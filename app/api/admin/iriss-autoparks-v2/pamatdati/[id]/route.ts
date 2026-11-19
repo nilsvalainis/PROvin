@@ -1,5 +1,13 @@
 import { isAutoparksOwner } from "@/lib/iriss-autoparks";
-import { autoparksV2Basics, v2Num, v2PlausibleTech, V2_FIELD_KEYS } from "@/lib/iriss-autoparks-v2";
+import {
+  autoparksV2Basics,
+  normalizeInspectionUntil,
+  v2CountInput,
+  v2Num,
+  v2PlausibleTech,
+  V2_COUNT_MAX,
+  V2_FIELD_KEYS,
+} from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { readAutoparksV2Car, refreshAutoparksV2Tech, updateCarV2 } from "@/lib/iriss-autoparks-v2-store";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -34,6 +42,8 @@ const TEXT_MAX: Record<string, number> = {
   color: 40,
   owner: 4,
   clientOrder: 1,
+  secondWheels: 80,
+  inspectionUntil: 20,
 };
 
 /**
@@ -77,6 +87,18 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (hasPowerKw && implausible("powerKw")) return autoparksV2Json({ error: "invalid_power" }, 400);
   if (hasDisplacement && implausible("displacementCm3")) return autoparksV2Json({ error: "invalid_displacement" }, 400);
   if (hasMileage && implausible("mileageKm")) return autoparksV2Json({ error: "invalid_mileage" }, 400);
+  // IRISS 18.11: atslēgas, īpašnieki, otrs disku komplekts, TA/HU (ar roku no izsoles).
+  const counts: Partial<Record<"keysCount" | "ownersCount", number | null>> = {};
+  for (const k of ["keysCount", "ownersCount"] as const) {
+    if (!Object.prototype.hasOwnProperty.call(body, k)) continue;
+    const n = v2CountInput(body[k], V2_COUNT_MAX[k]);
+    if (n === "invalid") return autoparksV2Json({ error: "invalid_count" }, 400);
+    counts[k] = n;
+  }
+  const inspectionRaw = text("inspectionUntil");
+  const inspectionUntil = inspectionRaw === undefined ? undefined : normalizeInspectionUntil(inspectionRaw);
+  if (inspectionUntil === "invalid") return autoparksV2Json({ error: "invalid_inspection" }, 400);
+  const secondWheels = text("secondWheels");
   const v2 = await updateCarV2(
     id,
     (c) => {
@@ -136,6 +158,22 @@ export async function PATCH(req: Request, ctx: Ctx) {
         hist.push({ field: "tech.mileageKm", from: c.tech.mileageKm, to: km });
         c.tech.mileageKm = km;
         c.sources["tech.mileageKm"] = "manual";
+      }
+      for (const k of ["keysCount", "ownersCount"] as const) {
+        if (!(k in counts)) continue;
+        hist.push({ field: `tech.${k}`, from: c.tech[k], to: counts[k] ?? null });
+        c.tech[k] = counts[k] ?? null;
+        c.sources[`tech.${k}`] = "manual";
+      }
+      if (secondWheels !== undefined) {
+        hist.push({ field: "tech.secondWheels", from: c.tech.secondWheels, to: secondWheels });
+        c.tech.secondWheels = secondWheels;
+        c.sources["tech.secondWheels"] = "manual";
+      }
+      if (inspectionUntil !== undefined) {
+        hist.push({ field: "tech.inspectionUntil", from: c.tech.inspectionUntil, to: inspectionUntil });
+        c.tech.inspectionUntil = inspectionUntil;
+        c.sources["tech.inspectionUntil"] = "manual";
       }
       return { result: c, history: hist };
     },

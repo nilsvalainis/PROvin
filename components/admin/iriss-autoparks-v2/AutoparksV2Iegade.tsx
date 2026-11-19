@@ -71,6 +71,16 @@ export function AutoparksV2CsddDocBadge() {
   );
 }
 
+/**
+ * «Iepirkuma cena» Iegādē: tikai ar summu tiesību (ap_summas); bez tās šūnas nav vispār
+ * (serveris tāpat atdod null un PATCH ir 403).
+ */
+export function iegadePurchasePriceCell(view: Pick<V2IegadeView, "canSums" | "purchasePriceEur">): { shown: string; raw: string } | null {
+  if (!view.canSums) return null;
+  if (view.purchasePriceEur == null) return { shown: "", raw: "" };
+  return { shown: fmtEur(view.purchasePriceEur), raw: String(view.purchasePriceEur) };
+}
+
 /** Iegādes failu režģis/saraksts - prezentācija, lai var testēt CSDD nozīmi. */
 export function AutoparksV2IegadeFiles({
   files,
@@ -332,6 +342,11 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
             "date",
           )}
           {vatCell}
+          {/* IRISS 18.11 (Nils 30.10 «pirkuma cena Dokumentos»): tikai ar summu tiesību (ap_summas); pašizmaksas bloks paliek izslēgts. */}
+          {(() => {
+            const price = iegadePurchasePriceCell(view);
+            return price ? cell("purchasePriceEur", "Iepirkuma cena", price.shown, price.raw) : null;
+          })()}
           {c ? (
             <button
               type="button"

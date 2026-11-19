@@ -63,7 +63,51 @@ export type V2Tech = {
   mileageKm: number | null;
   /** Kad pēdējo reizi jautāts CSDD tehniskajiem datiem (lai nejautātu katrā atvēršanā). */
   csddCheckedAt: string;
+  /** IRISS 18.11 (Nils 30.10): atslēgu skaits no izsoles; null = nav zināms. */
+  keysCount: number | null;
+  /** Īpašnieku skaits (piem. izsolē «3 Vorbesitzer»); null = nav zināms. */
+  ownersCount: number | null;
+  /** Otrs disku/riepu komplekts, brīvs teksts (piem. «Ziemas 17" uz diskiem», «Nav»). */
+  secondWheels: string;
+  /** TA/HU derīga līdz: «MM.GGGG» vai «DD.MM.GGGG» (tikai informācija, termiņu atgādinājumu nav). */
+  inspectionUntil: string;
 };
+
+/** Atslēgu/īpašnieku skaita robežas (ievade ārpus tām - kļūda, lauks netiek mainīts). */
+export const V2_COUNT_MAX = { keysCount: 20, ownersCount: 99 } as const;
+
+/** Vesels skaitlis 0..max; "" / null = notīrīt (null); citādi "invalid". */
+export function v2CountInput(raw: unknown, max: number): number | null | "invalid" {
+  if (raw === null || raw === undefined) return null;
+  const t = typeof raw === "number" ? String(raw) : typeof raw === "string" ? raw.trim() : "";
+  if (typeof raw !== "number" && typeof raw !== "string") return "invalid";
+  if (!t) return null;
+  if (!/^\d{1,3}$/.test(t)) return "invalid";
+  const n = Number(t);
+  return n <= max ? n : "invalid";
+}
+
+/**
+ * TA/HU termiņš: «04.2028», «4/2028», «2028-04» -> «04.2028»; «15.04.2028», «2028-04-15» -> «15.04.2028».
+ * "" = notīrīt; nesaprotams vai neticams gads - "invalid".
+ */
+export function normalizeInspectionUntil(raw: string): string | "invalid" {
+  const t = raw.trim().replace(/\s+/g, "");
+  if (!t) return "";
+  const pad = (n: string) => n.padStart(2, "0");
+  const okYear = (y: string) => Number(y) >= 1990 && Number(y) <= 2100;
+  const okMonth = (m: string) => Number(m) >= 1 && Number(m) <= 12;
+  const okDay = (d: string) => Number(d) >= 1 && Number(d) <= 31;
+  let m = t.match(/^(\d{1,2})[./-](\d{4})$/);
+  if (m && okMonth(m[1]!) && okYear(m[2]!)) return `${pad(m[1]!)}.${m[2]}`;
+  m = t.match(/^(\d{4})-(\d{1,2})$/);
+  if (m && okMonth(m[2]!) && okYear(m[1]!)) return `${pad(m[2]!)}.${m[1]}`;
+  m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (m && okDay(m[1]!) && okMonth(m[2]!) && okYear(m[3]!)) return `${pad(m[1]!)}.${pad(m[2]!)}.${m[3]}`;
+  m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m && okDay(m[3]!) && okMonth(m[2]!) && okYear(m[1]!)) return `${pad(m[3]!)}.${pad(m[2]!)}.${m[1]}`;
+  return "invalid";
+}
 
 export type V2Purchase = {
   auction: string;
@@ -248,7 +292,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 export function emptyCarV2(): AutoparksCarV2 {
   return {
     fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "", clientOrder: "" },
-    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "" },
+    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "", keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
     numberCheck: { fileId: "", scannedAt: "", extraFileIds: [] },
@@ -362,6 +406,16 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       engine: str(tech.engine, 60),
       mileageKm: v2Num(tech.mileageKm),
       csddCheckedAt: str(tech.csddCheckedAt, 40),
+      keysCount: (() => {
+        const n = v2CountInput(typeof tech.keysCount === "number" ? tech.keysCount : null, V2_COUNT_MAX.keysCount);
+        return typeof n === "number" ? n : null;
+      })(),
+      ownersCount: (() => {
+        const n = v2CountInput(typeof tech.ownersCount === "number" ? tech.ownersCount : null, V2_COUNT_MAX.ownersCount);
+        return typeof n === "number" ? n : null;
+      })(),
+      secondWheels: str(tech.secondWheels, 80),
+      inspectionUntil: str(tech.inspectionUntil, 10),
     },
     sources: normalizeSources(raw.sources),
     purchase: {
@@ -490,6 +544,8 @@ export type AutoparksV2Basics = {
   engine: V2Value<string>;
   registry: { status: V2RegistryStatus; actNo: string; actDate: string; known: boolean };
   hasPhoto: boolean;
+  /** IRISS 18.11: no izsoles - atslēgas, īpašnieki, otrs disku komplekts, TA/HU (ar roku, nav CSDD). */
+  extras: { keysCount: number | null; ownersCount: number | null; secondWheels: string; inspectionUntil: string };
 };
 
 /** `v2` - ar roku labotā marka/modelis (J29 C) aizstāj v1 vērtību attēlošanā; v1 pats netiek mainīts. */
@@ -555,6 +611,12 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
       known: Boolean(reg?.importedAt || reg?.tradeActNo || reg?.removedAt),
     },
     hasPhoto: Boolean(v2.mainPhoto),
+    extras: {
+      keysCount: v2.tech.keysCount,
+      ownersCount: v2.tech.ownersCount,
+      secondWheels: v2.tech.secondWheels,
+      inspectionUntil: v2.tech.inspectionUntil,
+    },
   };
 }
 

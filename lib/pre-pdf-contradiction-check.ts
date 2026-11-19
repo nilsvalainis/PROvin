@@ -20,6 +20,7 @@ import {
 } from "@/lib/unified-mileage";
 import {
   detectTotalLossFromPdfInput,
+  detectTotalLossInSourceEvidence,
   findTotalLossCommentMentions,
   headerMentionsTotalLoss,
   totalLossCommentFieldsFromInput,
@@ -30,6 +31,7 @@ import {
   type PdfSummaryTile,
 } from "@/lib/pdf-report-summary";
 import { countVendorOwnershipChangeEvents } from "@/lib/owner-count-synthesis";
+import type { ProvinBannerPdfInclude, ProvinManualBanner } from "@/lib/provin-alert-banners";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
 import { checkInternalNoteLeaks, type ClientPrintedTextField } from "@/lib/pre-pdf-internal-note-check";
 import { checkAiCommentLint } from "@/lib/pre-pdf-ai-lint";
@@ -40,6 +42,12 @@ export type PrePdfContradictionInput = {
   tiles?: PdfSummaryTile[];
   overrides?: OdometerAnomalyOverride[] | null;
   lifecycleEvents?: LifecycleEvent[];
+  /**
+   * Operatora kartīšu labojumi (`summary:incidents` u.c.) un „Rādīt PDF” iestatījumi - pārbaude
+   * skatās tās pašas kartītes, ko drukā PDF, nevis aprēķinātās pirms labojuma.
+   */
+  manualBanners?: ProvinManualBanner[] | null;
+  pdfBannerInclude?: ProvinBannerPdfInclude | null;
   /** Klienta PDF drukātie teksta lauki (plain): C10 iekšējo piezīmju pārbaudei. */
   clientTextFields?: readonly ClientPrintedTextField[] | null;
 };
@@ -102,7 +110,12 @@ function mileageRowsFromInput(input: PdfSummaryInput) {
  * C1-C4, C8 (arī komentāru brīdinājums), C9, C10 un rollback pret galveni. Operatoram rāda pirms PDF.
  */
 export function checkPrePdfContradictions(input: PrePdfContradictionInput): FactCheckFlag[] {
-  const tiles = input.tiles ?? buildPdfReportSummaryTiles(input.summaryInput);
+  const tiles =
+    input.tiles ??
+    buildPdfReportSummaryTiles(input.summaryInput, {
+      manualBanners: input.manualBanners ?? null,
+      pdfBannerInclude: input.pdfBannerInclude ?? null,
+    });
   const rows = mileageRowsFromInput(input.summaryInput);
   const flags: FactCheckFlag[] = [];
   const mileageTile = tiles.find((t) => t.id === "mileage");
@@ -199,7 +212,8 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
     );
   }
 
-  if (!loss.found) {
+  // CARFAX u.c. PDF „Citi avoti” sadaļā: fakts ir avotā, tikai ne strukturētā rindā - nav pretruna.
+  if (!loss.found && !detectTotalLossInSourceEvidence(input.summaryInput).found) {
     // Tikai komentārā (operatora / AI) minēts zaudējums: kartīti neieslēdz, bet operators to redz.
     const commentFields = input.clientTextFields ?? totalLossCommentFieldsFromInput(input.summaryInput);
     for (const m of findTotalLossCommentMentions(commentFields)) {

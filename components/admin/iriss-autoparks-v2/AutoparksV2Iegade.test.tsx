@@ -4,6 +4,7 @@ import {
   AutoparksV2IegadeFiles,
   CSDD_DOC_BADGE_SRC,
   CSDD_DOC_BADGE_TITLE,
+  iegadePurchasePriceCell,
 } from "@/components/admin/iriss-autoparks-v2/AutoparksV2Iegade";
 import { iegadeDocGroupOfType, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { renderHtml, renderText } from "@/lib/test-render";
@@ -67,5 +68,16 @@ describe("Dokumenti grupās (Nils 27.10)", () => {
   it("ar adresi - priekšskata vieta katram dokumentam", () => {
     const html = renderHtml(<AutoparksV2IegadeFiles files={files} onOpen={() => {}} urlFor={(f) => `/x/${f.id}`} />);
     expect(html.match(/ap2-thumb/g)?.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("Iepirkuma cena Iegādē (IRISS 18.11, summu tiesība)", () => {
+  it("bez ap_summas - lauka nav", () => {
+    expect(iegadePurchasePriceCell({ canSums: false, purchasePriceEur: null })).toBeNull();
+  });
+
+  it("ar ap_summas - tukšs «+ Pievienot» vai summa", () => {
+    expect(iegadePurchasePriceCell({ canSums: true, purchasePriceEur: null })).toEqual({ shown: "", raw: "" });
+    expect(iegadePurchasePriceCell({ canSums: true, purchasePriceEur: 10760.83 })).toEqual({ shown: "10 760,83 €", raw: "10760.83" });
   });
 });

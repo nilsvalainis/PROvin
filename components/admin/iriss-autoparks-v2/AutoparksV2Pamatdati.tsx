@@ -21,7 +21,21 @@ type EditKey =
   | "powerKw"
   | "mileageKm"
   | "gearbox"
-  | "engine";
+  | "engine"
+  | "keysCount"
+  | "ownersCount"
+  | "secondWheels"
+  | "inspectionUntil";
+
+/** IRISS 18.11: lauki no izsoles (ar roku, bez CSDD zaļā punkta). */
+const EXTRA_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => string>> = {
+  keysCount: (b) => (b.extras?.keysCount == null ? "" : String(b.extras.keysCount)),
+  ownersCount: (b) => (b.extras?.ownersCount == null ? "" : String(b.extras.ownersCount)),
+  secondWheels: (b) => b.extras?.secondWheels ?? "",
+  inspectionUntil: (b) => b.extras?.inspectionUntil ?? "",
+};
+
+const COUNT_KEYS: ReadonlySet<EditKey> = new Set(["keysCount", "ownersCount"]);
 
 const CSDD_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => { value: string; csdd: boolean }>> = {
   tyreSize: (b) => b.tyreSize,
@@ -44,7 +58,11 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
 
   async function save(key: EditKey, value: string) {
     setEditing(null);
-    const current = CSDD_VALUE[key] ? CSDD_VALUE[key]!(basics).value : (basics[key as "plate" | "location" | "arrivedAt" | "make" | "model" | "vin" | "year" | "color" | "owner"] as string);
+    const current = EXTRA_VALUE[key]
+      ? EXTRA_VALUE[key]!(basics)
+      : CSDD_VALUE[key]
+        ? CSDD_VALUE[key]!(basics).value
+        : (basics[key as "plate" | "location" | "arrivedAt" | "make" | "model" | "vin" | "year" | "color" | "owner"] as string);
     const next = value.trim();
     if (next === current) return;
     setError("");
@@ -54,16 +72,22 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
       return;
     }
     if (NUM_KEYS.has(key) && num !== null && String(num) === current) return;
+    if (COUNT_KEYS.has(key) && next !== "" && !/^\d{1,2}$/.test(next)) {
+      setError("Ievadi skaitu, piem., 2 - lauks netika mainīts");
+      return;
+    }
     setRetry(null);
     const r = await ap2PatchJson<{ basics?: AutoparksV2Basics; error?: string }>(
       `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`,
-      { [key]: NUM_KEYS.has(key) ? num : next },
+      { [key]: NUM_KEYS.has(key) ? num : COUNT_KEYS.has(key) ? (next === "" ? null : Number(next)) : next },
     );
     const data = r.data;
     if (r.ok && data?.basics) onBasics(data.basics);
     else if (data?.error === "invalid_power") setError("Jauda nav ticama (1-2000 kW) - lauks netika mainīts");
     else if (data?.error === "invalid_displacement") setError("Tilpums nav ticams (50-20000 cm3) - lauks netika mainīts");
     else if (data?.error === "invalid_mileage") setError("Nobraukums nav ticams - lauks netika mainīts");
+    else if (data?.error === "invalid_count") setError("Skaits nav ticams - lauks netika mainīts");
+    else if (data?.error === "invalid_inspection") setError("TA/HU: ievadi mēnesi un gadu, piem., 04.2028 - lauks netika mainīts");
     else if (key === "vin" && r.status !== null && r.status < 500) setError("Nederīgs VIN (17 zīmes, bez I/O/Q)");
     else {
       setError(`Neizdevās saglabāt «${next}»`);
@@ -82,7 +106,7 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
             className="v"
             // Skaitļiem teksta lauks ar ciparu tastatūru: `type="number"` atdeva "" pie "171 048" / "1,9" un lauks tika iztīrīts.
             type={type === "number" ? "text" : type}
-            inputMode={type === "number" ? "decimal" : undefined}
+            inputMode={type === "number" ? (COUNT_KEYS.has(key) ? "numeric" : "decimal") : undefined}
             defaultValue={value}
             autoFocus
             onBlur={(e) => void save(key, e.target.value)}
@@ -143,6 +167,9 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("vin", "VIN", basics.vin, basics.vin)}
         {editable("plate", "Numurzīme", basics.plate, basics.plate)}
         {editable("mileageKm", "Nobraukums", basics.mileageKm.value == null ? "" : String(basics.mileageKm.value), fmtKm(basics.mileageKm.value), "number")}
+        {editable("ownersCount", "Īpašnieku skaits", EXTRA_VALUE.ownersCount!(basics), EXTRA_VALUE.ownersCount!(basics), "number")}
+        {editable("keysCount", "Atslēgas", EXTRA_VALUE.keysCount!(basics), EXTRA_VALUE.keysCount!(basics), "number")}
+        {editable("inspectionUntil", "TA/HU līdz", EXTRA_VALUE.inspectionUntil!(basics), EXTRA_VALUE.inspectionUntil!(basics))}
         {/* "Atrašanās vieta" nerāda šeit kopš j62: lauks dzīvo tikai IRISS Loģistikas kabinetā (kartes punkts); dati paliek, tikai nav rediģējami no Autoparka. */}
         {editable("arrivedAt", "Atvests", basics.arrivedAt, fmtDateLv(basics.arrivedAt), "date")}
       </div>
@@ -156,6 +183,7 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("gearbox", "Pārnesumkārba", basics.gearbox.value, basics.gearbox.value)}
         {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
+        {editable("secondWheels", "Otrs disku komplekts", EXTRA_VALUE.secondWheels!(basics), EXTRA_VALUE.secondWheels!(basics))}
       </div>
       {error ? (
         <p className="ap2-err" role="alert">
