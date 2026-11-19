@@ -51,7 +51,8 @@ describe("Autoparks v2 Pamatdati - Atrašanās vieta j62", () => {
 describe("Autoparks v2 Pamatdati - lauki no izsoles (IRISS 18.11)", () => {
   it("tukši lauki - «+ Pievienot» ar nosaukumiem", () => {
     const text = renderText(<AutoparksV2Pamatdati basics={basics} onBasics={() => undefined} />);
-    for (const label of ["Īpašnieku skaits", "Atslēgas", "TA/HU līdz", "Otrs disku komplekts"]) expect(text).toContain(label);
+    for (const label of ["Īpašnieku skaits", "Atslēgas", "Otrs disku komplekts"]) expect(text).toContain(label);
+    expect(text).not.toContain("TA/HU");
   });
 
   it("aizpildītas vērtības redzamas", () => {
@@ -63,7 +64,7 @@ describe("Autoparks v2 Pamatdati - lauki no izsoles (IRISS 18.11)", () => {
     );
     expect(text).toMatch(/Īpašnieku skaits\s*3/);
     expect(text).toMatch(/Atslēgas\s*2/);
-    expect(text).toMatch(/TA\/HU līdz\s*04\.2028/);
+    expect(text).not.toContain("04.2028");
     expect(text).toMatch(/Otrs disku komplekts\s*Ziemas 17 uz diskiem/);
   });
 

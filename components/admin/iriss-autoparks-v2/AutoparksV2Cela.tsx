@@ -43,7 +43,7 @@ export function AutoparksV2Cela({ transit, canWrite = true }: { transit: Autopar
   const rows: Array<[string, string]> = [
     ["Savākšanas vieta", transit.pickupAddress || "-"],
     ["Izsole", transit.auction || "-"],
-    ["Pickup nr.", transit.pickupRef || "-"],
+    ["Pickup nr.", transit.pickupRef || "Nav pickup koda"],
     ["Krava", transit.cargoPlace ? `${transit.cargoLabel} (${transit.cargoPlace}. vieta)` : transit.cargoLabel],
     ["Savākšanas datums", transit.pickupDate ? dateLv(transit.pickupDate) : "-"],
     ["Bezmaksas stāvvieta līdz", transit.freeParkingUntil ? dateLv(transit.freeParkingUntil) : "-"],

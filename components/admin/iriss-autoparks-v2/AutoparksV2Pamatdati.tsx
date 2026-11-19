@@ -169,7 +169,7 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("mileageKm", "Nobraukums", basics.mileageKm.value == null ? "" : String(basics.mileageKm.value), fmtKm(basics.mileageKm.value), "number")}
         {editable("ownersCount", "Īpašnieku skaits", EXTRA_VALUE.ownersCount!(basics), EXTRA_VALUE.ownersCount!(basics), "number")}
         {editable("keysCount", "Atslēgas", EXTRA_VALUE.keysCount!(basics), EXTRA_VALUE.keysCount!(basics), "number")}
-        {editable("inspectionUntil", "TA/HU līdz", EXTRA_VALUE.inspectionUntil!(basics), EXTRA_VALUE.inspectionUntil!(basics))}
+        {/* TA/HU lauks noņemts (Nils 19.11: apskati veic klienti) - dati glabātuvē paliek, UI nerāda. */}
         {/* "Atrašanās vieta" nerāda šeit kopš j62: lauks dzīvo tikai IRISS Loģistikas kabinetā (kartes punkts); dati paliek, tikai nav rediģējami no Autoparka. */}
         {editable("arrivedAt", "Atvests", basics.arrivedAt, fmtDateLv(basics.arrivedAt), "date")}
       </div>
