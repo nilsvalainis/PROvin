@@ -9,7 +9,8 @@ export type IrissMobileMenuItem = {
   label: string;
   icon: AdminMobileIconName;
   group: 1 | 2 | 3;
-  section: IrissSection | "iestatijumi";
+  /** "iestatijumi" un "admin" - tikai administratoram. */
+  section: IrissSection | "iestatijumi" | "admin";
   badge?: IrissMobileMenuBadge;
 };
 
@@ -45,6 +46,8 @@ export const IRISS_MOBILE_MENU_ITEMS: readonly IrissMobileMenuItem[] = [
     badge: "waybills",
   },
   { id: "vin", href: "/admin/vin-scan", label: "VIN pārbaude", icon: "vinParbaude", group: 3, section: "vin" },
+  // Nils 19.11: tā pati «Dīlera dati» lapa IRISS pusē, tikai admini (OneAuto maksā naudu).
+  { id: "dilera-dati", href: "/admin/iriss/dilera-dati", label: "Dīlera dati", icon: "dileri", group: 3, section: "admin" },
   // Mēneša atskaite izvēlnē paslēpta (Nils 26.10: pagaidām nelieto); lapa /admin/iriss/atskaite paliek.
   { id: "iestatijumi", href: "/admin/iriss/iestatijumi", label: "Iestatījumi", icon: "iestatijumi", group: 3, section: "iestatijumi" },
 ];
@@ -54,7 +57,7 @@ export function canSeeIrissMobileMenuItem(
   sections: readonly IrissSection[],
   isAdmin: boolean,
 ): boolean {
-  if (item.section === "iestatijumi") return isAdmin;
+  if (item.section === "iestatijumi" || item.section === "admin") return isAdmin;
   if (isAdmin) return true;
   if (item.section === "logistika") return sections.some((id) => LOGISTICS_SECTIONS.includes(id));
   return sections.includes(item.section);

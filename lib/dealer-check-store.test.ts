@@ -17,7 +17,9 @@ import {
   convertDealerCheckToOrder,
   deleteDealerCheck,
   listDealerCheckEntries,
+  addDealerCheckDelivery,
   normalizeDealerCheckRecord,
+  patchDealerCheck,
   readDealerCheck,
   readDealerCheckByVin,
   readOwnedDealerCheck,
@@ -81,6 +83,22 @@ describe("dealer-check-store", () => {
     expect(normalizeDealerCheckRecord({ ...sample(), id: "../etc/passwd" })).toBeNull();
     expect(normalizeDealerCheckRecord(sample())?.vin).toBe(VIN);
     expect(normalizeDealerCheckRecord(sample())?.autoparks?.stockPath).toBe("/STOCK/Passat");
+  });
+
+  it("Lielie darbi labojumi un piegādes žurnāls saglabājas, saved nepazūd", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "dealer-check-"));
+    process.env.DEALER_CHECK_DIR = dir;
+    const rec = sample("dc-store-test-02", { saved: true });
+    expect(await writeDealerCheck(rec)).toBe(true);
+    const patched = await patchDealerCheck(rec.id, {
+      dealerMajorWorkOverrides: [{ key: "custom:1", action: "set", assemblyId: "turbo", km: "150000" }],
+    });
+    expect(patched?.saved).toBe(true);
+    await addDealerCheckDelivery(rec.id, { kind: "email", at: "2026-11-19T10:00:00.000Z", target: "a@b.lv" });
+    const back = await readDealerCheck(rec.id);
+    expect(back?.dealerMajorWorkOverrides).toEqual([{ key: "custom:1", action: "set", assemblyId: "turbo", km: "150000" }]);
+    expect(back?.deliveries).toEqual([{ kind: "email", at: "2026-11-19T10:00:00.000Z", target: "a@b.lv" }]);
+    expect(normalizeDealerCheckRecord({ ...sample(), deliveries: [{ kind: "x", at: "y" }] })?.deliveries).toBeUndefined();
   });
 
   it("create → VIN indekss → delete (ledger paliek)", async () => {

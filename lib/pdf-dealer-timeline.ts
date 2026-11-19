@@ -9,6 +9,8 @@ import {
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
 import {
+  dealerAccidentZoneDetail,
+  dealerAssemblyReplacedDetail,
   dealerMajorWorkCategory,
   hasAnyMajorAssemblyRepair,
   hasNonCampaignRepairAction,
@@ -335,10 +337,16 @@ export type DealerVisitMajorMark = {
   id: string;
   label: string;
   category: DealerMajorWorkCategory;
+  /** Īsa precizācija LV no ieraksta („priekšā labajā pusē”, „nomainīta”); "" = tikai kategorija. */
+  detail: string;
 };
 
-/** Īsā čipa etiķete vizītē (pilnā kategorija paliek Lielajos darbos). */
+/** Īsā galvenes etiķete vizītē (pilnā kategorija paliek Lielajos darbos). */
 export const DEALER_ACCIDENT_CHIP_LABEL = "Bojājuma remonts";
+
+function visitMarkDetail(category: DealerMajorWorkCategory, id: string, works: string): string {
+  return category === "accident" ? dealerAccidentZoneDetail(works) : dealerAssemblyReplacedDetail(works, id);
+}
 
 type MajorHitAnchor = {
   hit: DealerMajorWorkHit;
@@ -392,7 +400,7 @@ export function dealerVisitMajorMarker(
         category === "accident" && a.hit.label === majorAssemblyLabel("accident_repair")
           ? DEALER_ACCIDENT_CHIP_LABEL
           : a.hit.label;
-      out.push({ id: a.hit.id, label, category });
+      out.push({ id: a.hit.id, label, category, detail: visitMarkDetail(category, a.hit.id, row.works) });
     }
     // Negadījums pirmais - tas ir svarīgākais akcents.
     return out.sort((x, y) => (x.category === y.category ? 0 : x.category === "accident" ? -1 : 1));

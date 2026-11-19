@@ -14,6 +14,18 @@ Tu esi PROVIN dizainers.
 - Pārbaudi telefona platumā 390 px un datorā; tumšo režīmu, ja lapa to atbalsta.
 - Pieejamība: kontrasts, skāriena mērķi vismaz 44 px, teksti nav pārāk sīki.
 
+## Pirms katra maketa (obligāti, 19.11)
+1. Izlasi `docs/dizains/nila-gaume.md` (Nila «jā»/«nē» žurnāls). Pēc Nila atbildes - papildini to.
+2. Sāc no esošajām detaļām: īstās admin/PDF lapas komponenti un CSS (`lib/client-report-html.ts`, `components/admin/**`, `app/admin/**.css`), nevis zīmē no jauna. Ja vari, nofotografē īsto lapu (Playwright) un maketē uz tās bāzes.
+3. Dati: reālistiski (anonimizēti piemēri no Dropbox `/_PROv/` auditiem) - garš teksts, tukši lauki, daudz ierakstu. Nekādu personas datu.
+4. Ikonas: Lucide stila inline SVG (bez emoji), vienādas adminā un PDF.
+5. Kad rāda variantus - 3-5 patiešām atšķirīgi, ar ieteikumu un iemeslu.
+
+## Pašpārbaude pirms rādīšanas Nilam (obligāti)
+- Uzrenderē ar Playwright: dators (1280), iPhone (390, deviceScaleFactor 2), PDF/drukai arī melnbaltā (filter: grayscale). Apskati katru bildi pats un salabo.
+- Palaid dizaina kritiku un pieejamību ar skiliem: `design-skills:design-critique` (vai `design:design-critique`), `ux-ui-audit:ux-ui-audit` dzīvām lapām, `design-skills:accessibility-audit` (kontrasts, pieskāriena mērķi ≥44 px).
+- PDF izmaiņām: «pirms/pēc» PNG blakus PR aprakstā, lai nekas nemainās nejauši (Nila likums: PDF dizainu bez maketa nemainīt).
+
 ## Noteikumi
 
 - Ievēro `CLAUDE.md`.

@@ -5,6 +5,8 @@ vi.mock("server-only", () => ({}));
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import {
+  dealerAccidentZoneDetail,
+  dealerAssemblyReplacedDetail,
   dealerMajorWorkCategory,
   hasAnyMajorAssemblyRepair,
   isAccidentRepairWork,
@@ -118,17 +120,18 @@ describe("Lielo darbu izcelšana servisa vizītēs", () => {
       majorMarksForRow: dealerVisitMajorMarker(facts),
     });
     const accident = boxFor(html, "Unfallinstandsetzung");
-    expect(accident).toContain("pdf-svc-box--major pdf-svc-box--accident");
-    expect(accident).toContain("pdf-svc-major-chip--accident");
+    expect(accident).toContain("pdf-svc-box--hl pdf-svc-box--accident");
+    expect(accident).toContain("pdf-svc-hl__item--accident");
+    expect(accident).not.toContain("pdf-svc-major-chip");
     expect(accident).toContain("Bojājuma remonts");
 
     const gearbox = boxFor(html, "Getriebe getauscht");
-    expect(gearbox).toContain("pdf-svc-box--major pdf-svc-box--mechanical");
-    expect(gearbox).toContain("pdf-svc-major-chip--mechanical");
+    expect(gearbox).toContain("pdf-svc-box--hl pdf-svc-box--mechanical");
+    expect(gearbox).toContain("pdf-svc-hl__item--mechanical");
     expect(gearbox).toContain("Ātrumkārba");
 
-    expect(boxFor(html, "Inspektion")).not.toContain("pdf-svc-box--major");
-    expect(boxFor(html, "Wiper blades")).not.toContain("pdf-svc-box--major");
+    expect(boxFor(html, "Inspektion")).not.toContain("pdf-svc-box--hl");
+    expect(boxFor(html, "Wiper blades")).not.toContain("pdf-svc-box--hl");
   });
 
   it("tulko čipa etiķeti atskaites valodā", () => {
@@ -149,7 +152,7 @@ describe("Lielo darbu izcelšana servisa vizītēs", () => {
         { key: `accident_repair@${first.factId}`, action: "hide" },
       ]),
     });
-    expect(boxFor(html, "Unfallinstandsetzung")).not.toContain("pdf-svc-box--major");
+    expect(boxFor(html, "Unfallinstandsetzung")).not.toContain("pdf-svc-box--hl");
     expect(boxFor(html, "Accident repair rear bumper")).toContain("pdf-svc-box--accident");
   });
 
@@ -179,8 +182,71 @@ describe("Lielo darbu izcelšana servisa vizītēs", () => {
 
   it("bez marķiera HTML paliek kā iepriekš", () => {
     const html = buildDealerServiceVisitsHtml(ROWS, { condenseRecords: true });
-    expect(html).not.toContain("pdf-svc-box--major");
-    expect(html).not.toContain("pdf-svc-major-chip");
+    expect(html).not.toContain("pdf-svc-box--hl");
+    expect(html).not.toContain("pdf-svc-hl");
+  });
+});
+
+describe("Galvenes josla (variants 2)", () => {
+  const facts = extractDealerFactsFromServiceWorks(ROWS);
+  const render = (lang: "lv" | "en" | "ru" | "de") =>
+    buildDealerServiceVisitsHtml(ROWS, {
+      condenseRecords: true,
+      lang,
+      majorMarksForRow: dealerVisitMajorMarker(facts),
+    });
+
+  it("kategorija + droša precizācija: zona un «nomainīta»", () => {
+    const html = render("lv");
+    const front = boxFor(html, "Unfallinstandsetzung");
+    expect(front).toContain("<b>Bojājuma remonts</b>");
+    expect(front).toContain("- priekšā labajā pusē");
+    expect(front).toContain("<svg class=\"pdf-svc-hl__ico\"");
+    expect(boxFor(html, "Accident repair rear bumper")).toContain("- aizmugurē");
+    const gearbox = boxFor(html, "Getriebe getauscht");
+    expect(gearbox).toContain("<b>Ātrumkārba</b>");
+    expect(gearbox).toContain("- nomainīta");
+  });
+
+  it("precizācija tulkota EN/RU/DE", () => {
+    expect(boxFor(render("en"), "Unfallinstandsetzung")).toContain("- front right");
+    expect(boxFor(render("en"), "Getriebe getauscht")).toContain("- replaced");
+    expect(boxFor(render("ru"), "Unfallinstandsetzung")).toContain("- спереди справа");
+    expect(boxFor(render("ru"), "Getriebe getauscht")).toContain("Коробка передач");
+    expect(boxFor(render("de"), "Unfallinstandsetzung")).toContain("- vorne rechts");
+    expect(boxFor(render("de"), "Getriebe getauscht")).toContain("- ersetzt");
+  });
+
+  it("operatora pievienots ieraksts bez drošas precizācijas rāda tikai kategoriju", () => {
+    const html = buildDealerServiceVisitsHtml(ROWS, {
+      condenseRecords: true,
+      majorMarksForRow: dealerVisitMajorMarker(facts, [
+        { key: "custom:1", action: "set", assemblyId: "body_glass", date: "01.04.2022", km: "90 000 km" },
+      ]),
+    });
+    const wiper = boxFor(html, "Wiper blades");
+    expect(wiper).toContain("<b>Virsbūve / stikls</b></span>");
+    expect(wiper).not.toContain("pdf-svc-hl__detail");
+  });
+});
+
+describe("Precizācijas atpazīšana", () => {
+  it("zona: DE/EN/LV/RU; pretrunīga vai neminēta - tukša", () => {
+    expect(dealerAccidentZoneDetail("Unfallinstandsetzung vorne rechts")).toBe("priekšā labajā pusē");
+    expect(dealerAccidentZoneDetail("Accident repair rear left door")).toBe("aizmugurē kreisajā pusē");
+    expect(dealerAccidentZoneDetail("Aizmugurējā bampera krāsošana pēc bojājuma")).toBe("aizmugurē");
+    expect(dealerAccidentZoneDetail("Ремонт после ДТП, левое переднее крыло")).toBe("priekšā kreisajā pusē");
+    expect(dealerAccidentZoneDetail("Unfallinstandsetzung")).toBe("");
+    expect(dealerAccidentZoneDetail("Unfallinstandsetzung vorne und hinten")).toBe("");
+    expect(dealerAccidentZoneDetail("Inspektion vorne rechts")).toBe("");
+  });
+
+  it("«nomainīts» tikai skaidrai nomaiņai", () => {
+    expect(dealerAssemblyReplacedDetail("Getriebe getauscht", "gearbox")).toBe("nomainīta");
+    expect(dealerAssemblyReplacedDetail("Engine replaced", "engine")).toBe("nomainīts");
+    expect(dealerAssemblyReplacedDetail("Getriebe instandgesetzt", "gearbox")).toBe("");
+    expect(dealerAssemblyReplacedDetail("Getriebeöl erneuert", "gearbox")).toBe("");
+    expect(dealerAssemblyReplacedDetail("Windschutzscheibe ersetzt", "body_glass")).toBe("");
   });
 });
 

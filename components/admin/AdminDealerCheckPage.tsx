@@ -44,6 +44,8 @@ import { normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductId } from "@/lib/oneauto-catalog";
 import { AdminDealerCheckHistory } from "@/components/admin/AdminDealerCheckHistory";
+import { AdminDealerCheckDelivery } from "@/components/admin/AdminDealerCheckDelivery";
+import type { DealerMajorWorkOverride } from "@/lib/dealer-major-works-override-persist";
 import {
   DEALER_CHECK_LIST_DEFAULT_FILTER,
   dealerCheckListToCsv,
@@ -87,6 +89,7 @@ export function AdminDealerCheckPage({
   fromAutoparks = false,
   initialRecord = null,
   initialEntries = [],
+  basePath = DEALER_CHECK_PAGE_PATH,
 }: {
   initialVin: string;
   initialPlate?: string;
@@ -95,6 +98,8 @@ export function AdminDealerCheckPage({
   fromAutoparks?: boolean;
   initialRecord?: DealerCheckRecord | null;
   initialEntries?: DealerCheckHistoryEntry[];
+  /** PRO: /admin/dilera-dati, IRISS: /admin/iriss/dilera-dati (tā pati lapa). */
+  basePath?: string;
 }) {
   const [template, setTemplate] = useState<DealerCheckTemplateId>(initialRecord?.template ?? DEALER_CHECK_DEFAULT_TEMPLATE);
   const [vin, setVin] = useState(initialRecord?.vin || initialVin);
@@ -160,7 +165,7 @@ export function AdminDealerCheckPage({
   }, [refreshList]);
 
   function rememberUrl(id: string | null) {
-    const href = id ? dealerCheckPageHref({ id }) : DEALER_CHECK_PAGE_PATH;
+    const href = id ? dealerCheckPageHref({ id }).replace(DEALER_CHECK_PAGE_PATH, basePath) : basePath;
     window.history.replaceState(null, "", href);
   }
 
@@ -433,6 +438,19 @@ export function AdminDealerCheckPage({
     }
   }
 
+  async function beforeServerPdf(): Promise<boolean> {
+    if (!record) return false;
+    if (!editing) return true;
+    const next = await persist({ comments: draftComments });
+    if (!next) return false;
+    setEditing(false);
+    return true;
+  }
+
+  async function onOverridesChange(next: DealerMajorWorkOverride[]) {
+    await persist({ dealerMajorWorkOverrides: next });
+  }
+
   async function openPdf(kind: "raw" | "lv") {
     if (!record) return;
     const fallback = kind === "lv" ? buildDealerCheckLvHtml({ ...record, comments: draftComments }) : "";
@@ -445,6 +463,7 @@ export function AdminDealerCheckPage({
   }
 
   const http206 = record ? dealerCheckServiceHistoryHttp206(record.results) : false;
+  const stored = Boolean(record && dealerCheckHasResult(record) && entries.some((row) => row.id === record.id));
   const log = useMemo(
     () =>
       record
@@ -628,8 +647,18 @@ export function AdminDealerCheckPage({
           onSave={() => void onSave()}
           onDelete={() => void onDelete(record?.id)}
           busy={busy}
+          serverPdf={stored}
         />
       )}
+
+      {record && stored ? (
+        <AdminDealerCheckDelivery
+          record={record}
+          onOverridesChange={onOverridesChange}
+          beforePdf={beforeServerPdf}
+          busy={busy}
+        />
+      ) : null}
 
       <AdminDealerCheckHistory
         entries={filteredEntries}
@@ -658,6 +687,7 @@ function DealerCheckResult({
   onSave,
   onDelete,
   busy,
+  serverPdf,
 }: {
   record: DealerCheckRecord;
   log: string;
@@ -671,6 +701,8 @@ function DealerCheckResult({
   onSave: () => void;
   onDelete: () => void;
   busy: boolean;
+  /** Servera PDF ir piegādes blokā - šeit «Ģenerēt PDF» nedublē. */
+  serverPdf: boolean;
 }) {
   const v = record.vehicle;
   const warn = dealerCheckHttp206Warning();
@@ -822,9 +854,11 @@ function DealerCheckResult({
 
       <section className="rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => onPdf("lv")} className="flex-1 rounded-[10px] bg-[#2563EB] px-4 py-2.5 text-[13.5px] font-semibold text-white sm:flex-none">
-            Ģenerēt PDF
-          </button>
+          {serverPdf ? null : (
+            <button type="button" onClick={() => onPdf("lv")} className="flex-1 rounded-[10px] bg-[#2563EB] px-4 py-2.5 text-[13.5px] font-semibold text-white sm:flex-none">
+              Ģenerēt PDF
+            </button>
+          )}
           <button type="button" onClick={() => onPdf("raw")} className="flex-1 rounded-[10px] bg-[#f2f2f7] px-4 py-2.5 text-[13.5px] font-semibold text-[#111] sm:flex-none">
             Atvērt RAW
           </button>

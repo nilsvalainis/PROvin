@@ -2,7 +2,11 @@
  * OFICIĀLĀ DĪLERA DATI PDF: servisa vizītes (koncepts A), ne četru kolonnu tabula.
  */
 import { sanitizeMileageCountryField } from "@/lib/auto-records-paste-parse";
-import { translateClientReportStatic, type ClientReportLang } from "@/lib/client-report-i18n";
+import {
+  translateClientReportStatic,
+  translateDealerHighlightDetail,
+  type ClientReportLang,
+} from "@/lib/client-report-i18n";
 import { countryLabelToIso2, normalizeCountryName } from "@/lib/country-names-lv";
 import {
   autoRecordsServiceWorkRowIsPrintable,
@@ -103,13 +107,24 @@ function visitKindTagHtml(works: string, lang: ClientReportLang): string {
   return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
 }
 
-function majorChipsHtml(marks: readonly DealerVisitMajorMark[], lang: ClientReportLang): string {
-  return marks
-    .map(
-      (m) =>
-        `<span class="pdf-svc-tag pdf-svc-major-chip pdf-svc-major-chip--${m.category}">${escapeHtml(translateClientReportStatic(m.label, lang))}</span>`,
-    )
+/** Lucide „triangle-alert” - bojājuma remonts. Inline SVG, lai PDF drukā vienādi (arī melnbaltā). */
+const HL_ICON_ACCIDENT = `<svg class="pdf-svc-hl__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+
+/** Lucide „settings” (zobrats) - liels mehāniskais mezgls. */
+const HL_ICON_MECHANICAL = `<svg class="pdf-svc-hl__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+/** Galvenes josla: ikona + kategorija + īsa precizācija (piem. „Bojājuma remonts - priekšā labajā pusē”). */
+function highlightHeadHtml(marks: readonly DealerVisitMajorMark[], lang: ClientReportLang): string {
+  const items = marks
+    .map((m) => {
+      const icon = m.category === "accident" ? HL_ICON_ACCIDENT : HL_ICON_MECHANICAL;
+      const detail = m.detail
+        ? `<span class="pdf-svc-hl__detail">- ${escapeHtml(translateDealerHighlightDetail(m.detail, lang))}</span>`
+        : "";
+      return `<span class="pdf-svc-hl__item pdf-svc-hl__item--${m.category}">${icon}<b>${escapeHtml(translateClientReportStatic(m.label, lang))}</b>${detail}</span>`;
+    })
     .join("");
+  return `<div class="pdf-svc-hl">${items}</div>`;
 }
 
 function visitHtml(
@@ -127,16 +142,19 @@ function visitHtml(
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
   const place = visitPlaceHtml(row.location, lang, inferredCountry);
   const tag = visitKindTagHtml(row.works, lang);
-  const chips = `<div class="pdf-svc-chips">${majorChipsHtml(marks, lang)}${tag}${km}</div>`;
+  const chips = `<div class="pdf-svc-chips">${tag}${km}</div>`;
   const head = `<div class="pdf-svc-box-top">${place}${chips}</div>`;
-  const majorCls =
+  const content = `${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}`;
+  const box =
     marks.length === 0
-      ? ""
-      : ` pdf-svc-box--major pdf-svc-box--${marks.some((m) => m.category === "accident") ? "accident" : "mechanical"}`;
+      ? `<article class="pdf-svc-box">${content}</article>`
+      : `<article class="pdf-svc-box pdf-svc-box--hl pdf-svc-box--${
+          marks.some((m) => m.category === "accident") ? "accident" : "mechanical"
+        }">${highlightHeadHtml(marks, lang)}<div class="pdf-svc-box-in">${content}</div></article>`;
   return `<div class="pdf-svc-visit pdf-svc-kind--${classifyDealerVisitKind(row.works)}">
     ${dateHtml}
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>
-    <article class="pdf-svc-box${majorCls}">${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}</article>
+    ${box}
   </div>`;
 }
 

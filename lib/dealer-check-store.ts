@@ -7,6 +7,7 @@ import { del, get, put } from "@vercel/blob";
 
 import {
   addDealerCheckLedgerLoad,
+  DEALER_CHECK_MAX_DELIVERIES,
   emptyDealerCheckLedgerMonth,
   emptyDealerCheckVehicle,
   isDealerCheckTemplateId,
@@ -15,6 +16,7 @@ import {
   type DealerCheckAutoparksLink,
   type DealerCheckComments,
   type DealerCheckCsddCompare,
+  type DealerCheckDelivery,
   type DealerCheckLedgerMonth,
   type DealerCheckMileageRow,
   type DealerCheckRecord,
@@ -26,6 +28,7 @@ import { parseOneautoDisplay, parseOneautoProductIds } from "@/lib/oneauto-catal
 import { parseResultMap } from "@/lib/oneauto-block";
 import { rigaYearMonthKey } from "@/lib/admin-riga-calendar";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { parseDealerMajorWorkOverrides } from "@/lib/dealer-major-works-override-persist";
 import {
   dealerCheckHistoryEntryFromRecord,
   dealerCheckLoadShouldPersist,
@@ -248,6 +251,8 @@ export function normalizeDealerCheckRecord(raw: unknown, fallbackId = ""): Deale
   const selected = parseOneautoProductIds(o.selectedProducts);
   const csddSnapshot = parseDealerCheckCsddSnapshot(o.csddSnapshot);
   const orderId = typeof o.orderId === "string" ? o.orderId.trim().slice(0, 80) : "";
+  const majorOverrides = parseDealerMajorWorkOverrides(o.dealerMajorWorkOverrides);
+  const deliveries = parseDeliveries(o.deliveries);
   return {
     id,
     vin,
@@ -274,7 +279,29 @@ export function normalizeDealerCheckRecord(raw: unknown, fallbackId = ""): Deale
     ...(o.status === "converted" || orderId ? { status: "converted" as const } : {}),
     ...(orderId ? { orderId } : {}),
     ...(csddSnapshot ? { csddSnapshot } : {}),
+    ...(majorOverrides ? { dealerMajorWorkOverrides: majorOverrides } : {}),
+    ...(deliveries.length ? { deliveries } : {}),
   };
+}
+
+function parseDeliveries(raw: unknown): DealerCheckDelivery[] {
+  if (!Array.isArray(raw)) return [];
+  const out: DealerCheckDelivery[] = [];
+  for (const item of raw) {
+    const o = asRecord(item);
+    if (!o || (o.kind !== "email" && o.kind !== "autoparks")) continue;
+    const at = typeof o.at === "string" ? o.at.slice(0, 40) : "";
+    if (!at) continue;
+    out.push({
+      kind: o.kind,
+      at,
+      target: typeof o.target === "string" ? o.target.slice(0, 200) : "",
+      ...(typeof o.path === "string" && o.path ? { path: o.path.slice(0, 400) } : {}),
+      ...(typeof o.by === "string" && o.by ? { by: o.by.slice(0, 120) } : {}),
+    });
+    if (out.length >= DEALER_CHECK_MAX_DELIVERIES) break;
+  }
+  return out;
 }
 
 function parseEntries(raw: unknown): DealerCheckHistoryEntry[] {
@@ -446,7 +473,7 @@ export async function addDealerCheckCost(
 
 export async function patchDealerCheck(
   id: string,
-  patch: Partial<Pick<DealerCheckRecord, "comments" | "saved" | "autoparks" | "updatedAt">>,
+  patch: Partial<Pick<DealerCheckRecord, "comments" | "saved" | "autoparks" | "updatedAt" | "dealerMajorWorkOverrides">>,
 ): Promise<DealerCheckRecord | null> {
   const current = await readDealerCheck(id);
   if (!current) return null;
@@ -454,7 +481,20 @@ export async function patchDealerCheck(
     ...current,
     ...patch,
     comments: patch.comments ?? current.comments,
+    saved: patch.saved ?? current.saved,
     updatedAt: patch.updatedAt ?? new Date().toISOString(),
+  };
+  const ok = await writeDealerCheck(next);
+  return ok ? next : null;
+}
+
+/** Piegādes žurnāls (e-pasts / Autoparks). Nemaina datus, tikai pievieno rindu. */
+export async function addDealerCheckDelivery(id: string, delivery: DealerCheckDelivery): Promise<DealerCheckRecord | null> {
+  const current = await readDealerCheck(id);
+  if (!current) return null;
+  const next: DealerCheckRecord = {
+    ...current,
+    deliveries: [delivery, ...(current.deliveries ?? [])].slice(0, DEALER_CHECK_MAX_DELIVERIES),
   };
   const ok = await writeDealerCheck(next);
   return ok ? next : null;
