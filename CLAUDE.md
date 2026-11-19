@@ -67,5 +67,5 @@ Claude puses vadītājs ir **Kārlis** (`.claude/agents/karlis.md`), kas atskait
 ## Komanda
 - Claude pusē vadītājs: Kārlis (piesprausta Code sesija "Kārlis").
 - Grok pusē: Andris (galvenais), Aivars, PVN atguvējs, EKII, Klientu atbalsts, Google, Sociālie tīkli, Labā Roka, Fricis, PROVIN ADMINS (atskaišu aizpilde), IRISS (pasts/izsoles).
-- Claude pusē: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), mārketings (marketinga-specialists).
+- Claude pusē: koda darbi (iriss, provin-admins kods, b2b-partneri, dizaineris, koda-parbauditajs), mārketings (marketinga-specialists).
 - Apmaiņa: docs/komandu-zinojumi.md (viena rinda par svarīgu darbu); lasīt sesijas sākumā.

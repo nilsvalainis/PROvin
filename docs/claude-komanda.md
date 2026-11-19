@@ -18,7 +18,7 @@
 | `provin-admins` | PROVIN ADMINS | PRO admin, pasūtījumi, auditi, AI komentāri |
 | `iriss` | IRISS | IRISS admin, loģistika, autoparks, sludinājumi |
 | `aivars-csdd` | Aivars Aksenoks | Pavadzīmes, CSDD |
-| `iriss-b2b` | IRISS B2B | Partneri, maks, kredīti |
+| `b2b-partneri` | B2B partneri | Dīleru konti, maks, kredīti, demo.provin.lv; atskaitās galvenajam |
 | `fricis-cmr` | Fricis CMR | CMR un kravu dokumenti |
 | `pvn-atguvejs` | PVN atguvējs | PVN atgūšana, rēķinu pārbaude |
 | `klientu-atbalsts` | Klientu atbalsts | Atbilžu melnraksti |

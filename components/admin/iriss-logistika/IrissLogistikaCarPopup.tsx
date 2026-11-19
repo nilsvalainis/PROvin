@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { cargoBucketLabel, cargoRouteBuckets, logisticsCarTitle, logisticsCopyAllCarText, logisticsDriverShareText, moveCargoCar, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import type { CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { LOGISTICS_STEP_SHORT_LV, logisticsStepOf } from "@/lib/iriss-logistics-steps";
 import { formatLogisticsAddress, formatLogisticsDate, formatLogisticsEur, type LogisticsOrder } from "@/lib/iriss-logistics-types";
 
@@ -15,9 +17,28 @@ type Props = {
   onPlanChange: (plan: CargoPlanState) => void;
   /** Datorā (makets A/B, Nils 27.10): kartīte virs kartes ved uz auto kabinetu. */
   onOpenCabinet?: () => void;
+  /** Nils 19.11 (A): «Piegādāts - uz Autoparku» - tā pati darbība kā kabineta «Atvests» un kravas «Uz Autoparku». */
+  onMoveToAutopark?: (orderId: string) => Promise<boolean>;
+  /** Tās pašas tiesības kā kabinetā (rakstīt drīkst admins, Loģistika, Serviss). */
+  canMoveToAutopark?: boolean;
 };
 
-export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChange, onOpenCabinet }: Props) {
+/** Poga tikai, ja auto vēl nav atvests/Autoparkā un lietotājam ir rakstīšanas tiesības. */
+export function carPopupCanDeliver(
+  order: Pick<LogisticsOrder, "status" | "archived">,
+  stage: CabinetPickupStage,
+  canMoveToAutopark: boolean,
+): boolean {
+  if (!canMoveToAutopark) return false;
+  if (isLogisticsOrderArchived(order)) return false;
+  return logisticsStepOf(order.status, stage) !== "arrived";
+}
+
+export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChange, onOpenCabinet, onMoveToAutopark, canMoveToAutopark = false }: Props) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const canDeliver = Boolean(onMoveToAutopark) && carPopupCanDeliver(order, stage, canMoveToAutopark);
   const cargo = plan.cars.find((c) => c.carId === order.id);
   const bucket = cargo?.bucket ?? "none";
   const phone = order.pickupSnapshot?.phone || order.sellerContact;
@@ -75,7 +96,51 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
           </>
         ) : null}
       </dl>
+      {canDeliver && confirming ? (
+        <div className="iriss-log-deliver-confirm mt-3" role="alertdialog" aria-label="Apstiprināt piegādi">
+          <p className="text-[14px] font-semibold">Piegādāts - uz Autoparku?</p>
+          <p className="mt-0.5 text-[13px]">
+            {logisticsCarTitle(order)}
+            {order.vin ? <span className="font-mono"> · {order.vin}</span> : null}
+          </p>
+          {failed ? <p className="mt-1 text-[13px] text-[var(--iriss-log-bad)]">Neizdevās. Mēģini vēlreiz.</p> : null}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="iriss-log-btn-brand iriss-log-btn-touch"
+              disabled={busy}
+              onClick={async () => {
+                if (!onMoveToAutopark) return;
+                setBusy(true);
+                setFailed(false);
+                const ok = await onMoveToAutopark(order.id).catch(() => false);
+                setBusy(false);
+                if (ok) setConfirming(false);
+                else setFailed(true);
+              }}
+            >
+              {busy ? "Liek…" : "Jā, uz Autoparku"}
+            </button>
+            <button
+              type="button"
+              className="iriss-log-btn-sec iriss-log-btn-touch"
+              disabled={busy}
+              onClick={() => {
+                setConfirming(false);
+                setFailed(false);
+              }}
+            >
+              Atcelt
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-3 flex flex-wrap gap-2">
+        {canDeliver && !confirming ? (
+          <button type="button" className="iriss-log-btn-brand iriss-log-btn-touch" onClick={() => setConfirming(true)}>
+            Piegādāts - uz Autoparku
+          </button>
+        ) : null}
         {onOpenCabinet ? (
           <button type="button" className="iriss-log-btn-brand" onClick={onOpenCabinet}>
             Kabinets

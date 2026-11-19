@@ -2031,3 +2031,12 @@ html.iriss-log-printing .iriss-log-pin-tip {
     padding: 0 12px;
   }
 }
+/* Kartes kartīte: «Piegādāts - uz Autoparku» un apstiprinājums (Nils 19.11) - telefonā ≥44px pieskāriens. */
+.iriss-log-popup .iriss-log-btn-touch {
+  min-height: 44px;
+}
+.iriss-log-deliver-confirm {
+  border: 1px solid var(--iriss-log-btn-secondary-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
