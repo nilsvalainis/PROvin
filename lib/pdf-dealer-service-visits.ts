@@ -20,6 +20,7 @@ import {
   filterDealerPdfVisitRows,
   isDealerServiceGap,
   visitGapBetween,
+  type DealerVisitMajorMark,
 } from "@/lib/pdf-dealer-timeline";
 import { inferServiceWorkCountries } from "@/lib/service-works-country";
 import { formatServiceWorksLines } from "@/lib/service-works-lines";
@@ -102,11 +103,21 @@ function visitKindTagHtml(works: string, lang: ClientReportLang): string {
   return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
 }
 
+function majorChipsHtml(marks: readonly DealerVisitMajorMark[], lang: ClientReportLang): string {
+  return marks
+    .map(
+      (m) =>
+        `<span class="pdf-svc-tag pdf-svc-major-chip pdf-svc-major-chip--${m.category}">${escapeHtml(translateClientReportStatic(m.label, lang))}</span>`,
+    )
+    .join("");
+}
+
 function visitHtml(
   row: AutoRecordsServiceWorkRow,
   hideKeyReadLines: boolean,
   lang: ClientReportLang,
   inferredCountry = "",
+  marks: readonly DealerVisitMajorMark[] = [],
 ): string {
   const date = row.date.trim();
   const odo = formatServiceWorkOdometer(row.odometer);
@@ -116,12 +127,16 @@ function visitHtml(
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
   const place = visitPlaceHtml(row.location, lang, inferredCountry);
   const tag = visitKindTagHtml(row.works, lang);
-  const chips = `<div class="pdf-svc-chips">${tag}${km}</div>`;
+  const chips = `<div class="pdf-svc-chips">${majorChipsHtml(marks, lang)}${tag}${km}</div>`;
   const head = `<div class="pdf-svc-box-top">${place}${chips}</div>`;
+  const majorCls =
+    marks.length === 0
+      ? ""
+      : ` pdf-svc-box--major pdf-svc-box--${marks.some((m) => m.category === "accident") ? "accident" : "mechanical"}`;
   return `<div class="pdf-svc-visit pdf-svc-kind--${classifyDealerVisitKind(row.works)}">
     ${dateHtml}
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>
-    <article class="pdf-svc-box">${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}</article>
+    <article class="pdf-svc-box${majorCls}">${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}</article>
   </div>`;
 }
 
@@ -194,6 +209,8 @@ export type DealerServiceVisitsPdfOpts = {
    * (tas pats mēnesis vai abi kaimiņi vienā valstī). Saglabātos datus nemaina.
    */
   countryEvidence?: CountryTimelineEntry[];
+  /** Lielo darbu atzīmes vizītei (tie paši ieraksti kā kopsavilkumā, ar operatora labojumiem). */
+  majorMarksForRow?: (row: AutoRecordsServiceWorkRow) => DealerVisitMajorMark[];
 };
 
 export function printableDealerServiceWorks(
@@ -239,7 +256,8 @@ export function buildDealerServiceVisitsHtml(
     const row = printable[i]!;
     const year = serviceWorkYear(row.date);
     const info = countries[i];
-    const visit = visitHtml(row, hideKeyReadLines, lang, info?.countryInferred ? info.country : "");
+    const marks = opts?.majorMarksForRow ? opts.majorMarksForRow(row) : [];
+    const visit = visitHtml(row, hideKeyReadLines, lang, info?.countryInferred ? info.country : "", marks);
     const older = printable[i + 1];
     const gap =
       older != null

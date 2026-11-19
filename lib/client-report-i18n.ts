@@ -278,6 +278,8 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   Kardāns: { en: "Propshaft", ru: "Кардан" },
   Turbokompresors: { en: "Turbocharger", ru: "Турбокомпрессор" },
   "Virsbūve / stikls": { en: "Body / glass", ru: "Кузов / стекло" },
+  "Negadījuma / virsbūves remonts": { en: "Accident / body repair", ru: "Ремонт после ДТП / кузова" },
+  "Bojājuma remonts": { en: "Damage repair", ru: "Ремонт повреждений" },
   // Statiskais krāsas biezuma bloks (lib/paint-gauge-static-block.ts) - agrāk palika LV vai deva "Bodys stāvoklis".
   // PASŪTĪJUMA DATI bloks (client-report-pdf-layout-draft.ts) un CSDD statuss.
   "PASŪTĪJUMA DATI": { en: "ORDER DETAILS", ru: "ДАННЫЕ ЗАКАЗА" },
@@ -615,6 +617,8 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   Kardāns: "Gelenkwelle",
   Turbokompresors: "Turbolader",
   "Virsbūve / stikls": "Karosserie / Glas",
+  "Negadījuma / virsbūves remonts": "Unfall- / Karosseriereparatur",
+  "Bojājuma remonts": "Schadenreparatur",
   "PASŪTĪJUMA DATI": "BESTELLDATEN",
   Maksājums: "Zahlung",
   Pasūtījums: "Bestellung",
