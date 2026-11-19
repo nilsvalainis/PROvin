@@ -11,6 +11,10 @@ export type ClientReportSend = {
   /** Privātais Blob ceļš vai diska ceļš versijas kopijai. */
   archivePath?: string;
   dropboxPath?: string;
+  /** Admins apstiprināja adresi, kas atšķīrās no pasūtījumā saglabātās («Sūtīt tomēr uz šo adresi»). */
+  recipientOverride?: boolean;
+  /** Iepriekšējā (saglabātā) adrese maskētā veidā, ja bija `recipientOverride`. */
+  previousRecipientMasked?: string;
 };
 
 export function nextClientReportVersion(prev: readonly Pick<ClientReportSend, "version">[]): number {

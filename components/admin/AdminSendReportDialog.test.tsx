@@ -6,13 +6,17 @@ const noopAsync = async () => {
   throw new Error("test-dialog-does-not-send");
 };
 
-function dialog(attachments: ReadonlyArray<{ id: string; name?: string; filename?: string; mime?: string; size?: number }>) {
+function dialog(
+  attachments: ReadonlyArray<{ id: string; name?: string; filename?: string; mime?: string; size?: number }>,
+  recipientRole?: "client" | "partner",
+) {
   return (
     <AdminSendReportDialog
       open
       onClose={() => undefined}
       dark
       email="klients@example.com"
+      recipientRole={recipientRole}
       defaultKind="audits"
       b2b={false}
       attachments={attachments}
@@ -62,5 +66,19 @@ describe("Sūtīt atskaiti dialogs: pielikumu nosaukumi un Atcelt", () => {
     const text = renderText(dialog([{ id: "nav", name: "LTAB_izdruka.pdf", mime: "application/pdf" }]));
     expect(text).toContain("LTAB_izdruka.pdf");
     expect(text).not.toMatch(/NaN/);
+  });
+});
+
+describe("Sūtīt atskaiti dialogs: saņēmējs", () => {
+  it("rāda saņēmēja lomu «Klients» un neatzīmētu «Saņēmējs pārbaudīts»", () => {
+    const text = renderText(dialog([]));
+    const html = renderHtml(dialog([]));
+    expect(text).toContain("Klients: klients@example.com");
+    expect(text).toContain("Saņēmējs pārbaudīts");
+    expect(html).not.toMatch(/checked=""[^>]*>\s*Saņēmējs pārbaudīts/);
+  });
+
+  it("partnera pasūtījumā rāda «B2B partneris»", () => {
+    expect(renderText(dialog([], "partner"))).toContain("B2B partneris: klients@example.com");
   });
 });
