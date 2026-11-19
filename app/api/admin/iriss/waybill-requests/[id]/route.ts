@@ -79,7 +79,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const actor = gate.actor;
   const viewer = waybillPdfViewer(actor);
   if (body.action === "replace") {
-    // «Pārrakstīt» pārtrauc aktīvu pavadzīmi: partneris (tikai Pavadzīmes) - nekad; Nils/Toms/Ingus - arī cita pieprasījumu.
+    // «Pārrakstīt» = «Pārtraukt» aktīvo + tad jauna: partneris (tikai Pavadzīmes) - nekad; Nils/Toms/Ingus - arī cita pieprasījumu.
     if (isWaybillOnlyActor(actor)) return waybillOnlyForbidden();
     const waybillNo = typeof body.replaceWaybillNo === "string" ? body.replaceWaybillNo.trim().toUpperCase() : "";
     try {
@@ -104,10 +104,11 @@ export async function POST(req: Request, ctx: Ctx) {
           { status: 409, ...NO_STORE },
         );
       }
+      // 1. solis - «Pārtraukt» darbs Aivaram (tā pati plūsma kā pogai «Pārtraukt»; nekad anulēšana). Jaunā pavadzīme
+      // šim pieprasījumam rindā nonāk tikai pēc tam, kad «Pārtraukt» izdots (completeWaybillRequest).
+      after(() => wakeAivars(result.stop.id));
       const doc = await readWaybillRequestsDoc();
       const auto = await waybillAutoContext(doc);
-      // Kā jaunam pieprasījumam: automātika (tikai ar IRISS_WAYBILL_AUTO_REPLACE) vai uzreiz Aivars.
-      if (!(auto.mode === "live" && auto.isStandard(result.request))) after(() => wakeAivars(result.request.id));
       const withOrders = canSeeWaybillOrders(actor);
       return NextResponse.json(
         {

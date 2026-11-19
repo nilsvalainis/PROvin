@@ -127,9 +127,15 @@ export type WaybillRequest = {
   stopWaybillNo?: string;
   /**
    * Automātika atteica, jo CSDD numuru aizņem šī pavadzīme (pirmā aktīvā, worker plate_busy). Tikai statusā «Kļūda»;
-   * UI piedāvā «Pārrakstīt» (pārtraukt TIKAI šo un izrakstīt jaunu). Tukšs = nav piedāvājuma.
+   * UI piedāvā «Pārrakstīt» («Pārtraukt» darbs TIKAI šai, tad jauna). Tukšs = nav piedāvājuma.
    */
   activeWaybillNo?: string;
+  /**
+   * «Pārrakstīt» 2 soļos: gaida šo «Pārtraukt» darbu (kind=stop, id); kad tas izdots, šis pieprasījums atkal rindā.
+   * NEKAD anulēšana: plateBusyAtCreate/replaceWaybillNo netiek lietoti. Tukšs = negaida.
+   */
+  waitStopId?: string;
+  waitStopWaybillNo?: string;
   /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
   autoDisabled: boolean;
   /** Auto ir tirdzniecībā pieņemts: pavadzīme no akta ("Noformēt pavadzīmi"), bez maršruta. */
@@ -238,6 +244,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     kind: o.kind === "stop" ? "stop" : "create",
     stopWaybillNo: /^P\d{5,6}$/.test(str(o.stopWaybillNo, 12).toUpperCase()) ? str(o.stopWaybillNo, 12).toUpperCase() : "",
     activeWaybillNo: status === "error" ? normalizeActiveWaybillNo(o.activeWaybillNo) : "",
+    waitStopId: /^wbr_[a-z0-9]+$/i.test(str(o.waitStopId, 64)) ? str(o.waitStopId, 64) : "",
+    waitStopWaybillNo: normalizeActiveWaybillNo(o.waitStopWaybillNo),
     autoDisabled: o.autoDisabled === true,
     tradeAct: o.tradeAct === true,
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
@@ -271,10 +279,10 @@ export function plateBusyActiveWaybillNo(input: { activeWaybillNo?: unknown; err
 
 /** «Pārrakstīt» piedāvājums: kļūda «numurs aizņemts» ar zināmu aktīvo pavadzīmi. Partnerim (tikai Pavadzīmes) - nekad. */
 export function waybillReplaceOffer(
-  req: Pick<WaybillRequest, "status"> & Partial<Pick<WaybillRequest, "kind" | "activeWaybillNo">>,
+  req: Pick<WaybillRequest, "status"> & Partial<Pick<WaybillRequest, "kind" | "activeWaybillNo" | "waitStopId">>,
   viewer: { waybillOnly: boolean },
 ): { waybillNo: string } | null {
-  if (viewer.waybillOnly || req.status !== "error" || req.kind === "stop") return null;
+  if (viewer.waybillOnly || req.status !== "error" || req.kind === "stop" || req.waitStopId) return null;
   const no = normalizeActiveWaybillNo(req.activeWaybillNo);
   return no ? { waybillNo: no } : null;
 }
@@ -283,7 +291,7 @@ export function waybillReplaceButtonText(waybillNo: string): string {
   return `Pārrakstīt (pārtraukt ${waybillNo} un izrakstīt jaunu)`;
 }
 
-/** «Pārrakstīt» POST ķermenis: tas pats pieprasījums, pārtraukt drīkst TIKAI šo pavadzīmi. */
+/** «Pārrakstīt» POST ķermenis: «Pārtraukt» TIKAI šo pavadzīmi, tad tas pats pieprasījums vēlreiz (bez anulēšanas). */
 export function waybillReplaceRequestBody(waybillNo: string): { action: "replace"; replaceWaybillNo: string } {
   return { action: "replace", replaceWaybillNo: waybillNo.trim().toUpperCase() };
 }

@@ -312,7 +312,7 @@ export async function processJob(job, deps) {
       if (!replaceNo) {
         const text = plateBusyText(displayPlate(plate), active);
         deps.log("plate_busy", { id: job.id, plate, active: active.map((a) => a.waybillNo) });
-        // activeWaybillNo: serveris piedāvā «Pārrakstīt» (pārtraukt TIKAI šo un izrakstīt jaunu) - worker pats neko nepārtrauc.
+        // activeWaybillNo: serveris piedāvā «Pārrakstīt» («Pārtraukt» darbs Aivaram, tad jauna) - worker pats neko nepārtrauc.
         await deps.api.result(job.id, { ok: false, errorReason: text, activeWaybillNo: active[0].waybillNo, by: "auto" }).catch(() => {});
         return { outcome: "plate_busy", active: active.map((a) => a.waybillNo) };
       }

@@ -1,6 +1,6 @@
 /**
  * 19.11 «Pārrakstīt»: automātika atteica (numurs CSDD aizņemts) -> pieprasījumā aktīvā pavadzīme, UI poga
- * «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)» ar apstiprinājumu, tas pats pieprasījums ar replaceWaybillNo.
+ * «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)» ar apstiprinājumu: «Pārtraukt» darbs, tad tas pats pieprasījums.
  * Partneris (tikai Pavadzīmes) pārrakstīt nevar. Nekad «Anulēt».
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -137,7 +137,11 @@ vi.mock("@/lib/iriss-waybill-requests-store", () => ({
   replaceBusyWaybillRequest: async (input: { id: string; waybillNo: string; actorId: string }) => {
     state.replaceCalls.push({ id: input.id, waybillNo: input.waybillNo, actorId: input.actorId });
     return input.waybillNo === "P02812"
-      ? { ok: true, request: req({ status: "queued", plateBusyAtCreate: true, replaceWaybillNo: "P02812", activeWaybillNo: "" }) }
+      ? {
+          ok: true,
+          request: req({ activeWaybillNo: "", waitStopId: "wbr_stop1", waitStopWaybillNo: "P02812" }),
+          stop: req({ id: "wbr_stop1", status: "queued", kind: "stop", stopWaybillNo: "P02812", activeWaybillNo: "" }),
+        }
       : { ok: false, reason: "not_offered" };
   },
   completeWaybillRequest: async (input: Record<string, unknown>) => {
@@ -180,20 +184,20 @@ async function postReplace(body: Record<string, unknown>) {
   );
 }
 
-describe("POST action=replace (atkārtota iesniegšana ar replaceWaybillNo)", () => {
+describe("POST action=replace («Pārtraukt» + atkārtota iesniegšana)", () => {
   beforeEach(() => {
     state.replaceCalls = [];
     state.woken = [];
   });
 
-  it("Toms pārraksta Nila pieprasījumu: nosūta replaceWaybillNo = aktīvā, darbs Aivaram (aizvietošana nav automātikā)", async () => {
+  it("Toms pārraksta Nila pieprasījumu: nosūta aktīvo numuru, Aivars saņem «Pārtraukt» darbu (nevis anulēšanu)", async () => {
     state.actor = { kind: "staff", user: { id: "usr_toms", name: "Toms", sections: ["pavadzimes", "pasutijumi"] } };
     const res = await postReplace(waybillReplaceRequestBody("P02812"));
     expect(res.status).toBe(200);
     expect(state.replaceCalls).toEqual([{ id: "wbr_busy", waybillNo: "P02812", actorId: "usr_toms" }]);
     const json = (await res.json()) as { request: WaybillRequest };
-    expect(json.request).toMatchObject({ status: "queued", replaceWaybillNo: "P02812", plateBusyAtCreate: true });
-    expect(state.woken).toEqual(["wbr_busy"]);
+    expect(json.request).toMatchObject({ waitStopId: "wbr_stop1", replaceWaybillNo: "", plateBusyAtCreate: false });
+    expect(state.woken).toEqual(["wbr_stop1"]);
   });
 
   it("administrators arī drīkst; cits numurs nekā saglabātais -> 409", async () => {

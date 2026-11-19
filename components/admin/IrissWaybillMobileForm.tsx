@@ -623,7 +623,7 @@ export function WaybillCancelDialog({
 }
 
 /**
- * «Pārrakstīt» apstiprinājums: pārtrauc TIKAI norādīto pavadzīmi (CSDD «Pārtraukt», nekad «Anulēt») un izraksta jaunu.
+ * «Pārrakstīt» apstiprinājums: «Pārtraukt» darbs TIKAI norādītajai pavadzīmei (nekad «Anulēt»), pēc tam jaunā.
  * Nosūta TIKAI poga «Jā, pārrakstīt»; fons, Escape un «Nē» - nekas nenotiek.
  */
 export function WaybillReplaceDialog({
@@ -660,7 +660,7 @@ export function WaybillReplaceDialog({
           {waybillReplaceButtonText(waybillNo)}{title ? ` - ${title}` : ""}?
         </h3>
         <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">
-          Vai tiešām pārtraukt {waybillNo} un izrakstīt jaunu? Pārtrauc tikai {waybillNo}.
+          Vai tiešām pārtraukt {waybillNo} un izrakstīt jaunu? Vispirms CSDD «Pārtraukt» tikai {waybillNo}, pēc tam jaunā.
         </p>
         {staleWarning ? (
           <p className="mt-2 rounded-[10px] bg-[#FEF3C7] px-3 py-2 text-[12.5px] leading-snug text-[#92400e]" role="note">
