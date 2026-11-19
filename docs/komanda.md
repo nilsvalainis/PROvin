@@ -20,7 +20,7 @@ Kā sasniegt: Grok pusē - Grok Bot SendToAgent; no Claude puses - ieraksts `doc
 Kā sasniegt: Claude Code aģents no `.claude/agents/` (`--agent <nosaukums>`); no Grok puses - ieraksts `docs/komandu-zinojumi.md` ar "Kam: <vārds>".
 - Kārlis (`karlis`) - Claude puses vadītājs, atskaitās Andrim.
 - iriss - IRISS admin kods (pasūtījumi, loģistika, autoparks).
-- iriss-b2b - IRISS B2B partneri, maks, pakas.
+- b2b-partneri - B2B partneru joma (dīleru konti, maks, pakas, demo.provin.lv); atskaitās galvenajam.
 - provin-admins - PRO admin kods (pasūtījumi, auditi).
 - dizaineris - UI/UX, maketi, mobilais izkārtojums.
 - koda-parbauditajs - koda pārbaude pirms merge.

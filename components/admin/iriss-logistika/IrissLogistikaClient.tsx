@@ -90,6 +90,8 @@ type Props = {
   /** Saite "Autoparks →" galvenē (tikai, ja Autoparks lomai atveras). */
   showAutoparksLink?: boolean;
   canCreateOffer?: boolean;
+  /** Rakstīšanas tiesības kabinetā (admins, Loģistika, Serviss) - kartes kartītes «Piegādāts - uz Autoparku». */
+  canMoveToAutopark?: boolean;
   /** Loģistikas ieraksts -> Autoparka auto (saite "Kartīte" kravu plānā). Tukšs, ja nav tiesību. */
   autoparksByOrder?: Record<string, string>;
   /** Autoparka sasaistes migrācija (Nils 27.10) - tikai administratoram. */
@@ -119,6 +121,7 @@ export function IrissLogistikaClient({
   viewerName,
   canEnableTotp,
   canCreateOffer = false,
+  canMoveToAutopark = false,
   showAutoparksLink = false,
   autoparksByOrder = {},
   isAdmin = false,
@@ -473,9 +476,10 @@ export function IrissLogistikaClient({
   }
 
   /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
-  async function moveToAutopark(orderId: string) {
+  async function moveToAutopark(orderId: string): Promise<boolean> {
     const ok = await moveOneToAutopark(orderId);
     setNotice(cargoExitNotice("autoparks", ok ? 1 : 0, ok ? 0 : 1));
+    return ok;
   }
 
   async function moveOneToAutopark(orderId: string): Promise<boolean> {
@@ -1272,11 +1276,14 @@ export function IrissLogistikaClient({
           {popupOrder && !cabinetOpen ? (
             <div className="iriss-log-desk-popup">
               <IrissLogistikaCarPopup
+                key={popupOrder.id}
                 order={popupOrder}
                 plan={cargoPlan}
                 stage={popupStage}
                 onClose={() => setPopupId(null)}
                 onPlanChange={(next) => void persistCargoPlan(next)}
+                onMoveToAutopark={moveToAutopark}
+                canMoveToAutopark={canMoveToAutopark}
                 onOpenCabinet={() => {
                   setActiveId(popupOrder.id);
                   setCabinetOpen(true);
