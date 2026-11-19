@@ -17,7 +17,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { nextPeriodicSyncAt } from "./csdd-sync-schedule.mjs";
-import { csddPeriodicSyncEnabled, periodicPlateSync, processJob, resolveWorkerScript } from "./waybill-worker-core.mjs";
+import {
+  callWithOneRetry,
+  csddPeriodicSyncEnabled,
+  periodicPlateSync,
+  processJob,
+  resolveWorkerScript,
+} from "./waybill-worker-core.mjs";
 
 const run = promisify(execFile);
 const TTR_DIR = process.env.IRISS_TTR_DIR || "/root/iriss-ttr";
@@ -46,7 +52,10 @@ async function call(method, p, body, base = "waybill-requests") {
 
 const api = {
   async pending() {
-    const r = await call("GET", `?scope=auto&live=${LIVE ? "1" : "0"}`);
+    // 19.11: pending_http_500 / tīkla kļūda -> vienreiz atkārto pēc 2 s, tikai tad met kļūdu.
+    const r = await callWithOneRetry(() => call("GET", `?scope=auto&live=${LIVE ? "1" : "0"}`), {
+      onRetry: (info) => log("pending_retry", info),
+    });
     if (r.status !== 200) throw new Error(`pending_http_${r.status}`);
     return Array.isArray(r.data.requests) ? r.data.requests : [];
   },

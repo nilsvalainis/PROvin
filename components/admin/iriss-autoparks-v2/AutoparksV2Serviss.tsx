@@ -26,6 +26,7 @@ import {
   ServissStages,
 } from "./ServissPhone";
 import type { ServissDocKey } from "@/lib/iriss-autoparks-v2-serviss-ui";
+import { servisaLapaHref } from "@/lib/iriss-autoparks-v2-servisa-lapa";
 
 /** Serviss (F6, Nils A «Centra +»): dokumenti, problēmas, piezīmes, rēķins pēdējais. */
 export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
@@ -235,6 +236,7 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
         }}
         onToggleFixed={(p, fixed) => void patch({ problem: { id: p.id, fixedByService: fixed } })}
         photoUrl={(id) => urlFor({ id })}
+        printHref={servisaLapaHref(carId)}
       />
       {manual ? (
         <form

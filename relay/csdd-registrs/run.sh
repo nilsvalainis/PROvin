@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # CSDD tirdzniecības reģistra ikdienas nolasījums (bez AI, tikai lasīšana). Palaiž systemd taimeris
-# 03:30 Europe/Riga un ik 20 min līdz 05:50; pēc veiksmīga gājiena tajā dienā vairs nedarbojas.
+# 09:30 Europe/Riga un ik 20 min līdz 12:50 (Nils 19.11; termiņš REGISTRS_DEADLINE_HHMM=1300 no systemd vienības);
+# pēc veiksmīga gājiena tajā dienā vairs nedarbojas.
 #
 # VPN: read-registry.mjs lieto to pašu lease kā pavadzīmes (scripts/iriss-ttr/vpn-ctl.mjs, POST 127.0.0.1:9334/lease).
 # Nils lieto VPN ("Man vajag VPN", 409) vai VPN nav -> kods 75, nākamais mēģinājums pēc 20 min.

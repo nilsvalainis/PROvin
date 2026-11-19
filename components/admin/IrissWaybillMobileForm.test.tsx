@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
 import {
+  CsddModelHintButton,
   IrissWaybillAutoEntry,
   IrissWaybillCarPicker,
   IrissWaybillMobileForm,
@@ -261,5 +263,45 @@ describe("IrissWaybillCarPicker telefona logā (19.11 ritināšana)", () => {
     const plain = renderHtml(<IrissWaybillCarPicker cars={[]} selected="" onChoose={() => undefined} />);
     expect(inSheet).toContain('data-in-sheet="true"');
     expect(plain).not.toContain("data-in-sheet");
+  });
+});
+
+describe("CSDD modeļa ieteikums formā «Cits» (19.11)", () => {
+  function manualEntry(manualBrandModel: string) {
+    return (
+      <IrissWaybillAutoEntry
+        choice="manual"
+        car={null}
+        manualBrandModel={manualBrandModel}
+        isB192={false}
+        b192Empty={false}
+        showManual
+        showList={false}
+        onChoose={() => undefined}
+        onOpenList={() => undefined}
+        onClearCar={() => undefined}
+        onManualBrandModel={() => undefined}
+      />
+    );
+  }
+
+  it("«Volvo XC90 2.4 D5 Edition» - zem lauka «CSDD modelis: XC90»", () => {
+    expect(renderText(manualEntry("Volvo XC90 2.4 D5 Edition"))).toContain("CSDD modelis: XC90");
+    expect(renderText(manualEntry("BMW 3ER 325D"))).toContain("CSDD modelis: 325D");
+  });
+
+  it("teksts jau der («VW Golf») vai tukšs - ieteikuma nav", () => {
+    expect(renderText(manualEntry("VW Golf"))).not.toContain("CSDD modelis");
+    expect(renderText(manualEntry(""))).not.toContain("CSDD modelis");
+  });
+
+  it("lauks mainās tikai pēc pieskāriena: ieliek «Volvo XC90»", () => {
+    const applied: string[] = [];
+    const el = CsddModelHintButton({ brandModel: "Volvo XC90 2.4 D5 Edition", onApply: (v) => applied.push(v) }) as ReactElement<{
+      onClick: () => void;
+    }>;
+    expect(applied).toEqual([]);
+    el.props.onClick();
+    expect(applied).toEqual(["Volvo XC90"]);
   });
 });

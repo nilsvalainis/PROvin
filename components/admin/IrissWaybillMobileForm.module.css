@@ -823,3 +823,24 @@
   font-weight: 600;
   text-align: center;
 }
+
+/* 19.11: «CSDD modelis: XC90» ieteikums zem «Marka, modelis» (pieskāriens ieliek laukā). */
+.mf .modelHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 4px 10px;
+  min-height: 28px;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.mf .modelHint b {
+  color: var(--ink, #1c1c1e);
+  font-weight: 600;
+}

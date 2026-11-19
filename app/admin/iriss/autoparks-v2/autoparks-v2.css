@@ -4723,3 +4723,349 @@
   .ap2.ap2.ap2 .ap2-stale .tx { flex: 1; }
   .ap2.ap2.ap2 .ap2-stale .act { margin-left: auto; align-self: center; }
 }
+
+/* Serviss: «Drukāt servisa lapu» pie virsraksta «Problēmas» (Nils 19.11). */
+.ap2.ap2.ap2 .ap2-sv-sechd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ap2.ap2.ap2 .ap2-sv-print {
+  color: #007aff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Servisa darbu lapa (A4, makets apstiprināts Nils 19.11). Portāls body - ekrānā pārklājums. */
+.ap2.ap2-svl-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: auto;
+  background: #e9e9ee;
+  color-scheme: light;
+  padding: 16px 16px 24px;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-svl-tools {
+  width: 210mm;
+  max-width: 100%;
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+.ap2.ap2.ap2 .ap2-svl-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 12mm;
+  background: #fff;
+  padding: 12mm 13mm 11mm;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px rgba(22, 23, 26, 0.12);
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-svl-sheet *,
+.ap2.ap2.ap2 .ap2-svl-sheet *::before,
+.ap2.ap2.ap2 .ap2-svl-sheet *::after {
+  box-sizing: border-box;
+}
+.ap2.ap2.ap2 .ap2-svl-top {
+  display: flex;
+  align-items: stretch;
+  gap: 5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-sia {
+  background: #f26522;
+  color: #fff;
+  border-radius: 3mm;
+  padding: 4mm 6mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 62mm;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ap2.ap2.ap2 .ap2-svl-sia .lbl {
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+  margin-bottom: 2mm;
+}
+.ap2.ap2.ap2 .ap2-svl-sia .name {
+  font-size: 18pt;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+}
+.ap2.ap2.ap2 .ap2-svl-sia .reg {
+  font-size: 8pt;
+  opacity: 0.9;
+  margin-top: 1mm;
+}
+.ap2.ap2.ap2 .ap2-svl-title {
+  flex: 1;
+  border: 1px solid #d1d1d6;
+  border-radius: 3mm;
+  padding: 4mm 5mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-svl-title h1 {
+  margin: 0;
+  font-size: 17pt;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-svl-title .meta {
+  font-size: 9pt;
+  color: #6e6e73;
+  margin-top: 1.5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-car {
+  margin-top: 5mm;
+  border: 1px solid #d1d1d6;
+  border-radius: 3mm;
+  padding: 4mm 5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-car .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4mm;
+}
+.ap2.ap2.ap2 .ap2-svl-car .model {
+  font-size: 15pt;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-svl-car .vin {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12pt;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.ap2.ap2.ap2 .ap2-svl-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.5mm 4mm;
+  margin-top: 3.5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-grid span {
+  display: block;
+  font-size: 7.5pt;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ap2.ap2.ap2 .ap2-svl-grid b {
+  font-size: 10.5pt;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-svl-sheet h2 {
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6e6e73;
+  margin: 6mm 0 2mm;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-svl-tab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5pt;
+}
+.ap2.ap2.ap2 .ap2-svl-tab th {
+  text-align: left;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6e6e73;
+  font-weight: 600;
+  padding: 0 2mm 1.5mm;
+  border-bottom: 1.5px solid #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-svl-tab th.c {
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td {
+  padding: 3.5mm 2mm;
+  border-bottom: 1px solid #d1d1d6;
+  vertical-align: top;
+}
+.ap2.ap2.ap2 .ap2-svl-tab tr {
+  break-inside: avoid;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.n {
+  width: 8mm;
+  color: #6e6e73;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.t {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.st {
+  width: 24mm;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.box {
+  width: 16mm;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.note {
+  width: 78mm;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.note .line {
+  border-bottom: 1px solid #aeaeb2;
+  height: 5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-tab td.note .line + .line {
+  margin-top: 3mm;
+}
+.ap2.ap2.ap2 .ap2-svl-tab .chip {
+  display: inline-block;
+  font-size: 8pt;
+  font-weight: 600;
+  padding: 0.6mm 2mm;
+  border-radius: 2mm;
+  white-space: nowrap;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ap2.ap2.ap2 .ap2-svl-tab .chip.open {
+  background: #fff4e5;
+  color: #b25e00;
+}
+.ap2.ap2.ap2 .ap2-svl-tab .chip.done {
+  background: #e8f7ec;
+  color: #1e7b34;
+}
+.ap2.ap2.ap2 .ap2-svl-tab .sq {
+  display: inline-block;
+  width: 5mm;
+  height: 5mm;
+  border: 1.5px solid #1c1c1e;
+  border-radius: 1mm;
+}
+.ap2.ap2.ap2 .ap2-svl-tab .sq.x::after {
+  content: "✓";
+  display: block;
+  text-align: center;
+  font-size: 10pt;
+  line-height: 4.6mm;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-svl-notes {
+  border: 1px solid #d1d1d6;
+  border-radius: 3mm;
+  padding: 3mm 4mm;
+  font-size: 10pt;
+  min-height: 16mm;
+  color: #3a3a3c;
+}
+.ap2.ap2.ap2 .ap2-svl-notes.pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-svl-notes.tall {
+  min-height: 22mm;
+}
+.ap2.ap2.ap2 .ap2-svl-sign {
+  margin-top: auto;
+  padding-top: 7mm;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 6mm;
+  font-size: 8pt;
+  color: #6e6e73;
+  break-inside: avoid;
+}
+.ap2.ap2.ap2 .ap2-svl-sign div {
+  border-top: 1px solid #1c1c1e;
+  padding-top: 1.5mm;
+}
+.ap2.ap2.ap2 .ap2-svl-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 7.5pt;
+  color: #8e8e93;
+  margin-top: 4mm;
+}
+.ap2.ap2.ap2 .ap2-svl-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4mm;
+  border-bottom: 1px solid #d1d1d6;
+  padding-bottom: 3mm;
+}
+.ap2.ap2.ap2 .ap2-svl-bar .sia-s {
+  background: #f26522;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12pt;
+  border-radius: 2mm;
+  padding: 1.5mm 3.5mm;
+  white-space: nowrap;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ap2.ap2.ap2 .ap2-svl-bar .lab {
+  font-size: 9pt;
+  color: #6e6e73;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-svl-scan {
+  flex: 1;
+  min-height: 0;
+  margin-top: 4mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #8e8e93;
+  font-size: 11pt;
+}
+.ap2.ap2.ap2 .ap2-svl-scan img {
+  display: block;
+  max-width: 100%;
+  max-height: 250mm;
+  object-fit: contain;
+}
+.ap2.ap2.ap2 .ap2-svl-scan a {
+  color: #007aff;
+}
+@media print {
+  /* Drukā tikai servisa lapu: pārējais body saturs (admin) nav izkārtojumā - nav tukšu lapu. */
+  body:has(> .ap2-svl-root) > :not(.ap2-svl-root) {
+    display: none !important;
+  }
+  .ap2.ap2-svl-root,
+  .ap2.ap2-svl-root * {
+    visibility: visible !important;
+  }
+  .ap2.ap2.ap2.ap2-svl-root {
+    position: static;
+    overflow: visible;
+    padding: 0;
+    background: #fff;
+  }
+  .ap2.ap2.ap2 .ap2-svl-sheet {
+    margin: 0;
+    box-shadow: none;
+    min-height: 296mm;
+    break-after: page;
+  }
+  .ap2.ap2.ap2 .ap2-svl-sheet:last-of-type {
+    break-after: auto;
+  }
+}

@@ -18,6 +18,7 @@ import {
   WAYBILL_PLATES_EVENT,
 } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { csddPlateCheckText } from "@/lib/iriss-waybill-csdd-plates";
 
 const RING: Record<WaybillGauge["status"], string> = {
   ok: "#16a34a",
@@ -52,6 +53,16 @@ export function WaybillHomeCar(g: Pick<WaybillGauge, "busy" | "status" | "brandM
   return (
     <span className={styles.car} title={waybillHomeCarTitle(g)}>
       {waybillHomeCarText(g)}
+    </span>
+  );
+}
+
+/** 19.11: «Stāvoklis no CSDD pirms N min»; vecs (> 30 min) / kļūda - dzintara krāsā «var būt novecojis». */
+export function WaybillCsddCheck({ gauge, nowMs }: { gauge: Pick<WaybillGauge, "csddCheckedAt" | "csddCheckOk">; nowMs: number }) {
+  const { text, stale } = csddPlateCheckText(gauge, nowMs);
+  return (
+    <span className={stale ? `${styles.csdd} ${styles.csddStale}` : styles.csdd} title={text} data-stale={stale ? "1" : undefined}>
+      {text}
     </span>
   );
 }
@@ -161,7 +172,9 @@ export function IrissWaybillGauges({
       ? gauges.find((g) => g.plate === picked && g.busy) ?? null
       : gauges.find((g) => g.plate === open && g.busy) ?? null;
   if (chrome === "strip") {
-    return <WaybillPlateCards gauges={gauges} loading={loading} onExtend={onExtend} onStop={onStop} onOpenPdf={onOpenPdf} />;
+    return (
+      <WaybillPlateCards gauges={gauges} loading={loading} nowMs={nowMs} onExtend={onExtend} onStop={onStop} onOpenPdf={onOpenPdf} />
+    );
   }
 
   const small = size === "sidebar";
@@ -215,6 +228,7 @@ export function IrissWaybillGauges({
             </span>
             {floating ? <MonoPlate plate={g.plate} /> : <span className={styles.plate}>{g.plate.replace(/^([A-Z])/, "$1 ")}</span>}
             <WaybillHomeCar busy={g.busy} status={g.status} brandModel={g.brandModel} />
+            {linked || loading ? null : <WaybillCsddCheck gauge={g} nowMs={nowMs} />}
           </>
         );
         if (linked) {
@@ -327,12 +341,15 @@ function cardStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string } {
 export function WaybillPlateCards({
   gauges,
   loading,
+  nowMs,
   onExtend,
   onStop,
   onOpenPdf,
 }: {
   gauges: WaybillGauge[];
   loading: boolean;
+  /** Ja ir - zem numura «Stāvoklis no CSDD pirms N min». */
+  nowMs?: number;
   onExtend?: (gauge: WaybillGauge) => void;
   onStop?: (gauge: WaybillGauge) => void;
   onOpenPdf?: (gauge: WaybillGauge) => void;
@@ -349,6 +366,7 @@ export function WaybillPlateCards({
               <span className={styles.pcardPlate}>{g.plate}</span>
               <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
             </div>
+            {loading || nowMs === undefined ? null : <WaybillCsddCheck gauge={g} nowMs={nowMs} />}
             {g.busy ? (
               <>
                 <div>

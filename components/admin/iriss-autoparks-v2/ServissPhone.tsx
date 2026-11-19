@@ -193,6 +193,7 @@ export function ServissProblemsCard({
   onDelete,
   onToggleFixed,
   onEdit,
+  printHref,
 }: {
   problems: V2Problem[];
   canDelete: boolean;
@@ -203,11 +204,20 @@ export function ServissProblemsCard({
   onDelete: (p: V2Problem) => void;
   onToggleFixed: (p: V2Problem, fixed: boolean) => void;
   onEdit: (p: V2Problem) => void;
+  /** «Drukāt servisa lapu» (makets apstiprināts, Nils 19.11) - A4 lapa mehāniķim jaunā cilnē. */
+  printHref?: string;
 }) {
   const live = problems.filter((p) => p.text.trim());
   return (
     <section aria-label="Problēmas">
-      <div className="ap2-sv-sec">Problēmas</div>
+      <div className="ap2-sv-sec ap2-sv-sechd">
+        <span>Problēmas</span>
+        {printHref ? (
+          <a className="ap2-sv-print" href={printHref} target="_blank" rel="noreferrer">
+            Drukāt servisa lapu
+          </a>
+        ) : null}
+      </div>
       <div className="ap2-sv-card">
         {live.length === 0 ? (
           <button type="button" className="ap2-sv-hero" onClick={onAdd}>
@@ -605,6 +615,7 @@ export function ServissStages({
   onDeleteProblem,
   onToggleFixed,
   photoUrl,
+  printHref,
 }: {
   view: V2ServissView;
   notesEditing: boolean;
@@ -625,6 +636,7 @@ export function ServissStages({
   onDeleteProblem: (p: V2Problem) => void;
   onToggleFixed: (p: V2Problem, fixed: boolean) => void;
   photoUrl: (id: string) => string;
+  printHref?: string;
 }) {
   return (
     <div className="ap2-sv-a">
@@ -639,6 +651,7 @@ export function ServissStages({
         onDelete={onDeleteProblem}
         onToggleFixed={onToggleFixed}
         onEdit={onEditProblem}
+        printHref={printHref}
       />
       <ServissNotesCard
         notes={view.notes}
