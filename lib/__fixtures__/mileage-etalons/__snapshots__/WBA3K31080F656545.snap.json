@@ -85,9 +85,7 @@
   "carverticalMileageWarning": false,
   "maxRollbackDropKm": 0,
   "rollbacks": [],
-  "suspectedEntryErrors": [
-   "27.09.2015 90000 AutoDNA (sludinājums)"
-  ],
+  "suspectedEntryErrors": [],
   "implausibleReadings": [],
   "latestKm": 335000
  }

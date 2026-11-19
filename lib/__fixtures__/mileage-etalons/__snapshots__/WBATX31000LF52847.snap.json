@@ -2,7 +2,8 @@
  "label": "BMW X3: AutoDNA 2, carVertical 19, dīleris 35; negadījumi 15",
  "rindasPaAvotiem": {
   "OFICIĀLĀ DĪLERA DATI": 35,
-  "AutoDNA": 2,
+  "AutoDNA (sludinājums)": 1,
+  "AutoDNA": 1,
   "CarVertical": 19,
   "Sludinājums": 1
  },
@@ -19,7 +20,7 @@
   "05.02.2020 | 35234 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "11.02.2020 | 57832 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "12.03.2020 | 64822 | Vācija | OFICIĀLĀ DĪLERA DATI + AutoDNA + CarVertical",
-  "02.07.2020 | 69900 | Vācija | AutoDNA",
+  "02.07.2020 | 69900 | Vācija | AutoDNA (sludinājums)",
   "07.05.2021 | 71207 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "27.05.2021 | 72527 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "08.09.2021 | 80750 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",

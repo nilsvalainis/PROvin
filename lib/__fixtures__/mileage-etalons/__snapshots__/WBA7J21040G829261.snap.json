@@ -3,7 +3,8 @@
  "rindasPaAvotiem": {
   "CSDD": 2,
   "OFICIĀLĀ DĪLERA DATI": 16,
-  "AutoDNA": 3,
+  "AutoDNA": 2,
+  "AutoDNA (sludinājums)": 1,
   "CarVertical": 18,
   "CITI AVOTI - Nettiauto": 1,
   "NETTIAUTO": 1
@@ -33,7 +34,7 @@
   "01.09.2020 | 104077 | Luksemburga | CarVertical | mēnesis",
   "09.09.2020 | 104577 | Luksemburga | OFICIĀLĀ DĪLERA DATI",
   "01.02.2021 | 114284 | Beļģija | CarVertical | mēnesis",
-  "03.02.2021 | 114784 | Beļģija | AutoDNA",
+  "03.02.2021 | 114784 | Beļģija | AutoDNA (sludinājums)",
   "01.03.2021 | 114863 | Somija | CarVertical | mēnesis",
   "01.07.2022 | 128705 | Somija | CarVertical | mēnesis",
   "05.07.2022 | 129205 | Somija | OFICIĀLĀ DĪLERA DATI | secināta valsts",
