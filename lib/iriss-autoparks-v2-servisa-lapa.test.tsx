@@ -133,16 +133,15 @@ describe("Servisa darbu lapa - A4 renderējums", () => {
     expect(text).toContain("Īpašnieks SIA ĪRISS Reģ. nr. 59202001191");
     expect(text).toContain("Servisa darbu lapa Izdrukāts 19.11.2026 12:45 · Autoparks · Statuss: Servisā");
     expect(text).toContain("Problēmas (2) · 1 izdarīta, 1 atlikusi");
-    expect(text).toContain("1 Deg lampa panelī Neizdarīts");
-    expect(text).toContain("2 Ieeļļot slēdzi ✓ Izdarīts");
-    expect(html.match(/class="sq x"/g)?.length).toBe(1);
-    // 2 problēmas x 1 piezīmju līnija + 12 tukšas rindas (teksts + piezīmes) = 26
-    expect(html.match(/class="line"/g)?.length).toBe(2 + 12 * 2);
-    expect(html.match(/class="blank"/g)?.length).toBe(12);
-    expect(text).toContain("14");
+    expect(text).toContain("1 Deg lampa panelī ☐ Neizdarīts");
+    expect(text).toContain("2 Ieeļļot slēdzi ☑ Izdarīts");
+    // 19.11: iekšējai lietošanai - tikai esošās problēmas, viena statusa kolonna, bez tukšām rindām un parakstiem
+    expect(html).not.toContain('class="line"');
+    expect(html).not.toContain('class="blank"');
+    expect(text).not.toContain("Mehāniķa piezīmes");
     expect(text).toContain("Servisa piezīmes Nav piezīmju");
     expect(text).not.toContain("Papildu darbi");
-    expect(text).toContain("Mehāniķis (vārds, uzvārds) Paraksts Datums");
+    expect(text).not.toContain("Paraksts");
     expect(text).toContain("SIA ĪRISS · Autoparks · Servisa darbu lapa 1/2");
     expect(html).not.toContain("<img");
     expect(text).not.toMatch(/€|GDZ00218/);
@@ -200,15 +199,5 @@ describe("Serviss cilne - poga «Drukāt servisa lapu» pie «Problēmas»", () 
     );
     const problems = html.split('aria-label="Problēmas"')[1] ?? "";
     expect(problems).toMatch(/<span>Problēmas<\/span><a class="ap2-sv-print" href="\/admin\/iriss\/autoparks-v2\/c%201\/servisa-lapa" target="_blank"[^>]*>Drukāt servisa lapu<\/a>/);
-  });
-});
-
-describe("servisaLapaBlankRows (19.11 tukšas rindas jaunām problēmām)", () => {
-  it("kopā vismaz 14 rindas, bet vienmēr vismaz 4 tukšas", async () => {
-    const { servisaLapaBlankRows } = await import("@/components/admin/iriss-autoparks-v2/ServisaLapaSheets");
-    expect(servisaLapaBlankRows(0)).toBe(14);
-    expect(servisaLapaBlankRows(4)).toBe(10);
-    expect(servisaLapaBlankRows(12)).toBe(4);
-    expect(servisaLapaBlankRows(30)).toBe(4);
   });
 });

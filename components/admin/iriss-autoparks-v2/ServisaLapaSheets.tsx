@@ -53,14 +53,13 @@ export function ServisaLapaSheet({ s, pages }: { s: ServisaLapa; pages: number }
       <h2>
         Problēmas ({total}) · {servisaLapaCounts(s.doneCount, s.openCount)}
       </h2>
-      <table className="ap2-svl-tab">
+      {total > 0 ? (
+        <table className="ap2-svl-tab">
           <thead>
             <tr>
               <th>#</th>
               <th>Problēma</th>
-              <th>Statuss sistēmā</th>
-              <th className="c">Izdarīts</th>
-              <th>Mehāniķa piezīmes</th>
+              <th>Statuss</th>
             </tr>
           </thead>
           <tbody>
@@ -69,43 +68,19 @@ export function ServisaLapaSheet({ s, pages }: { s: ServisaLapa; pages: number }
                 <td className="n">{p.n}</td>
                 <td className="t">{p.text}</td>
                 <td className="st">
-                  <span className={`chip ${p.done ? "done" : "open"}`}>{p.done ? "✓ Izdarīts" : "Neizdarīts"}</span>
-                </td>
-                <td className="box">
-                  <span className={`sq${p.done ? " x" : ""}`} aria-label={p.done ? "Izdarīts" : "Nav atzīmēts"} />
-                </td>
-                <td className="note">
-                  <div className="line" />
-                </td>
-              </tr>
-            ))}
-            {/* 19.11 (Nils): tukšas rindas jaunām problēmām, ko mehāniķis atrod uz vietas. */}
-            {Array.from({ length: servisaLapaBlankRows(total) }, (_, i) => total + i + 1).map((n) => (
-              <tr key={`b${n}`} className="blank">
-                <td className="n">{n}</td>
-                <td className="t">
-                  <div className="line" />
-                </td>
-                <td className="st" />
-                <td className="box">
-                  <span className="sq" aria-label="Nav atzīmēts" />
-                </td>
-                <td className="note">
-                  <div className="line" />
+                  <span className={`chip ${p.done ? "done" : "open"}`}>{p.done ? "☑ Izdarīts" : "☐ Neizdarīts"}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      ) : (
+        <div className="ap2-svl-notes">Nav problēmu</div>
+      )}
 
       <h2>Servisa piezīmes</h2>
       <div className="ap2-svl-notes pre">{s.notes || "Nav piezīmju"}</div>
 
-      <div className="ap2-svl-sign">
-        <div>Mehāniķis (vārds, uzvārds)</div>
-        <div>Paraksts</div>
-        <div>Datums</div>
-      </div>
       <Foot s={s} label="Servisa darbu lapa" page={1} pages={pages} />
     </section>
   );
@@ -145,7 +120,3 @@ export function ServisaDiagSheet({ s, page, pages, state }: { s: ServisaLapa; pa
   );
 }
 
-/** Tukšās rindas jaunām problēmām: vismaz 4, kopā vismaz 14 rindas (vienā A4 lapā ietilpst ~22 kompaktas rindas). */
-export function servisaLapaBlankRows(problemCount: number): number {
-  return Math.max(4, 14 - Math.max(0, problemCount));
-}
