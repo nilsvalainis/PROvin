@@ -2,7 +2,35 @@
  * Izsoļu portāla (AUTO1 u.c.) i18n atslēgu un enum vērtību tulkojumi klienta PDF.
  * Ja tulkojuma nav, `humanizeToken()` pārvērš pēdējo segmentu lasāmā tekstā.
  * PDF nekad nedrīkst redzēt tekstu, kas sākas ar `global.`.
+ *
+ * Nākotnes vērtības: ja vārdnīcā nav tulkojuma, rezerve dod lasāmu tekstu UN reģistrē vērtību
+ * (`thecarapiUntranslated()`, žurnālā viena rinda «[thecarapi-i18n] neiztulkots: ...» uz vērtību),
+ * lai to var pievienot šai vārdnīcai. AI tulkošana netiek lietota (deterministisks PDF, bez maksas izsaukumiem).
  */
+
+export type ThecarapiUntranslatedKind = "atslēga" | "vērtība" | "detaļa" | "zona" | "bojājums" | "i18n";
+
+const UNTRANSLATED = new Map<string, { kind: ThecarapiUntranslatedKind; raw: string; shown: string }>();
+const UNTRANSLATED_MAX = 500;
+
+/** Reģistrē vērtību, kurai nav tulkojuma (rezerve jau dod lasāmu tekstu). */
+export function noteThecarapiUntranslated(kind: ThecarapiUntranslatedKind, raw: string, shown: string): void {
+  const value = raw.trim();
+  if (!value || value.length > 80) return;
+  const key = `${kind}:${value}`;
+  if (UNTRANSLATED.has(key) || UNTRANSLATED.size >= UNTRANSLATED_MAX) return;
+  UNTRANSLATED.set(key, { kind, raw: value, shown });
+  if (process.env.NODE_ENV !== "test") console.warn(`[thecarapi-i18n] neiztulkots: ${kind} «${value}» -> «${shown}»`);
+}
+
+/** Visas šajā procesā sastaptās neiztulkotās vērtības (vārdnīcas papildināšanai). */
+export function thecarapiUntranslated(): { kind: ThecarapiUntranslatedKind; raw: string; shown: string }[] {
+  return [...UNTRANSLATED.values()];
+}
+
+export function resetThecarapiUntranslated(): void {
+  UNTRANSLATED.clear();
+}
 
 const ZONES: Record<string, string> = {
   front: "Priekša",
@@ -28,6 +56,14 @@ const ZONES: Record<string, string> = {
   windows: "Stikli",
   trunk: "Bagāžnieks",
   technical: "Tehnika",
+  "front-end": "Priekša",
+  "rear-end": "Aizmugure",
+  side: "Sāni",
+  sides: "Sāni",
+  "all-over": "Visa virsbūve",
+  undercarriage: "Apakša",
+  windscreen: "Stikli",
+  windshield: "Stikli",
 };
 
 /** Zonu secība bojājumu tabulā. */
@@ -170,6 +206,63 @@ const DAMAGE_TYPES: Record<string, string> = {
   "not-working": "Nedarbojas",
   defect: "Defekts",
   "glass-damage": "Stikla bojājums",
+  "front-end": "Priekšpuses bojājums",
+  "rear-end": "Aizmugures bojājums",
+  side: "Sānu bojājums",
+  "all-over": "Bojājumi visā virsbūvē",
+  "minor-dent-scratches": "Nelieli iespiedumi un skrāpējumi",
+  "minor-dents-scratches": "Nelieli iespiedumi un skrāpējumi",
+  "normal-wear": "Normāls nolietojums",
+  "normal-wear-and-tear": "Normāls nolietojums",
+  mechanical: "Mehānisks bojājums",
+  "mechanical-damage": "Mehānisks bojājums",
+  undercarriage: "Apakšdaļas bojājums",
+  rollover: "Apgāšanās",
+  vandalism: "Vandālisms",
+  flood: "Applūdis",
+  water: "Ūdens bojājums",
+  "water-flood": "Applūdis",
+  fire: "Ugunsgrēka bojājums",
+  "burn-engine": "Motora nodalījuma apdegums",
+  "burn-interior": "Salona apdegums",
+  "partial-repair": "Daļējs remonts",
+  "replaced-vin": "Nomainīts VIN",
+  biohazard: "Bioloģisks piesārņojums",
+  "frame-damage": "Rāmja bojājums",
+  "suspension-damage": "Balstiekārtas bojājums",
+  "electrical-damage": "Elektrības bojājums",
+  "engine-damage": "Dzinēja bojājums",
+  "transmission-damage": "Ātrumkārbas bojājums",
+  theft: "Zādzības bojājums",
+  "theft-recovery": "Atgūts pēc zādzības",
+  "glass-chip": "Stikla šķemba",
+  "glass-crack": "Stikla plaisa",
+  "windscreen-chip": "Vējstikla šķemba",
+  "curb-damage": "Apmales bojājums",
+  "rim-damage": "Diska bojājums",
+  "paint-defect": "Lakas defekts",
+  "paint-scratch": "Lakas skrāpējums",
+  "paintwork-damage": "Lakas bojājums",
+  pitting: "Šķembas",
+  "stone-chipping": "Akmens šķembas",
+  scuff: "Noberzums",
+  scuffs: "Noberzumi",
+  scuffed: "Noberzums",
+  scrape: "Noberzums",
+  bent: "Saliekts",
+  "panel-gap": "Nevienmērīga sprauga",
+  misaligned: "Nepareizi novietots",
+  loose: "Vaļīgs",
+  dirty: "Netīrs",
+  faded: "Izbalējis",
+  dull: "Matēts",
+  "repair-needed": "Nepieciešams remonts",
+  replacement: "Nepieciešama nomaiņa",
+  corroded: "Korozija",
+  "surface-rust": "Virsmas rūsa",
+  welding: "Metināts",
+  "panel-repair": "Paneļa remonts",
+  unevenness: "Nelīdzenums",
 };
 
 const DAMAGE_DESCRIPTIONS: Record<string, string> = {
@@ -192,6 +285,12 @@ const DAMAGE_DESCRIPTIONS: Record<string, string> = {
   major: "liels",
   "with-paint-damage": "ar lakas bojājumu",
   "without-paint-damage": "bez lakas bojājuma",
+  moderate: "vidējs",
+  small: "neliels",
+  large: "liels",
+  significant: "būtisks",
+  cosmetic: "kosmētisks",
+  structural: "konstruktīvs",
 };
 
 const BRAKES: Record<string, string> = {
@@ -325,6 +424,100 @@ const ENUMS: Record<string, string> = {
   invoice: "Rēķins",
   "inspection-report": "Tehniskās apskates protokols",
   "tuv-report": "Tehniskās apskates protokols",
+  // TheCarApi v1 (publiskā dokumentācija 11.2026)
+  left: "Kreisā",
+  right: "Labā",
+  lhd: "Kreisā",
+  rhd: "Labā",
+  stated: "Norādīts avotā",
+  equipment: "Pēc aprīkojuma",
+  flag: "Pēc avota atzīmes",
+  model_name: "Pēc modeļa nosaukuma",
+  "model-name": "Pēc modeļa nosaukuma",
+  model_rule: "Pēc modeļa noteikuma",
+  "model-rule": "Pēc modeļa noteikuma",
+  internal_damage_report: "Salona bojājumu atskaite",
+  "internal-damage-report": "Salona bojājumu atskaite",
+  external_damage_report: "Ārējo bojājumu atskaite",
+  "external-damage-report": "Ārējo bojājumu atskaite",
+  maintenance_records: "Apkopes ieraksti",
+  "maintenance-records": "Apkopes ieraksti",
+  battery_health_report: "Akumulatora stāvokļa atskaite",
+  "battery-health-report": "Akumulatora stāvokļa atskaite",
+  option_report: "Aprīkojuma atskaite",
+  "option-report": "Aprīkojuma atskaite",
+  inspection_report: "Pārbaudes atskaite",
+  report: "Atskaite",
+  available: "Pieejams",
+  unavailable: "Nav pieejams",
+  sold: "Pārdots",
+  unsold: "Nav pārdots",
+  active: "Aktīva",
+  ended: "Beigusies",
+  closed: "Slēgta",
+  cancelled: "Atcelta",
+  canceled: "Atcelta",
+  withdrawn: "Atsaukta",
+  pending: "Gaida",
+  margin: "Peļņas daļas režīms (bez PVN)",
+  "margin-scheme": "Peļņas daļas režīms (bez PVN)",
+  regular: "Ar PVN",
+  "vat-deductible": "PVN atskaitāms",
+  "vat-qualifying": "PVN atskaitāms",
+  net: "Bez PVN",
+  gross: "Ar PVN",
+  export: "Eksportam",
+  salvage: "Avārijas auto (salvage)",
+  clean: "Tīrs",
+  "clean-title": "Tīrs",
+  "certificate-of-destruction": "Utilizācijas apliecība",
+  rebuilt: "Atjaunots",
+  "non-repairable": "Neremontējams",
+  "run-and-drive": "Iedarbojas un brauc",
+  "starts-only": "Tikai iedarbojas",
+  "does-not-start": "Neiedarbojas",
+  dealer: "Dīleris",
+  fleet: "Autoparks",
+  lease: "Līzings",
+  "lease-return": "Līzinga atgriezts",
+  "rental-return": "Nomas atgriezts",
+  manufacturer: "Ražotājs",
+  insurance: "Apdrošinātājs",
+  "former-taxi": "Bijušais taksometrs",
+  demo: "Demonstrācijas auto",
+  "demonstration-car": "Demonstrācijas auto",
+  "electric-hybrid": "Hibrīds",
+  "mild-hybrid": "Viegls hibrīds",
+  hydrogen: "Ūdeņradis",
+  ethanol: "Etanols",
+  limousine: "Sedans",
+  "off-road": "Apvidus",
+  cabriolet: "Kabriolets",
+  roadster: "Rodsters",
+  "small-car": "Mazais auto",
+  "panel-van": "Furgons",
+  bus: "Mikroautobuss",
+  minibus: "Mikroautobuss",
+  violet: "Violeta",
+  purple: "Violeta",
+  gold: "Zelta",
+  bronze: "Bronzas",
+  "dark-blue": "Tumši zila",
+  "light-blue": "Gaiši zila",
+  "dark-grey": "Tumši pelēka",
+  anthracite: "Antracīta",
+  "multi-colour": "Daudzkrāsaina",
+  other: "Cita",
+  excellent: "Teicams",
+  "very-good": "Ļoti labs",
+  fair: "Apmierinošs",
+  poor: "Slikts",
+  average: "Vidējs",
+  "not-available": "Nav pieejams",
+  "not-applicable": "Nav attiecināms",
+  missing: "Trūkst",
+  present: "Ir",
+  absent: "Nav",
 };
 
 const COUNTRIES: Record<string, string> = {
@@ -477,6 +670,82 @@ const KEY_LABELS: Record<string, string> = {
   servicehistory: "Servisa vēsture",
   timingbeltchanged: "Zobsiksna mainīta",
   timingbelt: "Zobsiksna",
+  // TheCarApi v1 (publiskā dokumentācija 11.2026) un citas platformas
+  cleanmake: "Marka",
+  cleanmodel: "Modelis",
+  registrationyear: "Reģistrācijas gads",
+  fuelgroup: "Degviela",
+  gearboxgroup: "Ātrumkārba",
+  steering: "Stūre",
+  drivetrainsource: "Piedziņa noteikta",
+  drivetrainsystem: "Piedziņas sistēma",
+  drivetrainselectable: "Pieslēdzama pilnpiedziņa",
+  cocavailable: "COC dokuments",
+  registrationdocsavailable: "Reģistrācijas dokumenti",
+  isv5present: "V5 dokuments",
+  licenseplate: "Numurzīmes",
+  paperwork: "Dokumenti",
+  inspectionreports: "Pārbaudes atskaites",
+  carreports: "Auto atskaites",
+  damagecomment: "Bojājumu komentārs",
+  damageservicecomment: "Bojājumu servisa komentārs",
+  technicalissues: "Tehniskās problēmas",
+  hastechnicalissues: "Tehniskas problēmas",
+  isdamaged: "Bojāts",
+  technicalinspection: "Tehniskā apskate",
+  technicalinspectiondate: "Tehniskā apskate",
+  othernotes: "Citas piezīmes",
+  profile: "Profils",
+  specs: "Specifikācija",
+  kbdiagnosis: "KB diagnostika",
+  kbinspection: "KB pārbaude",
+  panelmarks: "Paneļu atzīmes",
+  checkedcontrols: "Pārbaudītie punkti",
+  livepriceprice: "Tiešsaistes cena",
+  fetchedat: "Cena pārbaudīta",
+  source: "Avots",
+  estimatedvalue: "Aplēstā vērtība",
+  mileagekm: "Nobraukums",
+  company: "Serviss",
+  workshop: "Serviss",
+  vattype: "PVN režīms",
+  vatstatus: "PVN režīms",
+  taxtype: "PVN režīms",
+  runanddrive: "Iedarbojas un brauc",
+  rundrive: "Iedarbojas un brauc",
+  primarydamage: "Galvenais bojājums",
+  secondarydamage: "Papildu bojājums",
+  keysavailable: "Atslēgas",
+  haskeys: "Atslēgas",
+  titletype: "Dokumentu statuss",
+  saletitle: "Dokumentu statuss",
+  buildsheetseries: "Sērija",
+  series: "Sērija",
+  previoususe: "Iepriekšējā lietošana",
+  usage: "Lietošana",
+  lotnumber: "Lota numurs",
+  lot: "Lota numurs",
+  stocknumber: "Krājuma numurs",
+  region: "Reģions",
+  postcode: "Pasta indekss",
+  zip: "Pasta indekss",
+  street: "Iela",
+  address: "Adrese",
+  severity: "Smagums",
+  panel: "Panelis",
+  thickness: "Biezums",
+  odometerunit: "Nobraukuma mērvienība",
+  enginecapacity: "Dzinēja tilpums",
+  margin: "Peļņas daļas režīms",
+  exportprice: "Eksporta cena",
+  netprice: "Cena bez PVN",
+  grossprice: "Cena ar PVN",
+  auctiontype: "Izsoles veids",
+  saletype: "Pārdošanas veids",
+  saleschannel: "Pārdošanas kanāls",
+  conditionreport: "Stāvokļa atskaite",
+  lastseen: "Pēdējo reizi redzēta",
+  firstseen: "Pirmoreiz redzēta",
 };
 
 export function normKey(key: string): string {
@@ -517,7 +786,7 @@ function thicknessText(last: string): string {
 
 /** `rear-bumper` -> «Aizmugurējais buferis». */
 export function translatePart(raw: string): string {
-  const key = raw.trim().toLowerCase().replace(/_/g, "-").replace(/\s+/g, "-");
+  const key = raw.trim().toLowerCase().replace(/[_\s]+/g, "-");
   if (!key) return "";
   if (NOUNS[key]) return capitalize(NOUNS[key].lv);
   if (POSITIONS[key]) return POSITIONS[key];
@@ -533,18 +802,22 @@ export function translatePart(raw: string): string {
     const words = [...adjs.map((t) => ADJ[t]![noun.g]), noun.lv];
     return capitalize(words.join(" "));
   }
-  return humanizeToken(raw);
+  const shown = humanizeToken(raw);
+  noteThecarapiUntranslated("detaļa", raw, shown);
+  return shown;
 }
 
 /** Bojājuma zona no `area` atslēgas vai detaļas nosaukuma. */
 export function translateZone(raw: string): string {
-  const key = raw.trim().toLowerCase().replace(/_/g, "-");
+  const key = raw.trim().toLowerCase().replace(/[_\s]+/g, "-");
   if (ZONES[key]) return ZONES[key];
-  return humanizeToken(raw);
+  const shown = humanizeToken(raw);
+  noteThecarapiUntranslated("zona", raw, shown);
+  return shown;
 }
 
 export function zoneFromPart(rawPart: string): string {
-  const key = rawPart.toLowerCase().replace(/_/g, "-");
+  const key = rawPart.trim().toLowerCase().replace(/[_\s]+/g, "-");
   if (/(^|-)(roof|sunroof)(-|$)/.test(key)) return ZONES.roof!;
   if (/(seat|dashboard|steering|carpet|headliner|upholstery|console|interior)/.test(key)) return ZONES.interior!;
   if (/(^|-)(front|hood|bonnet|windshield|windscreen|grille)(-|$)/.test(key)) {
@@ -568,14 +841,26 @@ export function translatePosition(raw: string): string {
   return translatePart(raw);
 }
 
+function enumKey(raw: string): string {
+  return raw.trim().toLowerCase().replace(/[_\s/]+/g, "-").replace(/-+/g, "-");
+}
+
 export function translateDamageDescription(raw: string): string {
-  const key = raw.trim().toLowerCase().replace(/_/g, "-");
+  const key = enumKey(raw);
   return DAMAGE_DESCRIPTIONS[key] ?? "";
 }
 
+/** Tikai vārdnīcas trāpījums (bez rezerves). */
+export function knownDamageType(raw: string): string {
+  return DAMAGE_TYPES[enumKey(raw)] ?? "";
+}
+
 export function translateDamageType(raw: string): string {
-  const key = raw.trim().toLowerCase().replace(/_/g, "-");
-  return DAMAGE_TYPES[key] ?? humanizeToken(raw);
+  const known = knownDamageType(raw);
+  if (known) return known;
+  const shown = humanizeToken(raw);
+  noteThecarapiUntranslated("bojājums", raw, shown);
+  return shown;
 }
 
 function capitalize(s: string): string {
@@ -626,13 +911,17 @@ export function translateI18n(raw: string): string {
   }
   const generic = DAMAGE_DESCRIPTIONS[rest] ?? ENUMS[last.toLowerCase()];
   if (generic) return generic;
-  return thicknessText(last) || sizeText(rest) || humanizeToken(last);
+  const derived = thicknessText(last) || sizeText(rest);
+  if (derived) return derived;
+  const shown = humanizeToken(last);
+  noteThecarapiUntranslated("i18n", value, shown);
+  return shown;
 }
 
 /** Enum vērtība (`NOT_NEW_CAR`, `company-car`, `paper`). Ja nav zināma, atgriež tukšu. */
 export function translateEnum(raw: string): string {
   const key = raw.trim().toLowerCase();
-  return ENUMS[key] ?? ENUMS[key.replace(/_/g, "-")] ?? WHEELS[key] ?? "";
+  return ENUMS[key] ?? ENUMS[key.replace(/_/g, "-")] ?? ENUMS[enumKey(key)] ?? WHEELS[key] ?? "";
 }
 
 export function looksLikeEnum(raw: string): boolean {
@@ -643,7 +932,11 @@ export function looksLikeEnum(raw: string): boolean {
 
 export function keyLabel(key: string): string {
   const n = normKey(key);
-  return KEY_LABELS[n] ?? humanizeToken(key.replace(/^history_/, ""));
+  const known = KEY_LABELS[n];
+  if (known) return known;
+  const shown = humanizeToken(key.replace(/^history_/, ""));
+  noteThecarapiUntranslated("atslēga", key.replace(/^history_/, ""), shown);
+  return shown;
 }
 
 const EQUIPMENT_LV: Record<string, string> = {

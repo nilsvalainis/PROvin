@@ -17,7 +17,9 @@ import {
   isI18nKey,
   isSignificantMissingFeature,
   keyLabel,
+  knownDamageType,
   looksLikeEnum,
+  noteThecarapiUntranslated,
   normKey,
   THECARAPI_ZONE_ORDER,
   translateDamageDescription,
@@ -234,6 +236,20 @@ const EXCLUDED_KEYS = new Set(
     "photos",
     "auction_images",
     "AuctionImages",
+    // TheCarApi v1: iekšējie kodi un tehniskie karogi.
+    "type_id",
+    "typeId",
+    "live_price_pending",
+    "poll_after_seconds",
+    "videos",
+    // Remontu un servisa EUR summas atskaitēs neraksta (Nila likums).
+    "estimated_repair_costs",
+    "estimatedRepairCosts",
+    "estimated_repair_cost",
+    "repair_cost",
+    "repair_costs",
+    "repairCost",
+    "price_eur",
   ].map(normKey),
 );
 
@@ -354,11 +370,23 @@ function formatScalar(key: string, raw: unknown): string {
   if (/country/i.test(key) && /^[A-Za-z]{2}$/.test(s)) return countryName(s);
   const n = toNumber(s);
   if (n != null && !PLAIN_NUMBER_KEY.test(key) && !/^0\d/.test(s)) return numberText(n);
+  if (/damage/i.test(key)) {
+    const dmg = knownDamageType(s);
+    if (dmg) return dmg;
+  }
   const en = translateEnum(s);
   if (en) return en;
-  if (looksLikeEnum(s)) return humanizeToken(s);
+  if (looksLikeEnum(s)) {
+    const shown = humanizeToken(s);
+    noteThecarapiUntranslated("vērtība", s, shown);
+    return shown;
+  }
+  // Viens angļu vārds (enum bez atdalītāja) - rāda kā ir, bet reģistrē vārdnīcai. Brīvo tekstu neaiztiek.
+  if (/^[a-z]{3,24}$/.test(s) && !FREE_TEXT_KEY.test(key)) noteThecarapiUntranslated("vērtība", s, s);
   return s;
 }
+
+const FREE_TEXT_KEY = /(comment|remark|note|description|text|title|name|city|location|seller|company|model|make|brand|variant|trim|version|street|address)/i;
 
 function formatValue(key: string, raw: unknown): string {
   if (Array.isArray(raw)) {
@@ -540,6 +568,12 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
     } else if (/^(type|damagetype|kind|damage|damagename)$/.test(nk)) {
       d.baseType = d.baseType || translateDamageType(String(str));
     } else if (/^(description|depth|severity|desc|details)$/.test(nk)) {
+      // BCA u.c.: `description: "Dent"` ir bojājuma veids, nevis apraksts.
+      const asType = typeof str === "string" && !d.baseType ? knownDamageType(str) : "";
+      if (asType) {
+        d.baseType = asType;
+        continue;
+      }
       const t = (typeof str === "string" ? translateDamageDescription(str) : "") || formatScalar(key, str).toLowerCase();
       if (t) desc = desc ? `${desc}, ${t}` : t;
     } else if (/^(size|length|dimension|sizecategory)$/.test(nk)) {
@@ -948,8 +982,11 @@ function extractEquipment(ctx: Ctx, root: unknown): ThecarapiPdfEquipmentGroup[]
     } else {
       walkGroups(node.value, "", 0);
     }
-    mark(ctx, node.path);
+    // Aprīkojums modelī paliek, bet PDF to nedrukā (Nils 19.11) - apzināti izslēgts, nevis pazudis.
+    mark(ctx, node.path, "excluded");
   }
+  // Openlane aprīkojuma atskaites (`option_reports`, type_id 4) - arī aprīkojums.
+  for (const node of findNodes(root, (key) => normKey(key) === "optionreports")) mark(ctx, node.path, "excluded");
   for (const m of missing) items.push({ category: "Citi", text: `${m}: nav`, tokens: [] });
   const groups: ThecarapiPdfEquipmentGroup[] = [];
   for (const cat of EQUIPMENT_CATEGORY_ORDER) {
@@ -1017,9 +1054,28 @@ function extractService(ctx: Ctx, root: unknown): ThecarapiPdfModel["service"] &
 }
 
 function extractDocuments(ctx: Ctx, root: unknown): { names: string[]; urlNames: Map<string, string> } {
-  const nodes = findNodes(root, (key, value) => /^(documents|vehicledocuments)$/.test(normKey(key)) && Array.isArray(value));
+  const nodes = findNodes(
+    root,
+    (key, value) => /^(documents|vehicledocuments|inspectionreports|carreports)$/.test(normKey(key)) && Array.isArray(value),
+  );
   const names: string[] = [];
   const urlNames = new Map<string, string>();
+  // Openlane `paperwork` karogi: «jā» -> dokumentu sarakstā; «nē» paliek «Citos datos» ar latvisku nosaukumu.
+  const PAPERWORK: Record<string, string> = {
+    cocavailable: "COC",
+    registrationdocsavailable: "Reģistrācijas dokumenti",
+    isv5present: "V5 dokuments",
+    licenseplate: "Numurzīmes",
+  };
+  for (const node of findNodes(root, (key, value) => normKey(key) === "paperwork" && asRecord(value) != null)) {
+    for (const [k, v] of Object.entries(node.value as Record<string, unknown>)) {
+      const name = PAPERWORK[normKey(k)];
+      if (v === true && name) {
+        if (!names.includes(name)) names.push(name);
+        mark(ctx, `${node.path}.${k}`);
+      }
+    }
+  }
   for (const node of nodes) {
     for (const item of node.value as unknown[]) {
       let name = "";
@@ -1048,8 +1104,8 @@ const BASIC_MEANINGS: Meaning[] = [
   { label: "Pirmā reģistrācija", keys: ["firstRegistrationDate", "first_registration", "firstRegistration", "registrationDate", "initialRegistration"], kind: "day" },
   { label: "Izlaiduma gads", keys: ["builtYear", "year", "manufactureYear", "productionYear", "constructionYear"], kind: "plain" },
   { label: "Virsbūve", keys: ["bodyType", "body", "bodyStyle", "body_type"] },
-  { label: "Degviela", keys: ["fuelType", "fuel", "fuel_type"] },
-  { label: "Ātrumkārba", keys: ["gearType", "transmission", "gearbox", "gear_type"] },
+  { label: "Degviela", keys: ["fuelType", "fuel", "fuel_type", "fuel_group"] },
+  { label: "Ātrumkārba", keys: ["gearType", "transmission", "gearbox", "gear_type", "gearbox_group"] },
   { label: "Krāsa", keys: ["color", "colour", "bodyColor", "exteriorColor", "body_color"] },
   { label: "Durvis", keys: ["doorCount", "doors", "door_count"], kind: "plain" },
   { label: "Sēdvietas", keys: ["seatCount", "seats", "seat_count"], kind: "plain" },
@@ -1067,6 +1123,17 @@ const BASIC_MEANINGS: Meaning[] = [
   { label: "Pārdevēja auto ID", keys: ["car_id", "carId", "stockNumber", "stock_number"], kind: "plain" },
   { label: "Pārdevējs", keys: ["seller", "seller_name", "sellerName"] },
   { label: "Atrašanās vieta", keys: ["location", "city"] },
+  // TheCarApi v1 un citas platformas (Openlane, BCA, Copart, ...).
+  { label: "Reģistrācijas gads", keys: ["registration_year", "registrationYear"], kind: "plain" },
+  { label: "Stūre", keys: ["steering", "steering_side", "steeringSide"] },
+  { label: "Piedziņa", keys: ["drivetrain", "drive_type", "driveType"] },
+  { label: "Piedziņas sistēma", keys: ["drivetrain_system", "drivetrainSystem"] },
+  { label: "Stāvokļa vērtējums", keys: ["condition_grade", "conditionGrade", "grade"], kind: "plain" },
+  { label: "Galvenais bojājums", keys: ["primary_damage", "primaryDamage"] },
+  { label: "Papildu bojājums", keys: ["secondary_damage", "secondaryDamage"] },
+  { label: "Iedarbojas un brauc", keys: ["run_and_drive", "runAndDrive", "run_drive"] },
+  { label: "Dokumentu statuss", keys: ["title_type", "titleType", "sale_title"] },
+  { label: "PVN režīms", keys: ["vat_type", "vatType", "vat_status", "tax_type"] },
 ];
 
 const PRICE_MEANINGS: Meaning[] = [
@@ -1125,8 +1192,8 @@ function extractBasics(ctx: Ctx, title: string): ThecarapiPdfKv[] {
   const out: ThecarapiPdfKv[] = [];
   // Auto nosaukums: title, citādi marka + modelis + versija.
   const titleLeaves = leavesNamed(ctx, ["title", "car_title", "vehicle_title", "name_full"]);
-  const make = leavesNamed(ctx, ["make", "brand", "manufacturer", "manufacturerName"]);
-  const model = leavesNamed(ctx, ["model", "modelName", "model_name"]);
+  const make = leavesNamed(ctx, ["make", "brand", "manufacturer", "manufacturerName", "clean_make"]);
+  const model = leavesNamed(ctx, ["model", "modelName", "model_name", "clean_model"]);
   const variant = leavesNamed(ctx, ["variant", "trim", "version", "subModel", "modelVersion"]);
   const t = title || (typeof titleLeaves[0]?.value === "string" ? String(titleLeaves[0]!.value).trim() : "");
   const parts = [make, model, variant].map((ls) => (typeof ls[0]?.value === "string" ? String(ls[0]!.value).trim() : ""));
@@ -1165,12 +1232,60 @@ function extractBasics(ctx: Ctx, title: string): ThecarapiPdfKv[] {
   return out;
 }
 
+/** TheCarApi v1 `prices.{start,current,...}` = `{ amount, currency }` (publiskā dokumentācija 11.2026). */
+const V1_PRICE_LABELS: [string, string][] = [
+  ["start", "Sākuma cena"],
+  ["current", "Pēdējā cena"],
+  ["final", "Noslēguma cena"],
+  ["buy_now", "Pirkt tūlīt cena"],
+  ["public", "Publiskā cena"],
+  ["current_tax", "Pēdējā cena ar nodokļiem"],
+  ["current_tax_delivery", "Pēdējā cena ar nodokļiem un piegādi"],
+  ["buy_now_tax", "Pirkt tūlīt ar nodokļiem"],
+  ["buy_now_tax_delivery", "Pirkt tūlīt ar nodokļiem un piegādi"],
+  ["landed_current", "Pēdējā cena ar piegādi"],
+  ["landed_buy_now", "Pirkt tūlīt ar piegādi"],
+  ["estimated_value", "Aplēstā vērtība (nav pirkšanas cena)"],
+  ["native", "Cena avota valūtā"],
+];
+
+function v1PriceRows(ctx: Ctx, root: Record<string, unknown>): ThecarapiPdfKv[] {
+  const out: ThecarapiPdfKv[] = [];
+  const prices = asRecord(root.prices);
+  if (prices) {
+    for (const [key, label] of V1_PRICE_LABELS) {
+      const raw = prices[key];
+      if (raw == null) continue;
+      const rec = asRecord(raw);
+      const cur = typeof rec?.currency === "string" ? rec.currency : ctx.currency;
+      const text = priceText(rec ? rec.amount : raw, cur);
+      const path = `prices.${key}`;
+      // `native` tajā pašā valūtā un summā ir dublikāts.
+      const dup = !text || out.some((r) => r.value === text && (key === "native" || r.label === label));
+      if (!dup) out.push({ label, value: text });
+      mark(ctx, path, text && !dup ? "section" : "duplicate");
+    }
+  }
+  const live = asRecord(root.live_price);
+  if (live) {
+    const cur = typeof live.currency === "string" ? live.currency : ctx.currency;
+    const text = priceText(live.price ?? live.amount, cur);
+    const at = typeof live.fetched_at === "string" && isIsoDate(live.fetched_at) ? thecarapiPdfDate(live.fetched_at) : "";
+    if (text && !out.some((r) => r.value === text)) {
+      out.push({ label: "Tiešsaistes cena", value: at ? `${text} (${at})` : text });
+      mark(ctx, "live_price", "section");
+    } else mark(ctx, "live_price", "duplicate");
+  }
+  return out;
+}
+
 function extractPrices(ctx: Ctx, root: Record<string, unknown>): ThecarapiPdfKv[] {
   const fmt = (m: Meaning, leaf: Leaf): string => {
     const name = normKey(meaningName(leaf.segs));
     return priceText(leaf.value, name.includes("eur") ? "EUR" : ctx.currency);
   };
-  const rows = meaningRows(ctx, PRICE_MEANINGS, fmt);
+  const v1 = v1PriceRows(ctx, root);
+  const rows = [...v1, ...meaningRows(ctx, PRICE_MEANINGS, fmt).filter((r) => !v1.some((v) => v.label === r.label && v.value === r.value))];
   // Pēdējā cena = noslēguma cena -> viena rinda.
   const finals = new Set(rows.filter((r) => r.label.startsWith("Noslēguma")).map((r) => r.value));
   const out = rows.filter((r) => !(r.label.startsWith("Pēdējā cena") && finals.has(r.value)));

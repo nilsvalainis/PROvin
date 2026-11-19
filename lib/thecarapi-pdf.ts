@@ -1,9 +1,10 @@
 /**
- * Izsoļu portāla ieraksts klienta PDF: strukturēts modelis (`buildThecarapiPdfModel`) -> kartītes, čipi un
- * kompakti režģi atskaites vizuālajā valodā (kopsavilkuma kartītes, zaļie/dzeltenie/sarkanie čipi).
+ * Izsoļu portāla ieraksts klienta PDF: strukturēts modelis (`buildThecarapiPdfModel`) -> tās pašas klases kā
+ * «OFICIĀLĀ DĪLERA DATI» sadaļā (pdf-dealer-cover, pdf-svc-summary, pdf-dealer-vehicle-kv, pdf-svc-major, pdf-dealer-eq).
  * Ārējā pakalpojuma nosaukums netiek drukāts. Saites, bilžu tehniskie lauki un iekšējie id netiek drukāti.
  */
 import { CC_VIN_MAX_PHOTOS } from "@/lib/cc-vin-photo-types";
+import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import {
   buildThecarapiPdfModel,
   thecarapiPdfDate,
@@ -33,33 +34,36 @@ function subhead(title: string): string {
   return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
-function minihead(title: string): string {
-  return `<p class="pdf-tc-zone">${escapeHtml(title)}</p>`;
-}
-
 type Tone = "ok" | "warn" | "alert" | "neutral";
 
-function chip(text: string, cls = ""): string {
-  return `<span class="pdf-tc-chip${cls ? ` ${cls}` : ""}">${escapeHtml(text)}</span>`;
+/** Krāsains teksts (tikai lakai un stāvokļiem); pārējais kā dīlera sadaļā. */
+function toneText(text: string, tone: Tone): string {
+  if (tone === "neutral") return escapeHtml(text);
+  return `<span class="pdf-tc-tone pdf-tc-tone--${tone}">${escapeHtml(text)}</span>`;
 }
 
-function toneChip(text: string, tone: Tone): string {
-  return chip(text, `pdf-tc-chip--${tone}`);
-}
-
-/** Etiķete (mazie burti, pelēka) + vērtība (trekna) kompaktā 3 kolonnu režģī. */
-function factsGrid(rows: readonly ThecarapiPdfKv[], light = false): string {
+/** Dīlera «Transportlīdzekļa informācija» kv tabula (divas kolonnas). */
+function kvBlock(rows: readonly ThecarapiPdfKv[]): string {
   if (rows.length === 0) return "";
-  const cells = rows
-    .map(
-      (row) =>
-        `<div class="pdf-tc-fact"><p class="pdf-tc-fact__lab">${escapeHtml(row.label)}</p><p class="pdf-tc-fact__val${row.highlight ? " pdf-tc-warn" : ""}">${escapeHtml(row.value)}</p></div>`,
-    )
-    .join("");
-  return `<div class="pdf-tc-facts${light ? " pdf-tc-facts--light" : ""}">${cells}</div>`;
+  const table = buildPdfKvPairHtml(
+    rows.map((row) => ({
+      k: row.label,
+      v: row.value,
+      vHtml: row.highlight ? toneText(row.value, "alert") : undefined,
+    })),
+  );
+  return `<div class="pdf-dealer-vehicle-kv">${table}</div>`;
 }
 
-function gridTable(grid: ThecarapiPdfGrid | null): string {
+/** Sadaļa ar dīlera virsraksta + tabulas «keep-head» uzvedību. */
+function kvSection(title: string, rows: readonly ThecarapiPdfKv[]): string {
+  const body = kvBlock(rows);
+  if (!body) return "";
+  // Īsa tabula paliek kopā ar virsrakstu; gara drīkst plūst pāri lapai (citādi paliek tukša puslapa).
+  return rows.length <= 8 ? `<div class="pdf-keep-head">${subhead(title)}${body}</div>` : `${subhead(title)}${body}`;
+}
+
+function gridTable(grid: ThecarapiPdfGrid | null, toneCol?: (col: string) => boolean): string {
   if (!grid || grid.rows.length === 0) return "";
   const keep = grid.columns.map((_, i) => i === 0 || grid.rows.some((r) => (r[i] ?? "").trim()));
   const head = grid.columns
@@ -67,16 +71,27 @@ function gridTable(grid: ThecarapiPdfGrid | null): string {
     .map((h) => `<th>${escapeHtml(h)}</th>`)
     .join("");
   const body = grid.rows
-    .map((r) => `<tr>${r.filter((_, i) => keep[i]).map((c) => `<td>${escapeHtml(c.trim() || "-")}</td>`).join("")}</tr>`)
+    .map(
+      (r) =>
+        `<tr>${r
+          .map((c, i) => ({ c: c.trim(), i }))
+          .filter(({ i }) => keep[i])
+          .map(({ c, i }) => {
+            if (!c) return "<td>-</td>";
+            const tone = toneCol?.(grid.columns[i] ?? "") ? statusTone(c) : "neutral";
+            return `<td>${toneText(c, tone)}</td>`;
+          })
+          .join("")}</tr>`,
+    )
     .join("");
   return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log pdf-tc-grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
-const KM_RE = /^([\d\s ]+km)\s*(?:\((.+)\))?$/;
+const KM_RE = /^([\d\s ]+km)\s*(?:\((.+)\))?$/;
 
-function kmParts(value: string): { main: string; note: string } {
+function kmMain(value: string): string {
   const m = KM_RE.exec(value.trim());
-  return m ? { main: m[1]!.trim(), note: (m[2] ?? "").trim() } : { main: value, note: "" };
+  return m ? m[1]!.trim() : value;
 }
 
 function findKv(rows: readonly ThecarapiPdfKv[], label: RegExp): ThecarapiPdfKv | undefined {
@@ -95,11 +110,6 @@ function damageCount(model: ThecarapiPdfModel): number | null {
   return hasInspection ? 0 : null;
 }
 
-function damageTone(n: number): Tone {
-  if (n <= 0) return "ok";
-  return n <= 3 ? "warn" : "alert";
-}
-
 function auctionDay(model: ThecarapiPdfModel): string {
   const end = findKv(model.dates, /beigas|izsoles datums/i)?.value ?? "";
   const fromDates = /^\d{2}\.\d{2}\.\d{4}/.exec(end)?.[0];
@@ -107,58 +117,32 @@ function auctionDay(model: ThecarapiPdfModel): string {
   return /\b\d{2}\.\d{2}\.\d{4}\b/.exec(model.header)?.[0] ?? "";
 }
 
-/** 1. Galvenie fakti: 4 kartītes kā atskaites kopsavilkumā. */
-function keyTiles(model: ThecarapiPdfModel): string {
-  const tiles: { label: string; value: string; tone: Tone; note?: string }[] = [];
+/** Izsoles galvene dīlera vāka stilā: platforma kā virsraksts, pārējais meta rindā. */
+function coverHtml(model: ThecarapiPdfModel): string {
+  const [title, ...meta] = model.header.split(" · ");
+  const metaHtml = meta.length ? `<p class="pdf-dealer-cover__meta">${escapeHtml(meta.join(" · "))}</p>` : "";
+  return `<div class="pdf-dealer-cover pdf-tc-cover"><p class="pdf-dealer-cover__kicker">Izsoles dati</p><h3 class="pdf-dealer-cover__model">${escapeHtml(title || "Izsole")}</h3>${metaHtml}</div>`;
+}
+
+/** Galvenie fakti - dīlera kopsavilkuma josla (4 šūnas). */
+function summaryHtml(model: ThecarapiPdfModel): string {
+  const cells: { k: string; v: string }[] = [];
   const price = findKv(model.prices, /^Noslēguma cena$/) ?? findKv(model.prices, /^Pēdējā cena$/);
-  if (price) tiles.push({ label: price.label, value: price.value, tone: "neutral" });
+  if (price) cells.push({ k: price.label, v: price.value });
   const odo = findKv(model.mileage, /^Nobraukums$/);
-  if (odo) tiles.push({ label: "Nobraukums", value: kmParts(odo.value).main, tone: "neutral" });
+  if (odo) cells.push({ k: "Nobraukums", v: kmMain(odo.value) });
   const day = auctionDay(model);
-  if (day) tiles.push({ label: "Izsoles datums", value: day, tone: "neutral" });
+  if (day) cells.push({ k: "Izsoles datums", v: day });
   const n = damageCount(model);
-  if (n != null) tiles.push({ label: "Bojājumi", value: String(n), tone: damageTone(n) });
-  if (tiles.length === 0) return "";
-  const items = tiles
-    .map(
-      (t) =>
-        `<li class="pdf-summary-tile pdf-summary-tile--${t.tone === "neutral" ? "info" : t.tone} pdf-tc-tile"><p class="pdf-summary-tile__label">${escapeHtml(t.label)}</p><p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p></li>`,
-    )
-    .join("");
-  return `<ul class="pdf-summary-tiles pdf-tc-tiles">${items}</ul>`;
+  if (n != null) cells.push({ k: "Bojājumi", v: String(n) });
+  if (cells.length === 0) return "";
+  return `<div class="pdf-svc-summary pdf-tc-summary">${cells
+    .map((c) => `<div class="pdf-svc-summary__cell"><span>${escapeHtml(c.k)}</span><b>${escapeHtml(c.v)}</b></div>`)
+    .join("")}</div>`;
 }
 
-const LADDER_ORDER = ["Sākuma cena", "Pārdevēja prasītā cena", "Pēdējā cena", "Noslēguma cena"];
-
-/** 3. Cenu kāpnes: Sākuma -> Pārdevēja prasītā -> Noslēguma (izcelta); pārējās cenas blakus. */
-function priceLadder(rows: readonly ThecarapiPdfKv[]): string {
-  if (rows.length === 0) return "";
-  const ladder = LADDER_ORDER.map((l) => rows.find((r) => r.label === l)).filter((r): r is ThecarapiPdfKv => Boolean(r));
-  const rest = rows.filter((r) => !LADDER_ORDER.includes(r.label));
-  const step = (r: ThecarapiPdfKv, final: boolean): string =>
-    `<div class="pdf-tc-price${final ? " pdf-tc-price--final" : ""}"><p class="pdf-tc-price__lab">${escapeHtml(r.label)}</p><p class="pdf-tc-price__val">${escapeHtml(r.value)}</p></div>`;
-  const ladderHtml = ladder
-    .map((r, i) => step(r, i === ladder.length - 1 && ladder.length > 1))
-    .join(`<span class="pdf-tc-arrow" aria-hidden="true">→</span>`);
-  const restHtml = rest.map((r) => step(r, false)).join("");
-  return `<div class="pdf-tc-ladder">${ladderHtml}${restHtml}</div>`;
-}
-
-/** 4. Nobraukums: vērtība + avota piezīme kā čips. */
-function mileageList(rows: readonly ThecarapiPdfKv[]): string {
-  if (rows.length === 0) return "";
-  const items = rows
-    .map((row) => {
-      const { main, note } = kmParts(row.value);
-      const head = row.label === "Nobraukums" ? "" : `<p class="pdf-tc-fact__lab">${escapeHtml(row.label)}</p>`;
-      return `<div class="pdf-tc-odo">${head}<p class="pdf-tc-odo__val"><strong>${escapeHtml(main)}</strong>${note ? ` ${chip(note)}` : ""}</p></div>`;
-    })
-    .join("");
-  return `<div class="pdf-tc-odos">${items}</div>`;
-}
-
-/** 5. Bojājumi pa zonām: zonas kartīte ar čipiem; kopskaits kā žetons. */
-function damageCards(model: ThecarapiPdfModel): string {
+/** Bojājumi pa zonām: katra zona kā dīlera «Lielie darbi» kartīte. */
+function damageZones(model: ThecarapiPdfModel): string {
   const rows = model.damages;
   if (rows.length === 0) return "";
   const zones: { zone: string; items: ThecarapiPdfDamage[] }[] = [];
@@ -172,23 +156,19 @@ function damageCards(model: ThecarapiPdfModel): string {
     .map(({ zone, items }) => {
       const lines = items
         .map((d) => {
-          const chips = [
-            d.type ? toneChip(d.type, "alert") : "",
-            d.size ? chip(d.size) : "",
-            d.quantity ? chip(`${d.quantity} gab.`) : "",
-            d.repair ? chip(`Remonts: ${d.repair}`) : "",
-          ].join("");
-          const notes = d.notes ? `<p class="pdf-tc-dmg__note">${escapeHtml(d.notes)}</p>` : "";
-          return `<div class="pdf-tc-dmg__line"><p class="pdf-tc-dmg__part">${escapeHtml(d.part || "-")}</p><p class="pdf-tc-chips">${chips}</p>${notes}</div>`;
+          const meta = [d.type, d.size, d.quantity ? `${d.quantity} gab.` : "", d.repair ? `Remonts: ${d.repair}` : "", d.notes]
+            .filter(Boolean)
+            .join(" · ");
+          return `<li class="pdf-svc-major__item"><b>${escapeHtml(d.part || "-")}</b><span class="pdf-svc-major__meta">${escapeHtml(meta)}</span></li>`;
         })
         .join("");
-      return `<div class="pdf-tc-card pdf-tc-dmg"><p class="pdf-tc-card__top">${chip(zone, "pdf-tc-chip--zone")}</p>${lines}</div>`;
+      return `<aside class="pdf-svc-major pdf-tc-zone"><p class="pdf-subhead">${escapeHtml(zone)}</p><ul class="pdf-svc-major__list">${lines}</ul></aside>`;
     })
     .join("");
-  return `<div class="pdf-tc-cards">${cards}</div>`;
+  return `<div class="pdf-tc-cols">${cards}</div>`;
 }
 
-/** 6. Lakas biezums: ≤160 rūpnīcas, 161-300 iespējama pārkrāsošana, >300 iespējams špaktelis. */
+/** Lakas biezums: ≤160 rūpnīcas, 161-300 iespējama pārkrāsošana, >300 iespējams špaktelis. */
 export function thecarapiPaintTone(value: string): Tone {
   const n = Number.parseFloat(value.replace(",", "."));
   if (!Number.isFinite(n)) return "neutral";
@@ -196,119 +176,78 @@ export function thecarapiPaintTone(value: string): Tone {
   return n <= 300 ? "warn" : "alert";
 }
 
-function paintGrid(rows: readonly ThecarapiPdfKv[]): string {
+function paintBlock(rows: readonly ThecarapiPdfKv[]): string {
   if (rows.length === 0) return "";
-  const cells = rows
-    .map((row) => {
-      const tone = thecarapiPaintTone(row.value);
+  const table = buildPdfKvPairHtml(
+    rows.map((row) => {
       const unit = /^\d+([.,]\d+)?$/.test(row.value.trim()) ? " µm" : "";
-      return `<div class="pdf-tc-paint__cell"><p class="pdf-tc-paint__lab">${escapeHtml(row.label)}</p>${toneChip(`${row.value}${unit}`, tone)}</div>`;
-    })
-    .join("");
-  const legend = `<p class="pdf-tc-legend"><span class="pdf-tc-dot pdf-tc-dot--ok"></span>≤160 µm rūpnīcas krāsojums<span class="pdf-tc-dot pdf-tc-dot--warn"></span>161-300 µm iespējama pārkrāsošana<span class="pdf-tc-dot pdf-tc-dot--alert"></span>&gt;300 µm iespējams špaktelis</p>`;
-  return `<div class="pdf-tc-paint">${cells}</div>${legend}`;
+      const v = `${row.value}${unit}`;
+      return { k: row.label, v, vHtml: toneText(v, thecarapiPaintTone(row.value)) };
+    }),
+  );
+  const legend = `<p class="pdf-dealer-cover-note pdf-tc-legend">${toneText("≤160 µm rūpnīcas krāsojums", "ok")} · ${toneText("161-300 µm iespējama pārkrāsošana", "warn")} · ${toneText(">300 µm iespējams špaktelis", "alert")}</p>`;
+  return `<div class="pdf-dealer-vehicle-kv">${table}</div>${legend}`;
 }
-
-/** Kolonnas nosaukums -> īss priedēklis riteņa kartītē (bez tā vērtība nav saprotama). */
-const WHEEL_PREFIX: Record<string, string> = {
-  "Kluču biezums": "kluči",
-  "Diska stāvoklis": "disks",
-  Protektors: "protektors",
-  DOT: "DOT",
-  Izmērs: "",
-  Riepa: "",
-  Tips: "",
-  Stāvoklis: "",
-  Disks: "",
-};
 
 function statusTone(value: string): Tone {
   const v = value.trim().toLowerCase();
-  if (!v) return "neutral";
+  if (!v || /nav izmērām|nav zinām|nav pieejam/.test(v)) return "neutral";
   if (/^(ok|labs|laba|labā|kā jauna|jā)$/.test(v)) return "ok";
   if (/bojāt|nomain|kritisk|slikt|nolietot|nav ok|defekt|trūkst/.test(v)) return "alert";
   return "warn";
 }
 
-/** 7. Riteņu kartītes (bremzes, riepas): nosaukums + statusa čips + vērtības vienā rindā. */
-function wheelCards(grid: ThecarapiPdfGrid | null): string {
-  if (!grid || grid.rows.length === 0) return "";
-  const statusIdx = grid.columns.findIndex((c) => /novērtējums|statuss/i.test(c));
-  const cards = grid.rows
-    .map((row) => {
-      const name = row[0]?.trim() || "-";
-      const status = statusIdx > 0 ? (row[statusIdx] ?? "").trim() : "";
-      const bits = row
-        .map((cell, i) => ({ cell: cell.trim(), col: grid.columns[i] ?? "" }))
-        .filter((x, i) => i > 0 && i !== statusIdx && x.cell)
-        .map(({ cell, col }) => {
-          const prefix = col in WHEEL_PREFIX ? WHEEL_PREFIX[col] : col.toLowerCase();
-          return prefix ? `${prefix} ${cell}` : cell;
-        });
-      const statusHtml = status ? toneChip(status, statusTone(status)) : "";
-      return `<div class="pdf-tc-card pdf-tc-wheel"><p class="pdf-tc-card__top"><span class="pdf-tc-wheel__name">${escapeHtml(name)}</span>${statusHtml}</p><p class="pdf-tc-wheel__vals">${escapeHtml(bits.join(" · "))}</p></div>`;
-    })
-    .join("");
-  return `<div class="pdf-tc-wheels">${cards}</div>`;
+const STATUS_COL = (col: string): boolean => /novērtējums|statuss|stāvoklis/i.test(col);
+
+/** «Pēdējais serviss X pie Y km · Servisa grāmata: papīra» -> kv rindas. */
+function serviceSummaryRows(summary: string): ThecarapiPdfKv[] {
+  if (!summary.trim()) return [];
+  return summary.split(" · ").map((part) => {
+    const t = part.trim();
+    const colon = t.indexOf(": ");
+    if (colon > 0) return { label: t.slice(0, colon), value: t.slice(colon + 2) };
+    const m = /^(Pēdējais serviss)\s+(.+)$/.exec(t);
+    return m ? { label: m[1]!, value: m[2]! } : { label: "Serviss", value: t };
+  });
 }
 
-/** 8. Aprīkojums: grupas ar čipu mākoņiem. */
-function equipmentClouds(model: ThecarapiPdfModel): string {
-  if (model.equipment.length === 0) return "";
-  const groups = model.equipment
-    .map(
-      (g) =>
-        `<div class="pdf-tc-eq__group"><p class="pdf-tc-fact__lab">${escapeHtml(g.group)}</p><ul class="pdf-incident-chips pdf-tc-eq__chips">${g.items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul></div>`,
-    )
-    .join("");
-  return `<div class="pdf-tc-eq">${groups}</div>`;
-}
-
-/** Viena izsole: galvene, galvenie fakti, sadaļas spec 3.1-3.11 secībā; tukšās izlaistas. */
+/**
+ * Viena izsole dīlera sadaļas vizuālajā valodā: vāks, kopsavilkuma josla, kv tabulas, «Lielie darbi» kartītes.
+ * Aprīkojums netiek drukāts (Nils 19.11) - modelī tas paliek, bet PDF nav.
+ */
 export function renderThecarapiPdfModelHtml(model: ThecarapiPdfModel): string {
-  const blocks: string[] = [`<p class="pdf-tc-head">${escapeHtml(model.header)}</p>`, keyTiles(model)];
-  const section = (title: string, html: string, extra = ""): string =>
-    html ? `<div class="pdf-tc-sec${extra ? ` ${extra}` : ""}">${subhead(title)}${html}</div>` : "";
+  const blocks: string[] = [`<div class="pdf-tc-intro">${coverHtml(model)}${summaryHtml(model)}</div>`];
   const push = (html: string): void => {
     if (html) blocks.push(html);
   };
 
-  push(section("Pamatdati", factsGrid(model.basics)));
-  const prices = section("Cenas", priceLadder(model.prices));
-  const odo = section("Nobraukums", mileageList(model.mileage));
-  if (prices && odo) push(`<div class="pdf-tc-row">${prices}${odo}</div>`);
-  else push(prices || odo);
-  push(section("Datumi", factsGrid(model.dates, true)));
+  push(kvSection("Pamatdati", model.basics));
+  push(kvSection("Cenas", model.prices));
+  push(kvSection("Nobraukums", model.mileage));
+  push(kvSection("Datumi", model.dates));
 
-  const damage: string[] = [];
-  const n = damageCount(model);
-  if (model.damages.length) {
-    const total = model.damagesTotal ?? n;
-    const badge = total != null ? `<p class="pdf-tc-total">${toneChip(`Kopā bojājumi: ${total}`, damageTone(total))}</p>` : "";
-    damage.push(badge, damageCards(model));
+  const zones = damageZones(model);
+  if (zones) push(`${subhead("Bojājumi")}${zones}`);
+  const paint = paintBlock(model.paint);
+  if (paint) push(`<div class="pdf-keep-head">${subhead("Lakas biezums")}${paint}</div>`);
+  if (model.brakes?.rows.length) push(`<div class="pdf-keep-head">${subhead("Bremzes")}${gridTable(model.brakes, STATUS_COL)}</div>`);
+
+  for (const set of model.wheels) {
+    const table = gridTable(set.grid, STATUS_COL);
+    if (table) push(`<div class="pdf-keep-head">${subhead(`Riepas un diski - ${set.title}`)}${table}</div>`);
   }
-  if (model.paint.length) damage.push(minihead("Lakas biezums, µm"), paintGrid(model.paint));
-  if (model.brakes) damage.push(minihead("Bremzes"), wheelCards(model.brakes));
-  push(section("Bojājumi", damage.join("")));
 
-  push(section("Aprīkojums", equipmentClouds(model)));
+  const serviceRows = [...serviceSummaryRows(model.service.summary), ...model.service.rows];
+  const service = [kvBlock(serviceRows), gridTable(model.service.entries)].join("");
+  if (service) push(`${subhead("Servisa vēsture")}${service}`);
+  if (model.documents.length) {
+    push(
+      `<div class="pdf-keep-head">${subhead("Dokumenti")}<ul class="pdf-dealer-eq">${model.documents.map((d) => `<li>${escapeHtml(d)}</li>`).join("")}</ul></div>`,
+    );
+  }
 
-  push(section("Riepas un diski", model.wheels.map((set) => minihead(set.title) + wheelCards(set.grid)).join("")));
-
-  const summaryChips = model.service.summary
-    ? `<p class="pdf-tc-chips">${model.service.summary
-        .split(" · ")
-        .map((s) => chip(s.trim()))
-        .join("")}</p>`
-    : "";
-  const docs = model.documents.length
-    ? `<div class="pdf-tc-docs"><p class="pdf-tc-fact__lab">Dokumenti</p><p class="pdf-tc-chips">${model.documents.map((d) => chip(d)).join("")}</p></div>`
-    : "";
-  const service = [summaryChips, factsGrid(model.service.rows, true), gridTable(model.service.entries), docs].join("");
-  push(section("Servisa vēsture", service));
-
-  push(section("Citi dati", factsGrid(model.other, true)));
-  return `<section class="pdf-tc-lot">${blocks.join("\n")}</section>`;
+  push(kvSection("Citi dati", model.other));
+  return `<section class="pdf-tc-lot">${blocks.filter(Boolean).join("\n")}</section>`;
 }
 
 function recordHasData(record: ThecarapiAdminRecord): boolean {

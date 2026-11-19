@@ -60,7 +60,8 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     expect(row?.rawDetail).toBeTruthy();
 
     const html = buildThecarapiRecordsPdfHtml(records);
-    expect(html).toContain("AUTO1 · Izsole 1326383403 · 09.10.2026");
+    expect(html).toContain('<h3 class="pdf-dealer-cover__model">AUTO1</h3>');
+    expect(html).toContain("Izsole 1326383403 · 09.10.2026");
     expect(html).toContain("Pamatdati");
     expect(html).toContain("AUTO1 GmbH");
     expect(html).toContain("Berlin");
@@ -73,8 +74,8 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     expect(html).toContain("Priekšējais bamperis");
     expect(html).toContain("skrāpējums");
     expect(html).toContain("Kreisās durvis");
-    expect(html).toContain("Aprīkojums");
-    expect(html).toContain("Navigācija");
+    expect(html).not.toContain("Aprīkojums");
+    expect(html).not.toContain("Navigācija");
     expect(html).toContain("Servisa vēsture");
     expect(html).toContain("Eļļa mainīta 2026-09");
     expect(html).toContain("Citi dati");

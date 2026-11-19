@@ -34,15 +34,22 @@ export type ThecarapiDetailParsed = {
   equipment: string[];
 };
 
+/** Platformas pēc TheCarApi `/api/v1/sites` (publiskā dokumentācija 11.2026). */
 const SITE_LABELS: Record<string, string> = {
   auto1: "AUTO1",
   openlane: "Openlane",
   bca: "BCA",
   autorola: "Autorola",
-  dealercars: "dealercars",
+  dealercars: "Dealercars",
   encar: "Encar",
   korea: "Encar",
   ecarstrade: "eCarsTrade",
+  copart: "Copart",
+  schadeautos: "Schadeautos",
+  kbchachacha: "KB ChaChaCha",
+  koreaauctions: "Korea Auctions",
+  japan: "Japānas izsoles",
+  guazi: "Guazi",
 };
 
 function asRecord(raw: unknown): Record<string, unknown> | null {
@@ -66,9 +73,15 @@ export const THECARAPI_DETAIL_WRAPPERS = ["auction", "archive", "archived_auctio
 
 const LOT_HINT_KEYS = ["site_name", "site", "auction_id", "id", "images", "car_identification", "ImageUrls", "image_urls"];
 
+/** Openlane v1: `auction` ir tikai bilžu konteiners (`{ extracted_fields: { images } }`), nevis lots. */
+function isImageContainer(rec: Record<string, unknown>): boolean {
+  const keys = Object.keys(rec);
+  return keys.length > 0 && keys.every((k) => /^(extracted_fields|images|image_urls|gallery)$/i.test(k));
+}
+
 function detailWrapper(row: Record<string, unknown>): Record<string, unknown> | null {
   const outer = asRecord(row.auction);
-  if (outer) return outer;
+  if (outer && !(isImageContainer(outer) && (row.site != null || row.site_name != null || row.id != null))) return outer;
   // Citi ietinumi tikai tad, ja pati rinda nav lots (citādi `data`/`result` var būt parasts lauks).
   if (row.site_name != null || row.site != null || row.auction_id != null) return null;
   for (const key of THECARAPI_DETAIL_WRAPPERS) {
