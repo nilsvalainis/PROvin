@@ -3,7 +3,7 @@
 Katru dienu 03:30 Europe/Riga (atkārtojumi ik 20 min līdz 05:50) skripts **tikai lasa** CSDD tirdzniecības reģistra
 (`ows.csdd.gov.lv:7775`) pieņemto auto sarakstu (SIA ĪRISS un SIA DZINTARZEME AUTO), uzbūvē JSON
 `iriss-csdd-tirdzn-registrs/v1` (tā pati shēma kā Aivara rokas failiem, `docs/csdd-registrs-imports.md`) ar `owner` un
-`snapshot` un sūta to uz `POST https://provin.lv/api/iriss/csdd-registrs`. Autoparks atjaunojas pēc VIN.
+`snapshot` un sūta to uz `POST https://www.provin.lv/api/iriss/csdd-registrs`. Autoparks atjaunojas pēc VIN.
 
 | Fails | Kas |
 | --- | --- |
