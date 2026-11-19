@@ -9,6 +9,7 @@ import {
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
 import {
+  dealerMajorWorkCategory,
   hasAnyMajorAssemblyRepair,
   hasNonCampaignRepairAction,
   isCheckNoFaultWork,
@@ -17,6 +18,8 @@ import {
   isMajorAssemblyRepairWork,
   isRoutineMaintenanceWork,
   MAJOR_ASSEMBLY_SPECS,
+  majorAssemblyLabel,
+  type DealerMajorWorkCategory,
   type DealerMajorWorkHit,
 } from "@/lib/dealer-major-works";
 import {
@@ -216,9 +219,11 @@ function automaticMajorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
   const out: DealerMajorWorkHit[] = [];
   const seen = new Set<string>();
   for (const spec of MAJOR_ASSEMBLY_SPECS) {
+    // Mehāniskais mezgls: pirmais ieraksts. Negadījumi: katrs atsevišķi (katrs ir svarīgs).
+    const everyFact = dealerMajorWorkCategory(spec.id) === "accident";
     for (const fact of facts.rows) {
       if (!isMajorAssemblyRepairWork(factSearchText(fact), spec.id)) continue;
-      if (seen.has(spec.id)) continue;
+      if (!everyFact && seen.has(spec.id)) continue;
       seen.add(spec.id);
       out.push({
         id: spec.id,
@@ -227,7 +232,7 @@ function automaticMajorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
         date: fact.date,
         km: factKmLabel(fact),
       });
-      break;
+      if (!everyFact) break;
     }
   }
   return out;
@@ -283,7 +288,7 @@ export function buildDealerVisitSummaryHtml(
   const campaigns = translateClientReportYesNo(summary.campaignsDone, lang);
   const major =
     summary.majorWorks.length > 0
-      ? summary.majorWorks.map((w) => t(w.label)).join(", ")
+      ? [...new Set(summary.majorWorks.map((w) => t(w.label)))].join(", ")
       : t("Nav fiksēts");
   const cells: { k: string; v: string }[] = [
     { k: t("Vizītes"), v: String(summary.visitCount) },
@@ -315,13 +320,83 @@ export function buildDealerMajorWorksHtml(
   const items = hits
     .map((w) => {
       const meta = [w.date, w.km].filter(Boolean).join(" · ");
-      return `<li class="pdf-svc-major__item"><b>${escapeHtml(t(w.label))}</b><span class="pdf-svc-major__meta">${escapeHtml(meta)}</span></li>`;
+      const cat = dealerMajorWorkCategory(w.id);
+      return `<li class="pdf-svc-major__item pdf-svc-major__item--${cat}"><b>${escapeHtml(t(w.label))}</b><span class="pdf-svc-major__meta">${escapeHtml(meta)}</span></li>`;
     })
     .join("");
   return `<aside class="pdf-svc-major">
     <p class="pdf-subhead">${escapeHtml(t("Lielie darbi"))}</p>
     <ul class="pdf-svc-major__list">${items}</ul>
   </aside>`;
+}
+
+/** Servisa vizītes rindas izcēlums: tie paši Lielie darbi (ar operatora labojumiem). */
+export type DealerVisitMajorMark = {
+  id: string;
+  label: string;
+  category: DealerMajorWorkCategory;
+};
+
+/** Īsā čipa etiķete vizītē (pilnā kategorija paliek Lielajos darbos). */
+export const DEALER_ACCIDENT_CHIP_LABEL = "Bojājuma remonts";
+
+type MajorHitAnchor = {
+  hit: DealerMajorWorkHit;
+  date: string;
+  km: number | null;
+};
+
+function majorHitAnchors(hits: readonly DealerMajorWorkHit[], facts: DealerFacts): MajorHitAnchor[] {
+  const byId = new Map(facts.rows.map((f) => [f.id, f]));
+  return hits.map((hit) => {
+    const fact = byId.get(hit.factId);
+    if (fact) return { hit, date: fact.date.trim(), km: fact.odometerKm };
+    // Operatora pievienots ieraksts bez dīlera rindas: piesaiste pēc datuma / km.
+    return { hit, date: hit.date.trim(), km: parseKm(hit.km) };
+  });
+}
+
+function anchorMatchesRow(anchor: MajorHitAnchor, row: AutoRecordsServiceWorkRow): boolean {
+  const rowKm = parseKm(row.odometer);
+  const rowDate = row.date.trim();
+  if (anchor.km != null && rowKm != null) {
+    // Vienāds km = tā pati vizīte (rindas apvieno pēc odometra).
+    if (anchor.km === rowKm) return true;
+    // Tas pats datums, tuvs km (vienas dienas vizītes apvienotas).
+    if (anchor.date && anchor.date === rowDate) return Math.abs(anchor.km - rowKm) <= 1000;
+    return false;
+  }
+  return Boolean(anchor.date) && anchor.date === rowDate;
+}
+
+/**
+ * Katrai servisa vizītei atdod tās Lielo darbu atzīmes.
+ * Ievēro operatora slēptos / pievienotos ierakstus (tie paši trāpījumi kā kopsavilkumā).
+ */
+export function dealerVisitMajorMarker(
+  facts: DealerFacts,
+  overrides?: readonly DealerMajorWorkOverride[] | null,
+): (row: AutoRecordsServiceWorkRow) => DealerVisitMajorMark[] {
+  const anchors = majorHitAnchors(collectDealerMajorWorkHits(facts, overrides), facts);
+  return (row) => {
+    if (anchors.length === 0) return [];
+    const out: DealerVisitMajorMark[] = [];
+    const seen = new Set<string>();
+    for (const a of anchors) {
+      if (!anchorMatchesRow(a, row)) continue;
+      const key = `${a.hit.id}|${a.hit.label}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const category = dealerMajorWorkCategory(a.hit.id);
+      const label =
+        category === "accident" && a.hit.label === majorAssemblyLabel("accident_repair")
+          ? DEALER_ACCIDENT_CHIP_LABEL
+          : a.hit.label;
+      out.push({ id: a.hit.id, label, category });
+    }
+    // Negadījums pirmais - tas ir svarīgākais akcents.
+    return out.sort((x, y) => (x.category === y.category ? 0 : x.category === "accident" ? -1 : 1));
+  };
 }
 
 export function buildDealerGapMarkerHtml(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {

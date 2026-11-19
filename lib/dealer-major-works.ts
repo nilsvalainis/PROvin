@@ -12,6 +12,7 @@
 import { foldOilWorkText, isEngineOilChangeWork } from "@/lib/oil-change-intervals";
 
 export type DealerMajorAssemblyId =
+  | "accident_repair"
   | "engine"
   | "timing_chain"
   | "timing_belt"
@@ -24,6 +25,8 @@ export type DealerMajorAssemblyId =
   | "dual_mass_flywheel"
   | "turbo"
   | "body_glass";
+
+export type DealerMajorWorkCategory = "mechanical" | "accident";
 
 export type DealerMajorAssemblySpec = {
   id: DealerMajorAssemblyId;
@@ -40,6 +43,7 @@ export type DealerMajorWorkHit = {
 
 /** Kārtība PDF kopsavilkumā. Etiķetes ir LV atslēgas `client-report-i18n`. */
 export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
+  { id: "accident_repair", label: "Negadījuma / virsbūves remonts" },
   { id: "engine", label: "Dzinējs" },
   { id: "timing_chain", label: "Sadales ķēde" },
   { id: "timing_belt", label: "Zobsiksna" },
@@ -54,7 +58,38 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "body_glass", label: "Virsbūve / stikls" },
 ];
 
+/**
+ * Negadījums / apdrošināšanas gadījums: pats vārds nozīmē bojājuma novēršanu.
+ * Folded NFKD (bez diakritikas, mazie burti, ß -> ss).
+ */
+const ACCIDENT_EVENT_RE =
+  /unfall\p{L}*|accident\p{L}*|collision\p{L}*|\bcrash\p{L}*|kollision\p{L}*|(?:pec|после)\s+(?:avarij|авари)\p{L}*|avarij\p{L}*\s+(?:remont|bojajum|sek|gadijum)|negadijum\p{L}*|sadursm\p{L}*|дтп|авари(?:я|и|ю|ей)(?!\p{L})|столкновен\p{L}*|versicherungs(?:schaden|fall|reparatur)|haftpflichtschaden|kaskoschaden|insurance\s+(?:repair|claim|job|damage|case)|apdrosinasan\p{L}*\s+(?:remont|gadijum|atlidzib|lieta)|страхов\p{L}*\s+(?:случа|ремонт)|havarie|schadensfall/u;
+
+/** Drošības sistēmas / sensori / vadības bloki ar „collision/Unfall/Karosserie” vārdu - nav bojājums. */
+const ACCIDENT_SYSTEM_NOT_DAMAGE_RE =
+  /(?:collision|crash|unfall|accident|kollision)\p{L}*[\s-]*(?:warn|avoid|mitigat|sensor|detect|alert|assist|preven|data|meld|schutz|camera|radar|kalibr|calibr)|pre[\s-]?(?:collision|crash)|notbrems|notruf|e[\s-]?call|karosser\p{L}*[\s-]*(?:steuer|elektr|modul|computer|control)|body\s+(?:control|module|computer|electronic)|bcm\b/u;
+
+/** Virsbūves remonts / krāsošana pēc bojājuma (bez negadījuma vārda). */
+const BODY_DAMAGE_REPAIR_RE =
+  /karosser\p{L}*|carrosserie\p{L}*|body\s*(?:shop|work|repair)|bodywork|panel\s+beat\p{L}*|virsbuv\p{L}*\s+remont|remont\p{L}*\s+virsbuv|kuzov\p{L}*\s+remont|remont\p{L}*\s+kuzov|кузовн\p{L}*\s+ремонт|ремонт\p{L}*\s+кузов|кузовн\p{L}*\s+работ|(?:paint|respray)\p{L}*.{0,40}(?:after|due\s+to|following)\s+(?:damage|impact)|damage\s+repair|repair\s+of\s+(?:the\s+)?damage|(?:par)?kraso\p{L}*.{0,40}pec\s+bojajum|bojajum\p{L}*\s+(?:novers|remont)|lackschaden|lackierung\s+nach\s+schaden|schadensbehebung|schaden\s+(?:behoben|instandgesetzt|repariert)|покраск\p{L}*.{0,40}после\s+(?:повреждени|удар)|устранени\p{L}*\s+повреждени/u;
+
+/** „Bez negadījumiem” / „unfallfrei” - nav remonts. */
+const ACCIDENT_NEGATION_RE =
+  /unfallfrei|kein\p{L}*\s+unfall|ohne\s+unfall|accident[\s-]?free|no\s+(?:accident|collision|damage)|not\s+involved\s+in|bez\s+(?:avarij|negadijum|bojajum)|nav\s+(?:bijis\s+)?(?:avarij|negadijum)|без\s+(?:дтп|авари|повреждени)|не\s+(?:было|участвовал)/u;
+
+/** Tikai pārbaude / nolasījums (piem. BMW „Accident check”). */
+const BODY_CHECK_RE =
+  /\bcheck\p{L}*|prufung|gepruft|kontrolle|durchsicht|inspection|inspektion|parbaud\p{L}*|проверк\p{L}*|осмотр|diagnos\p{L}*|диагност\p{L}*|vermessung|gutachten|appraisal|estimate|kostenvoranschlag|tames\p{L}*|смет/u;
+
+/** Mazgāšana / pulēšana / rūsas garantijas pārbaude - nav bojājuma remonts. */
+const BODY_ROUTINE_RE =
+  /garantie\p{L}*|warranty|garantij\p{L}*|wasch\p{L}*|wash\p{L}*|mazgas\p{L}*|мойк\p{L}*|polier\p{L}*|polish\p{L}*|pulej\p{L}*|aufbereit\p{L}*|detailing|valet|konservier\p{L}*|hohlraum|rust|rost\p{L}*|corros\p{L}*|korozij\p{L}*|коррози\p{L}*/u;
+
+const BODY_REPAIR_ACTION_RE =
+  /instandsetz\p{L}*|instandgesetz\p{L}*|reparatur|repar\p{L}*|repair\p{L}*|lackier\p{L}*|lackiert|kraso\p{L}*|parkras\p{L}*|krasoj\p{L}*|покраск\p{L}*|ремонт\p{L}*|remont\p{L}*|respray|paint\p{L}*|richt\p{L}*|ausbeul\p{L}*|beseitig\p{L}*|behob\p{L}*|novers\p{L}*|устранени\p{L}*/u;
+
 const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
+  accident_repair: ACCIDENT_EVENT_RE,
   engine:
     /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmoteur\b|\bmotore\b|\bmotor\b/u,
   timing_chain:
@@ -282,8 +317,50 @@ function isEngineAncillaryNotUnit(folded: string): boolean {
   return isHoodPanelWork(folded);
 }
 
+/**
+ * Negadījuma / virsbūves bojājuma remonts vienā klauzulā.
+ * Garantijas atsaukumi, pārbaudes, mazgāšana un „bez negadījumiem” neskaitās.
+ */
+function isAccidentRepairClause(folded: string): boolean {
+  if (isCampaignClause(folded) || isSoftwareClause(folded) || isCourtesyCarClause(folded)) return false;
+  ACCIDENT_NEGATION_RE.lastIndex = 0;
+  if (ACCIDENT_NEGATION_RE.test(folded)) return false;
+  ACCIDENT_SYSTEM_NOT_DAMAGE_RE.lastIndex = 0;
+  if (ACCIDENT_SYSTEM_NOT_DAMAGE_RE.test(folded)) return false;
+  ACCIDENT_EVENT_RE.lastIndex = 0;
+  const event = ACCIDENT_EVENT_RE.test(folded);
+  BODY_DAMAGE_REPAIR_RE.lastIndex = 0;
+  const bodyRepair = BODY_DAMAGE_REPAIR_RE.test(folded);
+  if (!event && !bodyRepair) return false;
+  BODY_REPAIR_ACTION_RE.lastIndex = 0;
+  const hasAction = BODY_REPAIR_ACTION_RE.test(folded) || hasUnitRepairVerb(folded);
+  BODY_CHECK_RE.lastIndex = 0;
+  if (BODY_CHECK_RE.test(folded) && !hasAction) return false;
+  if (!event) {
+    BODY_ROUTINE_RE.lastIndex = 0;
+    if (BODY_ROUTINE_RE.test(folded)) return false;
+  }
+  return true;
+}
+
+export function isAccidentRepairWork(works: string): boolean {
+  const folded = foldDealerWorkText(works);
+  if (!folded) return false;
+  return splitClauses(folded).some(isAccidentRepairClause);
+}
+
+export function dealerMajorWorkCategory(id: string): DealerMajorWorkCategory {
+  return id === "accident_repair" ? "accident" : "mechanical";
+}
+
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  if (assembly === "accident_repair") return isAccidentRepairClause(folded);
   if (assembly === "turbo" && isTurboOilProduct(folded)) return false;
+  if (assembly === "body_glass" && isAccidentRepairClause(folded)) {
+    // Negadījuma remonts ir sava kategorija; Virsbūve / stikls paliek tikai stikla vienības nomaiņai.
+    GLASS_UNIT_REPLACE_RE.lastIndex = 0;
+    if (!GLASS_UNIT_REPLACE_RE.test(folded)) return false;
+  }
   if (
     assembly === "body_glass" &&
     (isWasherFluid(folded) ||
@@ -440,6 +517,7 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   if (isSoftwareClause(foldedClause)) return false;
   if (isCourtesyCarClause(foldedClause)) return false;
   if (isComfortInteriorClause(foldedClause)) return false;
+  if (assembly === "accident_repair") return isAccidentRepairClause(foldedClause);
   if (assembly === "turbo" && isChargeAirMinor(foldedClause)) return false;
   if (assembly === "engine") return isEngineUnitReplacement(foldedClause);
   if (isMinorPartClause(foldedClause) && !MINOR_SKIP_EXCEPT.has(assembly)) {
