@@ -32,8 +32,9 @@ describe("CSDD nolasījuma laiks pie numura", () => {
     );
   });
 
-  it("vecs par 30 min, kļūda, VPN izslēgts vai nav nolasīts - stale", () => {
-    expect(csddPlateCheckText({ csddCheckedAt: "2026-11-19T09:29:00.000Z", csddCheckOk: true }, NOW).stale).toBe(true);
+  it("vecs par 90 min, kļūda, VPN izslēgts vai nav nolasīts - stale", () => {
+    expect(csddPlateCheckText({ csddCheckedAt: "2026-11-19T08:20:00.000Z", csddCheckOk: true }, NOW).stale).toBe(true);
+    expect(csddPlateCheckText({ csddCheckedAt: "2026-11-19T09:15:00.000Z", csddCheckOk: true }, NOW).stale).toBe(false);
     expect(csddPlateCheckText({ csddCheckedAt: "2026-11-19T09:58:00.000Z", csddCheckOk: false }, NOW).stale).toBe(true);
     expect(csddPlateCheckText({ csddCheckedAt: "2026-11-19T09:58:00.000Z", csddCheckOk: true }, NOW, { vpnDown: true }).stale).toBe(true);
     expect(csddPlateCheckText({}, NOW)).toEqual({ text: "Stāvoklis no CSDD nav nolasīts", stale: true });

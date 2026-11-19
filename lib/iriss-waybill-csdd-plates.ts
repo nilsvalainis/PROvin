@@ -35,7 +35,7 @@ export const CSDD_PLATES_FRESH_MS = 15 * 60 * 1000;
  * UI (19.11): pie numura «Stāvoklis no CSDD pirms N min»; vecāks par 30 min (vai kļūda / VPN izslēgts) - dzintara krāsā
  * «var būt novecojis». Aizņemtības un «Pārrakstīt» loģika paliek pie CSDD_PLATES_FRESH_MS (15 min).
  */
-export const CSDD_PLATES_UI_STALE_MS = 30 * 60 * 1000;
+export const CSDD_PLATES_UI_STALE_MS = 90 * 60 * 1000; // 19.11: periodiskā sync ik ~60-75 min - 30 min slieksnis dzeltētu gandrīz vienmēr
 const WAYBILL_NO_RE = /^P\d{5,6}$/;
 
 export function emptyCsddPlatesDoc(): CsddPlatesDoc {

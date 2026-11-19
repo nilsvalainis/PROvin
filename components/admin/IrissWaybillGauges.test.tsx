@@ -106,11 +106,11 @@ describe("Stāvoklis no CSDD pie numura (19.11)", () => {
     expect(html).not.toContain('data-stale="1"');
   });
 
-  it("vecāks par 30 min - «var būt novecojis» un iezīmēts kā vecs", () => {
+  it("vecāks par 90 min - «var būt novecojis» un iezīmēts kā vecs", () => {
     const html = renderHtml(
-      <WaybillPlateCards gauges={[{ ...free, csddCheckedAt: "2026-11-19T09:15:00.000Z", csddCheckOk: true }]} loading={false} nowMs={NOW} />,
+      <WaybillPlateCards gauges={[{ ...free, csddCheckedAt: "2026-11-19T08:20:00.000Z", csddCheckOk: true }]} loading={false} nowMs={NOW} />,
     );
-    expect(html).toContain("Stāvoklis no CSDD pirms 45 min - var būt novecojis");
+    expect(html).toContain("var būt novecojis");
     expect(html).toContain('data-stale="1"');
   });
 
