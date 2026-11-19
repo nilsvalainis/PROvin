@@ -405,3 +405,31 @@ function displayPlate(raw) {
   const c = String(raw || "").toUpperCase().replace(/[\s-]/g, "");
   return Object.keys(PLATE_CTX).find((p) => p.replace("-", "") === c) || String(raw || "");
 }
+
+/** Vai API atbilde/kļūda ir pārejoša (5xx vai tīkla kļūda/timeout) - tādu drīkst atkārtot vienreiz. */
+export function isTransientApiFailure(result, err) {
+  if (err) return true;
+  const s = Number(result?.status);
+  return Number.isFinite(s) && s >= 500 && s <= 599;
+}
+
+/**
+ * Tikai LASOŠIEM API izsaukumiem (piem. pending): 5xx vai tīkla kļūda -> pagaida delayMs (nokl. 2 s) un mēģina VIENREIZ vēl.
+ * Otrā mēģinājuma rezultāts (vai kļūda) tiek atgriezts/mests kā ir. 2xx/4xx netiek atkārtoti.
+ * doCall: () => Promise<{status, data}>.
+ */
+export async function callWithOneRetry(doCall, opts = {}) {
+  const delayMs = Number.isFinite(opts.delayMs) ? opts.delayMs : 2_000;
+  const sleep = opts.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  let first;
+  let firstErr = null;
+  try {
+    first = await doCall();
+  } catch (err) {
+    firstErr = err || new Error("network_error");
+  }
+  if (!isTransientApiFailure(first, firstErr)) return first;
+  opts.onRetry?.({ status: first?.status, err: firstErr instanceof Error ? firstErr.message : firstErr ? String(firstErr) : "" });
+  await sleep(delayMs);
+  return doCall();
+}

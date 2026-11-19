@@ -363,3 +363,22 @@
   gap: 8px;
   margin-top: auto;
 }
+
+/* 19.11: «Stāvoklis no CSDD pirms N min» pie numura; vecs/kļūda - dzintara krāsā. */
+.csdd {
+  display: block;
+  max-width: 100%;
+  color: #8e8e93;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.wg.sm .csdd {
+  font-size: 9px;
+}
+.csddStale {
+  color: #b45309;
+}

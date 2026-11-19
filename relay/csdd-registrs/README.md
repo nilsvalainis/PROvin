@@ -1,6 +1,6 @@
 # csdd-registrs: CSDD tirdzniecības reģistrs -> PROVIN Autoparks (Hetzner, bez AI)
 
-Katru dienu 03:30 Europe/Riga (atkārtojumi ik 20 min līdz 05:50) skripts **tikai lasa** CSDD tirdzniecības reģistra
+Katru dienu 09:30 Europe/Riga (atkārtojumi ik 20 min līdz 12:50, termiņš `REGISTRS_DEADLINE_HHMM=1300`; Nils 19.11 - pārcelts no nakts uz dienu) skripts **tikai lasa** CSDD tirdzniecības reģistra
 (`ows.csdd.gov.lv:7775`) pieņemto auto sarakstu (SIA ĪRISS un SIA DZINTARZEME AUTO), uzbūvē JSON
 `iriss-csdd-tirdzn-registrs/v1` (tā pati shēma kā Aivara rokas failiem, `docs/csdd-registrs-imports.md`) ar `owner` un
 `snapshot` un sūta to uz `POST https://www.provin.lv/api/iriss/csdd-registrs`. Autoparks atjaunojas pēc VIN.
@@ -53,7 +53,7 @@ meklēšanas poga -> lapošana `ex('rep_lapt_tl',1,'porcijas_numurs=N')` līdz n
 Nedublē VPN loģiku: lieto to pašu lease kā pavadzīmes - `iriss-vpn-ctl` (`scripts/iriss-ttr/vpn-ctl.mjs`, 127.0.0.1:9334,
 jāuzstāda ar `scripts/iriss-ttr/install-vpn-ctl.sh`, ja vēl nav).
 - Sākumā `POST /lease` (ieslēdz VPN, ja nav). 409 `vpn_blocked_manual` (Nils nospieda "Man vajag VPN" / lieto VPN) vai
-  vpn-ctl nav sasniedzams -> kods 75, nākamais mēģinājums pēc 20 min (līdz 05:50).
+  vpn-ctl nav sasniedzams -> kods 75, nākamais mēģinājums pēc 20 min (līdz 12:50).
 - Keep-alive: ik 60 s `POST /lease`. Ja atteikts vai VPN atslēgts - darbs pārtraukts, uz PROVIN nekas netiek sūtīts.
 - Atbrīvošana: vpn-ctl idle autostop (`IRISS_VPN_IDLE_MIN`, nokl. 20 min). Pavadzīmju worker var lietot to pašu VPN vienlaikus.
 - Pirms pieslēgšanās pārbauda, vai `ows.csdd.gov.lv:7775` ir sasniedzams.

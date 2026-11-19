@@ -103,12 +103,26 @@ describe("j66b atsauktā pavadzīme overlay slāņos neaizņem numuru", () => {
 
   it("Arhīvs Dropbox + palicis izdots pieprasījums (request.validUntil): numurs brīvs", () => {
     const plates = composeWaybillPlateStates([{ ...p02818, archived: true }], csdd({ "B193-7": [] }), [issued], now);
-    expect(plates.find((s) => s.plate === "B193-7")).toEqual({ plate: "B193-7", busy: false });
+    const b193 = plates.find((s) => s.plate === "B193-7");
+    // 19.11: stāvoklim pievienots arī CSDD nolasījuma laiks (csddCheckedAt/csddCheckOk) - aizņemtību tas nemaina.
+    expect({ plate: b193?.plate, busy: b193?.busy, current: b193?.current, issuing: b193?.issuing }).toEqual({
+      plate: "B193-7",
+      busy: false,
+      current: undefined,
+      issuing: undefined,
+    });
   });
 
   it("Arhīvs + vecs CSDD active ar to pašu nr.: numurs brīvs", () => {
     const plates = composeWaybillPlateStates([{ ...p02818, archived: true }], csdd({ "B193-7": ["P02818"] }), [], now);
-    expect(plates.find((s) => s.plate === "B193-7")).toEqual({ plate: "B193-7", busy: false });
+    const b193 = plates.find((s) => s.plate === "B193-7");
+    // 19.11: stāvoklim pievienots arī CSDD nolasījuma laiks (csddCheckedAt/csddCheckOk) - aizņemtību tas nemaina.
+    expect({ plate: b193?.plate, busy: b193?.busy, current: b193?.current, issuing: b193?.issuing }).toEqual({
+      plate: "B193-7",
+      busy: false,
+      current: undefined,
+      issuing: undefined,
+    });
   });
 
   it("parasta dzīva pavadzīme joprojām aizņem numuru", () => {
