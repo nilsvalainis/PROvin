@@ -99,25 +99,35 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
     expect(extract.incidents[0]?.incidentNo).toMatch(/Vācij/i);
   });
 
-  it("aggregateUnifiedIncidents does not average and shows the full range", () => {
+  it("aggregateUnifiedIncidents does not average; AutoDNA two July rows are two incidents (19.11 rule)", () => {
     const rows = collectUnifiedIncidentRows({
       manualVendorBlocks: grandlandVendorBlocks(),
     });
     const agg = aggregateUnifiedIncidents(rows);
-    expect(agg.uniqueCount).toBe(1);
-    expect(agg.clusters).toHaveLength(1);
-    const c = agg.clusters[0]!;
-    expect(c.averaged).toBe(false);
-    expect(c.averageEur).toBeNull();
-    expect(c.date).toBe("07.2026");
-    expect(c.displayAmount).toBe("1 501 - 6 500 €");
-    expect(c.kindLabel).toBe("Bojājumu ieraksts");
-    const autodna = c.sourceValuations.find((s) => s.sourceLabel === SOURCE_BLOCK_LABELS.autodna);
-    const cv = c.sourceValuations.find((s) => s.sourceLabel === SOURCE_BLOCK_LABELS.carvertical);
-    expect(autodna?.displayAmount).toBe("1 600 - 1 700 €; 6 000 - 6 500 €");
-    expect(autodna?.rowCount).toBe(2);
-    expect(cv?.displayAmount).toBe("1 501 - 2 000 €");
-    const blob = JSON.stringify(c);
+    // AutoDNA 1 600 - 1 700 € un CarVertical 1 501 - 2 000 € ir viens notikums (summas pārklājas),
+    // AutoDNA 6 000 - 6 500 € ir otrs negadījums tajā pašā mēnesī.
+    expect(agg.uniqueCount).toBe(2);
+    expect(agg.clusters).toHaveLength(2);
+    for (const c of agg.clusters) {
+      expect(c.averaged).toBe(false);
+      expect(c.averageEur).toBeNull();
+      expect(c.date).toBe("07.2026");
+      expect(c.kindLabel).toBe("Bojājumu ieraksts");
+    }
+    const small = agg.clusters.find((c) => c.displayAmount === "1 501 - 2 000 €");
+    const big = agg.clusters.find((c) => c.displayAmount === "6 000 - 6 500 €");
+    expect(small).toBeDefined();
+    expect(big).toBeDefined();
+    expect(small?.sourceValuations.map((s) => [s.sourceLabel, s.displayAmount])).toEqual(
+      expect.arrayContaining([
+        [SOURCE_BLOCK_LABELS.autodna, "1 600 - 1 700 €"],
+        [SOURCE_BLOCK_LABELS.carvertical, "1 501 - 2 000 €"],
+      ]),
+    );
+    expect(big?.sourceValuations.map((s) => [s.sourceLabel, s.displayAmount])).toEqual([
+      [SOURCE_BLOCK_LABELS.autodna, "6 000 - 6 500 €"],
+    ]);
+    const blob = JSON.stringify(agg.clusters);
     expect(blob).not.toMatch(/3\s*950/);
     expect(blob).not.toMatch(/2\s*850/);
   });
@@ -138,8 +148,9 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
         expect(html, needle).not.toContain(needle);
       }
     }
-    expect(incidentsHtml).toContain("1 501 - 6 500 €");
-    expect(incidentsHtml).toContain("1 600 - 1 700 €; 6 000 - 6 500 €");
+    expect(incidentsHtml).toContain("1 501 - 2 000 €");
+    expect(incidentsHtml).toContain("6 000 - 6 500 €");
+    expect(incidentsHtml).not.toContain("1 501 - 6 500 €");
     expect(incidentsHtml).toContain("Bojājumu ieraksts");
     expect(incidentsHtml).toContain("07.2026");
     expect(incidentsHtml).not.toContain("01.07.2026");
@@ -197,16 +208,17 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
     ).toBe(true);
   });
 
-  it("buildPdfReportSummaryTiles stays warn without Pilnīgs zaudējums", () => {
+  it("buildPdfReportSummaryTiles shows 2 incidents without Pilnīgs zaudējums", () => {
     const thisCase = buildPdfReportSummaryTiles({
       csddForm: emptyCsddFields(),
       manualVendorBlocks: grandlandVendorBlocks(),
       ccVinBlock: seedCcVinDefaultComment(emptyCcVinBlock()),
     });
     const incidents = thisCase.find((t) => t.id === "incidents");
-    expect(incidents?.value).toBe("1 bojājumu ieraksts");
+    expect(incidents?.value).toBe("2 bojājumu ieraksti");
     expect(incidents?.note).not.toMatch(/Pilnīgs zaudējums/i);
-    expect(incidents?.tone).toBe("warn");
+    // 19.11: divi atsevišķi negadījumi -> „alert” (count > 1), nevis pilnīga zaudējuma dēļ.
+    expect(incidents?.tone).toBe("alert");
 
     const empty = buildPdfReportSummaryTiles({
       csddForm: emptyCsddFields(),

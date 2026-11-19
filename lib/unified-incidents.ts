@@ -1,7 +1,8 @@
 /**
  * Vienota negadījumu tabula PDF — AutoDNA, CarVertical, LTAB, Citi avoti (tikai rindas ar aizpildītu „Zaudējumu summu”).
- * Loģiskais apkopojums: tas pats mēnesis + valsts (arī starp avotiem) → viena karte ar katra avota
- * precīzajām summām (bez vidējiem) un kopējo diapazonu.
+ * Katrs negadījums ir atsevišķa karte (19.11). Viens un tas pats notikums no vairākiem avotiem (tā pati diena
+ * vai tas pats mēnesis ar sakrītošu summu / zonu) → viena karte ar katra avota precīzajām summām (bez vidējiem)
+ * un kopējo diapazonu.
  */
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
@@ -219,13 +220,6 @@ export function incidentYearMonthKey(row: Pick<UnifiedIncidentRow, "date" | "sor
   return null;
 }
 
-function incidentClusterKey(row: UnifiedIncidentRow): string {
-  const ym = incidentYearMonthKey(row);
-  const country = incidentCountryKey(row.country);
-  if (!ym) return `unique:${row.sourceOrder}`;
-  return `${ym}|${country}`;
-}
-
 function rowAmountBounds(raw: string): UnifiedIncidentAmountBounds | null {
   const bounds = parseLossAmountEurBounds(raw);
   if (bounds) return bounds;
@@ -358,8 +352,93 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
   };
 }
 
+type IncidentRowCtx = {
+  row: UnifiedIncidentRow;
+  ym: string | null;
+  countryKey: string;
+  /** `YYYY-MM-DD` tikai īstam dienas datumam (ne MM.YYYY un ne avota „01.” mēneša aizstājējam). */
+  dayKey: string | null;
+  bounds: UnifiedIncidentAmountBounds | null;
+  amountKey: string;
+  zoneIds: Set<DamageZoneId>;
+};
+
+function incidentDayKey(row: UnifiedIncidentRow): string | null {
+  if (isMonthPrecisionDate(row.date)) return null;
+  if (row.sortableTime === Number.NEGATIVE_INFINITY || !Number.isFinite(row.sortableTime)) return null;
+  const d = new Date(row.sortableTime);
+  const day = d.getUTCDate();
+  // AutoDNA / CarVertical mēneša precizitāti glabā kā „01.MM.YYYY” - to nedrīkst uzskatīt par to pašu dienu.
+  if (day === 1) return null;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function incidentAmountKey(raw: string): string {
+  const b = rowAmountBounds(raw);
+  if (b) return `${b.lo}-${b.hi}`;
+  return raw.replace(/[\s\u00a0\u202f]/g, "").toLowerCase();
+}
+
+function boundsOverlap(a: UnifiedIncidentAmountBounds | null, b: UnifiedIncidentAmountBounds | null, tolerant: boolean): boolean {
+  if (!a || !b) return false;
+  if (!tolerant) {
+    if (a.lo === a.hi && b.lo === b.hi) return Math.abs(a.lo - b.lo) <= INCIDENT_AMOUNT_MATCH_EUR;
+    return a.lo <= b.hi && b.lo <= a.hi;
+  }
+  const tol = (v: number) => Math.max(INCIDENT_AMOUNT_MATCH_EUR, Math.round(v * INCIDENT_AMOUNT_MATCH_RATIO));
+  return a.lo - tol(a.lo) <= b.hi + tol(b.hi) && b.lo - tol(b.lo) <= a.hi + tol(a.hi);
+}
+
+function damageDetailMatchesRow(d: UnifiedIncidentDamageInput, ctx: IncidentRowCtx): boolean {
+  const dYm = incidentYearMonthKey({ date: d.date, sortableTime: parseMileageDateForSort(d.date) });
+  if (!dYm || !ctx.ym || dYm !== ctx.ym) return false;
+  if (!countriesCompatible(incidentCountryKey(d.country), ctx.countryKey)) return false;
+  return boundsOverlap(rowAmountBounds(d.lossAmount), ctx.bounds, false);
+}
+
+function incidentRowCtx(row: UnifiedIncidentRow, damageDetails: UnifiedIncidentDamageInput[]): IncidentRowCtx {
+  const ctx: IncidentRowCtx = {
+    row,
+    ym: incidentYearMonthKey(row),
+    countryKey: incidentCountryKey(row.country),
+    dayKey: incidentDayKey(row),
+    bounds: rowAmountBounds(row.lossAmount),
+    amountKey: incidentAmountKey(row.lossAmount),
+    zoneIds: new Set(),
+  };
+  for (const d of damageDetails) {
+    if (!damageDetailMatchesRow(d, ctx)) continue;
+    for (const h of parseDamageZoneHits(d.damagedSides)) ctx.zoneIds.add(h.id);
+  }
+  return ctx;
+}
+
+function isExactDuplicateIncidentRow(a: IncidentRowCtx, b: IncidentRowCtx): boolean {
+  return (
+    a.row.sourceLabel === b.row.sourceLabel &&
+    a.row.date.trim() === b.row.date.trim() &&
+    a.amountKey === b.amountKey &&
+    a.countryKey === b.countryKey
+  );
+}
+
 /**
- * Apvieno to pašu mēnesi + valsti no visiem avotiem par vienu karti.
+ * Cik droši divi DAŽĀDU avotu ieraksti tajā pašā mēnesī un valstī ir viens un tas pats notikums.
+ * 0 = nav pierādījuma, ka tas ir tas pats (skaita atsevišķi).
+ */
+function sameEventScore(a: IncidentRowCtx, b: IncidentRowCtx): number {
+  if (a.dayKey && b.dayKey && a.dayKey === b.dayKey) return 4;
+  if (boundsOverlap(a.bounds, b.bounds, false)) return 3;
+  if (boundsOverlap(a.bounds, b.bounds, true)) return 2;
+  if (a.zoneIds.size > 0 && b.zoneIds.size > 0 && [...a.zoneIds].some((z) => b.zoneIds.has(z))) return 1;
+  return 0;
+}
+
+/**
+ * Katrs negadījums tiek skaitīts atsevišķi (Nila lēmums 19.11, variants B).
+ * Viens notikums no vairākiem avotiem (AutoDNA, CarVertical, LTAB, cc_vin, ASV) joprojām ir viena karte, ja
+ * tajā pašā mēnesī un valstī sakrīt diena, summa (ar pielaidi) vai bojājumu zona.
+ * Divi viena avota ieraksti vienā mēnesī ir divi negadījumi, ja vien tie nav precīzi dublikāti (datums + summa).
  * Kopējā summa = visu avotu diapazons (min lo - max hi), bez vidējiem.
  */
 export function aggregateUnifiedIncidents(
@@ -367,20 +446,53 @@ export function aggregateUnifiedIncidents(
   damageDetails: UnifiedIncidentDamageInput[] = [],
 ): UnifiedIncidentAggregation {
   const sorted = sortUnifiedIncidentsNewestFirst(rows);
-  const groups = new Map<string, UnifiedIncidentRow[]>();
+  const groups: IncidentRowCtx[][] = [];
   for (const row of sorted) {
-    const key = incidentClusterKey(row);
-    const list = groups.get(key) ?? [];
-    list.push(row);
-    groups.set(key, list);
+    const ctx = incidentRowCtx(row, damageDetails);
+    if (!ctx.ym) {
+      groups.push([ctx]);
+      continue;
+    }
+    let bestIdx = -1;
+    let bestScore = 0;
+    for (let i = 0; i < groups.length; i++) {
+      const members = groups[i]!;
+      const head = members[0]!;
+      if (head.ym !== ctx.ym || !countriesCompatible(head.countryKey, ctx.countryKey)) continue;
+      if (!members.every((m) => countriesCompatible(m.countryKey, ctx.countryKey))) continue;
+      const sameSource = members.filter((m) => m.row.sourceLabel === ctx.row.sourceLabel);
+      let score: number;
+      if (sameSource.length > 0) {
+        score = sameSource.some((m) => isExactDuplicateIncidentRow(m, ctx)) ? 5 : 0;
+      } else {
+        score = Math.max(0, ...members.map((m) => sameEventScore(m, ctx)));
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx < 0) groups.push([ctx]);
+    else groups[bestIdx]!.push(ctx);
   }
 
-  const clusters = [...groups.values()].map((members) => {
-    const cluster = clusterFromMembers(members);
-    const matched = damageDetails.filter((d) => damageDetailMatchesCluster(d, cluster));
+  const clusters = groups.map((members) => {
+    const cluster = clusterFromMembers(members.map((m) => m.row));
+    return { cluster, members };
+  });
+  const withDamage = clusters.map(({ cluster, members }) => {
+    const matched = damageDetails.filter((d) => {
+      if (!damageDetailMatchesCluster(d, cluster)) return false;
+      // Ja tajā pašā mēnesī ir vairāki negadījumi, bojājumu zonas piesaista tam, kura summa sakrīt.
+      const amountMatchesAny = clusters.some(
+        (o) => damageDetailMatchesCluster(d, o.cluster) && o.members.some((m) => damageDetailMatchesRow(d, m)),
+      );
+      if (!amountMatchesAny) return true;
+      return members.some((m) => damageDetailMatchesRow(d, m));
+    });
     return { ...cluster, damage: mergeClusterDamage(matched) };
   });
-  const mergedAcrossCountry = mergeIncidentClustersSameAmountAndZones(clusters);
+  const mergedAcrossCountry = mergeIncidentClustersSameAmountAndZones(withDamage);
   mergedAcrossCountry.sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.date.localeCompare(b.date, "lv");
@@ -395,6 +507,8 @@ export function aggregateUnifiedIncidents(
 
 const INCIDENT_MERGE_MAX_DAYS = 31;
 const INCIDENT_AMOUNT_MATCH_EUR = 10;
+/** Dažādu avotu summu pielaide (LTAB precīza izmaksa pret AutoDNA / CarVertical diapazonu). */
+const INCIDENT_AMOUNT_MATCH_RATIO = 0.05;
 
 function incidentZoneKey(c: UnifiedIncidentCluster): string {
   return (c.damage?.zoneIds ?? []).slice().sort().join(",");
@@ -458,7 +572,7 @@ function mergeClusterDamageFromClusters(
   return { zoneIds, zoneLabels, partLabels, groupLabels };
 }
 
-/** 1 mēneša logā, tās pašas zonas un summa (arī ja CarVertical saka Kanāda, Copart - ASV). */
+/** 1 mēneša logā, tās pašas zonas un summa no dažādiem avotiem (arī ja CarVertical saka Kanāda, Copart - ASV). */
 function mergeIncidentClustersSameAmountAndZones(clusters: UnifiedIncidentCluster[]): UnifiedIncidentCluster[] {
   const out: UnifiedIncidentCluster[] = [];
   for (const c of clusters) {
@@ -468,6 +582,10 @@ function mergeIncidentClustersSameAmountAndZones(clusters: UnifiedIncidentCluste
           ? Math.abs(prev.sortableTime - c.sortableTime) / 86_400_000
           : 999;
       if (days > INCIDENT_MERGE_MAX_DAYS) return false;
+      // Viena avota divi ieraksti ir divi negadījumi - šeit apvieno tikai dažādu avotu dublikātus.
+      if (prev.sourceValuations.some((p) => c.sourceValuations.some((v) => v.sourceLabel === p.sourceLabel))) {
+        return false;
+      }
       if (!amountsOverlapForDedupe(clusterAmountBounds(prev), clusterAmountBounds(c))) return false;
       return incidentZoneKey(prev) === incidentZoneKey(c);
     });
