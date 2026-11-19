@@ -245,7 +245,7 @@ export function AdminDealerCheckDelivery({
             Kam: <b className="break-all">{to}</b>
           </p>
           <p className="text-[13px] text-[#111]">
-            No: <b>info@provin.lv</b>
+            No: <b>{record.template === "dzintarzeme" ? "Nils Valainis · " : ""}info@provin.lv</b>
           </p>
           <p className="text-[13px] font-semibold text-[#111]">{subject}</p>
           <pre className="whitespace-pre-wrap rounded-lg border border-[#e5e5ea] bg-white p-2.5 font-sans text-[13px] leading-[1.5] text-[#3a3a3c]">

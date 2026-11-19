@@ -105,6 +105,10 @@ export function dealerCheckReportFilename(record: DealerCheckRecord): string {
   return record.template === "dzintarzeme" ? base.replace(/\.pdf$/i, "_DZA.pdf") : base;
 }
 
+/** DZA e-pasta paraksts un sūtītāja vārds (Nils 19.11: DZA e-pastā nekur nav PROVIN). */
+export const DEALER_CHECK_DZA_SIGNATURE = "Ar cieņu,\nNils Valainis";
+export const DEALER_CHECK_DZA_FROM_NAME = "Nils Valainis";
+
 /** E-pasta noklusējuma teksts (rediģējams pirms sūtīšanas). */
 export function dealerCheckEmailDefaults(record: DealerCheckRecord): { subject: string; text: string } {
   const car = [record.vehicle.make, record.vehicle.model].filter(Boolean).join(" ");
@@ -116,7 +120,26 @@ export function dealerCheckEmailDefaults(record: DealerCheckRecord): { subject: 
       "",
       `Pielikumā oficiālā dīlera servisa dati${label ? ` (${label})` : ""}.`,
       "",
-      "Ar cieņu",
+      record.template === "dzintarzeme" ? DEALER_CHECK_DZA_SIGNATURE : "Ar cieņu",
     ].join("\n"),
   };
+}
+
+/** Vai teksts satur PROVIN zīmolu (DZA e-pastā aizliegts). */
+export function dealerCheckMentionsProvin(text: string): boolean {
+  return /provin/i.test(text);
+}
+
+function escapeEmailHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/** DZA e-pasta HTML: tikai admina teksts, bez PROVIN veidnes, galvenes un kājenes. */
+export function dealerCheckDzaEmailHtml(text: string): string {
+  const body = text
+    .trim()
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px">${escapeEmailHtml(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return `<!doctype html><html lang="lv"><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#111">${body}</body></html>`;
 }

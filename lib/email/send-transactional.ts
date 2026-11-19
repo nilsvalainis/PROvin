@@ -519,6 +519,39 @@ function dedupeAttachmentFilenames(items: ReportReadyMailAttachment[]): ReportRe
   });
 }
 
+/** Sūtītājs ar citu vārdu, tā pati SMTP adrese (piem. DZA e-pastā bez PROVIN zīmola). */
+export function mailFromWithName(name: string): string {
+  const from = getMailFromAddress();
+  const addr = from.match(/<([^>]+)>/)?.[1] ?? from;
+  return `${name} <${addr.trim()}>`;
+}
+
+/**
+ * Vienkāršs e-pasts ar PDF bez PROVIN veidnes (dīlera datu platforma, šablons «Dzintarzeme Auto»).
+ * Sūtītāja adrese tā pati (info@provin.lv), vārds - `fromName`.
+ */
+export async function sendPlainBrandlessEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  fromName: string;
+  attachments: ReportReadyMailAttachment[];
+}): Promise<void> {
+  await sendSmtpMail({
+    to: opts.to,
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
+    from: mailFromWithName(opts.fromName),
+    attachments: dedupeAttachmentFilenames(opts.attachments).map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType,
+    })),
+  });
+}
+
 /** Klients: atskaite gatava (dīleris / MINI / AUDITS) + pielikumi. */
 export async function sendReportReadyEmail(opts: {
   to: string;

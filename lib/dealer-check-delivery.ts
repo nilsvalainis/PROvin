@@ -82,6 +82,8 @@ export function dealerCheckDeliveryErrorLv(code: string): string {
       return "Vajag tematu un tekstu.";
     case "smtp_not_configured":
       return "Serverī nav SMTP.";
+    case "provin_in_dza":
+      return "Dzintarzeme Auto e-pastā nedrīkst būt PROVIN.";
     case "not_confirmed":
       return "Sūtīšana nav apstiprināta.";
     default:

@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   metaSize: -1,
   dropboxPathSet: [] as string[],
   mails: [] as { to: string; subject?: string; attachments: number }[],
+  plain: [] as { to: string; subject: string; text: string; html: string; fromName: string; attachments: number }[],
   smtp: true,
   renders: 0,
 }));
@@ -59,6 +60,9 @@ vi.mock("@/lib/dropbox-client", () => ({
 }));
 vi.mock("@/lib/email/send-transactional", () => ({
   isSmtpConfigured: () => state.smtp,
+  sendPlainBrandlessEmail: async (opts: { to: string; subject: string; text: string; html: string; fromName: string; attachments: unknown[] }) => {
+    state.plain.push({ ...opts, attachments: opts.attachments.length });
+  },
   sendReportReadyEmail: async (opts: { to: string; custom?: { subject: string }; attachments: unknown[] }) => {
     state.mails.push({ to: opts.to, subject: opts.custom?.subject, attachments: opts.attachments.length });
   },
@@ -71,6 +75,7 @@ import {
   sendDealerCheckEmail,
   validateDealerCheckEmail,
 } from "@/lib/dealer-check-platform";
+import { dealerCheckEmailDefaults } from "@/lib/dealer-check-report";
 
 const VIN = "WBA8A71070K896936";
 const PDF_LEN = new TextEncoder().encode("%PDF-1.4 mock").length;
@@ -110,6 +115,7 @@ beforeEach(() => {
   state.metaSize = PDF_LEN;
   state.dropboxPathSet = [];
   state.mails = [];
+  state.plain = [];
   state.smtp = true;
   state.renders = 0;
 });
@@ -164,10 +170,33 @@ describe("E-pasts", () => {
     expect(validateDealerCheckEmail({ to: " a@b.lv ", subject: "T", text: "X" }, "")).toMatchObject({ ok: true, to: "a@b.lv" });
   });
 
-  it("sūta ar servera PDF pielikumā (mock)", async () => {
-    const r = await sendDealerCheckEmail(record(), { to: "klients@example.com", subject: "Dīlera dati", text: "Labdien!" });
+  it("Cits: sūta ar servera PDF pielikumā caur esošo veidni (mock)", async () => {
+    const r = await sendDealerCheckEmail(record({ template: "cits" }), { to: "klients@example.com", subject: "Dīlera dati", text: "Labdien!" });
     expect(r).toEqual({ ok: true, to: "klients@example.com" });
     expect(state.mails).toEqual([{ to: "klients@example.com", subject: "Dīlera dati", attachments: 1 }]);
+    expect(state.plain).toHaveLength(0);
+  });
+
+  it("Dzintarzeme Auto: tematā, tekstā, HTML un sūtītāja vārdā nav PROVIN, paraksts Nils Valainis", async () => {
+    const rec = record();
+    const mail = dealerCheckEmailDefaults(rec);
+    expect(mail.text.endsWith("Ar cieņu,\nNils Valainis")).toBe(true);
+    const r = await sendDealerCheckEmail(rec, { to: "klients@example.com", ...mail });
+    expect(r).toEqual({ ok: true, to: "klients@example.com" });
+    expect(state.mails).toHaveLength(0);
+    expect(state.plain).toHaveLength(1);
+    const sent = state.plain[0]!;
+    for (const part of [sent.subject, sent.text, sent.html, sent.fromName]) expect(part).not.toMatch(/provin/i);
+    expect(sent.fromName).toBe("Nils Valainis");
+    expect(sent.html).toContain("Nils Valainis");
+    expect(sent.attachments).toBe(1);
+  });
+
+  it("Dzintarzeme Auto: ja admins ierakstījis PROVIN - nesūta", async () => {
+    const r = await sendDealerCheckEmail(record(), { to: "klients@example.com", subject: "PROVIN dati", text: "Labdien!" });
+    expect(r).toEqual({ ok: false, error: "provin_in_dza" });
+    expect(state.plain).toHaveLength(0);
+    expect(state.renders).toBe(0);
   });
 
   it("bez SMTP nesūta un PDF negatavo", async () => {

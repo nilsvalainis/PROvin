@@ -8,6 +8,7 @@ import {
   applyDealerCheckBrandHeader,
   buildDealerCheckReportHtml,
   buildDealerCheckReportPayload,
+  dealerCheckDzaEmailHtml,
   dealerCheckEmailDefaults,
   dealerCheckReportFilename,
 } from "@/lib/dealer-check-report";
@@ -110,5 +111,10 @@ describe("dīlera datu servera PDF HTML", () => {
     expect(mail.subject).toContain(VIN);
     expect(mail.text).toContain("Pielikumā");
     expect(mail.text).not.toMatch(/[—–]/);
+    expect(mail.text).not.toMatch(/provin/i);
+    expect(dealerCheckEmailDefaults(record({ template: "cits" })).text).not.toContain("Nils Valainis");
+    const html = dealerCheckDzaEmailHtml("Labdien!\n\n<b>x</b>\nAr cieņu,\nNils Valainis");
+    expect(html).not.toMatch(/provin/i);
+    expect(html).toContain("&lt;b&gt;x&lt;/b&gt;<br>Ar cieņu,<br>Nils Valainis");
   });
 });

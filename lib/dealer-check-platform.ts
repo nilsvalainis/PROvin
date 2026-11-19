@@ -3,7 +3,13 @@ import "server-only";
 import fs from "node:fs/promises";
 import { renderReportHtmlToPdf } from "@/lib/report-pdf-server";
 import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo-fs";
-import { buildDealerCheckReportHtml, dealerCheckReportFilename } from "@/lib/dealer-check-report";
+import {
+  buildDealerCheckReportHtml,
+  DEALER_CHECK_DZA_FROM_NAME,
+  dealerCheckDzaEmailHtml,
+  dealerCheckMentionsProvin,
+  dealerCheckReportFilename,
+} from "@/lib/dealer-check-report";
 import { findAutoparksCarByVin, type DealerCheckRecord } from "@/lib/dealer-check";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -13,7 +19,7 @@ import { autoparksDropboxEnabled, resolveAutoparksCarFolder } from "@/lib/iriss-
 import { joinDropboxPath } from "@/lib/iriss-autoparks-dropbox-path";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { setCabinetDocumentDropboxPath, upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
-import { isSmtpConfigured, sendReportReadyEmail } from "@/lib/email/send-transactional";
+import { isSmtpConfigured, sendPlainBrandlessEmail, sendReportReadyEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { isRecipientBlocked, parseRecipientBlocklist, REPORT_RECIPIENT_BLOCKLIST_ENV } from "@/lib/report-recipient-guard";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
@@ -147,7 +153,10 @@ export function validateDealerCheckEmail(
   return { ok: true, to, subject, text };
 }
 
-/** Sūta no info@provin.lv (noklusētais SMTP) ar servera PDF pielikumā. Tikai pēc admina apstiprinājuma UI. */
+/**
+ * Sūta no info@provin.lv (noklusētais SMTP) ar servera PDF pielikumā. Tikai pēc admina apstiprinājuma UI.
+ * «Dzintarzeme Auto»: vienkāršs e-pasts bez PROVIN (temats/teksts ar PROVIN tiek noraidīts).
+ */
 export async function sendDealerCheckEmail(
   record: DealerCheckRecord,
   input: DealerCheckEmailInput,
@@ -155,12 +164,29 @@ export async function sendDealerCheckEmail(
 ): Promise<{ ok: true; to: string } | { ok: false; error: string }> {
   const v = validateDealerCheckEmail(input);
   if (!v.ok) return v;
+  const dza = record.template === "dzintarzeme";
+  if (dza && (dealerCheckMentionsProvin(v.subject) || dealerCheckMentionsProvin(v.text))) {
+    return { ok: false, error: "provin_in_dza" };
+  }
   if (!isSmtpConfigured()) return { ok: false, error: "smtp_not_configured" };
   const file = pdf ?? (await renderDealerCheckPdf(record));
+  const attachments = [{ filename: file.filename, content: file.pdf, contentType: "application/pdf" }];
+  if (dza) {
+    // Nils 19.11: DZA e-pastā nekur nav PROVIN - bez PROVIN veidnes, sūtītāja vārds «Nils Valainis».
+    await sendPlainBrandlessEmail({
+      to: v.to,
+      subject: v.subject,
+      text: v.text,
+      html: dealerCheckDzaEmailHtml(v.text),
+      fromName: DEALER_CHECK_DZA_FROM_NAME,
+      attachments,
+    });
+    return { ok: true, to: v.to };
+  }
   await sendReportReadyEmail({
     to: v.to,
     carVin: record.vin,
-    attachments: [{ filename: file.filename, content: file.pdf, contentType: "application/pdf" }],
+    attachments,
     custom: { subject: v.subject, text: v.text },
   });
   return { ok: true, to: v.to };
