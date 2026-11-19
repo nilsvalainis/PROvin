@@ -472,7 +472,13 @@ export function AdminMobileSectionNav({
   );
 }
 
-export type AdminMobileDockStatus = { text: string; tone?: "info" | "ok" | "error"; busy?: boolean };
+export type AdminMobileDockStatus = {
+  text: string;
+  tone?: "info" | "ok" | "error";
+  busy?: boolean;
+  /** Neobligāta poga statusā (piem. FLASH MAX noslēguma pārbaudes ieteikumi). */
+  action?: { label: string; onClick: () => void };
+};
 
 export function AdminMobileActionDock({
   actions,
@@ -506,6 +512,15 @@ export function AdminMobileActionDock({
             <span className="mt-[3px] inline-block h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
           ) : null}
           <span className="min-w-0 flex-1 whitespace-pre-line">{status.text}</span>
+          {status.action && !status.busy ? (
+            <button
+              type="button"
+              onClick={status.action.onClick}
+              className="-my-0.5 min-h-8 shrink-0 rounded-full bg-[var(--am-ink)] px-3 text-[12px] font-semibold text-[var(--am-s1)]"
+            >
+              {status.action.label}
+            </button>
+          ) : null}
           {onDismissStatus && !status.busy ? (
             <button type="button" aria-label="Aizvērt paziņojumu" onClick={onDismissStatus} className="-mr-1 shrink-0 px-1 text-[15px] leading-none opacity-60">
               ×
