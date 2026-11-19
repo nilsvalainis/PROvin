@@ -18,6 +18,7 @@ const basics: AutoparksV2Basics = {
   displacementCm3: { value: null, csdd: false }, powerKw: { value: null, csdd: false }, tyreSize: { value: "", csdd: false },
   gearbox: { value: "", csdd: false }, engine: { value: "", csdd: false },
   registry: { status: "accepted", actNo: "TA-1", actDate: "2026-10-01", known: true }, hasPhoto: false,
+  extras: { keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
 };
 
 describe("CSDD reģistra svaigums Autoparkā", () => {

@@ -39,6 +39,7 @@ const basics: AutoparksV2Basics = {
   engine: { value: "", csdd: false },
   registry: { status: "none", actNo: "", actDate: "", known: false },
   hasPhoto: true,
+  extras: { keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
 };
 
 const perms = {

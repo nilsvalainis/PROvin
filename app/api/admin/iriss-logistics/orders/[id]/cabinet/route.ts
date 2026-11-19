@@ -25,6 +25,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   const access = buildCabinetAccessView(query, rules);
   const visible = filterDocumentsByCabinetAccess(documents, query, rules);
   if (visible.length) {
+    // Skatīšanās žurnāls ir papildu ieraksts: ja Blob rakstīšana neizdodas, kabinets tik un tā atveras
+    // (agrāk 500 -> kabinets palika bloķēts, pickup kodu nevarēja ievadīt).
     await appendCabinetAudit({
       actorId: query.userId,
       action: "view",
@@ -33,6 +35,8 @@ export async function GET(_req: Request, ctx: Ctx) {
       section: "",
       docType: "",
       detail: `${visible.length} docs`,
+    }).catch((err: unknown) => {
+      console.error("[iriss-logistika] kabineta skatījuma žurnāls neizdevās", err instanceof Error ? err.message : err);
     });
   }
   return NextResponse.json(

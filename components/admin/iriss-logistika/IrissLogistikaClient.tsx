@@ -16,6 +16,7 @@ import { cargoExitNotice, type CargoExitKind } from "@/lib/iriss-logistics-cargo
 import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { CargoPlanBoundary } from "@/components/admin/iriss-logistika/CargoPlanBoundary";
+import { logisticsUrlCarStep } from "@/lib/iriss-logistics-cabinet-load";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
@@ -179,13 +180,16 @@ export function IrissLogistikaClient({
   const searchParams = useSearchParams();
   const [cabinetOpen, setCabinetOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  /** `?car=` apstrādā vienu reizi katrai saitei - citādi katra saglabāšana atgrieza kabinetu uz saites auto. */
+  const urlCarHandled = useRef("");
   useEffect(() => {
     const car = searchParams.get("car")?.trim() ?? "";
-    if (!car) return;
-    if (!orders.some((o) => o.id === car)) return;
+    const step = logisticsUrlCarStep(car, searchParams.get("view"), urlCarHandled.current, orders.map((o) => o.id));
+    urlCarHandled.current = step.handled;
+    if (!step.open) return;
     setActiveId(car);
     // No Autoparka kartītes ("Kartē"): iezīmē auto kartē; vecā saite bez view atver kabinetu.
-    if (searchParams.get("view") === "map") {
+    if (step.open === "map") {
       setPopupId(car);
       setBounceId(car);
       return;
@@ -1207,6 +1211,8 @@ export function IrissLogistikaClient({
               <button type="button" className="iriss-log-btn-sec mb-2 h-8 px-2.5 text-[12px]" onClick={() => setCabinetOpen(false)}>
                 Aizvērt kabinetu
               </button>
+              {/* Kļūda kabinetā nenogāž visu Loģistikas lapu (karte un saraksts paliek). */}
+              <CargoPlanBoundary key={active.id} title="Auto kabinetu neizdevās attēlot.">
               <IrissLogistikaCabinet
                 order={active}
                 groupedPoints={groupedPoints}
@@ -1230,6 +1236,7 @@ export function IrissLogistikaClient({
                   </>
                 }
               />
+              </CargoPlanBoundary>
             </div>
           ) : (
             <div className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1">
