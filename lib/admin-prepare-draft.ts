@@ -51,7 +51,7 @@ import { mergeLtabIncidentRows, mergeVendorServiceHistory } from "@/lib/history-
 import { mergeDamageDetailRows } from "@/lib/vendor-damage-hydrate";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
 import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
-import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
+import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { ingestSourcePdfFile, type SourcePdfIngestTarget } from "@/lib/pdf-source-ingest";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
@@ -89,8 +89,15 @@ export type PrepareDraftPdfInput = {
 function applyVendorImport(
   existing: VendorAvotuBlockState,
   result: HistoryVendorPdfParseResult,
+  sourceLabel: string,
 ): VendorAvotuBlockState {
   const raw = result.rawText.trim();
+  const aiContextRaw = raw
+    ? upsertVendorPdfAiContext(existing, raw, {
+        sourceLabel,
+        previousAutoTexts: [existing.mileagePasteRaw],
+      }).aiContextRaw
+    : existing.aiContextRaw;
   const nextService =
     result.serviceHistory.length > 0
       ? mergeVendorServiceHistory(existing.serviceHistory ?? [], result.serviceHistory)
@@ -106,9 +113,7 @@ function applyVendorImport(
   return {
     ...existing,
     ...(raw ? { mileagePasteRaw: raw.slice(0, ADMIN_MILEAGE_PASTE_RAW_MAX_LEN) } : {}),
-    ...(raw && !(existing.aiContextRaw ?? "").trim()
-      ? { aiContextRaw: fillVendorAiContextIfEmpty(existing, raw).aiContextRaw }
-      : {}),
+    aiContextRaw,
     ...(nextService.length > 0 ? { serviceHistory: nextService } : {}),
     ...(nextIncidents.length > 0 ? { incidents: nextIncidents } : {}),
     ...(result.vehicleHistoryTimeline?.length
@@ -180,7 +185,7 @@ function applyCitiAvotiImport(
     idx = sections.length - 1;
   }
   const existing = sections[idx] ?? emptyCitiAvotiSection();
-  const merged = applyVendorImport(existing, result);
+  const merged = applyVendorImport(existing, result, label.trim() || "Citi avoti");
   sections[idx] = {
     ...merged,
     label: label.trim() || existing.label || "",
@@ -294,7 +299,11 @@ export async function runPrepareDraftPipeline(input: {
         const key = vendorBlockKey(target);
         blocks = {
           ...blocks,
-          [key]: applyVendorImport(blocks[key], result as HistoryVendorPdfParseResult),
+          [key]: applyVendorImport(
+            blocks[key],
+            result as HistoryVendorPdfParseResult,
+            key === "carvertical" ? "CarVertical" : "AutoDNA",
+          ),
         };
       }
 

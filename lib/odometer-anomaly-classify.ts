@@ -9,6 +9,7 @@ import {
   isIsolatedMileageDrop,
   isListingMileageSource,
   isMileageCountryChange,
+  isTrailingSameDaySourcePair,
   parseOdometerKm,
   sortMileageChronological,
   type UnifiedMileageRow,
@@ -172,8 +173,12 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
       continue;
     }
 
+    // Sērijas pēdējais vienas dienas viena avota pāris: augstākais partneris nav "atgūšanās" (šaubās kritumu rāda).
+    const trailingPair = isTrailingSameDaySourcePair(src, next?.row, i + 2 >= pts.length);
+
     if (
       prev &&
+      !trailingPair &&
       isIsolatedMileageDrop(curr.km, prev.km, next?.km ?? null, src.sortableTime, next?.row.sortableTime) &&
       !isListingMileageSource(src) &&
       !isMileageCountryChange(prev.row, src)
@@ -196,7 +201,7 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
     }
 
     // Nils 18.11: kritums valsts maiņas brīdī ir manipulācija arī tad, ja vēlāk rādījumi atgūstas.
-    if (isMileageCountryChange(prev.row, src) || laterPointsStayBelow(pts, i, prev.km)) {
+    if (trailingPair || isMileageCountryChange(prev.row, src) || laterPointsStayBelow(pts, i, prev.km)) {
       push(src, "rollback", prev.row.date, prev.km, curr.km);
     }
   }
