@@ -314,6 +314,19 @@ export function parseLogisticsAuctionName(raw: unknown): LogisticsAuction | "" {
 }
 
 /** YYYY-MM-DD vai DD.MM.YYYY. Tukšs, ja nav datuma. */
+/**
+ * VIN no formas/sludinājuma: lielie burti, bez atstarpēm/defisēm un «VIN:» priekšā, ne garāks par 17.
+ * «+ Nopirkts» to saglabā gan Loģistikā, gan Autoparka (v1) ierakstā, lai /STOCK mapi var atrast pēc VIN6.
+ */
+export function normalizeLogisticsVin(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw
+    .toUpperCase()
+    .replace(/^\s*VIN\b\s*[:#.-]?/, "")
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 17);
+}
+
 export function parseLogisticsIsoDate(raw: unknown): string {
   if (typeof raw !== "string") return "";
   const t = raw.trim();
