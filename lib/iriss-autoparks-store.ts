@@ -112,7 +112,14 @@ export async function ensureAutoparksCarFromOrder(
 ): Promise<{ car: AutoparksCar; created: boolean }> {
   const state = await readAutoparksState();
   const existing = state.cars.find((c) => c.orderId === order.id || (order.vin && c.vin === order.vin.toUpperCase()));
-  if (existing) return { car: existing, created: false };
+  if (existing) {
+    // Agrāk bez VIN izveidots ieraksts: VIN no Loģistikas aizpilda tukšo lauku (citu VIN nepārraksta).
+    if (!existing.vin && order.vin) {
+      const filled = await patchAutoparksCar(existing.id, { vin: order.vin }, actor);
+      if (filled) return { car: filled, created: false };
+    }
+    return { car: existing, created: false };
+  }
   const titleParts = order.title.trim().split(/\s+/);
   const car = await createAutoparksCar(
     {
