@@ -1514,3 +1514,10 @@ export function buildThecarapiPdfModel(record: ThecarapiAdminRecord): ThecarapiP
 export function thecarapiPdfLeafExcluded(path: string, value: unknown): boolean {
   return isExcludedLeaf({ segs: parsePath(path), path, value });
 }
+
+/** Visi lapas lauki (ceļš -> vērtība) tajā pašā secībā kā `coverage`. Adminam: izslēgtie tehniskie lauki arī redzami. */
+export function thecarapiLeafValues(record: ThecarapiAdminRecord): { path: string; value: unknown }[] {
+  const leaves: Leaf[] = [];
+  flatten(thecarapiPdfSourceObject(record), [], leaves, 0);
+  return leaves.map((leaf) => ({ path: leaf.path, value: leaf.value }));
+}
