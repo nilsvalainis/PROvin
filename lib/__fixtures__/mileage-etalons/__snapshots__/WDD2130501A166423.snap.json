@@ -3,7 +3,8 @@
  "rindasPaAvotiem": {
   "CSDD": 1,
   "OFICIĀLĀ DĪLERA DATI": 10,
-  "AutoDNA": 13,
+  "AutoDNA": 12,
+  "AutoDNA (sludinājums)": 1,
   "CarVertical": 14,
   "CITI AVOTI - Nettiauto (Somija)": 3,
   "NETTIAUTO (SOMIJA)": 3,
@@ -18,7 +19,7 @@
   "12.07.2019 | 66946 | Nīderlande | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
   "08.07.2020 | 86159 | Nīderlande | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
   "16.09.2021 | 97677 | Nīderlande | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "05.01.2022 | 101566 | Nīderlande | AutoDNA",
+  "05.01.2022 | 101566 | Nīderlande | AutoDNA (sludinājums) + AutoDNA",
   "01.03.2022 | 101580 | Somija | CarVertical | mēnesis",
   "05.09.2022 | 108000 | Somija | CITI AVOTI - Nettiauto (Somija) + NETTIAUTO (SOMIJA)",
   "24.10.2022 | 111000 | Somija | CITI AVOTI - Nettiauto (Somija) + NETTIAUTO (SOMIJA)",

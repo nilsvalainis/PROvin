@@ -1,4 +1,5 @@
 import { MINI_TO_AUDITS_APPROVED_TEXT } from "@/lib/email/mini-to-audits-approved-text";
+import { DEALER_SEND_TEMPLATE_DEFS } from "@/lib/messages/dealer-send-template-defs";
 import { IRISS_PDF_TEMPLATE_DEFS } from "@/lib/messages/iriss-pdf-template-defs";
 import type { MessageTemplateDef } from "@/lib/messages/types";
 import {
@@ -470,6 +471,22 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     ],
     htmlKind: "plain_paragraphs",
   },
+  {
+    id: "wa.upsell.mini_to_audit",
+    channel: "whatsapp",
+    group: "Piedāvājumi",
+    title: "MINI → AUDITS ieteikums",
+    body: miniToAuditsTemplateBody,
+    vars: [
+      { key: "vards", label: "Vārds (vokatīvs)", sample: "Jāni", required: true },
+      { key: "auto", label: "Auto", sample: "VW Golf", required: true },
+      { key: "starpiba", label: "Starpība", sample: "60,00", required: true },
+      { key: "maksajuma_saite", label: "Maksājuma saite", sample: "https://buy.stripe.com/…", required: true },
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
+      { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
+    ],
+  },
+  ...DEALER_SEND_TEMPLATE_DEFS,
   ...partnerVerifyDefs(),
   ...partnerResetDefs(),
   {

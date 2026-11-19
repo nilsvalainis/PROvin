@@ -20,10 +20,10 @@
   "25.04.2016 | 0 | Dānija | DĀNIJAS NACIONĀLO REĢISTRU DATI",
   "01.10.2016 | 56378 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
   "01.10.2016 | 56178 | Dānija | CarVertical | mēnesis",
-  "01.02.2017 | 121100 | Dānija | OFICIĀLĀ DĪLERA DATI",
+  "01.02.2017 | 121100 | Dānija | OFICIĀLĀ DĪLERA DATI | ANOMĀLIJA, nav grafikā",
   "01.02.2017 | 91794 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
   "01.02.2017 | 91594 | Dānija | CarVertical | mēnesis",
-  "19.04.2017 | 114000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI | ANOMĀLIJA",
+  "19.04.2017 | 114000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI",
   "01.05.2017 | 121100 | Dānija | AutoDNA",
   "01.05.2017 | 120600 | Dānija | CarVertical | mēnesis",
   "01.11.2017 | 180150 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
@@ -51,11 +51,13 @@
  ],
  "sarkanaJosla": true,
  "klases": [
+  "typo_outlier: 01.02.2017 91794 -> 01.02.2017 121100 (kritums 29306) [01.02.2017 | 121100 | OFICIĀLĀ DĪLERA DATI]",
   "rollback: 20.04.2022 529000 -> 01.09.2024 195623 (kritums 333377) [01.09.2024 | 195623 | CarVertical]"
  ],
  "kritumsBezNilaLemumiem": true,
  "nilaLemumi": [],
  "klasesPecNilaLemumiem": [
+  "typo_outlier: 01.02.2017 121100",
   "rollback: 01.09.2024 195623"
  ],
  "faktuLapa": {

@@ -77,6 +77,7 @@ import {
   formatImplausibleReadingLine,
   type UnifiedMileageRow,
   hasAnyOdometerAnomaly,
+  isListingMileageSource,
   resolveCsddUndatedOdometer,
   type CsddUndatedOdometer,
   parseOdometerKm,
@@ -92,6 +93,10 @@ export const CANONICAL_FACTS_INSTRUCTION =
   "Nerunā pretī šiem faktiem; ja avots ir pretrunā, norādi to piesardzīgi.";
 export const CANONICAL_FACTS_MAX_CHARS = 4000;
 export const CANONICAL_FACTS_TARGET_MIN_CHARS = 2000;
+
+/** 19.11 (Nils): sludinājuma rādījums nav fakts par odometru - pārdevēja norāde, ne ievades kļūda un ne korekcija. */
+export const LISTING_BELOW_RECORDED_LINE_PREFIX =
+  "Sludinājumā norādīts mazāks nobraukums nekā iepriekš fiksēts (pārdevēja dati, NAV oficiāls fiksējums, NEPIEMINĒT kā korekciju vai ievades kļūdu)";
 
 export const SUSPECTED_ENTRY_ERROR_LINE_PREFIX =
   "Atsevišķs neatbilstošs rādījums (iespējama ievades kļūda, NEPIEMINĒT kā korekciju)";
@@ -174,6 +179,8 @@ export type CanonicalFacts = {
   rollbacks: OdometerRollbackBound[];
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
   suspectedEntryErrors: SuspectedEntryError[];
+  /** 19.11: sludinājuma rādījums zem iepriekš fiksētā - atsevišķi no ievades kļūdām. */
+  listingBelowRecorded?: SuspectedEntryError[];
   /** j26: neticami rādījumi (< 1 000 km pēc > 1 gada), izslēgti no aprēķina un PDF. */
   implausibleReadings: UnifiedMileageRow[];
   /** j26: valstu posmi no reģistru laika līnijas. */
@@ -365,12 +372,16 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const tableTypo = (b: OdometerRollbackBound) =>
     tableClasses.some((c) => c.class === "typo_outlier" && c.toKm === b.toKm);
   const rollbacks = allDrops.filter((b) => isRealOdometerDrop(b) && tableRollback(b));
-  const suspectedEntryErrors = [
+  const suspectedOrListing = [
     ...allDrops.filter((b) => !isRealOdometerDrop(b) && b.suspect).map((b) => b.suspect!),
     ...allDrops
       .filter((b) => isRealOdometerDrop(b) && !tableRollback(b) && tableTypo(b))
       .map((b) => ({ date: b.toDate, km: b.toKm, source: b.toSource ?? "" })),
   ];
+  const isListingEntry = (e: SuspectedEntryError) =>
+    isListingMileageSource({ sourceLabel: e.source, countryUnverified: false });
+  const suspectedEntryErrors = suspectedOrListing.filter((e) => !isListingEntry(e));
+  const listingBelowRecorded = suspectedOrListing.filter(isListingEntry);
   const anomalyMap = computeOdometerAnomalyBySourceOrder(mileageRows);
   // Tabulas karogs no tā paša izolētā punkta nav korekcijas pazīme.
   const odometerAnomaly =
@@ -451,6 +462,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     latestKm,
     rollbacks,
     suspectedEntryErrors,
+    listingBelowRecorded,
     csddUndatedOdometer: csddUndated,
     implausibleReadings,
     countryPeriods,
@@ -564,6 +576,11 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   for (const e of facts.suspectedEntryErrors) {
     lines.push(
       `- ${SUSPECTED_ENTRY_ERROR_LINE_PREFIX}: ${e.date}, ${formatForensicsInt(e.km)} km, ${e.source}`,
+    );
+  }
+  for (const e of facts.listingBelowRecorded ?? []) {
+    lines.push(
+      `- ${LISTING_BELOW_RECORDED_LINE_PREFIX}: ${e.date}, ${formatForensicsInt(e.km)} km, ${e.source}`,
     );
   }
   for (const r of facts.implausibleReadings) {

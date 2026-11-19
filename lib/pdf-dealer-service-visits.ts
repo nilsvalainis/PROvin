@@ -21,7 +21,9 @@ import {
   isDealerServiceGap,
   visitGapBetween,
 } from "@/lib/pdf-dealer-timeline";
+import { inferServiceWorkCountries } from "@/lib/service-works-country";
 import { formatServiceWorksLines } from "@/lib/service-works-lines";
+import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 const EMPTY_WORKS_NOTE = "Detalizēts darbu saraksts atskaitē nav pieejams.";
@@ -82,13 +84,17 @@ function visitWorksHtml(raw: string, hideKeyReadLines: boolean, lang: ClientRepo
     .join("")}</ul>`;
 }
 
-function visitPlaceHtml(location: string, lang: ClientReportLang): string {
-  const { place, country } = formatDealerServicePlace(location, lang);
+function visitPlaceHtml(location: string, lang: ClientReportLang, inferredCountry = ""): string {
+  const own = formatDealerServicePlace(location, lang);
+  const place = own.place;
+  const inferred = !own.country && inferredCountry.trim() ? normalizeCountryName(inferredCountry.trim(), lang) : "";
+  const country = own.country || inferred;
   if (!place && !country) return "";
+  const mark = inferred ? ` data-country-inferred="1"` : "";
   if (place && country && !place.toLowerCase().includes(country.toLowerCase())) {
-    return `<p class="pdf-svc-place">${escapeHtml(place)} <span>· ${escapeHtml(country)}</span></p>`;
+    return `<p class="pdf-svc-place">${escapeHtml(place)} <span${mark}>· ${escapeHtml(country)}</span></p>`;
   }
-  return `<p class="pdf-svc-place">${escapeHtml(place || country)}</p>`;
+  return `<p class="pdf-svc-place"${place ? "" : mark}>${escapeHtml(place || country)}</p>`;
 }
 
 function visitKindTagHtml(works: string, lang: ClientReportLang): string {
@@ -96,14 +102,19 @@ function visitKindTagHtml(works: string, lang: ClientReportLang): string {
   return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
 }
 
-function visitHtml(row: AutoRecordsServiceWorkRow, hideKeyReadLines: boolean, lang: ClientReportLang): string {
+function visitHtml(
+  row: AutoRecordsServiceWorkRow,
+  hideKeyReadLines: boolean,
+  lang: ClientReportLang,
+  inferredCountry = "",
+): string {
   const date = row.date.trim();
   const odo = formatServiceWorkOdometer(row.odometer);
   const dateHtml = date
     ? `<time class="pdf-svc-date">${escapeHtml(date)}</time>`
     : `<span class="pdf-svc-date pdf-svc-date--empty"></span>`;
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
-  const place = visitPlaceHtml(row.location, lang);
+  const place = visitPlaceHtml(row.location, lang, inferredCountry);
   const tag = visitKindTagHtml(row.works, lang);
   const chips = `<div class="pdf-svc-chips">${tag}${km}</div>`;
   const head = `<div class="pdf-svc-box-top">${place}${chips}</div>`;
@@ -178,6 +189,11 @@ export type DealerServiceVisitsPdfOpts = {
   condenseRecords?: boolean;
   extraMileageRows?: AutoRecordsServiceWorkRow[];
   lang?: ClientReportLang;
+  /**
+   * Citu avotu valstu laika josla (bez sludinājumiem): vizītei bez valsts to secina tikai droši
+   * (tas pats mēnesis vai abi kaimiņi vienā valstī). Saglabātos datus nemaina.
+   */
+  countryEvidence?: CountryTimelineEntry[];
 };
 
 export function printableDealerServiceWorks(
@@ -206,6 +222,8 @@ export function buildDealerServiceVisitsHtml(
 
   const hideKeyReadLines = condense;
   const lang = opts?.lang ?? "lv";
+  const evidence = opts?.countryEvidence ?? [];
+  const countries = evidence.length > 0 ? inferServiceWorkCountries(printable, evidence) : [];
   const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable, { lang })];
   let lastYear = "";
   let yearOpen = false;
@@ -220,7 +238,8 @@ export function buildDealerServiceVisitsHtml(
   for (let i = 0; i < printable.length; i++) {
     const row = printable[i]!;
     const year = serviceWorkYear(row.date);
-    const visit = visitHtml(row, hideKeyReadLines, lang);
+    const info = countries[i];
+    const visit = visitHtml(row, hideKeyReadLines, lang, info?.countryInferred ? info.country : "");
     const older = printable[i + 1];
     const gap =
       older != null

@@ -18,7 +18,13 @@ import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
 import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
 import { del, get } from "@vercel/blob";
 import { isReportPdfPathname, reportPdfPathPrefix } from "@/lib/report-pdf-constants";
-import { readClientReportSends, recordClientReportSend } from "@/lib/client-report-sends";
+import {
+  readClientReportCommentSnapshots,
+  readClientReportSends,
+  recordClientReportCommentSnapshot,
+  recordClientReportSend,
+} from "@/lib/client-report-sends";
+import { buildClientReportCommentSnapshot } from "@/lib/client-report-comment-snapshot-core";
 import { dropboxReportFilename } from "@/lib/client-report-sends-core";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
@@ -121,6 +127,8 @@ export async function POST(req: Request) {
   let saveDropbox = true;
   /** Admins apzināti apstiprina adresi, kas atšķiras no pasūtījumā saglabātās. */
   let confirmRecipientOverride = false;
+  /** Dīlera «Sūtīt klientam» logs: admina rediģēts temats + teksts (PDF tas pats servera ceļš). */
+  let customMail: { subject: string; text: string } | null = null;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -152,6 +160,9 @@ export async function POST(req: Request) {
       markComplete = b.markComplete === true;
       saveDropbox = b.saveDropbox !== false;
       confirmRecipientOverride = b.confirmRecipientOverride === true;
+      const cs = typeof b.customSubject === "string" ? b.customSubject.trim().slice(0, 180) : "";
+      const ct = typeof b.customText === "string" ? b.customText.trim().slice(0, 12_000) : "";
+      if (cs && ct) customMail = { subject: cs, text: ct };
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -373,6 +384,7 @@ export async function POST(req: Request) {
       }),
       lang: reportLang,
       corrected: previousSends.length > 0,
+      custom: customMail,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
@@ -439,6 +451,23 @@ export async function POST(req: Request) {
       const done = await setAuditDeadlineComplete(sessionId, true);
       serverSend.completedAt = done.ok ? done.completedAt : null;
     }
+  }
+
+  // AI komentāru gala versija pie sūtījuma (apmācībai), neatkarīgi no TRAINING_V2. Kļūda sūtījumu neaptur.
+  try {
+    const prevSnapshots = await readClientReportCommentSnapshots(sessionId);
+    await recordClientReportCommentSnapshot(
+      sessionId,
+      buildClientReportCommentSnapshot({
+        draft,
+        sentAt: new Date().toISOString(),
+        lang: reportLang,
+        corrected: previousSends.length > 0 || prevSnapshots.length > 0,
+        ...(serverSend ? { version: serverSend.version } : {}),
+      }),
+    );
+  } catch (e) {
+    console.error("[api/admin/notify-report-ready] comment snapshot", e instanceof Error ? e.message.slice(0, 200) : e);
   }
 
   console.info("[api/admin/notify-report-ready] sent", {

@@ -531,6 +531,8 @@ export async function sendReportReadyEmail(opts: {
   lang?: ClientReportLang;
   /** Atkārtots sūtījums pēc labojumiem: tēmā "· labota" (Nils 17.11, G9). */
   corrected?: boolean;
+  /** Admina rediģēts temats + teksts (dīlera «Sūtīt klientam» logs). PDF pielikumi paliek tie paši. */
+  custom?: { subject: string; text: string } | null;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -544,6 +546,20 @@ export async function sendReportReadyEmail(opts: {
     throw new Error(
       "Nav pielikumu: pievienojiet audita PDF (admin forma) vai pārliecinieties, ka apmaksātajam pasūtījumam var ģenerēt rēķinu.",
     );
+  }
+
+  const custom = opts.custom?.subject.trim() && opts.custom.text.trim() ? opts.custom : null;
+  if (custom) {
+    const b2b = opts.b2bClient === true;
+    await sendSmtpMail({
+      to: opts.to,
+      subject: custom.subject.trim(),
+      text: custom.text.trim(),
+      html: dealerDataOperatorMessageEmailHtml({ text: custom.text.trim(), b2bClient: b2b, lang: opts.lang ?? "lv" }),
+      from: b2b ? getB2bMailFromAddress() : undefined,
+      attachments: deduped.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
+    });
+    return;
   }
 
   const rawVin = opts.carVin.trim();
