@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROVIN BUSINESS poga - 10 paraugi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:#e9e9ec;color:#0c0d10;-webkit-font-smoothing:antialiased}
+  header{padding:28px 36px 8px}
+  header h1{margin:0;font-size:20px}
+  header p{margin:6px 0 0;color:#6b6f78;font-size:13px;max-width:900px;line-height:1.5}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(880px,1fr));gap:22px;padding:20px 36px 48px}
+  .s{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .s h2{margin:0;font-size:15px}
+  .s h2 span{color:#6b6f78;font-weight:600;margin-right:6px}
+  .s .why{margin:6px 0 14px;font-size:12.5px;line-height:1.5;color:#4b4f58}
+  .s .why b{color:#0c0d10}
+  .ctx{display:grid;grid-template-columns:400px 400px;gap:16px}
+  .lt,.dk{padding:20px;border-radius:8px}
+  .lt{background:#fff;border:1px solid #eee;font-family:Poppins,sans-serif}
+  .dk{background:#000;color:#fff}
+  .pr{font-size:22px;font-weight:700;margin-bottom:10px;font-family:Inter}
+  .ph{height:38px;margin-top:8px;font-size:12px;font-weight:600;color:#fff;display:grid;place-items:center;font-family:Poppins}
+  .lt .ph{background:#44c41d}
+  .dk .ph{background:#1c1f26;color:#9aa1ad;border-radius:8px;font-family:Inter;font-weight:500}
+
+  /* kopīgie */
+  .w{font-weight:800;letter-spacing:.02em}.w i{font-style:normal;color:#2563eb}
+  .dk .w i{color:#4f8bff}
+  a.btn{display:flex;width:100%;text-decoration:none;font-family:Inter,system-ui,sans-serif}
+  a.btn .p,a.btn .tab{white-space:nowrap}
+  .tab{font-variant-numeric:tabular-nums}
+  .chev{width:14px;height:14px;flex:none}
+
+  /* 1 Monolīts */
+  .b1{justify-content:center;align-items:center;flex-direction:column;gap:4px;min-height:60px;background:#0c0d10;color:#fff;border-radius:10px}
+  .dk .b1{background:#fff;color:#0c0d10}
+  .b1 .w{font-size:9.5px;letter-spacing:.22em;opacity:.75}
+  .b1 .t{font-size:15px;font-weight:600}
+  .b1 .t em{font-style:normal;font-weight:500;opacity:.6;margin-left:6px}
+
+  /* 2 Vārdzīme priekšā */
+  .b2{align-items:center;min-height:58px;border-radius:10px;border:1px solid #dfe1e6;background:#fff;color:#0c0d10;padding:0 16px;gap:14px}
+  .dk .b2{background:#0f1116;border-color:#2a2e38;color:#fff}
+  .b2 .w{font-size:19px;letter-spacing:-.01em}
+  .b2 .sep{width:1px;align-self:stretch;margin:14px 0;background:currentColor;opacity:.15}
+  .b2 .t{flex:1;display:flex;flex-direction:column;font-size:11px;line-height:1.3;opacity:.65}
+  .b2 .t b{font-size:14px;opacity:1;font-weight:600;color:inherit}
+  .b2 .p{font-weight:700;font-size:14px}
+
+  /* 3 VIN čips */
+  .b3{align-items:center;gap:12px;min-height:62px;padding:0 16px;border-radius:10px;background:#0c0d10;color:#fff}
+  .dk .b3{background:#14161b;box-shadow:inset 0 0 0 1px #2a2e38}
+  .b3 .vin{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.06em;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.08);white-space:nowrap}
+  .b3 .t{flex:1;display:flex;flex-direction:column;line-height:1.25}
+  .b3 .t small{font-size:9.5px;letter-spacing:.2em;font-weight:700;opacity:.6}
+  .b3 .t b{font-size:14px;font-weight:600}
+  .b3 .p{font-size:14px;font-weight:600;opacity:.85}
+
+  /* 4 Ar faktu rindu */
+  .b4wrap{display:flex;flex-direction:column;gap:8px}
+  .b4{align-items:center;justify-content:space-between;min-height:54px;padding:0 18px;border-radius:10px;background:#0c0d10;color:#fff;font-size:15px;font-weight:600}
+  .dk .b4{background:#fff;color:#0c0d10}
+  .b4 .p{font-weight:500;opacity:.7}
+  .facts{display:flex;justify-content:center;gap:10px;font-size:11px;color:#6b6f78;font-family:Inter}
+  .dk .facts{color:#9aa1ad}
+  .facts span::before{content:"✓";color:#16a34a;margin-right:4px;font-weight:700}
+  .b4brand{font-size:9.5px;letter-spacing:.2em;text-align:center;color:#6b6f78;font-family:Inter}
+  .dk .b4brand{color:#9aa1ad}
+
+  /* 5 Kontūra ar retināto tekstu */
+  .b5{align-items:center;justify-content:space-between;min-height:56px;padding:0 18px;border:1.5px solid #0c0d10;border-radius:0;background:transparent;color:#0c0d10}
+  .dk .b5{border-color:#fff;color:#fff}
+  .b5 .t{font-size:12px;font-weight:700;letter-spacing:.16em}
+  .b5 .t .w{letter-spacing:.16em;font-weight:800}
+  .b5 .p{font-size:13px;font-weight:600;letter-spacing:.04em}
+  .b5:hover{background:#0c0d10;color:#fff}
+
+  /* 6 Āķis virs pogas */
+  .b6wrap{display:flex;flex-direction:column;gap:6px}
+  .hook{font-size:12px;font-weight:600;color:#0c0d10;font-family:Inter}
+  .dk .hook{color:#fff}
+  .hook span{color:#6b6f78;font-weight:500}
+  .dk .hook span{color:#9aa1ad}
+  .b6{align-items:center;justify-content:space-between;min-height:54px;padding:0 6px 0 18px;border-radius:12px;background:#f3f4f6;color:#0c0d10}
+  .dk .b6{background:#14161b;color:#fff}
+  .b6 .t{font-size:14px;font-weight:600}
+  .b6 .t .w{font-size:12px;margin-right:6px}
+  .b6 .p{background:#0c0d10;color:#fff;border-radius:9px;padding:10px 14px;font-weight:700;font-size:14px}
+  .dk .b6 .p{background:#fff;color:#0c0d10}
+
+  /* 7 Kapsula ar zīmolu */
+  .b7{align-items:center;min-height:54px;border-radius:999px;background:#fff;border:1px solid #dfe1e6;padding:5px;gap:12px;color:#0c0d10}
+  .dk .b7{background:#0f1116;border-color:#2a2e38;color:#fff}
+  .b7 .brand{background:#0c0d10;color:#fff;border-radius:999px;padding:12px 14px;font-size:11px;letter-spacing:.14em}
+  .dk .b7 .brand{background:#fff;color:#0c0d10}
+  .b7 .t{flex:1;font-size:14px;font-weight:600}
+  .b7 .p{font-size:13px;font-weight:500;opacity:.65;margin-right:14px}
+
+  /* 8 Klusā saite */
+  .b8{align-items:center;justify-content:space-between;padding:14px 2px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;color:#0c0d10}
+  .dk .b8{border-color:#262a33;color:#fff}
+  .b8 .t{font-size:14px;font-weight:600}
+  .b8 .t u{text-decoration-thickness:1px;text-underline-offset:4px}
+  .b8 .t small{display:block;font-size:11px;font-weight:500;color:#6b6f78;margin-top:3px}
+  .b8 .t small .w{font-size:10px;letter-spacing:.14em}
+  .b8 .p{font-size:14px;font-weight:700}
+
+  /* 9 Atskaites kartīte */
+  .b9{flex-direction:column;border-radius:12px;border:1px solid #e3e5ea;background:#fff;color:#0c0d10;overflow:hidden}
+  .dk .b9{background:#0f1116;border-color:#262a33;color:#fff}
+  .b9 .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 6px;font-size:10px;letter-spacing:.18em}
+  .b9 .hd em{font-style:normal;letter-spacing:.02em;color:#6b6f78;font-family:ui-monospace,Menlo,monospace}
+  .b9 ul{list-style:none;margin:0;padding:2px 14px 10px;font-size:12px}
+  .b9 li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed rgba(127,127,127,.2)}
+  .b9 li i{font-style:normal;width:64px;height:8px;border-radius:4px;background:rgba(127,127,127,.22);align-self:center}
+  .b9 .ft{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#0c0d10;color:#fff;font-size:14px;font-weight:600}
+  .dk .b9 .ft{background:#fff;color:#0c0d10}
+
+  /* 10 Zīmola zilā */
+  .b10{align-items:center;justify-content:space-between;min-height:56px;padding:0 18px;border-radius:10px;background:#1d4ed8;color:#fff}
+  .b10 .t{display:flex;flex-direction:column;line-height:1.25}
+  .b10 .t small{font-size:9.5px;letter-spacing:.2em;font-weight:700;opacity:.75}
+  .b10 .t small i{font-style:normal;color:#fff;opacity:1}
+  .b10 .t b{font-size:15px;font-weight:600}
+  .b10 .p{font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <h1>PROVIN BUSINESS poga - 10 paraugi</h1>
+  <p>Katrs paraugs gaišā (Dzintarzeme / RZ tipa) un tumšā (Auto2000 tipa) auto lapā, zem cenas. Visur pamata teksts «PROVIN BUSINESS · Pārbaudīt vēsturi · 69,99 €»; dažos mārketinga papildinājums (VIN, fakti, āķis) - to var noņemt. Cena bez nosvītrojuma. Plakanas pogas, Inter.</p>
+</header>
+
+<div class="grid">
+
+<section class="s">
+  <h2><span>01</span>Monolīts</h2>
+  <p class="why"><b>Dizains:</b> viens vienlaidus bloks, centrēts, kā maksājuma poga - mierīgs un dārgs. <b>Mārketings:</b> skaidra darbība, bet zīmols mazs; labi, ja dīleris negrib «svešu reklāmu».</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b1" href="#"><span class="w">PRO<i>VIN</i> BUSINESS</span><span class="t">Pārbaudīt vēsturi<em class="tab">69,99 €</em></span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b1" href="#"><span class="w">PRO<i>VIN</i> BUSINESS</span><span class="t">Pārbaudīt vēsturi<em class="tab">69,99 €</em></span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>02</span>Vārdzīme priekšā</h2>
+  <p class="why"><b>Dizains:</b> PROVIN logo kā galvenais elements, līnija, tad darbība - izskatās pēc partnerības zīmes. <b>Mārketings:</b> stiprina zīmola atpazīstamību katrā sludinājumā.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b2" href="#"><span class="w">PRO<i>VIN</i></span><span class="sep"></span><span class="t">Business atskaite<b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b2" href="#"><span class="w">PRO<i>VIN</i></span><span class="sep"></span><span class="t">Business atskaite<b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>03</span>Ar šī auto VIN</h2>
+  <p class="why"><b>Dizains:</b> tumšs bloks ar VIN «čipu» - tehnisks, precīzs. <b>Mārketings:</b> personalizēts («šim auto»), pircējs redz, ka atskaite ir par konkrēto mašīnu - augstāka klikšķu motivācija.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b3" href="#"><span class="vin">…FY7H2024825</span><span class="t"><small>PROVIN BUSINESS</small><b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b3" href="#"><span class="vin">…6GML042769</span><span class="t"><small>PROVIN BUSINESS</small><b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>04</span>Poga + ko saņem</h2>
+  <p class="why"><b>Dizains:</b> vienkārša poga, zem tās trīs sīki fakti. <b>Mārketings:</b> atbild uz «ko es par 69,99 € dabūšu?» - nobraukums, avārijas, serviss ir trīs lielākās pircēja bailes.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><div class="b4wrap"><div class="b4brand">PROVIN BUSINESS</div><a class="btn b4" href="#"><span>Pārbaudīt vēsturi</span><span class="p tab">69,99 €</span></a><div class="facts"><span>Nobraukums</span><span>Avārijas</span><span>Serviss</span></div></div><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><div class="b4wrap"><div class="b4brand">PROVIN BUSINESS</div><a class="btn b4" href="#"><span>Pārbaudīt vēsturi</span><span class="p tab">69,99 €</span></a><div class="facts"><span>Nobraukums</span><span>Avārijas</span><span>Serviss</span></div></div><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>05</span>Kontūra, retināts teksts</h2>
+  <p class="why"><b>Dizains:</b> tikai līnija un plaši atstatīti lielie burti - modes zīmolu valoda, nekonkurē ar dīlera krāsainajām pogām. <b>Mārketings:</b> izsmalcināti, bet mazāk pamanāms; der premium dīleriem.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b5" href="#"><span class="t"><span class="w">PRO<i>VIN</i></span> · PĀRBAUDĪT VĒSTURI</span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b5" href="#"><span class="t"><span class="w">PRO<i>VIN</i></span> · PĀRBAUDĪT VĒSTURI</span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>06</span>Āķis virs pogas</h2>
+  <p class="why"><b>Dizains:</b> maigs pelēks lauks, cena kā kontrastaina «poga pogā». <b>Mārketings:</b> virsrakstā iemesls («Pirms pērc») - pārvērš ziņkārību darbībā; cena skaidri redzama kā vienīgais solis.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><div class="b6wrap"><div class="hook">Pirms pērc - <span>pārbaudi šī auto vēsturi</span></div><a class="btn b6" href="#"><span class="t"><span class="w">PRO<i>VIN</i></span>Business atskaite</span><span class="p tab">69,99 €</span></a></div><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><div class="b6wrap"><div class="hook">Pirms pērc - <span>pārbaudi šī auto vēsturi</span></div><a class="btn b6" href="#"><span class="t"><span class="w">PRO<i>VIN</i></span>Business atskaite</span><span class="p tab">69,99 €</span></a></div><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>07</span>Kapsula ar zīmolu</h2>
+  <p class="why"><b>Dizains:</b> noapaļota kapsula, zīmols atsevišķā tumšā «tabletē» - mūsdienīgs, der RZ tipa vietnēm. <b>Mārketings:</b> zīmols nolasāms vienā mirklī, darbība centrā.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b7" href="#"><span class="brand w">PROVIN</span><span class="t">Pārbaudīt vēsturi</span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b7" href="#"><span class="brand w">PROVIN</span><span class="t">Pārbaudīt vēsturi</span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>08</span>Klusā rinda</h2>
+  <p class="why"><b>Dizains:</b> nav «pogas» vispār - rinda starp divām līnijām kā žurnālā. <b>Mārketings:</b> izskatās pēc dīlera paša pakalpojuma, nevis reklāmas; mazāk klikšķu, bet augstāka uzticība.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b8" href="#"><span class="t"><u>Pārbaudīt šī auto vēsturi</u><small><span class="w">PRO<i>VIN</i> BUSINESS</span> atskaite e-pastā</small></span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b8" href="#"><span class="t"><u>Pārbaudīt šī auto vēsturi</u><small><span class="w">PRO<i>VIN</i> BUSINESS</span> atskaite e-pastā</small></span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>09</span>Atskaites priekšskats</h2>
+  <p class="why"><b>Dizains:</b> mini «atskaites lapa» ar aizsegtām vērtībām un pogu apakšā. <b>Mārketings:</b> spēcīgākais - rāda, ka dati jau ir, tikai jāatver (ziņkāre). Aizņem vairāk vietas.</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b9" href="#"><span class="hd"><span class="w">PRO<i>VIN</i> BUSINESS</span><em>…FY7H2024825</em></span><ul><li>Nobraukuma vēsture<i></i></li><li>Bojājumi un avārijas<i></i></li><li>Servisa ieraksti<i></i></li></ul><span class="ft"><span>Atvērt vēsturi</span><span class="tab">69,99 €</span></span></a></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b9" href="#"><span class="hd"><span class="w">PRO<i>VIN</i> BUSINESS</span><em>…6GML042769</em></span><ul><li>Nobraukuma vēsture<i></i></li><li>Bojājumi un avārijas<i></i></li><li>Servisa ieraksti<i></i></li></ul><span class="ft"><span>Atvērt vēsturi</span><span class="tab">69,99 €</span></span></a></div>
+  </div>
+</section>
+
+<section class="s">
+  <h2><span>10</span>PROVIN zilā</h2>
+  <p class="why"><b>Dizains:</b> pilna zīmola krāsa - tieši, pamanāmi. <b>Mārketings:</b> visaugstākā pamanāmība un klikšķi, bet konkurē ar dīlera pogām un var šķist «reklāma».</p>
+  <div class="ctx">
+    <div class="lt"><div class="pr">€52,990</div><a class="btn b10" href="#"><span class="t"><small>PRO<i>VIN</i> BUSINESS</small><b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">PIETEIKTIES LĪZINGAM</div></div>
+    <div class="dk"><div class="pr">14 490 €</div><a class="btn b10" href="#"><span class="t"><small>PRO<i>VIN</i> BUSINESS</small><b>Pārbaudīt vēsturi</b></span><span class="p tab">69,99 €</span></a><div class="ph">Auto marka · Kia</div></div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

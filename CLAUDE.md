@@ -38,6 +38,7 @@ Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resu
 - Testi pārbauda uzvedību, nevis avota tekstu (`.cursor/rules/tests-behavior-first.mdc`).
 - Atskaitē vienmēr: PR nr., squash commit uz `main`, Vercel production statuss, kas nav pārbaudīts.
 - Ja mainīts `relay/` vai `provin-listings`: atskaites beigās raksti `VAJAG RELEJA DEPLOY`.
+- **Vercel būvē TIKAI `main` un `pakete/*` zarus** (`scripts/vercel-ignore-build.sh`, 19.11.2026). Aģentu `feat/`, `fix/`, `chore/`, `docs/`, `backup/` u.c. zari Vercel preview nebūvē - PR pārbaude ir GitHub Actions CI (vitest + `next build`). Vairākus PR apvieno vienā `pakete/YYYY-MM-DD[-x]` zarā; tikai tam ir Vercel preview, un tieši to sapludina uz `main` (viena production būve). `main` commits, kas maina tikai `docs/` vai `*.md`, arī nebūvē.
 
 ## Komanda
 
@@ -66,5 +67,5 @@ Claude puses vadītājs ir **Kārlis** (`.claude/agents/karlis.md`), kas atskait
 ## Komanda
 - Claude pusē vadītājs: Kārlis (piesprausta Code sesija "Kārlis").
 - Grok pusē: Andris (galvenais), Aivars, PVN atguvējs, EKII, Klientu atbalsts, Google, Sociālie tīkli, Labā Roka, Fricis, PROVIN ADMINS (atskaišu aizpilde), IRISS (pasts/izsoles).
-- Claude pusē: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), mārketings (marketinga-specialists).
+- Claude pusē: koda darbi (iriss, provin-admins kods, b2b-partneri, dizaineris, koda-parbauditajs), mārketings (marketinga-specialists).
 - Apmaiņa: docs/komandu-zinojumi.md (viena rinda par svarīgu darbu); lasīt sesijas sākumā.

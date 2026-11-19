@@ -80,4 +80,9 @@ journalctl -u csdd-registrs --since today
 `last-run.json`: `summary.byOwner` (auto skaits pa firmām), `result` (PROVIN: `matched`, `added`, `removed`, `statusChanged`,
 `actUpdated`, `removalGuarded`), `durationSec`.
 
+Serverī (19.11) dienas logs uzlikts ar drop-in failiem `/etc/systemd/system/csdd-registrs.timer.d/diena.conf`
+(`OnCalendar` 09:30-12:50 Rīgas laikā) un `/etc/systemd/system/csdd-registrs.service.d/diena.conf`
+(`REGISTRS_DEADLINE_HHMM=1300`). Repo `systemd/` vienībās ir tas pats grafiks; pēc nākamā `install.sh` drop-in var dzēst
+(`systemctl daemon-reload`). Pārbaude: `systemctl list-timers csdd-registrs.timer`.
+
 Atcelšana: `systemctl disable --now csdd-registrs.timer`; atjaunošana no backup mapes.

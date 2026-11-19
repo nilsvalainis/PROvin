@@ -7,7 +7,7 @@ Statuss: izpēte un apspriešana, nekas nav ieviests.
 Šī dokumenta 1.-7. sadaļa rakstīta 22.10. Kopš tā laika main jau ir uzbūvēts tirdzniecības reģistra imports, tāpēc turpmāk galvenie ir šie dokumenti:
 
 - `docs/csdd-registrs-imports.md` - JSON shēma, kā imports raksta kartītē, "pieņemtie tirdzniecībā" filtrs, personas dati, iestatījumi.
-- `relay/csdd-registrs/README.md` - Hetzner cron, kas katru nakti 03:30 **tikai lasa** reģistru (IRISS un DZA) un sūta uz `POST /api/iriss/csdd-registrs`.
+- `relay/csdd-registrs/README.md` - Hetzner cron, kas katru dienu 09:30-12:50 Rīgas laikā (termiņš 13:00; līdz 19.11 bija 03:30 naktī) **tikai lasa** reģistru (IRISS un DZA) un sūta uz `POST /api/iriss/csdd-registrs`.
 - Rezerves ceļš: Aivars ieliek JSON Dropbox `/CSDD_registrs_IRISS`, Vercel cron `/api/cron/iriss-autoparks-registrs` to importē katru dienu 04:40 UTC.
 - Kartītē: cilne "CSDD reģistrs" (akta nr. un datums, statuss, nobraukums), cenu lapa ar drošības sistēmām un CSDD atzīmēm. Tātad 5. sadaļas datu modelis un "cenu šabloni" jau ir realizēti citā formā.
 

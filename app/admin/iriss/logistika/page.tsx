@@ -15,7 +15,7 @@ import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2CanOpen } from "@/lib/iriss-autoparks-v2-perms";
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
-import { cabinetActorHidesSums, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery } from "@/lib/iriss-logistics-access";
 
 export const metadata = {
@@ -64,6 +64,7 @@ export default async function IrissLogistikaPage() {
       viewerName={viewerName}
       canEnableTotp={canEnableTotp}
       canCreateOffer={canCreateOffer}
+      canMoveToAutopark={cabinetActorCanWrite(actorQuery)}
       autoparksByOrder={autoparksByOrder}
       showAutoparksLink={autoparksV2CanOpen(autoparksV2Perms(actor))}
       isAdmin={actor.kind === "admin"}

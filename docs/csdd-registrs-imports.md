@@ -1,7 +1,7 @@
 # CSDD tirdzniecības reģistrs - JSON imports Autoparkam
 
 Avots: CSDD Transportlīdzekļu tirdzniecības reģistrs (NE tech-data API).
-Galvenais ceļš (no 23.10.2026): Hetzner cron `relay/csdd-registrs` katru dienu 03:30 Europe/Riga (atkārto ik 20 min līdz 06:00, ja VPN aizņemts) TIKAI LASA reģistru un sūta pilnu nolasījumu uz `POST /api/iriss/csdd-registrs`. Bez AI. Sk. `relay/csdd-registrs/README.md`.
+Galvenais ceļš (no 23.10.2026): Hetzner cron `relay/csdd-registrs` katru dienu 09:30 Europe/Riga (atkārto ik 20 min līdz 12:50, termiņš 13:00; Nils 19.11 - pārcelts no nakts uz dienu) TIKAI LASA reģistru un sūta pilnu nolasījumu uz `POST /api/iriss/csdd-registrs`. Bez AI. Sk. `relay/csdd-registrs/README.md`.
 Rezerves ceļš: Grok aģents Aivars pēc Nila pieprasījuma nolasa reģistru pārlūkā, sastāda JSON pēc šīs shēmas un augšupielādē Dropbox caur API (iknedēļas rokas rutīna vairs nav vajadzīga, kad cron strādā).
 Kur: Dropbox mape `/CSDD_registrs_IRISS` (maina ar env `DROPBOX_CSDD_REGISTRS_PATH`). Faila nosaukums: `registrs-YYYY-MM-DD.json`. Vecos failus nedzēš.
 Imports: cron `/api/cron/iriss-autoparks-registrs` katru dienu 04:40 UTC (07:40 Rīgā vasarā) nolasa jaunāko `.json` failu caur Dropbox API un aizpilda Autoparka kartītes pēc VIN. Bez AI. Ja faila saturs nav mainījies, imports neko nedara (`?force=1` importē vēlreiz).
