@@ -5,7 +5,7 @@
  */
 
 const LISTING_RECORD_RE =
-  /sludināj|pārdošanai\s+piedāv|piedāvātas\s+automašīn|izsol[eē]|auction|listed\s+for\s+sale|advertis|vēsturisk[āa]\s+cen|historical\s+price|tirgus\s+cen|d[īi]lera\s+piedāv|market\s+(?:value|listing)|vehicle\s+value|novērtēt[āa]\s+cen|listing\s+price|sale\s+price|pēdēj[āa]\s+zinām[āa]\s+pārdošanas\s+cen/i;
+  /sludināj|pārdošanai\s+piedāv|piedāvāt\w*\s+pārdošan|izlikts\s+pārdošan|piedāvātas\s+automašīn|offered\s+for\s+sale|izsol[eē]|auction|listed\s+for\s+sale|advertis|vēsturisk[āa]\s+cen|historical\s+price|tirgus\s+cen|d[īi]lera\s+piedāv|market\s+(?:value|listing)|vehicle\s+value|novērtēt[āa]\s+cen|listing\s+price|sale\s+price|pēdēj[āa]\s+zinām[āa]\s+pārdošanas\s+cen/i;
 
 export const VENDOR_TIMELINE_LISTING_AI_NOTE =
   "sludinājuma/tirgus ieraksts, NAV reģistrācija vai fiziska valsts maiņa";

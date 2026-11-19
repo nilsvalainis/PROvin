@@ -139,20 +139,35 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
       toDate: row.date,
       fromKm,
       toKm,
-      dropKm: fromKm - toKm,
+      // Izlēcējam uz augšu (viena cipara kļūda) starpība ir pozitīva; kritumiem nemainās.
+      dropKm: Math.abs(fromKm - toKm),
     });
   };
+
+  // 19.11: izlēcējs uz augšu (viena cipara / ×10 kļūda) - grafikā nav, un nākamais rādījums nav jāmēra pret to.
+  // Tikai viena cipara izlēcējs (sērija tā līmeni sasniedz gada laikā); lielie izlēcēji (210 000 -> 120 000) paliek
+  // salīdzināšanas punkts, lai īsta korekcija netiktu paslēpta.
+  const isUpwardSpike = (row: UnifiedMileageRow) => analysis.typoSpikeSourceOrders?.has(row.sourceOrder) === true;
 
   for (let i = 0; i < pts.length; i++) {
     const curr = pts[i]!;
     // Ievades kļūda (arī kļūdains pirmais rādījums) nav salīdzināšanas punkts nākamajam.
     let prevIdx = i - 1;
-    while (prevIdx >= 0 && analysis.dataEntryErrorSourceOrders.has(pts[prevIdx]!.row.sourceOrder)) prevIdx -= 1;
+    while (
+      prevIdx >= 0 &&
+      (analysis.dataEntryErrorSourceOrders.has(pts[prevIdx]!.row.sourceOrder) || isUpwardSpike(pts[prevIdx]!.row))
+    ) {
+      prevIdx -= 1;
+    }
     const prev = prevIdx >= 0 ? pts[prevIdx]! : null;
     const next = i < pts.length - 1 ? pts[i + 1]! : null;
     const src = curr.row;
 
     if (analysis.dataEntryErrorSourceOrders.has(src.sourceOrder)) {
+      push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km);
+      continue;
+    }
+    if (isUpwardSpike(src)) {
       push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km);
       continue;
     }

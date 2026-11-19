@@ -533,11 +533,83 @@ export function looksLikeExtraDigitOdometerTypo(spikeKm: number, neighborKm: num
 /**
  * Adatas spike starp zemākiem kaimiņiem — neiekļauj grafikā (Y skala citādi izkropļojas).
  */
-export function isSpuriousMileageSpike(currKm: number, prevKm: number | null, nextKm: number | null): boolean {
+/**
+ * 19.11 (BMW dīlera dati, Nils): viena cipara pārrakstīšanās (85 886 -> 96 533 -> 90 205, īstais ~86 533).
+ * Ja, nomainot TIKAI vienu ciparu, rādījums iekļaujas starp kaimiņiem (prev <= v <= next), tas ir ievades kļūdas
+ * paraksts, nevis korekcija. Atsevišķi pārbauda tempu (sk. {@link isSpuriousMileageSpike}).
+ */
+export function singleDigitTypoFitsBetween(currKm: number, prevKm: number, nextKm: number): boolean {
+  const digits = String(Math.round(currKm));
+  for (let i = 0; i < digits.length; i++) {
+    for (let d = 0; d <= 9; d++) {
+      if (String(d) === digits[i]) continue;
+      if (i === 0 && d === 0 && digits.length > 1) continue;
+      const v = Number(digits.slice(0, i) + String(d) + digits.slice(i + 1));
+      if (v >= prevKm && v <= nextKm) return true;
+    }
+  }
+  return false;
+}
+
+/** Viena cipara izlēcējs: sērijai tā līmenis jāsasniedz ne vēlāk kā pēc gada. */
+export const SPIKE_RECOVERY_MAX_MS = 365 * 24 * 60 * 60 * 1000;
+
+/** Tempa reizinātājs: kāpums uz izlēcēju jābūt vismaz tik reižu straujāks par prev -> next tempu. */
+export const SPIKE_RATE_FACTOR = 5;
+
+export type MileageSpikeTimes = { prev?: number; curr?: number; next?: number; recoveredWithinYear?: boolean };
+
+/**
+ * Viena cipara izlēcējs uz augšu: bez tā sērija ir monotona (prev <= next), viena cipara labojums iekļaujas starp
+ * kaimiņiem, kāpuma temps ≥ 5× sērijas tempa, un sērija šo līmeni sasniedz gada laikā. Īsta korekcija
+ * (next < prev vai līmenis netiek sasniegts) šeit neiekrīt.
+ */
+export function isSingleDigitTypoSpike(
+  currKm: number,
+  prevKm: number | null,
+  nextKm: number | null,
+  times?: MileageSpikeTimes,
+): boolean {
   if (prevKm == null || nextKm == null) return false;
   if (!(currKm > prevKm && nextKm < currKm)) return false;
   const up = currKm - prevKm;
   const down = currKm - nextKm;
+  // Viena cipara kļūda: bez tā punkta sērija ir monotona (prev <= next) un temps uz izlēcēju ir nereāls.
+  // Īsta korekcija (next < prev) šeit neiekrīt - to tālāk atzīmē kā kritumu.
+  if (
+    down >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM &&
+    nextKm >= prevKm &&
+    times?.prev != null &&
+    times.curr != null &&
+    times.next != null &&
+    Number.isFinite(times.prev) &&
+    Number.isFinite(times.curr) &&
+    Number.isFinite(times.next) &&
+    times.next > times.prev &&
+    // Sērija izlēcēja līmeni vēlāk sasniedz normālā tempā (≤ 1 gads). Ja nekad - tā var būt korekcija
+    // (210 000 -> 120 000 -> 150 000), un punkts paliek kā kritums.
+    times.recoveredWithinYear === true &&
+    singleDigitTypoFitsBetween(currKm, prevKm, nextKm)
+  ) {
+    const DAY = 24 * 60 * 60 * 1000;
+    const spikeRate = up / Math.max(1, (times.curr - times.prev) / DAY);
+    const chainRate = (nextKm - prevKm) / Math.max(1, (times.next - times.prev) / DAY);
+    return spikeRate >= Math.max(chainRate * SPIKE_RATE_FACTOR, 150);
+  }
+  return false;
+}
+
+export function isSpuriousMileageSpike(
+  currKm: number,
+  prevKm: number | null,
+  nextKm: number | null,
+  times?: MileageSpikeTimes,
+): boolean {
+  if (prevKm == null || nextKm == null) return false;
+  if (!(currKm > prevKm && nextKm < currKm)) return false;
+  const up = currKm - prevKm;
+  const down = currKm - nextKm;
+  if (isSingleDigitTypoSpike(currKm, prevKm, nextKm, times)) return true;
   if (down < Math.max(UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM, up * 0.4)) return false;
   if (looksLikeExtraDigitOdometerTypo(currKm, prevKm) || looksLikeExtraDigitOdometerTypo(currKm, nextKm)) {
     return true;
@@ -563,6 +635,8 @@ export type UnifiedMileageAnomalyAnalysis = {
    * nobraukumu". Atsevišķs dzeltens brīdinājums, nekad sarkanā josla (sludinājums nav oficiāls fiksējums).
    */
   listingBelowRecordedSourceOrders: Set<number>;
+  /** 19.11: viena cipara izlēcējs uz augšu (sk. {@link isSingleDigitTypoSpike}) - nav salīdzināšanas punkts kritumam. */
+  typoSpikeSourceOrders?: Set<number>;
 };
 
 /** Izolēts kritums starp diviem augstākiem kaimiņiem (A → zems → A+). */
@@ -588,6 +662,12 @@ export function isIsolatedMileageDrop(
   }
   const drop = prevKm - currKm;
   return drop >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+}
+
+function endOfUtcMonth(t: number): number {
+  if (!Number.isFinite(t)) return t;
+  const d = new Date(t);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0);
 }
 
 /** Pirmā rādījuma kļūda: nākamais rādījums ne vēlāk kā pēc tik ilga laika. */
@@ -638,6 +718,9 @@ function findStaleDocumentSourceOrders(
   const pts: { sourceOrder: number; km: number; documentValue: boolean }[] = [];
   for (const r of sorted) {
     if (chartExclude.has(r.sourceOrder)) continue;
+    // 19.11: sludinājums nav dokuments - to vērtē sludinājuma zarā ("sludinājumā mazāk"), citādi noapaļots
+    // sludinājuma km (200 000, 90 000), kas nejauši atkārto agrāku līmeni, kļūst par "novecojušu dokumentu".
+    if (isListingMileageSource(r)) continue;
     const km = parseOdometerKm(r.odometer);
     if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, documentValue: r.documentValue === true });
   }
@@ -714,6 +797,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
   const rowByOrder = new Map(sorted.map((r) => [r.sourceOrder, r]));
   const chartExclude = new Set<number>();
   const dataEntryErrors = new Set<number>();
+  const typoSpikes = new Set<number>();
 
   const pts: { sourceOrder: number; km: number; time: number }[] = [];
   for (const r of sorted) {
@@ -725,7 +809,16 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     const prev = i > 0 ? pts[i - 1]!.km : null;
     const next = i < pts.length - 1 ? pts[i + 1]!.km : null;
     const curr = pts[i]!;
-    if (isSpuriousMileageSpike(curr.km, prev, next)) {
+    const spikeTimes = {
+      prev: i > 0 ? pts[i - 1]!.time : undefined,
+      curr: curr.time,
+      next: i < pts.length - 1 ? pts[i + 1]!.time : undefined,
+      recoveredWithinYear: pts
+        .slice(i + 2)
+        .some((p) => p.km >= curr.km && Number.isFinite(p.time) && p.time - curr.time <= SPIKE_RECOVERY_MAX_MS),
+    };
+    if (isSpuriousMileageSpike(curr.km, prev, next, spikeTimes)) {
+      if (isSingleDigitTypoSpike(curr.km, prev, next, spikeTimes)) typoSpikes.add(curr.sourceOrder);
       chartExclude.add(curr.sourceOrder);
       continue;
     }
@@ -749,8 +842,11 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     if (prev == null && i + 2 < pts.length && src && !isListingMileageSource(src)) {
       const n1 = pts[i + 1]!;
       const n2 = pts[i + 2]!;
+      // 19.11: mēneša precizitātes rādījums (CarVertical 11.2012) var būt no mēneša beigām - 31 dienas logu skaita
+      // no mēneša pēdējās dienas, citādi 01.11 -> 04.12 izskatās pēc 33 dienām un pareizais dīleris saņem sarkano joslu.
+      const firstTime = src.datePrecision === "month" ? endOfUtcMonth(curr.time) : curr.time;
       if (
-        isLeadingMileageEntryError(curr.km, curr.time, n1.km, n1.time, n2.km) &&
+        isLeadingMileageEntryError(curr.km, firstTime, n1.km, Math.max(n1.time, firstTime), n2.km) &&
         !isMileageCountryChange(src, rowByOrder.get(n1.sourceOrder))
       ) {
         dataEntryErrors.add(curr.sourceOrder);
@@ -813,6 +909,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     staleDocumentSourceOrders: staleDocuments,
     dataEntryErrorSourceOrders: dataEntryErrors,
     listingBelowRecordedSourceOrders: listingBelow,
+    typoSpikeSourceOrders: typoSpikes,
   };
 }
 
@@ -1139,7 +1236,13 @@ export function collectUnifiedMileageRows(
 
 function isUnknownMileageCountry(country: string): boolean {
   const c = country.trim();
-  return !c || c === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL || /^nezināma/i.test(c);
+  // 19.11: "Nezināmā" (ar ā) agrāk netika atpazīts pēc toLocaleLowerCase - nezināma valsts skaitījās kā valsts
+  // maiņa, un tas bloķēja ievades kļūdu atpazīšanu (CV 11.2012 89 960 -> dīleris 04.12.2012 2 954).
+  return (
+    !c ||
+    c.toLocaleLowerCase("lv") === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL.toLocaleLowerCase("lv") ||
+    /^nezin[āa]m/i.test(c)
+  );
 }
 
 /**
