@@ -17,6 +17,8 @@ import {
   upsertDealerDataJob,
 } from "@/lib/dealer-data-job-store";
 
+import { recordManualOneautoPurchase } from "@/lib/oneauto-manual-purchase";
+
 const VIN = "WAUZZZ4M0JD000001";
 
 describe("dealer-data-job-store CAS", () => {
@@ -65,5 +67,42 @@ describe("dealer-data-job-store CAS", () => {
     expect((await listUnfinishedDealerDataJobs()).map((j) => j.sessionId).sort()).toEqual(["s_1", "s_2", "s_3", "s_4"]);
     await upsertDealerDataJob("s_2", { vin: VIN, status: "failed", attempts: 3, alert: { key: "failed_final", at: "x" } });
     expect((await listUnfinishedDealerDataJobs()).map((j) => j.sessionId).sort()).toEqual(["s_1", "s_3", "s_4"]);
+  });
+
+  it("manuāla ielase, kamēr automātika strādā: sapludina, nepārraksta un neatņem nomu", async () => {
+    await claimDealerDataJobRun({ sessionId: "s_m", vin: VIN, runId: "run_auto", trigger: "webhook" });
+    await upsertDealerDataJob(
+      "s_m",
+      { vin: VIN, oneautoResults: { oe_vin_lookup: { ok: true, payload: { make: "Audi" } } } },
+      { expectRunId: "run_auto" },
+    );
+    await recordManualOneautoPurchase({
+      sessionId: "s_m",
+      vin: VIN,
+      results: {
+        oe_service_history: { ok: true, payload: { result: { service_events: [{ date: "2024-01-10", odometer: "12000", works: "Oil" }] } } },
+        oe_vin_lookup: { ok: false, error: "http_502", payload: null },
+      },
+    });
+    const job = await readDealerDataJob("s_m");
+    expect(job?.status).toBe("running");
+    expect(job?.runId).toBe("run_auto");
+    expect((job?.oneautoResults?.oe_vin_lookup as { ok: boolean }).ok).toBe(true);
+    expect((job?.oneautoResults?.oe_service_history as { ok: boolean }).ok).toBe(true);
+    expect(await dealerDataRunLeaseHeld("s_m", "run_auto")).toBe(true);
+  });
+
+  it("manuāla ielase ar vēsturi -> statuss «Ielasīts»", async () => {
+    await upsertDealerDataJob("s_n", { vin: VIN, status: "failed", attempts: 3, error: "http_502" });
+    await recordManualOneautoPurchase({
+      sessionId: "s_n",
+      vin: VIN,
+      results: {
+        oe_service_history: { ok: true, payload: { result: { service_events: [{ date: "2024-01-10", odometer: "12000", works: "Oil" }] } } },
+      },
+    });
+    const job = await readDealerDataJob("s_n");
+    expect(job?.status).toBe("done");
+    expect(job?.error).toBeUndefined();
   });
 });

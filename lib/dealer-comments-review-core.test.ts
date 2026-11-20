@@ -5,7 +5,6 @@ import {
   dealerCommentPlainCleanup,
   highlightMajorAssembliesInRichHtml,
 } from "@/lib/dealer-comments-review-core";
-import { splitOneautoAlreadyPurchased } from "@/lib/oneauto-manual-purchase-core";
 
 describe("highlightMajorAssembliesInRichHtml", () => {
   it("izceļ lielos mezglus, neaiztiek virsrakstus un tagus", () => {
@@ -48,25 +47,5 @@ describe("applyDealerCommentReviewFindings", () => {
   });
   it("garās defises -> īsā", () => {
     expect(dealerCommentPlainCleanup("Dzinējs — labs – ok")).toBe("Dzinējs - labs - ok");
-  });
-});
-
-describe("splitOneautoAlreadyPurchased", () => {
-  const stored = {
-    oe_service_history: { ok: true, payload: { result: { service_events: [{ date: "2024-01-01" }] } } },
-    oe_vin_lookup: { ok: false, error: "no_data", payload: null },
-    vin_decoder: { ok: false, error: "http_502", payload: null },
-  };
-  it("jau nopirkto un «datu nav» nepērk vēlreiz; kļūdu drīkst", () => {
-    expect(splitOneautoAlreadyPurchased(["oe_service_history", "oe_vin_lookup", "vin_decoder"], stored)).toEqual({
-      toFetch: ["vin_decoder"],
-      reused: ["oe_service_history", "oe_vin_lookup"],
-    });
-  });
-  it("«Pirkt vēlreiz» (force) pērk visu", () => {
-    expect(splitOneautoAlreadyPurchased(["oe_service_history"], stored, true)).toEqual({
-      toFetch: ["oe_service_history"],
-      reused: [],
-    });
   });
 });
