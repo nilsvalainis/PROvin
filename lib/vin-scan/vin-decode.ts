@@ -358,8 +358,15 @@ const EU_WMI_COUNTRY = new Set([
   "SK",
 ]);
 
+/** Ziemeļamerikas WMI (1, 4, 5 = ASV; 2 = Kanāda; 3 = Meksika). */
+const NORTH_AMERICA_COUNTRIES = new Set(["US", "CA", "MX"]);
+
+/**
+ * ASV tirgus VIN: ASV, Kanādā vai Meksikā ražots (WMI 1-5). NHTSA un ASV OEM atsaukumi tos meklē pēc VIN
+ * (piem. 2T1 Toyota Kanādā, 3VW VW Meksikā).
+ */
 export function isUsWmiVin(vin: string): boolean {
-  return decodeVinLocal(vin).countryCode === "US";
+  return NORTH_AMERICA_COUNTRIES.has(decodeVinLocal(vin).countryCode);
 }
 
 /** Eiropas WMI: NHTSA / ASV OEM lapas nav šī VIN atsaukums. */

@@ -146,4 +146,23 @@ describe("NHTSA / ASV OEM atsaukumi ne-ASV VIN", () => {
     expect(row.status).toBe("none");
     expect(row.summary).not.toBe(ASV_MARKET_RECALL_LABEL);
   });
+
+  it("Kanādas (2T1) un Meksikas (3VW) VIN: NHTSA vaicājums kā ASV auto", async () => {
+    scanFetch.mockImplementation(async (url: string) => {
+      if (url.includes("DecodeVinValues")) {
+        return {
+          status: 200,
+          text: JSON.stringify({ Results: [{ Make: "TOYOTA", Model: "COROLLA", ModelYear: "2018" }] }),
+        };
+      }
+      if (url.includes("recallsByVehicle")) return { status: 200, text: JSON.stringify({ results: [] }) };
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    for (const vin of ["2T1BURHE0JC123456", "3VWFE21C04M000001"]) {
+      scanFetch.mockClear();
+      const row = await probeNhtsaRecalls(ctx(vin));
+      expect(scanFetch.mock.calls.some((call) => String(call[0]).includes("recallsByVehicle"))).toBe(true);
+      expect(row.summary).not.toBe(ASV_MARKET_RECALL_LABEL);
+    }
+  });
 });
