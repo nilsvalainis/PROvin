@@ -47,10 +47,35 @@ export function irissPhoneWhatsAppDigits(phone: string | null | undefined): stri
 }
 
 /** Nobraukums sarakstam: vienība vienmēr km, ja ir skaitlis. */
+/** «20000» -> «20 000» (tūkstošu atstarpe); daļskaitlis paliek kā ievadīts. */
+function groupThousands(raw: string): string {
+  const n = Number(raw.replace(",", "."));
+  if (!Number.isFinite(n)) return raw;
+  return Number.isInteger(n) ? String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") : raw;
+}
+
+/**
+ * 20.11: vienots diapazons sarakstā - «20000-27000» / «20 000 – 27 000 EUR» -> «20 000-27 000 €», «15000-250000» -> «15 000-250 000 km».
+ * Tikai, ja teksts ir tieši divi skaitļi ar defisi (un, iespējams, mērvienība); citādi null (teksts paliek kā ievadīts).
+ */
+export function formatIrissListRange(raw: string, unit: "€" | "km"): string | null {
+  const unitRe = unit === "€" ? /€|\beur\b|\beiro\b/gi : /\bkm\b/gi;
+  const compact = raw.replace(unitRe, "").replace(/\s+/g, "");
+  const m = compact.match(/^(\d+(?:[.,]\d+)?)[-\u2013\u2014](\d+(?:[.,]\d+)?)$/);
+  if (!m) return null;
+  return `${groupThousands(m[1]!)}-${groupThousands(m[2]!)} ${unit}`;
+}
+
 export function formatIrissListKm(raw: string | null | undefined): string {
   const t = (raw ?? "").trim();
   if (!t || t === "-" || t === "\u2014" || t === "\u2013") return "";
-  if (/\bkm\b/i.test(t)) return t.replace(/\s+/g, " ");
+  const range = formatIrissListRange(t, "km");
+  if (range) return range;
+  if (/\bkm\b/i.test(t)) {
+    const plainKm = t.replace(/\bkm\b/gi, "").replace(/\s/g, "");
+    if (/^\d+$/.test(plainKm)) return `${groupThousands(plainKm)} km`;
+    return t.replace(/\s+/g, " ");
+  }
   const compact = t.replace(/\s/g, "").replace(",", ".");
   if (/^\d+(?:\.\d+)?$/.test(compact)) {
     const n = Number.parseFloat(compact);
@@ -158,6 +183,8 @@ export function irissListBudgetText(budget: string | null | undefined): string {
   const t = (budget ?? "").trim();
   if (!t || t === "\u2014" || t === "\u2013") return "-";
   // Tikai skaitlis ("40000", "40 000", "40000.00") -> "40 000 €" (Nils 28.10); teksts paliek kā ievadīts.
+  const range = formatIrissListRange(t, "€");
+  if (range) return range;
   const plain = t.replace(/\s|€|eur/gi, "").replace(",", ".");
   if (/^\d+(\.\d+)?$/.test(plain)) {
     const n = Math.round(Number(plain));

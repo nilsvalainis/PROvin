@@ -34,16 +34,23 @@ export function IrissWaybillGaugeDetail({
             </a>
           )
         ) : null}
-        {active.id ? (
-          <button type="button" className={styles.btn} onClick={() => onExtend?.(active)}>
-            Pagarināt
+        {active.id ? null : (
+          <button type="button" className={styles.btn} disabled>
+            PDF
           </button>
-        ) : null}
-        {active.id && active.number ? (
-          <button type="button" className={`${styles.btn} ${styles.btnStop}`} onClick={() => onStop?.(active)}>
-            Pārtraukt
-          </button>
-        ) : null}
+        )}
+        {/* 20.11: Pagarināt arī pavadzīmei, kuras PDF vēl nav indeksā (forma aizpildās no numura un auto). */}
+        <button type="button" className={styles.btn} onClick={() => onExtend?.(active)}>
+          Pagarināt
+        </button>
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnStop}`}
+          disabled={!active.id || !active.number}
+          onClick={() => onStop?.(active)}
+        >
+          Pārtraukt
+        </button>
       </div>
     </div>
   );

@@ -65,13 +65,14 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     }
     expect(text).not.toContain("Galamērķis");
     expect(text).not.toContain("Pievienot PDF");
-    // Noklusējums: nepiespiež sarakstu un nerāda manuālos laukus (teksts "Izvēlies auto" paliek "Kā tas strādā").
+    // Noklusējums (20.11): «No saraksta» aktīvs un «Izvēlies auto» redzams visiem numuriem; manuālo lauku nav.
     const html = renderHtml(form());
     expect(html).not.toContain('placeholder="Marka, modelis"');
     expect(html).toContain('placeholder="193 uz BMW 330"');
     expect(html).not.toContain('aria-label="VIN"');
     expect(html).not.toContain('placeholder="17 zīmes"');
-    expect(html).not.toContain("tirdzniecībā pieņemtie");
+    expect(html).toContain("tirdzniecībā pieņemtie");
+    expect(html).toMatch(/aria-pressed="true"[^>]*>No saraksta/);
     // Laika izvēles TIEŠI 1 h, 12 h, 48 h, Cits (24 h vairs nav); noklusējums 12 h; brīvais lauks tikai pēc "Cits".
     const hourButtons = [...html.slice(html.indexOf(">Laiks<")).matchAll(/aria-pressed="(true|false)"[^>]*>(\d+ h|Cits)</g)].map((m) => m[2]);
     expect(hourButtons).toEqual(["1 h", "12 h", "48 h", "Cits"]);

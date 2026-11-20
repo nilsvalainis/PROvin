@@ -276,3 +276,30 @@ export function csddPlateCheckText(
   const stale = info.csddCheckOk === false || opts.vpnDown === true || age > CSDD_PLATES_UI_STALE_MS;
   return { text: stale ? `${base} - var būt novecojis` : base, stale };
 }
+
+/**
+ * 20.11: viens «Stāvoklis no CSDD ...» visiem numuriem (agrāk zem katra numura - 3 reizes). Ņem vecāko nolasījumu;
+ * ja kāds numurs nav nolasīts vai nolasījums neizdevās - stale (dzintara krāsā), lai neslēptu problēmu.
+ */
+export function csddPlatesCheckSummary(
+  infos: ReadonlyArray<Pick<WaybillPlateState, "csddCheckedAt" | "csddCheckOk">>,
+): Pick<WaybillPlateState, "csddCheckedAt" | "csddCheckOk"> {
+  let oldest: string | undefined;
+  let oldestMs = Infinity;
+  let ok = true;
+  let missing = false;
+  for (const info of infos) {
+    const t = Date.parse(info.csddCheckedAt ?? "");
+    if (!Number.isFinite(t)) {
+      missing = true;
+      continue;
+    }
+    if (info.csddCheckOk === false) ok = false;
+    if (t < oldestMs) {
+      oldestMs = t;
+      oldest = info.csddCheckedAt;
+    }
+  }
+  if (!oldest) return {};
+  return { csddCheckedAt: oldest, ...(ok && !missing ? {} : { csddCheckOk: false }) };
+}

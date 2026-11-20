@@ -18,7 +18,7 @@ import {
   WAYBILL_PLATES_EVENT,
 } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
-import { csddPlateCheckText } from "@/lib/iriss-waybill-csdd-plates";
+import { csddPlateCheckText, csddPlatesCheckSummary } from "@/lib/iriss-waybill-csdd-plates";
 
 const RING: Record<WaybillGauge["status"], string> = {
   ok: "#16a34a",
@@ -228,7 +228,6 @@ export function IrissWaybillGauges({
             </span>
             {floating ? <MonoPlate plate={g.plate} /> : <span className={styles.plate}>{g.plate.replace(/^([A-Z])/, "$1 ")}</span>}
             <WaybillHomeCar busy={g.busy} status={g.status} brandModel={g.brandModel} />
-            {linked || loading ? null : <WaybillCsddCheck gauge={g} nowMs={nowMs} />}
           </>
         );
         if (linked) {
@@ -295,6 +294,12 @@ export function IrissWaybillGauges({
         </div>
       )}
       {row}
+      {/* 20.11: viens CSDD stāvoklis zem visiem numuriem (agrāk zem katra - 3 reizes; sānjoslā bija nogriezts līdz punktiņiem). */}
+      {loading || small ? null : (
+        <div className={styles.csddOnce}>
+          <WaybillCsddCheck gauge={csddPlatesCheckSummary(gauges)} nowMs={nowMs} />
+        </div>
+      )}
       {active ? (
         <IrissWaybillGaugeDetail
           active={active}
@@ -356,6 +361,11 @@ export function WaybillPlateCards({
 }) {
   return (
     <section className={styles.cards} aria-label="Numuri un aktīvās pavadzīmes">
+      {loading || nowMs === undefined ? null : (
+        <div className={styles.cardsCsdd}>
+          <WaybillCsddCheck gauge={csddPlatesCheckSummary(gauges)} nowMs={nowMs} />
+        </div>
+      )}
       {gauges.map((g) => {
         const st = cardStatus(g);
         const left = waybillGaugeTimeLeft(g);
@@ -366,7 +376,6 @@ export function WaybillPlateCards({
               <span className={styles.pcardPlate}>{g.plate}</span>
               <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
             </div>
-            {loading || nowMs === undefined ? null : <WaybillCsddCheck gauge={g} nowMs={nowMs} />}
             {g.busy ? (
               <>
                 <div>
@@ -388,23 +397,19 @@ export function WaybillPlateCards({
                     <span className={soon ? styles.stripFillSoon : styles.stripFill} style={{ width: `${Math.round(g.share * 100)}%` }} />
                   </span>
                 </div>
-                {g.id ? (
-                  <div className={styles.pcardActions}>
-                    <IrissButton size="sm" onClick={() => onOpenPdf?.(g)}>
-                      PDF
-                    </IrissButton>
-                    <IrissButton size="sm" onClick={() => onExtend?.(g)}>
-                      Pagarināt
-                    </IrissButton>
-                    {g.number ? (
-                      <IrissButton size="sm" variant="danger-outline" onClick={() => onStop?.(g)}>
-                        Pārtraukt
-                      </IrissButton>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className={styles.pcardMeta}>Pavadzīme no CSDD - PDF vēl nav indeksā.</p>
-                )}
+                {/* 20.11: aizņemtam numuram vienmēr tās pašas 3 darbības; bez indeksa PDF un Pārtraukt neaktīvi. */}
+                <div className={styles.pcardActions}>
+                  <IrissButton size="sm" disabled={!g.id} onClick={() => onOpenPdf?.(g)}>
+                    PDF
+                  </IrissButton>
+                  <IrissButton size="sm" onClick={() => onExtend?.(g)}>
+                    Pagarināt
+                  </IrissButton>
+                  <IrissButton size="sm" variant="danger-outline" disabled={!g.id || !g.number} onClick={() => onStop?.(g)}>
+                    Pārtraukt
+                  </IrissButton>
+                </div>
+                {g.id ? null : <p className={styles.pcardMeta}>Pavadzīme no CSDD - PDF vēl nav indeksā.</p>}
               </>
             ) : (
               <>

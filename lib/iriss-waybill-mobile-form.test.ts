@@ -10,6 +10,7 @@ import {
   waybillWrittenOffAtMs,
   firstFreeWaybillPlate,
   initialWaybillMobileForm,
+  waybillAutoForPlate,
   waybillMobileHours,
   waybillMobilePlate,
   waybillMobileProgress,
@@ -95,10 +96,13 @@ describe("phone waybill form", () => {
     expect(built.ok && built.payload.vin).toBe("WAUZZZF27LN004512");
   });
 
-  it("Ar roku / No saraksta: noklusējums nepiespiež sarakstu; pārslēgšana rāda attiecīgos laukus", () => {
-    expect(base.autoChoice).toBe("none");
+  it("Ar roku / No saraksta: noklusējums «No saraksta» visiem numuriem; pārslēgšana rāda attiecīgos laukus", () => {
+    expect(base.autoChoice).toBe("list");
     expect(waybillShowsManualFields(base)).toBe(false);
-    expect(waybillShowsTradeList(base)).toBe(false);
+    expect(waybillShowsTradeList(base)).toBe(true);
+    for (const plate of ["B193-7", "B762-7", "B192-7"]) {
+      expect(waybillShowsTradeList(initialWaybillMobileForm(plate))).toBe(true);
+    }
     const manual = applyWaybillAutoChoice(base, "manual");
     expect(manual).toMatchObject({ autoChoice: "manual", manual: true, car: null });
     expect(waybillShowsManualFields(manual)).toBe(true);
@@ -510,5 +514,27 @@ describe("Pārtraukt darbs telefona sarakstā", () => {
     expect(WAYBILL_STOP_STATUS_LABEL.in_progress).toBe("Pārtrauc");
     expect(waybillStopProgress("in_progress", "P02833").text).toBe("Aivars pārtrauc pavadzīmi P02833 CSDD...");
     expect(waybillStopProgress("issued", "P02833").text).toBe("Pārtraukta CSDD · P02833");
+  });
+});
+
+describe("waybillAutoForPlate (20.11: numura maiņa)", () => {
+  const car = (owner: "IRISS" | "DZA") => ({ id: "c", brandModel: "BMW 220", vin: "WBA00000000000001", accepted: true, owner });
+  it("B192-7 notīra ne-DZA auto, «No saraksta» paliek aktīvs", () => {
+    const state = { ...initialWaybillMobileForm("B193-7"), car: car("IRISS"), representative: "Nils Valainis" };
+    const next = waybillAutoForPlate({ ...state, plate: "B192-7" }, "B192-7");
+    expect(next.car).toBeNull();
+    expect(next.representative).toBe("");
+    expect(waybillShowsTradeList(next)).toBe(true);
+  });
+  it("DZA auto uz B192-7 paliek; «none» kļūst par «No saraksta»", () => {
+    const state = { ...initialWaybillMobileForm("B192-7"), car: car("DZA") };
+    expect(waybillAutoForPlate(state, "B192-7").car?.owner).toBe("DZA");
+    const none = applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "none");
+    expect(waybillAutoForPlate(none, "B192-7").autoChoice).toBe("list");
+    expect(waybillAutoForPlate(none, "B762-7").autoChoice).toBe("list");
+  });
+  it("«Cits» (ar roku) numura maiņa nemaina", () => {
+    const manual = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "manual"), manualBrandModel: "VW Golf" };
+    expect(waybillAutoForPlate(manual, "B192-7")).toBe(manual);
   });
 });

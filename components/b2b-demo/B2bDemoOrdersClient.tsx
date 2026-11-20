@@ -7,6 +7,7 @@ import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryB
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import { B2B_DEMO_APP_PREFIX } from "@/lib/b2b-demo-host";
+import { irissListBudgetText } from "@/lib/iriss-pasutijumi-list-view";
 import {
   B2B_DEMO_DEAL_DETAIL_OPTIONS,
   B2B_DEMO_ORDER_STATUSES,
@@ -149,7 +150,7 @@ function OrderRow({ row }: { row: B2bDemoOrderListRow }) {
           <span className="text-sm text-slate-500">
             {row.clientName || "Bez klienta"}
             {row.vin ? ` · ${row.vin}` : ""}
-            {row.totalBudget ? ` · ${row.totalBudget}` : ""}
+            {row.totalBudget ? ` · ${irissListBudgetText(row.totalBudget)}` : ""}
           </span>
         </span>
         <span className="text-xs uppercase text-slate-500">{B2B_DEMO_ORDER_STATUS_LV[row.status]}</span>

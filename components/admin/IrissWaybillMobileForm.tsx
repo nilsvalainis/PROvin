@@ -21,6 +21,7 @@ import {
   WAYBILL_MOBILE_HOUR_PRESETS,
   WAYBILL_TUKUMS_STREET,
   applyWaybillAutoChoice,
+  waybillAutoForPlate,
   buildWaybillMobilePayload,
   firstFreeWaybillPlate,
   initialWaybillMobileForm,
@@ -167,7 +168,7 @@ export function IrissWaybillMobileForm({
     const onSelect = (e: Event) => {
       const plate = (e as CustomEvent<string>).detail;
       if (typeof plate !== "string" || !plate) return;
-      setForm((prev) => ({ ...prev, plate, plateTouched: true, representative: "" }));
+      setForm((prev) => waybillAutoForPlate({ ...prev, plate, plateTouched: true, representative: "" }, plate));
       setOtherRep(false);
     };
     window.addEventListener(WAYBILL_SELECT_PLATE_EVENT, onSelect);
@@ -271,7 +272,7 @@ export function IrissWaybillMobileForm({
                   aria-pressed={on}
                   className={`${styles.pick} ${styles.plateBtn} ${on ? styles.on : ""}`}
                   onClick={() => {
-                    patch({ plate: row.plate, plateTouched: true, representative: "" });
+                    setForm((prev) => waybillAutoForPlate({ ...prev, plate: row.plate, plateTouched: true, representative: "" }, row.plate));
                     setOtherRep(false);
                   }}
                 >
@@ -757,7 +758,8 @@ export function WaybillLiveRow({
           {done ? <Check className="mr-0.5 inline h-3 w-3 align-[-2px]" strokeWidth={3} aria-hidden /> : null}
           {row.label}
         </span>
-        {row.pdfUrl ? (
+        {/* 20.11: izdotai ar «Saglabāt PDF» virsrakstā PDF saites nav (bija dublikāts). */}
+        {row.pdfUrl && !row.savePdfHref ? (
           <a className={styles.link} href={row.pdfUrl} target="_blank" rel="noopener noreferrer">
             PDF
           </a>

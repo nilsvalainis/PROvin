@@ -25,6 +25,7 @@ import { sortWaybillsNewestFirst, waybillLifecycleLabel } from "@/lib/iriss-pava
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
+import type { WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { waybillDeleteConfirmText } from "@/lib/iriss-pavadzimes-delete";
@@ -271,6 +272,15 @@ export function IrissPavadzimesListClient({
     orderId: row.order?.id ?? "",
   });
 
+  /** Pavadzīme no CSDD bez indeksa ieraksta (nav PDF): Pagarināt aizpilda formu no numura un auto. */
+  const chipFromGauge = (g: WaybillGauge): WaybillVehicleChip => ({
+    chip: g.brandModel.split(/\s+/).slice(0, 2).join(" ") || g.number || g.plate,
+    brandModel: g.brandModel,
+    vin: "",
+    plate: g.plate,
+    orderId: "",
+  });
+
   /** Atkārtot ar vienu pieskārienu: Aivara pieprasījums aizpildīts ar to pašu numuru, auto un VIN. */
   const repeatWaybill = (row: IrissPavadzimeListRow) => {
     setExtendVehicle(chipFromRow(row));
@@ -415,11 +425,9 @@ export function IrissPavadzimesListClient({
             chrome="strip"
             allHref={null}
             onExtend={(g) => {
-              const row = data.rows.find((r) => r.id === g.id);
-              if (row) {
-                setExtendVehicle(chipFromRow(row));
-                window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-              }
+              const row = g.id ? data.rows.find((r) => r.id === g.id) : undefined;
+              setExtendVehicle(row ? chipFromRow(row) : chipFromGauge(g));
+              window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
             }}
             onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
             onOpenPdf={(g) => {
@@ -631,8 +639,8 @@ export function IrissPavadzimesListClient({
               allHref={null}
               selectable
               onExtend={(g) => {
-                const row = data.rows.find((r) => r.id === g.id);
-                if (row) setExtendVehicle(chipFromRow(row));
+                const row = g.id ? data.rows.find((r) => r.id === g.id) : undefined;
+                setExtendVehicle(row ? chipFromRow(row) : chipFromGauge(g));
               }}
               onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
               onOpenPdf={(g) => {
