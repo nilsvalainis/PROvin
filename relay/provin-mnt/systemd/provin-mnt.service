@@ -1,0 +1,24 @@
+[Unit]
+Description=PROVIN mnt.ee browser relay (Playwright + Chrome under Xvfb)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=provinmnt
+Group=provinmnt
+WorkingDirectory=/opt/provin-mnt
+EnvironmentFile=/etc/provin-mnt.env
+Environment=HOME=/var/lib/provin-mnt
+ExecStart=/usr/bin/xvfb-run -a -s "-screen 0 1920x1080x24 -nolisten tcp" /usr/bin/node /opt/provin-mnt/server.mjs
+Restart=always
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=20
+MemoryMax=2G
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-mnt /tmp
+
+[Install]
+WantedBy=multi-user.target
