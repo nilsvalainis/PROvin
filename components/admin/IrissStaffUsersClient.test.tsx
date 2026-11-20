@@ -42,7 +42,17 @@ describe("Personu saraksta ielāde", () => {
     expect(text).toContain("Mēģināt vēlreiz");
   });
 
-  it("pēc ielādes neko nerāda", () => {
+  it("pēc ielādes ar lietotājiem neko nerāda", () => {
     expect(renderText(<StaffListPlaceholder state="ready" onRetry={() => undefined} />)).toBe("");
+  });
+
+  it("pēc ielādes bez lietotājiem rāda «Nav lietotāju»", () => {
+    const html = renderHtml(<StaffListPlaceholder state="ready" empty onRetry={() => undefined} />);
+    expect(html).toContain('data-testid="staff-list-empty"');
+    expect(renderText(<StaffListPlaceholder state="ready" empty onRetry={() => undefined} />)).toBe("Nav lietotāju");
+  });
+
+  it("ielādes laikā «Nav lietotāju» nerāda", () => {
+    expect(renderText(<StaffListPlaceholder state="loading" empty onRetry={() => undefined} />)).not.toContain("Nav lietotāju");
   });
 });
