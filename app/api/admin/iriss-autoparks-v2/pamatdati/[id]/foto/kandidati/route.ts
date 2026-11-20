@@ -14,6 +14,6 @@ export async function GET(_req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const found = await readAutoparksV2Car(id);
   if (!found) return autoparksV2Json({ error: "not_found" }, 404);
-  const candidates = await autoparksV2StockPhotoCandidates(found.car);
+  const candidates = await autoparksV2StockPhotoCandidates(found.car, found.v2.fields.vin);
   return autoparksV2Json({ ok: true, current: found.v2.mainPhoto?.dropboxId ?? "", candidates });
 }

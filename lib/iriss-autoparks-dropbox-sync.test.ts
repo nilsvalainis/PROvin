@@ -380,3 +380,48 @@ describe("J39: BMW 220d (V99966) zināmā piesaiste + dryRun režīms", () => {
     expect(after?.car.dropboxFolderId).toBe(bmwFolder.id);
   });
 });
+
+describe("DE iepirkumi: mape bez VIN nosaukumā, VIN car-data.json (20.11)", () => {
+  const DE = "/STOCK/Volvo XC60 DE Iepirkums";
+  const VIN = "YV1DZ3150F2674045";
+  const carData = JSON.stringify({ fields: { VIN: { value: VIN } } });
+
+  it("jaunam auto atrod DE mapi pēc car-data.json, nevis veido jaunu tukšu", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", DE);
+    db.add("file", `${DE}/car-data.json`, carData);
+    db.add("folder", `${DE}/bildes-izsole`);
+    db.add("file", `${DE}/bildes-izsole/1.jpg`, "img");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Volvo", model: "XC60", year: "2014", vin: VIN }, actor);
+    expect(await sync.linkAutoparksCarToDropbox(car.id)).toMatchObject({ linked: true, path: DE });
+    expect(db.client.ensureFolder).not.toHaveBeenCalled();
+  });
+
+  it("cits VIN car-data.json -> DE mapi neņem, veido jaunu pēc parauga", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", DE);
+    db.add("file", `${DE}/car-data.json`, carData);
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Volvo", model: "XC90", vin: "YV1CR714691518193" }, actor);
+    const r = await sync.linkAutoparksCarToDropbox(car.id);
+    expect(r.path).toBe(`/STOCK/Volvo XC90${SEP}518193`);
+  });
+
+  it("sinhronizācija sasaista nesaistītu auto ar DE mapi pēc car-data.json", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", DE);
+    db.add("file", `${DE}/car-data.json`, carData);
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Volvo", model: "XC60", vin: VIN }, actor);
+    const r = await sync.runAutoparksDropboxSync({ full: true });
+    expect(r.linked).toBe(1);
+    expect((await store.getAutoparksRoom(car.id))?.car.dropboxFolderPath).toBe(DE);
+  });
+});

@@ -1,9 +1,11 @@
 import "server-only";
 
-import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
+import { getDropboxClient, type DropboxClient, type DropboxEntry } from "@/lib/dropbox-client";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { linkAutoparksCarToDropbox, listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
-import { makeAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
+import { autoparksOwner } from "@/lib/iriss-autoparks";
+import { autoparksDropboxRoot } from "@/lib/iriss-autoparks-dropbox-path";
+import { findStockFolderByCarDataVin, makeAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import type { AutoparksCarV2 } from "@/lib/iriss-autoparks-v2";
 import { pickStockMainPhoto } from "@/lib/iriss-autoparks-v2-photo-pick";
@@ -22,6 +24,32 @@ const NEGATIVE_RECHECK_MS = 60 * 60 * 1000;
 export type StockPhotoCandidate = { id: string; name: string };
 
 /**
+ * Bilžu grupas auto mapei; ja piesaistītajā mapē nav nevienas bildes (piem. auto izveides brīdī tika izveidota jauna
+ * tukša mape "Volvo XC90 D5 Executive 2009 – 518193", bet bildes ir IRISS mapē "Volvo XC90 DE Iepirkums"), mēģina
+ * mapi bez VIN nosaukumā, kuras `car-data.json` satur šī auto VIN (sk. `findStockFolderByCarDataVin`). Sasaiste
+ * netiek mainīta - tikai bildes ņemtas no atrastās mapes.
+ */
+async function stockPhotoGroupsWithCarDataFallback(
+  client: DropboxClient,
+  car: Pick<AutoparksCar, "vin" | "owner">,
+  folderPath: string,
+  vinOverride = "",
+): Promise<DropboxEntry[][]> {
+  const groups = await listAutoparksStockPhotoGroups(client, folderPath);
+  if (groups.some((g) => g.length > 0)) return groups;
+  const vin = vinOverride.trim() || car.vin.trim();
+  if (!vin) return groups;
+  try {
+    const { entries } = await client.listAll(autoparksDropboxRoot(autoparksOwner(car)), { recursive: false });
+    const alt = await findStockFolderByCarDataVin(client, entries, vin);
+    if (!alt || alt.pathDisplay.toLowerCase() === folderPath.toLowerCase()) return groups;
+    return await listAutoparksStockPhotoGroups(client, alt.pathDisplay);
+  } catch {
+    return groups;
+  }
+}
+
+/**
  * Auto /STOCK mapes bilžu kandidāti: jaunajā struktūrā (J36/J39) `bildes-izsole/` (ar `LR`
  * apakšmapi) + "iPhone" apakšmapes, ar vecās struktūras (saknes bildes) fallback, ja nekur nekā
  * nav. `bildes-canon` netiek lietota (J39 labojums).
@@ -31,13 +59,16 @@ export type StockPhotoCandidate = { id: string; name: string };
  * pēc VIN (bez jaunas mapes veidošanas, sk. `linkAutoparksCarToDropbox`), tāpat kā to jau dara
  * zināmo VIN pārpiesaiste (j36/j39/j48), bet automātiski, nevis ar roku rakstītam sarakstam.
  */
-export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "id" | "dropboxFolderId">): Promise<StockPhotoCandidate[]> {
+export async function autoparksV2StockPhotoCandidates(
+  car: Pick<AutoparksCar, "id" | "dropboxFolderId" | "vin" | "owner">,
+  vinOverride = "",
+): Promise<StockPhotoCandidate[]> {
   const client = getDropboxClient();
   if (!client) return [];
   try {
     const folder = car.dropboxFolderId ? await client.getMetadata(car.dropboxFolderId) : null;
     if (folder?.tag === "folder") {
-      const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+      const groups = await stockPhotoGroupsWithCarDataFallback(client, car, folder.pathDisplay, vinOverride);
       return groups.flat().map((e) => ({ id: e.id, name: e.name }));
     }
     const relinked = await linkAutoparksCarToDropbox(car.id, { create: false });
@@ -56,11 +87,15 @@ export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "i
  * `listAutoparksStockPhotoGroups`), no tās - zemākais numurētais/pirmais pēc nosaukuma, izfiltrējot
  * acīmredzami ne-priekšas kadrus (`pickStockMainPhoto`). `bildes-canon` netiek lietota.
  */
-async function pickAutoparksV2MainPhotoCandidate(client: DropboxClient, car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate | null> {
+async function pickAutoparksV2MainPhotoCandidate(
+  client: DropboxClient,
+  car: Pick<AutoparksCar, "dropboxFolderId" | "vin" | "owner">,
+  vinOverride = "",
+): Promise<StockPhotoCandidate | null> {
   if (!car.dropboxFolderId) return null;
   const folder = await client.getMetadata(car.dropboxFolderId);
   if (folder?.tag !== "folder") return null;
-  const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+  const groups = await stockPhotoGroupsWithCarDataFallback(client, car, folder.pathDisplay, vinOverride);
   for (const group of groups) {
     const picked = pickStockMainPhoto(group.map((e) => ({ id: e.id, name: e.name })));
     if (picked) return picked;
@@ -87,7 +122,7 @@ export async function autoparksV2MainPhoto(car: AutoparksCar, v2: AutoparksCarV2
   }
   const client = getDropboxClient();
   if (!client || !car.dropboxFolderId) return null;
-  const picked = await pickAutoparksV2MainPhotoCandidate(client, car);
+  const picked = await pickAutoparksV2MainPhotoCandidate(client, car, v2.fields.vin);
   let thumb: Buffer | null = null;
   if (picked) {
     try {
@@ -120,10 +155,11 @@ export async function setAutoparksV2MainPhoto(
   car: AutoparksCar,
   dropboxId: string,
   actor: AutoparksV2Actor,
+  vinOverride = "",
 ): Promise<{ ok: true } | { ok: false; reason: "not_found" | "dropbox_error" }> {
   const client = getDropboxClient();
   if (!client) return { ok: false, reason: "dropbox_error" };
-  const candidates = await autoparksV2StockPhotoCandidates(car);
+  const candidates = await autoparksV2StockPhotoCandidates(car, vinOverride);
   const picked = candidates.find((c) => c.id === dropboxId);
   if (!picked) return { ok: false, reason: "not_found" };
   let thumb: Buffer | null = null;
