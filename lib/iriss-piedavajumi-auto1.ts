@@ -436,7 +436,7 @@ function parseVinData(detail: IrissRelayAuctionDetail): string[] {
   // Nils 30.10: pēc «Show more +» tas pats saraksts var būt divreiz - ņem garāko (pilno).
   let best: string[] = [];
   for (const l of detail.lists ?? []) {
-    if (!/according to (the )?(identification number|vin)|car data/i.test(l.heading)) continue;
+    if (!/according to (the )?(identification number|vin)|car data|dati pēc vin|(laut|gemäß) (fin|vin)/i.test(l.heading)) continue;
     const items = l.items.map(clean).filter(Boolean);
     if (items.length > best.length) best = items;
   }
