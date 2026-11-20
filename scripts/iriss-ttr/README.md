@@ -67,6 +67,19 @@ nekad «Anulēt», nekad «Paziņot klientam») -> `sync.js` (vecā vairs nav ak
 Lokālā pārbaude: numurs `P\d{5,6}`, sakrīt ar lietotāja apstiprināto, ir starp firmas zināmajiem numuriem (`knownWaybills`);
 B192-7 - tikai ar roku. Izslēgt: `/etc/iriss-ttr/env` `IRISS_WAYBILL_REPLACE_STOP=0` (tad darbs Aivaram).
 
+### Ātrums: adaptīvs poll + silts pārlūks (Nils 20.11)
+
+- **Poll**: worker aptaujā Vercel ik 2 s, kad pēdējās 15 min izveidots pieprasījums vai pēdējās 6 min atvērta Pavadzīmju lapa
+  (serveris atbildē dod `pollMs`; lapas atzīme `iriss-ttr-control` `ui.pageSeenAt`, raksta ne biežāk kā reizi 3 min), citādi ik 10 s.
+  Worker pats paliek ātrs 15 min pēc sava darba. Ienākošu portu nav: worker tikai izsauc `https://www.provin.lv`.
+- **Silts pārlūks** (`IRISS_WAYBILL_WARM_BROWSER`, noklusējumā ieslēgts): `sync`/`stop`/`fill`/`save` worker procesā, viens Chromium,
+  katrai firmai (ctx1 ĪRISS, ctx2 DZA) savs konteksts = sava CSDD sesija. Tas pats `runCli`, ledger un sargi (tīkls, DOM klikšķi,
+  dialogi, `FORBIDDEN_ACTION_RE`, `ANNUL_NEVER_RE`, «Paziņot» bloķēts), atļaujas piesaistītas solim: Saglabāt tikai `save`,
+  «Pārtraukt!» tikai `stop`, `annul` worker nepalaiž nekad. Kļūda, `ok:false` vai 180 s timeout -> sesija aizvērta (nākamais solis ar
+  jaunu pieslēgšanos). Dīkstāvē pārlūks aizveras pēc `IRISS_WAYBILL_WARM_IDLE_MIN` (nokl. 10) min. CDP režīmā (`browserUrl`) netiek lietots.
+- `IRISS_WAYBILL_WARM_BROWSER=0` -> vecā uzvedība (katram solim `node refill.js|save.js|sync.js|stop.js` ar savu pārlūku un pieslēgšanos).
+- Žurnālā: `claimed` ar `queuedSec` (izveide -> claim), `issued` ar `stepsSec`, `totalSec`, `queuedSec`; `job_done` ar `warm`.
+
 ### Tūlītēja numuru sinhronizācija (`plates-sync-now.mjs`)
 
 Tikai lasa: CSDD numuru (B193-7, B762-7, B192-7) stāvoklis -> `POST /api/iriss/aivars/waybill-plates` uzreiz (tas pats, ko worker dara

@@ -13,7 +13,9 @@ import {
 import { autoWaybillLiveNow, busyWaybillPlatesNow } from "@/lib/iriss-waybill-auto-server";
 import { pendingWaybillRequests } from "@/lib/iriss-waybill-requests";
 import { readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
-import { noteWaybillWorkerHeartbeat } from "@/lib/iriss-ttr-control-store";
+import { noteWaybillWorkerHeartbeat, readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
+import type { TtrControlDoc } from "@/lib/iriss-ttr-control";
+import { waybillWorkerPollMs } from "@/lib/iriss-waybill-worker-poll";
 import { knownWaybillNumbers } from "@/lib/iriss-waybill-csdd-plates";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
@@ -52,12 +54,18 @@ export async function GET(req: Request) {
   if (!verifyIrissAivarsApiToken(req.headers.get("authorization"))) return unauthorized();
   const params = new URL(req.url).searchParams;
   const scopeAuto = params.get("scope") === "auto";
+  const nowMs = Date.now();
+  // Worker: vadības dokuments vajadzīgs gan sirdspukstam, gan pollMs (lapa atvērta) - nolasa vienreiz, paralēli rindai.
+  const [doc, control] = await Promise.all([
+    readWaybillRequestsDoc(),
+    scopeAuto ? readTtrControlDoc().catch((): TtrControlDoc | null => null) : Promise.resolve(null),
+  ]);
   if (scopeAuto && params.has("live")) {
     const live = params.get("live") === "1";
-    after(() => noteWaybillWorkerHeartbeat(live));
+    after(() => noteWaybillWorkerHeartbeat(live, control));
   }
-  const nowMs = Date.now();
-  const doc = await readWaybillRequestsDoc();
+  // 20.11: ātra aptauja (2 s), kad nesen bija pieprasījums vai atvērta Pavadzīmju lapa; citādi 10 s.
+  const pollMs = scopeAuto ? waybillWorkerPollMs({ requests: doc.requests, pageSeenAt: control?.ui.pageSeenAt, nowMs }) : undefined;
   const pending = pendingWaybillRequests(doc.requests, nowMs);
   const creates = pending.filter((row) => !isWaybillStopRequest(row));
   const stops = pending.filter((row) => isWaybillStopRequest(row));
@@ -110,6 +118,7 @@ export async function GET(req: Request) {
       requests,
       stopRequests: scopeAuto ? [] : stops.map(toAivarsStopWaybillAction),
       ...(wantKnown && known ? { knownWaybills: known } : {}),
+      ...(pollMs ? { pollMs } : {}),
     },
     { headers: { "Cache-Control": "private, no-store" } },
   );
