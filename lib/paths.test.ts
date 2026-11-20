@@ -21,7 +21,7 @@ describe("approved LV VIN-check copy", () => {
     };
     const v = vin.VinCheck;
     expect(v.homeBody).toContain("<freeEval>bezmaksas VIN koda un sludinājuma novērtējumu</freeEval>");
-    expect(v.homeBody).toContain("Ja meklē, kur veikt VIN koda pārbaudi");
+    expect(v.homeBody).toContain("Ja meklē, kur veikt <vinPage>VIN koda pārbaudi</vinPage>");
     expect(v.h1).toBe("VIN koda pārbaude pirms auto pirkuma");
     expect(v.lead).toContain("VIN ir 17 zīmju rūpnīcas identifikācijas numurs.");
     expect(v.whatTitle).toBe("Kas ir VIN koda pārbaude?");
@@ -30,6 +30,23 @@ describe("approved LV VIN-check copy", () => {
     expect(v.whyBody).toContain("Katrā atskaitē redzams tikai tas, kas iegūts no vienas konkrētas datubāzes");
     expect(v.howTitle).toBe("Kā notiek pārbaude PROVIN");
     expect(v.howBody).toContain("24-72 stundu laikā");
-    expect(meta.Meta.servicesIntro).toContain("Izvēlies, cik padziļinātu VIN koda pārbaudi vēlies");
+    expect(meta.Meta.servicesIntro).toContain(
+      "Izvēlies, cik padziļinātu <vinPage>VIN koda pārbaudi</vinPage> vēlies",
+    );
+  });
+
+  it("wraps an existing VIN-check phrase in every public locale without changing visible copy", () => {
+    for (const locale of ["lv", "en", "de", "ru"] as const) {
+      const vin = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}/vinCheck.json`), "utf8")) as {
+        VinCheck: { homeBody: string };
+      };
+      const meta = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}/meta.json`), "utf8")) as {
+        Meta: { servicesIntro: string };
+      };
+      expect(vin.VinCheck.homeBody).toMatch(/<vinPage>.+<\/vinPage>/);
+      expect(meta.Meta.servicesIntro).toMatch(/<vinPage>.+<\/vinPage>/);
+      expect(vin.VinCheck.homeBody.replace(/<\/?[^>]+>/g, "")).not.toMatch(/[<>]/);
+      expect(meta.Meta.servicesIntro.replace(/<\/?[^>]+>/g, "")).not.toMatch(/[<>]/);
+    }
   });
 });
