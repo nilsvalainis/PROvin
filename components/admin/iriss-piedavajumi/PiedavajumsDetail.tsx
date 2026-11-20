@@ -40,6 +40,9 @@ import {
   irissPdEditorValue,
   formatIrissPdPrice,
   irissPdAvailableActions,
+  canCancelIrissPd,
+  IRISS_PD_CANCEL_CONFIRM_LV,
+  IRISS_PD_CANCEL_LV,
   irissPdEurDigits,
   irissPdMargin,
   irissPdTotalFromParts,
@@ -463,9 +466,15 @@ export function PiedavajumsDetail({
   });
 
   async function act(
-    action: IrissPdAction | "create-order" | "fill-from-stock",
+    action: IrissPdAction | "create-order" | "fill-from-stock" | "cancel",
     opts: { quiet?: boolean } = {},
   ): Promise<IrissPiedavajums | null> {
+    let extra: { text?: string } = {};
+    if (action === "cancel") {
+      const reason = window.prompt(`${IRISS_PD_CANCEL_CONFIRM_LV}\n\nIemesls (nav obligāts):`, "");
+      if (reason === null) return null;
+      extra = { text: reason };
+    }
     if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return null;
     if (action === "approve" && !window.confirm("Atzīmēt kā apstiprinātu? Tiks izveidots/rezervēts Pasūtījums.")) return null;
     if (action === "reopen" && !window.confirm("Atjaunot piedāvājumu? Klients saitē atkal varēs apstiprināt vai noraidīt.")) return null;
@@ -477,7 +486,7 @@ export function PiedavajumsDetail({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...extra }),
       });
       const data = (await res.json()) as { ok?: boolean; record?: IrissPiedavajums; message?: string };
       if (!data.ok || !data.record) throw new Error(data.message || "Neizdevās.");
@@ -1082,6 +1091,11 @@ export function PiedavajumsDetail({
                 Atjaunot (klientam atkal pieejams)
               </button>
             ) : null}
+            {!staff && canCancelIrissPd(rec.status) ? (
+              <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void act("cancel")}>
+                {IRISS_PD_CANCEL_LV}
+              </button>
+            ) : null}
             {!staff && rec.status === "approved" && !rec.approvedOrderId ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("create-order")}>
                 Izveidot pasūtījumu
@@ -1096,7 +1110,7 @@ export function PiedavajumsDetail({
               PDF
             </Link>
             {rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? (
-              <a className="pd-btn" href={irissPdPublicPath(rec.linkToken)} target="_blank" rel="noreferrer">
+              <a className="pd-btn" href={`${irissPdPublicPath(rec.linkToken)}?admins=1`} target="_blank" rel="noreferrer">
                 Klienta skats
               </a>
             ) : null}
@@ -1105,7 +1119,7 @@ export function PiedavajumsDetail({
             <div className="pd-kv">
               <span>Pasūtījums</span>
               <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${rec.approvedOrderId}`}>
-                Rezervēts →
+                {rec.status === "approved" ? "Rezervēts →" : "Atvērt →"}
               </Link>
             </div>
           ) : null}

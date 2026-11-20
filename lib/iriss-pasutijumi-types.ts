@@ -288,6 +288,8 @@ export type IrissStatusHistoryEntry = {
   at: string;
   by: string;
   reason?: string;
+  /** Nils 20.11 (audits 3): maiņu veica automātika, jo šis Autoparka auto kļuva «Pārdots» (atsaukšanai). */
+  autoparksCarId?: string;
 };
 
 export type IrissPasutijumsRecord = {

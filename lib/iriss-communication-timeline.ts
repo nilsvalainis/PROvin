@@ -12,6 +12,7 @@ import {
   type IrissAdvanceDraft,
 } from "@/lib/iriss-advance";
 import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
+import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 import {
   displayIrissPasutijumsListStatusLabel,
   type IrissGeneratedDocument,
@@ -187,6 +188,8 @@ export function deriveIrissCommunicationTimeline(input: {
   advance?: IrissAdvanceDraft;
   storedEvents?: IrissCommunicationEvent[];
   offerLinks?: IrissOfferClientLinkAdminView[];
+  /** Nils 20.11 (audits 4): jaunās PD sistēmas notikumi (`irissPdCommunicationEvents`). */
+  pdEvents?: IrissCommunicationEvent[];
 }): IrissCommTimelineItem[] {
   const out: IrissCommTimelineItem[] = [];
   const seen = new Set<string>();
@@ -283,6 +286,8 @@ export function deriveIrissCommunicationTimeline(input: {
     }
   }
 
+  for (const ev of input.pdEvents ?? []) push(ev, true);
+
   if (input.advance && irissAdvanceHasContent(input.advance)) {
     const amount = parseIrissAdvanceAmount(input.advance.amount);
     const paid = input.advance.paidAt ? `${input.advance.paidAt}T12:00:00.000Z` : "";
@@ -369,6 +374,7 @@ export function newIrissCommunicationEvent(
 export function timelineFromPasutijums(
   rec: IrissPasutijumsRecord,
   offerLinks: IrissOfferClientLinkAdminView[] = [],
+  pdEvents: IrissCommunicationEvent[] = [],
 ): IrissCommTimelineItem[] {
   return deriveIrissCommunicationTimeline({
     notes: rec.notes,
@@ -379,5 +385,51 @@ export function timelineFromPasutijums(
     advance: rec.advance,
     storedEvents: rec.communicationEvents,
     offerLinks,
+    pdEvents,
   });
+}
+
+/**
+ * Nils 20.11 (audits 4): jaunās PD sistēmas notikumi pasūtījuma «Komunikācija» laika joslā
+ * (izveidots, nosūtīts, atvērts klientam, jautājums, apstiprināts, noraidīts, atcelts) - līdzās vecajiem piedāvājumiem.
+ * Tīra funkcija: no PD vēstures, klienta ziņām un pirmās atvēršanas laika. Cenas un iekšējās piezīmes netiek iekļautas.
+ */
+
+/** = IRISS_PD_CLIENT_ACTOR (lib/iriss-piedavajumi; tests pārbauda vienādību - šeit bez smagā importa). */
+export const IRISS_PD_COMM_CLIENT_ACTOR = "Klients (piedāvājuma saite)";
+const CLIENT_ACTOR = IRISS_PD_COMM_CLIENT_ACTOR;
+
+function afterColon(text: string): string {
+  const i = text.indexOf(":");
+  return i >= 0 ? text.slice(i + 1).trim() : "";
+}
+
+export function irissPdCommunicationEvents(
+  rec: Pick<IrissPiedavajums, "id" | "number" | "createdAt" | "history" | "messages" | "vehicle">,
+  opts: { firstViewedAt?: string } = {},
+): IrissCommunicationEvent[] {
+  const label = irissPdNumberLabel(rec.number);
+  const out: IrissCommunicationEvent[] = [];
+  const add = (id: string, at: string, title: string, status: IrissCommunicationEvent["status"], body?: string) => {
+    if (!at || !Number.isFinite(Date.parse(at))) return;
+    out.push({ id: `pd-${rec.id}-${id}`.slice(0, 64), at, kind: "offer", title, status, ...(body ? { body } : {}) });
+  };
+  const created = rec.createdAt || rec.history[0]?.at || "";
+  add("created", created, `${label} izveidots`, "logged", rec.vehicle.title.trim() || undefined);
+  rec.history.forEach((h, i) => {
+    const id = `h${i}`;
+    const who = h.by === CLIENT_ACTOR ? "klients saitē" : h.by ? `atzīmēja ${h.by}` : "";
+    if (h.text.startsWith("Nosūtīts")) add(id, h.at, `${label} nosūtīts klientam`, "sent");
+    else if (h.text.startsWith("Atjaunots - klientam atkal pieejams")) add(id, h.at, `${label} atkal pieejams klientam`, "sent");
+    else if (h.text === "Apstiprināts") add(id, h.at, `${label} apstiprināts`, "received", who || undefined);
+    else if (h.text === "Atzīmēts kā noraidīts") add(id, h.at, `${label} noraidīts`, "logged", who || undefined);
+    else if (h.text.startsWith("Klients noraidīja")) add(id, h.at, `${label} klients noraidīja`, "received", afterColon(h.text) || undefined);
+    else if (h.text.startsWith("Darījums atcelts")) add(id, h.at, `${label} darījums atcelts`, "logged", afterColon(h.text) || undefined);
+  });
+  for (const m of rec.messages) {
+    if (m.from !== "client" || m.kind !== "question") continue;
+    add(`q-${m.id}`, m.at, `${label} klienta jautājums`, m.answeredAt ? "answered" : "received", m.text);
+  }
+  if (opts.firstViewedAt) add("open", opts.firstViewedAt, `${label} klients atvēra saiti`, "opened");
+  return out;
 }

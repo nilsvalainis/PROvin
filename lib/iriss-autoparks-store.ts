@@ -233,10 +233,12 @@ export async function linkAutoparksCarToOrder(carId: string, orderId: string, ac
 }
 
 export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, actor: AutoparksActor): Promise<AutoparksCar | null> {
-  return mutateAutoparksState((state) => {
+  let prevStatus = "";
+  const out = await mutateAutoparksState<AutoparksCar | null>((state) => {
   const idx = state.cars.findIndex((c) => c.id === id);
   if (idx < 0) return { result: null, write: false };
   const prev = state.cars[idx]!;
+  prevStatus = prev.status;
   const now = new Date().toISOString();
   let next: AutoparksCar = { ...prev, updatedAt: now };
   const text = (v: string | undefined, max: number) => (v === undefined ? undefined : v.trim().slice(0, max));
@@ -270,6 +272,16 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
   state.cars[idx] = next;
   return { result: next };
   });
+  // Nils 20.11 (audits 3): «Pārdots» <-> saistītais pasūtījums «Izpildīts» (kļūda neaptur saglabāšanu).
+  if (out && prevStatus && out.status !== prevStatus && (out.status === "sold" || prevStatus === "sold")) {
+    try {
+      const { syncIrissOrdersAfterCarStatusById } = await import("@/lib/iriss-autoparks-sold-orders");
+      await syncIrissOrdersAfterCarStatusById(id, prevStatus, out.status, { id: actor.id, name: actor.name });
+    } catch (e) {
+      console.error("[iriss-autoparks] sold sync", e instanceof Error ? e.message : e);
+    }
+  }
+  return out;
 }
 
 /** Statuss, uz kuru pārdotu auto atgriež «Atjaunot no arhīva» (Nils 20.11). */

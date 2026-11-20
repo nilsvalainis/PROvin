@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { IrissCarSharePublicUnavailable, IrissCarSharePublicView } from "@/components/iriss-car-share-public/IrissCarSharePublicView";
+import {
+  IrissCarSharePublicSold,
+  IrissCarSharePublicUnavailable,
+  IrissCarSharePublicView,
+} from "@/components/iriss-car-share-public/IrissCarSharePublicView";
 import { isSafeIrissCarShareToken } from "@/lib/iriss-car-share";
 import { loadIrissCarSharePublicView } from "@/lib/iriss-car-share-public";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
+import { irissCarShareTokenSold } from "@/lib/iriss-public-availability";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -23,5 +28,7 @@ export default async function IrissCarSharePublicPage({ params }: { params: Prom
   if (!ipRl.ok || !isSafeIrissCarShareToken(token)) return <IrissCarSharePublicUnavailable />;
   const view = await loadIrissCarSharePublicView(token);
   if (!view) return <IrissCarSharePublicUnavailable />;
+  // Nils 20.11: pārdots auto - neitrāls teksts bez detaļām (iekšējos statusus klients neredz nekad).
+  if (await irissCarShareTokenSold(token)) return <IrissCarSharePublicSold />;
   return <IrissCarSharePublicView token={token} view={view} />;
 }

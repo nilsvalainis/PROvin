@@ -119,9 +119,9 @@ describe("Klienta skats (publiskā saite)", () => {
 });
 
 describe("Statusu čipi un saraksts", () => {
-  it("visi 6 statusi ar LV tekstu", () => {
+  it("visi 7 statusi ar LV tekstu (20.11: + «Atcelts»)", () => {
     const text = IRISS_PD_STATUSES.map((s) => renderText(<PdStatusChip status={s} />));
-    expect(text).toEqual(["Pieprasīts", "Melnraksts", "Nosūtīts", "Apstiprināts", "Noraidīts", "Beidzies termiņš"]);
+    expect(text).toEqual(["Pieprasīts", "Melnraksts", "Nosūtīts", "Apstiprināts", "Noraidīts", "Beidzies termiņš", "Atcelts"]);
   });
 
   it("saraksts: darbība pēc statusa un beigušais rāda «Jauns uz šī bāzes»", () => {

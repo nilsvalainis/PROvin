@@ -4,6 +4,7 @@ import { getClientIpFromHeaders } from "@/lib/client-ip";
 import { loadIrissPdPhoto } from "@/lib/iriss-piedavajumi-photo";
 import { readIrissPdByToken } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdToken } from "@/lib/iriss-piedavajumi-types";
+import { irissPdPublicNotCurrentFor } from "@/lib/iriss-public-availability";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   if (!rl.ok) return hidden();
   const rec = await readIrissPdByToken(token);
   if (!rec || (rec.status !== "sent" && rec.status !== "approved")) return hidden();
+  if (await irissPdPublicNotCurrentFor(rec)) return hidden();
   const size = new URL(req.url).searchParams.get("s") === "full" ? "full" : "thumb";
   const photo = await loadIrissPdPhoto(rec, index, size);
   if (!photo) return hidden();

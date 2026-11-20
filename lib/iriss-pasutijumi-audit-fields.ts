@@ -88,12 +88,14 @@ export function parseIrissStatusHistory(raw: unknown): IrissStatusHistoryEntry[]
     if (!isIsoDate(o.at)) continue;
     const by = typeof o.by === "string" ? o.by.trim().slice(0, 80) : "";
     const reason = typeof o.reason === "string" ? o.reason.trim().slice(0, 240) : "";
+    const carId = typeof o.autoparksCarId === "string" && /^[\w-]{1,80}$/.test(o.autoparksCarId) ? o.autoparksCarId : "";
     out.push({
       from: o.from,
       to: o.to,
       at: o.at,
       by: by || "operators",
       ...(reason ? { reason } : {}),
+      ...(carId ? { autoparksCarId: carId } : {}),
     });
   }
   return out;

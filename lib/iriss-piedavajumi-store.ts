@@ -183,6 +183,7 @@ export async function deleteIrissPd(id: string): Promise<boolean> {
     const nextRows = rows.filter((r) => r.id !== id);
     if (rec?.linkToken) await deleteJson(`${DIR}tokens/${hashIrissPdToken(rec.linkToken)}.json`);
     await deleteJson(`${DIR}decisions/${id}.json`);
+    await deleteJson(`${DIR}views/${id}.json`);
     await deleteJson(recordRel(id));
     if (nextRows.length === rows.length && !rec) return false;
     return (await writeJson(INDEX_REL, { rows: nextRows })) === "ok";
@@ -211,6 +212,23 @@ export async function claimIrissPdDecision(
   if (res === "ok") return { won: true };
   if (res === "exists") return { won: false };
   return null;
+}
+
+/**
+ * Nils 20.11 (audits 4): pirmā klienta atvēršana - atsevišķs fails (raksta tikai vienreiz), lai publiskās lapas
+ * ielāde nekad nepārraksta PD ierakstu paralēli admina saglabāšanai.
+ */
+export async function recordIrissPdFirstView(id: string, at: string): Promise<void> {
+  if (!isSafeIrissPdId(id) || !isIrissPdStoreEnabled()) return;
+  if (await readIrissPdFirstView(id)) return;
+  await writeJson(`${DIR}views/${id}.json`, { at }, { once: true });
+}
+
+export async function readIrissPdFirstView(id: string): Promise<string> {
+  if (!isSafeIrissPdId(id) || !isIrissPdStoreEnabled()) return "";
+  const raw = await readJson(`${DIR}views/${id}.json`);
+  const at = raw && typeof raw === "object" ? (raw as { at?: unknown }).at : null;
+  return typeof at === "string" && Number.isFinite(Date.parse(at)) ? at : "";
 }
 
 /** Kurš lēmums uzvarēja (null - nav vai nevar nolasīt). */
