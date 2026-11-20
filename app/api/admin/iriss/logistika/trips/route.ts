@@ -5,6 +5,7 @@ import { cargoBucketLabel, cargoRouteBuckets, carsInCargoBucket, logisticsCarTit
 import { loadCargoPlanForActiveOrders } from "@/lib/iriss-logistics-cargo-store";
 import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 import { toLogisticsTripView } from "@/lib/staff-data-filter";
+import { overlayOrdersReadOnly } from "@/lib/iriss-logistics-viens-avots-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const gate = await requireLogisticsApi();
   if (!gate.ok) return gate.response;
-  const [orders, plan] = await Promise.all([listLogisticsOrders(), loadCargoPlanForActiveOrders()]);
+  const [allOrders, plan] = await Promise.all([listLogisticsOrders(), loadCargoPlanForActiveOrders()]);
+  // P3 (viens avots): auto nosaukums un VIN no saistītā Autoparka auto.
+  const orders = await overlayOrdersReadOnly(allOrders.filter(isLogisticsOrderActive));
   const byId = new Map(orders.filter(isLogisticsOrderActive).map((o) => [o.id, o]));
   const trips = cargoRouteBuckets(plan).flatMap((bucket) =>
     carsInCargoBucket(plan, bucket).flatMap((car) => {

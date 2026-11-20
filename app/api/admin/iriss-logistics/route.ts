@@ -3,6 +3,7 @@ import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetActorSeesTransportC
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
 import { logisticsCabinetAccessQuery, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
+import { overlayOrdersForActor } from "@/lib/iriss-logistics-viens-avots-server";
 import { isLogisticsListView, LOGISTICS_DEFAULT_LIST_VIEW } from "@/lib/iriss-logistics-types";
 import {
   getIrissLogisticsStorageState,
@@ -40,7 +41,8 @@ export async function GET(req: Request) {
       cabinetCarVisibleToActor({ ...actorQuery, carId: order.id }, rules),
     );
     const hideTransport = !cabinetActorSeesTransportCost(actorQuery);
-    const visible = scoped.map((order) => maskOrderSums(order, hideSums, hideTransport));
+    // P3 (viens avots): VIN/marka/modelis/gads/km/krāsa no saistītā Autoparka auto; summu maska kā līdz šim.
+    const visible = (await overlayOrdersForActor(scoped, gate.actor)).map((order) => maskOrderSums(order, hideSums, hideTransport));
     const filtered = filterLogisticsOrdersByView(visible, view);
     const previous = includePrevious ? await listPreviousLogisticsPoints() : [];
     return NextResponse.json(

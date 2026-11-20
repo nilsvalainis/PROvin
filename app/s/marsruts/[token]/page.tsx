@@ -6,6 +6,7 @@ import { loadCargoPlanForActiveOrders } from "@/lib/iriss-logistics-cargo-store"
 import { buildDriverRouteView } from "@/lib/iriss-logistics-driver-link";
 import { findDriverLink } from "@/lib/iriss-logistics-driver-link-store";
 import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
+import { overlayOrdersReadOnly } from "@/lib/iriss-logistics-viens-avots-server";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,8 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ to
     );
   }
   const [plan, orders] = await Promise.all([loadCargoPlanForActiveOrders(), listLogisticsOrders()]);
-  const view = buildDriverRouteView(plan, orders.filter(isLogisticsOrderActive), link.bucket);
+  // P3 (viens avots): auto nosaukums un VIN no saistītā Autoparka auto.
+  const view = buildDriverRouteView(plan, await overlayOrdersReadOnly(orders.filter(isLogisticsOrderActive)), link.bucket);
   const km = formatCargoKm(view.distanceKm);
   const dur = formatCargoDuration(view.durationMin);
 

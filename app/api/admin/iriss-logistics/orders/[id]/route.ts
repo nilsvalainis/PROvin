@@ -5,6 +5,7 @@ import { getLogisticsOrder, removeManualLogisticsOrder, setLogisticsOrderArchive
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import { autoparksActor } from "@/lib/iriss-autoparks-access";
 import { syncAutoparksCarWithLogisticsAction } from "@/lib/iriss-autoparks-store";
+import { overlayOrderForActor, routeSharedCarFields, sharedCarRouteErrorBody } from "@/lib/iriss-logistics-viens-avots-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,8 +21,9 @@ export async function GET(_req: Request, ctx: Ctx) {
   const query = logisticsCabinetAccessQuery(gate.actor, id);
   const hideSums = cabinetActorHidesSums(query);
   const hideTransport = !cabinetActorSeesTransportCost(query);
+  // P3: kopējie auto lauki no saistītā Autoparka auto (viens avots).
   return NextResponse.json(
-    { ok: true, order: maskOrderSums(order, hideSums, hideTransport) },
+    { ok: true, order: maskOrderSums(await overlayOrderForActor(order, gate.actor), hideSums, hideTransport) },
     { headers: irissLogisticsScopeHeader() },
   );
 }
@@ -54,7 +56,10 @@ export async function PATCH(req: Request, ctx: Ctx) {
         console.error("[iriss-logistics] autoparks sync", id, e instanceof Error ? e.message : e),
       );
     }
-    return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums, hideTransport) }, { headers: irissLogisticsScopeHeader() });
+    return NextResponse.json(
+      { ok: true, order: maskOrderSums(await overlayOrderForActor(order, gate.actor), hideSums, hideTransport) },
+      { headers: irissLogisticsScopeHeader() },
+    );
   }
   const existing = await getLogisticsOrder(id);
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
@@ -69,8 +74,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
     }
     patch = clean.patch;
   }
-  const order = await upsertLogisticsOrder({ ...(patch as Partial<LogisticsOrder>), id });
-  return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums, hideTransport) }, { headers: irissLogisticsScopeHeader() });
+  // P3 (viens avots): saistītam auto VIN/marka/modelis/gads/km/krāsa pieder Autoparkam - raksta tur, ne Loģistikā.
+  const routed = await routeSharedCarFields(existing, patch, gate.actor);
+  if (!routed.ok) return NextResponse.json(sharedCarRouteErrorBody(routed), { status: routed.status, headers: irissLogisticsScopeHeader() });
+  patch = routed.rest;
+  const order = Object.keys(patch).length > 0 ? await upsertLogisticsOrder({ ...(patch as Partial<LogisticsOrder>), id }) : existing;
+  return NextResponse.json(
+    { ok: true, order: maskOrderSums(await overlayOrderForActor(order, gate.actor), hideSums, hideTransport) },
+    { headers: irissLogisticsScopeHeader() },
+  );
 }
 
 /** Tikai ar roku ievadītie citu klientu auto (source = manual). */
