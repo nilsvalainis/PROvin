@@ -7,6 +7,7 @@ import { lvTerm } from "@/lib/iriss-auction-detail";
 import { listingCopyId, type ListingDetailUrlInput } from "@/lib/iriss-listings-detail-url";
 import { listingVinSourceMark } from "@/lib/iriss-listings-vin-from-photos";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { isPlausibleListingVin } from "@/lib/iriss-listings-extract";
 import { hasIso3779CheckDigit } from "@/lib/vin-iso3779";
 
 export { listingVinSourceMark };
@@ -65,7 +66,8 @@ export function listingVinCardState(v: {
   vinSource?: string;
   vinOcrStatus?: string;
 }): ListingVinCardState | null {
-  const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
+  // Izsoles iekšējs ID (17 zīmju hash) VIN laukā netiek rādīts kā VIN.
+  const vin = v.vin && isPlausibleListingVin(v.vin) ? normalizeVin(v.vin) : "";
   if (!vin) return null;
   if (v.vinSource === "ocr_photo") {
     if (v.vinOcrStatus === "conflict") return null;

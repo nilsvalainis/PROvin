@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ClipboardList, Download, EyeOff, ExternalLink, FilePlus2, RotateCcw, Star, Warehouse, X } from "lucide-react";
 import Link from "next/link";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
@@ -107,6 +107,7 @@ export function IrissListDrawer({
   const [bid, setBid] = useState(bid0 ?? 0);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [offerBusy, setOfferBusy] = useState(false);
+  const offerBusyRef = useRef(false);
   const [zipMsg, setZipMsg] = useState("");
   const [lvMsg, setLvMsg] = useState("");
   const dmg = classifyListingDamage(v.damageRaw);
@@ -214,11 +215,14 @@ export function IrissListDrawer({
   }
 
   async function createOffer() {
-    if (!onCreateOffer || offerBusy) return;
+    // Ref: dubultklikšķis vienā kadrā (pirms `offerBusy` atslēdz pogu) neizveido divus piedāvājumus.
+    if (!onCreateOffer || offerBusy || offerBusyRef.current) return;
+    offerBusyRef.current = true;
     setOfferBusy(true);
     try {
       await onCreateOffer(v);
     } finally {
+      offerBusyRef.current = false;
       setOfferBusy(false);
     }
   }

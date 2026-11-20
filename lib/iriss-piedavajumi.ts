@@ -50,6 +50,7 @@ import {
 } from "@/lib/iriss-piedavajumi-types";
 import { irissPdOpenQuestionCount, irissPdPublicQuestions, normalizeIrissPdMessages } from "@/lib/iriss-piedavajumi-messages";
 import { formatIrissEurWhole, parsePriceLike } from "@/lib/iriss-price-format";
+import { irissPdListPrice } from "@/lib/iriss-piedavajumi-list-display";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil, rigaLocalToUtcIso } from "@/lib/iriss-offer-valid-until";
 
 export const IRISS_PD_SYSTEM_ACTOR = "Sistēma";
@@ -546,8 +547,9 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     source: rec.source,
     sourceRef: rec.sourceRef,
     sourceKey: rec.sourceKey,
+    sourceUrl: rec.sourceUrl,
     hasAuto1: Boolean(rec.auto1),
-    price: rec.price,
+    price: irissPdListPrice(rec),
     validUntil: rec.validUntil,
     approvedOrderId: rec.approvedOrderId,
     cover: rec.photos[0] ?? null,
@@ -572,6 +574,7 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     source: isIrissPdSource(o.source) ? o.source : "manual",
     sourceRef: clean(o.sourceRef, 100),
     sourceKey: clean(o.sourceKey, 80),
+    ...(typeof o.sourceUrl === "string" ? { sourceUrl: clean(o.sourceUrl, 2000) } : {}),
     hasAuto1: o.hasAuto1 === true,
     price: clean(o.price, 80),
     validUntil: normalizeOfferValidUntil(o.validUntil),

@@ -1,7 +1,8 @@
 import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
 import { requireAdminPage } from "@/lib/admin-auth";
-import { isIrissPdStoreEnabled, listIrissPdRows, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
+import { irissPdRowsForDisplay } from "@/lib/iriss-piedavajumi-list-rows";
+import { isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
 
 export const metadata = { title: "Piedāvājumi | IRISS" };
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function IrissPiedavajumiPage() {
   if (enabled) {
     try {
       await refreshIrissPdExpiries(Date.now());
-      rows = await listIrissPdRows();
+      rows = await irissPdRowsForDisplay(await listIrissPdRows(), readIrissPd);
     } catch (e) {
       loadError = e instanceof Error ? e.message : "Neizdevās ielādēt piedāvājumus.";
     }

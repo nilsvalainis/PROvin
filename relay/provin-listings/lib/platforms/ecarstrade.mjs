@@ -399,6 +399,60 @@ export function ecarstradeCardSlice(html, index) {
   return text.slice(Math.max(0, start), index + 16_000);
 }
 
+const FIRST_REG_TITLES = [
+  "First registration date",
+  "First registration",
+  "1st registration",
+  "Registration date",
+  "Erstzulassung",
+  "Date de première immatriculation",
+  "Eerste inschrijving",
+];
+const FIRST_REG_KEYS = [
+  "first_registration_date",
+  "first_registration",
+  "firstRegistrationDate",
+  "firstRegistration",
+  "date_first_registration",
+  "registration_date",
+  "registrationDate",
+  "first_reg",
+  "reg_date",
+];
+const YEAR_KEYS = ["year", "registration_year", "production_year", "build_year", "model_year", "construction_year"];
+
+/** Kartītes īpašība pēc tooltip nosaukuma (Bootstrap 4/5 atribūti vai title). */
+function featureValue(s, title) {
+  const re = new RegExp(
+    `(?:data-(?:bs-)?original-title|data-title|title|aria-label)="${title}"[\\s\\S]{0,800}?<div class="feature-value[^"]*">([\\s\\S]*?)</div>`,
+    "i",
+  );
+  return stripTags(re.exec(s)?.[1] ?? "");
+}
+
+/** Pirmā reģistrācija no kartītes HTML, tad no JSON `data`. */
+export function ecarstradeRelayFirstRegistration(s, d = {}) {
+  for (const t of FIRST_REG_TITLES) {
+    const v = featureValue(s, t);
+    if (v && /\d/.test(v)) return v;
+  }
+  for (const k of FIRST_REG_KEYS) {
+    const v = d[k] == null ? "" : String(d[k]).trim();
+    if (v && /(?:19|20)\d{2}/.test(v)) return v;
+  }
+  return "";
+}
+
+export function ecarstradeRelayYear(firstReg, d = {}) {
+  const m = String(firstReg ?? "").match(/((?:19|20)\d{2})/);
+  if (m) return m[1];
+  for (const k of YEAR_KEYS) {
+    const y = String(d[k] ?? "").match(/((?:19|20)\d{2})/);
+    if (y) return y[1];
+  }
+  return "";
+}
+
 export function extractEcarstradeRelayItem(html, data = {}) {
   const s = String(html ?? "");
   const d = flattenPriceData(data);
@@ -471,7 +525,7 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     priceCurrent = null;
   }
   const flag = /\/images\/flags\/h\d+\/([a-z]{2})\.png/i.exec(s)?.[1] || "";
-  const firstReg = stripTags(/data-original-title="First registration date"[\s\S]*?<div class="feature-value">([\s\S]*?)<\/div>/i.exec(s)?.[1] ?? "");
+  const firstReg = ecarstradeRelayFirstRegistration(s, d);
   const kmRaw = stripTags(/data-original-title="Mileage"[\s\S]*?<div class="feature-value">([\s\S]*?)<\/div>/i.exec(s)?.[1] ?? "");
   const km = (() => {
     const m = kmRaw.replace(/\u00a0/g, " ").match(/([\d.\s]+)\s*(?:km|км)/i);
@@ -484,7 +538,7 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     detailUrl: ecarstradeRelayDetailUrl(id),
     title,
     manufacturer,
-    year: firstReg.match(/((?:19|20)\d{2})/)?.[1] || "",
+    year: ecarstradeRelayYear(firstReg, d),
     firstRegistration: firstReg,
     mileageKm: km,
     fuel: stripTags(/data-original-title="Fuel"[^>]*>([\s\S]*?)<\/span>/i.exec(s)?.[1] ?? ""),
