@@ -21,8 +21,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-/** Vienā palaišanā, lai neizsistu funkcijas laika limitu. */
-const MAX_JOBS_PER_RUN = 5;
+/**
+ * Viens darbs vienā palaišanā: maksas solis nedrīkst tikt nogalināts starp OneAuto atbildi un
+ * ierakstu (5 darbi × līdz 300 s neiekļāvās maxDuration). Cron ik 5 min.
+ */
+const MAX_JOBS_PER_RUN = 1;
 
 function isAuthorized(req: Request): { ok: true } | { ok: false; status: number; error: string } {
   // Vercel Cron sūta Bearer CRON_SECRET; papildus atbalstām projekta ADMIN_DEALER_DATA_CRON_SECRET.
@@ -40,6 +43,7 @@ function isAuthorized(req: Request): { ok: true } | { ok: false; status: number;
 }
 
 export async function GET(req: Request) {
+  const startedAt = Date.now();
   const gate = isAuthorized(req);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
@@ -57,6 +61,8 @@ export async function GET(req: Request) {
         sessionId: job.sessionId,
         vin: job.vin,
         trigger: "cron",
+        respectNextRetry: true,
+        deadlineAt: startedAt + 270_000,
       });
       processed.push({ sessionId: job.sessionId, status: r.status, reason: r.reason });
     }
@@ -67,7 +73,7 @@ export async function GET(req: Request) {
       if (job.status === "running") {
         const started = Date.parse(job.startedAt ?? job.updatedAt);
         if (Number.isFinite(started) && now - started < DEALER_DATA_STALE_RUNNING_MS) continue;
-        await upsertDealerDataJob(job.sessionId, { vin: job.vin, status: "failed", error: job.error || "stalled" });
+        await upsertDealerDataJob(job.sessionId, { vin: job.vin, status: "failed", error: job.error || "stalled", runId: "" });
       }
       await sendDealerDataAlertIfNeeded(job.sessionId, { trigger: "cron" });
     }

@@ -132,7 +132,7 @@ export function AdminOneautoIngestBar({
     onIngestChange({ ...value, selectedProducts: next });
   };
 
-  const fetchData = async (forceProducts?: OneautoProductId[]) => {
+  const fetchData = async (forceProducts?: OneautoProductId[]): Promise<void> => {
     if (!editable || busy || imagesBusy || inFlight.current) return;
     if (value.selectedProducts.length === 0) {
       setError(oneautoFetchErrorLv("no_products_selected"));
@@ -177,6 +177,18 @@ export function AdminOneautoIngestBar({
         displayOriginal?: OneautoDisplaySections;
         reused?: OneautoProductId[];
       };
+      if (res.status === 409 && body.error === "dealer_job_active") {
+        if (
+          window.confirm(
+            "Automātiskā dīlera ielase šim pasūtījumam vēl notiek vai gaida OneAuto atbildi.\n\nPirkt vēlreiz tagad? Tas var iekasēt maksu atkārtoti.",
+          )
+        ) {
+          rebuy = productsToFetch;
+        } else {
+          setError("Automātiskā ielase vēl notiek - pagaidi dažas minūtes un pārlādē lapu.");
+        }
+        return;
+      }
       if (!res.ok && !body.results) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
         return;
@@ -243,8 +255,9 @@ export function AdminOneautoIngestBar({
     } finally {
       setBusy(false);
       inFlight.current = false;
+      // «Pirkt vēlreiz» - otrs pieprasījums ar force (arī pēc 409 agrīnā return).
+      if (rebuy.length > 0) void fetchData(rebuy);
     }
-    if (rebuy.length > 0) await fetchData(rebuy);
   };
 
   const fetchImages = async () => {

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "crypto";
+
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
 import { adminRichHtmlToPlainText, aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
@@ -36,7 +38,12 @@ import {
   extractLoadedPowertrainIdentity,
   toGeneratedAgainst,
 } from "@/lib/comment-powertrain-guard";
-import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
+import {
+  claimDealerDataJobRun,
+  dealerDataRunLeaseHeld,
+  readDealerDataJob,
+  upsertDealerDataJob,
+} from "@/lib/dealer-data-job-store";
 import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
 import {
@@ -245,6 +252,11 @@ async function generateDealerNotes(
 export async function enqueueDealerDataJob(args: {
   sessionId: string;
   vin: string;
+  /**
+   * Kad cron drīkst pārņemt. Noklusējums 5 min (webhook fona darbs sāk uzreiz, bez sacensības);
+   * 0 - tikai cron (numurzīmes ceļš: atsevišķa funkcija ar savu laika budžetu).
+   */
+  cronAfterMs?: number;
 }): Promise<boolean> {
   const vin = normalizeVin(args.vin ?? "");
   if (!isSafeOrderDraftSessionId(args.sessionId) || !isValidVin(vin)) return false;
@@ -254,8 +266,7 @@ export async function enqueueDealerDataJob(args: {
     vin,
     status: "pending",
     trigger: "webhook",
-    // Webhook fona darbs sāk uzreiz; cron to pārņem tikai, ja tas nesākās (bez sacensības).
-    nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    nextRetryAt: new Date(Date.now() + (args.cronAfterMs ?? 5 * 60 * 1000)).toISOString(),
   });
   return job !== null;
 }
@@ -298,7 +309,7 @@ export const DEALER_PENDING_MAX_RETRIES = 6;
 /** Citas kļūdas: nākamais automātiskais mēģinājums pēc 30 min (kā līdz šim). */
 export const DEALER_FAILED_RETRY_MS = 30 * 60 * 1000;
 
-export async function runDealerDataJob(args: Parameters<typeof runDealerDataJobInner>[0]): Promise<DealerDataRunResult> {
+export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResult> {
   const result = await runDealerDataJobInner(args);
   if (!result.ok || result.status === "failed") {
     // Neviens klients nedrīkst palikt nepamanīts: push + e-pasts, ja problēma prasa operatoru.
@@ -307,7 +318,12 @@ export async function runDealerDataJob(args: Parameters<typeof runDealerDataJobI
   return result;
 }
 
-async function runDealerDataJobInner(args: {
+/** Pirms maksas soļa jābūt vismaz tik daudz laika (OneAuto polls līdz ~80 s + ieraksts). */
+export const DEALER_PAID_STEP_MIN_REMAINING_MS = 110_000;
+/** Noklusējuma laika budžets vienai palaišanai (funkcijas maxDuration 300 s). */
+export const DEALER_RUN_DEFAULT_BUDGET_MS = 250_000;
+
+type RunArgs = {
   sessionId: string;
   vin: string;
   trigger: DealerDataJob["trigger"];
@@ -316,9 +332,16 @@ async function runDealerDataJobInner(args: {
   skipAi?: boolean;
   /** RAW produkts: OEM ieraksti paliek oriģinālvalodā, bez darbu tulkojuma uz LV. */
   skipTranslate?: boolean;
-}): Promise<DealerDataRunResult> {
+  /** Absolūts termiņš (ms); pēc tā maksas soļi netiek sākti - darbs atgriežas rindā. */
+  deadlineAt?: number;
+  /** Cron: respektē nextRetryAt svaigā ierakstā. */
+  respectNextRetry?: boolean;
+};
+
+async function runDealerDataJobInner(args: RunArgs): Promise<DealerDataRunResult> {
   const sessionId = args.sessionId;
   const vin = normalizeVin(args.vin ?? "");
+  const deadlineAt = args.deadlineAt ?? Date.now() + DEALER_RUN_DEFAULT_BUDGET_MS;
 
   if (!isSafeOrderDraftSessionId(sessionId)) {
     return { ok: false, status: "failed", reason: "invalid_session" };
@@ -336,20 +359,27 @@ async function runDealerDataJobInner(args: {
     return { ok: false, status: "failed", reason: "missing_oneauto_credentials" };
   }
 
-  const existing = await readDealerDataJob(sessionId);
-  const decision = decideDealerDataRun({
-    job: existing,
-    vin,
-    force: args.force,
-    trigger: args.trigger,
-  });
-  if (!decision.run) {
-    return { ok: true, status: existing?.status ?? "pending", reason: decision.reason };
-  }
-
   const draft = await readOrderDraft(sessionId);
   const notes = draft?.orderEdits?.notes ?? "";
   const marks = parseB2bWalletOrderMarks(notes);
+
+  // Atomiska noma (CAS): svaigā ierakstā decideDealerDataRun + nextRetryAt; paralēla palaišana nevar sākt.
+  const runId = `run_${randomUUID()}`;
+  const claim = await claimDealerDataJobRun({
+    sessionId,
+    vin,
+    runId,
+    trigger: args.trigger,
+    force: args.force,
+    respectNextRetry: args.respectNextRetry,
+  });
+  if (!claim.ok) {
+    return { ok: true, status: claim.job?.status ?? "pending", reason: claim.reason };
+  }
+  const existing = claim.previous && normalizeVin(claim.previous.vin) === vin ? claim.previous : null;
+  const attempts = claim.job.attempts;
+  const firstDraftWrite = !claim.job.draftWrittenAt;
+
   const skipTranslate =
     args.skipTranslate ?? existing?.skipTranslate ?? marks?.product === "dealer_raw";
   const commentLang = resolveDealerCommentOutputLang({
@@ -361,60 +391,82 @@ async function runDealerDataJobInner(args: {
   const previousIngest = mergeSourceBlocksWithDefaults(
     draft?.workspace?.sourceBlocks ?? emptyWorkspaceBody().sourceBlocks,
   ).auto_records.oneautoIngest;
+  // Melnraksta rezultāti der tikai tam pašam VIN (VIN maiņa - vecie dati netiek izmantoti).
+  const ingestSameVin =
+    previousIngest && normalizeVin(previousIngest.lastFetchedVin ?? "") === vin ? previousIngest : null;
   const storedResults = mergeOneautoProductResults(
-    parseResultMap(existing?.oneautoResults),
-    previousIngest?.results,
+    parseResultMap(claim.job.oneautoResults),
+    ingestSameVin?.results,
   );
   const storedOutcomes = mergeDealerPaidOutcomes(
-    existing?.paidOutcomes,
+    claim.job.paidOutcomes,
     outcomesFromResults(storedResults),
   );
   const toFetch = selectDealerAutoProductsToFetch(storedOutcomes);
 
-  const attempts = (existing?.attempts ?? 0) + 1;
-  await upsertDealerDataJob(sessionId, {
-    vin,
-    status: "running",
-    attempts,
-    startedAt: new Date().toISOString(),
-    trigger: args.trigger,
-    skipTranslate,
-    commentLang,
-    paidOutcomes: storedOutcomes,
-  });
+  /** Darba ieraksts tikai, kamēr šī palaišana tur nomu. */
+  const save = (patch: Omit<Parameters<typeof upsertDealerDataJob>[1], "vin">) =>
+    upsertDealerDataJob(
+      sessionId,
+      { vin, attempts, trigger: args.trigger, skipTranslate, commentLang, ...patch },
+      { expectRunId: runId },
+    );
+
+  /** Laiks beidzas pirms maksas soļa: atgriežam darbu rindā (bez mēģinājuma skaitīšanas). */
+  const requeueForTime = async (): Promise<DealerDataRunResult> => {
+    await save({
+      status: "pending",
+      attempts: Math.max(0, attempts - 1),
+      runId: "",
+      nextRetryAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    return { ok: true, status: "pending", reason: "time_budget" };
+  };
+  /** Pirms katra maksas soļa: laiks + noma (svaigs nolasījums). */
+  const canPay = async (): Promise<"ok" | "time" | "lease"> => {
+    if (Date.now() > deadlineAt - DEALER_PAID_STEP_MIN_REMAINING_MS) return "time";
+    return (await dealerDataRunLeaseHeld(sessionId, runId)) ? "ok" : "lease";
+  };
+  const leaseLost: DealerDataRunResult = { ok: true, status: "running", reason: "lease_lost" };
+
+  await save({ status: "running", paidOutcomes: storedOutcomes, startedAt: new Date().toISOString() });
 
   let mergedResults = storedResults;
-  let lastCostEur = previousIngest?.lastCostEur ?? "";
+  let lastCostEur = ingestSameVin?.lastCostEur ?? "";
+  let pendingRequestIds: Partial<Record<OneautoProductId, string>> = {};
   if (toFetch.length > 0) {
+    const gate = await canPay();
+    if (gate === "time") return requeueForTime();
+    if (gate === "lease") return leaseLost;
     let fetched: Awaited<ReturnType<typeof fetchOneautoProducts>>;
     try {
-      fetched = await fetchOneautoProducts({ vin, products: toFetch });
+      fetched = await fetchOneautoProducts({
+        vin,
+        products: toFetch,
+        requestIds: claim.job.pendingRequestId ? { oe_service_history: claim.job.pendingRequestId } : undefined,
+        // Samaksātais rezultāts darba ierakstā UZREIZ pēc atbildes (pirms izmaksu ieraksta).
+        onResults: async (results) => {
+          const merged = mergeOneautoProductResults(storedResults, results);
+          await save({
+            status: "running",
+            paidOutcomes: mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(merged)),
+            oneautoResults: resultsRecord(merged),
+          });
+        },
+      });
     } catch (e) {
       const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
-      await upsertDealerDataJob(sessionId, {
-        vin,
+      await save({
         status: "failed",
-        attempts,
         error,
-        trigger: args.trigger,
+        runId: "",
         nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
       });
       return { ok: false, status: "failed", reason: error };
     }
     mergedResults = mergeOneautoProductResults(storedResults, fetched.results);
     lastCostEur = fetched.costEur || lastCostEur;
-    const paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
-    // Saglabā rezultātus PIRMS melnraksta rakstīšanas, lai retry neiekasētu vēlreiz.
-    await upsertDealerDataJob(sessionId, {
-      vin,
-      status: "running",
-      attempts,
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
-      paidOutcomes,
-      oneautoResults: resultsRecord(mergedResults),
-    });
+    pendingRequestIds = fetched.pendingRequestIds ?? {};
   }
 
   let paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
@@ -425,19 +477,17 @@ async function runDealerDataJobInner(args: {
   if (historyTechnical) {
     const error = String(mergedResults[historyTechnical]?.error ?? `${historyTechnical}_failed`).slice(0, 200);
     const pending = paidOutcomes.oe_service_history === "pending";
-    const pendingRetries = (existing?.pendingRetries ?? 0) + (pending ? 1 : 0);
+    const pendingRetries = (claim.job.pendingRetries ?? 0) + (pending ? 1 : 0);
     const fastRetry = pending && pendingRetries <= DEALER_PENDING_MAX_RETRIES;
-    await upsertDealerDataJob(sessionId, {
-      vin,
+    await save({
       status: "failed",
       // 202 «apstrādē» nav kļūda: ātrs atkārtojums, mēģinājumu skaits nepieaug.
       attempts: fastRetry ? attempts - 1 : attempts,
       pendingRetries,
+      pendingRequestId: pending ? pendingRequestIds.oe_service_history ?? claim.job.pendingRequestId ?? "" : "",
       nextRetryAt: new Date(Date.now() + (fastRetry ? DEALER_PENDING_RETRY_MS : DEALER_FAILED_RETRY_MS)).toISOString(),
       error,
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
+      runId: "",
       paidOutcomes,
       oneautoResults: resultsRecord(mergedResults),
     });
@@ -457,6 +507,8 @@ async function runDealerDataJobInner(args: {
     historyEventCount === 0;
 
   // VIN dekodēšana (Nils 20.11): OE VIN Lookup, ja tas datus nedod - VIN Decoder. Ne vairāk kā 2 soļi.
+  let newDecodeData = false;
+  let decodeDeferred = false;
   for (let step = 0; step < 2; step++) {
     const next = planDealerVinDecodeStep({
       historyHasEntries: !oeNoData,
@@ -466,9 +518,27 @@ async function runDealerDataJobInner(args: {
       decoderGaveData: dealerDecodeResultGaveData(mergedResults.vin_decoder),
     });
     if (!next) break;
+    const gate = await canPay();
+    if (gate === "lease") return leaseLost;
+    if (gate === "time") {
+      // Vēsture jau samaksāta - to ierakstām tagad, dekodēšana nākamajā palaišanā.
+      decodeDeferred = true;
+      break;
+    }
     let decodeFetched: Awaited<ReturnType<typeof fetchOneautoProducts>> | null = null;
     try {
-      decodeFetched = await fetchOneautoProducts({ vin, products: [next] });
+      decodeFetched = await fetchOneautoProducts({
+        vin,
+        products: [next],
+        onResults: async (results) => {
+          const merged = mergeOneautoProductResults(mergedResults, results);
+          await save({
+            status: "running",
+            paidOutcomes: mergeDealerPaidOutcomes(paidOutcomes, outcomesFromResults(merged)),
+            oneautoResults: resultsRecord(merged),
+          });
+        },
+      });
     } catch (e) {
       const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
       console.warn("[dealer-data-job] decode fetch failed", { sessionId, product: next, error });
@@ -480,22 +550,14 @@ async function runDealerDataJobInner(args: {
     if (decodeFetched) {
       mergedResults = mergeOneautoProductResults(mergedResults, decodeFetched.results);
       lastCostEur = addCostEur(lastCostEur, decodeFetched.costEur);
+      if (dealerDecodeResultGaveData(decodeFetched.results[next])) newDecodeData = true;
     }
     paidOutcomes = mergeDealerPaidOutcomes(paidOutcomes, outcomesFromResults(mergedResults));
     if (!paidOutcomes[next]) paidOutcomes = { ...paidOutcomes, [next]: "failed" };
-    await upsertDealerDataJob(sessionId, {
-      vin,
-      status: "running",
-      attempts,
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
-      paidOutcomes,
-      oneautoResults: resultsRecord(mergedResults),
-    });
+    await save({ status: "running", paidOutcomes, oneautoResults: resultsRecord(mergedResults) });
   }
 
-  let decodeError = "";
+  let decodeError = decodeDeferred ? "time_budget" : "";
   if (!oeNoData) {
     const lookupData = dealerDecodeResultGaveData(mergedResults.oe_vin_lookup);
     const decoderData = dealerDecodeResultGaveData(mergedResults.vin_decoder);
@@ -512,15 +574,10 @@ async function runDealerDataJobInner(args: {
   }
 
   if (oeNoData) {
-    await upsertDealerDataJob(sessionId, {
-      vin,
+    await save({
       status: "no_data",
-      attempts,
       serviceEventCount: 0,
       finishedAt: new Date().toISOString(),
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
       paidOutcomes,
       oneautoResults: resultsRecord(mergedResults),
     });
@@ -530,59 +587,77 @@ async function runDealerDataJobInner(args: {
     return { ok: true, status: "no_data", reason: "no_data", serviceEventCount: 0 };
   }
 
-  const display = skipTranslate ? originalDisplay : await translateOneautoWorksOnIngest(originalDisplay);
   const serviceEventCount = filledOneautoServiceEvents(originalDisplay.serviceTimeline).length;
 
-  const wrote = await writeAutoRecords(sessionId, (blocks) => {
-    const prevIngest = blocks.auto_records.oneautoIngest ?? emptyOneautoIngest();
-    const results = mergeOneautoProductResults(prevIngest.results, mergedResults);
-    const rebuiltPayloads: Partial<Record<OneautoProductId, unknown>> = {};
-    for (const id of Object.keys(results) as OneautoProductId[]) {
-      rebuiltPayloads[id] = results[id]?.payload;
-    }
-    const rebuiltOriginal = buildOneautoDisplay(rebuiltPayloads);
-    const freshOriginal = filledOneautoServiceEvents(rebuiltOriginal.serviceTimeline);
-    const ingest: AutoRecordsOneautoIngest = {
-      ...prevIngest,
-      lastFetchedVin: vin,
-      fetchedAt: new Date().toISOString(),
-      lastCostEur: lastCostEur || prevIngest.lastCostEur,
-      selectedProducts: Array.from(
-        new Set([
-          ...prevIngest.selectedProducts,
-          ...DEALER_AUTO_PRODUCT_IDS.filter((id) => results[id] != null),
-        ]),
-      ),
-      results,
-      serviceTimelineOriginal:
-        freshOriginal.length > 0 ? freshOriginal : prevIngest.serviceTimelineOriginal,
-    };
-    return {
-      ...blocks,
-      auto_records: applyOneautoToAutoRecords(blocks.auto_records, {
-        display,
-        ingest,
-        vehicleOverride:
-          dealerDecodeResultGaveData(mergedResults.oe_vin_lookup) ||
-          dealerDecodeResultGaveData(mergedResults.vin_decoder),
-      }),
-    };
-  });
+  // Pirmais ieraksts: pilna vēsture (tulkota), VIN dekodēšana pārraksta auto laukus.
+  // Atkārtojumi (ai_generation_failed, vin_decode:, Atkārtot): vēsturi netulko un nepārraksta;
+  // jauni VIN dekodēšanas dati aizpilda tikai tukšos auto laukus.
+  const writeMode: "full" | "vehicle_only" | "none" = firstDraftWrite
+    ? "full"
+    : newDecodeData
+      ? "vehicle_only"
+      : args.force
+        ? "full"
+        : "none";
+  let wrote = true;
+  if (writeMode !== "none") {
+    const display =
+      writeMode === "full"
+        ? skipTranslate || (!firstDraftWrite && !args.force)
+          ? originalDisplay
+          : await translateOneautoWorksOnIngest(originalDisplay)
+        : { ...originalDisplay, serviceTimeline: [] };
+    wrote = await writeAutoRecords(sessionId, (blocks) => {
+      const prevIngest = blocks.auto_records.oneautoIngest ?? emptyOneautoIngest();
+      const prevSameVin = normalizeVin(prevIngest.lastFetchedVin ?? "") === vin;
+      const results = mergeOneautoProductResults(prevSameVin ? prevIngest.results : {}, mergedResults);
+      const rebuiltPayloads: Partial<Record<OneautoProductId, unknown>> = {};
+      for (const id of Object.keys(results) as OneautoProductId[]) {
+        rebuiltPayloads[id] = results[id]?.payload;
+      }
+      const rebuiltOriginal = buildOneautoDisplay(rebuiltPayloads);
+      const freshOriginal = filledOneautoServiceEvents(rebuiltOriginal.serviceTimeline);
+      const ingest: AutoRecordsOneautoIngest = {
+        ...prevIngest,
+        lastFetchedVin: vin,
+        fetchedAt: new Date().toISOString(),
+        lastCostEur: lastCostEur || prevIngest.lastCostEur,
+        selectedProducts: Array.from(
+          new Set([
+            ...(prevSameVin ? prevIngest.selectedProducts : []),
+            ...DEALER_AUTO_PRODUCT_IDS.filter((id) => results[id] != null),
+          ]),
+        ),
+        results,
+        serviceTimelineOriginal:
+          freshOriginal.length > 0 ? freshOriginal : prevIngest.serviceTimelineOriginal,
+      };
+      return {
+        ...blocks,
+        auto_records: applyOneautoToAutoRecords(blocks.auto_records, {
+          display,
+          ingest,
+          vehicleOverride:
+            firstDraftWrite &&
+            (dealerDecodeResultGaveData(mergedResults.oe_vin_lookup) ||
+              dealerDecodeResultGaveData(mergedResults.vin_decoder)),
+        }),
+      };
+    });
+  }
 
   if (!wrote) {
-    await upsertDealerDataJob(sessionId, {
-      vin,
+    await save({
       status: "failed",
-      attempts,
       error: "draft_write_failed",
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
+      runId: "",
+      nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       paidOutcomes,
       oneautoResults: resultsRecord(mergedResults),
     });
     return { ok: false, status: "failed", reason: "draft_write_failed" };
   }
+  if (firstDraftWrite) await save({ status: "running", draftWrittenAt: new Date().toISOString() });
 
   const wroteNotes = args.skipAi
     ? new Set<DealerNoteField>()
@@ -597,15 +672,11 @@ async function runDealerDataJobInner(args: {
   // Abiem komentāriem jābūt (eļļas intervāli + „Komentāri”); trūkstošo ģenerē nākamais mēģinājums.
   const aiGenerated = hasNote("oilChangeIntervalNotes") && hasNote("comments");
   if (!args.skipAi && !aiGenerated) {
-    await upsertDealerDataJob(sessionId, {
-      vin,
+    await save({
       status: "failed",
-      attempts,
       error: "ai_generation_failed",
+      runId: "",
       nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
       paidOutcomes,
       oneautoResults: resultsRecord(mergedResults),
       serviceEventCount,
@@ -615,16 +686,14 @@ async function runDealerDataJobInner(args: {
   }
 
   if (decodeError) {
-    // Vēsture un komentāri ir melnrakstā; atkārtojas tikai VIN dekodēšana (Decoder, nav iekasēts).
-    await upsertDealerDataJob(sessionId, {
-      vin,
+    // Vēsture un komentāri ir melnrakstā; atkārtojas tikai VIN dekodēšana.
+    await save({
       status: "failed",
-      attempts,
+      // Laika budžets nav kļūda - mēģinājumu neskaitām.
+      ...(decodeDeferred ? { attempts: Math.max(0, attempts - 1) } : {}),
       error: `vin_decode:${decodeError}`.slice(0, 200),
-      nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
-      trigger: args.trigger,
-      skipTranslate,
-      commentLang,
+      runId: "",
+      nextRetryAt: new Date(Date.now() + (decodeDeferred ? 60_000 : DEALER_FAILED_RETRY_MS)).toISOString(),
       paidOutcomes,
       oneautoResults: resultsRecord(mergedResults),
       serviceEventCount,
@@ -633,16 +702,11 @@ async function runDealerDataJobInner(args: {
     return { ok: false, status: "failed", reason: "vin_decode_failed", serviceEventCount };
   }
 
-  await upsertDealerDataJob(sessionId, {
-    vin,
+  await save({
     status: "done",
-    attempts,
     serviceEventCount,
     aiGenerated,
     finishedAt: new Date().toISOString(),
-    trigger: args.trigger,
-    skipTranslate,
-    commentLang,
     paidOutcomes,
     oneautoResults: resultsRecord(mergedResults),
   });

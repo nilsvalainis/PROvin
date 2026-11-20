@@ -14,6 +14,8 @@ import {
   splitOneautoAlreadyPurchased,
 } from "@/lib/oneauto-manual-purchase";
 import { mergeOneautoProductResults } from "@/lib/oneauto-to-auto-records";
+import { readDealerDataJob } from "@/lib/dealer-data-job-store";
+import { DEALER_AUTO_PRODUCT_IDS, dealerDataJobBlocksManualPurchase } from "@/lib/dealer-data-job-types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +50,22 @@ export async function POST(req: Request) {
   const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
   const force = o.force === true;
   const stored = sessionId ? await readStoredOneautoResults(sessionId, vin) : {};
+
+  // Automātiskā dīlera ielase vēl notiek / gaida OneAuto 202: manuāls pirkums var nopirkt to pašu
+  // vēlreiz. Atļauts tikai ar skaidru «Pirkt vēlreiz».
+  if (sessionId && !force && products.some((id) => (DEALER_AUTO_PRODUCT_IDS as readonly string[]).includes(id))) {
+    const job = await readDealerDataJob(sessionId).catch(() => null);
+    if (job && normalizeVin(job.vin) === vin && dealerDataJobBlocksManualPurchase(job)) {
+      return NextResponse.json(
+        {
+          error: "dealer_job_active",
+          message:
+            "Automātiskā dīlera ielase šim pasūtījumam vēl notiek vai gaida OneAuto atbildi. Pagaidi dažas minūtes vai spied «Pirkt vēlreiz».",
+        },
+        { status: 409 },
+      );
+    }
+  }
   const { toFetch, reused } = splitOneautoAlreadyPurchased(products, stored, force);
 
   try {
@@ -70,11 +88,14 @@ export async function POST(req: Request) {
         displayOriginal: original,
       });
     }
-    const fetchedRaw = await fetchOneautoProducts({ vin, products: toFetch });
-    if (sessionId) {
-      // Uzreiz serverī: dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
-      await recordManualOneautoPurchase({ sessionId, vin, results: fetchedRaw.results });
-    }
+    const fetchedRaw = await fetchOneautoProducts({
+      vin,
+      products: toFetch,
+      // Uzreiz serverī (pirms izmaksu ieraksta): dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
+      onResults: sessionId
+        ? (results) => recordManualOneautoPurchase({ sessionId, vin, results })
+        : undefined,
+    });
     const fetched =
       reused.length > 0
         ? (() => {

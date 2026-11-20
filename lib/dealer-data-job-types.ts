@@ -54,10 +54,25 @@ export type DealerDataJob = {
   nextRetryAt?: string;
   /** Cik reizes OneAuto atbildēja 202 «apstrādē» (ātrie atkārtojumi, neskaita pie griestiem). */
   pendingRetries?: number;
+  /** Pašreizējās palaišanas nomas id (CAS slēdzene): maksas soļi notiek tikai, kamēr tas sakrīt. */
+  runId?: string;
+  /** Kad vēsture pirmoreiz ierakstīta melnrakstā (atkārtojumi vairs netulko un nepārraksta auto laukus). */
+  draftWrittenAt?: string;
+  /** OneAuto 202: pieprasījuma id, ko atkārtojumā aptaujā (nevis sūta jaunu pieprasījumu). */
+  pendingRequestId?: string;
+  /** Iepriekšējā VIN rezultāti pēc VIN maiņas (netiek sapludināti ar jauno VIN). */
+  archived?: DealerDataJobArchive[];
   /** Pasūtījuma numurzīme (ja klients ievadīja numuru, ne VIN). */
   plate?: string;
   /** Pēdējais admina paziņojums par šo darbu (push + e-pasts) - viens paziņojums uz problēmu. */
   alert?: DealerDataAlertRecord;
+};
+
+export type DealerDataJobArchive = {
+  vin: string;
+  at: string;
+  paidOutcomes?: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>>;
+  oneautoResults?: Record<string, unknown>;
 };
 
 export type DealerDataAlertRecord = {
@@ -443,6 +458,23 @@ export function dealerDataJobHistoryReady(
   return job.status === "done" || (job.status === "failed" && Boolean(job.error?.startsWith("vin_decode:")));
 }
 
+/**
+ * Manuālā OneAuto josla nedrīkst pirkt dīlera produktus, kamēr automātiskā ielase notiek
+ * (running, nav iestrēgusi), gaida rindā (pending) vai gaida OneAuto 202 atkārtojumu.
+ */
+export function dealerDataJobBlocksManualPurchase(
+  job: Pick<DealerDataJob, "status" | "startedAt" | "updatedAt" | "pendingRequestId" | "nextRetryAt">,
+  nowMs: number = Date.now(),
+): boolean {
+  if (job.status === "pending") return true;
+  if (job.status === "running") {
+    const started = Date.parse(job.startedAt ?? job.updatedAt);
+    return Number.isFinite(started) && nowMs - started < DEALER_DATA_STALE_RUNNING_MS;
+  }
+  if (job.status === "failed" && job.pendingRequestId) return !dealerDataJobRetryDue(job, nowMs);
+  return false;
+}
+
 /** Vai cron drīkst šo darbu atkārtot tagad (nextRetryAt pagājis vai nav iestatīts). */
 export function dealerDataJobRetryDue(
   job: Pick<DealerDataJob, "nextRetryAt">,
@@ -492,6 +524,26 @@ function asCommentLang(v: unknown): DealerCommentOutputLang | undefined {
 function asOneautoResults(raw: unknown): Record<string, unknown> | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   return raw as Record<string, unknown>;
+}
+
+function asArchived(raw: unknown): DealerDataJobArchive[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: DealerDataJobArchive[] = [];
+  for (const item of raw.slice(-5)) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const vin = asStr(o.vin, 24).toUpperCase();
+    if (!vin) continue;
+    const paidOutcomes = asPaidOutcomes(o.paidOutcomes);
+    const oneautoResults = asOneautoResults(o.oneautoResults);
+    out.push({
+      vin,
+      at: asStr(o.at, 40),
+      ...(paidOutcomes ? { paidOutcomes } : {}),
+      ...(oneautoResults ? { oneautoResults } : {}),
+    });
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function asAlert(raw: unknown): DealerDataAlertRecord | undefined {
@@ -589,6 +641,10 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(plate ? { plate } : {}),
     ...(alert ? { alert } : {}),
     ...(asStr(o.nextRetryAt, 40) ? { nextRetryAt: asStr(o.nextRetryAt, 40) } : {}),
+    ...(asStr(o.runId, 80) ? { runId: asStr(o.runId, 80) } : {}),
+    ...(asStr(o.draftWrittenAt, 40) ? { draftWrittenAt: asStr(o.draftWrittenAt, 40) } : {}),
+    ...(asStr(o.pendingRequestId, 120) ? { pendingRequestId: asStr(o.pendingRequestId, 120) } : {}),
+    ...(asArchived(o.archived) ? { archived: asArchived(o.archived)! } : {}),
     ...(typeof o.pendingRetries === "number" && Number.isFinite(o.pendingRetries)
       ? { pendingRetries: Math.max(0, Math.floor(o.pendingRetries)) }
       : {}),

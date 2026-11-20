@@ -396,11 +396,13 @@ async function startPaidOrderDownstream(
         if (!dealerOrder || enteredValidVin) return;
         try {
           if (effectiveVin && isValidVin(effectiveVin)) {
-            const queuedPlate = await enqueueDealerDataJob({ sessionId: session.id, vin: effectiveVin });
-            if (queuedPlate) {
-              const r = await runDealerDataJob({ sessionId: session.id, vin: effectiveVin, trigger: "webhook" });
-              console.info("[stripe webhook] dealer data job (plate)", { sessionId: session.id, ...r });
-            }
+            // Atsevišķi no šī webhook laika budžeta (seed/VIN SCAN): cron ≤5 min palaiž ar savu 300 s.
+            const queuedPlate = await enqueueDealerDataJob({
+              sessionId: session.id,
+              vin: effectiveVin,
+              cronAfterMs: 0,
+            });
+            console.info("[stripe webhook] dealer data job queued (plate)", { sessionId: session.id, queuedPlate });
           } else {
             await markDealerDataNoVin({
               sessionId: session.id,
