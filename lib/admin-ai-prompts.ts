@@ -516,7 +516,7 @@ Rekomendācija
 ${AI_HIDDEN_MAINTENANCE_MILEAGE_RULES}
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes - ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana - tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav - par plēvi NERAKSTI.
 - Neapgalvo mezgla defektu, ja tas datos nav fiksēts. Ja jāpārbauda - saki to rekomendācijā, ne kā pierādītu faktu.
-- Beigās NERAKSTI zīmolu zīmogu vai parakstu (nekad „Inspected by IRISS” - tas ir cita zīmola teksts).
+- Beigās NERAKSTI zīmogu vai parakstu (nekad „Inspected by IRISS”).
 
 Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
 
