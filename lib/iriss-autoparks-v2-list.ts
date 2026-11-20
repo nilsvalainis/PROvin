@@ -6,6 +6,7 @@
  */
 
 import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
+import { isTransitWithoutLogistics } from "@/lib/iriss-autoparks-transit";
 import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, v2RegistryStatus, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 
 export type AutoparksV2ListRow = {
@@ -32,6 +33,8 @@ export type AutoparksV2ListRow = {
   clientOrder: boolean;
   /** Nils 27.10: pieņemts tirdzniecībā (CSDD akts, nav noņemts). */
   inTrade: boolean;
+  /** P2 (Nils 20.11): glabātais statuss «Ceļā», bet aktīva Loģistikas ieraksta nav - brīdinājums, neko nemaina. */
+  transitNoLogistics?: boolean;
 };
 
 /** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
@@ -71,7 +74,7 @@ export function sortAutoparksV2Rows(rows: readonly AutoparksV2ListRow[], sort: A
 export function autoparksV2ListRows(
   cars: readonly AutoparksCar[],
   v2: AutoparksV2State,
-  opts: { sums?: boolean; vat?: boolean } = {},
+  opts: { sums?: boolean; vat?: boolean; activeLogistics?: ReadonlySet<string> } = {},
 ): AutoparksV2ListRow[] {
   return cars.map((car) => {
     const carV2 = carV2Of(v2, car.id);
@@ -93,6 +96,7 @@ export function autoparksV2ListRows(
       vatMode: opts.vat ? carV2.purchase.vat.mode : "",
       clientOrder: carV2.fields.clientOrder ? carV2.fields.clientOrder === "1" : Boolean(car.clientOrder),
       inTrade: v2RegistryStatus(car) === "accepted",
+      transitNoLogistics: opts.activeLogistics ? isTransitWithoutLogistics(car, opts.activeLogistics) : false,
     };
   });
 }
@@ -140,6 +144,7 @@ export function autoparksV2OwnerCounts(rows: readonly AutoparksV2ListRow[]): Rec
 
 export function autoparksV2StatusCounts(rows: readonly AutoparksV2ListRow[]): Record<AutoparksStatus, number> {
   const out = Object.fromEntries(AUTOPARKS_V2_STATUS_ORDER.map((s) => [s, 0])) as Record<AutoparksStatus, number>;
-  for (const r of rows) out[r.status] += 1;
+  // P2 (Nils 20.11): «Ceļā» skaita tikai ar aktīvu Loģistikas ierakstu.
+  for (const r of rows) if (!(r.status === "in_transit" && r.transitNoLogistics)) out[r.status] += 1;
   return out;
 }

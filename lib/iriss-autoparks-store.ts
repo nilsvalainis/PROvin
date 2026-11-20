@@ -25,6 +25,7 @@ import { applyRegistryFileToState, type AutoparksRegistryImportResult } from "@/
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import { readLogisticsJsonFile, mutateLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 import { readAutoparksStoredBytes, storeAutoparksFileBytes } from "@/lib/iriss-autoparks-files";
+import { autoparksSyncForLogisticsAction, findAutoparksCarForOrder, type LogisticsSyncAction } from "@/lib/iriss-autoparks-transit";
 
 /** Tā pati Loģistikas krātuve (Blob vai mape), atsevišķs fails. Esošos Loģistikas datus neaiztiek. */
 const AUTOPARKS_FILE = "autoparks.json";
@@ -157,6 +158,60 @@ export async function markAutoparksCarArrived(carId: string, actor: AutoparksAct
     state.cars[idx] = next;
     state.events.push(event(carId, actor, "Atvests: Ceļā -> Gaida sagatavošanu"));
     return { result: next };
+  });
+}
+
+/**
+ * P2 (Nils 20.11): Loģistikas darbība delivered / archive / other_company sinhronizē saistīto Autoparka auto
+ * (pēc `orderId`, tad VIN). Noteikumi - `autoparksSyncForLogisticsAction`. Nekad nedzēš.
+ */
+export async function syncAutoparksCarWithLogisticsAction(
+  order: Pick<LogisticsOrder, "id" | "vin">,
+  action: LogisticsSyncAction,
+  actor: AutoparksActor,
+  today = new Date(),
+): Promise<AutoparksCar | null> {
+  return mutateAutoparksState((state) => {
+    const car = findAutoparksCarForOrder(state.cars, order);
+    if (!car) return { result: null, write: false };
+    const plan = autoparksSyncForLogisticsAction(car, action);
+    if (!plan) return { result: car, write: false };
+    const idx = state.cars.findIndex((c) => c.id === car.id);
+    const now = new Date().toISOString();
+    let next: AutoparksCar = car;
+    if (plan.status) {
+      next = {
+        ...car,
+        status: plan.status,
+        statusChangedAt: now,
+        arrivedAt: plan.setArrived ? car.arrivedAt || today.toISOString().slice(0, 10) : car.arrivedAt,
+        updatedAt: now,
+      };
+      state.cars[idx] = next;
+    }
+    state.events.push(event(car.id, actor, plan.text));
+    return { result: next };
+  });
+}
+
+/**
+ * P2 (Nils 20.11, 4A): admins pēc apstiprinājuma pārceļ «Ceļā bez Loģistikas» auto uz «Noliktavā».
+ * `eligible` - servera pārbaudīts saraksts (in_transit bez aktīva Loģistikas ieraksta); citus id izlaiž.
+ */
+export async function moveTransitCarsToStock(ids: readonly string[], eligible: ReadonlySet<string>, actor: AutoparksActor): Promise<string[]> {
+  return mutateAutoparksState((state) => {
+    const moved: string[] = [];
+    const now = new Date().toISOString();
+    for (const id of new Set(ids)) {
+      if (!eligible.has(id)) continue;
+      const idx = state.cars.findIndex((c) => c.id === id);
+      const prev = idx >= 0 ? state.cars[idx]! : null;
+      if (!prev || prev.status !== "in_transit" || prev.archivedAt) continue;
+      state.cars[idx] = { ...prev, status: "prep_waiting", statusChangedAt: now, updatedAt: now };
+      state.events.push(event(id, actor, "Ceļā bez Loģistikas -> Noliktavā (admins)"));
+      moved.push(id);
+    }
+    return moved.length ? { result: moved } : { result: moved, write: false };
   });
 }
 

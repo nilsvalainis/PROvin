@@ -53,6 +53,7 @@ describe("Autoparks v2 saraksts", () => {
       "status",
       "statusChangedAt",
       "title",
+      "transitNoLogistics",
       "vatMode",
       "vin",
       "year",

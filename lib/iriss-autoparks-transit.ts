@@ -82,3 +82,69 @@ export function planAutoparksLinks(
     return { kind: "create", orderId: o.id, title };
   });
 }
+
+/* ---------------- P2 (Nils 20.11, 4A): «Ceļā» = tikai ar aktīvu Loģistikas ierakstu ---------------- */
+
+type TransitCar = { id: string; orderId: string; vin: string; status: string; archivedAt?: string };
+type TransitOrder = Pick<LogisticsOrder, "id" | "vin" | "archived" | "status">;
+
+function normVin(v: string | undefined): string {
+  return (v ?? "").replace(/[\s-]/g, "").toUpperCase();
+}
+
+/** Loģistikas ieraksts pieder auto: pēc sasaistes (`orderId`) vai pēc VIN (≥11 zīmes). */
+export function logisticsOrderMatchesCar(order: Pick<LogisticsOrder, "id" | "vin">, car: Pick<TransitCar, "orderId" | "vin">): boolean {
+  if (car.orderId && car.orderId === order.id) return true;
+  const vin = normVin(order.vin);
+  return vin.length >= 11 && vin === normVin(car.vin);
+}
+
+/** Autoparka auto id, kuriem ir aktīvs (nearhivēts) Loģistikas ieraksts. */
+export function carIdsWithActiveLogistics(
+  cars: ReadonlyArray<Pick<TransitCar, "id" | "orderId" | "vin">>,
+  orders: readonly TransitOrder[],
+  isActive: (o: TransitOrder) => boolean,
+): Set<string> {
+  const active = orders.filter(isActive);
+  const out = new Set<string>();
+  for (const car of cars) if (active.some((o) => logisticsOrderMatchesCar(o, car))) out.add(car.id);
+  return out;
+}
+
+/** Glabātais statuss «Ceļā», bet aktīva Loģistikas ieraksta nav (arhīva auto neskaita). */
+export function isTransitWithoutLogistics(car: Pick<TransitCar, "id" | "status" | "archivedAt">, activeIds: ReadonlySet<string>): boolean {
+  return car.status === "in_transit" && !car.archivedAt && !activeIds.has(car.id);
+}
+
+/** Autoparka auto, kas saistīts ar Loģistikas ierakstu: vispirms pēc `orderId`, tad pēc VIN; arhīva auto neaiztiek. */
+export function findAutoparksCarForOrder<C extends Pick<TransitCar, "id" | "orderId" | "vin" | "archivedAt">>(
+  cars: readonly C[],
+  order: Pick<LogisticsOrder, "id" | "vin">,
+): C | undefined {
+  const live = cars.filter((c) => !c.archivedAt);
+  return live.find((c) => c.orderId && c.orderId === order.id) ?? live.find((c) => logisticsOrderMatchesCar({ id: "", vin: order.vin }, { orderId: "", vin: c.vin }));
+}
+
+export type LogisticsSyncAction = "delivered" | "archive" | "other_company";
+
+/**
+ * Ko Loģistikas darbība dara ar saistīto Autoparka auto (tikai, ja tas ir «Ceļā»; citus statusus neaiztiek, nekad nedzēš):
+ * - delivered: «Noliktavā» + atvešanas datums (kā «Uz Autoparku»);
+ * - archive: «Noliktavā» bez atvešanas datuma (transports noņemts, auto paliek mūsu uzskaitē);
+ * - other_company: statusu nemaina (auto citai SIA - nav mūsu noliktavā); auto paliek «Ceļā bez Loģistikas» sarakstā admina lēmumam.
+ */
+export function autoparksSyncForLogisticsAction(
+  car: Pick<TransitCar, "status">,
+  action: LogisticsSyncAction,
+): { status: "prep_waiting"; setArrived: boolean; text: string } | { status: null; text: string } | null {
+  if (car.status !== "in_transit") return null;
+  if (action === "delivered") return { status: "prep_waiting", setArrived: true, text: "Loģistika: atvests - Ceļā -> Noliktavā" };
+  if (action === "archive") return { status: "prep_waiting", setArrived: false, text: "Loģistika: arhīvā - Ceļā -> Noliktavā" };
+  return { status: null, text: "Loģistika: Cita SIA - statuss nav mainīts" };
+}
+
+/** Ar roku pievienotam auto «Ceļā» atļauts tikai ar aktīvu Loģistikas ierakstu pēc VIN (≥11 zīmes). */
+export function findActiveOrderForVin<O extends TransitOrder>(orders: readonly O[], vin: string, isActive: (o: O) => boolean): O | undefined {
+  if (normVin(vin).length < 11) return undefined;
+  return orders.find((o) => isActive(o) && logisticsOrderMatchesCar(o, { orderId: "", vin }));
+}
