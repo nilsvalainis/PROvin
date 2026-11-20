@@ -2,7 +2,8 @@ import "server-only";
 
 import { AUTOPARKS_STATUS_SHORT_LV, autoparksCarTitle } from "@/lib/iriss-autoparks";
 import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
-import { readAutoparksEffectiveCars, readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
+import { readAutoparksEffectiveCars, readAutoparksV2Car, readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
+import { findCarForLogisticsOrder } from "@/lib/iriss-autoparks-dedup";
 import {
   autoparksSaitesHref,
   buildIrissCarShareAdminView,
@@ -113,10 +114,9 @@ async function resolveEntities(from: IrissCarShareFrom, id: string): Promise<Res
   }
   const order = await getLogisticsOrder(id).catch(() => null);
   if (!order) return null;
-  const cars = await readAutoparksEffectiveCars().catch(() => null);
-  const car =
-    cars?.find((c) => c.orderId === order.id) ??
-    (order.vin ? cars?.find((c) => c.vin && c.vin.toUpperCase() === order.vin.toUpperCase()) : undefined);
+  const [cars, v2] = await Promise.all([readAutoparksEffectiveCars().catch(() => null), readAutoparksV2State().catch(() => null)]);
+  // Bugfix 20.11: kopējā Loģistika <-> Autoparks saskaņošana (efektīvie auto; VIN arī no piezīmēm / saīsināts / VIN6).
+  const car = cars ? findCarForLogisticsOrder(cars, v2, order)?.car : undefined;
   const pas = await findPasutijums({
     vin: order.vin,
     autoparksCarId: car?.id ?? "",

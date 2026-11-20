@@ -19,7 +19,7 @@ export function transitFixAdminOf(actor: AdminOrStaffActor | null): { id: string
 /** Tikai lasīšana: Autoparka auto ar «Ceļā» bez aktīva Loģistikas ieraksta (jaunākā iegāde augšā). */
 export async function listTransitWithoutLogistics(): Promise<{ rows: TransitFixRow[]; eligible: Set<string> }> {
   const [v1, v2, orders] = await Promise.all([readAutoparksState(), readAutoparksV2State(), listLogisticsOrders()]);
-  const active = carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive);
+  const active = carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive, v2);
   const eligible = new Set(v1.cars.filter((c) => isTransitWithoutLogistics(c, active)).map((c) => c.id));
   const rows = autoparksV2ListRows(
     v1.cars.filter((c) => eligible.has(c.id)),

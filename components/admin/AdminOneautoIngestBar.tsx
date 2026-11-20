@@ -1,7 +1,7 @@
 "use client";
 
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
   ONEAUTO_PRODUCTS,
@@ -12,7 +12,6 @@ import {
   oneautoDisplayHasRows,
   oneautoProductStatusLabel,
   oneautoProductsCostCents,
-  oneautoProductsInSoftCooldown,
   oneautoResultIsNoData,
   oneautoResultIsPending,
   oneautoResultIsUnavailable,
@@ -98,6 +97,8 @@ export function AdminOneautoIngestBar({
   onImagesFetched,
 }: Props) {
   const [busy, setBusy] = useState(false);
+  /** Dubultklikšķa aizsardzība: state atjaunojas tikai pēc renderēšanas, ref - uzreiz. */
+  const inFlight = useRef(false);
   const [imagesBusy, setImagesBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imagesNote, setImagesNote] = useState<string | null>(null);
@@ -117,9 +118,6 @@ export function AdminOneautoIngestBar({
     historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload),
   );
   const selectedHaveProblem = oneautoSelectedHaveProblem(value.selectedProducts, value.results);
-  const cooldownProducts = cachedForVin
-    ? oneautoProductsInSoftCooldown(value.selectedProducts, value.results, value.fetchedAt)
-    : [];
   const canFetchImages = Boolean(sessionId && photosEnabled && onImagesFetched);
 
   const toggleProduct = (id: OneautoProductId, checked: boolean) => {
@@ -129,25 +127,18 @@ export function AdminOneautoIngestBar({
     onIngestChange({ ...value, selectedProducts: next });
   };
 
-  const fetchData = async () => {
-    if (!editable || busy || imagesBusy) return;
+  /**
+   * Nila lēmums 20.11: poga vienmēr ielasa uzreiz no OneAuto (bez «jau ielādēts» bloķēšanas).
+   * Dubultklikšķa aizsardzība: viena poga = viens pieprasījums.
+   */
+  const fetchData = async (): Promise<void> => {
+    if (!editable || busy || imagesBusy || inFlight.current) return;
     if (value.selectedProducts.length === 0) {
       setError(oneautoFetchErrorLv("no_products_selected"));
       return;
     }
-    let productsToFetch = [...value.selectedProducts];
-    if (cooldownProducts.length > 0) {
-      const labels = cooldownProducts
-        .map((id) => ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id)
-        .join(", ");
-      const override = window.confirm(
-        `Šim VIN pēdējās 24h jau ir ielādēts: ${labels}. Ielādēt šos produktus no jauna? Tas var atkārtoti iekasēt maksu.`,
-      );
-      if (!override) {
-        productsToFetch = productsToFetch.filter((id) => !cooldownProducts.includes(id));
-        if (productsToFetch.length === 0) return;
-      }
-    }
+    const productsToFetch = [...value.selectedProducts];
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -155,7 +146,11 @@ export function AdminOneautoIngestBar({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vin: effectiveVin, products: productsToFetch }),
+        body: JSON.stringify({
+          vin: effectiveVin,
+          products: productsToFetch,
+          ...(sessionId ? { sessionId } : {}),
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -218,6 +213,7 @@ export function AdminOneautoIngestBar({
       setError(oneautoFetchErrorLv("upstream_error"));
     } finally {
       setBusy(false);
+      inFlight.current = false;
     }
   };
 

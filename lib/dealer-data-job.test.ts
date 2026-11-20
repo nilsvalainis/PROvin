@@ -16,10 +16,41 @@ vi.mock("@/lib/oneauto-api", () => ({
   fetchOneautoProducts: (opts: unknown) => fetchOneautoProducts(opts),
   getOneautoApiConfig: () => getOneautoApiConfig(),
 }));
-vi.mock("@/lib/dealer-data-job-store", () => ({
-  readDealerDataJob: (id: string) => readDealerDataJob(id),
-  upsertDealerDataJob: (id: string, patch: unknown) => upsertDealerDataJob(id, patch),
-}));
+const dealerDataRunLeaseHeld = vi.fn(async (_id: string, _runId: string) => true);
+vi.mock("@/lib/dealer-data-job-store", async () => {
+  const types = await import("@/lib/dealer-data-job-types");
+  const merge = await import("@/lib/dealer-data-job-merge");
+  return {
+    readDealerDataJob: (id: string) => readDealerDataJob(id),
+    upsertDealerDataJob: (id: string, patch: unknown, opts?: unknown) => upsertDealerDataJob(id, patch, opts),
+    dealerDataRunLeaseHeld: (id: string, runId: string) => dealerDataRunLeaseHeld(id, runId),
+    // Tā pati loģika kā īstajā CAS nomā, bet atmiņā (svaigais ieraksts = readDealerDataJob).
+    claimDealerDataJobRun: async (args: {
+      sessionId: string;
+      vin: string;
+      runId: string;
+      trigger: "webhook" | "cron" | "manual";
+      force?: boolean;
+      respectNextRetry?: boolean;
+    }) => {
+      const current = (await readDealerDataJob(args.sessionId)) as import("@/lib/dealer-data-job-types").DealerDataJob | null;
+      const decision = types.decideDealerDataRun({ job: current, vin: args.vin, force: args.force, trigger: args.trigger });
+      if (!decision.run) return { ok: false, reason: decision.reason, job: current };
+      if ((args.respectNextRetry || current?.pendingRequestId) && current?.status === "failed" && !types.dealerDataJobRetryDue(current)) {
+        return { ok: false, reason: "not_due", job: current };
+      }
+      const base = merge.mergeDealerDataJobPatch(args.sessionId, current, { vin: args.vin });
+      const job = merge.mergeDealerDataJobPatch(args.sessionId, base, {
+        vin: args.vin,
+        status: "running",
+        attempts: base.attempts + 1,
+        runId: args.runId,
+        trigger: args.trigger,
+      });
+      return { ok: true, job, previous: current };
+    },
+  };
+});
 vi.mock("@/lib/admin-order-draft-store", () => ({
   isSafeOrderDraftSessionId: (id: string) => /^[a-zA-Z0-9_]+$/.test(id),
   readOrderDraft: (id: string) => readOrderDraft(id),
@@ -33,6 +64,19 @@ vi.mock("@/lib/admin-ai-oneauto-translate", () => ({
 }));
 vi.mock("@/lib/b2b-wallet-refund", () => ({
   refundB2bWalletOrderIfNoData: (id: string) => refundB2bWalletOrderIfNoData(id),
+}));
+const sendDealerDataAlertIfNeeded = vi.fn(async (_id: string, _opts?: unknown) => null);
+const reviewDealerCommentsWithOpus = vi.fn(async (args: { fields: { id: string; text: string }[] }) => ({
+  texts: Object.fromEntries(args.fields.map((f) => [f.id, f.text])),
+  applied: 0,
+  ok: true,
+}));
+vi.mock("@/lib/dealer-data-alert", () => ({
+  sendDealerDataAlertIfNeeded: (id: string, opts?: unknown) => sendDealerDataAlertIfNeeded(id, opts),
+}));
+vi.mock("@/lib/dealer-comments-review", () => ({
+  reviewDealerCommentsWithOpus: (args: { fields: { id: string; text: string }[] }) =>
+    reviewDealerCommentsWithOpus(args),
 }));
 vi.mock("@/lib/admin-rich-comment-html", () => ({
   aiExpertSourceCommentToRichHtml: (text: string) => `<p>${text}</p>`,
@@ -89,6 +133,7 @@ describe("runDealerDataJob paid idempotency", () => {
       ...patch,
     }));
     patchOrderDraft.mockResolvedValue({ ok: true });
+    dealerDataRunLeaseHeld.mockResolvedValue(true);
     generateSourceCommentWithAi.mockResolvedValue("Dealer comment in English.");
     readDealerDataJob.mockResolvedValue(null);
     readOrderDraft.mockResolvedValue(
@@ -118,20 +163,31 @@ describe("runDealerDataJob paid idempotency", () => {
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
     expect(r).toMatchObject({ ok: true, status: "done" });
     expect(fetchOneautoProducts).toHaveBeenCalledTimes(2);
-    expect(fetchOneautoProducts.mock.calls[0]![0]).toEqual({
+    expect(fetchOneautoProducts.mock.calls[0]![0]).toMatchObject({
       vin: VIN,
       products: ["oe_service_history"],
     });
-    expect(fetchOneautoProducts.mock.calls[1]![0]).toEqual({
+    expect(fetchOneautoProducts.mock.calls[1]![0]).toMatchObject({
       vin: VIN,
       products: ["oe_vin_lookup"],
     });
-    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(1);
-    expect(generateSourceCommentWithAi.mock.calls[0]![0]).toMatchObject({
-      modelTier: "gemini-flash",
-      outputLang: "en",
-      isolateDealerComments: true,
-    });
+    // Divi komentāri: eļļas intervāli + „Komentāri”.
+    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(2);
+    const fields = generateSourceCommentWithAi.mock.calls.map((c) => (c[0] as { targetField: string }).targetField);
+    expect(fields.sort()).toEqual(["comments", "oilChangeIntervalNotes"]);
+    for (const call of generateSourceCommentWithAi.mock.calls) {
+      expect(call[0]).toMatchObject({
+        modelTier: "gemini-flash",
+        outputLang: "en",
+        isolateDealerComments: true,
+        highlightMajorAssemblies: true,
+      });
+      expect(call[0]).not.toHaveProperty("includeOilIntervalSummary");
+    }
+    // EN komentāriem Opus (LV) pārbaudi nepalaižam.
+    expect(reviewDealerCommentsWithOpus).not.toHaveBeenCalled();
+    const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+    expect(last).toMatchObject({ status: "done", aiGenerated: true });
   });
 
   it("retry neizsauc jau settled maksas produktus, tikai trūkstošo", async () => {
@@ -278,13 +334,21 @@ describe("runDealerDataJob paid idempotency", () => {
         },
         display: { equipment: [], powertrain: [], serviceTimeline: [] },
       });
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "0.18",
+      results: { vin_decoder: { ok: true, payload: lookupPayload() } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
     expect(r).toMatchObject({ ok: true, status: "done" });
     expect(patchOrderDraft).toHaveBeenCalled();
+    // Lookup nedeva datus -> VIN Decoder (0,18 €).
+    expect(fetchOneautoProducts).toHaveBeenCalledTimes(3);
+    expect(fetchOneautoProducts.mock.calls[2]![0].products).toEqual(["vin_decoder"]);
     const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
     expect(last).toMatchObject({
       status: "done",
-      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "no_data" },
+      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "no_data", vin_decoder: "ok" },
     });
   });
 
@@ -372,10 +436,276 @@ describe("runDealerDataJob paid idempotency", () => {
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual", force: true });
     expect(r.status).toBe("done");
     expect(fetchOneautoProducts).not.toHaveBeenCalled();
-    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(1);
+    // Pretrunīgais komentārs + tukšais eļļas lauks.
+    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(2);
     expect(patchOrderDraft.mock.calls.some((call) => {
       const comments = call[1]?.workspace?.sourceBlocks?.auto_records?.comments;
       return typeof comments === "string" && comments.includes("35 TFSI");
     })).toBe(true);
+  });
+
+  it("VIN Lookup 502 nebloķē vēsturi: Decoder; Decoder kļūda -> vēsture melnrakstā, dekodēšana atkārtosies", async () => {
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: { oe_service_history: { ok: true, payload: historyPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.00",
+        results: { oe_vin_lookup: { ok: false, error: "http_502", httpStatus: 502, payload: null } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      })
+      .mockRejectedValueOnce(new Error("timeout"));
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r).toMatchObject({ ok: false, status: "failed", reason: "vin_decode_failed" });
+    expect(fetchOneautoProducts.mock.calls.map((c) => c[0].products[0])).toEqual([
+      "oe_service_history",
+      "oe_vin_lookup",
+      "vin_decoder",
+    ]);
+    // Vēsture ierakstīta melnrakstā, komentāri ģenerēti.
+    expect(
+      patchOrderDraft.mock.calls.some(
+        (call) => (call[1]?.workspace?.sourceBlocks?.auto_records?.serviceWorks ?? []).length > 0,
+      ),
+    ).toBe(true);
+    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(2);
+    const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+    expect(last).toMatchObject({ status: "failed", aiGenerated: true });
+    expect(String(last.error)).toMatch(/^vin_decode:/);
+    expect(sendDealerDataAlertIfNeeded).toHaveBeenCalledWith(SESSION, { trigger: "webhook" });
+  });
+
+  it("retry pēc Decoder kļūdas: Lookup un vēsturi nepērk, tikai Decoder", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "failed",
+      error: "vin_decode:timeout",
+      attempts: 1,
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "failed", vin_decoder: "failed" },
+      oneautoResults: {
+        oe_service_history: { ok: true, payload: historyPayload() },
+        oe_vin_lookup: { ok: false, error: "http_502", payload: null },
+        vin_decoder: { ok: false, error: "timeout", payload: null },
+      },
+    });
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "0.18",
+      results: { vin_decoder: { ok: true, payload: lookupPayload() } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron" });
+    expect(r.status).toBe("done");
+    expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
+    expect(fetchOneautoProducts.mock.calls[0]![0].products).toEqual(["vin_decoder"]);
+  });
+
+  it("LV: Opus pārbaude piemērota abiem komentāriem pirms ieraksta", async () => {
+    readOrderDraft.mockResolvedValue(emptyDraft("Privātpersona"));
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: { oe_service_history: { ok: true, payload: historyPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.36",
+        results: { oe_vin_lookup: { ok: true, payload: lookupPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      });
+    generateSourceCommentWithAi.mockImplementation(async (opts: { targetField: string }) =>
+      opts.targetField === "comments" ? "Dzinējs remontēts 2020. gadā." : "Ražotāja intervāls: 15 000 km / 12 mēn.",
+    );
+    reviewDealerCommentsWithOpus.mockImplementationOnce(async (args) => ({
+      texts: Object.fromEntries(
+        args.fields.map((f) => [f.id, f.text.replace("2020. gadā", "2024. gadā")]),
+      ),
+      applied: 1,
+      ok: true,
+    }));
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r.status).toBe("done");
+    expect(reviewDealerCommentsWithOpus).toHaveBeenCalledTimes(1);
+    const written = patchOrderDraft.mock.calls
+      .map((c) => c[1]?.workspace?.sourceBlocks?.auto_records)
+      .filter(Boolean)
+      .at(-1);
+    expect(written.comments).toContain("2024. gadā");
+    expect(written.comments).toContain("<strong>Dzinējs</strong>");
+    expect(written.oilChangeIntervalNotes).toContain("Ražotāja intervāls");
+  });
+
+  it("viens komentārs neizdodas -> failed ai_generation_failed (atkārtos tikai trūkstošo)", async () => {
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: { oe_service_history: { ok: true, payload: historyPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.36",
+        results: { oe_vin_lookup: { ok: true, payload: lookupPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      });
+    generateSourceCommentWithAi.mockImplementation(async (opts: { targetField: string }) => {
+      if (opts.targetField === "oilChangeIntervalNotes") throw new Error("gemini_down");
+      return "Komentārs.";
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r).toMatchObject({ ok: false, reason: "ai_generation_failed" });
+  });
+
+  it("OneAuto 202 (apstrādē): ātrs atkārtojums, mēģinājums netiek skaitīts", async () => {
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "0.00",
+      results: { oe_service_history: { ok: false, error: "pending", payload: { status: "In Progress" } } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const before = Date.now();
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r.status).toBe("failed");
+    const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+    expect(last.attempts).toBe(0);
+    const next = Date.parse(String(last.nextRetryAt));
+    expect(next - before).toBeLessThan(6 * 60 * 1000);
+  });
+
+  it("noma zaudēta pirms maksas soļa -> nekas netiek pirkts", async () => {
+    dealerDataRunLeaseHeld.mockResolvedValueOnce(false);
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron" });
+    expect(r.reason).toBe("lease_lost");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+  });
+
+  it("laika budžets beidzies -> darbs atpakaļ rindā, nekas netiek pirkts", async () => {
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron", deadlineAt: Date.now() + 1000 });
+    expect(r).toMatchObject({ status: "pending", reason: "time_budget" });
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+    const last = upsertDealerDataJob.mock.calls.at(-1)!;
+    expect(last[1]).toMatchObject({ status: "pending", attempts: 0, runId: "" });
+  });
+
+  it("paralēla palaišana (running, svaiga) netiek sākta", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "running",
+      attempts: 1,
+      startedAt: new Date().toISOString(),
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: new Date().toISOString(),
+      runId: "run_other",
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
+    expect(r.reason).toBe("in_flight");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+  });
+
+  it("OneAuto rezultāts saglabāts darbā uzreiz (onResults) ar nomas pārbaudi", async () => {
+    fetchOneautoProducts.mockImplementationOnce(async (opts: { onResults?: (r: unknown) => Promise<void> }) => {
+      const results = { oe_service_history: { ok: false, error: "no_data", payload: { success: false } } };
+      await opts.onResults?.(results);
+      return { costEur: "0.00", results, display: { equipment: [], powertrain: [], serviceTimeline: [] } };
+    });
+    await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    const early = upsertDealerDataJob.mock.calls.find(
+      (c) => (c[1] as { oneautoResults?: unknown }).oneautoResults && (c[1] as { status?: string }).status === "running",
+    );
+    expect(early).toBeTruthy();
+    expect(early![2]).toMatchObject({ expectRunId: expect.stringMatching(/^run_/) });
+  });
+
+  it("202 atkārtojums aptaujā to pašu request_id", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "failed",
+      error: "pending",
+      attempts: 0,
+      pendingRetries: 1,
+      pendingRequestId: "req_123",
+      nextRetryAt: new Date(Date.now() - 1000).toISOString(),
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+    });
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "0.00",
+      results: { oe_service_history: { ok: false, error: "no_data", payload: { success: false } } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron", respectNextRetry: true });
+    expect(fetchOneautoProducts.mock.calls[0]![0]).toMatchObject({ requestIds: { oe_service_history: "req_123" } });
+  });
+
+  it("202: pirms nextRetryAt arī «Atkārtot» nesūta jaunu pieprasījumu", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "failed",
+      error: "pending",
+      attempts: 0,
+      pendingRequestId: "req_123",
+      nextRetryAt: new Date(Date.now() + 120_000).toISOString(),
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
+    expect(r.reason).toBe("not_due");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+  });
+
+  it("VIN maiņa: vecā VIN dati netiek izmantoti, jaunajam pērk vēsturi", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: "WAUZZZ4M0JD999999",
+      status: "done",
+      attempts: 1,
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "ok" },
+      oneautoResults: {
+        oe_service_history: { ok: true, payload: historyPayload() },
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
+      },
+    });
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "0.00",
+      results: { oe_service_history: { ok: false, error: "no_data", payload: { success: false } } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
+    expect(fetchOneautoProducts.mock.calls[0]![0]).toMatchObject({ vin: VIN, products: ["oe_service_history"] });
+    expect(r.status).toBe("no_data");
+  });
+
+  it("atkārtojums pēc ai_generation_failed: netulko un nepārraksta vēsturi/auto laukus", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "failed",
+      error: "ai_generation_failed",
+      attempts: 1,
+      draftWrittenAt: "2026-10-19T00:00:00.000Z",
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "ok" },
+      oneautoResults: {
+        oe_service_history: { ok: true, payload: historyPayload() },
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
+      },
+    });
+    readOrderDraft.mockResolvedValue(emptyDraft("Privātpersona"));
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron" });
+    expect(r.status).toBe("done");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+    expect(translateOneautoWorksOnIngest).not.toHaveBeenCalled();
+    // Melnrakstā raksta tikai komentārus (viens ieraksts), ne vēsturi.
+    expect(patchOrderDraft).toHaveBeenCalledTimes(1);
+    const ar = patchOrderDraft.mock.calls[0]![1].workspace.sourceBlocks.auto_records;
+    expect(JSON.stringify(ar.serviceWorks ?? [])).not.toMatch(/Oil change/);
   });
 });

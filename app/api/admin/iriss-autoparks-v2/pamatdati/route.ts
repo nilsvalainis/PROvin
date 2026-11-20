@@ -17,7 +17,7 @@ export async function GET() {
   const gate = await requireAutoparksV2Api("pamatdati");
   if (!gate.ok) return gate.response;
   const [v1, v2, orders] = await Promise.all([readAutoparksState(), readAutoparksV2State(), listLogisticsOrders().catch(() => null)]);
-  const activeLogistics = orders ? carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive) : undefined;
+  const activeLogistics = orders ? carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive, v2) : undefined;
   return autoparksV2Json({ ok: true, cars: autoparksV2ListRows(v1.cars, v2, { activeLogistics }) });
 }
 

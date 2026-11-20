@@ -96,7 +96,7 @@ async function readJson(res: Response): Promise<unknown> {
 
 const REQUEST_ID_KEYS = ["request_id", "requestId", "job_id", "jobId", "report_id", "reportId", "id"] as const;
 
-function requestIdFrom(payload: unknown): string {
+export function requestIdFrom(payload: unknown): string {
   const pick = (node: unknown): string => {
     if (!node || typeof node !== "object") return "";
     const o = node as Record<string, unknown>;
@@ -161,14 +161,23 @@ async function fetchOneautoPath(
   return fetchOneautoQuery(config, basePath, query);
 }
 
+function pollPathFor(path: string, requestId: string): string {
+  const clean = path.split("?")[0] ?? path;
+  return requestId
+    ? `${clean}?request_id=${encodeURIComponent(requestId)}&report_id=${encodeURIComponent(requestId)}`
+    : clean;
+}
+
 async function fetchWithPoll(
   config: OneautoApiConfig,
   path: string,
   vin: string,
-): Promise<{ ok: boolean; status: number; payload: unknown }> {
-  let last = await fetchOneautoPath(config, path, vin);
-  if (!payloadLooksPending(last.status, last.payload)) return last;
-  const requestId = requestIdFrom(last.payload);
+  existingRequestId = "",
+): Promise<{ ok: boolean; status: number; payload: unknown; requestId: string }> {
+  // 202 atkārtojums: aptaujā jau esošo pieprasījumu, nevis sūta jaunu bāzes pieprasījumu.
+  let last = await fetchOneautoPath(config, existingRequestId ? pollPathFor(path, existingRequestId) : path, vin);
+  if (!payloadLooksPending(last.status, last.payload)) return { ...last, requestId: existingRequestId };
+  const requestId = requestIdFrom(last.payload) || existingRequestId;
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     const clean = path.split("?")[0] ?? path;
@@ -176,14 +185,21 @@ async function fetchWithPoll(
       ? `${clean}?request_id=${encodeURIComponent(requestId)}&report_id=${encodeURIComponent(requestId)}`
       : clean;
     last = await fetchOneautoPath(config, pollPath, vin);
-    if (!payloadLooksPending(last.status, last.payload)) return last;
+    if (!payloadLooksPending(last.status, last.payload)) return { ...last, requestId };
   }
-  return last;
+  return { ...last, requestId };
 }
 
 export async function fetchOneautoProducts(opts: {
   vin: string;
   products: readonly OneautoProductId[];
+  /** 202 atkārtojumam: iepriekšējā pieprasījuma id pa produktiem. */
+  requestIds?: Partial<Record<OneautoProductId, string>>;
+  /**
+   * Izsauc UZREIZ pēc OneAuto atbildes, pirms izmaksu ieraksta - lai samaksātais rezultāts tiktu
+   * saglabāts, pat ja funkcija pēc tam tiek apturēta.
+   */
+  onResults?: (results: Partial<Record<OneautoProductId, OneautoProductResult>>) => Promise<void>;
 }): Promise<{
   source: typeof ONEAUTO_SOURCE_TAG;
   vin: string;
@@ -191,21 +207,25 @@ export async function fetchOneautoProducts(opts: {
   costCents: number;
   results: Partial<Record<OneautoProductId, OneautoProductResult>>;
   display: ReturnType<typeof buildOneautoDisplay>;
+  /** Pieprasījumu id produktiem, kas palika 202 «apstrādē». */
+  pendingRequestIds: Partial<Record<OneautoProductId, string>>;
 }> {
   const config = getOneautoApiConfig();
   if (!config) throw new Error("missing_oneauto_credentials");
 
   const results: Partial<Record<OneautoProductId, OneautoProductResult>> = {};
+  const pendingRequestIds: Partial<Record<OneautoProductId, string>> = {};
   const rawForDisplay: Partial<Record<OneautoProductId, unknown>> = {};
 
   for (const id of opts.products) {
     const product = ONEAUTO_PRODUCTS.find((p) => p.id === id);
     if (!product) continue;
     try {
-      const fetched = await fetchWithPoll(config, product.path, opts.vin);
+      const fetched = await fetchWithPoll(config, product.path, opts.vin, opts.requestIds?.[id] ?? "");
       logOneautoProduct(opts.vin, id, fetched.status, fetched.payload);
       const classified = buildOneautoProductResult(fetched);
       results[id] = classified;
+      if (classified.error === "pending" && fetched.requestId) pendingRequestIds[id] = fetched.requestId;
       if (classified.ok) rawForDisplay[id] = fetched.payload;
     } catch (e) {
       logOneautoProduct(opts.vin, id, 0, e instanceof Error ? e.message : "network_error");
@@ -233,7 +253,15 @@ export async function fetchOneautoProducts(opts: {
   }
 
   const costCents = oneautoChargedCostCents(opts.products, results);
-  void persistOneautoChargedCosts(opts.vin, opts.products, results);
+  if (opts.onResults) {
+    // Samaksātais rezultāts vispirms (darba ierakstā), izmaksu uzskaite pēc tam.
+    try {
+      await opts.onResults(results);
+    } catch (err) {
+      console.error("[oneauto] onResults failed", err);
+    }
+  }
+  await persistOneautoChargedCosts(opts.vin, opts.products, results);
   return {
     source: ONEAUTO_SOURCE_TAG,
     vin: opts.vin,
@@ -241,6 +269,7 @@ export async function fetchOneautoProducts(opts: {
     costCents,
     results,
     display,
+    pendingRequestIds,
   };
 }
 
@@ -250,15 +279,16 @@ async function persistOneautoChargedCosts(
   results: Partial<Record<OneautoProductId, OneautoProductResult>>,
 ): Promise<void> {
   try {
-    const { persistPaidSourceCost } = await import("@/lib/admin-costs-persist");
+    const { persistPaidSourceCostAsync } = await import("@/lib/admin-costs-persist");
     const { adminCostsEurToUsd } = await import("@/lib/admin-costs-live");
+    // Pa vienam (ne paralēli), lai viena mēneša Blob dokumentā nerastos CAS konflikti.
     for (const row of oneautoChargedCostEventDrafts({
       vin,
       products,
       results,
       eurToUsd: adminCostsEurToUsd(),
     })) {
-      persistPaidSourceCost({
+      await persistPaidSourceCostAsync({
         source: "oneauto",
         sku: row.sku,
         units: row.units,

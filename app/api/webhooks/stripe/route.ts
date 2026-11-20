@@ -33,6 +33,7 @@ import {
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
+import { markDealerDataNoVin } from "@/lib/dealer-data-alert";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillManualOrderPayment } from "@/lib/manual-order-fulfill";
 import { isManualOrderPaymentFulfillment } from "@/lib/manual-order-payment";
@@ -214,7 +215,7 @@ async function fulfillPaidCheckoutSession(
                 text: rendered.text,
                 invoiceAttachment,
               });
-              console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id, to: email });
+              console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id });
             } else {
               await sendPaymentConfirmationEmail({
                 to: email,
@@ -225,7 +226,7 @@ async function fulfillPaidCheckoutSession(
                 lang: session.locale ?? null,
                 invoiceAttachment,
               });
-              console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
+              console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id });
             }
           } catch (e) {
             console.error("[stripe webhook] Customer payment confirmation email failed:", e);
@@ -238,7 +239,7 @@ async function fulfillPaidCheckoutSession(
 
     if (isWalletTopup) {
       await sendCustomerConfirmation();
-      console.info("PROVIN order:", payload);
+      console.info("PROVIN order:", orderLogSummary(payload));
       triggerInvoiceSequenceRepairInBackground();
       await completeStripeEvent(fulfillDedupeKey(thinSession.id));
       return "done";
@@ -249,7 +250,7 @@ async function fulfillPaidCheckoutSession(
     );
 
     await sendCustomerConfirmation();
-    console.info("PROVIN order:", payload);
+    console.info("PROVIN order:", orderLogSummary(payload));
     triggerInvoiceSequenceRepairInBackground();
     await completeStripeEvent(fulfillDedupeKey(thinSession.id));
     return "done";
@@ -360,6 +361,12 @@ async function startPaidOrderDownstream(
       });
 
       let effectiveVin = order.vin?.trim() ? normalizeVin(order.vin) : "";
+      const dealerOrder =
+        fulfillment !== "b2b_pack" &&
+        isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total });
+      const enteredValidVin = Boolean(effectiveVin && isValidVin(effectiveVin));
+      let plateForDealer: string | null = null;
+      let plateFailReason: string | null = null;
       if (effectiveVin && !isValidVin(effectiveVin)) {
         try {
           const resolved = await resolveOrderVinFromPlate(session.id, {
@@ -368,11 +375,46 @@ async function startPaidOrderDownstream(
             runDownstream: false,
           });
           if (resolved.effectiveVin) effectiveVin = resolved.effectiveVin;
-          console.info("[stripe webhook] plate→vin", { sessionId: session.id, ...resolved });
+          plateForDealer = resolved.resolution?.plate ?? null;
+          plateFailReason = resolved.resolution?.message ?? resolved.reason ?? null;
+          console.info("[stripe webhook] plate→vin", {
+            sessionId: session.id,
+            ok: resolved.ok,
+            status: resolved.resolution?.status ?? null,
+            reason: resolved.reason ?? null,
+            vinFound: Boolean(resolved.effectiveVin),
+          });
         } catch (err) {
+          plateFailReason = "csdd_error";
           console.error("[stripe webhook] plate→vin:", err);
         }
       }
+
+      // Dīlera dati ar numurzīmi (Nils 20.11): pēc atrastā VIN automātiski tā pati pilnā ielase
+      // kā VIN pasūtījumam. VIN neatrasts -> statuss «Nav VIN» + admina paziņojums.
+      const dealerPlateRun = (async () => {
+        if (!dealerOrder || enteredValidVin) return;
+        try {
+          if (effectiveVin && isValidVin(effectiveVin)) {
+            // Atsevišķi no šī webhook laika budžeta (seed/VIN SCAN): cron ≤5 min palaiž ar savu 300 s.
+            const queuedPlate = await enqueueDealerDataJob({
+              sessionId: session.id,
+              vin: effectiveVin,
+              cronAfterMs: 0,
+            });
+            console.info("[stripe webhook] dealer data job queued (plate)", { sessionId: session.id, queuedPlate });
+          } else {
+            await markDealerDataNoVin({
+              sessionId: session.id,
+              plate: plateForDealer,
+              reason: plateFailReason || "vin_not_found",
+            });
+            console.warn("[stripe webhook] dealer data: no VIN", { sessionId: session.id });
+          }
+        } catch (err) {
+          console.error("[stripe webhook] dealer data (plate):", err);
+        }
+      })();
 
       // Ātrais vērtējums ar to pašu VIN + e-pastu → dati pāriet automātiski (pirms bezmaksas ielases).
       try {
@@ -406,6 +448,7 @@ async function startPaidOrderDownstream(
       } else {
         console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
       }
+      await dealerPlateRun;
     });
   }
 }
@@ -423,6 +466,21 @@ async function creditB2bWalletTopupFromSession(session: Stripe.Checkout.Session)
     return r.applied ? { value: true, next: r.wallet } : { value: false };
   });
   console.info("[stripe webhook] wallet topup", { sessionId: session.id, partnerId, amountCents, applied });
+}
+
+/** Žurnālam bez personas datiem (vārds, e-pasts, tālrunis Vercel žurnālos nepaliek). */
+function orderLogSummary(p: {
+  sessionId?: string | null;
+  vin?: string | null;
+  amountTotal?: string | null;
+  currency?: string | null;
+}): Record<string, unknown> {
+  return {
+    sessionId: p.sessionId ?? null,
+    vin: p.vin ?? null,
+    amountTotal: p.amountTotal ?? null,
+    currency: p.currency ?? null,
+  };
 }
 
 /** Atmaksa / strīds: atzīme pasūtījumam, maka korekcija papildinājumam, push par strīdu. */

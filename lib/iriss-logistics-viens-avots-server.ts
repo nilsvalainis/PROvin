@@ -18,10 +18,11 @@ import {
   splitSharedCarPatch,
 } from "@/lib/iriss-logistics-viens-avots";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
+import type { LogisticsOrderMatchInput } from "@/lib/iriss-autoparks-dedup";
 import type { AdminOrStaffActor } from "@/lib/staff-auth";
 import { ENV_ADMIN_USER_ID } from "@/lib/staff-roles";
 
-type OrderKey = Pick<LogisticsOrder, "id" | "vin">;
+type OrderKey = LogisticsOrderMatchInput;
 type OverlayOrder = Pick<LogisticsOrder, "id" | "vin" | "make" | "model" | "title" | "mileageKm">;
 
 /** Kopējos laukus Loģistikā drīkst labot tikai ar Autoparka «Pamatdati» tiesību (admins vienmēr). */
@@ -34,7 +35,7 @@ export async function loadLinkedCarLookup(): Promise<(order: OrderKey) => Linked
   const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
   return (order) => {
     // Saskaņo pēc efektīvā VIN (Pamatdatos labotais), lauki - no `autoparksV2Basics`.
-    const car = linkedCarForOrder(effectiveAutoparksCars(v1.cars, v2), order);
+    const car = linkedCarForOrder(effectiveAutoparksCars(v1.cars, v2), order, v2);
     if (!car) return undefined;
     const b = autoparksV2Basics(car, carV2Of(v2, car.id));
     return { id: car.id, vin: b.vin, make: b.make, model: b.model, year: b.year, color: b.color, mileageKm: b.mileageKm.value };

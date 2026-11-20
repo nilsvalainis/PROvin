@@ -8,6 +8,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
 import { parseOneautoProductIds } from "@/lib/oneauto-catalog";
+import { recordManualOneautoPurchase } from "@/lib/oneauto-manual-purchase";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +39,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_products_selected" }, { status: 400 });
   }
 
+  // Nila lēmums 20.11: manuālā poga vienmēr ielasa uzreiz no OneAuto (atkārtota tā paša VIN
+  // OE vēsture netiek iekasēta). Pirkums tiek saglabāts serverī uzreiz un sapludināts ar
+  // automātikas rezultātiem (ne pārrakstīts).
+  const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
+  const toFetch = products;
+
   try {
-    const fetched = await fetchOneautoProducts({ vin, products });
-    const allFailed = products.every(
+    const fetched = await fetchOneautoProducts({
+      vin,
+      products: toFetch,
+      // Uzreiz serverī (pirms izmaksu ieraksta): dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
+      onResults: sessionId
+        ? (results) => recordManualOneautoPurchase({ sessionId, vin, results })
+        : undefined,
+    });
+    const allFailed = toFetch.every(
       (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",
     );
-    const allPending = products.every((id) => fetched.results[id]?.error === "pending");
+    const allPending = toFetch.every((id) => fetched.results[id]?.error === "pending");
     const balanceFail = Object.values(fetched.results).some((r) => r?.error === "insufficient_balance");
     if (allFailed && balanceFail) {
       return NextResponse.json({ error: "insufficient_balance", ...fetched }, { status: 402 });

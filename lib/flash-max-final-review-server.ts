@@ -25,12 +25,19 @@ export type FlashMaxFinalReviewResult =
  * vai izsaukums neizdodas, atgriež kļūdu (FLASH MAX teksti paliek, kā bija).
  */
 export async function runFlashMaxFinalReview(
-  input: { fields: FlashMaxReviewField[]; facts: CanonicalFactsInput; budget?: AiRequestBudget },
+  input: {
+    fields: FlashMaxReviewField[];
+    facts: CanonicalFactsInput;
+    budget?: AiRequestBudget;
+    /** Papildu avota dati faktu lapas beigās (piem. oficiālā dīlera tabula automātiskajai ielasei). */
+    extraFactsText?: string;
+  },
   generate: typeof aiGenerateText = aiGenerateText,
 ): Promise<FlashMaxFinalReviewResult> {
   if (input.fields.length === 0) return { ok: true, findings: [] };
   try {
-    const factsSheet = buildCanonicalFactsSheet(input.facts);
+    const extra = input.extraFactsText?.trim() ?? "";
+    const factsSheet = [buildCanonicalFactsSheet(input.facts), extra].filter((t) => t.trim()).join("\n\n");
     const raw = await generate({
       model: CLAUDE_MODEL_OPUS,
       systemInstruction: FLASH_MAX_FINAL_REVIEW_SYSTEM,

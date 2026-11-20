@@ -6,8 +6,8 @@
  * Tīra loģika, bez servera atkarībām (testējama).
  */
 
-import { logisticsOrderMatchesCar } from "@/lib/iriss-autoparks-transit";
-import { v2Num, v2PlausibleTech, type AutoparksCarV2 } from "@/lib/iriss-autoparks-v2";
+import { findCarForLogisticsOrder, type LogisticsOrderMatchInput } from "@/lib/iriss-autoparks-dedup";
+import { v2Num, v2PlausibleTech, type AutoparksCarV2, type AutoparksV2State } from "@/lib/iriss-autoparks-v2";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
@@ -42,11 +42,13 @@ type MatchCar = { id: string; orderId: string; vin: string; archivedAt?: string 
  * Autoparka auto Loģistikas ierakstam: vispirms pēc `orderId` (arī arhīvā - tas pats auto),
  * tad pēc VIN ≥11 starp nearhivētiem auto.
  */
-export function linkedCarForOrder<C extends MatchCar>(cars: readonly C[], order: Pick<LogisticsOrder, "id" | "vin">): C | undefined {
-  return (
-    cars.find((c) => c.orderId && c.orderId === order.id) ??
-    cars.find((c) => !c.archivedAt && logisticsOrderMatchesCar({ id: "", vin: order.vin }, { orderId: "", vin: c.vin }))
-  );
+export function linkedCarForOrder<C extends MatchCar>(
+  cars: readonly C[],
+  order: LogisticsOrderMatchInput,
+  v2?: Pick<AutoparksV2State, "cars"> | null,
+): C | undefined {
+  // Bugfix 20.11: kopējā saskaņošana (VIN arī no piezīmēm, saīsināts VIN, VIN6 - tikai viennozīmīgi).
+  return cars.find((c) => c.orderId && c.orderId === order.id) ?? findCarForLogisticsOrder(cars, v2, order, { liveOnly: true })?.car;
 }
 
 function carTitle(make: string, model: string): string {

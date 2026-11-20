@@ -31,7 +31,7 @@ export default async function AutoparksV2Page() {
   // Ātrā pāreja uz Loģistiku (makets 26.10: posms "Ceļā") - tikai ar Loģistikas tiesību.
   const logisticsCount = orders && staffHasLogisticsCabinet(access.actor) ? orders.filter(isLogisticsOrderActive).length : null;
   // P2 (Nils 20.11): «Ceļā» tikai ar aktīvu Loģistikas ierakstu; pārējiem brīdinājums (neko nemaina).
-  const activeLogistics = v1 && orders ? carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive) : undefined;
+  const activeLogistics = v1 && orders ? carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive, v2) : undefined;
   const rows = v1 && v2 ? autoparksV2ListRows(v1.cars, v2, { sums: access.perms.summas, vat: access.perms.iegade, activeLogistics }) : [];
   return (
     <AutoparksV2List

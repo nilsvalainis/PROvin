@@ -7,6 +7,8 @@ import type { CabinetPickup } from "@/lib/iriss-logistics-cabinet";
 import { LOGISTICS_STEPS, LOGISTICS_STEP_LV, logisticsStepOf, type LogisticsStep } from "@/lib/iriss-logistics-steps";
 import { cargoBucketLabel, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import { LOGISTICS_ORDER_STATUS_LV, type LogisticsOrder } from "@/lib/iriss-logistics-types";
+import { findCarForLogisticsOrder, findOrderForCarVin, type LogisticsOrderMatchInput } from "@/lib/iriss-autoparks-dedup";
+import type { AutoparksV2State } from "@/lib/iriss-autoparks-v2";
 
 /** Tie paši 4 soļi kā Loģistikā (Nils 27.10). */
 export const AUTOPARKS_TRANSIT_STEPS: readonly LogisticsStep[] = LOGISTICS_STEPS;
@@ -69,15 +71,17 @@ export type AutoparksLinkAction =
  * (tikai, ja tam vēl nav cita Loģistikas ieraksta) / izveidot jaunu ar statusu «Ceļā».
  */
 export function planAutoparksLinks(
-  orders: ReadonlyArray<Pick<LogisticsOrder, "id" | "vin" | "title" | "make" | "model">>,
-  cars: ReadonlyArray<{ id: string; orderId: string; vin: string }>,
+  orders: ReadonlyArray<LogisticsOrderMatchInput & Pick<LogisticsOrder, "vin" | "title" | "make" | "model">>,
+  cars: ReadonlyArray<{ id: string; orderId: string; vin: string; archivedAt?: string }>,
+  v2?: Pick<AutoparksV2State, "cars"> | null,
 ): AutoparksLinkAction[] {
+  const free = cars.filter((c) => !c.orderId);
   return orders.map((o) => {
     const title = o.title.trim() || `${o.make} ${o.model}`.trim() || o.vin;
     const linked = cars.find((c) => c.orderId === o.id);
     if (linked) return { kind: "linked", orderId: o.id, carId: linked.id, title };
-    const vin = o.vin.trim().toUpperCase();
-    const byVin = vin.length >= 11 ? cars.find((c) => !c.orderId && c.vin.toUpperCase() === vin) : undefined;
+    // Bugfix 20.11: kopējā saskaņošana (efektīvais VIN, piezīmes, saīsināts VIN, VIN6) starp auto bez sasaistes.
+    const byVin = findCarForLogisticsOrder(free, v2, o)?.car;
     if (byVin) return { kind: "link_vin", orderId: o.id, carId: byVin.id, title };
     return { kind: "create", orderId: o.id, title };
   });
@@ -86,28 +90,43 @@ export function planAutoparksLinks(
 /* ---------------- P2 (Nils 20.11, 4A): «Ceļā» = tikai ar aktīvu Loģistikas ierakstu ---------------- */
 
 type TransitCar = { id: string; orderId: string; vin: string; status: string; archivedAt?: string };
-type TransitOrder = Pick<LogisticsOrder, "id" | "vin" | "archived" | "status">;
+type TransitOrder = LogisticsOrderMatchInput & Pick<LogisticsOrder, "archived" | "status">;
+type V2Vins = Pick<AutoparksV2State, "cars"> | null | undefined;
 
 function normVin(v: string | undefined): string {
   return (v ?? "").replace(/[\s-]/g, "").toUpperCase();
 }
 
-/** Loģistikas ieraksts pieder auto: pēc sasaistes (`orderId`) vai pēc VIN (≥11 zīmes). */
-export function logisticsOrderMatchesCar(order: Pick<LogisticsOrder, "id" | "vin">, car: Pick<TransitCar, "orderId" | "vin">): boolean {
+/**
+ * Loģistikas ieraksts pieder auto. Bugfix 20.11: viena loģika ar `findCarForLogisticsOrder`
+ * (sasaiste, efektīvais VIN, VIN no piezīmēm, saīsināts VIN, VIN6 - nepilns tikai viennozīmīgi starp `cars`).
+ * Bez `cars` saraksta nepilnu VIN nevar pārbaudīt viennozīmīgi - tad salīdzina tikai ar šo vienu auto.
+ */
+export function logisticsOrderMatchesCar(
+  order: LogisticsOrderMatchInput,
+  car: Pick<TransitCar, "id" | "orderId" | "vin"> & { archivedAt?: string },
+  cars: ReadonlyArray<Pick<TransitCar, "id" | "orderId" | "vin"> & { archivedAt?: string }> = [car],
+  v2?: V2Vins,
+): boolean {
   if (car.orderId && car.orderId === order.id) return true;
-  const vin = normVin(order.vin);
-  return vin.length >= 11 && vin === normVin(car.vin);
+  return findCarForLogisticsOrder(cars, v2, order)?.car.id === car.id;
 }
 
 /** Autoparka auto id, kuriem ir aktīvs (nearhivēts) Loģistikas ieraksts. */
 export function carIdsWithActiveLogistics(
-  cars: ReadonlyArray<Pick<TransitCar, "id" | "orderId" | "vin">>,
+  cars: ReadonlyArray<Pick<TransitCar, "id" | "orderId" | "vin"> & { archivedAt?: string }>,
   orders: readonly TransitOrder[],
   isActive: (o: TransitOrder) => boolean,
+  v2?: V2Vins,
 ): Set<string> {
-  const active = orders.filter(isActive);
   const out = new Set<string>();
-  for (const car of cars) if (active.some((o) => logisticsOrderMatchesCar(o, car))) out.add(car.id);
+  for (const o of orders) {
+    if (!isActive(o)) continue;
+    // Visi auto ar tiešu sasaisti (kā līdz šim) + auto pēc kopējās saskaņošanas loģikas.
+    for (const c of cars) if (c.orderId && c.orderId === o.id) out.add(c.id);
+    const hit = findCarForLogisticsOrder(cars, v2, o);
+    if (hit) out.add(hit.car.id);
+  }
   return out;
 }
 
@@ -116,13 +135,13 @@ export function isTransitWithoutLogistics(car: Pick<TransitCar, "id" | "status" 
   return car.status === "in_transit" && !car.archivedAt && !activeIds.has(car.id);
 }
 
-/** Autoparka auto, kas saistīts ar Loģistikas ierakstu: vispirms pēc `orderId`, tad pēc VIN; arhīva auto neaiztiek. */
+/** Autoparka auto, kas saistīts ar Loģistikas ierakstu (kopējā loģika); arhīva auto neaiztiek. */
 export function findAutoparksCarForOrder<C extends Pick<TransitCar, "id" | "orderId" | "vin" | "archivedAt">>(
   cars: readonly C[],
-  order: Pick<LogisticsOrder, "id" | "vin">,
+  order: LogisticsOrderMatchInput,
+  v2?: V2Vins,
 ): C | undefined {
-  const live = cars.filter((c) => !c.archivedAt);
-  return live.find((c) => c.orderId && c.orderId === order.id) ?? live.find((c) => logisticsOrderMatchesCar({ id: "", vin: order.vin }, { orderId: "", vin: c.vin }));
+  return findCarForLogisticsOrder(cars, v2, order, { liveOnly: true })?.car;
 }
 
 export type LogisticsSyncAction = "delivered" | "archive" | "other_company";
@@ -143,8 +162,8 @@ export function autoparksSyncForLogisticsAction(
   return { status: null, text: "Loģistika: Cita SIA - statuss nav mainīts" };
 }
 
-/** Ar roku pievienotam auto «Ceļā» atļauts tikai ar aktīvu Loģistikas ierakstu pēc VIN (≥11 zīmes). */
+/** Ar roku pievienotam auto «Ceļā» atļauts tikai ar aktīvu Loģistikas ierakstu pēc VIN (≥11 zīmes; pasūtījuma VIN arī no piezīmēm). */
 export function findActiveOrderForVin<O extends TransitOrder>(orders: readonly O[], vin: string, isActive: (o: O) => boolean): O | undefined {
   if (normVin(vin).length < 11) return undefined;
-  return orders.find((o) => isActive(o) && logisticsOrderMatchesCar(o, { orderId: "", vin }));
+  return findOrderForCarVin(orders.filter(isActive), vin);
 }

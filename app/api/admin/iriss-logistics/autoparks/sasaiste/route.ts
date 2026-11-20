@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { autoparksActor } from "@/lib/iriss-autoparks-access";
 import { ensureAutoparksCarFromOrder, linkAutoparksCarToOrder, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { planAutoparksLinks } from "@/lib/iriss-autoparks-transit";
+import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
 import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
 import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
@@ -18,8 +19,8 @@ const noStore = { "Cache-Control": "private, no-store" };
  * Tikai administrators. Atkārtota palaišana dublikātus neveido.
  */
 async function currentPlan() {
-  const [orders, state] = await Promise.all([listLogisticsOrders(), readAutoparksState()]);
-  return planAutoparksLinks(orders.filter(isLogisticsOrderActive), state.cars);
+  const [orders, state, v2] = await Promise.all([listLogisticsOrders(), readAutoparksState(), readAutoparksV2State().catch(() => null)]);
+  return planAutoparksLinks(orders.filter(isLogisticsOrderActive), state.cars, v2);
 }
 
 export async function GET() {
