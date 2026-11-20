@@ -33,7 +33,11 @@ import {
   IRISS_PD_MARK_SENT_LV,
   irissPdDeleteConfirm,
   irissPdMailtoHref,
-  irissPdWhatsAppHref,
+  buildIrissPdWhatsAppText,
+  irissPdClientWhatsAppHref,
+  irissPdClientWhatsAppPhone,
+  irissPdEditorInput,
+  irissPdEditorValue,
   formatIrissPdPrice,
   irissPdAvailableActions,
   irissPdEurDigits,
@@ -495,12 +499,22 @@ export function PiedavajumsDetail({
   /** Saite jau ir klientam (nosūtīts / apstiprināts / klienta noraidīts) - melnrakstu var atvērt atkārtoti. */
   const sentLinkToken =
     rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? rec.linkToken : "";
+  /** WhatsApp poga aktīva tikai ar izvēlēta klienta tālruni. */
+  const waPhone = irissPdClientWhatsAppPhone(d.client);
 
   /**
    * Nils 20.11 (audits P1, A): WhatsApp / e-pasts tikai atver melnrakstu ar gatavu tekstu un saiti - sūta cilvēks.
    * Melnrakstam statuss kļūst «Nosūtīts» tāpat kā ar «Atzīmēt nosūtītu».
    */
   async function openClientDraft(channel: "whatsapp" | "email") {
+    // P4 (Nils 20.11): WhatsApp tieši izvēlētā klienta numuram (wa.me atver lietotni), īss šablons ar saiti.
+    if (channel === "whatsapp" && !waPhone) return;
+    if (channel === "whatsapp" && sentLinkToken) {
+      // Saite jau ir - atver uzreiz klikšķī (iPhone Safari: bez await pirms atvēršanas).
+      window.location.href = irissPdClientWhatsAppHref(d.client, buildIrissPdWhatsAppText(d, irissPdAbsoluteLink(sentLinkToken)));
+      setInfo("WhatsApp atvērts ar gatavu tekstu - pārbaudi un nosūti pats.");
+      return;
+    }
     // iPhone Safari bloķē logu, ko atver pēc await - tukšo cilni atver uzreiz klikšķī.
     const win = channel === "whatsapp" ? window.open("", "_blank") : null;
     if (win) win.opener = null;
@@ -510,13 +524,16 @@ export function PiedavajumsDetail({
       win?.close();
       return;
     }
-    const msg = buildIrissPdClientMessage(d, irissPdAbsoluteLink(token));
-    const href = channel === "whatsapp" ? irissPdWhatsAppHref(d.client.phone, msg) : irissPdMailtoHref(d.client.email, msg);
+    const link = irissPdAbsoluteLink(token);
+    const href =
+      channel === "whatsapp"
+        ? irissPdClientWhatsAppHref(d.client, buildIrissPdWhatsAppText(d, link))
+        : irissPdMailtoHref(d.client.email, buildIrissPdClientMessage(d, link));
     if (win) win.location.href = href;
     else window.location.href = href;
     setInfo(
       channel === "whatsapp"
-        ? "WhatsApp melnraksts atvērts - pārbaudi tekstu un nosūti pats."
+        ? "WhatsApp atvērts ar gatavu tekstu - pārbaudi un nosūti pats."
         : "E-pasta melnraksts atvērts - pārbaudi tekstu un nosūti pats.",
     );
   }
@@ -615,8 +632,14 @@ export function PiedavajumsDetail({
                   type="button"
                   className="pd-btn"
                   data-pd-draft="whatsapp"
-                  disabled={busy !== "" || (!sentLinkToken && blockers.length > 0)}
-                  title={sentLinkToken ? "Atver WhatsApp ar gatavu tekstu un saiti" : blockers.join(" ") || "Atver WhatsApp ar gatavu tekstu un saiti"}
+                  disabled={busy !== "" || !waPhone || (!sentLinkToken && blockers.length > 0)}
+                  title={
+                    !waPhone
+                      ? "Izvēlies klientu ar tālruni"
+                      : sentLinkToken
+                        ? `Atver WhatsApp klientam ${d.client.name || d.client.phone}`
+                        : blockers.join(" ") || `Atver WhatsApp klientam ${d.client.name || d.client.phone}`
+                  }
                   onClick={() => void openClientDraft("whatsapp")}
                 >
                   WhatsApp
@@ -708,11 +731,11 @@ export function PiedavajumsDetail({
                 <input
                   id={`pd-${k}`}
                   className={k === "vin" ? "pd-mono" : undefined}
-                  value={d.vehicle[k]}
+                  value={irissPdEditorValue(k, d.vehicle[k])}
                   placeholder={ph}
                   inputMode={k === "mileageKm" || k === "year" ? "numeric" : undefined}
                   disabled={!editable}
-                  onChange={(e) => setV(k, k === "vin" ? e.target.value.toUpperCase() : e.target.value)}
+                  onChange={(e) => setV(k, k === "vin" ? e.target.value.toUpperCase() : irissPdEditorInput(k, e.target.value))}
                 />
               </div>
             ))}
@@ -766,7 +789,7 @@ export function PiedavajumsDetail({
             {MORE_FIELDS.map(([k, l]) => (
               <div className="pd-fld" key={k}>
                 <label htmlFor={`pd-${k}`}>{l}</label>
-                <input id={`pd-${k}`} value={d.vehicle[k]} disabled={!editable} onChange={(e) => setV(k, e.target.value)} />
+                <input id={`pd-${k}`} value={irissPdEditorValue(k, d.vehicle[k])} disabled={!editable} onChange={(e) => setV(k, irissPdEditorInput(k, e.target.value))} />
               </div>
             ))}
           </div>

@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => undefined, r
 
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
 import { PiedavajumsDetail } from "@/components/admin/iriss-piedavajumi/PiedavajumsDetail";
-import { renderText } from "@/lib/test-render";
+import { renderHtml, renderText } from "@/lib/test-render";
 import { applyIrissPdPatch, irissPdToListRow, normalizeIrissPiedavajums, photoKey, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { irissPdFromLegacyOffer, irissPdPlainFromHtml } from "@/lib/iriss-piedavajumi-from-legacy";
 import {
@@ -312,5 +312,41 @@ describe("UI: darbinieka skats", () => {
     expect(text).not.toContain("Cits auto Ingum");
     expect(text).not.toContain("Avots: visi");
     expect(text).toContain("1 piedāvājums");
+  });
+});
+
+describe("P4: WhatsApp klientam un redaktora lauki", () => {
+  it("wa.me tieši klienta numuram ar īso šablonu; bez tālruņa - nav saites", async () => {
+    const { buildIrissPdWhatsAppText, irissPdClientWhatsAppHref, irissPdClientWhatsAppPhone } = await import("@/lib/iriss-piedavajumi");
+    const r = rec({ vehicle: { ...rec().vehicle, title: "Škoda Kodiaq 2.0 TDI Sportline" } });
+    const text = buildIrissPdWhatsAppText(r, "https://www.provin.lv/p/d/AbCdEfGhIjKlMnOpQrStUvWx");
+    expect(text).toBe(
+      "Sveiki! Nosūtu izskatīšanai Škoda Kodiaq, ja ir jautājumi, droši rakstiet vai zvaniet. https://www.provin.lv/p/d/AbCdEfGhIjKlMnOpQrStUvWx",
+    );
+    const href = irissPdClientWhatsAppHref({ phone: "+371 29 123 456" }, text);
+    expect(href.startsWith("https://wa.me/37129123456?text=")).toBe(true);
+    expect(href).not.toContain("web.whatsapp.com");
+    expect(decodeURIComponent(href.split("?text=")[1]!)).toBe(text);
+    expect(irissPdClientWhatsAppPhone({ phone: "" })).toBe("");
+    expect(irissPdClientWhatsAppHref({ phone: "123" }, text)).toBe("");
+  });
+
+  it("redaktorā nobraukums ar atstarpēm un km, krāsa latviski; ievade saglabā ciparus", async () => {
+    const { irissPdEditorInput, irissPdEditorValue } = await import("@/lib/iriss-piedavajumi");
+    expect(irissPdEditorValue("mileageKm", "153709")).toBe("153 709 km");
+    expect(irissPdEditorInput("mileageKm", "153 70 km")).toBe("15370");
+    expect(irissPdEditorInput("mileageKm", "ap. 150 tkm")).toBe("ap. 150 tkm");
+    expect(irissPdEditorValue("color", "Gray Metallic (Original)")).toBe("Pelēka metālika (oriģināls)");
+    expect(irissPdEditorValue("title", "Gray")).toBe("Gray");
+  });
+
+  it("WhatsApp poga neaktīva bez klienta tālruņa", () => {
+    const base = rec({ status: "sent", linkToken: "AbCdEfGhIjKlMnOpQrStUvWx" });
+    const none = renderText(<PiedavajumsDetail initial={base} clientOptions={[]} note="" />);
+    expect(none).toContain("WhatsApp");
+    const html = (r: IrissPiedavajums) => renderHtml(<PiedavajumsDetail initial={r} clientOptions={[]} note="" />);
+    expect(html(base)).toMatch(/data-pd-draft="whatsapp"[^>]*disabled|disabled=""[^>]*data-pd-draft="whatsapp"/);
+    const withPhone = html({ ...base, client: { name: "Jānis", phone: "+37129123456", email: "", orderId: "" } });
+    expect(withPhone).not.toMatch(/data-pd-draft="whatsapp"[^>]*disabled|disabled=""[^>]*data-pd-draft="whatsapp"/);
   });
 });

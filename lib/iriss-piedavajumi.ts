@@ -4,6 +4,7 @@
  * Termiņš ir obligāts nosūtīšanai, bez noklusējuma. Beidzies automātiski pēc Rīgas dienas beigām.
  */
 
+import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
 import {
   applyIrissPdEquipmentSummaryEdit,
   buildIrissPdEqSummaryPublic,
@@ -458,6 +459,47 @@ export function buildIrissPdClientMessage(
     brand,
   ].join("\n");
   return { subject, text };
+}
+
+/**
+ * Nils 20.11 (P4): WhatsApp teksts PD klientam. Vietturi: {auto} - marka un modelis īsi, {saite} - publiskā PD saite.
+ * IRISS PD ziņu šablonu reģistra nav (PROVIN šabloni IRISS nedrīkst lietot) - teksts labojams šeit.
+ */
+export const IRISS_PD_WHATSAPP_TEMPLATE = "Sveiki! Nosūtu izskatīšanai {auto}, ja ir jautājumi, droši rakstiet vai zvaniet. {saite}";
+
+/** «Škoda Kodiaq 2.0 TDI Sportline» -> «Škoda Kodiaq» (marka + modelis). */
+export function irissPdShortModel(title: string): string {
+  return title.replace(/\s+/g, " ").trim().split(" ").slice(0, 2).join(" ");
+}
+
+export function buildIrissPdWhatsAppText(rec: Pick<IrissPiedavajums, "vehicle">, url: string, template: string = IRISS_PD_WHATSAPP_TEMPLATE): string {
+  const auto = irissPdShortModel(rec.vehicle.title) || "piedāvājumu";
+  return template.replace("{auto}", auto).replace("{saite}", url).replace(/\s+/g, " ").trim();
+}
+
+/** Klienta tālrunis WhatsApp pogai (tikai cipari, min. 8) vai "" - tad poga neaktīva. */
+export function irissPdClientWhatsAppPhone(client: Pick<IrissPdClient, "phone">): string {
+  const digits = client.phone.replace(/\D/g, "");
+  return digits.length >= 8 ? digits : "";
+}
+
+/** wa.me (atver WhatsApp lietotni, ne web.whatsapp.com) tieši klienta numuram. */
+export function irissPdClientWhatsAppHref(client: Pick<IrissPdClient, "phone">, text: string): string {
+  const phone = irissPdClientWhatsAppPhone(client);
+  return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : "";
+}
+
+/** Redaktora laukā: nobraukums «153 709 km», krāsa latviski (kā klienta pusē). Labojams - saglabājas ievadītais. */
+export function irissPdEditorValue(k: keyof IrissPdVehicle, raw: string): string {
+  if (k === "mileageKm" && /^\d[\d\s.,]*$/.test(raw.trim())) return `${raw.replace(/[\s.,]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ")} km`;
+  if (k === "color") return irissPdDisplayValue(raw);
+  return raw;
+}
+
+/** Nobraukuma ievade «153 709 km» -> «153709»; cits teksts paliek kā ievadīts. */
+export function irissPdEditorInput(k: keyof IrissPdVehicle, input: string): string {
+  if (k === "mileageKm" && /^[\d\s.,]*(km?)?\s*$/i.test(input)) return input.replace(/\D/g, "");
+  return input;
 }
 
 /** wa.me ar gatavu tekstu (bez numura - WhatsApp ļauj izvēlēties kontaktu). Tikai atver, nesūta. */
