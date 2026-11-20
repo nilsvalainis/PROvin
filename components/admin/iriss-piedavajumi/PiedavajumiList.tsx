@@ -25,6 +25,10 @@ import {
   type IrissPdStatus,
 } from "@/lib/iriss-piedavajumi-types";
 import { formatOfferValidUntilLv } from "@/lib/iriss-offer-valid-until";
+import { irissPdCreatorInitials, irissPdRowsInScope, type IrissPdListScope } from "@/lib/iriss-piedavajumi-staff";
+
+/** P4: kas skatās sarakstu (darbiniekam «Mani» / «Visi», «Veidoja» kolonna, citu PD tikai «Atvērt»). */
+export type PdListViewer = { kind: "admin" | "staff"; id: string };
 
 export function irissPdCountLabel(n: number): string {
   const one = n % 10 === 1 && n % 100 !== 11;
@@ -46,6 +50,15 @@ function Source({ row }: { row: IrissPdListRow }) {
   );
 }
 
+function Creator({ row, viewerId }: { row: IrissPdListRow; viewerId: string }) {
+  const mine = Boolean(row.createdById) && row.createdById === viewerId;
+  return (
+    <span className="pd-who" title={row.createdByName || "Administrators"}>
+      <span className={`pd-av${mine ? " me" : ""}`}>{irissPdCreatorInitials(row.createdByName)}</span>
+    </span>
+  );
+}
+
 function RowAction({
   row,
   status,
@@ -53,6 +66,8 @@ function RowAction({
   onRebase,
   onDelete,
   busy,
+  readOnly = false,
+  canDelete = true,
 }: {
   row: IrissPdListRow;
   status: IrissPdStatus;
@@ -60,13 +75,23 @@ function RowAction({
   onRebase: () => void;
   onDelete: () => void;
   busy: boolean;
+  /** P4: darbiniekam cita veidots PD - tikai atvērt. */
+  readOnly?: boolean;
+  canDelete?: boolean;
 }) {
   const href = `/admin/iriss/piedavajumi/${row.id}`;
-  const del = (
+  if (readOnly) {
+    return (
+      <Link className="pd-btn s" href={href}>
+        Atvērt
+      </Link>
+    );
+  }
+  const del = canDelete ? (
     <button type="button" className="pd-btn s bad" onClick={onDelete} disabled={busy}>
       Dzēst
     </button>
-  );
+  ) : null;
   if (status === "requested") {
     return (
       <span className="inline-flex flex-wrap items-center gap-1">
@@ -126,20 +151,27 @@ export function PiedavajumiList({
   nowMs,
   storeEnabled,
   loadError,
+  viewer = { kind: "admin", id: "env-admin" },
 }: {
   rows: IrissPdListRow[];
   nowMs: number;
   storeEnabled: boolean;
   loadError: string;
+  viewer?: PdListViewer;
 }) {
   const router = useRouter();
+  const staff = viewer.kind === "staff";
+  // 2A (Nils 20.11): darbiniekam pēc noklusējuma «Mani», slēdzis «Visi» (citu PD tikai atvērt).
+  const [scope, setScope] = useState<IrissPdListScope>(staff ? "mine" : "all");
+  const scoped = useMemo(() => (staff ? irissPdRowsInScope(rows, viewer.id, scope) : rows), [rows, staff, viewer.id, scope]);
+  const own = (row: IrissPdListRow) => !staff || (Boolean(row.createdById) && row.createdById === viewer.id);
   const [filter, setFilter] = useState<IrissPdListFilter>({ status: "all", source: "all", query: "" });
   const { copy, copiedId, copyError } = usePdCopyLink();
   const { rebase, rebaseBusy, rebaseError } = usePdRebase();
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const counts = useMemo(() => countIrissPdByStatus(rows, nowMs), [rows, nowMs]);
-  const shown = useMemo(() => sortIrissPdRows(filterIrissPdRows(rows, filter, nowMs)), [rows, filter, nowMs]);
+  const counts = useMemo(() => countIrissPdByStatus(scoped, nowMs), [scoped, nowMs]);
+  const shown = useMemo(() => sortIrissPdRows(filterIrissPdRows(scoped, filter, nowMs)), [scoped, filter, nowMs]);
   const err = copyError || rebaseError || deleteError;
   const busy = rebaseBusy || deleteBusy;
 
@@ -165,7 +197,7 @@ export function PiedavajumiList({
       <div className="pd-top">
         <div>
           <h1>Piedāvājumi</h1>
-          <div className="pd-sub">{irissPdCountLabel(rows.length)}</div>
+          <div className="pd-sub">{irissPdCountLabel(scoped.length)}</div>
         </div>
         <Link className="pd-btn p pd-new-top" href="/admin/iriss/piedavajumi/jauns">
           + Jauns piedāvājums
@@ -199,6 +231,15 @@ export function PiedavajumiList({
     <div className="pdv">
       {header}
       <div className="pd-fl">
+        {staff ? (
+          <div className="pd-seg pd-own" role="group" aria-label="Kuri piedāvājumi">
+            {(["mine", "all"] as const).map((v) => (
+              <button key={v} type="button" className={scope === v ? "on" : ""} aria-pressed={scope === v} onClick={() => setScope(v)}>
+                {v === "mine" ? "Mani" : "Visi"}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <label className="pd-srch">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
@@ -214,6 +255,7 @@ export function PiedavajumiList({
         <div className="pd-seg" role="group" aria-label="Statuss">
           {(["all", ...IRISS_PD_STATUSES] as const).map(statusBtn)}
         </div>
+        {staff ? null : (
         <select
           className="pd-sel"
           value={filter.source}
@@ -227,12 +269,13 @@ export function PiedavajumiList({
             </option>
           ))}
         </select>
+        )}
       </div>
       {err ? <p className="pd-err" role="alert">{err}</p> : null}
 
       {shown.length === 0 ? (
         <div className="pd-empty">
-          {rows.length === 0 ? "Vēl nav neviena piedāvājuma." : "Pēc šiem filtriem nekas nav atrasts."}
+          {scoped.length === 0 ? (staff && scope === "mine" ? "Tev vēl nav piedāvājumu." : "Vēl nav neviena piedāvājuma.") : "Pēc šiem filtriem nekas nav atrasts."}
           <div style={{ marginTop: 12 }}>
             <Link className="pd-btn p" href="/admin/iriss/piedavajumi/jauns">+ Jauns piedāvājums</Link>
           </div>
@@ -245,8 +288,8 @@ export function PiedavajumiList({
               <span>Modelis</span>
               <span>VIN</span>
               <span>Klients</span>
-              <span>Avots</span>
-              <span>Cena</span>
+              <span>{staff ? (scope === "all" ? "Veidoja" : "") : "Avots"}</span>
+              <span>{staff ? "Cena klientam" : "Cena"}</span>
               <span>Termiņš</span>
               <span>Statuss</span>
               <span>Darbība</span>
@@ -263,7 +306,7 @@ export function PiedavajumiList({
                   </Link>
                   <span className="pd-mono pd-el">{row.vin || "-"}</span>
                   <span className="pd-el">{row.clientName || "-"}</span>
-                  <Source row={row} />
+                  {staff ? scope === "all" ? <Creator row={row} viewerId={viewer.id} /> : <span /> : <Source row={row} />}
                   <b>{formatIrissPdPrice(row.price) || "-"}</b>
                   <span>{row.validUntil ? formatOfferValidUntilLv(row.validUntil) : "-"}</span>
                   <span className="pd-chips">
@@ -278,6 +321,8 @@ export function PiedavajumiList({
                       onCopy={() => void copy(row.id)}
                       onRebase={() => void rebase(row.id, router)}
                       onDelete={() => void remove(row)}
+                      readOnly={!own(row)}
+                      canDelete={!staff || status !== "approved"}
                     />
                     {copiedId === row.id ? <span className="pd-ok-hint">Saite nokopēta</span> : null}
                   </span>
@@ -296,7 +341,7 @@ export function PiedavajumiList({
                       <PdStatusChip status={status} />
                       <PdQuestionTag count={row.openQuestions} />
                     </span>
-                    <span className="pd-src">{IRISS_PD_SOURCE_LV[row.source]}</span>
+                    {staff ? (scope === "all" ? <Creator row={row} viewerId={viewer.id} /> : null) : <span className="pd-src">{IRISS_PD_SOURCE_LV[row.source]}</span>}
                   </div>
                   <Link className="row" href={`/admin/iriss/piedavajumi/${row.id}`}>
                     <Thumb row={row} />
@@ -320,6 +365,8 @@ export function PiedavajumiList({
                       onCopy={() => void copy(row.id)}
                       onRebase={() => void rebase(row.id, router)}
                       onDelete={() => void remove(row)}
+                      readOnly={!own(row)}
+                      canDelete={!staff || status !== "approved"}
                     />
                       {copiedId === row.id ? <span className="pd-ok-hint">Saite nokopēta</span> : null}
                     </div>

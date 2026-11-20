@@ -23,7 +23,7 @@ const APP_DIR = path.resolve(__dirname, "../app");
 
 /** Sadaļa -> atļautie API prefiksi (neatkarīga kopija no lib/staff-roles.ts). */
 const API_ALLOW: Record<IrissSection, readonly string[]> = {
-  pasutijumi: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed", "/api/admin/change-history"],
+  pasutijumi: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed", "/api/admin/iriss-piedavajumi", "/api/admin/change-history"],
   sludinajumi: ["/api/admin/iriss-listings", "/api/admin/change-history"],
   radars: ["/api/admin/iriss-scan", "/api/admin/iriss-marketplace"],
   logistika: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
@@ -42,7 +42,7 @@ const API_ALLOW: Record<IrissSection, readonly string[]> = {
 
 /** Sadaļa -> atļautās lapas. */
 const PAGE_ALLOW: Record<IrissSection, readonly string[]> = {
-  pasutijumi: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi/jauns"],
+  pasutijumi: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi"],
   sludinajumi: ["/admin/iriss/sludinajumi"],
   radars: ["/admin/iriss/scan"],
   logistika: ["/admin/iriss/logistika", "/admin/iriss/autoparks"],

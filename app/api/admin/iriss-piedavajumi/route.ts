@@ -9,7 +9,10 @@ import { findRecentDuplicateIrissPd, irissPdCreateIdentityKey, type IrissPdCreat
 import { irissPdListingRef } from "@/lib/iriss-piedavajumi-from-listing";
 import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
 import { emptyIrissPdClient, emptyIrissPiedavajums, isSafeIrissPdId, type IrissPdClient, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
-import { requireAdminOnlyApi } from "@/lib/staff-auth";
+import { irissPdFromLegacyOffer } from "@/lib/iriss-piedavajumi-from-legacy";
+import { irissPdRowsForViewer, irissPdViewerCanUseStock, irissPdViewerFromActor, type IrissPdViewer } from "@/lib/iriss-piedavajumi-staff";
+import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,13 +25,17 @@ function fail(status: number, error: string, extra: Record<string, unknown> = {}
   return NextResponse.json({ ok: false, error, ...extra }, { status, headers: noStore });
 }
 
-/** GET - visi piedāvājumi (saraksta rindas). Termiņi pārbaudīti ielādē. */
+/**
+ * GET - visi piedāvājumi (saraksta rindas). Termiņi pārbaudīti ielādē.
+ * P4: darbinieks (Pasūtījumi) saņem rindas bez avota saites un izsoles numura.
+ */
 export async function GET() {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
   if (!isIrissPdStoreEnabled()) return fail(503, "store_disabled");
   await refreshIrissPdExpiries(Date.now()).catch(() => 0);
-  return NextResponse.json({ ok: true, rows: await listIrissPdRows() }, { headers: noStore });
+  const viewer = irissPdViewerFromActor(gate.actor);
+  return NextResponse.json({ ok: true, rows: irissPdRowsForViewer(await listIrissPdRows(), viewer) }, { headers: noStore });
 }
 
 type Body = {
@@ -40,9 +47,12 @@ type Body = {
   baseId?: unknown;
   status?: unknown;
   client?: unknown;
+  orderId?: unknown;
+  offerId?: unknown;
 };
 
-function fromImport(imp: IrissPdImport, at: string, by: string) {
+function fromImport(imp: IrissPdImport, at: string, viewer: IrissPdViewer) {
+  const by = viewer.name;
   return (id: string) => (number: number): IrissPiedavajums => {
     const rec: IrissPiedavajums = {
       ...emptyIrissPiedavajums(id, at),
@@ -58,6 +68,8 @@ function fromImport(imp: IrissPdImport, at: string, by: string) {
       purchasePrice: imp.purchasePrice,
       auto1: imp.auto1,
       auto1ImportedAt: imp.auto1 ? at : "",
+      createdById: viewer.id,
+      createdByName: viewer.name,
     };
     // Nils 30.10: Novērtējums klientam - fakti no izsoles (atslēgas, serviss, TA, avārija, krāsojums).
     if (imp.auto1) rec.content = { ...rec.content, facts: irissPdFactsFromAuto1(imp.auto1, rec.content.facts) };
@@ -103,11 +115,14 @@ function createIdentity(body: Body, client: IrissPdClient): IrissPdCreateIdentit
  *   { kind: "listing", listingId }       no Sludinājumiem (auto dati, bildes, pirkuma cena jau ielasīti)
  *   { kind: "rebase", baseId }            «Izveidot jaunu uz šī bāzes» (beidzies/noraidīts)
  *   { kind: "request", client? }          klienta pieprasījums bez auto (statuss «Pieprasīts»)
- * Visiem veidiem (izņemot rebase) var nodot `client` - piesaista klientu un pasūtījumu jau izveidē.
+ *   { kind: "legacy", orderId, offerId }  P4: «Jauns PD uz šī bāzes» no vecā /p/ piedāvājuma (vecais netiek mainīts)
+ * Visiem veidiem (izņemot rebase, legacy) var nodot `client` - piesaista klientu un pasūtījumu jau izveidē.
+ * P4: darbinieks (Pasūtījumi) var veidot; Autoparks / Loģistika tikai ar attiecīgo sadaļu. Veidotājs tiek saglabāts.
  */
 export async function POST(req: Request) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  const viewer = irissPdViewerFromActor(gate.actor);
   if (!isIrissPdStoreEnabled()) return fail(503, "store_disabled");
   let body: Body;
   try {
@@ -116,13 +131,15 @@ export async function POST(req: Request) {
     return fail(400, "invalid_json");
   }
   const identity = createIdentity(body, clientFrom(body.client));
-  if (!identity) return createPd(body, gate.actor.name || "Admins");
-  const existing = findRecentDuplicateIrissPd(await listIrissPdRows().catch(() => []), identity, Date.now());
+  if (!identity) return createPd(body, viewer);
+  // Darbiniekam dublikāts tikai paša veidotais (citu PD viņš var tikai skatīt).
+  const dupRows = (await listIrissPdRows().catch(() => [])).filter((r) => viewer.kind === "admin" || r.createdById === viewer.id);
+  const existing = findRecentDuplicateIrissPd(dupRows, identity, Date.now());
   if (existing) return NextResponse.json({ ok: true, id: existing, existing: true, note: "" }, { headers: noStore });
-  const key = irissPdCreateIdentityKey(identity);
+  const key = `${viewer.id}|${irissPdCreateIdentityKey(identity)}`;
   const pending = inFlightCreates.get(key);
   if (pending) return (await pending).clone();
-  const run = createPd(body, gate.actor.name || "Admins");
+  const run = createPd(body, viewer);
   inFlightCreates.set(key, run);
   try {
     return (await run).clone();
@@ -131,8 +148,10 @@ export async function POST(req: Request) {
   }
 }
 
-async function createPd(body: Body, by: string): Promise<Response> {
+async function createPd(body: Body, viewer: IrissPdViewer): Promise<Response> {
   const at = new Date().toISOString();
+  const by = viewer.name;
+  const owned = (rec: IrissPiedavajums): IrissPiedavajums => ({ ...rec, createdById: viewer.id, createdByName: viewer.name });
   const id = crypto.randomUUID();
 
   let build: ((number: number) => IrissPiedavajums) | null = null;
@@ -142,10 +161,11 @@ async function createPd(body: Body, by: string): Promise<Response> {
     const kind = body.kind;
     const carId = typeof body.carId === "string" ? body.carId.trim() : "";
     if (!/^[\w-]{1,80}$/.test(carId)) return fail(400, "invalid");
+    if (!irissPdViewerCanUseStock(viewer, kind)) return fail(403, "forbidden", { message: kind === "autoparks" ? "Nav Autoparka tiesību." : "Nav Loģistikas tiesību." });
     // Nils 28.10: vienam auto drīkst būt vairāki piedāvājumi (agrāk «1 auto = 1 piedāvājums» bloķēja).
     const imp = await importIrissPdFromStock(kind, carId);
     if (!imp) return fail(404, "not_found", { message: kind === "autoparks" ? "Auto Autoparkā nav atrasts." : "Auto Loģistikā nav atrasts." });
-    build = fromImport(imp, at, by)(id);
+    build = fromImport(imp, at, viewer)(id);
     note = imp.note;
   } else if (body.kind === "link") {
     const url = typeof body.url === "string" ? body.url : "";
@@ -154,7 +174,7 @@ async function createPd(body: Body, by: string): Promise<Response> {
       const status = res.error === "not_auction_link" ? 400 : 502;
       return fail(status, res.error, { message: irissPdLinkErrorLv(res.error, res.note), source: res.link?.source ?? null });
     }
-    build = fromImport(res.data, at, by)(id);
+    build = fromImport(res.data, at, viewer)(id);
     note = res.data.note;
   } else if (body.kind === "listing") {
     const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";
@@ -167,7 +187,7 @@ async function createPd(body: Body, by: string): Promise<Response> {
     // Ja saite nav nolasāma (stub avots, relejs nepieejams) - kā līdz šim, tikai sludinājuma dati.
     const linkRes = fromListing.sourceUrl ? await importIrissPdFromLink(fromListing.sourceUrl).catch(() => null) : null;
     const imp = linkRes?.ok && linkRes.data.fieldCount > 0 ? irissPdMergeListingWithLink(fromListing, linkRes.data) : fromListing;
-    build = fromImport(imp, at, by)(id);
+    build = fromImport(imp, at, viewer)(id);
     note = imp.note;
   } else if (body.kind === "rebase") {
     const baseId = typeof body.baseId === "string" ? body.baseId : "";
@@ -175,13 +195,21 @@ async function createPd(body: Body, by: string): Promise<Response> {
     const base = await readIrissPd(baseId);
     if (!base) return fail(404, "not_found");
     if (!canRebaseIrissPd(base.status)) return fail(409, "not_rebasable", { message: "Jaunu uz bāzes var veidot tikai no beigušā vai noraidītā piedāvājuma." });
-    build = (number) => rebaseIrissPd(base, { id, number, at, by });
+    build = (number) => rebaseIrissPd(base, { id, number, at, by, byId: viewer.id });
+  } else if (body.kind === "legacy") {
+    const orderId = typeof body.orderId === "string" ? body.orderId : "";
+    const offerId = typeof body.offerId === "string" ? body.offerId : "";
+    if (!isSafeIrissPasutijumsId(orderId) || !/^[\w-]{1,80}$/.test(offerId)) return fail(400, "invalid");
+    const order = await readIrissPasutijums(orderId).catch(() => null);
+    const offer = order?.offers.find((o) => o.id === offerId) ?? null;
+    if (!order || !offer) return fail(404, "not_found", { message: "Vecais piedāvājums nav atrasts." });
+    build = (number) => irissPdFromLegacyOffer(order, offer, { id, number, at, by, byId: viewer.id });
   } else if (body.kind === "manual") {
     build = (number) =>
-      appendIrissPdHistory({ ...emptyIrissPiedavajums(id, at), number, source: "manual" }, { at, by, text: "Izveidots tukšs (aizpilda ar roku)" });
+      appendIrissPdHistory(owned({ ...emptyIrissPiedavajums(id, at), number, source: "manual" }), { at, by, text: "Izveidots tukšs (aizpilda ar roku)" });
   } else if (body.kind === "request") {
     build = (number) =>
-      appendIrissPdHistory({ ...emptyIrissPiedavajums(id, at), number, status: "requested", client }, { at, by, text: "Reģistrēts klienta pieprasījums" });
+      appendIrissPdHistory(owned({ ...emptyIrissPiedavajums(id, at), number, status: "requested", client }), { at, by, text: "Reģistrēts klienta pieprasījums" });
   } else {
     return fail(400, "invalid_kind");
   }
@@ -189,7 +217,7 @@ async function createPd(body: Body, by: string): Promise<Response> {
   const withClient = build;
   const hasClient = Boolean(client.name || client.phone || client.email || client.orderId);
   const created = await createIrissPd(
-    hasClient && body.kind !== "rebase" && body.kind !== "request" ? (number) => ({ ...withClient(number), client }) : withClient,
+    hasClient && body.kind !== "rebase" && body.kind !== "request" && body.kind !== "legacy" ? (number) => ({ ...withClient(number), client }) : withClient,
   );
   if (!created.ok) return fail(500, created.error);
   return NextResponse.json({ ok: true, id: created.record.id, note }, { headers: noStore });

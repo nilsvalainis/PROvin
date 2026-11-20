@@ -23,7 +23,16 @@ import {
 } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 import { IRISS_PD_EQ_SUMMARY_ERROR_LV } from "@/lib/iriss-pd-equipment-summary";
-import { requireAdminOnlyApi } from "@/lib/staff-auth";
+import {
+  irissPdForViewer,
+  irissPdViewerCanAct,
+  irissPdViewerCanDelete,
+  irissPdViewerCanEdit,
+  irissPdViewerCanUseStock,
+  irissPdViewerFromActor,
+  sanitizeIrissPdPatchForStaff,
+} from "@/lib/iriss-piedavajumi-staff";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,35 +47,43 @@ function fail(status: number, error: string, message = "") {
   return NextResponse.json({ ok: false, error, message }, { status, headers: noStore });
 }
 
+const READ_ONLY_LV = "Šo piedāvājumu veidoja cits - to var tikai skatīt.";
+
+/** P4: darbinieks (Pasūtījumi) redz visus PD bez iekšējām summām un avota; labo tikai savus. */
 export async function GET(_req: Request, { params }: Ctx) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  const viewer = irissPdViewerFromActor(gate.actor);
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
   const rec = await readIrissPdFresh(id, Date.now());
   if (!rec) return fail(404, "not_found");
-  return NextResponse.json({ ok: true, record: rec }, { headers: noStore });
+  return NextResponse.json({ ok: true, record: irissPdForViewer(rec, viewer) }, { headers: noStore });
 }
 
 /** PATCH - lauku labojumi (auto dati, cena, termiņš, klients, iekšējais, foto secība, redzamība). */
 export async function PATCH(req: Request, { params }: Ctx) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  const viewer = irissPdViewerFromActor(gate.actor);
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
-  let patch: IrissPdPatch;
+  let raw: unknown;
   try {
-    patch = (await req.json()) as IrissPdPatch;
+    raw = await req.json();
   } catch {
     return fail(400, "invalid_json");
   }
   const nowMs = Date.now();
   const rec = await readIrissPdFresh(id, nowMs);
   if (!rec) return fail(404, "not_found");
-  const res = applyIrissPdPatch(rec, patch ?? {}, { by: gate.actor.name || "Admins", at: new Date(nowMs).toISOString(), nowMs });
+  if (!irissPdViewerCanEdit(rec, viewer)) return fail(403, "forbidden", READ_ONLY_LV);
+  // Darbinieks nevar mainīt slēptos laukus (iepirkums, izmaksas, komisija, piezīmes, avots) - tie tiek izmesti.
+  const patch: IrissPdPatch = viewer.kind === "admin" ? ((raw ?? {}) as IrissPdPatch) : sanitizeIrissPdPatchForStaff(raw, rec);
+  const res = applyIrissPdPatch(rec, patch, { by: viewer.name, at: new Date(nowMs).toISOString(), nowMs });
   if (!res.ok) return fail(409, "rejected", res.error);
   if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-  return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+  return NextResponse.json({ ok: true, record: irissPdForViewer(res.record, viewer) }, { headers: noStore });
 }
 
 /**
@@ -75,10 +92,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
  * | question-answered { messageId, answered } (klienta jautājums atbildēts / atkal neatbildēts)
  * | equipment-summary { force?, confirm? } (komplektācijas kopsavilkums ar AI)
  * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās).
+ * P4: darbinieks - tikai savam PD un tikai IRISS_PD_STAFF_ACTIONS + piezīmes, jautājumi, kopsavilkums, imports.
  */
+const STAFF_EXTRA_ACTIONS = new Set(["import", "fill-from-stock", "note", "note-visibility", "question-answered", "equipment-summary"]);
+
 export async function POST(req: Request, { params }: Ctx) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  const viewer = irissPdViewerFromActor(gate.actor);
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
   let body: {
@@ -102,15 +123,20 @@ export async function POST(req: Request, { params }: Ctx) {
   const action = String(body.action ?? "");
   const nowMs = Date.now();
   const at = new Date(nowMs).toISOString();
-  const by = gate.actor.name || "Admins";
+  const by = viewer.name;
   const rec = await readIrissPdFresh(id, nowMs);
   if (!rec) return fail(404, "not_found");
+  if (viewer.kind === "staff") {
+    if (!irissPdViewerCanEdit(rec, viewer)) return fail(403, "forbidden", READ_ONLY_LV);
+    if (!STAFF_EXTRA_ACTIONS.has(action) && !irissPdViewerCanAct(rec, viewer, action)) return fail(403, "forbidden", "Šo darbību veic administrators.");
+  }
+  const out = (r: typeof rec) => irissPdForViewer(r, viewer);
 
   if (action === "create-order") {
     if (rec.status !== "approved" || rec.approvedOrderId) return fail(409, "rejected", "Pasūtījums jau ir vai piedāvājums nav apstiprināts.");
     const next = await runIrissPdApprovalEffects(rec, { at, by });
     if (!(await writeIrissPd({ ...next, updatedAt: at }))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: next }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
   }
 
   if (action === "import") {
@@ -118,6 +144,7 @@ export async function POST(req: Request, { params }: Ctx) {
     if (!isIrissPdEditable(rec.status)) return fail(409, "rejected", "Šo piedāvājumu vairs nevar labot.");
     let imp: IrissPdImport | null = null;
     if (body.kind === "autoparks") {
+      if (!irissPdViewerCanUseStock(viewer, "autoparks")) return fail(403, "forbidden", "Nav Autoparka tiesību.");
       const carId = typeof body.carId === "string" ? body.carId.trim() : "";
       if (!/^[\w-]{1,80}$/.test(carId)) return fail(400, "invalid");
       imp = await importIrissPdFromAutoparks(carId);
@@ -131,12 +158,13 @@ export async function POST(req: Request, { params }: Ctx) {
     }
     const next = appendIrissPdHistory({ ...applyIrissPdImportData(rec, imp, at), updatedAt: at }, { at, by, text: imp.historyText });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: next, note: imp.note }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(next), note: imp.note }, { headers: noStore });
   }
 
   if (action === "fill-from-stock") {
     // Nils 28.10: esošam piedāvājumam no Autoparka aizpilda tikai tukšos laukus (nobraukums, jauda, kārba...).
     if (!isIrissPdEditable(rec.status)) return fail(409, "rejected", "Šo piedāvājumu vairs nevar labot.");
+    if (!irissPdViewerCanUseStock(viewer, "autoparks")) return fail(403, "forbidden", "Nav Autoparka tiesību.");
     const m = /^autoparks:([\w-]{1,80})$/.exec(rec.sourceRef);
     if (!m) return fail(400, "invalid_source", "Piedāvājums nav no Autoparka.");
     const imp = await importIrissPdFromAutoparks(m[1]!);
@@ -145,7 +173,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const filled = (Object.keys(vehicle) as Array<keyof typeof vehicle>).filter((k) => vehicle[k] !== rec.vehicle[k]).length;
     const next = appendIrissPdHistory({ ...rec, vehicle, updatedAt: at }, { at, by, text: `Papildināts no Autoparka · ${filled} lauki` });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: next }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
   }
 
   if (action === "note") {
@@ -153,7 +181,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const res = applyIrissPdAdminNote(rec, body.text, { at, by, id: crypto.randomUUID(), public: body.public === true });
     if (!res.ok) return fail(400, "empty", "Ieraksti piezīmi.");
     if (!(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(res.record) }, { headers: noStore });
   }
 
   if (action === "note-visibility") {
@@ -161,7 +189,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const res = setIrissPdNoteVisibility(rec, body.messageId, body.public === true, { at, by });
     if (!res.ok) return fail(404, "not_found", "Atbilde nav atrasta.");
     if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(res.record) }, { headers: noStore });
   }
 
   if (action === "question-answered") {
@@ -170,7 +198,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const res = setIrissPdQuestionAnswered(rec, body.messageId, body.answered, { at, by });
     if (!res.ok) return fail(404, "not_found", "Jautājums nav atrasts.");
     if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(res.record) }, { headers: noStore });
   }
 
   if (action === "equipment-summary") {
@@ -180,7 +208,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const { generateIrissPdEquipmentSummary } = await import("@/lib/iriss-pd-equipment-summary-ai");
     const res = await generateIrissPdEquipmentSummary(rec, { force: body.force === true, confirm: body.confirm === true, at });
     if (!res.ok) return fail(res.error === "confirm_required" ? 409 : res.error === "no_source" ? 400 : 502, res.error, IRISS_PD_EQ_SUMMARY_ERROR_LV[res.error]);
-    if (!res.generated) return NextResponse.json({ ok: true, record: rec }, { headers: noStore });
+    if (!res.generated) return NextResponse.json({ ok: true, record: out(rec) }, { headers: noStore });
     // AI ilgst ~10-40 s - ieraksta svaigāko versiju, maina tikai šo lauku.
     const fresh = (await readIrissPdFresh(id, Date.now())) ?? rec;
     if (fresh.equipmentSummaryLv?.editedByAdmin && body.confirm !== true) return fail(409, "confirm_required", IRISS_PD_EQ_SUMMARY_ERROR_LV.confirm_required);
@@ -189,7 +217,7 @@ export async function POST(req: Request, { params }: Ctx) {
       { at, by, text: body.force === true ? "Komplektācijas kopsavilkums pārģenerēts" : "Komplektācijas kopsavilkums sagatavots" },
     );
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-    return NextResponse.json({ ok: true, record: next }, { headers: noStore });
+    return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
   }
 
   if (!["send", "revert", "decline", "approve", "reopen"].includes(action)) return fail(400, "invalid_action");
@@ -207,17 +235,19 @@ export async function POST(req: Request, { params }: Ctx) {
     await clearIrissPdDecision(id);
   }
   if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
-  return NextResponse.json({ ok: true, record: next }, { headers: noStore });
+  return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
 }
 
 /** Dzēš piedāvājumu no krātuves. Publiskā saite pēc tam nesatur saturu. */
 export async function DELETE(_req: Request, { params }: Ctx) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  const viewer = irissPdViewerFromActor(gate.actor);
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
   const rec = await readIrissPd(id);
   if (!rec) return fail(404, "not_found");
+  if (!irissPdViewerCanDelete(rec, viewer)) return fail(403, "forbidden", "Dzēst var tikai savu piedāvājumu, kas nav apstiprināts.");
   if (!(await deleteIrissPd(id))) return fail(500, "write_failed", "Neizdevās dzēst.");
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

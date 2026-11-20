@@ -4,7 +4,7 @@ import { irissPdPhotosFromUrls } from "@/lib/iriss-piedavajumi-import";
 import type { IrissPdPhoto } from "@/lib/iriss-piedavajumi-types";
 
 const A = "https://img-pa.auto1.com/imgef/3d/ef3d35a247403554a5d7415a3cdb8f47/pa";
-const urls = (photos: IrissPdPhoto[]) => photos.map((p) => (p.kind === "url" ? p.url : p.ref));
+const urls = (photos: IrissPdPhoto[]) => photos.map((p) => (p.kind === "url" ? p.url : p.kind === "dropbox" ? p.ref : p.attId));
 
 describe("Nils 30.10: izsoles bildes bez svešām (kājene, «līdzīgie auto») un bez dublikātiem", () => {
   it("Auto1: tikai šī auto krājuma kods; tā pati bilde vairākos izmēros - viena, lielākā", () => {
