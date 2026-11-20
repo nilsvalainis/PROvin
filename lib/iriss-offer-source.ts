@@ -12,6 +12,7 @@ import { listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-syn
 import { resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
+import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
 import { offerSeedFromAutoparks, offerSeedFromLogistics, offerSeedTaggedKeys, type OfferSeedFields } from "@/lib/iriss-offer-seed";
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 import {
@@ -171,9 +172,11 @@ export async function loadOfferSeed(ref: OfferSourceRef, opts: { hideSums?: bool
   if (ref.kind === "autoparks") {
     const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
     const both = await readAutoparksV2Car(ref.id).catch(() => null);
-    const car = both?.car ?? (await readAutoparksState()).cars.find((c) => c.id === ref.id);
-    if (!car) return null;
+    const car0 = both?.car ?? (await readAutoparksState()).cars.find((c) => c.id === ref.id);
+    if (!car0) return null;
     const v2 = both?.v2;
+    // Efektīvie Pamatdati (ar roku labotais VIN, marka, krāsa, nobraukums) - kā kabinetā.
+    const car = effectiveAutoparksCar(car0, v2);
     fields = offerSeedFromAutoparks(car, {
       tech: v2?.tech ?? null,
       purchase: v2?.purchase ?? null,

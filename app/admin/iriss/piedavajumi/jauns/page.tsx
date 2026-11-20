@@ -2,7 +2,7 @@ import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { PiedavajumsNew } from "@/components/admin/iriss-piedavajumi/PiedavajumsNew";
 import { isIrissPasutijumiStoreEnabled, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { irissPdClientOptions } from "@/lib/iriss-piedavajumi";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { readAutoparksEffectiveCars } from "@/lib/iriss-autoparks-v2-store";
 import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 import { readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { parseIrissPdEntry, type IrissPdEntryTab } from "@/lib/iriss-pd-entry";
@@ -36,8 +36,9 @@ export default async function IrissPiedavajumsNewPage({ searchParams }: { search
   const tabs: IrissPdEntryTab[] = ["link", ...(canAutoparks ? (["autoparks"] as const) : []), ...(canLogistics ? (["logistics"] as const) : []), "empty"];
   // Darbiniekam bez avota sadaļas auto no Autoparka/Loģistikas netiek veidots - paliek cilne «Saite».
   const entry = tabs.includes(parsed.tab) ? parsed : { ...parsed, tab: "link" as const, carId: "" };
-  const [state, orders, rows, client, irissOrders] = await Promise.all([
-    canAutoparks ? readAutoparksState().catch(() => null) : Promise.resolve(null),
+  const [cars, orders, rows, client, irissOrders] = await Promise.all([
+    // Efektīvie Pamatdati (v2 labotais VIN/numurs/marka) - izvēlei un dublikātu pārbaudei.
+    canAutoparks ? readAutoparksEffectiveCars().catch(() => null) : Promise.resolve(null),
     canLogistics ? listLogisticsOrders().catch(() => null) : Promise.resolve(null),
     listIrissPdRows().catch(() => []),
     clientFromOrder(entry.orderId),
@@ -45,8 +46,8 @@ export default async function IrissPiedavajumsNewPage({ searchParams }: { search
   ]);
   return (
     <PiedavajumsNew
-      cars={state ? irissPdCarPicks(state.cars, rows) : []}
-      carsError={state || !canAutoparks ? "" : "Autoparku neizdevās ielādēt."}
+      cars={cars ? irissPdCarPicks(cars, rows) : []}
+      carsError={cars || !canAutoparks ? "" : "Autoparku neizdevās ielādēt."}
       logistics={orders ? irissPdLogisticsPicks(orders, rows) : []}
       logisticsError={orders || !canLogistics ? "" : "Loģistiku neizdevās ielādēt."}
       entry={entry}

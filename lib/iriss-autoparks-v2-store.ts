@@ -23,6 +23,7 @@ import {
   type AutoparksV2State,
   type V2HistoryRow,
 } from "@/lib/iriss-autoparks-v2";
+import { effectiveAutoparksCars } from "@/lib/iriss-autoparks-effective";
 import { mutateLogisticsJsonFile, readLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 
 export type AutoparksV2Actor = { id: string; name: string };
@@ -83,6 +84,15 @@ export async function updateCarV2<R>(
     for (const h of rows) state.history.push(v2HistoryRow(carId, actor, h.field, h.from, h.to));
     return { result: out.result };
   });
+}
+
+/**
+ * v1 auto ar efektīvajiem Pamatdatiem (v2 labotais VIN/numurs/marka/gads/krāsa/īpašnieks/nobraukums).
+ * TIKAI lasīšanai (saraksti, saskaņošana) - nekad neierakstīt v1 krātuvē.
+ */
+export async function readAutoparksEffectiveCars(): Promise<AutoparksCar[]> {
+  const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
+  return effectiveAutoparksCars(v1.cars, v2);
 }
 
 export async function readAutoparksV2Car(carId: string): Promise<{ car: AutoparksCar; v2: AutoparksCarV2 } | null> {

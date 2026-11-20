@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { effectiveAutoparksCars } from "@/lib/iriss-autoparks-effective";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { cabinetCarVisibleToActor } from "@/lib/iriss-logistics-cabinet-access";
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
@@ -28,7 +29,9 @@ export async function GET(req: Request) {
   try {
     if (kind === "autoparks") {
       const { cars } = await readAutoparksState();
-      return NextResponse.json({ rows: offerSourceCarsFromAutoparks(cars) }, { headers: noStore });
+      // Efektīvie Pamatdati (v2 labotā marka/VIN/gads/krāsa); v2 kļūda saraksts nesalauž (v1 vērtības).
+      const v2 = await import("@/lib/iriss-autoparks-v2-store").then((m) => m.readAutoparksV2State()).catch(() => null);
+      return NextResponse.json({ rows: offerSourceCarsFromAutoparks(effectiveAutoparksCars(cars, v2)) }, { headers: noStore });
     }
     const [orders, rules] = await Promise.all([listLogisticsOrders(), listCabinetAccessRules()]);
     const visible = orders.filter((o) => cabinetCarVisibleToActor(logisticsCabinetAccessQuery(gate.actor, o.id), rules));

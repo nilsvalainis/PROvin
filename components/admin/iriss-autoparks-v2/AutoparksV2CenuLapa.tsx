@@ -212,9 +212,20 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
         ) : null}
       </div>
       <div className="ap2-a4wrap">
-        <a className="ap2-btn dark ap2-a4btn" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
-          Drukāt A4
-        </a>
+        {s.sold ? (
+          <>
+            <span className="ap2-chip on" data-testid="cl-sold">
+              Pārdots
+            </span>{" "}
+            <button type="button" className="ap2-btn dark ap2-a4btn" disabled aria-disabled="true">
+              Drukāt A4
+            </button>
+          </>
+        ) : (
+          <a className="ap2-btn dark ap2-a4btn" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
+            Drukāt A4
+          </a>
+        )}
         <div className="ap2-cl-prev">
           <A4Sheet s={s} />
         </div>

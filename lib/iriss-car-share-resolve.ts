@@ -1,8 +1,8 @@
 import "server-only";
 
 import { AUTOPARKS_STATUS_SHORT_LV, autoparksCarTitle } from "@/lib/iriss-autoparks";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
-import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
+import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
+import { readAutoparksEffectiveCars, readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
 import {
   autoparksSaitesHref,
   buildIrissCarShareAdminView,
@@ -85,7 +85,8 @@ async function resolveEntities(from: IrissCarShareFrom, id: string): Promise<Res
   if (from === "autoparks") {
     const found = await readAutoparksV2Car(id).catch(() => null);
     if (!found) return null;
-    const car = found.car;
+    // Efektīvie Pamatdati (v2 labotais VIN/marka) - tikai lasīšanai.
+    const car = effectiveAutoparksCar(found.car, found.v2);
     const logistics =
       (car.orderId ? await getLogisticsOrder(car.orderId).catch(() => null) : null) ??
       (car.vin ? await findLogisticsOrderByVin(car.vin).catch(() => null) : null);
@@ -112,10 +113,10 @@ async function resolveEntities(from: IrissCarShareFrom, id: string): Promise<Res
   }
   const order = await getLogisticsOrder(id).catch(() => null);
   if (!order) return null;
-  const state = await readAutoparksState().catch(() => null);
+  const cars = await readAutoparksEffectiveCars().catch(() => null);
   const car =
-    state?.cars.find((c) => c.orderId === order.id) ??
-    (order.vin ? state?.cars.find((c) => c.vin && c.vin === order.vin.toUpperCase()) : undefined);
+    cars?.find((c) => c.orderId === order.id) ??
+    (order.vin ? cars?.find((c) => c.vin && c.vin.toUpperCase() === order.vin.toUpperCase()) : undefined);
   const pas = await findPasutijums({
     vin: order.vin,
     autoparksCarId: car?.id ?? "",

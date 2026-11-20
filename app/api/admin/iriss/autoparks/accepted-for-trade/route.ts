@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAutoparksOwner } from "@/lib/iriss-autoparks";
 import { listAcceptedForTradeVehicles } from "@/lib/iriss-autoparks-accepted";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { readAutoparksEffectiveCars } from "@/lib/iriss-autoparks-v2-store";
 import { requireIrissSectionApi, requireLogisticsApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   if (!gate.ok) return gate.response;
   const owner = new URL(req.url).searchParams.get("owner")?.toUpperCase();
   try {
-    const vehicles = listAcceptedForTradeVehicles((await readAutoparksState()).cars, isAutoparksOwner(owner) ? { owner } : {});
+    const vehicles = listAcceptedForTradeVehicles(await readAutoparksEffectiveCars(), isAutoparksOwner(owner) ? { owner } : {});
     return NextResponse.json({ ok: true, vehicles }, NO_STORE);
   } catch (err) {
     console.error("[autoparks] accepted_for_trade_failed", err instanceof Error ? err.message : err);

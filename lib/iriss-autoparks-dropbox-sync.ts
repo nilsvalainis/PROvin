@@ -15,7 +15,8 @@ import {
 import { autoparksDropboxEnabled, resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { fillAutoparksFromStock, type AutoparksFillable } from "@/lib/iriss-autoparks-info-txt";
 import { mutateAutoparksState, readAutoparksState } from "@/lib/iriss-autoparks-store";
-import { carV2Of } from "@/lib/iriss-autoparks-v2";
+import { carV2Of, type AutoparksV2State } from "@/lib/iriss-autoparks-v2";
+import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
 import { mutateLogisticsJsonFile, readLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 
@@ -109,14 +110,22 @@ function ownerOf(car: AutoparksCar): AutoparksOwner {
 }
 
 /** Atrod auto mapei: pēc saistītā id, citādi pēc VIN (tikai nesaistītiem un tikai, ja viennozīmīgi). */
-export function carForStockFolder(cars: readonly AutoparksCar[], owner: AutoparksOwner, name: string, folderId: string): AutoparksCar | null {
+export function carForStockFolder(
+  cars: readonly AutoparksCar[],
+  owner: AutoparksOwner,
+  name: string,
+  folderId: string,
+  /** v2 Pamatdati: saskaņo pēc efektīvā VIN/īpašnieka; atgriež oriģinālo v1 auto (to raksta). */
+  v2?: Pick<AutoparksV2State, "cars"> | null,
+): AutoparksCar | null {
   if (folderId) {
     const byId = cars.find((c) => c.dropboxFolderId === folderId);
     if (byId) return byId;
   }
-  const candidates = cars.filter(
-    (c) => !c.dropboxFolderId && ownerOf(c) === owner && c.vin && matchStockFolderByVin([name], c.vin).kind === "found",
-  );
+  const candidates = cars.filter((c) => {
+    const e = effectiveAutoparksCar(c, v2?.cars[c.id]);
+    return !c.dropboxFolderId && ownerOf(e) === owner && e.vin && matchStockFolderByVin([name], e.vin).kind === "found";
+  });
   return candidates.length === 1 ? candidates[0]! : null;
 }
 
@@ -170,6 +179,7 @@ async function planGroup(
   owner: AutoparksOwner,
   g: FolderGroup,
   root = "",
+  v2?: Pick<AutoparksV2State, "cars"> | null,
 ): Promise<PlannedCarChange | null> {
   let folder = g.folder;
   // Inkrementālās izmaiņās mapes ieraksta var nebūt (mainījās tikai faili) - id nolasām pēc ceļa.
@@ -177,7 +187,7 @@ async function planGroup(
     const meta = await client.getMetadata(`${root.replace(/\/+$/, "")}/${g.name}`);
     if (meta?.tag === "folder") folder = meta;
   }
-  const car0 = carForStockFolder(state.cars, owner, g.name, folder?.id ?? "") ?? (await carForStockCarData(client, state, owner, g));
+  const car0 = carForStockFolder(state.cars, owner, g.name, folder?.id ?? "", v2) ?? (await carForStockCarData(client, state, owner, g));
   if (!car0) return null;
   if (!folder || !folder.id) {
     const meta = car0.dropboxFolderId ? await client.getMetadata(car0.dropboxFolderId) : null;
@@ -322,9 +332,10 @@ async function syncOnce(opts: { full?: boolean }): Promise<AutoparksDropboxSyncR
       }
       const changes = await listChanges(client, root, opts.full ? undefined : cursors[root]?.cursor);
       const state = await readAutoparksState();
+      const v2 = await readAutoparksV2State().catch(() => null);
       const plans: PlannedCarChange[] = [];
       for (const g of groupStockEntries(changes.entries, meta.pathDisplay || root).values()) {
-        const plan = await planGroup(client, state, owner, g, meta.pathDisplay || root);
+        const plan = await planGroup(client, state, owner, g, meta.pathDisplay || root, v2);
         if (plan) plans.push(plan);
       }
       if (plans.length) {
@@ -366,21 +377,23 @@ export async function linkAutoparksCarToDropbox(carId: string, opts: { create?: 
     const state = await readAutoparksState();
     const car = state.cars.find((c) => c.id === carId);
     if (!car) return { linked: false, error: "not_found" };
+    const v2 = await readAutoparksV2State().catch(() => null);
+    const eff = effectiveAutoparksCar(car, v2?.cars[car.id]);
     // Bez VIN mapi automātiski neveidojam (nosaukums vēlāk nesakristu); to izdara pirmā faila augšupielāde.
     // VIN, kas labots tikai Pamatdati UI (v2.fields.vin, sk. j30), der esošas mapes atrašanai, bet mapi pēc tā neveidojam.
     const create = opts.create !== false && Boolean(vinTail(car.vin));
-    const vin = car.vin.trim() || carV2Of(await readAutoparksV2State(), car.id).fields.vin.trim();
+    const vin = car.vin.trim() || eff.vin.trim();
     const folder = await resolveAutoparksCarFolder(client, { ...car, vin }, { create });
     if (!folder) return { linked: false };
     const listing = await client.listAll(folder.path, { recursive: false });
     const meta = await client.getMetadata(folder.id);
-    const owner = ownerOf(car);
+    const owner = ownerOf(eff);
     const plan = await planGroup(client, { ...state, cars: state.cars.map((c) => (c.id === carId ? { ...c, dropboxFolderId: folder.id } : c)) }, owner, {
       name: meta?.name ?? folder.path.split("/").pop() ?? "",
       folder: meta,
       files: listing.entries.filter((e) => e.tag === "file"),
       deleted: [],
-    });
+    }, "", v2);
     const linkPlan: PlannedCarChange = plan ?? { carId, link: null, fill: {}, addFiles: [], removeDropboxIds: [] };
     linkPlan.link = folder;
     await mutateAutoparksState((s) => ({ result: applyPlannedChanges(s, [linkPlan]) }));

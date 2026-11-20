@@ -5,7 +5,8 @@
  * Izņēmums (Nils 27.10, kārtošana): iegādes summa rindā ir TIKAI ar tiesību «summas» (serveris to citādi nesūta).
  */
 
-import { autoparksCarArchived, autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
+import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
+import { autoparksCarArchived, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { isTransitWithoutLogistics } from "@/lib/iriss-autoparks-transit";
 import { priceSheetState } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, v2RegistryStatus, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
@@ -16,6 +17,8 @@ export type AutoparksV2ListRow = {
   year: string;
   color: string;
   vin: string;
+  /** Efektīvā numurzīme (meklēšanai; sarakstā nerāda). */
+  plate?: string;
   status: AutoparksStatus;
   owner: AutoparksOwner;
   archived: boolean;
@@ -87,15 +90,18 @@ export function autoparksV2ListRows(
 ): AutoparksV2ListRow[] {
   return cars.map((car) => {
     const carV2 = carV2Of(v2, car.id);
+    // Pamatdatu labojumi (v2) - efektīvās vērtības (gads, krāsa, VIN, numurs, īpašnieks).
+    const eff = effectiveAutoparksCar(car, carV2);
     const price = carV2.purchase.purchasePriceEur ?? car.purchasePriceEur;
     return {
       id: car.id,
       title: autoparksV2Title(car, carV2),
-      year: car.year,
-      color: car.color,
-      vin: carV2.fields.vin || car.vin,
+      year: eff.year,
+      color: eff.color,
+      vin: eff.vin,
+      plate: eff.plate,
       status: car.status,
-      owner: autoparksOwner(car),
+      owner: eff.owner ?? "IRISS",
       // Nils 20.11: «Pārdots» = arhīvā (arī vecie pārdotie bez archivedAt - atvasināti, datus nemainot).
       archived: autoparksCarArchived(car),
       hasPhoto: Boolean(carV2.mainPhoto?.thumbBlobPath),
@@ -128,7 +134,10 @@ export function filterAutoparksV2Rows(
     if (opts.inTradeOnly && !r.inTrade) return false;
     if (!q) return true;
     // Atstarpes salīdzināšanā ignorē (marka/modelis un VIN tajā pašā laukā): «E 350» = «E350». Burtu lielums kā līdz šim.
-    const hay = `${r.title} ${r.vin}`.toLowerCase().replace(/\s+/g, "");
+    // Arī pēc numurzīmes (bez defises/atstarpēm: «AB-1234» = «ab1234»).
+    const hay = `${r.title} ${r.vin} ${r.plate ?? ""}`.toLowerCase().replace(/\s+/g, "");
+    const hayPlate = (r.plate ?? "").toLowerCase().replace(/[\s-]+/g, "");
+    if (hayPlate && q.replace(/[\s-]+/g, "").length >= 2 && hayPlate.includes(q.replace(/[\s-]+/g, ""))) return true;
     return q.split(" ").every((part) => hay.includes(part));
   });
 }

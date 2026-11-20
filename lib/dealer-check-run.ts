@@ -1,5 +1,6 @@
 import "server-only";
 
+import { effectiveAutoparksCars } from "@/lib/iriss-autoparks-effective";
 import { randomUUID } from "node:crypto";
 import { fetchOneautoProducts } from "@/lib/oneauto-api";
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
@@ -55,7 +56,7 @@ async function resolveVinFromPlate(plate: string): Promise<string> {
 async function lookupAutoparksLink(vin: string): Promise<DealerCheckAutoparksLink | null> {
   try {
     const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
-    const car = findAutoparksCarByVin(v1.cars, vin);
+    const car = findAutoparksCarByVin(effectiveAutoparksCars(v1.cars, v2), vin);
     if (!car) return null;
     const basics = autoparksV2Basics(car, carV2Of(v2, car.id));
     return {
@@ -85,7 +86,7 @@ async function lookupCsdd(
     let csddKm: number | null = null;
     try {
       const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
-      const car = findAutoparksCarByVin(v1.cars, vin);
+      const car = findAutoparksCarByVin(effectiveAutoparksCars(v1.cars, v2), vin);
       if (car) {
         const basics = autoparksV2Basics(car, carV2Of(v2, car.id));
         if (basics.mileageKm.value != null && basics.mileageKm.value > 0) {

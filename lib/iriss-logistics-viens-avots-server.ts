@@ -1,5 +1,6 @@
 import "server-only";
 
+import { effectiveAutoparksCars } from "@/lib/iriss-autoparks-effective";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { autoparksV2Basics, carV2Of } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
@@ -32,7 +33,8 @@ export function logisticsCanEditCarFields(actor: AdminOrStaffActor): boolean {
 export async function loadLinkedCarLookup(): Promise<(order: OrderKey) => LinkedCarFields | undefined> {
   const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
   return (order) => {
-    const car = linkedCarForOrder(v1.cars, order);
+    // Saskaņo pēc efektīvā VIN (Pamatdatos labotais), lauki - no `autoparksV2Basics`.
+    const car = linkedCarForOrder(effectiveAutoparksCars(v1.cars, v2), order);
     if (!car) return undefined;
     const b = autoparksV2Basics(car, carV2Of(v2, car.id));
     return { id: car.id, vin: b.vin, make: b.make, model: b.model, year: b.year, color: b.color, mileageKm: b.mileageKm.value };

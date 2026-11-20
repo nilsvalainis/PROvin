@@ -1,5 +1,6 @@
 import "server-only";
 
+import { effectiveAutoparksCars } from "@/lib/iriss-autoparks-effective";
 import fs from "node:fs/promises";
 import { renderReportHtmlToPdf } from "@/lib/report-pdf-server";
 import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo-fs";
@@ -54,7 +55,9 @@ export type DealerCheckAutoparksCar = { carId: string; title: string };
 /** Auto Autoparkā pēc VIN (tikai esošs ieraksts - jaunu neveido). */
 export async function findDealerCheckAutoparksCar(vin: string): Promise<{ car: AutoparksCar; info: DealerCheckAutoparksCar } | null> {
   const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
-  const car = findAutoparksCarByVin(v1.cars, vin);
+  // Efektīvais VIN (Pamatdatos labotais); atgrieztais auto ir oriģinālais v1 ieraksts.
+  const hit = findAutoparksCarByVin(effectiveAutoparksCars(v1.cars, v2), vin);
+  const car = hit ? v1.cars.find((c) => c.id === hit.id) : undefined;
   if (!car) return null;
   const title = autoparksV2Basics(car, carV2Of(v2, car.id)).title || [car.make, car.model].filter(Boolean).join(" ");
   return { car, info: { carId: car.id, title } };

@@ -22,7 +22,7 @@ import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { csddWithdrawnRequestNos, unionWithdrawnNos, withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { readAutoparksEffectiveCars } from "@/lib/iriss-autoparks-v2-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
 import { isWaybillOnlyActor, requireIrissSectionApi, waybillPdfViewer } from "@/lib/staff-auth";
@@ -49,7 +49,7 @@ async function loadVehiclesSafe() {
 /** Telefona formas auto saraksts: tikai drošie lauki (bez cenām), arī lietotājam bez Autoparka tiesībām. */
 async function loadTradeCarsSafe(): Promise<{ cars: WaybillTradeCar[]; source: WaybillCarsSource }> {
   try {
-    return waybillTradeCarsWithSource((await readAutoparksState()).cars);
+    return waybillTradeCarsWithSource(await readAutoparksEffectiveCars());
   } catch (err) {
     console.error("[iriss-waybill] trade_cars_failed", err instanceof Error ? err.message : err);
     return { cars: [], source: "registry" };

@@ -164,6 +164,8 @@ export type IrissPdImport = {
   historyText: string;
   /** Brīdinājums UI (piem. bildes nav, stub). */
   note: string;
+  /** Autoparka Pamatdati faktu rindām (atslēgas, otrais riteņu komplekts); citiem avotiem nav. */
+  stockFacts?: { keysCount: number | null; secondWheels: string } | null;
 };
 
 /**
