@@ -711,7 +711,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
             aria-modal="true"
             aria-label="Vairāk"
           >
-            <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+16px+env(safe-area-inset-bottom,0px))]">
+            <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+var(--admin-tab-bottom,16px)+env(safe-area-inset-bottom,0px)+24px)]">
               <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
                 <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
                 <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="group" aria-label="Darba zona">

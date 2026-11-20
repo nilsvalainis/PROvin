@@ -1225,16 +1225,18 @@ export function IrissWaybillCarPicker({
   const shown = useMemo(() => filterWaybillTradeCars(cars ?? [], query), [cars, query]);
   return (
     <div className={inSheet ? `${styles.picker} ${styles.pickerInSheet}` : styles.picker} data-in-sheet={inSheet ? "true" : undefined}>
-      <input
-        type="search"
-        className={styles.search}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Marka, modelis vai VIN"
-        aria-label="Meklēt auto"
-        autoComplete="off"
-        spellCheck={false}
-      />
+      <div className={styles.searchBar}>
+        <input
+          type="search"
+          className={styles.search}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Marka, modelis vai VIN"
+          aria-label="Meklēt auto"
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
       <div className={styles.list}>
         {cars === null ? <p className={styles.empty}>Ielādē...</p> : null}
         {cars !== null && shown.length === 0 ? (
