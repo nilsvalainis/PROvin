@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas (akts "Noformēt pavadzīmi" vai jauna).
-// Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
+// Ik 2-10 s (adaptīvi): GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
 // -> lokāla pārbaude -> VPN /status (Nils lieto VPN -> neko nedara) -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl)
 // -> sync.js (numura statuss CSDD, momentuzņēmums -> POST /api/iriss/aivars/waybill-plates) -> [stop.js + sync.js] -> refill.js -> save.js -> PDF -> result
 // -> VPN release (vienmēr, finally). Katrs solis tiek ziņots serverim (events stage), UI rāda tikai reālos soļus.
@@ -11,12 +11,21 @@
 // CSDD numuru sync (j13, Nils 23.10): tieši pirms un pēc katra darba (processJob) + periodiski TIKAI 08:00-19:00 Rīgas laikā
 // ik ~60-75 min ar nejaušu nobīdi, ne uz apaļām minūtēm (csdd-sync-schedule.mjs), tikai ja VPN jau ieslēgts. Naktī neko.
 // IRISS_CSDD_SYNC_PERIODIC=0 - periodisko izslēdz (pirms/pēc darba paliek). Vecais IRISS_CSDD_SYNC_MIN vairs netiek lietots.
+// Ātrums (Nils 20.11): (1) adaptīvs poll - serveris atbildē dod pollMs (2 s, kad pēdējās 15 min bija pieprasījums vai atvērta
+// Pavadzīmju lapa, citādi 10 s); worker pats ātrs 15 min pēc sava darba. (2) Silts pārlūks (IRISS_WAYBILL_WARM_BROWSER,
+// noklusējumā ieslēgts; "0" -> vecā uzvedība: katram solim atsevišķs node process ar jaunu pārlūku un pieslēgšanos):
+// sync/stop/fill/save worker procesā vienā CSDD sesijā katrai firmai, tie paši sargi un ledger (waybill-warm-core.mjs).
+// Pārlūks aizveras pēc IRISS_WAYBILL_WARM_IDLE_MIN (nokl. 10) min dīkstāves. (3) Žurnālā queuedSec (izveide -> claim).
 
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { nextPeriodicSyncAt } from "./csdd-sync-schedule.mjs";
+import { platesForCtx } from "./csdd-waybills-core.mjs";
+import { createWarmBrowserPool } from "./waybill-driver.mjs";
+import { runCli } from "./waybill-scripts-core.mjs";
+import { nextPollMs, runStepInProcess, warmBrowserEnabled, warmIdleMs } from "./waybill-warm-core.mjs";
 import {
   callWithOneRetry,
   csddPeriodicSyncEnabled,
@@ -33,12 +42,17 @@ const TOKEN = process.env.IRISS_AIVARS_API_TOKEN || "";
 const LIVE = process.env.IRISS_WAYBILL_WORKER_LIVE === "1";
 const REPLACE_STOP = replaceStopEnabled(process.env.IRISS_WAYBILL_REPLACE_STOP);
 const PERIODIC_SYNC = csddPeriodicSyncEnabled(process.env.IRISS_CSDD_SYNC_PERIODIC);
-const POLL_MS = 10_000;
 const SCRIPT_TIMEOUT_MS = 180_000;
 
 function log(msg, extra = {}) {
   console.log(JSON.stringify({ t: new Date().toISOString(), msg, ...extra }));
 }
+
+const pool = createWarmBrowserPool({ ttrDir: TTR_DIR, env: process.env, log, idleMs: warmIdleMs(process.env.IRISS_WAYBILL_WARM_IDLE_MIN) });
+const WARM = warmBrowserEnabled(process.env.IRISS_WAYBILL_WARM_BROWSER) && pool.supported();
+/** Pēdējā pending atbildē serveris ieteica (pollMs); pēdējais apstrādātais darbs (lokāli ātrs režīms). */
+let serverPollMs = 0;
+let lastJobAtMs = 0;
 
 async function call(method, p, body, base = "waybill-requests") {
   const res = await fetch(`${API_BASE}/api/iriss/aivars/${base}${p}`, {
@@ -58,6 +72,7 @@ const api = {
       onRetry: (info) => log("pending_retry", info),
     });
     if (r.status !== 200) throw new Error(`pending_http_${r.status}`);
+    serverPollMs = Number(r.data.pollMs) || 0;
     return Array.isArray(r.data.requests) ? r.data.requests : [];
   },
   /** Zināmie pavadzīmju numuri pa firmām (CSDD + indekss) periodiskajai sinhronizācijai. */
@@ -120,6 +135,21 @@ async function vpnRelease() {
 async function runScript(step, input) {
   // annul.js worker nepalaiž nekad (annulEnabled netiek padots); aizstāšana = stop.js.
   const file = resolveWorkerScript(step, { replaceStopEnabled: REPLACE_STOP });
+  if (WARM) {
+    // Tas pats runCli un tie paši sargi, tikai siltajā sesijā (bez jauna procesa, pārlūka un pieslēgšanās).
+    return runStepInProcess(step, input, {
+      pool,
+      runCli,
+      env: process.env,
+      ledgerDir: process.env.IRISS_WAYBILL_LEDGER_DIR || path.join(TTR_DIR, "state", "waybill-jobs"),
+      dateFormat: process.env.IRISS_TTR_DATE_FORMAT || "dd.MM.yyyy HH:mm",
+      platesForCtx,
+      timeoutMs: SCRIPT_TIMEOUT_MS,
+      log,
+      replaceStopEnabled: REPLACE_STOP,
+      stderr: process.stderr,
+    });
+  }
   const { stdout } = await run("node", [path.join(TTR_DIR, file)], {
     cwd: TTR_DIR,
     env: { ...process.env, IRISS_JOB_JSON: JSON.stringify(input), IRISS_AUTO: "1" },
@@ -175,7 +205,8 @@ async function tick() {
         replaceStopEnabled: REPLACE_STOP,
         vpnBusyNotified,
       });
-      log("job_done", { id: job.id, ...res });
+      log("job_done", { id: job.id, warm: WARM, ...res });
+      if (res.outcome !== "skipped" && res.outcome !== "dry_run") lastJobAtMs = Date.now();
       // VPN aizņemts (Nils): darbs nav aiztikts, nākamajā tick mēģinās vēlreiz.
       if (res.outcome === "vpn_busy") seen.delete(job.id);
       // Darbs pats sinhronizēja numuru (pirms un pēc): periodisko atliek.
@@ -187,12 +218,27 @@ async function tick() {
   } finally {
     busy = false;
   }
+  // Silto pārlūku dīkstāvē aizver (RAM: serverim 3,7 GB).
+  await pool.closeIdle().catch(() => {});
 }
+
+/** Nākamā aptauja pēc iepriekšējās beigām (2 s vai 10 s), nevis fiksēts setInterval. */
+async function loop() {
+  await tick();
+  setTimeout(() => void loop(), nextPollMs({ serverPollMs, lastJobAtMs, nowMs: Date.now() }));
+}
+
+async function shutdown(sig) {
+  log("stopping", { sig });
+  await pool.closeAll().catch(() => {});
+  process.exit(0);
+}
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
 
 if (!TOKEN) {
   log("missing_token_env");
   process.exit(2);
 }
-log("started", { live: LIVE, replaceStop: REPLACE_STOP, periodicSync: PERIODIC_SYNC, nextSync: new Date(nextSyncMs).toISOString() });
-setInterval(() => void tick(), POLL_MS);
-void tick();
+log("started", { live: LIVE, replaceStop: REPLACE_STOP, periodicSync: PERIODIC_SYNC, warm: WARM, nextSync: new Date(nextSyncMs).toISOString() });
+void loop();

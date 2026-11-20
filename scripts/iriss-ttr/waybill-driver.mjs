@@ -92,37 +92,87 @@ function domGuardScript({ forbidden, save, phase, annulBtn, annulNever }) {
   document.addEventListener("submit", block, true);
 }
 
+const STEPS = new Set(["fill", "save", "sync", "annul", "stop"]);
+
+/** Adapteris: siltajā režīmā katram solim svaigs stāvoklis (createAdapter), tieši kā atsevišķā procesā. */
+function loadAdapter(ttrDir, fresh) {
+  const adapterFile = path.join(ttrDir, "waybill-adapter.cjs");
+  if (!fs.existsSync(adapterFile)) return {};
+  const mod = createRequire(adapterFile)(adapterFile);
+  return fresh && typeof mod.createAdapter === "function" ? mod.createAdapter() : mod;
+}
+
 /**
- * @param {"fill" | "save" | "sync" | "annul" | "stop"} step
- * @param {{ ttrDir: string, env: Record<string, string | undefined>, log: (m: string, e?: object) => void }} opts
+ * Sargi: tīkla bloķētājs + init skripts (uz kontekstu, vienreiz), DOM klikšķu sargs + dialogu sargs (uz lapu, vienreiz).
+ * Fāzi, soli un pārtraukšanas adresi lasa no session.guard (siltajā režīmā tos pārslēdz katram solim, aukstajā - viens solis).
  */
-export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
-  const cfg = loadConfig(ttrDir);
+async function installGuards(session, log) {
+  const g = session.guard;
+  const args = {
+    forbidden: FORBIDDEN_ACTION_RE.source,
+    save: SAVE_ACTION_RE.source,
+    phase: "fill",
+    annulBtn: ANNUL_BUTTON_RE.source,
+    annulNever: ANNUL_NEVER_RE.source,
+  };
+  if (session.guardedContext !== session.context) {
+    session.guardedContext = session.context;
+    await session.context.route("**/*", (route) => {
+      const req = route.request();
+      if (isRequestForbidden({ url: req.url(), postData: req.postData() }, g.phase, g.annulOrigin)) {
+        log("blocked_request", { method: req.method(), url: req.url().slice(0, 120) });
+        return route.abort();
+      }
+      return route.fallback();
+    });
+    await session.context.addInitScript(domGuardScript, args);
+  }
+  if (session.guardedPage !== session.page) {
+    session.guardedPage = session.page;
+    await session.page.evaluate(domGuardScript, args).catch(() => {});
+    session.page.on("dialog", (d) => {
+      const decision = dialogDecision(d.message(), g.phase);
+      log("dialog", { decision, text: d.message().slice(0, 80) });
+      void (decision === "accept" ? d.accept() : d.dismiss()).catch(() => {});
+    });
+  }
+}
+
+/**
+ * Viena soļa draiveris uz sesijas (pārlūks/konteksts/lapa). Visas atļaujas ir piesaistītas `step`:
+ * Saglabāt tikai "save", «Pārtraukt!» fāze tikai "stop"/"annul" (stopWaybill tikai "stop", annulWaybill tikai "annul").
+ * @param {string} step
+ * @param {{ cfg: any, adapter: any, session: any, ttrDir: string, log: Function, prepare: (input: any) => Promise<void>, finish: (o: {keepPage: boolean}) => Promise<void> }} o
+ */
+function stepDriver(step, { cfg, adapter, session, ttrDir, log, prepare, finish }) {
+  if (!STEPS.has(step)) throw new Error(`nezināms solis: ${step}`);
   const sel = cfg.selectors || {};
   const timeout = Number(cfg.timeoutMs || 30000);
-  const adapterFile = path.join(ttrDir, "waybill-adapter.cjs");
-  const adapter = fs.existsSync(adapterFile) ? createRequire(adapterFile)(adapterFile) : {};
-  const { chromium } = await loadPlaywright(ttrDir);
-  let browser;
-  let context;
-  let page;
-  let phase = "fill";
-  let own = false;
-
+  const g = session.guard;
   /** Pārtraukšanas ("Pārtraukt!") fāze atļauta tikai stop.js (aizstāšana, 20.11) un annul.js (izslēgts ar ANNUL_LIVE). */
   const stopStep = step === "annul" || step === "stop";
-  const annulOrigin = stopStep ? new URL(cfg.startUrl).origin : "";
+  let closed = false;
+  g.step = step;
+  g.phase = "fill";
+  g.annulOrigin = stopStep ? new URL(cfg.startUrl).origin : "";
+  const page = () => {
+    if (closed) throw new Error("draiveris jau aizvērts");
+    if (!session.page) throw new Error("draiveris: open nav izsaukts");
+    return session.page;
+  };
 
   async function setPhase(p) {
     if (p === "annul" && !stopStep) throw new Error("pārtraukšana drīkst tikai stop.js / annul.js");
-    phase = p;
-    await page.evaluate((v) => {
+    if (g.step !== step) throw new Error("sesiju lieto cits solis");
+    g.phase = p;
+    await page().evaluate((v) => {
       window.__irissPhase = v;
     }, p).catch(() => {});
   }
 
   /** Vienīgais klikšķu ceļš skriptā: pārbauda nozīmi pirms klikšķa. */
   async function safeClick(locator, why) {
+    if (g.step !== step) throw new Error("sesiju lieto cits solis");
     await locator.waitFor({ state: "visible", timeout });
     const el = await locator.evaluate((n) => ({
       text: (n.innerText || n.textContent || "").trim().slice(0, 120),
@@ -134,117 +184,79 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
       onclick: n.getAttribute("onclick") || "",
       href: n.getAttribute("href") || "",
     }));
-    const verdict = isClickAllowed(el, phase);
+    const verdict = isClickAllowed(el, g.phase);
     if (!verdict.allowed) throw new Error(`klikšķis aizliegts (${why}: ${verdict.reason})`);
     await locator.click({ timeout });
   }
 
-  async function installGuards() {
-    await context.route("**/*", (route) => {
-      const req = route.request();
-      if (isRequestForbidden({ url: req.url(), postData: req.postData() }, phase, annulOrigin)) {
-        log("blocked_request", { method: req.method(), url: req.url().slice(0, 120) });
-        return route.abort();
-      }
-      return route.fallback();
-    });
-    const args = {
-      forbidden: FORBIDDEN_ACTION_RE.source,
-      save: SAVE_ACTION_RE.source,
-      phase,
-      annulBtn: ANNUL_BUTTON_RE.source,
-      annulNever: ANNUL_NEVER_RE.source,
-    };
-    await context.addInitScript(domGuardScript, args);
-    await page.evaluate(domGuardScript, args).catch(() => {});
-    page.on("dialog", (d) => {
-      const decision = dialogDecision(d.message(), phase);
-      log("dialog", { decision, text: d.message().slice(0, 80) });
-      void (decision === "accept" ? d.accept() : d.dismiss()).catch(() => {});
-    });
-  }
-
   async function login() {
-    const pass = loc(page, sel.pass || "input[type=password]");
+    const pass = loc(page(), sel.pass || "input[type=password]");
     if ((await pass.count()) === 0) return;
+    const env = session.env || {};
     const ttrEnv = readEnvFile(env.CSDD_TTR_ENV_FILE || path.join(ttrDir, ".env"));
     const user = env[cfg.userVar || "CSDD_USER"] || ttrEnv[cfg.userVar || "CSDD_USER"] || "";
     const pw = env[cfg.passVar || "CSDD_PASS"] || ttrEnv[cfg.passVar || "CSDD_PASS"] || "";
     if (!user || !pw) throw new Error("nav CSDD piekļuves (env)");
-    await loc(page, sel.user || "input[type=text]").fill(user);
+    await loc(page(), sel.user || "input[type=text]").fill(user);
     await pass.fill(pw);
     await setPhase("login");
-    await safeClick(loc(page, sel.loginButton || "button[type=submit], input[type=submit]"), "login");
-    await page.waitForLoadState("domcontentloaded", { timeout });
+    await safeClick(loc(page(), sel.loginButton || "button[type=submit], input[type=submit]"), "login");
+    await page().waitForLoadState("domcontentloaded", { timeout });
     await setPhase("fill");
-    if ((await loc(page, sel.pass || "input[type=password]").count()) > 0) throw new Error("CSDD pieslēgšanās neizdevās");
+    if ((await loc(page(), sel.pass || "input[type=password]").count()) > 0) throw new Error("CSDD pieslēgšanās neizdevās");
   }
 
-  const helpers = { loc: (s, v) => loc(page, s, v), safeClick, setPhase, log, cfg, ttrDir, csdd };
+  const helpers = { loc: (s, v) => loc(page(), s, v), safeClick, setPhase, log, cfg, ttrDir, csdd };
 
-  const driver = {
+  return {
     async open(input) {
-      if (cfg.browserUrl) {
-        browser = cfg.browserUrl.startsWith("ws") ? await chromium.connect(cfg.browserUrl) : await chromium.connectOverCDP(cfg.browserUrl);
-        context = browser.contexts()[0] || (await browser.newContext());
-        // Katram darbam sava cilne (window.name), lai refill un save strādā vienā un tajā pašā formā.
-        for (const p of context.pages()) {
-          if ((await p.evaluate(() => window.name).catch(() => "")) === `iriss-job-${input.jobId}`) page = p;
-        }
-      } else {
-        own = true;
-        browser = await chromium.launch({ headless: true });
-        context = await browser.newContext({ ignoreHTTPSErrors: cfg.ignoreTls === true });
-      }
-      const reuse = Boolean(page);
-      page = page || (await context.newPage());
-      page.setDefaultTimeout(timeout);
-      await installGuards();
-      if (adapter.open) return adapter.open(page, input, helpers);
+      const reuse = await prepare(input);
+      page().setDefaultTimeout(timeout);
+      await installGuards(session, log);
+      if (adapter.open) return adapter.open(page(), input, helpers);
       if (!reuse) {
-        await page.goto(cfg.startUrl, { waitUntil: "domcontentloaded", timeout });
-        await page.evaluate((n) => {
+        await page().goto(cfg.startUrl, { waitUntil: "domcontentloaded", timeout });
+        await page().evaluate((n) => {
           window.name = n;
         }, `iriss-job-${input.jobId}`);
         await login();
         const company = sel.company?.[String(input.ctx)];
-        if (company) await safeClick(loc(page, company), "company");
+        if (company) await safeClick(loc(page(), company), "company");
       }
     },
     async findActiveWaybill(input) {
-      if (adapter.findActiveWaybill) return adapter.findActiveWaybill(page, input, helpers);
+      if (adapter.findActiveWaybill) return adapter.findActiveWaybill(page(), input, helpers);
       return null;
     },
     // Tikai adapteris (CSDD TTR) prot lasīt pavadzīmju kartītes un pārtraukt; bez tā - nav (worker tad neko nedara).
-    readActiveWaybills: adapter.readActiveWaybills ? (q) => adapter.readActiveWaybills(page, q, helpers) : undefined,
-    lookupWaybill: adapter.lookupWaybill ? (no) => adapter.lookupWaybill(page, no, helpers) : undefined,
-    verifySavedWaybill: adapter.verifySavedWaybill ? (input) => adapter.verifySavedWaybill(page, input, helpers) : undefined,
-    annulWaybill:
-      adapter.annulWaybill && step === "annul" ? (q) => adapter.annulWaybill(page, q, helpers) : undefined,
+    readActiveWaybills: adapter.readActiveWaybills ? (q) => adapter.readActiveWaybills(page(), q, helpers) : undefined,
+    lookupWaybill: adapter.lookupWaybill ? (no) => adapter.lookupWaybill(page(), no, helpers) : undefined,
+    verifySavedWaybill: adapter.verifySavedWaybill ? (input) => adapter.verifySavedWaybill(page(), input, helpers) : undefined,
+    annulWaybill: adapter.annulWaybill && step === "annul" ? (q) => adapter.annulWaybill(page(), q, helpers) : undefined,
     // stop.js: tas pats CSDD «Pārtraukt» solis (kartīte -> lapv_par -> "Pārtraukt!" -> vairs nav Derīga), nekad «Anulēt».
-    stopWaybill: adapter.stopWaybill && step === "stop" ? (q) => adapter.stopWaybill(page, q, helpers) : undefined,
+    stopWaybill: adapter.stopWaybill && step === "stop" ? (q) => adapter.stopWaybill(page(), q, helpers) : undefined,
     async openFromTradeAct(input) {
-      if (adapter.openFromTradeAct) return adapter.openFromTradeAct(page, input, helpers);
+      if (adapter.openFromTradeAct) return adapter.openFromTradeAct(page(), input, helpers);
       if (!sel.tradeActList || !sel.tradeActRow || !sel.tradeActIssue) return false;
-      await page.goto(new URL(sel.tradeActList, cfg.startUrl).toString(), { waitUntil: "domcontentloaded", timeout });
-      const row = loc(page, sel.tradeActRow, { vin: input.vin });
+      await page().goto(new URL(sel.tradeActList, cfg.startUrl).toString(), { waitUntil: "domcontentloaded", timeout });
+      const row = loc(page(), sel.tradeActRow, { vin: input.vin });
       if ((await row.count()) === 0) return false;
       await safeClick(row.locator(sel.tradeActIssue).first(), "trade_act");
-      await page.waitForLoadState("domcontentloaded", { timeout });
+      await page().waitForLoadState("domcontentloaded", { timeout });
       return true;
     },
     async openNewWaybill(input) {
-      if (adapter.openNewWaybill) return adapter.openNewWaybill(page, input, helpers);
+      if (adapter.openNewWaybill) return adapter.openNewWaybill(page(), input, helpers);
       if (!sel.newWaybill) throw new Error("waybill-ui.json: nav selectors.newWaybill");
-      await safeClick(loc(page, sel.newWaybill), "new_waybill");
-      await page.waitForLoadState("domcontentloaded", { timeout });
+      await safeClick(loc(page(), sel.newWaybill), "new_waybill");
+      await page().waitForLoadState("domcontentloaded", { timeout });
     },
     async fillForm(values) {
-      if (adapter.fillForm) return adapter.fillForm(page, values, helpers);
+      if (adapter.fillForm) return adapter.fillForm(page(), values, helpers);
       const fields = sel.fields || {};
       for (const key of FIELD_KEYS) {
         if (!fields[key] || values[key] === "" || values[key] == null) continue;
-        const el = loc(page, fields[key]);
+        const el = loc(page(), fields[key]);
         if ((await el.count()) === 0) continue;
         const tag = await el.evaluate((n) => n.tagName.toLowerCase());
         if (tag === "select") await el.selectOption({ label: values[key] }).catch(() => el.selectOption(values[key]));
@@ -252,48 +264,48 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
       }
     },
     async readForm() {
-      if (adapter.readForm) return adapter.readForm(page, helpers);
+      if (adapter.readForm) return adapter.readForm(page(), helpers);
       const out = {};
       for (const [key, s] of Object.entries(sel.fields || {})) {
-        const el = loc(page, s);
+        const el = loc(page(), s);
         if ((await el.count()) === 0) continue;
         out[key] = await el.evaluate((n) => (n.tagName === "SELECT" ? n.options[n.selectedIndex]?.text || "" : "value" in n ? n.value : n.textContent || ""));
       }
       return out;
     },
     async formMode() {
-      if (adapter.formMode) return adapter.formMode(page, helpers);
-      const plate = sel.fields?.plate ? loc(page, sel.fields.plate) : null;
+      if (adapter.formMode) return adapter.formMode(page(), helpers);
+      const plate = sel.fields?.plate ? loc(page(), sel.fields.plate) : null;
       return plate && (await plate.count()) > 0 ? "open" : "";
     },
     async clickSave() {
       if (step !== "save") throw new Error("Saglabāt drīkst tikai save.js");
       await setPhase("save");
       try {
-        if (adapter.clickSave) await adapter.clickSave(page, helpers);
-        else await safeClick(loc(page, sel.save || "button:has-text('Saglabāt'), input[value='Saglabāt']"), "save");
-        await page.waitForLoadState("domcontentloaded", { timeout });
+        if (adapter.clickSave) await adapter.clickSave(page(), helpers);
+        else await safeClick(loc(page(), sel.save || "button:has-text('Saglabāt'), input[value='Saglabāt']"), "save");
+        await page().waitForLoadState("domcontentloaded", { timeout });
       } finally {
         await setPhase("pdf");
       }
     },
     async readWaybillNo() {
-      if (adapter.readWaybillNo) return adapter.readWaybillNo(page, helpers);
+      if (adapter.readWaybillNo) return adapter.readWaybillNo(page(), helpers);
       const re = cfg.waybillNoRe ? new RegExp(cfg.waybillNoRe, "i") : undefined;
       if (sel.waybillNo) {
-        const el = loc(page, sel.waybillNo);
+        const el = loc(page(), sel.waybillNo);
         await el.waitFor({ timeout }).catch(() => {});
         const t = ((await el.textContent().catch(() => "")) || "").trim();
         if (t) return re ? extractWaybillNo(t, re) : t;
       }
-      return extractWaybillNo(await page.innerText("body"), re);
+      return extractWaybillNo(await page().innerText("body"), re);
     },
     async downloadPdf(name) {
-      if (adapter.downloadPdf) return adapter.downloadPdf(page, name, helpers);
+      if (adapter.downloadPdf) return adapter.downloadPdf(page(), name, helpers);
       if (!sel.pdf) return "";
       const dir = path.join(ttrDir, "pdf");
       fs.mkdirSync(dir, { recursive: true });
-      const [download] = await Promise.all([page.waitForEvent("download", { timeout }), safeClick(loc(page, sel.pdf), "pdf")]);
+      const [download] = await Promise.all([page().waitForEvent("download", { timeout }), safeClick(loc(page(), sel.pdf), "pdf")]);
       const rel = path.join("pdf", `${name}.pdf`);
       await download.saveAs(path.join(ttrDir, rel));
       return rel;
@@ -303,13 +315,204 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
       const safe = String(name).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60);
       fs.mkdirSync(path.join(ttrDir, "shots"), { recursive: true });
       const rel = path.join("shots", `${safe}.png`);
-      await page.screenshot({ path: path.join(ttrDir, rel), fullPage: true });
+      await page().screenshot({ path: path.join(ttrDir, rel), fullPage: true });
       return rel;
     },
-    async close({ keepPage }) {
-      if (page && !keepPage && !own) await page.close().catch(() => {});
-      if (browser) await browser.close().catch(() => {});
+    async close({ keepPage } = { keepPage: false }) {
+      if (closed) return;
+      closed = true;
+      // Solis beidzies: atpakaļ drošajā fāzē (nekas nav atļauts ārpus soļa), pārtraukšanas adrese noņemta.
+      if (g.step === step) {
+        g.phase = "fill";
+        g.annulOrigin = "";
+        g.step = "";
+        if (session.page) {
+          await session.page.evaluate(() => {
+            window.__irissPhase = "fill";
+          }).catch(() => {});
+        }
+      }
+      await finish({ keepPage: Boolean(keepPage) });
     },
   };
-  return driver;
+}
+
+function newSession(env) {
+  return { browser: null, context: null, page: null, guard: { phase: "fill", step: "", annulOrigin: "" }, guardedContext: null, guardedPage: null, env };
+}
+
+/**
+ * Aukstais režīms (vecā uzvedība, IRISS_WAYBILL_WARM_BROWSER=0 vai refill.js/save.js kā atsevišķs process):
+ * katram solim savs pārlūks (vai CDP cilne, ja waybill-ui.json browserUrl) un sava pieslēgšanās.
+ * @param {"fill" | "save" | "sync" | "annul" | "stop"} step
+ * @param {{ ttrDir: string, env: Record<string, string | undefined>, log: (m: string, e?: object) => void }} opts
+ */
+export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
+  const cfg = loadConfig(ttrDir);
+  const adapter = loadAdapter(ttrDir, false);
+  const { chromium } = await loadPlaywright(ttrDir);
+  const session = newSession(env);
+  let own = false;
+  return stepDriver(step, {
+    cfg,
+    adapter,
+    session,
+    ttrDir,
+    log,
+    async prepare(input) {
+      if (cfg.browserUrl) {
+        session.browser = cfg.browserUrl.startsWith("ws") ? await chromium.connect(cfg.browserUrl) : await chromium.connectOverCDP(cfg.browserUrl);
+        session.context = session.browser.contexts()[0] || (await session.browser.newContext());
+        // Katram darbam sava cilne (window.name), lai refill un save strādā vienā un tajā pašā formā.
+        for (const p of session.context.pages()) {
+          if ((await p.evaluate(() => window.name).catch(() => "")) === `iriss-job-${input.jobId}`) session.page = p;
+        }
+      } else {
+        own = true;
+        session.browser = await chromium.launch({ headless: true });
+        session.context = await session.browser.newContext({ ignoreHTTPSErrors: cfg.ignoreTls === true });
+      }
+      const reuse = Boolean(session.page);
+      session.page = session.page || (await session.context.newPage());
+      return reuse;
+    },
+    async finish({ keepPage }) {
+      if (session.page && !keepPage && !own) await session.page.close().catch(() => {});
+      if (session.browser) await session.browser.close().catch(() => {});
+    },
+  });
+}
+
+/**
+ * Siltais pārlūks (worker procesā, IRISS_WAYBILL_WARM_BROWSER noklusējumā ieslēgts): viens Chromium, katrai firmai (ctx)
+ * savs konteksts (savas sīkdatnes = sava CSDD sesija) ar vienu lapu. Sargi uzstādīti vienreiz uz kontekstu un pārslēdzas
+ * pēc aktīvā soļa (stepDriver). Sesija paliek starp soļiem un darbiem; adapteris pats pārbauda pieslēgšanos (#vards ->
+ * pieslēdzas vēlreiz). Dīkstāvē (idleMs) konteksts un pārlūks tiek aizvērti (RAM). Kļūda solī -> discard(ctx).
+ * Ar waybill-ui.json browserUrl (CDP) siltais režīms netiek lietots (supported() = false).
+ * @param {{ ttrDir: string, env: Record<string, string | undefined>, log: Function, idleMs?: number, now?: () => number, loadPw?: () => Promise<any>, loadCfg?: () => any }} opts
+ */
+export function createWarmBrowserPool({ ttrDir, env, log, idleMs = 10 * 60_000, now = () => Date.now(), loadPw, loadCfg }) {
+  const getCfg = loadCfg || (() => loadConfig(ttrDir));
+  const getPw = loadPw || (() => loadPlaywright(ttrDir));
+  /** @type {Map<number, any>} */
+  const sessions = new Map();
+  let browser = null;
+  let launching = null;
+  let launches = 0;
+
+  async function ensureBrowser() {
+    if (browser && (typeof browser.isConnected !== "function" || browser.isConnected())) return browser;
+    if (!launching) {
+      launching = (async () => {
+        const { chromium } = await getPw();
+        const b = await chromium.launch({ headless: true });
+        launches += 1;
+        b.on?.("disconnected", () => {
+          if (browser === b) {
+            browser = null;
+            sessions.clear();
+          }
+        });
+        browser = b;
+        log("warm_browser_launched", { launches });
+        return b;
+      })().finally(() => {
+        launching = null;
+      });
+    }
+    return launching;
+  }
+
+  async function discard(ctx, reason = "") {
+    const s = sessions.get(ctx);
+    if (!s) return;
+    sessions.delete(ctx);
+    log("warm_session_closed", { ctx, reason });
+    await s.context?.close().catch(() => {});
+    if (!sessions.size && browser) {
+      const b = browser;
+      browser = null;
+      await b.close().catch(() => {});
+    }
+  }
+
+  async function closeAll(reason = "shutdown") {
+    for (const ctx of [...sessions.keys()]) await discard(ctx, reason);
+    if (browser) {
+      const b = browser;
+      browser = null;
+      await b.close().catch(() => {});
+    }
+  }
+
+  return {
+    /** CDP (browserUrl) režīmā silto pārlūku nelieto. */
+    supported() {
+      try {
+        return !getCfg().browserUrl;
+      } catch {
+        return false;
+      }
+    },
+    stats() {
+      return { launches, sessions: [...sessions.keys()], browser: Boolean(browser) };
+    },
+    /** Draiveris vienam solim uz firmas (ctx 1/2) siltās sesijas. Vienlaikus tikai viens solis uz sesiju. */
+    async driverFor(ctx, step) {
+      const n = Number(String(ctx ?? "").replace(/^ctx/i, ""));
+      if (n !== 1 && n !== 2) throw new Error("ctx nederīgs");
+      if (!STEPS.has(step)) throw new Error(`nezināms solis: ${step}`);
+      const cfg = getCfg();
+      if (cfg.browserUrl) throw new Error("siltais pārlūks nav pieejams CDP režīmā");
+      let s = sessions.get(n);
+      if (s && s.guard.step) throw new Error(`siltā sesija ctx${n} aizņemta (${s.guard.step})`);
+      if (!s) {
+        s = newSession(env);
+        s.lastUsed = now();
+        sessions.set(n, s);
+      }
+      const session = s;
+      session.guard.step = step; // aizņem uzreiz (pirms async), stepDriver to apstiprina
+      const adapter = loadAdapter(ttrDir, true);
+      return stepDriver(step, {
+        cfg,
+        adapter,
+        session,
+        ttrDir,
+        log,
+        async prepare() {
+          if (!session.context) {
+            const b = await ensureBrowser();
+            session.context = await b.newContext({ ignoreHTTPSErrors: cfg.ignoreTls === true });
+            session.page = await session.context.newPage();
+          } else if (!session.page || (typeof session.page.isClosed === "function" && session.page.isClosed())) {
+            // Jaunai lapai installGuards uzliek savu dialogu un DOM sargu (tīkla sargs un init skripts jau ir uz konteksta).
+            session.page = await session.context.newPage();
+          }
+          // Adapteris pats izlemj: tā paša darba forma (window.name) -> turpina; citādi atver sākumu un pieslēdzas, ja vajag.
+          return false;
+        },
+        async finish() {
+          session.lastUsed = now();
+        },
+      });
+    },
+    discard,
+    /** Drošībai pēc katra soļa: ja solis draiveri neaizvēra (agrs return pirms open), sesija atkal brīva drošajā fāzē. */
+    release(ctx) {
+      const s = sessions.get(Number(String(ctx ?? "").replace(/^ctx/i, "")));
+      if (!s) return;
+      s.guard.step = "";
+      s.guard.phase = "fill";
+      s.guard.annulOrigin = "";
+      s.lastUsed = now();
+    },
+    /** Aizver sesijas, kas dīkstāvē ilgāk par idleMs (un pārlūku, ja vairs nav sesiju). */
+    async closeIdle() {
+      for (const [ctx, s] of [...sessions.entries()]) {
+        if (!s.guard.step && now() - (s.lastUsed || 0) >= idleMs) await discard(ctx, "idle");
+      }
+    },
+    closeAll,
+  };
 }

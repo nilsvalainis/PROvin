@@ -206,7 +206,9 @@ export function formatTimings(marks) {
     prev = marks[key];
   }
   const total = Number.isFinite(marks.result) && Number.isFinite(marks.created) ? Math.round((marks.result - marks.created) / 1000) : null;
-  return { stepsSec: out, totalSec: total };
+  // queuedSec (20.11): cik ilgi pieprasījums gaidīja rindā (izveide -> claim); null, ja darbs nav paņemts.
+  const queued = Number.isFinite(marks.claim) && Number.isFinite(marks.created) ? Math.round((marks.claim - marks.created) / 1000) : null;
+  return { stepsSec: out, totalSec: total, queuedSec: queued };
 }
 
 /**
@@ -303,6 +305,7 @@ export async function processJob(job, deps) {
     return { outcome: "not_claimed" };
   }
   marks.claim = deps.now();
+  deps.log("claimed", { id: job.id, queuedSec: formatTimings(marks).queuedSec });
   const stage = (name) => deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => "");
   /** 07.11: lietotājs darbu atcēla (Atcelt pieprasījumu) - pirms CSDD Saglabāt neturpinām. */
   const cancelledError = () => {

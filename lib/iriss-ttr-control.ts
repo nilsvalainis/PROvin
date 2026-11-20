@@ -22,6 +22,11 @@ export type TtrWorkerHeartbeat = {
   seenAt: string;
 };
 
+/** Pavadzīmju lapa (admin) atvērta: pēdējā reize (raksta ne biežāk kā reizi 3 min) - worker tad aptaujā ik 2 s. */
+export type TtrWaybillUi = {
+  pageSeenAt: string;
+};
+
 export type TtrControlDoc = {
   version: 1;
   updatedAt: string;
@@ -29,6 +34,7 @@ export type TtrControlDoc = {
   stopRequestedBy: string;
   server: TtrServerReport;
   worker: TtrWorkerHeartbeat;
+  ui: TtrWaybillUi;
 };
 
 /** Serveris ziņo vismaz reizi 5 min; pēc 10 min stāvoklis ir "nav zināms". */
@@ -49,6 +55,7 @@ export function emptyTtrControlDoc(): TtrControlDoc {
     stopRequestedBy: "",
     server: emptyTtrServerReport(),
     worker: { live: false, seenAt: "" },
+    ui: { pageSeenAt: "" },
   };
 }
 
@@ -82,7 +89,13 @@ export function parseTtrControlDoc(raw: unknown): TtrControlDoc {
     stopRequestedBy: typeof o.stopRequestedBy === "string" ? o.stopRequestedBy.slice(0, 64) : "",
     server: parseTtrServerReport(o.server) ?? emptyTtrServerReport(),
     worker: parseTtrWorkerHeartbeat(o.worker),
+    ui: parseTtrWaybillUi(o.ui),
   };
+}
+
+function parseTtrWaybillUi(raw: unknown): TtrWaybillUi {
+  const o = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  return { pageSeenAt: isoOrEmpty(o.pageSeenAt) };
 }
 
 function parseTtrWorkerHeartbeat(raw: unknown): TtrWorkerHeartbeat {
@@ -100,6 +113,18 @@ export function workerHeartbeatNeedsWrite(doc: TtrControlDoc, live: boolean, now
 
 export function applyTtrWorkerHeartbeat(doc: TtrControlDoc, live: boolean, now = new Date()): TtrControlDoc {
   return { ...doc, worker: { live, seenAt: now.toISOString() } };
+}
+
+/** Pavadzīmju lapas «atvērta» atzīme: raksta tikai, ja iepriekšējā vecāka par 3 min (Blob rakstījumu taupība). */
+export const TTR_PAGE_SEEN_WRITE_MS = 3 * 60 * 1000;
+
+export function waybillPageSeenNeedsWrite(doc: Pick<TtrControlDoc, "ui">, nowMs = Date.now()): boolean {
+  const seen = Date.parse(doc.ui.pageSeenAt);
+  return !Number.isFinite(seen) || nowMs - seen >= TTR_PAGE_SEEN_WRITE_MS;
+}
+
+export function applyWaybillPageSeen(doc: TtrControlDoc, now = new Date()): TtrControlDoc {
+  return { ...doc, ui: { pageSeenAt: now.toISOString() } };
 }
 
 /** Vai worker tiešām izraksta (live) un ir dzīvs (sirdspuksts nesenāks par 10 min). */

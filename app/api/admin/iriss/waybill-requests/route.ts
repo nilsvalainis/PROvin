@@ -16,7 +16,7 @@ import {
 } from "@/lib/iriss-waybill-requests";
 import { csddPlateSyncState, withCsddCheckInfo, type CsddPlateSyncState, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 import { ttrVpnStatus } from "@/lib/iriss-ttr-control";
-import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
+import { noteWaybillPageSeen, readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
@@ -32,6 +32,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const NO_STORE = { headers: { "Cache-Control": "private, no-store" } };
+
+/** Lapa atvērta -> worker aptauja ik 2 s. Šī instance atzīmē ne biežāk kā reizi 2 min (admin poll ik 3-5 s, Blob taupība). */
+const PAGE_SEEN_NOTE_MS = 2 * 60 * 1000;
+let pageSeenNotedAt = 0;
 
 async function loadVehiclesSafe() {
   try {
@@ -137,6 +141,10 @@ export async function GET(req: Request) {
   if (!gate.ok) return gate.response;
   // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
   const withCars = new URL(req.url).searchParams.get("cars") === "1";
+  if (Date.now() - pageSeenNotedAt >= PAGE_SEEN_NOTE_MS) {
+    pageSeenNotedAt = Date.now();
+    after(() => noteWaybillPageSeen());
+  }
   try {
     const [doc, vehicles, occupancy, tradeCars, dismissedIds] = await Promise.all([
       readWaybillRequestsDoc(),
