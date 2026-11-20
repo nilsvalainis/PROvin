@@ -87,6 +87,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  /** 20.11: aizmugures pogas (Piespraust/Dzēst) tikai vilkšanas laikā - citādi to krāsa spīd cauri kartītes labās malas noapaļojumam (izskatījās nogriezta). */
+  const [swipeBackVisible, setSwipeBackVisible] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const statusBtnRef = useRef<HTMLButtonElement>(null);
@@ -168,6 +170,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
         swipeAxisRef.current = "vertical";
       } else if (absX > SWIPE_AXIS_MIN && absX > absY + SWIPE_AXIS_BIAS) {
         swipeAxisRef.current = "horizontal";
+        setSwipeBackVisible(true);
         swipeDragControls.start(e.nativeEvent);
       }
     }
@@ -425,7 +428,10 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     >
       <div className="relative overflow-x-clip rounded-[18px]">
         {narrowSwipeViewport ? (
-          <div className="absolute inset-y-0 right-0 z-0 flex bg-[var(--fill2)]" style={{ width: SWIPE_ACTION_WIDTH }}>
+          <div
+            className="absolute inset-y-0 right-0 z-0 flex bg-[var(--fill2)]"
+            style={{ width: SWIPE_ACTION_WIDTH, visibility: swipeBackVisible || isOpen ? "visible" : "hidden" }}
+          >
             <button
               type="button"
               onClick={() => {
@@ -470,6 +476,9 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
             }}
             animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
             transition={SWIPE_SPRING}
+            onAnimationComplete={() => {
+              if (!isOpen) setSwipeBackVisible(false);
+            }}
             onPointerDown={onFrontPointerDown}
             onPointerMove={onFrontPointerMove}
             onPointerUp={onFrontPointerEnd}

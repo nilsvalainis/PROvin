@@ -540,10 +540,8 @@
     background: transparent !important;
   }
 
-  .iriss-spec-fields input.iriss-range-input-missing::placeholder,
-  .admin-ios-theme [data-iriss-order-room="1"] input.iriss-range-input-missing::placeholder {
-    color: #fca5a5 !important;
-  }
+  /* 20.11: rozā vietturis (obligāts, tukšs) noņemts - visiem «no/līdz» viens pelēks vietturis; trūkstošo lauku rāda
+     bloka «trūkst: ...» teksts un «*» pie nosaukuma. */
 }
 
 /* 01 Pasūtījumi: segmenti, kartītes, izvēlne. Tokeni no 00-tema. */

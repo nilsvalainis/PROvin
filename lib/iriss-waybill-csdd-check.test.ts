@@ -57,3 +57,18 @@ describe("CSDD nolasījuma laiks pie numura", () => {
     expect(b192.csddCheckedAt).toBeUndefined();
   });
 });
+
+describe("csddPlatesCheckSummary (20.11: viens teksts visiem numuriem)", () => {
+  it("ņem vecāko nolasījumu; kļūda vai nenolasīts numurs = stale", async () => {
+    const { csddPlatesCheckSummary, csddPlateCheckText } = await import("@/lib/iriss-waybill-csdd-plates");
+    const now = Date.parse("2026-11-20T10:00:00Z");
+    const ok = csddPlatesCheckSummary([
+      { csddCheckedAt: "2026-11-20T09:55:00Z", csddCheckOk: true },
+      { csddCheckedAt: "2026-11-20T09:50:00Z", csddCheckOk: true },
+    ]);
+    expect(csddPlateCheckText(ok, now)).toEqual({ text: "Stāvoklis no CSDD pirms 10 min", stale: false });
+    const bad = csddPlatesCheckSummary([{ csddCheckedAt: "2026-11-20T09:55:00Z", csddCheckOk: false }, {}]);
+    expect(csddPlateCheckText(bad, now).stale).toBe(true);
+    expect(csddPlateCheckText(csddPlatesCheckSummary([{}, {}]), now).text).toBe("Stāvoklis no CSDD nav nolasīts");
+  });
+});

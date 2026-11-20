@@ -10,6 +10,7 @@ import {
 } from "@/components/iriss-offer-public/IrissOfferPublicChrome";
 import { IrissOfferPublicGallery, type IrissOfferPublicGalleryUrlMap } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
 import { PdClientContent } from "@/components/iriss-piedavajumi/PdClientContent";
+import { PdEquipmentSummary } from "@/components/iriss-piedavajumi/PdEquipmentSummary";
 import { PdOfferBottomSections, PdOfferExtraSections } from "@/components/iriss-piedavajumi/PdOfferExtraSections";
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPdViewMode } from "@/lib/iriss-piedavajumi";
@@ -122,6 +123,8 @@ export function PdClientView({
       ) : null}
 
       <PdClientContent content={view.content} />
+
+      <PdEquipmentSummary summary={view.equipmentSummary} />
 
       {view.auto1 ? <PdOfferExtraSections blocks={view.auto1} show={view.blocks} /> : null}
 

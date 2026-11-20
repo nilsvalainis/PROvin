@@ -711,7 +711,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
             aria-modal="true"
             aria-label="Vairāk"
           >
-            <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+16px+env(safe-area-inset-bottom,0px))]">
+            <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+var(--admin-tab-bottom,16px)+env(safe-area-inset-bottom,0px)+24px)]">
               <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
                 <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
                 <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="group" aria-label="Darba zona">
@@ -783,9 +783,12 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                       setMore(false);
                       setLimitsOpen(true);
                     }}
-                    className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+                    className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-left text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
                   >
-                    LIMITI
+                    {/* 20.11: kā pārējie «Vairāk» ieraksti - ikona, nosaukums, bultiņa (agrāk tikai «LIMITI» lielajiem burtiem). */}
+                    <AdminMobileIcon name="statistika" className="h-5 w-5 text-[var(--am-ink2)]" />
+                    <span className="min-w-0 flex-1 truncate">Limiti</span>
+                    <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
                   </button>
                 ) : null}
                 <button

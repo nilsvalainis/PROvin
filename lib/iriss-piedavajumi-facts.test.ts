@@ -8,7 +8,7 @@ import { IRISS_PD_FACTS_TEMPLATE } from "@/lib/iriss-piedavajumi-types";
 const volvo: IrissPdAuto1Blocks = {
   paint: null,
   tech: [
-    { label: "TA līdz", value: "03/2027" },
+    { label: "Tehniskā apskate derīga līdz", value: "03/2027" },
     { label: "Atslēgas", value: "2" },
     { label: "Iepriekšējie bojājumi / avārija (pēc iepr. īpašnieka)", value: "No" },
   ],
@@ -26,7 +26,7 @@ describe("Nils 30.10: Novērtējums klientam no izsoles datiem", () => {
     const out = irissPdFactsFromAuto1(volvo, tpl, now);
     expect(out).toContainEqual({ text: "2 atslēgas", on: true });
     expect(out).toContainEqual({ text: "Servisa grāmatiņa", on: true });
-    expect(out).toContainEqual({ text: "TA derīga līdz 03/2027", on: true });
+    expect(out).toContainEqual({ text: "TA derīga līdz 03.2027", on: true });
     expect(out).toContainEqual({ text: "Nav avārijas vēstures", on: true });
     // Bez mērījumiem krāsojuma rinda paliek kā šablonā (admins pārbauda).
     expect(out).toContainEqual({ text: "Pārkrāsots (kosmētiski)", on: false });
@@ -46,7 +46,7 @@ describe("Nils 30.10: Novērtējums klientam no izsoles datiem", () => {
       now,
     );
     expect(out).toContainEqual({ text: "Servisa grāmatiņa: Not available", on: false });
-    expect(out).toContainEqual({ text: "TA beigusies (08/2026)", on: false });
+    expect(out).toContainEqual({ text: "TA beigusies (08.2026)", on: false });
     expect(out).toContainEqual({ text: "Nav avārijas vēstures", on: false });
   });
 

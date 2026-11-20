@@ -191,12 +191,8 @@ export function AutoparksV2Cabinet({
           {onHome ? statusBtn("ap2-dstatus") : null}
         </div>
         <div className="ap2-mvin-row">
+          {/* 20.11: «Dīlera dati ↗» tikai pie nosaukuma (te bija dublikāts). */}
           <VinCopy vin={basics.vin} className="ap2-mvin" />
-          {perms.admin && basics.vin ? (
-            <Link href={dealerCheckPageHref({ vin: basics.vin, from: "autoparks" })} className="ap2-dealer-data">
-              Dīlera dati ↗
-            </Link>
-          ) : null}
         </div>
       </div>
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">

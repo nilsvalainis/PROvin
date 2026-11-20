@@ -270,6 +270,10 @@
   border-color: #dc2626;
   color: #dc2626;
 }
+.wg .detail .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .wg .item.pickable.free {
   cursor: pointer;
 }
@@ -376,8 +380,19 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.wg.sm .csdd {
-  font-size: 9px;
+/* 20.11: viena rinda zem visiem numuriem (apļi) / virs kartītēm (dators). */
+.csddOnce {
+  margin-top: 6px;
+  text-align: center;
+}
+.csddOnce .csdd {
+  font-size: 12px;
+}
+.cardsCsdd {
+  grid-column: 1 / -1;
+}
+.cardsCsdd .csdd {
+  font-size: 12.5px;
 }
 .csddStale {
   color: #b45309;

@@ -62,7 +62,10 @@ export function waybillTradeCarsWithSource(cars: ReadonlyArray<AutoparksCar>): {
  * nekad SIA ĪRISS auto (sk. j43, Nils 24.10).
  */
 export function dzintarzemeAcceptedCars(cars: ReadonlyArray<WaybillTradeCar>): WaybillTradeCar[] {
-  return cars.filter((car) => car.owner === "DZA" && car.accepted);
+  // Kamēr CSDD reģistrs nav nolasīts (Autoparka rezerves saraksts - neviens nav `accepted`), B192-7 rāda DZA auto
+  // tāpat kā pārējie numuri rāda Autoparka auto; citādi DZA saraksts būtu tukšs datu trūkuma dēļ (20.11).
+  const fallback = !cars.some((car) => car.accepted);
+  return cars.filter((car) => car.owner === "DZA" && (car.accepted || fallback));
 }
 
 /** Meklēšana izvēles logā: marka, modelis vai VIN (daļa). */

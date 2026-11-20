@@ -976,6 +976,15 @@ button.pd-lv {
   color: var(--ink3);
   margin-top: 5px;
 }
+.pd-pm-extra {
+  font-size: 12px;
+  color: #3a3a3c;
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+.pd-pm-extra b {
+  font-weight: 600;
+}
 
 /* Klienta skats (priekšskatījums + publiskā saite) */
 .pdc .pdc-hero {

@@ -67,13 +67,29 @@ describe("Auto1 vērtības latviski", () => {
     expect(irissPdDisplayValue("12/21/2020")).toBe("21.12.2020");
     expect(irissPdDisplayValue("130,129 km")).toBe("130 129 km");
     expect(irissPdDisplayValue("-")).toBe("-");
-    expect(irissPdDisplayValue("Diesel")).toBe("Diesel");
+    expect(irissPdDisplayValue("Diesel")).toBe("Dīzelis");
+    // Nils 20.11: Auto1 bloks bez angļu tekstiem un ASV formātiem.
+    expect(irissPdDisplayValue("Digital service book")).toBe("Digitālā servisa grāmata");
+    expect(irissPdDisplayValue("12/2027")).toBe("12.2027");
+    expect(irissPdDisplayValue("01/02/2024")).toBe("02.01.2024");
+    expect(irissPdDisplayValue("140 kW / 190 HP")).toBe("140 kW / 190 ZS");
+    expect(irissPdDisplayValue("1,968 ccm")).toBe("1968 cm³");
+    expect(irissPdDisplayValue("184g/km")).toBe("184 g/km");
+    expect(irissPdDisplayValue("Gray Metallic (Original)")).toBe("Pelēka metālika (oriģināls)");
+    expect(irissPdDisplayValue("Leather (Original)")).toBe("Āda (oriģināls)");
+    expect(irissPdDisplayValue("Mythos Black Metallic")).toBe("Mythos Black Metallic");
+    expect(irissPdDisplayValue("Duplex")).toBe("Automātiskā (divsajūgu)");
     expect(irissPdDisplayValue("13/45/2020")).toBe("13/45/2020");
   });
 });
 
 describe("Krāsas karte", () => {
-  it("tabulā rāda visus mērījumus katrai zonai un bez zonas", () => {
+  it("shēmā vai īsā rindā zem tās ir visi mērījumi; tabulas Zona / Mērījumi / Bojājumi nav (Nils 20.11)", () => {
+    const html = renderHtml(<PdPaintMap paint={AUTO1.paint!} />);
+    expect(html).not.toContain("data-paint-table");
+    expect(html).not.toContain(">Mērījumi<");
+    // Priekšpusē 5 mērījumi (shēmā 1), kreisajā 6 (shēmā 4) - pārējie rindā zem shēmas.
+    expect(html).toContain("data-paint-extra");
     const text = renderText(<PdPaintMap paint={AUTO1.paint!} />).replace(/ /g, " ");
     for (const n of [112, 118, 276, 121, 130, 101, 99, 104, 108, 251, 97, 88]) {
       expect(text).toContain(`${n} µm`);
@@ -90,7 +106,6 @@ describe("Krāsas karte", () => {
     expect(html).not.toContain("<svg");
     const text = renderText(<PdPaintMap paint={paint} />);
     expect(text).toContain("nav mērāms");
-    expect(text).toContain("nav mērāms (materiāls)");
     // Izvēlēta pirmā zona ar ▲ (priekšpuse): tās laukums iezīmēts.
     expect(html).toMatch(/pd-pm-area sel/);
   });

@@ -39,6 +39,7 @@ import {
   WAYBILL_FORM_DEFAULT_HOURS,
   buildWaybillDesktopPayload,
   initialWaybillMobileForm,
+  waybillAutoForPlate,
   parseWaybillCustomHours,
   waybillAutoEntryValues,
   type WaybillMobileFormState,
@@ -608,7 +609,10 @@ export function IrissKomandaAivaramChat({
       <IrissWaybillDesktopCreateForm
         plates={chat.plates}
         plate={plate}
-        onPlate={setPlate}
+        onPlate={(next) => {
+          setPlate(next);
+          setAuto((prev) => waybillAutoForPlate(prev, next));
+        }}
         auto={auto}
         onAuto={setAuto}
         tradeCars={tradeCars}

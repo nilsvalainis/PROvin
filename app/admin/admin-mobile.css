@@ -670,3 +670,65 @@
     overscroll-behavior: contain;
   }
 }
+
+/*
+ * iPhone drošās zonas (Nils 20.11, Safari ekrānšāviņi).
+ * 1) Augšā: ar viewport-fit=cover lapa ritinās zem statusa joslas (laiks pārklājās ar «DOKUMENTI»). Galvene paliek
+ *    NE-sticky (Nila likums) - tikai fiksēta fona josla statusa joslas augstumā, lai saturs zem tās nav redzams.
+ * 2) Apakšā: vieta peldošajai joslai + safe-area, lai pēdējo saturu var aizritināt virs tās.
+ */
+@media (max-width: 767.98px) {
+  body:has(.admin-m)::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 29;
+    height: env(safe-area-inset-top, 0px);
+    background: #f2f2f7;
+    pointer-events: none;
+  }
+  body:has(.admin-m[data-section="iriss"])::before {
+    background: #e9ecf1;
+  }
+  body:has(.admin-m[data-theme="dark"])::before {
+    background: #000;
+  }
+  body:has(.admin-m[data-section="iriss"][data-theme="dark"])::before {
+    background: #060607;
+  }
+  /* Autoparks v2 lapām savs gaišais fons. */
+  body:has(.admin-m[data-section]):has(.ap2)::before {
+    background: #f2f2f7;
+  }
+
+  /* Vieta, ko aizņem peldošā josla (augstums + atkāpe no malas + safe-area + rezerve). */
+  .admin-m {
+    --admin-dock-room: calc(62px + var(--admin-tab-bottom, 16px) + env(safe-area-inset-bottom, 0px) + 24px);
+  }
+
+  /* IRISS kartītes darbību josla («Līgums | Piedāvājums | Saglabāt»): necaurspīdīgs fons līdz ekrāna malai,
+     saturam apakšā vieta joslas augstumā, lai «Saglabāt» neuzliekas pāri pēdējiem laukiem. */
+  .admin-m.admin-m[data-section="iriss"] .iriss-action-dock {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    padding: 8px var(--admin-tab-side, 16px) max(12px, env(safe-area-inset-bottom, 0px));
+    background: #e9ecf1;
+    box-shadow: 0 -0.5px 0 rgba(17, 24, 39, 0.12);
+  }
+  .admin-m.admin-m[data-section="iriss"][data-theme="dark"] .iriss-action-dock {
+    background: #060607;
+    box-shadow: 0 -0.5px 0 rgba(255, 255, 255, 0.12);
+  }
+  .admin-m.admin-m[data-section="iriss"]:has(.iriss-action-dock) {
+    padding-bottom: calc(50px + 8px + max(12px, env(safe-area-inset-bottom, 0px)) + 24px) !important;
+  }
+  .admin-m.admin-m[data-section="iriss"]:has(.iriss-action-dock) [data-iriss-order-room="1"] {
+    padding-bottom: 8px;
+  }
+  .admin-m.admin-m[data-section="iriss"]:has(.iriss-action-dock) :is(input, textarea, select):focus {
+    scroll-margin-bottom: calc(50px + 8px + env(safe-area-inset-bottom, 0px) + 32px);
+  }
+}

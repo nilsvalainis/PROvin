@@ -173,3 +173,18 @@ describe("Kritēriji telefonā (Nils 28.10)", () => {
     ]);
   });
 });
+
+describe("saraksta diapazoni (20.11: vienots formāts)", () => {
+  it("budžets: tūkstošu atstarpe, īsā defise, €", () => {
+    expect(irissListBudgetText("20000-27000")).toBe("20 000-27 000 €");
+    expect(irissListBudgetText("20 000 – 27 000 EUR")).toBe("20 000-27 000 €");
+    expect(irissListBudgetText("25000")).toBe("25 000 €");
+    expect(irissListBudgetText("līdz 30k")).toBe("līdz 30k");
+  });
+  it("nobraukums: tūkstošu atstarpe, īsā defise, km", () => {
+    expect(formatIrissListKm("15000-250000")).toBe("15 000-250 000 km");
+    expect(formatIrissListKm("15000 - 250000 km")).toBe("15 000-250 000 km");
+    expect(formatIrissListKm("250000 km")).toBe("250 000 km");
+    expect(formatIrissListKm("250 000 km")).toBe("250 000 km");
+  });
+});

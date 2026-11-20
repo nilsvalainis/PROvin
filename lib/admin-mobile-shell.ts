@@ -18,8 +18,12 @@ export const ADMIN_MOBILE_TABBAR_H_CSS =
 export const IRISS_MOBILE_TAB_BOTTOM_CSS =
   "max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px))" as const;
 
+/**
+ * Vieta lapas apakšā zem IRISS peldošās joslas: joslas augstums + atkāpe no malas + safe-area + rezerve,
+ * lai pēdējās rindas var aizritināt virs joslas arī iPhone Safari (Nils 20.11).
+ */
 export const IRISS_MOBILE_TABBAR_H_CSS =
-  "calc(62px + max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px)) + 16px)" as const;
+  "calc(62px + max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px)) + env(safe-area-inset-bottom, 0px) + 24px)" as const;
 
 /** v11d-fix: centrēta C kapsula (Sākums, Vairāk, Meklēt). z-index: tab bar 30. */
 export const ADMIN_MOBILE_TABBAR_DOCK_WRAPPER =

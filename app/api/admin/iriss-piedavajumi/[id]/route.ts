@@ -22,6 +22,7 @@ import {
   writeIrissPd,
 } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
+import { IRISS_PD_EQ_SUMMARY_ERROR_LV } from "@/lib/iriss-pd-equipment-summary";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -72,6 +73,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
  * POST { action } - send | revert | decline | approve (ar roku, piem. klients apstiprināja pa tālruni)
  * | reopen (noraidīto atkal dara pieejamu klientam) | note { text } (iekšēja piezīme pie klienta ziņām)
  * | question-answered { messageId, answered } (klienta jautājums atbildēts / atkal neatbildēts)
+ * | equipment-summary { force?, confirm? } (komplektācijas kopsavilkums ar AI)
  * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās).
  */
 export async function POST(req: Request, { params }: Ctx) {
@@ -89,6 +91,8 @@ export async function POST(req: Request, { params }: Ctx) {
     public?: unknown;
     messageId?: unknown;
     answered?: unknown;
+    force?: unknown;
+    confirm?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -167,6 +171,25 @@ export async function POST(req: Request, { params }: Ctx) {
     if (!res.ok) return fail(404, "not_found", "Jautājums nav atrasts.");
     if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+  }
+
+  if (action === "equipment-summary") {
+    // Nils 20.11: komplektācijas kopsavilkums (AI). Bez force - tikai ja nav vai avots mainījies (labotu nekad nepārraksta).
+    if (!isIrissPdEditable(rec.status)) return fail(409, "rejected", "Šo piedāvājumu vairs nevar labot.");
+    // AI klients tiek ielādēts tikai šai darbībai (pārējās darbības paliek vieglas).
+    const { generateIrissPdEquipmentSummary } = await import("@/lib/iriss-pd-equipment-summary-ai");
+    const res = await generateIrissPdEquipmentSummary(rec, { force: body.force === true, confirm: body.confirm === true, at });
+    if (!res.ok) return fail(res.error === "confirm_required" ? 409 : res.error === "no_source" ? 400 : 502, res.error, IRISS_PD_EQ_SUMMARY_ERROR_LV[res.error]);
+    if (!res.generated) return NextResponse.json({ ok: true, record: rec }, { headers: noStore });
+    // AI ilgst ~10-40 s - ieraksta svaigāko versiju, maina tikai šo lauku.
+    const fresh = (await readIrissPdFresh(id, Date.now())) ?? rec;
+    if (fresh.equipmentSummaryLv?.editedByAdmin && body.confirm !== true) return fail(409, "confirm_required", IRISS_PD_EQ_SUMMARY_ERROR_LV.confirm_required);
+    const next = appendIrissPdHistory(
+      { ...fresh, equipmentSummaryLv: res.summary, updatedAt: at },
+      { at, by, text: body.force === true ? "Komplektācijas kopsavilkums pārģenerēts" : "Komplektācijas kopsavilkums sagatavots" },
+    );
+    if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: next }, { headers: noStore });
   }
 
   if (!["send", "revert", "decline", "approve", "reopen"].includes(action)) return fail(400, "invalid_action");

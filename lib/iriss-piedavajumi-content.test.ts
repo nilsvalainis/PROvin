@@ -118,9 +118,13 @@ describe("j75 saturs: klienta skats", () => {
 describe("j75: Auto1 īsais kopsavilkums", () => {
   const A: IrissPdAuto1Blocks = {
     paint: { zones: [{ id: "front", readings: [276], warning: true }, { id: "roof", readings: [], warning: false }, { id: "rear", readings: [], warning: false }, { id: "left", readings: [], warning: false }, { id: "right", readings: [], warning: false }], unassigned: [] },
-    tech: [{ label: "Jauda", value: "136 kW / 185 ZS" }],
+    tech: [{ label: "Jauda", value: "136 kW / 185 HP" }, { label: "Tehniskā apskate derīga līdz", value: "12/2027" }],
     equipment: [],
-    service: [{ label: "Servisa grāmata", value: "Pieejams" }, { label: "Pēdējais serviss", value: "10/2017" }],
+    service: [
+      { label: "Servisa grāmata", value: "Digital service book" },
+      { label: "Pēdējais serviss", value: "01/02/2024" },
+      { label: "Pēdējā servisa km", value: "97,920 km" },
+    ],
     inspection: [{ label: "Pēdējās TA datums", value: "12/2024" }],
     damage: [
       { area: "exterior", damage: "Scratch", severity: "", description: "", quantity: "25", parts: "" },
@@ -134,8 +138,11 @@ describe("j75: Auto1 īsais kopsavilkums", () => {
     const b = irissPdAuto1Brief(A);
     expect(b.car).toEqual([
       { label: "Jauda", value: "136 kW / 185 ZS" },
-      { label: "Pēdējā TA", value: "12/2024" },
-      { label: "Serviss", value: "Pieejams · 10/2017" },
+      // Nils 20.11: Auto1 «Inspection expires» ir derīguma termiņš, nevis pēdējā TA.
+      { label: "TA derīga līdz", value: "12.2027" },
+      { label: "Pēdējā TA", value: "12.2024" },
+      { label: "Servisa grāmata", value: "Digitālā servisa grāmata" },
+      { label: "Pēdējais serviss", value: "02.01.2024 · 97\u00a0920 km" },
     ]);
     expect(b.damage).toEqual([
       { label: "Bojājumi ārpusē", value: "29" },
@@ -143,6 +150,9 @@ describe("j75: Auto1 īsais kopsavilkums", () => {
       { label: "Kļūdas paziņojumi", value: "1" },
       { label: "Pārkrāsotas zonas", value: "1" },
     ]);
+    // ▲ (bojājumi zonā) bez ≥250 µm nav pārkrāsojums.
+    const noRepaint = { ...A, paint: { ...A.paint!, zones: A.paint!.zones.map((z) => (z.id === "front" ? { ...z, readings: [120] } : z)) } };
+    expect(irissPdAuto1Brief(noRepaint).damage.map((r) => r.label)).not.toContain("Pārkrāsotas zonas");
     expect(irissPdAuto1Brief(null)).toEqual({ car: [], damage: [] });
   });
 });

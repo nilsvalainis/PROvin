@@ -29,7 +29,7 @@ export function IrissSpecDiapazoniBlock({
       {show("budget") ? (
         <IrissRangeFromToField
           label="Cena"
-          unit="EUR"
+          unit="€"
           phoneUnit="€"
           required
           from={ranges.budgetFrom}

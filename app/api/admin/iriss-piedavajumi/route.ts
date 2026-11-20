@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { appendIrissPdHistory, canRebaseIrissPd, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
-import { irissPdImportFromListing } from "@/lib/iriss-piedavajumi-from-listing";
+import { irissPdImportFromListing, irissPdMergeListingWithLink } from "@/lib/iriss-piedavajumi-from-listing";
 import { irissPdFactsFromAuto1 } from "@/lib/iriss-piedavajumi-facts";
 import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
@@ -126,7 +126,11 @@ export async function POST(req: Request) {
     const view = await readIrissListingsLatestViewWithMarketplace().catch(() => null);
     const vehicle = view?.vehicles.find((v) => v.id === listingId) ?? null;
     if (!vehicle) return fail(404, "not_found", { message: "Sludinājums vairs nav atrodams - atjauno sarakstu." });
-    const imp = irissPdImportFromListing(vehicle);
+    const fromListing = irissPdImportFromListing(vehicle);
+    // Nils 20.11: tā pati ielase kā Piedāvājumu sadaļā (izsoles detaļu lapa caur releju, visi Auto1 bloki).
+    // Ja saite nav nolasāma (stub avots, relejs nepieejams) - kā līdz šim, tikai sludinājuma dati.
+    const linkRes = fromListing.sourceUrl ? await importIrissPdFromLink(fromListing.sourceUrl).catch(() => null) : null;
+    const imp = linkRes?.ok && linkRes.data.fieldCount > 0 ? irissPdMergeListingWithLink(fromListing, linkRes.data) : fromListing;
     build = fromImport(imp, at, by)(id);
     note = imp.note;
   } else if (body.kind === "rebase") {

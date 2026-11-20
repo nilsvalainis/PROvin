@@ -24,6 +24,8 @@ import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPanel";
 import { PdClientMessages } from "@/components/admin/iriss-piedavajumi/PdClientMessages";
+import { PdEquipmentSummaryEditor } from "@/components/admin/iriss-piedavajumi/PdEquipmentSummaryEditor";
+import type { IrissPdEquipmentSummary } from "@/lib/iriss-pd-equipment-summary";
 import { irissPdOpenQuestionCount } from "@/lib/iriss-piedavajumi-messages";
 import {
   canRebaseIrissPd,
@@ -110,6 +112,7 @@ export type Draft = {
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
   content: IrissPdContent;
+  equipmentSummaryLv: IrissPdEquipmentSummary | null;
 };
 
 /** Lauki, kas mainīti pēc nosūtīšanas, paliek; pārējie ņem servera vērtību. */
@@ -136,6 +139,7 @@ function draftOf(r: IrissPiedavajums): Draft {
     photos: [...r.photos],
     visibility: JSON.parse(JSON.stringify(r.visibility)) as IrissPdVisibility,
     content: JSON.parse(JSON.stringify(r.content)) as IrissPdContent,
+    equipmentSummaryLv: r.equipmentSummaryLv ? { ...r.equipmentSummaryLv } : null,
   };
 }
 
@@ -718,6 +722,15 @@ export function PiedavajumsDetail({
           </div>
         </Card>
 
+        <PdEquipmentSummaryEditor
+          rec={rec}
+          draft={d.equipmentSummaryLv}
+          editable={editable}
+          onChange={(v) => set("equipmentSummaryLv", v)}
+          onRecord={(next) => applyRecord(next, draftOf(recRef.current))}
+          beforeGenerate={() => save()}
+        />
+
         <Card
           title="Kopsavilkums"
           sub={c.summaryOn ? "Rāda klientam · gatavi šabloni, ķeksē vajadzīgo" : "Paslēpts klientam"}
@@ -795,7 +808,7 @@ export function PiedavajumsDetail({
         </Card>
 
         {rec.auto1 ? (
-          <Card title="Auto1 dati" sub={`Ielasīts ${stamp(rec.auto1ImportedAt).slice(0, 5) || "-"} · īsi`}>
+          <Card title="Auto1 dati" sub={`Ielasīts ${stamp(rec.auto1ImportedAt).slice(0, 5) || "-"} · kopsavilkums`}>
             {brief.car.length || brief.damage.length ? (
               <div className="pde-2c pde-kvs">
                 <div>
