@@ -52,6 +52,8 @@ export type SerializedAdminOrderTableRow = {
   /** Stripe atmaksa / strīds: īss teksts („Atmaksāts”, „Strīds”). */
   paymentAdjustmentLabel?: string;
   paymentAdjustmentTone?: "refund" | "dispute";
+  /** Audits 20.11: pilnībā atmaksāts / zaudēts strīds - nav aktīvs, nekavē. */
+  fullyReversed?: boolean;
 };
 
 type RowInput = {
@@ -88,12 +90,18 @@ type RowInput = {
   paymentAdjustment?: unknown;
 };
 
-function paymentAdjustmentFields(raw: unknown): Pick<SerializedAdminOrderTableRow, "paymentAdjustmentLabel" | "paymentAdjustmentTone"> {
+function paymentAdjustmentFields(
+  raw: unknown,
+): Pick<SerializedAdminOrderTableRow, "paymentAdjustmentLabel" | "paymentAdjustmentTone" | "fullyReversed"> {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
   const label = typeof o.label === "string" ? o.label.trim() : "";
   if (!label) return {};
-  return { paymentAdjustmentLabel: label, paymentAdjustmentTone: o.tone === "dispute" ? "dispute" : "refund" };
+  return {
+    paymentAdjustmentLabel: label,
+    paymentAdjustmentTone: o.tone === "dispute" ? "dispute" : "refund",
+    ...(o.fullyReversed === true ? { fullyReversed: true } : {}),
+  };
 }
 
 function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {

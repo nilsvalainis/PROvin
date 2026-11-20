@@ -293,6 +293,8 @@ export type IrissPdListRow = {
   updatedAt: string;
   /** Neatbildēti klienta jautājumi (sarakstā - zīme «Jautājums»). */
   openQuestions: number;
+  /** Audits 20.11: klients apstiprināja, bet Autoparka auto jau bija rezervēts/pārdots (sarakstā - zīme). */
+  carConflict?: boolean;
   /** P4: veidotājs (saraksts «Mani» / «Visi»). Vecās indeksa rindās nav. */
   createdById?: string;
   createdByName?: string;

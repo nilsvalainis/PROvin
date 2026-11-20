@@ -1,6 +1,7 @@
 import "server-only";
 
 import { buildProvinAuditPdfFilename } from "@/lib/audit-report-pdf-filename";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 
 export const MAX_NOTIFY_ATTACHMENTS_BYTES = NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES;
@@ -52,6 +53,8 @@ export async function collectAttachmentsFromFormData(
     auditReportVin?: string | null;
     checkoutLine?: string | null;
     amountTotalCents?: number | null;
+    /** Audits 20.11: atskaites valoda - nosaukumā _EN/_RU/_DE kā UI. */
+    lang?: ClientReportLang | null;
   },
 ): Promise<{
   attachments: ParsedMailAttachment[];
@@ -99,6 +102,7 @@ export async function collectAttachmentsFromFormData(
       filename: buildProvinAuditPdfFilename(options?.auditReportVin, {
         checkoutLine: options?.checkoutLine,
         amountTotalCents: options?.amountTotalCents,
+        lang: options?.lang ?? null,
       }),
       content: buf,
       contentType: "application/pdf",

@@ -4,7 +4,7 @@ import type { CheckoutLineKind } from "@/lib/stripe-session";
 /**
  * Klienta audita PDF pielikuma standarta nosaukums.
  * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf, PROVIN_BUSINESS_<VIN>.pdf
- * vai OFICIALA_DILERA_DATI_<VIN>.pdf
+ * vai OFICIALA_DILERA_DATI_<VIN>.pdf; ne-LV valodai galotne _EN / _RU / _DE (kā UI).
  * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN - tikai burti un cipari, lielie burti).
  */
 
@@ -37,7 +37,10 @@ export function resolveProvinAuditPdfProductBrand(args: {
   const line = (args.checkoutLine ?? "").toString().trim().toLowerCase();
   if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN_MINI";
   if (line === "premium" || line === "audit" || line === "audits") return "PROVIN_AUDITS";
-  // Dealer / SELECT / unknown - pēc summas; 39,99 € = MINI.
+  // Audits 20.11: Business un Dīlera dati pēc līnijas (agrāk krita uz PROVIN_AUDITS).
+  if (line === "business") return "PROVIN_BUSINESS";
+  if (line === "dealer") return "PROVIN_DILERIS";
+  // SELECT / unknown - pēc summas; 39,99 € = MINI.
   if (args.amountTotalCents === MINI_AMOUNT_CENTS) return "PROVIN_MINI";
   return "PROVIN_AUDITS";
 }
@@ -57,6 +60,8 @@ export function buildProvinAuditPdfFilename(
       checkoutLine: product?.checkoutLine,
       amountTotalCents: product?.amountTotalCents,
     });
+  // Dīlera dati - tas pats nosaukums kā UI pogai «Dīlera PDF» (OFICIALA_DILERA_DATI_<VIN>.pdf).
+  if (brand === "PROVIN_DILERIS") return buildProvinDilerisPdfFilename(vin, product?.lang);
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const slug = v.length > 0 ? v : "NAV_VIN";
   return withReportLangSuffix(`${brand}_${slug}.pdf`, product?.lang);

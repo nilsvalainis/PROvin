@@ -10,7 +10,13 @@ import "server-only";
  */
 
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
-import { notifyIrissOfferDecision, notifyIrissOfferQuestion } from "@/lib/iriss-offer-notify";
+import {
+  irissOfferCarIsConflict,
+  irissOfferCarOutcomeOf,
+  irissOfferCarReserveText,
+  type IrissOfferCarReserveOutcome,
+} from "@/lib/iriss-offer-car-conflict";
+import { notifyIrissOfferCarConflict, notifyIrissOfferDecision, notifyIrissOfferQuestion } from "@/lib/iriss-offer-notify";
 import type { IrissOfferNotifyFacts } from "@/lib/iriss-offer-notify-shared";
 import { irissWorkspaceRevision } from "@/lib/iriss-pasutijumi-save-safety";
 import { createIrissPasutijums, readIrissPasutijums, writeIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
@@ -112,22 +118,41 @@ export function irissPdAutoparksCarId(sourceRef: string): string {
   return m ? m[1]! : "";
 }
 
-/** Nils 27.10: apstiprināts piedāvājums ar Autoparka auto -> auto «Rezervēts» (ja tas vēl nav tālākā posmā). */
+/**
+ * Nils 27.10 + audits 20.11: klienta apstiprināts piedāvājums ar Autoparka auto -> auto «Rezervēts».
+ * Kopīga jaunajam PD un vecajai formai (/p/[token]). Ja auto jau «Rezervēts» vai «Pārdots» - rezervācija netiek
+ * veikta, adminam push (klientam nekas netiek sūtīts). Kļūdas nekad neaptur klienta atbildi.
+ */
+export async function reserveAutoparksCarForApprovedOffer(
+  carId: string,
+  notify: { offerId: string; label: string; vehicle: string; vin: string; adminPath: string },
+): Promise<IrissOfferCarReserveOutcome> {
+  let outcome: IrissOfferCarReserveOutcome;
+  try {
+    const { reserveAutoparksCarAfterOffer } = await import("@/lib/iriss-autoparks-v2-store");
+    outcome = irissOfferCarOutcomeOf(await reserveAutoparksCarAfterOffer(carId, { id: "pd", name: notify.label }));
+  } catch (e) {
+    console.error("[iriss-offer-car] reserve autoparks", e instanceof Error ? e.message : e);
+    outcome = "error";
+  }
+  if (irissOfferCarIsConflict(outcome)) {
+    await notifyIrissOfferCarConflict(notify, outcome);
+  }
+  return outcome;
+}
+
 async function reserveSourceCar(rec: IrissPiedavajums, opts: { at: string; by: string }): Promise<IrissPiedavajums> {
   const carId = irissPdAutoparksCarId(rec.sourceRef);
   if (!carId) return rec;
-  try {
-    const { reserveAutoparksCarAfterOffer } = await import("@/lib/iriss-autoparks-v2-store");
-    const res = await reserveAutoparksCarAfterOffer(carId, { id: "pd", name: `Piedāvājums ${irissPdNumberLabel(rec.number)}` });
-    if (res.ok) return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto pārslēgts uz «Rezervēts»" });
-    if (res.reason === "conflict") {
-      return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto statuss tikko mainīts - «Rezervēts» iestati ar roku" });
-    }
-  } catch (e) {
-    console.error("[iriss-piedavajumi] reserve autoparks", e instanceof Error ? e.message : e);
-    return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto neizdevās pārslēgt uz «Rezervēts» - iestati ar roku" });
-  }
-  return rec;
+  const label = irissPdNumberLabel(rec.number);
+  const outcome = await reserveAutoparksCarForApprovedOffer(carId, {
+    offerId: rec.id,
+    label: `Piedāvājums ${label}`,
+    vehicle: `${label} · ${rec.vehicle.title}`,
+    vin: rec.vehicle.vin,
+    adminPath: irissPdAdminPath(rec.id),
+  });
+  return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: irissOfferCarReserveText(outcome) });
 }
 
 /** Paziņojuma fakti (bez klienta kontaktiem pushā - tos nerāda bloķētajā ekrānā). */

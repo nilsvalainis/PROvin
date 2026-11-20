@@ -2,7 +2,7 @@ import "server-only";
 
 import { countAdminActiveOrders } from "@/lib/admin-active-orders-count";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
-import { listAdminOrders } from "@/lib/admin-orders";
+import { adminOrderFullyReversed, listAdminOrders } from "@/lib/admin-orders";
 import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { countUnseenB2bPartners } from "@/lib/b2b-partner-account";
 import { listB2bPartners } from "@/lib/b2b-partner-store";
@@ -47,6 +47,7 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
     deadlineFromUnix: upsellListOverlay(upsell.get(o.id) ?? [])?.paidAtUnix,
     auditComplete: Boolean(done.get(o.id)),
     isB2bPack: isB2bPackAdminOrder(o),
+    fullyReversed: adminOrderFullyReversed(o),
     checkoutLine: o.checkoutLine,
     amountTotalCents: o.amountTotal,
   }));
