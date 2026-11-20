@@ -251,7 +251,8 @@ export function extractDetailDom() {
   });
   const lists = [];
   document.querySelectorAll("ul, ol").forEach((ul) => {
-    const items = [...ul.children].filter((li) => li.tagName === "LI").map((li) => txt(li)).filter((t) => t && t.length <= 120);
+    // 300: Auto1 «Airbag ...» aprīkojuma rinda ar visiem spilveniem ir garāka par 120 zīmēm (agrāk pazuda).
+    const items = [...ul.children].filter((li) => li.tagName === "LI").map((li) => txt(li)).filter((t) => t && t.length <= 300);
     if (items.length < 2) return;
     let heading = "";
     let el = ul;
@@ -268,6 +269,27 @@ export function extractDetailDom() {
       el = el.parentElement;
     }
     lists.push({ heading: heading.slice(0, 80), items: items.slice(0, 120) });
+  });
+  // Nils 20.11: Auto1 «CAR DATA ACCORDING TO IDENTIFICATION NUMBER (VIN)» - <ul> ir tikai pirmie 10, pārējie pēc
+  // «Show more» ir citā elementā. Pilnais saraksts = sadaļas innerText rindas aiz virsraksta (bez pogām), konteinerā,
+  // kurā vēl nav citas sadaļas virsraksta. Tas pats virsraksts -> mergeDetailExtracts paturēs garāko sarakstu.
+  const HEAD_SEL = "h1, h2, h3, h4, h5, h6, [role=heading]";
+  const UI_LINE = /^(show (more|less|original)|mehr anzeigen|weniger anzeigen|rādīt (vairāk|mazāk)|some content has been automatically translated\.?)\s*[+-]?$/i;
+  document.querySelectorAll(HEAD_SEL).forEach((h) => {
+    const heading = txt(h);
+    if (!heading || heading.length > 100 || !/according to (the )?(identification number|vin)/i.test(heading)) return;
+    let best = [];
+    let box = h.parentElement;
+    for (let depth = 0; depth < 6 && box; depth += 1) {
+      const other = [...box.querySelectorAll(HEAD_SEL)].some((x) => x !== h && !h.contains(x) && !x.contains(h) && txt(x));
+      if (other) break;
+      const lines = String(box.innerText || "").split("\n").map(clean).filter(Boolean);
+      const start = lines.indexOf(heading);
+      const items = lines.slice(start + 1).filter((l) => !UI_LINE.test(l) && l.length <= 300);
+      if (items.length > best.length) best = items;
+      box = box.parentElement;
+    }
+    if (best.length >= 2) lists.unshift({ heading: heading.slice(0, 80), items: best.slice(0, 300) });
   });
   const photos = [];
   const addImg = (u, w) => {

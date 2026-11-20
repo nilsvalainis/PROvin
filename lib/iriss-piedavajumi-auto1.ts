@@ -5,6 +5,7 @@
  */
 
 import type { IrissRelayAuctionDetail } from "@/lib/iriss-auction-detail";
+import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
 
 export type IrissPdKv = { label: string; value: string };
 
@@ -62,16 +63,26 @@ const norm = (s: string): string =>
 const clean = (s: unknown): string =>
   typeof s === "string" ? s.replace(/\s+/g, " ").trim() : typeof s === "number" && Number.isFinite(s) ? String(s) : "";
 
+/** Auto1 «Inspection expires» etiķete. Vecajos ierakstos bija «TA līdz» - lasot pārsauc (`LEGACY_LABEL_LV`). */
+export const IRISS_PD_TA_VALID_LABEL = "Tehniskā apskate derīga līdz";
+
+/** Agrākās etiķetes krātuvē -> pašreizējās (tikai rādīšanai; dati krātuvē netiek mainīti). */
+const LEGACY_LABEL_LV: Record<string, string> = {
+  "TA līdz": IRISS_PD_TA_VALID_LABEL,
+};
+
 /** Tehniskie dati: Auto1 etiķete (normalizēta) -> LV. Secība kā Auto1 lapā. */
 const TECH_LABELS: Array<[string, string]> = [
   ["buildyear", "Izlaiduma gads"],
   ["firstregistration", "Pirmā reģistrācija"],
   ["odometerreading", "Odometra rādījums"],
   ["fueltype", "Degvielas tips"],
+  ["power", "Jauda"],
   ["horsepower", "Jauda"],
   ["cylindercapacity", "Tilpums"],
   ["gearbox", "Ātrumkārba"],
-  ["inspectionexpires", "TA līdz"],
+  // Auto1 «Inspection expires» = līdz kuram derīga TA (nākamā TA), nevis pēdējās TA datums (Nils 20.11).
+  ["inspectionexpires", IRISS_PD_TA_VALID_LABEL],
   ["bodytype", "Virsbūves tips"],
   ["totalnumberofowners", "Īpašnieku skaits"],
   ["keys", "Atslēgas"],
@@ -135,10 +146,96 @@ const EQUIPMENT_LV: Record<string, string> = {
   lightsensor: "Gaismas sensors",
   multifunctionsteeringwheel: "Daudzfunkciju stūre",
   bluetooth: "Bluetooth",
+  // Nils 20.11: Auto1 kategorijas, kas agrāk palika angliski etiķešu kolonnā.
+  blockheater: "Autonomais sildītājs",
+  parkingheater: "Autonomais sildītājs",
+  auxiliaryheater: "Autonomais sildītājs",
+  seatsettings: "Sēdekļu regulēšana",
+  electricseats: "Elektriski regulējami sēdekļi",
+  limitedslipdifferential: "Diferenciāļa bloķēšana",
+  differentiallock: "Diferenciāļa bloķēšana",
+  ventilatedseats: "Sēdekļu ventilācija",
+  massageseats: "Masāžas sēdekļi",
+  sportseats: "Sporta sēdekļi",
+  heatedsteeringwheel: "Stūres apsilde",
+  headupdisplay: "Projekcijas displejs",
+  keylessentry: "Bezatslēgas piekļuve",
+  keylessgo: "Bezatslēgas piekļuve",
+  adaptivecruisecontrol: "Adaptīvā kruīza kontrole",
+  laneassist: "Joslas asistents",
+  lanekeepingassist: "Joslas asistents",
+  blindspotassist: "Aklās zonas asistents",
+  blindspotmonitor: "Aklās zonas asistents",
+  parkingassist: "Parkošanās asistents",
+  parkassist: "Parkošanās asistents",
+  "360camera": "360° kamera",
+  airsuspension: "Pneimatiskā piekare",
+  sportsuspension: "Sporta piekare",
+  adaptivesuspension: "Adaptīvā piekare",
+  electrictailgate: "Elektriskais bagāžnieka vāks",
+  ambientlighting: "Salona apgaismojums",
+  roofrails: "Jumta reliņi",
+  tintedwindows: "Tonēti stikli",
+  foglights: "Miglas lukturi",
+  soundsystem: "Audio sistēma",
+  tirepressuremonitoring: "Riepu spiediena kontrole",
+  tyrepressuremonitoring: "Riepu spiediena kontrole",
+  sportpackage: "Sporta pakete",
+  trailerhitch: "Āķis",
+  sunblinds: "Saulessargi",
+  isofix: "Isofix",
+  smartphoneintegration: "Viedtālruņa integrācija",
+  applecarplay: "Apple CarPlay",
+  androidauto: "Android Auto",
+  digitalcockpit: "Digitālais panelis",
+  hillstartassist: "Kalnā braukšanas palīgs",
+  emergencybrakeassist: "Avārijas bremzēšanas asistents",
+  trafficsignrecognition: "Ceļa zīmju atpazīšana",
+  matrixled: "Matrix LED lukturi",
+  laserlights: "Lāzera lukturi",
+  wirelesscharging: "Bezvadu uzlāde",
+  heatedwindscreen: "Vējstikla apsilde",
+  electricmirror: "Elektriskie spoguļi",
 };
 
 export function irissPdEquipmentLv(name: string): string {
   return EQUIPMENT_LV[norm(name)] ?? clean(name);
+}
+
+const EQUIPMENT_LV_VALUES = new Set(Object.values(EQUIPMENT_LV));
+
+/** «Towbar Detachable tow hitch» -> kategorija + apraksts (īsākais vārdu sākums, kas ir zināma kategorija). */
+function splitEquipmentText(text: string): { category: string; rest: string } | null {
+  const words = clean(text).split(" ");
+  for (let i = 1; i <= Math.min(words.length, 4); i += 1) {
+    if (EQUIPMENT_LV[norm(words.slice(0, i).join(" "))]) {
+      return { category: words.slice(0, i).join(" "), rest: words.slice(i).join(" ").replace(/^[:\s-]+/, "") };
+    }
+  }
+  return null;
+}
+
+/** Aprīkojuma rinda tabulai (Nils 20.11): etiķete - īss latvisks kategorijas nosaukums, vērtība - avota apraksts. */
+export type IrissPdEquipmentView = { label: string; value: string };
+
+export const IRISS_PD_EQUIPMENT_OTHER = "Cits";
+
+/**
+ * Viena rinda rādīšanai. Der arī vecajiem ierakstiem, kuros nezināma kategorija palika `name` ar tukšu `detail`
+ * («Block Heater Additional heater (parking heater)»): sadala no jauna; ja kategoriju nevar noteikt - «Cits».
+ * Etiķešu kolonnā nekad nenonāk garš teksts ar tukšu vērtību.
+ */
+export function irissPdEquipmentView(row: IrissPdEquipmentRow): IrissPdEquipmentView {
+  const name = clean(row.name);
+  const detail = clean(row.detail);
+  const known = EQUIPMENT_LV[norm(name)] ?? (EQUIPMENT_LV_VALUES.has(name) ? name : "");
+  if (known) return { label: known, value: detail || "Ir" };
+  const split = splitEquipmentText(name);
+  if (split) {
+    const value = [split.rest, detail].filter(Boolean).join(" - ");
+    return { label: EQUIPMENT_LV[norm(split.category)]!, value: value || "Ir" };
+  }
+  return { label: IRISS_PD_EQUIPMENT_OTHER, value: [name, detail].filter(Boolean).join(" - ") };
 }
 
 function pickKv(fields: ReadonlyArray<[string, string]>, labels: ReadonlyArray<[string, string]>): IrissPdKv[] {
@@ -148,9 +245,10 @@ function pickKv(fields: ReadonlyArray<[string, string]>, labels: ReadonlyArray<[
       const n = norm(l);
       return n === key || (key === "priordamage" && n.startsWith(key));
     });
-    if (!hit) continue;
+    if (!hit || out.some((r) => r.label === lv)) continue;
     const value = clean(hit[1]);
-    if (value) out.push({ label: lv, value });
+    // «-» Auto1 rāda tukšam laukam (piem. «Drive belt change on: -») - tukšas rindas nerāda.
+    if (value && !/^[-–—]+$/.test(value)) out.push({ label: lv, value });
   }
   return out;
 }
@@ -326,16 +424,8 @@ function parseEquipment(detail: IrissRelayAuctionDetail): IrissPdEquipmentRow[] 
     if (!/equipment|aprikojum|ausstattung/i.test(norm(l.heading)) || /identification|vin/i.test(l.heading)) continue;
     for (const item of l.items.slice(0, 80)) {
       const t = clean(item);
-      // «Towbar Detachable tow hitch» -> kategorija + apraksts (īsākais vārdu sākums, kas ir zināma kategorija).
-      const words = t.split(" ");
-      let split = 0;
-      for (let i = 1; i <= Math.min(words.length, 4); i += 1) {
-        if (EQUIPMENT_LV[norm(words.slice(0, i).join(" "))]) {
-          split = i;
-          break;
-        }
-      }
-      if (split > 0) add(words.slice(0, split).join(" "), words.slice(split).join(" ").replace(/^[:\s-]+/, ""));
+      const split = splitEquipmentText(t);
+      if (split) add(split.category, split.rest);
       else if (t) add(t, "");
     }
   }
@@ -515,7 +605,8 @@ function kvList(raw: unknown, max: number): IrissPdKv[] {
   return raw
     .slice(0, max)
     .map((r) => (r && typeof r === "object" ? { label: str((r as IrissPdKv).label, 120), value: str((r as IrissPdKv).value, 400) } : null))
-    .filter((r): r is IrissPdKv => Boolean(r && r.label && r.value));
+    .filter((r): r is IrissPdKv => Boolean(r && r.label && r.value && !/^[-–—]+$/.test(r.value)))
+    .map((r) => ({ ...r, label: LEGACY_LABEL_LV[r.label] ?? r.label }));
 }
 
 export function normalizeIrissPdAuto1Blocks(raw: unknown): IrissPdAuto1Blocks | null {
@@ -578,20 +669,25 @@ function damageTotal(rows: readonly IrissPdDamageRow[], area: IrissPdDamageRow["
 const WARNING_RE = /warning|kontroll|control lamp|error|fehler|kļūd/i;
 
 /**
- * Maketa «Auto1 dati» kartīte: 2 kolonnas (auto / bojājumi). Tikai rindas ar datiem.
+ * Maketa «Auto1 dati» kartīte: 2 kolonnas (auto / bojājumi). Tikai rindas ar datiem, vērtības latviski.
+ * Nils 20.11: Auto1 «Inspection expires» ir TA derīguma termiņš (nevis pēdējā TA) - abas rindas atsevišķi.
  */
 export function irissPdAuto1Brief(b: IrissPdAuto1Blocks | null): { car: IrissPdKv[]; damage: IrissPdKv[] } {
   if (!b) return { car: [], damage: [] };
-  const service = [kvValue(b.service, "Servisa grāmata"), kvValue(b.service, "Pēdējais serviss")].filter(Boolean).join(" · ");
+  const v = (rows: readonly IrissPdKv[], label: string) => irissPdDisplayValue(kvValue(rows, label));
+  const lastService = [v(b.service, "Pēdējais serviss"), v(b.service, "Pēdējā servisa km")].filter(Boolean).join(" · ");
   const car: IrissPdKv[] = [
-    { label: "Jauda", value: kvValue(b.tech, "Jauda") },
-    { label: "Pēdējā TA", value: kvValue(b.inspection, "Pēdējās TA datums") || kvValue(b.tech, "TA līdz") },
-    { label: "Serviss", value: service },
+    { label: "Jauda", value: v(b.tech, "Jauda") },
+    { label: "TA derīga līdz", value: v(b.tech, IRISS_PD_TA_VALID_LABEL) },
+    { label: "Pēdējā TA", value: v(b.inspection, "Pēdējās TA datums") },
+    { label: "Servisa grāmata", value: v(b.service, "Servisa grāmata") },
+    { label: "Pēdējais serviss", value: lastService },
   ].filter((r) => r.value);
   const ext = damageTotal(b.damage, "exterior");
   const int = damageTotal(b.damage, "interior");
   const warnings = b.damage.filter((r) => WARNING_RE.test(`${r.damage} ${r.description}`)).length;
-  const repainted = b.paint ? b.paint.zones.filter((z) => z.warning).length : 0;
+  // Pārkrāsots = mērījums ≥250 µm (▲ `warning` nozīmē «zonā ir bojājumi», ne pārkrāsojumu).
+  const repainted = b.paint ? b.paint.zones.filter((z) => z.readings.some((n) => n >= IRISS_PD_REPAINT_UM)).length : 0;
   const damage: IrissPdKv[] = [
     ...(ext != null ? [{ label: "Bojājumi ārpusē", value: String(ext) }] : []),
     ...(int != null ? [{ label: "Salonā", value: String(int) }] : []),

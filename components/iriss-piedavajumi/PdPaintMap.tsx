@@ -34,16 +34,32 @@ function um(n: number): string {
   return `${isRepaint(n) ? "◐ " : ""}${n} µm`;
 }
 
+type PaintExtra = { id: string; label: string; text: string };
+
+/** Mērījumi, kurus shēma neattēlo (tīra loģika, testējama). */
+export function paintMapExtras(paint: NonNullable<IrissPdAuto1Blocks["paint"]>): PaintExtra[] {
+  const out: PaintExtra[] = [];
+  for (const id of ZONE_ORDER) {
+    const z = paint.zones.find((x) => x.id === id);
+    if (!z) continue;
+    const isSide = id === "left" || id === "right";
+    const shown = isSide ? SIDE_X.length : 1;
+    const rest = z.readings.slice(shown);
+    if (rest.length) out.push({ id, label: `${IRISS_PD_PAINT_ZONE_LV[id]} (vēl)`, text: rest.map(um).join(", ") });
+    else if (isSide && z.readings.length === 0 && z.notMeasurable) out.push({ id, label: IRISS_PD_PAINT_ZONE_LV[id], text: "nav mērāms (materiāls)" });
+  }
+  if (paint.unassigned.length) out.push({ id: "unassigned", label: "Bez zonas", text: paint.unassigned.map(um).join(", ") });
+  return out;
+}
+
 /** Ārpuses krāsas karte (Auto1 «Exterior»): µm katrai zonai, ▲ - zonā atrasti bojājumi. */
 export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<IrissPdAuto1Blocks["paint"]>; compact?: boolean }) {
   const first = paint.zones.find((z) => z.warning)?.id ?? null;
   const [sel, setSel] = useState<IrissPdPaintZoneId | null>(first);
   const pick = (id: IrissPdPaintZoneId) => setSel((cur) => (cur === id ? null : id));
-  const zoneById = new Map(paint.zones.map((z) => [z.id, z]));
-  // Tabulā tikai zonas ar mērījumu, bojājumu vai «nav mērāms».
-  const tableZones = ZONE_ORDER.map((id) => zoneById.get(id)).filter(
-    (z): z is NonNullable<typeof z> => Boolean(z) && (z!.readings.length > 0 || z!.warning || Boolean(z!.notMeasurable)),
-  );
+  // Nils 20.11: tabula (Zona / Mērījumi / Bojājumi) dzēsta - dublējās ar shēmu. Zem shēmas īsa rinda tikai tiem
+  // mērījumiem, kas shēmā neietilpst (sānos > 4, augšskatā > 1, bez zonas, «nav mērāms» sānos).
+  const extras = paintMapExtras(paint);
 
   return (
     <div>
@@ -104,55 +120,16 @@ export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<Iris
       <div className="pd-pm-cap">
         Krāsas biezums µm · ◐ pārkrāsots (≥{IRISS_PD_REPAINT_UM} µm) · <span className="pd-wa">▲</span> zonā atrasti bojājumi (buktes, skrāpējumi u.c.)
       </div>
-      {/* Visi mērījumi tabulā: kartē sānos ietilpst 4, augšskatā 1. */}
-      <table className="mt-2.5 w-full border-collapse text-left text-[12.5px] leading-snug" data-paint-table="">
-        <thead>
-          <tr className="text-[10.5px] uppercase tracking-[0.06em] text-[#6e6e73]">
-            <th className="border-b border-[#e4e4e7] py-1.5 pr-2 font-semibold">Zona</th>
-            <th className="border-b border-[#e4e4e7] py-1.5 pr-2 font-semibold">Mērījumi</th>
-            <th className="border-b border-[#e4e4e7] py-1.5 text-right font-semibold">Bojājumi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableZones.map((z) => (
-            <tr key={z.id} className={`cursor-pointer align-top ${sel === z.id ? "bg-[#eef3fd]" : ""}`} onClick={() => pick(z.id)}>
-              <td className="border-b border-[#f3f4f6] py-1.5 pr-2 font-semibold text-[#111827]">{IRISS_PD_PAINT_ZONE_LV[z.id]}</td>
-              <td className="border-b border-[#f3f4f6] py-1.5 pr-2 tabular-nums text-[#111827]">
-                {z.readings.length ? (
-                  <span className="flex flex-wrap gap-x-2.5 gap-y-0.5">
-                    {z.readings.map((n, i) => (
-                      <span key={i} className={isRepaint(n) ? "font-bold text-[#b45309]" : undefined}>
-                        {um(n)}
-                      </span>
-                    ))}
-                  </span>
-                ) : z.notMeasurable ? (
-                  <span className="text-[#6e6e73]">nav mērāms (materiāls)</span>
-                ) : (
-                  <span className="text-[#a1a1aa]">-</span>
-                )}
-              </td>
-              <td className="border-b border-[#f3f4f6] py-1.5 text-right">
-                {z.warning ? <span className="pd-wa font-semibold">▲ ir</span> : <span className="text-[#a1a1aa]">-</span>}
-              </td>
-            </tr>
+      {extras.length ? (
+        <p className="pd-pm-extra" data-paint-extra="">
+          {extras.map((x, i) => (
+            <span key={x.id}>
+              {i ? " · " : ""}
+              <b>{x.label}:</b> {x.text}
+            </span>
           ))}
-          {paint.unassigned.length ? (
-            <tr className="align-top">
-              <td className="py-1.5 pr-2 font-semibold text-[#111827]">Bez zonas</td>
-              <td className="py-1.5 pr-2 tabular-nums text-[#111827]" colSpan={2}>
-                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5">
-                  {paint.unassigned.map((n, i) => (
-                    <span key={i} className={isRepaint(n) ? "font-bold text-[#b45309]" : undefined}>
-                      {um(n)}
-                    </span>
-                  ))}
-                </span>
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+        </p>
+      ) : null}
     </div>
   );
 }

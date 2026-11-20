@@ -71,3 +71,30 @@ export function irissPdImportFromListing(v: IrissListingVehicle): IrissPdImport 
     note: "",
   };
 }
+
+/**
+ * Nils 20.11: piedāvājums no klienta kabineta (Meklētāja atbilstība) vai Sludinājumiem jāielasa tāpat kā
+ * Piedāvājumu sadaļā («Saite»: Auto1/Openlane detaļu lapa ar visiem blokiem). Bāze - saites imports;
+ * sludinājuma dati aizpilda tikai tukšos laukus, `sourceRef` paliek sludinājuma (pēc tā Sludinājumi atrod PD).
+ */
+export function irissPdMergeListingWithLink(listing: IrissPdImport, link: IrissPdImport): IrissPdImport {
+  const vehicle = { ...link.vehicle };
+  for (const k of Object.keys(vehicle) as Array<keyof IrissPdVehicle>) {
+    if (!vehicle[k].trim() && listing.vehicle[k]?.trim()) vehicle[k] = listing.vehicle[k];
+  }
+  const filled = Object.values(vehicle).filter((x) => x.trim()).length;
+  const fieldCount = Math.max(link.fieldCount, filled);
+  return {
+    ...link,
+    source: link.source,
+    sourceRef: listing.sourceRef,
+    sourceUrl: link.sourceUrl || listing.sourceUrl,
+    sourceKey: link.sourceKey || listing.sourceKey,
+    vehicle,
+    photos: link.photos.length ? link.photos : listing.photos,
+    purchasePrice: link.purchasePrice || listing.purchasePrice,
+    fieldCount,
+    historyText: `${link.historyText} (sākts no Sludinājumiem)`,
+    note: link.note || listing.note,
+  };
+}

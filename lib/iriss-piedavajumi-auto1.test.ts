@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { IrissRelayAuctionDetail } from "@/lib/iriss-auction-detail";
 import {
+  irissPdEquipmentView,
+  normalizeIrissPdAuto1Blocks as normalizeAuto1ForLegacy,
   irissPdAuto1BlockCount,
   irissPdAuto1BlocksFromDetail,
   irissPdAuto1FieldCount,
@@ -97,7 +99,6 @@ describe("Auto1 bloki no detaļu lapas", () => {
       { label: "Servisa apmeklējumi", value: "Some" },
       { label: "Pēdējais serviss", value: "10/09/2017" },
       { label: "Pēdējā servisa km", value: "144,742 km" },
-      { label: "Siksnas maiņa", value: "-" },
     ]);
     expect(b.inspection).toEqual([
       { label: "Pēdējās TA datums", value: "12/06/2024" },
@@ -218,5 +219,44 @@ describe("krāsas mērījumi no Auto1 shēmas (JD14299, 17.11)", () => {
       text: "",
     });
     expect(b.paint?.zones.flatMap((x) => x.readings) ?? []).toEqual([]);
+  });
+});
+
+describe("Aprīkojuma tabula (Nils 20.11)", () => {
+  it("etiķete - īss LV kategorijas nosaukums, vērtība - avota apraksts; arī vecajiem ierakstiem", () => {
+    // Vecie ieraksti: nezināmā kategorija palika `name` ar tukšu `detail`.
+    expect(irissPdEquipmentView({ name: "Block Heater Additional heater (parking heater)", detail: "" })).toEqual({
+      label: "Autonomais sildītājs",
+      value: "Additional heater (parking heater)",
+    });
+    expect(irissPdEquipmentView({ name: "Seat settings Front seats electrically adjustable (with Memory)", detail: "" })).toEqual({
+      label: "Sēdekļu regulēšana",
+      value: "Front seats electrically adjustable (with Memory)",
+    });
+    expect(irissPdEquipmentView({ name: "Limited-slip differential Electrically controlled limited-slip differential (XDS)", detail: "" })).toEqual({
+      label: "Diferenciāļa bloķēšana",
+      value: "Electrically controlled limited-slip differential (XDS)",
+    });
+    expect(irissPdEquipmentView({ name: "Āķis", detail: "Towbar with Stability Control" })).toEqual({ label: "Āķis", value: "Towbar with Stability Control" });
+    expect(irissPdEquipmentView({ name: "Ksenona lukturi", detail: "" })).toEqual({ label: "Ksenona lukturi", value: "Ir" });
+    expect(irissPdEquipmentView({ name: "Something unusual here", detail: "" })).toEqual({ label: "Cits", value: "Something unusual here" });
+  });
+
+  it("jauns imports: Auto1 saraksta rindas sadala kategorijā un aprakstā", () => {
+    const b = irissPdAuto1BlocksFromDetail({
+      ...DETAIL,
+      fields: [],
+      lists: [{ heading: "CAR EQUIPMENT", items: ["Block Heater Additional heater (parking heater)", "Airbag Passenger side airbag Driver side airbag"] }],
+    });
+    expect(b.equipment).toEqual([
+      { name: "Autonomais sildītājs", detail: "Additional heater (parking heater)" },
+      { name: "Drošības spilveni", detail: "Passenger side airbag Driver side airbag" },
+    ]);
+  });
+
+  it("«TA līdz» vecajos ierakstos lasot kļūst «Tehniskā apskate derīga līdz»; «-» rindas izmestas", () => {
+    const b = normalizeAuto1ForLegacy({ tech: [{ label: "TA līdz", value: "12/2027" }], service: [{ label: "Siksnas maiņa", value: "-" }] });
+    expect(b?.tech).toEqual([{ label: "Tehniskā apskate derīga līdz", value: "12/2027" }]);
+    expect(b?.service).toEqual([]);
   });
 });

@@ -6,6 +6,7 @@ import {
   IRISS_PD_DAMAGE_AREA_LV,
   irissPdAuto1BlockCount,
   irissPdDamageSummary,
+  irissPdEquipmentView,
   type IrissPdAuto1Blocks,
   type IrissPdKv,
 } from "@/lib/iriss-piedavajumi-auto1";
@@ -84,13 +85,16 @@ function EquipmentBlock({ b, limit }: { b: IrissPdAuto1Blocks; limit?: number })
   if (!eq.length && !hasSide) return <Empty />;
   const list = (
     <div>
-      {eq.map((e) => (
-        <div className="pd-eq" key={e.name}>
-          <i className="pd-ck" aria-hidden="true">✓</i>
-          <b>{e.name}</b>
-          <span>{e.detail}</span>
-        </div>
-      ))}
+      {eq.map((e, i) => {
+        const row = irissPdEquipmentView(e);
+        return (
+          <div className="pd-eq" key={`${i}-${e.name}`}>
+            <i className="pd-ck" aria-hidden="true">✓</i>
+            <b>{row.label}</b>
+            <span>{row.value}</span>
+          </div>
+        );
+      })}
     </div>
   );
   if (limit || !hasSide) return list;
@@ -204,7 +208,7 @@ function VinBlock({ items, expandAll = false }: { items: string[]; expandAll?: b
       {items.length > LIMIT && !expandAll ? (
         <div className="pd-more pdc-noprint">
           <button type="button" onClick={() => setAll((v) => !v)}>
-            {all ? "Rādīt mazāk" : `Rādīt vairāk (+${items.length - LIMIT})`}
+            {all ? "Rādīt mazāk" : `Rādīt visas (${items.length})`}
           </button>
         </div>
       ) : null}
