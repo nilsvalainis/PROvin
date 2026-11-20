@@ -24,7 +24,6 @@ import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import {
   appendIrissPdHistory,
   formatIrissPdPrice,
-  IRISS_PD_CAR_RESERVED_TEXT,
   splitIrissPdClientName,
 } from "@/lib/iriss-piedavajumi";
 import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
