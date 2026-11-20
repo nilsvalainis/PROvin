@@ -2,7 +2,7 @@ import "server-only";
 
 import { cabinetActorHidesSums } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery, logisticsCabinetActorId } from "@/lib/iriss-logistics-access";
-import type { AutoparksCar, AutoparksListRow, AutoparksRoom, AutoparksWorkItem } from "@/lib/iriss-autoparks";
+import type { AutoparksCar, AutoparksFile, AutoparksFileKind, AutoparksListRow, AutoparksRoom, AutoparksWorkItem } from "@/lib/iriss-autoparks";
 import type { AutoparksActor } from "@/lib/iriss-autoparks-store";
 import type { AdminOrStaffActor } from "@/lib/staff-auth";
 
@@ -18,7 +18,7 @@ export function autoparksHidesSums(actor: AdminOrStaffActor): boolean {
   return cabinetActorHidesSums(logisticsCabinetAccessQuery(actor, ""));
 }
 
-function stripCar<T extends AutoparksCar>(car: T): T {
+export function stripCar<T extends AutoparksCar>(car: T): T {
   const out = { ...car, purchasePriceEur: null, salePriceEur: null };
   if ("listPriceEur" in car) out.listPriceEur = null;
   return out;
@@ -33,6 +33,19 @@ export function autoparksRowsForActor(rows: AutoparksListRow[], hide: boolean): 
   return hide ? rows.map(stripCar) : rows;
 }
 
+/** Rēķini un tāmes satur summas - Loģistika/Serviss (hideSums) tos neredz un nevar lejupielādēt. */
+export const AUTOPARKS_SUM_FILE_KINDS: readonly AutoparksFileKind[] = ["invoice", "estimate"];
+
+export function autoparksFileHiddenForActor(file: Pick<AutoparksFile, "kind">, hide: boolean): boolean {
+  return hide && AUTOPARKS_SUM_FILE_KINDS.includes(file.kind);
+}
+
 export function autoparksRoomForActor(room: AutoparksRoom, hide: boolean): AutoparksRoom {
-  return hide ? { ...room, car: stripCar(room.car), work: room.work.map(stripWork) } : room;
+  if (!hide) return room;
+  return {
+    ...room,
+    car: stripCar(room.car),
+    work: room.work.map(stripWork),
+    files: room.files.filter((f) => !autoparksFileHiddenForActor(f, hide)),
+  };
 }

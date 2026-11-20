@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AUTOPARKS_STAGES, autoparksBundleName, isAutoparksStage } from "@/lib/iriss-autoparks";
+import { autoparksFileHiddenForActor, autoparksHidesSums } from "@/lib/iriss-autoparks-access";
 import { mergePdfs } from "@/lib/iriss-autoparks-pdf";
 import { getAutoparksRoom, readAutoparksFileBytes } from "@/lib/iriss-autoparks-store";
 import { irissLogisticsScopeHeader, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
@@ -19,9 +20,10 @@ export async function GET(req: Request, ctx: Ctx) {
   if (!room) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
   const stageRaw = new URL(req.url).searchParams.get("stage");
   const stage = isAutoparksStage(stageRaw) ? stageRaw : null;
+  const hide = autoparksHidesSums(gate.actor);
   const order = new Map(AUTOPARKS_STAGES.map((s, i) => [s, i]));
   const pdfs = room.files
-    .filter((f) => f.contentType.includes("pdf") && (!stage || f.stage === stage))
+    .filter((f) => f.contentType.includes("pdf") && (!stage || f.stage === stage) && !autoparksFileHiddenForActor(f, hide))
     .sort((a, b) => order.get(a.stage)! - order.get(b.stage)! || a.createdAt.localeCompare(b.createdAt));
   if (pdfs.length === 0) return NextResponse.json({ error: "no_pdf" }, { status: 404, headers: irissLogisticsScopeHeader() });
   const bytes = [];

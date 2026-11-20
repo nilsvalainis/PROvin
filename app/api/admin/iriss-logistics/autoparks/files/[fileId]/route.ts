@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { autoparksDownloadName, isAutoparksFileKind, isAutoparksStage } from "@/lib/iriss-autoparks";
-import { autoparksActor } from "@/lib/iriss-autoparks-access";
+import { autoparksDownloadName, isAutoparksFileKind, isAutoparksStage, type AutoparksFile } from "@/lib/iriss-autoparks";
+import { autoparksActor, autoparksFileHiddenForActor, autoparksHidesSums } from "@/lib/iriss-autoparks-access";
 import { autoparksTemporaryLink, readAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { findAutoparksFile, patchAutoparksFile, readAutoparksFileBytes, softDeleteAutoparksFile } from "@/lib/iriss-autoparks-store";
 import { irissLogisticsScopeHeader, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
@@ -13,21 +13,28 @@ type Ctx = { params: Promise<{ fileId: string }> };
 /** Vercel atbildes ķermeņa limits ~4,5 MB: lielākus Dropbox failus atveram ar īslaicīgu (4 h) Dropbox saiti. */
 const PROXY_MAX_BYTES = 4 * 1024 * 1024;
 
+/** Loģistika/Serviss: rēķins/tāme (summas) - 403, arī labot un dzēst. */
+function sumFileForbidden(actor: Parameters<typeof autoparksHidesSums>[0], file: { kind: AutoparksFile["kind"] } | null | undefined) {
+  if (!file || !autoparksFileHiddenForActor(file, autoparksHidesSums(actor))) return null;
+  return NextResponse.json({ error: "forbidden" }, { status: 403, headers: irissLogisticsScopeHeader() });
+}
+
 /** `?dl=1` lejupielādē, citādi atver pārlūkā (PDF skatītājs). `?thumb=1` = mazs JPEG sīktēls bildēm. */
 export async function GET(req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
   const { fileId } = await ctx.params;
   const params = new URL(req.url).searchParams;
+  const meta = await findAutoparksFile(fileId);
+  const forbidden = sumFileForbidden(gate.actor, meta?.file);
+  if (forbidden) return forbidden;
   if (params.get("thumb") === "1") {
-    const meta = await findAutoparksFile(fileId);
     const thumb = meta ? await readAutoparksThumbnail(meta.file) : null;
     if (!thumb) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
     return new NextResponse(new Uint8Array(thumb), {
       headers: { ...irissLogisticsScopeHeader(), "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=3600" },
     });
   }
-  const meta = await findAutoparksFile(fileId);
   if (meta && meta.file.size > PROXY_MAX_BYTES && (meta.file.dropboxId || meta.file.dropboxPath)) {
     const link = await autoparksTemporaryLink(meta.file);
     if (link) return NextResponse.redirect(link, { status: 302, headers: { ...irissLogisticsScopeHeader(), "Cache-Control": "private, no-store" } });
@@ -58,6 +65,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
+  const forbidden = sumFileForbidden(gate.actor, (await findAutoparksFile(fileId))?.file);
+  if (forbidden) return forbidden;
   const file = await patchAutoparksFile(fileId, {
     stage: isAutoparksStage(body.stage) ? body.stage : undefined,
     kind: isAutoparksFileKind(body.kind) ? body.kind : undefined,
@@ -73,6 +82,8 @@ export async function DELETE(_req: Request, ctx: Ctx) {
   const denied = logisticsCabinetWriteForbidden(gate.actor);
   if (denied) return denied;
   const { fileId } = await ctx.params;
+  const forbidden = sumFileForbidden(gate.actor, (await findAutoparksFile(fileId))?.file);
+  if (forbidden) return forbidden;
   const file = await softDeleteAutoparksFile(fileId, autoparksActor(gate.actor));
   if (!file) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
   return NextResponse.json({ ok: true, file }, { headers: irissLogisticsScopeHeader() });
