@@ -2,11 +2,36 @@ import { describe, expect, it } from "vitest";
 import { buildUnifiedIncidentsTableHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
+const BASE_PAYLOAD: ClientReportPayload = {
+  sessionId: "cs_test",
+  vin: "WVWZZZ1JZXW000001",
+  created: Date.now(),
+  amountTotal: 7999,
+  currency: "eur",
+  paymentStatus: "paid",
+  isDemo: false,
+  listingUrl: null,
+  customerEmail: null,
+  customerPhone: null,
+  customerName: null,
+  contactMethod: null,
+  notes: null,
+  csdd: "",
+  ltab: "",
+  tirgus: "",
+  citi: "",
+  iriss: "",
+  apskatesPlāns: "",
+  tehniskoRiskuAnalize: "",
+  cenasAtbilstiba: "",
+};
+
 describe("incident photo groups in client report", () => {
   it("renders each incident photo group with its own heading", () => {
     const photoA = "inc_ph_aabbccddeeff001122334455";
     const photoB = "inc_ph_112233445566778899aabbcc";
-    const p = {
+    const p: ClientReportPayload = {
+      ...BASE_PAYLOAD,
       internalComment: "Kopsavilkuma teksts",
       incidentPhotos: [{ id: photoA }, { id: photoB }],
       incidentPhotoGroups: [
@@ -30,7 +55,7 @@ describe("incident photo groups in client report", () => {
           pdfChecklist: { incidents: false, mileageHistory: false, mileageLine: false },
         },
       ],
-    } as ClientReportPayload;
+    };
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const urls = new Map<string, string>([
       [photoA, "data:image/jpeg;base64,/9j/AAAA"],

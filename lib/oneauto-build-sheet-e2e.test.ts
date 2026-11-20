@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchOneautoProducts } from "@/lib/oneauto-api";
-import { applyOneautoToAutoRecords, emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
+import { applyOneautoToAutoRecords, emptyOneautoIngest, type AutoRecordsOneautoTarget } from "@/lib/oneauto-to-auto-records";
 import { collectOemOneautoPayloads, oemDisplayFromRawPayloads } from "@/lib/pdf-dealer-oem";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 
@@ -85,7 +85,7 @@ describe("OE Build Sheet (Europe) no API līdz dīlera laukiem un PDF", () => {
       selectedProducts: ["oe_build_sheet" as const],
       results: fetched.results,
     };
-    const records = applyOneautoToAutoRecords({}, { display: fetched.display, ingest });
+    const records = applyOneautoToAutoRecords<AutoRecordsOneautoTarget>({}, { display: fetched.display, ingest });
     const codes = records.outvinReport?.equipment.map((e) => e.code) ?? [];
     expect(codes).toEqual(expect.arrayContaining(["9AK", "PR3L"]));
 

@@ -1,0 +1,18 @@
+{
+  "name": "provin-mnt",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROVIN mnt.ee (Igaunija) pārlūka relejs: Playwright + Google Chrome zem Xvfb (Hetzner).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check split-proxy.mjs && node --check detail-extract.js"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}

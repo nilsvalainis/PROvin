@@ -42,6 +42,7 @@ describe("Google Maps hard counters", () => {
       geocodePlace: 0,
       searchDestinations: 0,
       directions: 0,
+      autocomplete: 0,
     };
     const d = decideLogisticsMapsQuota({ usage, api: "geocoding", at });
     expect(d.allowed).toBe(false);
@@ -58,6 +59,7 @@ describe("Google Maps hard counters", () => {
       geocodePlace: LOGISTICS_MAPS_DAILY_CAP,
       searchDestinations: LOGISTICS_MAPS_DAILY_CAP,
       directions: 0,
+      autocomplete: 0,
     };
     usage.geocodePlace = LOGISTICS_MAPS_DAILY_CAP;
     usage.searchDestinations = LOGISTICS_MAPS_DAILY_CAP;

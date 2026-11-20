@@ -4,6 +4,7 @@ import {
   resolveB2bDemoAdminSecret,
   verifyB2bDemoAdminSecret,
 } from "./b2b-demo-admin-secret";
+import { testEnv } from "@/lib/test-process-env";
 
 describe("b2b demo admin secret", () => {
   const prevDedicated = process.env.B2B_DEMO_ADMIN_SECRET;
@@ -28,17 +29,17 @@ describe("b2b demo admin secret", () => {
   });
 
   it("ņem B2B_DEMO_ADMIN_SECRET pirms ADMIN_SECRET", () => {
-    const env = {
+    const env = testEnv({
       B2B_DEMO_ADMIN_SECRET: "dedicated-secret-16",
       ADMIN_SECRET: "fallback-admin-secret",
-    } as NodeJS.ProcessEnv;
+    });
     expect(resolveB2bDemoAdminSecret(env)).toBe("dedicated-secret-16");
     expect(verifyB2bDemoAdminSecret("dedicated-secret-16", env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("fallback-admin-secret", env)).toBe(false);
   });
 
   it("krīt uz ADMIN_SECRET, ja dedicated nav", () => {
-    const env = { ADMIN_SECRET: "fallback-admin-secret" } as NodeJS.ProcessEnv;
+    const env = testEnv({ ADMIN_SECRET: "fallback-admin-secret" });
     expect(b2bDemoAdminSecretConfigured(env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("fallback-admin-secret", env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("wrong-secret-value-x", env)).toBe(false);

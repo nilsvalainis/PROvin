@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { testEnv } from "@/lib/test-process-env";
 
 vi.mock("server-only", () => ({}));
 
@@ -16,14 +17,14 @@ describe("readFixieProxyUrl / withAutodnaFixieProxy", () => {
 
   it("rejects a malformed FIXIE_URL instead of sending traffic through it", async () => {
     const { readFixieProxyUrl } = await import("@/lib/autodna-api");
-    expect(readFixieProxyUrl({ FIXIE_URL: "not-a-url" })).toBeNull();
-    expect(readFixieProxyUrl({ FIXIE_URL: "ftp://proxy.example" })).toBeNull();
+    expect(readFixieProxyUrl(testEnv({ FIXIE_URL: "not-a-url" }))).toBeNull();
+    expect(readFixieProxyUrl(testEnv({ FIXIE_URL: "ftp://proxy.example" }))).toBeNull();
   });
 
   it("attaches a dispatcher only when FIXIE_URL is a valid http(s) proxy", async () => {
     const { withAutodnaFixieProxy } = await import("@/lib/autodna-api");
     const proxy = "http://fixie:secret@group.usefixie.com:80";
-    const out = withAutodnaFixieProxy({ method: "POST" }, { FIXIE_URL: proxy });
+    const out = withAutodnaFixieProxy({ method: "POST" }, testEnv({ FIXIE_URL: proxy }));
     expect(out.method).toBe("POST");
     expect(out.dispatcher).toBeTruthy();
     expect(out.dispatcher?.constructor.name).toBe("ProxyAgent");

@@ -6,13 +6,18 @@ import {
   isConditionalWriteConflict,
 } from "@/lib/conditional-write";
 
+type Wallet = { credits: number; keys: string[] };
+type DebitResult = { ok: boolean; duplicate: boolean; credits: number };
+type Note = { revision: number; note: string };
+type NoteResult = { ok: true; revision: number } | { ok: false; reason: "stale_revision"; revision: number };
+
 describe("compareAndSwap", () => {
   it("divi paralēli norakstījumi atstāj pareizu atlikumu un neiet negatīvā", async () => {
-    const store = createMemoryConditionalStore<{ credits: number; keys: string[] }>();
+    const store = createMemoryConditionalStore<Wallet>();
     await store.write("p1", { credits: 1, keys: [] }, null);
 
     async function debit(idempotencyKey: string) {
-      return compareAndSwap({
+      return compareAndSwap<Wallet, DebitResult>({
         read: () => store.read("p1"),
         write: (next, etag) => store.write("p1", next, etag),
         update: (current) => {
@@ -40,10 +45,10 @@ describe("compareAndSwap", () => {
   });
 
   it("zaudēts atjauninājums ar to pašu etag tiek noraidīts un otrais mēģinājums redz jauno revīziju", async () => {
-    const store = createMemoryConditionalStore<{ revision: number; note: string }>();
+    const store = createMemoryConditionalStore<Note>();
     await store.write("s1", { revision: 3, note: "a" }, null);
 
-    const first = await compareAndSwap({
+    const first = await compareAndSwap<Note, NoteResult>({
       read: () => store.read("s1"),
       write: (next, etag) => store.write("s1", next, etag),
       update: (current) => {
@@ -58,7 +63,7 @@ describe("compareAndSwap", () => {
     });
     expect(first.ok).toBe(true);
 
-    const second = await compareAndSwap({
+    const second = await compareAndSwap<Note, NoteResult>({
       read: () => store.read("s1"),
       write: (next, etag) => store.write("s1", next, etag),
       update: (current) => {
