@@ -13,7 +13,7 @@ import {
 } from "@/lib/admin-audit-sla-warning-store";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
-import { listAdminOrders } from "@/lib/admin-orders";
+import { adminOrderFullyReversed, listAdminOrders } from "@/lib/admin-orders";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { notifyAdminAuditSlaWarning } from "@/lib/notify";
 import { upsellListOverlay } from "@/lib/order-upsell";
@@ -51,6 +51,7 @@ export async function runAdminAuditSlaWarnings(nowMs = Date.now()): Promise<Audi
     deadlineFromUnix: upsellListOverlay(upsell.get(o.id) ?? [])?.paidAtUnix ?? null,
     auditComplete: Boolean(done.get(o.id)),
     isB2bPack: isB2bPackAdminOrder(o),
+    fullyReversed: adminOrderFullyReversed(o),
   }));
 
   const candidates = collectAuditSlaWarningCandidates(annotated, nowMs);

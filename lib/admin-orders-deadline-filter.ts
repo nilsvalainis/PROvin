@@ -2,7 +2,7 @@
  * Pasūtījumu saraksts pēc termiņa (?termins=nokavets | steidzams), lai pieskāriens sarkanajam skaitlim
  * uzreiz atver tikos pasūtījumus. Tikai neizpildītie.
  */
-import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
+import { formatAuditDeadlineRemaining, isAdminOrderInactive } from "@/lib/admin-audit-deadline";
 
 export type AdminOrdersDeadlineFilter = "overdue" | "urgent";
 
@@ -25,11 +25,11 @@ export function adminOrdersDeadlineFilterLabel(f: AdminOrdersDeadlineFilter): st
 
 /** "steidzams" ietver arī nokavētos: abiem jāpievēršas tagad. */
 export function matchesAdminOrdersDeadlineFilter(
-  o: { created: number; deadlineFromUnix?: number | null; auditComplete?: boolean; isB2bPack?: boolean },
+  o: { created: number; deadlineFromUnix?: number | null; auditComplete?: boolean; isB2bPack?: boolean; fullyReversed?: boolean },
   f: AdminOrdersDeadlineFilter,
   nowMs: number,
 ): boolean {
-  if (o.auditComplete || o.isB2bPack) return false;
+  if (isAdminOrderInactive(o)) return false;
   const { status } = formatAuditDeadlineRemaining(o.deadlineFromUnix ?? o.created, nowMs);
   return f === "overdue" ? status === "overdue" : status === "overdue" || status === "urgent";
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { PdQuestionTag, PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
+import { PdCarConflictTag, PdQuestionTag, PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { deleteIrissPdRequest, usePdCopyLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import {
   countIrissPdByStatus,
@@ -312,6 +312,7 @@ export function PiedavajumiList({
                   <span className="pd-chips">
                     <PdStatusChip status={status} />
                     <PdQuestionTag count={row.openQuestions} />
+                    <PdCarConflictTag on={row.carConflict} />
                   </span>
                   <span>
                     <RowAction
@@ -340,6 +341,7 @@ export function PiedavajumiList({
                     <span className="pd-chips">
                       <PdStatusChip status={status} />
                       <PdQuestionTag count={row.openQuestions} />
+                    <PdCarConflictTag on={row.carConflict} />
                     </span>
                     {staff ? (scope === "all" ? <Creator row={row} viewerId={viewer.id} /> : null) : <span className="pd-src">{IRISS_PD_SOURCE_LV[row.source]}</span>}
                   </div>

@@ -4,6 +4,8 @@
  * localStorage — tikai īslaicīgs UX kešs / migrācija no vecās versijas.
  */
 
+import { isAdminOrderInactive } from "@/lib/admin-audit-deadline";
+
 export const ADMIN_AUDIT_COMPLETE_STORAGE_KEY = "provin-admin-audit-complete-v1";
 
 export function parseAuditCompleteIds(raw: string | null): Set<string> {
@@ -55,11 +57,11 @@ export function setAuditCompleteInLocalCache(
 
 /** Neizpildītie (nav „Izpildīts”) vispirms; katrā grupā jaunākie augšā. Piepirkums lieto activityUnix. */
 export function sortAdminOrdersIncompleteFirst<
-  T extends { created: number; activityUnix?: number; auditComplete?: boolean; isB2bPack?: boolean },
+  T extends { created: number; activityUnix?: number; auditComplete?: boolean; isB2bPack?: boolean; fullyReversed?: boolean },
 >(rows: T[]): T[] {
   return [...rows].sort((a, b) => {
-    const aDone = a.auditComplete || a.isB2bPack ? 1 : 0;
-    const bDone = b.auditComplete || b.isB2bPack ? 1 : 0;
+    const aDone = isAdminOrderInactive(a) ? 1 : 0;
+    const bDone = isAdminOrderInactive(b) ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
     const aAt = a.activityUnix ?? a.created;
     const bAt = b.activityUnix ?? b.created;
@@ -80,11 +82,12 @@ export function partitionAdminOrdersActiveFirst<
     activityUnix?: number;
     auditComplete?: boolean;
     isB2bPack?: boolean;
+    fullyReversed?: boolean;
   },
 >(rows: T[]): { active: T[]; done: T[] } {
   const active: T[] = [];
   const done: T[] = [];
-  for (const r of rows) (r.auditComplete || r.isB2bPack ? done : active).push(r);
+  for (const r of rows) (isAdminOrderInactive(r) ? done : active).push(r);
   const arrivedAt = (r: T) => r.activityUnix ?? r.created;
   active.sort((a, b) => arrivedAt(b) - arrivedAt(a));
   return { active, done };

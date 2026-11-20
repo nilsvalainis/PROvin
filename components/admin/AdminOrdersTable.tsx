@@ -42,7 +42,7 @@ import {
   type AdminMobileDeadlineTag,
 } from "@/lib/admin-mobile-ds";
 import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
-import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
+import { formatAuditDeadlineRemaining, isAdminOrderInactive } from "@/lib/admin-audit-deadline";
 import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
 import {
   ADMIN_ORDERS_DEADLINE_PARAM,
@@ -831,7 +831,7 @@ export function AdminOrdersTable({
     let urgentCount = 0;
     let overdueCount = 0;
     for (const o of displayedOrders) {
-      if (o.auditComplete || o.isB2bPack) continue;
+      if (isAdminOrderInactive(o)) continue;
       const status = formatAuditDeadlineRemaining(o.deadlineFromUnix ?? o.created).status;
       if (status === "overdue") overdueCount++;
       else if (status === "urgent") urgentCount++;
@@ -977,7 +977,7 @@ export function AdminOrdersTable({
           const tone = adminOrderCardTone({
             createdUnix: o.created,
             nowMs: nowMs ?? Date.now(),
-            complete: Boolean(o.auditComplete),
+            complete: Boolean(o.auditComplete) || Boolean(o.fullyReversed),
             isPack: v.isPack,
             partnerHighlight: v.partnerHighlight,
             dealerHighlight: v.dealerHighlight,
@@ -1082,10 +1082,14 @@ export function AdminOrdersTable({
                 </p>
                 {v.isPack ? null : (
                   <AdminOrderDeadlineTag
-                    tag={formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
-                      complete: Boolean(o.auditComplete),
-                      nowMs: nowMs ?? undefined,
-                    })}
+                    tag={
+                      o.fullyReversed
+                        ? { label: o.paymentAdjustmentLabel || "Atmaksāts", tone: "done" }
+                        : formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
+                            complete: Boolean(o.auditComplete),
+                            nowMs: nowMs ?? undefined,
+                          })
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
                       setCardMenuId(o.id);
@@ -1293,6 +1297,10 @@ export function AdminOrdersTable({
                   <td className={`${hug} py-1 pl-4 pr-4`}>
                     {isPack ? (
                       <span className="text-[#c7c7cc]">-</span>
+                    ) : o.fullyReversed ? (
+                      <span className="text-[12.5px] text-[#aeaeb2]" title="Pilnībā atmaksāts vai zaudēts strīds - termiņš neskaitās">
+                        {o.paymentAdjustmentLabel || "Atmaksāts"}
+                      </span>
                     ) : (
                       <AdminAuditDeadlineCell
                         sessionId={o.id}

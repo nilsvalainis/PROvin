@@ -74,6 +74,7 @@ import {
   type IrissPiedavajums,
 } from "@/lib/iriss-piedavajumi-types";
 import { formatOfferValidUntilLv } from "@/lib/iriss-offer-valid-until";
+import { irissPdCarConflictText, irissPdSourceCarWarning } from "@/lib/iriss-offer-car-conflict";
 
 /**
  * j75: Piedāvājuma redaktors pēc maketa 01-redaktors (26.10). Viena kolonna, bez cilnēm, modāļiem un akordeoniem:
@@ -243,6 +244,7 @@ export function PiedavajumsDetail({
   note,
   staff = false,
   readOnly = false,
+  sourceCarStatus = "",
 }: {
   initial: IrissPiedavajums;
   clientOptions: IrissPdClientOption[];
@@ -251,6 +253,8 @@ export function PiedavajumsDetail({
   staff?: boolean;
   /** P4: cita veidots PD darbiniekam - tikai skatīt. */
   readOnly?: boolean;
+  /** Audits 20.11: Autoparka avota auto statuss (tukšs - nav Autoparka avota). */
+  sourceCarStatus?: string;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState(initial);
@@ -280,6 +284,8 @@ export function PiedavajumsDetail({
   const merged: IrissPiedavajums = { ...rec, ...d };
   const actions = irissPdAvailableActions(rec.status);
   const blockers = irissPdSendBlockers(merged, Date.now());
+  // Audits 20.11: auto jau «Rezervēts»/«Pārdots» - brīdinājums pirms sūtīšanas (nebloķē); pēc apstiprinājuma - no vēstures.
+  const carWarning = irissPdSourceCarWarning(rec.status, sourceCarStatus) || irissPdCarConflictText(rec.history);
   const label = irissPdNumberLabel(rec.number);
   const margin = irissPdMargin(d.price, d.purchasePrice, d.logisticsCost, d.prepCost);
   const brief = useMemo(() => irissPdAuto1Brief(rec.auto1), [rec.auto1]);
@@ -622,7 +628,7 @@ export function PiedavajumsDetail({
                 Kopēt saiti
               </button>
             ) : readOnly ? null : actions.includes("send") ? (
-              <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ")} onClick={() => void act("send")}>
+              <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ") || carWarning} onClick={() => void act("send")}>
                 {IRISS_PD_MARK_SENT_LV}
               </button>
             ) : null}
@@ -711,6 +717,11 @@ export function PiedavajumsDetail({
           </p>
         ) : null}
         {editable && blockers.length && actions.includes("send") ? <p className="pd-hint">Lai nosūtītu: {blockers.join(" ")}</p> : null}
+        {carWarning ? (
+          <p className="pd-err" role="alert" data-pd-car-warning="">
+            {carWarning}
+          </p>
+        ) : null}
 
         {showImport ? <PdImportPanel id={rec.id} onDone={applyRecord} /> : null}
 

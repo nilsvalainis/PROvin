@@ -6,6 +6,7 @@ import "server-only";
  */
 
 import { sendAdminPush } from "@/lib/admin-push";
+import { irissOfferCarConflictPushMessage, type IrissOfferCarReserveOutcome } from "@/lib/iriss-offer-car-conflict";
 import { getSiteOrigin } from "@/lib/email/mail-config";
 import { sendAdminIrissOfferDecisionEmail, sendAdminIrissOfferQuestionEmail } from "@/lib/email/send-transactional";
 import { irissOfferTotalLabel } from "@/lib/iriss-offer-client-link";
@@ -86,6 +87,19 @@ export async function notifyIrissOfferExpired(facts: IrissOfferNotifyFacts): Pro
     return (await sendAdminPush(irissOfferExpiredPushMessage(facts), IRISS_OFFER_PUSH_USER_KEY)).sent;
   } catch (e) {
     console.error("[iriss-offer-notify] expired push", e instanceof Error ? e.message : e);
+    return 0;
+  }
+}
+
+/** Audits 20.11: klients apstiprināja, bet Autoparka auto jau rezervēts/pārdots - tikai push adminam (bez e-pasta klientam). */
+export async function notifyIrissOfferCarConflict(
+  facts: { offerId: string; vehicle: string; vin: string; adminPath: string },
+  outcome: IrissOfferCarReserveOutcome,
+): Promise<number> {
+  try {
+    return (await sendAdminPush(irissOfferCarConflictPushMessage(facts, outcome), IRISS_OFFER_PUSH_USER_KEY)).sent;
+  } catch (e) {
+    console.error("[iriss-offer-notify] car conflict push", e instanceof Error ? e.message : e);
     return 0;
   }
 }

@@ -68,3 +68,19 @@ describe("buildProvinAuditPdfFilename", () => {
     expect(buildProvinAuditPdfFilename(null, { checkoutLine: "mini" })).toBe("PROVIN_MINI_NAV_VIN.pdf");
   });
 });
+
+describe("produkts un valoda serverī (audits 20.11)", () => {
+  it("Business un Dīlera dati pēc līnijas", () => {
+    expect(resolveProvinAuditPdfProductBrand({ checkoutLine: "business" })).toBe("PROVIN_BUSINESS");
+    expect(resolveProvinAuditPdfProductBrand({ checkoutLine: "dealer" })).toBe("PROVIN_DILERIS");
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "business" })).toBe("PROVIN_BUSINESS_WVWZZZ1JZXW000001.pdf");
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "dealer" })).toBe("OFICIALA_DILERA_DATI_WVWZZZ1JZXW000001.pdf");
+  });
+
+  it("valodas galotne kā UI", () => {
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "business", lang: "en" })).toBe("PROVIN_BUSINESS_WVWZZZ1JZXW000001_EN.pdf");
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "dealer", lang: "ru" })).toBe("OFICIALA_DILERA_DATI_WVWZZZ1JZXW000001_RU.pdf");
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "audit", lang: "de" })).toBe("PROVIN_AUDITS_WVWZZZ1JZXW000001_DE.pdf");
+    expect(buildProvinAuditPdfFilename("WVWZZZ1JZXW000001", { checkoutLine: "mini", lang: "lv" })).toBe("PROVIN_MINI_WVWZZZ1JZXW000001.pdf");
+  });
+});

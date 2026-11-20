@@ -1,4 +1,5 @@
-import { auditDeadlineMs, formatAuditDeadlineRemaining, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import { auditDeadlineMs, formatAuditDeadlineRemaining, isAdminOrderInactive, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import { paidProductLabel } from "@/lib/admin-customer-identity";
 import type { CostAlert } from "@/lib/admin-costs";
 import { rigaCalendarDayKey } from "@/lib/admin-riga-calendar";
 import {
@@ -14,6 +15,11 @@ export type MorningSummaryOrderInput = {
   deadlineFromUnix?: number | null;
   auditComplete?: boolean;
   isB2bPack?: boolean;
+  /** Audits 20.11: pilnībā atmaksāts vai zaudēts strīds - nav aktīvs. */
+  fullyReversed?: boolean;
+  /** Produkta noteikšanai (MINI / AUDITS / Business / Dīleris). */
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
   makeModel?: string | null;
   vin?: string | null;
   customerName?: string | null;
@@ -38,6 +44,8 @@ export type MorningQueueItem = {
   href: string;
   title: string;
   subtitle: string;
+  /** Auditiem: produkts (MINI / AUDITS / Business / Dīleris); tukšs, ja nav zināms. */
+  product?: string;
   deadlineStatus: AuditDeadlineStatus | null;
   deadlineLabel: string | null;
   dueToday: boolean;
@@ -112,7 +120,17 @@ export function morningPeekTitle(peek: MorningSummaryPeekInput): string {
 }
 
 function isActiveAudit(order: MorningSummaryOrderInput): boolean {
-  return !order.auditComplete && !order.isB2bPack;
+  return !isAdminOrderInactive(order);
+}
+
+/** Īss produkta nosaukums rīta kopsavilkuma rindā (audits 20.11). */
+export function morningProductLabel(order: Pick<MorningSummaryOrderInput, "checkoutLine" | "amountTotalCents">): string {
+  const full = paidProductLabel({ checkoutLine: order.checkoutLine, amountTotalCents: order.amountTotalCents });
+  if (full === "PROVIN MINI") return "MINI";
+  if (full === "PROVIN AUDITS") return "AUDITS";
+  if (full === "PROVIN BUSINESS") return "Business";
+  if (full === "Dīlera dati") return "Dīleris";
+  return "";
 }
 
 function deadlineUnix(order: MorningSummaryOrderInput): number {
@@ -136,12 +154,14 @@ function toAuditItem(order: MorningSummaryOrderInput, nowMs: number): MorningQue
   const sla = formatAuditDeadlineRemaining(deadlineUnix(order), nowMs);
   const email = (order.customerEmail ?? "").trim();
   const vin = (order.vin ?? "").trim();
+  const product = morningProductLabel(order);
   return {
     kind: "audit",
     id: order.id,
     href: `/admin/orders/${encodeURIComponent(order.id)}`,
     title: morningAuditTitle(order),
-    subtitle: [vin && vin !== morningAuditTitle(order) ? vin : "", email].filter(Boolean).join(" · "),
+    subtitle: [product, vin && vin !== morningAuditTitle(order) ? vin : "", email].filter(Boolean).join(" · "),
+    ...(product ? { product } : {}),
     deadlineStatus: sla.status,
     deadlineLabel: sla.label,
     dueToday: isAuditDueToday(order, nowMs),

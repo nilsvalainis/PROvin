@@ -53,6 +53,7 @@ import { irissPdOpenQuestionCount, irissPdPublicQuestions, normalizeIrissPdMessa
 import { formatIrissEurWhole, parsePriceLike } from "@/lib/iriss-price-format";
 import { irissPdListPrice } from "@/lib/iriss-piedavajumi-list-display";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil, rigaLocalToUtcIso } from "@/lib/iriss-offer-valid-until";
+import { irissPdCarConflictText } from "@/lib/iriss-offer-car-conflict";
 import {
   buildIrissOfferClientLinkMailto,
   buildIrissOfferClientLinkWhatsAppUrl,
@@ -655,6 +656,7 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     cover: rec.photos[0] ?? null,
     updatedAt: rec.updatedAt,
     openQuestions: irissPdOpenQuestionCount(rec.messages),
+    ...(irissPdCarConflictText(rec.history) ? { carConflict: true } : {}),
     createdById: rec.createdById,
     createdByName: rec.createdByName,
   };
@@ -684,6 +686,7 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     cover,
     updatedAt: clean(o.updatedAt, 40),
     openQuestions: typeof o.openQuestions === "number" && Number.isFinite(o.openQuestions) ? Math.max(0, Math.min(999, Math.floor(o.openQuestions))) : 0,
+    ...(o.carConflict === true ? { carConflict: true } : {}),
     ...(typeof o.createdById === "string" ? { createdById: clean(o.createdById, 80) } : {}),
     ...(typeof o.createdByName === "string" ? { createdByName: clean(o.createdByName, 120) } : {}),
   };

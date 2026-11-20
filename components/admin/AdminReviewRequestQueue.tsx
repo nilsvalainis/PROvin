@@ -53,6 +53,7 @@ export function AdminReviewRequestQueue({
       .filter(
         (o) =>
           o.auditComplete &&
+          !o.fullyReversed &&
           !o.isB2bPack &&
           !o.isB2bTopup &&
           !o.isDemo &&

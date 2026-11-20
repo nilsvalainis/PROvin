@@ -1,4 +1,4 @@
-import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
+import { formatAuditDeadlineRemaining, isAdminOrderInactive } from "@/lib/admin-audit-deadline";
 import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 
 /** PRO sākuma flīze: aktīvo skaits, kavētie un tuvākā VĒL NEKAVĒTĀ termiņa sākuma laiks (unix s). */
@@ -24,6 +24,7 @@ type Row = {
   deadlineFromUnix?: number | null;
   auditComplete?: boolean;
   isB2bPack?: boolean;
+  fullyReversed?: boolean;
   checkoutLine?: string | null;
   amountTotalCents?: number | null;
 };
@@ -45,7 +46,7 @@ export function summarizeProHome(rows: readonly Row[], nowMs: number): ProHomeSu
       out.today.revenueCents += r.amountTotalCents;
       out.today.count += 1;
     }
-    if (r.auditComplete || r.isB2bPack) continue;
+    if (isAdminOrderInactive(r)) continue;
     const tile = isDealerHighlightAdminOrder({ checkoutLine: r.checkoutLine, amountTotalCents: r.amountTotalCents }) ? out.dealers : out.orders;
     const from = r.deadlineFromUnix ?? r.created;
     tile.count += 1;

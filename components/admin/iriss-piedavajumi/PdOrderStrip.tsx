@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
+import { PdCarConflictTag, PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { formatIrissPdPrice, irissPdRowEffectiveStatus } from "@/lib/iriss-piedavajumi";
 import { irissPdNumberLabel, type IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 
@@ -19,7 +19,10 @@ export function PdOrderStrip({ rows, nowMs }: { rows: IrissPdListRow[]; nowMs: n
               {irissPdNumberLabel(r.number)} · {r.title || "Auto"}
               {r.price ? ` · ${formatIrissPdPrice(r.price)}` : ""}
             </span>
-            <PdStatusChip status={irissPdRowEffectiveStatus(r, nowMs)} />
+            <span className="pd-chips">
+              <PdStatusChip status={irissPdRowEffectiveStatus(r, nowMs)} />
+              <PdCarConflictTag on={r.carConflict} />
+            </span>
           </Link>
         ))}
       </div>
