@@ -15,6 +15,7 @@ import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@
 import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 import {
   displayIrissPasutijumsListStatusLabel,
+  IRISS_ORDER_STAGE_LV,
   type IrissGeneratedDocument,
   type IrissOfferRecord,
   type IrissPasutijumsRecord,
@@ -222,7 +223,10 @@ export function deriveIrissCommunicationTimeline(input: {
         at: entry.at,
         kind: "status",
         title: applyProvinHumanDashes(
-          `${displayIrissPasutijumsListStatusLabel(entry.from)} -> ${displayIrissPasutijumsListStatusLabel(entry.to)}`,
+          // P5: posma maiņa ar roku - rāda posmu (piem. «Rezervēts -> Ceļā»).
+          entry.stage
+            ? `${displayIrissPasutijumsListStatusLabel(entry.from)} -> ${IRISS_ORDER_STAGE_LV[entry.stage]}`
+            : `${displayIrissPasutijumsListStatusLabel(entry.from)} -> ${displayIrissPasutijumsListStatusLabel(entry.to)}`,
         ),
         body: entry.reason,
         status: "logged",

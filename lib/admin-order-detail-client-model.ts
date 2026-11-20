@@ -30,7 +30,7 @@ function attachmentList(v: unknown): { label: string; fileName: string }[] {
     .filter((x): x is { label: string; fileName: string } => x != null);
 }
 
-function paymentAdjustmentFields(raw: unknown): { paymentAdjustmentLabel?: string; invoiceNeedsCreditNote?: true } {
+function paymentAdjustmentFields(raw: unknown): { paymentAdjustmentLabel?: string; invoiceNeedsCreditNote?: true; fullyReversed?: true } {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
   const label = str(o.label).trim();
@@ -38,6 +38,7 @@ function paymentAdjustmentFields(raw: unknown): { paymentAdjustmentLabel?: strin
   return {
     paymentAdjustmentLabel: label,
     ...(o.invoiceNeedsCreditNote === true ? { invoiceNeedsCreditNote: true as const } : {}),
+    ...(o.fullyReversed === true ? { fullyReversed: true as const } : {}),
   };
 }
 

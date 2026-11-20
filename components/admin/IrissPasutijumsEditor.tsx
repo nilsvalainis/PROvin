@@ -52,6 +52,7 @@ import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
+import { applyIrissOrderStage } from "@/lib/iriss-order-stage";
 import {
   irissDraftFieldLabel,
   takeIrissDraftHandoff,
@@ -69,7 +70,6 @@ import {
   type IrissOrderSpecTextKey,
 } from "@/lib/iriss-order-range-fields";
 import {
-  appendIrissStatusHistory,
   applyIrissFieldEdit,
   irissRequiredFieldWarnings,
   isIrissRecordDeleted,
@@ -108,7 +108,8 @@ import {
   type IrissGeneratedDocument,
   type IrissOfferAttachment,
   type IrissOfferRecord,
-  type IrissPasutijumsListStatus,
+  type IrissOrderStage,
+  type IrissOrderStageSignals,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
@@ -336,6 +337,7 @@ export function IrissPasutijumsEditor({
   pdEntry = true,
   pdRows,
   pdCommEvents,
+  stageSignals = null,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -362,6 +364,8 @@ export function IrissPasutijumsEditor({
   pdRows?: IrissPdListRow[];
   /** Nils 20.11 (audits 4): PD notikumi «Komunikācija» laika joslā. */
   pdCommEvents?: IrissCommunicationEvent[];
+  /** P5: PD/Autoparka signāli posmam (aprēķina lapa). */
+  stageSignals?: IrissOrderStageSignals | null;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -441,12 +445,12 @@ export function IrissPasutijumsEditor({
     setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, p, Date.now())));
   }, []);
 
-  const setListStatus = useCallback((status: IrissPasutijumsListStatus) => {
+  const setStage = useCallback((stage: IrissOrderStage) => {
     setRec((r) =>
       withAutoEcarstradeLinks(
-        appendIrissStatusHistory(r, status, {
+        applyIrissOrderStage(r, stage, {
           at: new Date().toISOString(),
-          reason: status === "inactive" ? r.inactiveReason : undefined,
+          reason: stage === "inactive" ? r.inactiveReason : undefined,
         }),
       ),
     );
@@ -2272,7 +2276,8 @@ export function IrissPasutijumsEditor({
           onPatchRange={patchRange}
           onPatchRecord={patchRecord}
           onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
-          onSetStatus={setListStatus}
+          onSetStage={setStage}
+          stageSignals={stageSignals}
           onSave={saveCurrentPage}
           onSaveCriteria={saveCriteria}
           onPdf={() => void openPdf()}

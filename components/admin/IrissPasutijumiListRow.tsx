@@ -25,11 +25,8 @@ import {
 } from "@/lib/iriss-pasutijumi-list-view";
 import { whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import { irissPhoneTelHref } from "@/lib/iriss-pasutijumi-list-row";
-import {
-  displayIrissPasutijumsListStatusLabel,
-  type IrissPasutijumsListRow,
-  type IrissPasutijumsListStatus,
-} from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGE_LV, type IrissOrderStage, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+import { irissListRowStage, irissListRowStageHint } from "@/lib/iriss-order-stage";
 import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 
 const SWIPE_ACTION_BLOCK_WIDTH = 72;
@@ -72,7 +69,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   newHits: number;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
-  onSetStatus: (id: string, status: IrissPasutijumsListStatus) => void;
+  onSetStatus: (id: string, stage: IrissOrderStage) => void;
   onRestore?: (id: string) => void;
   onAskStatus?: (id: string) => void;
   actionBusy: string | null;
@@ -105,7 +102,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   const specBrief = formatIrissListSpecBrief(row);
   const isPinned = Boolean(row.pinnedAt);
   const statusBusy = actionBusy === row.id;
-  const curStatus = row.listStatus ?? "active";
+  const curStatus = irissListRowStage(row);
+  const stageHint = irissListRowStageHint(row);
   const client = formatIrissListClientLine(row);
   const telHref = irissPhoneTelHref(row.phone);
   const waDigits = irissPhoneWhatsAppDigits(row.phone);
@@ -209,7 +207,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       aria-haspopup="menu"
       aria-expanded={statusMenuOpen}
     >
-      {displayIrissPasutijumsListStatusLabel(curStatus)}
+      {IRISS_ORDER_STAGE_LV[curStatus]}
       <ChevronDown className="h-3.5 w-3.5 opacity-55" aria-hidden />
     </button>
   );
@@ -362,6 +360,9 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
           {specBrief ? (
             <span className="mt-0.5 block text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2 md:truncate">{specBrief}</span>
           ) : null}
+          {stageHint ? (
+            <span className="iriss-pas-stage-hint mt-0.5 block truncate text-[12px] font-medium leading-snug text-[var(--ink2)]">{stageHint}</span>
+          ) : null}
           <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] leading-snug text-[var(--ink2)] md:hidden">
             <span className="min-w-0 break-words">{client.name}</span>
             {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
@@ -407,7 +408,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       anchorRef={statusBtnRef}
       align="end"
       minWidth={136}
-      estimatedHeight={168}
+      estimatedHeight={248}
     >
       <IrissPasutijumiStatusMenuItems
         currentStatus={curStatus}

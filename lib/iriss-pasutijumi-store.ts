@@ -680,6 +680,9 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
         16,
       ),
       hasExpiredOffer: Boolean(o.hasExpiredOffer),
+      // P5: trūkstošs lauks (vecs indekss) paliek undefined - `listIrissPasutijumi` indeksu pārbūvē.
+      ...(typeof o.dealWorkflowStatus === "string" ? { dealWorkflowStatus: sanitizeDraftTextForStorage(o.dealWorkflowStatus, 32) } : {}),
+      ...(typeof o.advancePaidAt === "string" ? { advancePaidAt: sanitizeDraftTextForStorage(o.advancePaidAt, 16) } : {}),
     });
   }
   return rows;
@@ -796,6 +799,8 @@ export async function listIrissPasutijumi(opts?: { includeDeleted?: boolean }): 
   }
 
   let rows = await readListRowsIndex(r);
+  // P5: indekss pirms posmu laukiem (nav `dealWorkflowStatus`) - vienreiz pārbūvē no ierakstiem (ieraksti netiek rakstīti).
+  if (rows && rows.some((row) => row.dealWorkflowStatus === undefined)) rows = null;
   if (!rows) {
     rows = await rebuildListRowsFromRecords(r);
     try {

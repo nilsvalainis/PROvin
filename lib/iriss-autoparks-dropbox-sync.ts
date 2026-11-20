@@ -131,7 +131,8 @@ export function carForStockFolder(
 
 type PlannedCarChange = {
   carId: string;
-  link: { id: string; path: string } | null;
+  /** `replaces` - tukšās mapes id, ko drīkst aizstāt (tikai, ja auto joprojām piesaistīts tieši tai). */
+  link: { id: string; path: string; replaces?: { id: string; path: string } } | null;
   fill: AutoparksFillable;
   addFiles: AutoparksFile[];
   removeDropboxIds: string[];
@@ -243,10 +244,20 @@ export function applyPlannedChanges(state: AutoparksState, plans: readonly Plann
     if (idx < 0) continue;
     const car = { ...state.cars[idx]! };
     let changed = false;
-    if (p.link && (!car.dropboxFolderId || car.dropboxFolderId === p.link.id)) {
+    const relink = Boolean(p.link?.replaces && car.dropboxFolderId && car.dropboxFolderId === p.link.replaces.id && car.dropboxFolderId !== p.link.id);
+    if (p.link && (!car.dropboxFolderId || car.dropboxFolderId === p.link.id || relink)) {
       if (!car.dropboxFolderId) {
         out.linked += 1;
         state.events.push({ id: `ae-${randomUUID()}`, carId: car.id, at: now, actorName: SYNC_ACTOR, text: `Sasaistīts ar Dropbox mapi "${p.link.path.split("/").pop()}"` });
+      } else if (relink) {
+        out.linked += 1;
+        state.events.push({
+          id: `ae-${randomUUID()}`,
+          carId: car.id,
+          at: now,
+          actorName: SYNC_ACTOR,
+          text: `Dropbox mape pārpiesaistīta: tukšā "${p.link.replaces!.path.split("/").pop()}" -> "${p.link.path.split("/").pop()}"`,
+        });
       }
       car.dropboxFolderId = p.link.id;
       car.dropboxFolderPath = p.link.path;
@@ -383,7 +394,8 @@ export async function linkAutoparksCarToDropbox(carId: string, opts: { create?: 
     // VIN, kas labots tikai Pamatdati UI (v2.fields.vin, sk. j30), der esošas mapes atrašanai, bet mapi pēc tā neveidojam.
     const create = opts.create !== false && Boolean(vinTail(car.vin));
     const vin = car.vin.trim() || eff.vin.trim();
-    const folder = await resolveAutoparksCarFolder(client, { ...car, vin }, { create });
+    // 20.11 audits: piesaistīta tukša mape, bet ir cita ar šo VIN un failiem -> pārsaista (neko nedzēš).
+    const folder = await resolveAutoparksCarFolder(client, { ...car, vin }, { create, relinkEmpty: true });
     if (!folder) return { linked: false };
     const listing = await client.listAll(folder.path, { recursive: false });
     const meta = await client.getMetadata(folder.id);
@@ -395,7 +407,7 @@ export async function linkAutoparksCarToDropbox(carId: string, opts: { create?: 
       deleted: [],
     }, "", v2);
     const linkPlan: PlannedCarChange = plan ?? { carId, link: null, fill: {}, addFiles: [], removeDropboxIds: [] };
-    linkPlan.link = folder;
+    linkPlan.link = folder.replaces ? { id: folder.id, path: folder.path, replaces: folder.replaces } : { id: folder.id, path: folder.path };
     await mutateAutoparksState((s) => ({ result: applyPlannedChanges(s, [linkPlan]) }));
     return { linked: true, path: folder.path };
   } catch (err) {

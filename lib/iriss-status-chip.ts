@@ -12,6 +12,8 @@ export const STATUS_CHIP_TONES = [
   "reserved",
   "completed",
   "inactive",
+  "transit",
+  "sold",
   "trash",
 ] as const;
 
@@ -32,8 +34,20 @@ const CHIP_ON: Record<StatusChipTone, string> = {
   reserved: "border-violet-200 bg-violet-50 text-violet-950",
   completed: "border-emerald-200 bg-emerald-50 text-emerald-950",
   inactive: "border-rose-200 bg-rose-50 text-rose-950",
+  transit: "border-blue-400 bg-blue-50 text-blue-950",
+  sold: "border-emerald-200 bg-emerald-50 text-emerald-950",
   trash: "border-neutral-300 bg-neutral-100 text-neutral-900",
 };
+
+/** P5: posmu krāsas (makets): Meklējam pelēks, Piedāvāts zils, Rezervēts dzintara, Ceļā zils ar malu, Pārdots zaļš. */
+export const IRISS_ORDER_STAGE_TONE = {
+  searching: "active",
+  offered: "searching",
+  reserved: "offered",
+  transit: "transit",
+  sold: "sold",
+  inactive: "trash",
+} as const satisfies Record<import("@/lib/iriss-pasutijumi-types").IrissOrderStage, StatusChipTone>;
 
 export function statusChipClass(on: boolean, tone: StatusChipTone): string {
   return `${CHIP_BASE} ${on ? CHIP_ON[tone] : CHIP_OFF}`;

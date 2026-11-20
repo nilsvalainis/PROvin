@@ -5,7 +5,7 @@ import {
   type IrissOfferLinkAction,
 } from "@/lib/iriss-offer-client-link";
 import { hashIrissOfferLinkToken } from "@/lib/iriss-offer-client-link-token";
-import { openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
+import { irissOfferLinkNotCurrent, openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
 import { recordIrissOfferDecisionSummary, respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
 import { runIrissOfferDecisionEffects } from "@/lib/iriss-offer-decision-effects";
 import { irissOfferNotifyFacts, notifyIrissOfferQuestion } from "@/lib/iriss-offer-notify";
@@ -45,6 +45,8 @@ export async function POST(req: Request) {
   if (!hashRl.ok) return hidden();
   const opened = await openUsableIrissOfferLink(token);
   if (!opened) return hidden();
+  // Nils 20.11: auto pārdots citam - klients vairs nevar ne apstiprināt, ne jautāt (kā /p/d/).
+  if (await irissOfferLinkNotCurrent(opened)) return hidden();
   const result = await respondIrissOfferClientLink(
     opened.link.tokenHash,
     action as IrissOfferLinkAction,

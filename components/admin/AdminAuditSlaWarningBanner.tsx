@@ -6,12 +6,22 @@ import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadline
 export function AdminAuditSlaOrderBanner({
   createdUnixSec,
   hidden = false,
+  inactiveLabel,
 }: {
   createdUnixSec: number;
   hidden?: boolean;
+  /** 20.11 audits: atmaksāts / zaudēts strīds - termiņa vietā šis statuss (kā sarakstā). */
+  inactiveLabel?: string;
 }) {
   const tick = useAdminAuditDeadlineTick();
   void tick;
+  if (inactiveLabel) {
+    return (
+      <p className="mb-3 rounded-lg border border-slate-200/90 bg-slate-50 px-3 py-2 text-[12px] font-semibold leading-snug text-slate-700" role="status" data-testid="order-deadline-inactive">
+        {inactiveLabel}
+      </p>
+    );
+  }
   if (hidden || !Number.isFinite(createdUnixSec) || createdUnixSec <= 0) return null;
   const { label, status } = formatAuditDeadlineRemaining(createdUnixSec);
   if (status !== "urgent" && status !== "overdue") return null;

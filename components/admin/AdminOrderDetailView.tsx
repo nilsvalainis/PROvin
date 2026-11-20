@@ -138,6 +138,8 @@ export type AdminOrderDetailClientModel = {
   paymentAdjustmentLabel?: string | null;
   /** Rēķins izrakstīts pirms atmaksas/strīda: kredītrēķins vēl jāveido. */
   invoiceNeedsCreditNote?: boolean;
+  /** Pilnībā atmaksāts vai zaudēts strīds (isAdminOrderInactive) - termiņa vietā statuss. */
+  fullyReversed?: boolean;
 };
 
 type OrderEdits = {
@@ -839,7 +841,10 @@ export function AdminOrderDetailView({
         <AdminOrderUpsellPanel sessionId={order.id} placement="mini" />
       ) : null}
 
-      <AdminAuditSlaOrderBanner createdUnixSec={order.created} />
+      <AdminAuditSlaOrderBanner
+        createdUnixSec={order.created}
+        inactiveLabel={order.fullyReversed ? order.paymentAdjustmentLabel || "Atmaksāts" : undefined}
+      />
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 
       <OrderDetailWorkspace

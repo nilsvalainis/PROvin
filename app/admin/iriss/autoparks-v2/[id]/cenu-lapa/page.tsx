@@ -19,10 +19,26 @@ export default async function AutoparksV2PriceSheetPage({ params }: Props) {
   const { id } = await params;
   const found = await readAutoparksV2Car(id);
   if (!found) notFound();
+  const sheet = autoparksV2PriceSheet(found.car, found.v2, autoparksV2Basics(found.car, found.v2));
+  // 20.11 audits: tiešā saite pārdotam auto bez manuālas stāvokļa izvēles - pārdošanas lapu nedrukā.
+  if (sheet.sold) {
+    return (
+      <div className="ap2 ap2-print">
+        <div className="ap2-card" data-testid="cl-sold-page">
+          <h3>Auto pārdots</h3>
+          <p>
+            <a className="ap2-btn sm" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(id)}`}>
+              Atpakaļ uz auto
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="ap2 ap2-print">
       <PrintButton />
-      <A4Sheet s={autoparksV2PriceSheet(found.car, found.v2, autoparksV2Basics(found.car, found.v2))} />
+      <A4Sheet s={sheet} />
     </div>
   );
 }
