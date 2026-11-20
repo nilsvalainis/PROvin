@@ -7,8 +7,11 @@ import {
   autoparksStockFolderName,
   joinDropboxPath,
   matchStockFolderByVin,
+  STOCK_CAR_DATA_FILE,
+  stockCarDataVin,
+  stockFolderNameHasVinToken,
 } from "@/lib/iriss-autoparks-dropbox-path";
-import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
+import { getDropboxClient, type DropboxClient, type DropboxEntry } from "@/lib/dropbox-client";
 import { getLogisticsBinaryFile, getLogisticsOrder, putLogisticsBinaryFile } from "@/lib/iriss-logistics-store";
 
 /** `AUTOPARKS_DROPBOX=off` atslēdz Dropbox un atgriežas pie Blob (avārijas slēdzis). */
@@ -27,8 +30,37 @@ export class AutoparksFolderError extends Error {
   }
 }
 
+/** Cik mapju bez VIN nosaukumā vienā meklējumā drīkst atvērt `car-data.json` (Dropbox API zvanu griesti). */
+const CAR_DATA_SCAN_LIMIT = 25;
+
 /**
- * Auto mape Dropbox: 1) saglabātais id, 2) esoša /STOCK mape pēc VIN pēdējiem 6, 3) jauna mape pēc parauga.
+ * DE iepirkumi (20.11): IRISS mapes "Volvo XC60 DE Iepirkums" veido bez VIN astes nosaukumā, tāpēc
+ * `matchStockFolderByVin` tās neatrod - auto palika bez mapes (vai ar jaunu tukšu mapi) un bez titulbildes.
+ * Starp mapēm, kuru nosaukumā nav VIN līdzīga vārda, nolasa `car-data.json` un salīdzina pilno VIN.
+ * Atgriež mapi tikai, ja trāpījums ir tieši viens.
+ */
+export async function findStockFolderByCarDataVin(client: DropboxClient, folders: readonly DropboxEntry[], vin: string): Promise<DropboxEntry | null> {
+  const want = vin.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (want.length !== 17) return null;
+  const pool = folders
+    .filter((f) => f.tag === "folder" && !f.name.trim().startsWith("_") && !/^arh[iī]vs/i.test(f.name.trim()) && !stockFolderNameHasVinToken(f.name))
+    .slice(0, CAR_DATA_SCAN_LIMIT);
+  const hits: DropboxEntry[] = [];
+  for (const f of pool) {
+    try {
+      const { bytes } = await client.download(joinDropboxPath(f.pathDisplay, STOCK_CAR_DATA_FILE));
+      if (bytes.length > 512 * 1024) continue;
+      if (stockCarDataVin(JSON.parse(bytes.toString("utf8"))) === want) hits.push(f);
+    } catch {
+      // nav car-data.json vai bojāts JSON - šī mape neder
+    }
+  }
+  return hits.length === 1 ? hits[0]! : null;
+}
+
+/**
+ * Auto mape Dropbox: 1) saglabātais id, 2) esoša /STOCK mape pēc VIN pēdējiem 6, 2b) mape bez VIN nosaukumā,
+ * kuras `car-data.json` satur šo VIN (DE iepirkumi), 3) jauna mape pēc parauga.
  * Saknes mapi nekad neveido - ja tās nav (piem. Dropbox app ir "App folder" tipa), metam kļūdu un paliekam pie Blob.
  */
 export async function resolveAutoparksCarFolder(
@@ -54,6 +86,8 @@ export async function resolveAutoparksCarFolder(
     return { id: f.id, path: f.pathDisplay };
   }
   if (match.kind === "ambiguous") throw new AutoparksFolderError("ambiguous");
+  const byCarData = await findStockFolderByCarDataVin(client, folders, car.vin);
+  if (byCarData) return { id: byCarData.id, path: byCarData.pathDisplay };
   if (opts.create === false) return null;
   if (!car.vin.trim() && !car.make.trim() && !car.model.trim()) throw new AutoparksFolderError("no_vin_and_no_name");
   let auction = opts.auction ?? null;

@@ -84,7 +84,9 @@ export function AutoparksV2List({
     if (!prev || prev.status === next) return;
     setStatusErr("");
     const at = new Date().toISOString();
-    setCars((cs) => cs.map((c) => (c.id === id ? { ...c, status: next, statusChangedAt: at } : c)));
+    // Nils 20.11: «Pārdots» -> arhīvā (pazūd no saraksta); no «Pārdots» uz citu -> atpakaļ sarakstā (tā pati loģika kā serverī).
+    const archived = next === "sold" ? true : prev.status === "sold" ? false : prev.archived;
+    setCars((cs) => cs.map((c) => (c.id === id ? { ...c, status: next, statusChangedAt: at, archived } : c)));
     const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(id)}/statuss`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

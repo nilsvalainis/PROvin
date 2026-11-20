@@ -98,6 +98,11 @@ export type AutoparksCar = {
   arrivedAt: string;
   /** Pēc "Pārdots": pārvietots uz arhīvu (sarakstā vairs nav, var atjaunot). Tukšs = aktīvs. */
   archivedAt: string;
+  /**
+   * Nils 20.11: "sold" - arhīvā automātiski statusa «Pārdots» dēļ (CSDD reģistrs un pavadzīmes to vēl skata,
+   * kamēr reģistrā pieņemts). Nav lauka - arhivēts ar roku (vai vecs ieraksts).
+   */
+  archiveReason?: "sold";
   /** Īpašnieks. Vecajos ierakstos lauka nav (= IRISS, sk. `autoparksOwner`). */
   owner?: AutoparksOwner;
   /** «Pasūtījums» (agrāk statuss «Pasūtījums», Nils 27.10). Tikai, ja true. */
@@ -253,6 +258,7 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     salePriceEur: numOrNull(raw.salePriceEur),
     arrivedAt: str(raw.arrivedAt, 40),
     archivedAt: str(raw.archivedAt, 40),
+    ...(raw.archiveReason === "sold" && str(raw.archivedAt, 40) ? { archiveReason: "sold" as const } : {}),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
     ...(isAutoparksOwner(raw.owner) ? { owner: raw.owner } : {}),
@@ -405,6 +411,45 @@ export function autoparksDaysInPark(car: Pick<AutoparksCar, "arrivedAt" | "creat
 export function filterAutoparksByOwner<T extends { owner?: unknown }>(rows: readonly T[], owner: unknown): T[] {
   if (!isAutoparksOwner(owner)) return [...rows];
   return rows.filter((r) => autoparksOwner(r) === owner);
+}
+
+export const AUTOPARKS_ARCHIVE_SOLD_TEXT = "Pārdots - pārcelts uz arhīvu";
+export const AUTOPARKS_ARCHIVE_RESTORED_TEXT = "Atjaunots no arhīva";
+
+/**
+ * Nils 20.11: vai auto ir arhīvā (galvenajā sarakstā nav, redzams filtrā «Arhīvs»).
+ * Atvasināts: `archivedAt` VAI statuss «Pārdots» - vecie pārdotie bez `archivedAt` tiek rādīti arhīvā, datus nemainot.
+ */
+export function autoparksCarArchived(car: Pick<AutoparksCar, "status"> & { archivedAt?: string }): boolean {
+  return Boolean(car.archivedAt) || car.status === "sold";
+}
+
+/**
+ * Arhīvā ar roku (nevis automātiski «Pārdots» dēļ): tādu auto CSDD reģistra sinhronizācija un pavadzīmes vairs neskata.
+ * Automātiski arhivētais pārdotais (`archiveReason: "sold"`) paliek pavadzīmēm, kamēr CSDD reģistrā pieņemts (#1060).
+ */
+export function autoparksCarArchivedManually(car: { archivedAt?: string; archiveReason?: string }): boolean {
+  return Boolean(car.archivedAt) && car.archiveReason !== "sold";
+}
+
+/**
+ * Nils 20.11: arhīvs pēc statusa maiņas (VIENĪGAIS noteikums visiem statusa maiņas ceļiem).
+ * - uz «Pārdots» un auto nav arhīvā -> `archivedAt` = now, `archiveReason` = "sold";
+ * - no «Pārdots» uz citu un auto ir arhīvā -> arhīvs noņemts.
+ * Atgriež jauno auto un vēstures tekstu vai null (nekas nav jāmaina).
+ */
+export function autoparksArchiveOnStatusChange<C extends Pick<AutoparksCar, "status" | "archivedAt" | "archiveReason">>(
+  prev: C,
+  next: AutoparksStatus,
+  now: string,
+): { car: C; text: string } | null {
+  if (next === prev.status) return null;
+  if (next === "sold" && !prev.archivedAt) return { car: { ...prev, archivedAt: now, archiveReason: "sold" }, text: AUTOPARKS_ARCHIVE_SOLD_TEXT };
+  if (prev.status === "sold" && prev.archivedAt) {
+    const { archiveReason: _drop, ...rest } = prev;
+    return { car: { ...(rest as C), archivedAt: "" }, text: AUTOPARKS_ARCHIVE_RESTORED_TEXT };
+  }
+  return null;
 }
 
 /** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */

@@ -106,3 +106,32 @@ export function isInsideDropboxFolder(path: string, folder: string): boolean {
   const f = folder.toLowerCase().replace(/\/+$/, "");
   return p.startsWith(`${f}/`);
 }
+
+/** IRISS aģenta `car-data.json` (DE iepirkumu mapēs) - fails, no kura nolasa VIN, ja mapes nosaukumā tā nav. */
+export const STOCK_CAR_DATA_FILE = "car-data.json";
+
+const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
+
+/**
+ * VIN no `car-data.json` satura (`fields.VIN.value`, `fields.vin.value`, `vin`, `VIN`). Tukšs, ja nav derīga 17 zīmju VIN.
+ * DE iepirkumu mapes ("Volvo XC60 DE Iepirkums") IRISS veido bez VIN astes nosaukumā - tad VIN ir tikai šajā failā.
+ */
+export function stockCarDataVin(raw: unknown): string {
+  if (!raw || typeof raw !== "object") return "";
+  const o = raw as Record<string, unknown>;
+  const fields = o.fields && typeof o.fields === "object" ? (o.fields as Record<string, unknown>) : {};
+  const pick = (v: unknown): string => {
+    const s = typeof v === "string" ? v : v && typeof v === "object" && typeof (v as { value?: unknown }).value === "string" ? (v as { value: string }).value : "";
+    const clean = s.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return VIN_RE.test(clean) ? clean : "";
+  };
+  return pick(fields.VIN) || pick(fields.vin) || pick(o.VIN) || pick(o.vin);
+}
+
+/**
+ * Vai mapes nosaukumā jau ir kāds VIN astei līdzīgs vārds (6 zīmes ar ciparu vai pilns VIN). Tādām mapēm
+ * `car-data.json` nelasām - sasaiste pēc nosaukuma (`matchStockFolderByVin`) tām jau strādā.
+ */
+export function stockFolderNameHasVinToken(name: string): boolean {
+  return tokens(name).some((t) => (t.length === 6 && /\d/.test(t)) || VIN_RE.test(t));
+}

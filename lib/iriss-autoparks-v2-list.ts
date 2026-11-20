@@ -5,7 +5,7 @@
  * Izņēmums (Nils 27.10, kārtošana): iegādes summa rindā ir TIKAI ar tiesību «summas» (serveris to citādi nesūta).
  */
 
-import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
+import { autoparksCarArchived, autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { isTransitWithoutLogistics } from "@/lib/iriss-autoparks-transit";
 import { priceSheetState } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, v2RegistryStatus, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
@@ -75,7 +75,7 @@ export function sortAutoparksV2Rows(rows: readonly AutoparksV2ListRow[], sort: A
 }
 
 function listPriceSheetState(car: AutoparksCar, carV2: ReturnType<typeof carV2Of>): "" | "soon" | "reserved" {
-  if (car.archivedAt || car.status === "sold") return "";
+  if (autoparksCarArchived(car)) return "";
   const st = priceSheetState(car, carV2);
   return st === "normal" ? "" : st;
 }
@@ -96,7 +96,8 @@ export function autoparksV2ListRows(
       vin: carV2.fields.vin || car.vin,
       status: car.status,
       owner: autoparksOwner(car),
-      archived: Boolean(car.archivedAt),
+      // Nils 20.11: «Pārdots» = arhīvā (arī vecie pārdotie bez archivedAt - atvasināti, datus nemainot).
+      archived: autoparksCarArchived(car),
       hasPhoto: Boolean(carV2.mainPhoto?.thumbBlobPath),
       statusChangedAt: car.statusChangedAt || car.updatedAt || car.createdAt,
       make: (carV2.fields.make || car.make || "").trim(),

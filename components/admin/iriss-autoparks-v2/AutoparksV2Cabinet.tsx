@@ -94,7 +94,7 @@ export function AutoparksV2Cabinet({
     if (s === basics.status) return;
     setStatusErr("");
     const prev = basics;
-    setBasics({ ...basics, status: s, statusLabel: AUTOPARKS_STATUS_LV[s] });
+    setBasics({ ...basics, status: s, statusLabel: AUTOPARKS_STATUS_LV[s], archived: archivedAfterStatus(basics, s) });
     const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}/statuss`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -119,7 +119,8 @@ export function AutoparksV2Cabinet({
       body: JSON.stringify({ undo: t.historyId }),
     }).catch(() => null);
     const data = (await res?.json().catch(() => null)) as { status?: AutoparksStatus } | null;
-    if (res?.ok && data?.status) setBasics((b) => ({ ...b, status: data.status!, statusLabel: AUTOPARKS_STATUS_LV[data.status!] }));
+    if (res?.ok && data?.status)
+      setBasics((b) => ({ ...b, status: data.status!, statusLabel: AUTOPARKS_STATUS_LV[data.status!], archived: archivedAfterStatus(b, data.status!) }));
     else setStatusErr("Atsaukt vairs nevar - statuss jau mainīts");
   }
 
@@ -240,6 +241,7 @@ export function AutoparksV2Cabinet({
           </div>
           <div className="ap2-pd-bottom">
             {desktop ? null : <AutoparksV2Csdd basics={basics} fresh={registryFresh} />}
+            {perms.pamatdati && basics.archived ? <RestoreFromArchiveButton basics={basics} onBasics={onBasics} /> : null}
             {perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
           </div>
         </div>
@@ -299,16 +301,63 @@ function StatusSheet({ current, onPick, onClose }: { current: AutoparksStatus; o
   );
 }
 
+/** Nils 20.11: tā pati arhīva loģika kā serverī (`autoparksArchiveOnStatusChange`) - uzreiz kabinetā. */
+function archivedAfterStatus(b: AutoparksV2Basics, next: AutoparksStatus): boolean {
+  if (next === "sold") return true;
+  if (b.status === "sold") return false;
+  return b.archived;
+}
+
+/**
+ * Nils 20.11: «Atjaunot no arhīva» (pēc apstiprinājuma). Pārdotam auto statuss -> «Pārdošanā», auto atkal sarakstā.
+ */
+export function RestoreFromArchiveButton({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function restore() {
+    const sold = basics.status === "sold";
+    const msg = sold
+      ? `Atjaunot "${basics.title}" no arhīva? Statuss «Pārdots» mainīsies uz «${AUTOPARKS_STATUS_LV.for_sale}», auto atkal būs Autoparka sarakstā.`
+      : `Atjaunot "${basics.title}" no arhīva? Auto atkal būs Autoparka sarakstā.`;
+    if (!window.confirm(msg)) return;
+    setBusy(true);
+    setErr(null);
+    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}/statuss`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restore: true }),
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) as { status?: AutoparksStatus } | null;
+    setBusy(false);
+    if (!res?.ok || !data?.status) {
+      setErr("Neizdevās atjaunot no arhīva.");
+      return;
+    }
+    onBasics({ ...basics, status: data.status, statusLabel: AUTOPARKS_STATUS_LV[data.status], archived: false });
+  }
+  return (
+    <div className="ap2-delete">
+      <button type="button" className="iriss-btn iriss-btn--secondary iriss-btn--sm" disabled={busy} onClick={() => void restore()}>
+        {busy ? "Atjauno..." : "Atjaunot no arhīva"}
+      </button>
+      {err ? <p className="ap2-err">{err}</p> : null}
+    </div>
+  );
+}
+
 /**
  * Create => delete (LAW 26.10): auto dzēšana ar visu istabu (faili, piezīmes, tāme). Tikai administrators;
  * apstiprinājums pirms dzēšanas, jo to nevar atsaukt. API tā pati, ko lietoja vecais Autoparks (v1).
  */
+/** Nils 20.11: dzēšana nav pārdošana - pārdotam auto statuss «Pārdots» (pārceļ uz arhīvu). */
+export const DELETE_CAR_CONFIRM_LV = "Dzēš neatgriezeniski ar visiem failiem. Pārdotam auto izmanto statusu «Pārdots» - tas pārceļ uz arhīvu.";
+
 export function DeleteCarButton({ carId, title }: { carId: string; title: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   async function remove() {
-    if (!window.confirm(`Dzēst "${title}" ar visiem failiem, piezīmēm un tāmi? To nevar atsaukt.`)) return;
+    if (!window.confirm(`Dzēst "${title}"? ${DELETE_CAR_CONFIRM_LV}`)) return;
     setBusy(true);
     setErr(null);
     const res = await fetch(`/api/admin/iriss-logistics/autoparks/${encodeURIComponent(carId)}`, {

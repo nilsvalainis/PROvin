@@ -3,7 +3,15 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { DropboxApiError, getDropboxClient, type DropboxClient, type DropboxEntry } from "@/lib/dropbox-client";
 import { autoparksOwner, type AutoparksCar, type AutoparksFile, type AutoparksFileKind, type AutoparksStage, type AutoparksState } from "@/lib/iriss-autoparks";
-import { autoparksDropboxRoot, matchStockFolderByVin, vinTail, type AutoparksOwner } from "@/lib/iriss-autoparks-dropbox-path";
+import {
+  autoparksDropboxRoot,
+  matchStockFolderByVin,
+  STOCK_CAR_DATA_FILE,
+  stockCarDataVin,
+  stockFolderNameHasVinToken,
+  vinTail,
+  type AutoparksOwner,
+} from "@/lib/iriss-autoparks-dropbox-path";
 import { autoparksDropboxEnabled, resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { fillAutoparksFromStock, type AutoparksFillable } from "@/lib/iriss-autoparks-info-txt";
 import { mutateAutoparksState, readAutoparksState } from "@/lib/iriss-autoparks-store";
@@ -130,6 +138,31 @@ async function readInfoTxt(client: DropboxClient, files: DropboxEntry[]): Promis
   }
 }
 
+/**
+ * DE iepirkumi (20.11): mapei bez VIN nosaukumā ("Volvo XC90 DE Iepirkums") auto atrod pēc `car-data.json` VIN -
+ * tikai nesaistītam auto ar to pašu īpašnieku un tikai, ja viennozīmīgi (VIN var būt v1 vai v2 Pamatdati laukā).
+ */
+async function carForStockCarData(client: DropboxClient, state: AutoparksState, owner: AutoparksOwner, g: FolderGroup): Promise<AutoparksCar | null> {
+  if (stockFolderNameHasVinToken(g.name)) return null;
+  const folderLower = (g.folder?.pathLower || "").replace(/\/+$/, "");
+  const dataFile = g.files.find(
+    (f) => f.name.toLowerCase() === STOCK_CAR_DATA_FILE && (!folderLower || (f.pathLower || "").toLowerCase() === `${folderLower}/${STOCK_CAR_DATA_FILE}`),
+  );
+  if (!dataFile || dataFile.size > 512 * 1024) return null;
+  let vin = "";
+  try {
+    vin = stockCarDataVin(JSON.parse((await client.download(dataFile.id || dataFile.pathLower)).bytes.toString("utf8")));
+  } catch {
+    return null;
+  }
+  if (!vin) return null;
+  const v2 = await readAutoparksV2State();
+  const hits = state.cars.filter(
+    (c) => !c.dropboxFolderId && ownerOf(c) === owner && (c.vin.trim() || carV2Of(v2, c.id).fields.vin.trim()).toUpperCase() === vin,
+  );
+  return hits.length === 1 ? hits[0]! : null;
+}
+
 /** Plāno izmaiņas vienai mapei (tīkla lasīšana te, rakstīšana vēlāk vienā CAS solī). */
 async function planGroup(
   client: DropboxClient,
@@ -144,7 +177,7 @@ async function planGroup(
     const meta = await client.getMetadata(`${root.replace(/\/+$/, "")}/${g.name}`);
     if (meta?.tag === "folder") folder = meta;
   }
-  const car0 = carForStockFolder(state.cars, owner, g.name, folder?.id ?? "");
+  const car0 = carForStockFolder(state.cars, owner, g.name, folder?.id ?? "") ?? (await carForStockCarData(client, state, owner, g));
   if (!car0) return null;
   if (!folder || !folder.id) {
     const meta = car0.dropboxFolderId ? await client.getMetadata(car0.dropboxFolderId) : null;
@@ -334,7 +367,10 @@ export async function linkAutoparksCarToDropbox(carId: string, opts: { create?: 
     const car = state.cars.find((c) => c.id === carId);
     if (!car) return { linked: false, error: "not_found" };
     // Bez VIN mapi automātiski neveidojam (nosaukums vēlāk nesakristu); to izdara pirmā faila augšupielāde.
-    const folder = await resolveAutoparksCarFolder(client, car, { create: opts.create !== false && Boolean(vinTail(car.vin)) });
+    // VIN, kas labots tikai Pamatdati UI (v2.fields.vin, sk. j30), der esošas mapes atrašanai, bet mapi pēc tā neveidojam.
+    const create = opts.create !== false && Boolean(vinTail(car.vin));
+    const vin = car.vin.trim() || carV2Of(await readAutoparksV2State(), car.id).fields.vin.trim();
+    const folder = await resolveAutoparksCarFolder(client, { ...car, vin }, { create });
     if (!folder) return { linked: false };
     const listing = await client.listAll(folder.path, { recursive: false });
     const meta = await client.getMetadata(folder.id);

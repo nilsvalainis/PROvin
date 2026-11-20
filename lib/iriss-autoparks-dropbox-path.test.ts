@@ -57,3 +57,21 @@ describe("autoparks /STOCK mapes", () => {
     expect(sanitizeDropboxName("  a.. ")).toBe("a");
   });
 });
+
+describe("DE iepirkumi: car-data.json VIN", () => {
+  it("stockCarDataVin nolasa fields.VIN.value un noraida nederīgu", async () => {
+    const { stockCarDataVin } = await import("@/lib/iriss-autoparks-dropbox-path");
+    expect(stockCarDataVin({ fields: { VIN: { value: "yv1dz3150f2674045", source: "Rechnung" } } })).toBe("YV1DZ3150F2674045");
+    expect(stockCarDataVin({ vin: "WAUZZZ8R0CA081727" })).toBe("WAUZZZ8R0CA081727");
+    expect(stockCarDataVin({ fields: { VIN: { value: "123" } } })).toBe("");
+    expect(stockCarDataVin(null)).toBe("");
+  });
+
+  it("stockFolderNameHasVinToken: DE mapēm nav, parastajām ir", async () => {
+    const { stockFolderNameHasVinToken } = await import("@/lib/iriss-autoparks-dropbox-path");
+    expect(stockFolderNameHasVinToken("Volvo XC60 DE Iepirkums")).toBe(false);
+    expect(stockFolderNameHasVinToken("Audi Q5 sline de Iepirkums")).toBe(false);
+    expect(stockFolderNameHasVinToken(`Volvo XC60 2013 sudrabs${SEP}439274${SEP}A1`)).toBe(true);
+    expect(stockFolderNameHasVinToken("Mercedes Sprinter - WDB9061331N534460 - Autobid 84073")).toBe(true);
+  });
+});

@@ -48,7 +48,7 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!isSafeDropboxFileId(dropboxId)) return autoparksV2Json({ error: "invalid_id" }, 400);
   const found = await readAutoparksV2Car(id);
   if (!found) return autoparksV2Json({ error: "not_found" }, 404);
-  const res = await setAutoparksV2MainPhoto(found.car, dropboxId, { id: gate.actorId, name: gate.actorName });
+  const res = await setAutoparksV2MainPhoto(found.car, dropboxId, { id: gate.actorId, name: gate.actorName }, found.v2.fields.vin);
   if (!res.ok) return autoparksV2Json({ error: res.reason }, res.reason === "not_found" ? 404 : 502);
   const after = await readAutoparksV2Car(id);
   return autoparksV2Json({ ok: true, basics: autoparksV2Basics(after!.car, after!.v2) });

@@ -8,7 +8,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { autoparksOwner, type AutoparksCar, type AutoparksEvent, type AutoparksState } from "@/lib/iriss-autoparks";
+import { autoparksCarArchivedManually, autoparksOwner, type AutoparksCar, type AutoparksEvent, type AutoparksState } from "@/lib/iriss-autoparks";
 import {
   emptyAutoparksRegistry,
   hasTradeAct,
@@ -133,7 +133,8 @@ export function applyRegistryFileToState(
 
   let changed = false;
   state.cars = state.cars.map((car) => {
-    if (!car.vin || car.archivedAt) return car;
+    // Arhīvs ar roku - reģistrs to vairs neskata; «Pārdots» automātiskais arhīvs - skata (pavadzīmēm, līdz CSDD noņem).
+    if (!car.vin || autoparksCarArchivedManually(car)) return car;
     const rec = byVin.get(car.vin);
     if (!rec) {
       // Pilnajā nolasījumā šīs firmas pieņemtā auto vairs nav -> "izņemts" (tikai reģistra lauki).
@@ -195,7 +196,7 @@ export function applyRegistryFileToState(
     return { ...car, updatedAt: now, registry: { ...reg, status, removedAt: now, registryDate: file.generatedAt || reg.registryDate } };
   }
 
-  const archivedVins = new Set(state.cars.filter((c) => c.vin && c.archivedAt).map((c) => c.vin));
+  const archivedVins = new Set(state.cars.filter((c) => c.vin && autoparksCarArchivedManually(c)).map((c) => c.vin));
   for (const v of byVin.values()) {
     if (seen.has(v.vin)) continue;
     if (archivedVins.has(v.vin)) {
