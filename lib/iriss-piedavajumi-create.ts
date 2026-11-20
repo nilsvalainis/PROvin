@@ -47,6 +47,7 @@ export async function importIrissPdFromStock(kind: "autoparks" | "logistics", ca
   let price = "";
   let purchase = "";
   let vehicle = irissPdVehicleFromSeed(seed.fields);
+  let stockFacts: IrissPdImport["stockFacts"] = null;
   if (kind === "autoparks") {
     try {
       const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
@@ -66,6 +67,7 @@ export async function importIrissPdFromStock(kind: "autoparks" | "logistics", ca
           displacementCm3: b.displacementCm3.value,
           color: b.color,
         });
+        stockFacts = { keysCount: b.extras.keysCount, secondWheels: b.extras.secondWheels };
       }
     } catch {
       /* cenas un papildu lauki nav obligāti */
@@ -90,6 +92,7 @@ export async function importIrissPdFromStock(kind: "autoparks" | "logistics", ca
     fieldCount,
     historyText: `Izveidots no ${kind === "autoparks" ? "Autoparka" : "Loģistikas"} · ${fieldCount} lauki, ${photos.length} foto`,
     note: seed.photosNote,
+    stockFacts,
   };
 }
 

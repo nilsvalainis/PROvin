@@ -93,7 +93,14 @@ export type AdminPaymentAdjustment = {
   clawbackCents: number;
   /** Rēķins jau izrakstīts: vajag kredītrēķinu (to veido Nils). */
   invoiceNeedsCreditNote: boolean;
+  /** Audits 20.11: pilnībā atmaksāts vai zaudēts strīds - pasūtījums neskaitās aktīvs (nav «kavē»). */
+  fullyReversed?: boolean;
 };
+
+/** Audits 20.11: pilnībā atmaksāts vai zaudēts strīds (no `paymentAdjustment`). */
+export function adminOrderFullyReversed(row: { paymentAdjustment?: AdminPaymentAdjustment | null }): boolean {
+  return row.paymentAdjustment?.fullyReversed === true;
+}
 
 export function toAdminPaymentAdjustment(adj: StripePaymentAdjustment | null | undefined): AdminPaymentAdjustment | null {
   const view = paymentAdjustmentView(adj);
@@ -103,6 +110,7 @@ export function toAdminPaymentAdjustment(adj: StripePaymentAdjustment | null | u
     tone: view.tone,
     clawbackCents: stripeClawbackCents(adj),
     invoiceNeedsCreditNote: adj.invoiceNeedsCreditNote === true,
+    ...(view.fullyReversed ? { fullyReversed: true } : {}),
   };
 }
 

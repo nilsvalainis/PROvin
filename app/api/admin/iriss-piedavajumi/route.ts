@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { appendIrissPdHistory, canRebaseIrissPd, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
 import { irissPdImportFromListing, irissPdMergeListingWithLink } from "@/lib/iriss-piedavajumi-from-listing";
-import { irissPdFactsFromAuto1 } from "@/lib/iriss-piedavajumi-facts";
+import { irissPdFactsFromAuto1, irissPdFactsFromAutoparks } from "@/lib/iriss-piedavajumi-facts";
 import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { detectIrissPdLink, irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { findRecentDuplicateIrissPd, irissPdCreateIdentityKey, type IrissPdCreateIdentity } from "@/lib/iriss-piedavajumi-list-display";
@@ -73,6 +73,8 @@ function fromImport(imp: IrissPdImport, at: string, viewer: IrissPdViewer) {
     };
     // Nils 30.10: Novērtējums klientam - fakti no izsoles (atslēgas, serviss, TA, avārija, krāsojums).
     if (imp.auto1) rec.content = { ...rec.content, facts: irissPdFactsFromAuto1(imp.auto1, rec.content.facts) };
+    // 20.11: no Autoparka - atslēgu skaits un otrais riteņu komplekts (Pamatdati).
+    if (imp.stockFacts) rec.content = { ...rec.content, facts: irissPdFactsFromAutoparks(imp.stockFacts, rec.content.facts) };
     return appendIrissPdHistory(rec, { at, by: imp.fieldCount ? "Sistēma" : by, text: imp.historyText });
   };
 }

@@ -1,4 +1,4 @@
-import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
+import { adminOrderFullyReversed, isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import {
   countAdminOrdersHiddenByAmountFilter,
   filterAdminOrdersForDashboard,
@@ -215,7 +215,7 @@ export default async function AdminOrdersPage({
       title: [o.makeModel, o.vin || draftSummaries.get(o.id)?.vin].filter(Boolean).join(" · ") || o.customerName || "Pasūtījums",
       vin: o.vin || draftSummaries.get(o.id)?.vin || null,
       checkoutLine: o.checkoutLine,
-      auditComplete: Boolean(o.auditComplete),
+      auditComplete: Boolean(o.auditComplete) || adminOrderFullyReversed(o),
       isB2bPack: Boolean(o.isB2bPack),
       hint: draftSummaries.get(o.id)?.vinScan ?? null,
     })),

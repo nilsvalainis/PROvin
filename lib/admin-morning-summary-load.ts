@@ -8,7 +8,7 @@ import {
 } from "@/lib/admin-morning-summary";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
-import { listAdminOrders } from "@/lib/admin-orders";
+import { adminOrderFullyReversed, listAdminOrders } from "@/lib/admin-orders";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { listListingPeeks } from "@/lib/listing-peek-store";
 import { upsellListOverlay } from "@/lib/order-upsell";
@@ -53,6 +53,9 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
       deadlineFromUnix: overlay?.paidAtUnix ?? null,
       auditComplete: Boolean(done.get(o.id)),
       isB2bPack: isB2bPackAdminOrder(o),
+      fullyReversed: adminOrderFullyReversed(o),
+      checkoutLine: overlay?.targetLine ?? o.checkoutLine ?? null,
+      amountTotalCents: overlay?.targetCents ?? o.amountTotal ?? null,
       makeModel: draft?.makeModel ?? null,
       vin: draft?.vin || o.vin,
       customerName: draft?.customerName || o.companyName || null,

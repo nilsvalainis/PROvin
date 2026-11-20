@@ -8,6 +8,7 @@ import {
   type IrissPdPatch,
 } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-piedavajumi-create";
+import { irissPdFactsFromAutoparks } from "@/lib/iriss-piedavajumi-facts";
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
@@ -156,7 +157,10 @@ export async function POST(req: Request, { params }: Ctx) {
     } else {
       return fail(400, "invalid_kind");
     }
-    const next = appendIrissPdHistory({ ...applyIrissPdImportData(rec, imp, at), updatedAt: at }, { at, by, text: imp.historyText });
+    const applied = applyIrissPdImportData(rec, imp, at);
+    // 20.11: no Autoparka - atslēgu skaits un otrais riteņu komplekts (tikai neaiztiktās šablona rindas).
+    if (imp.stockFacts) applied.content = { ...applied.content, facts: irissPdFactsFromAutoparks(imp.stockFacts, applied.content.facts) };
+    const next = appendIrissPdHistory({ ...applied, updatedAt: at }, { at, by, text: imp.historyText });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: out(next), note: imp.note }, { headers: noStore });
   }

@@ -70,7 +70,17 @@ export const OFFER_SEED_TAG_KEYS = [
 
 export type AutoparksSeedExtras = {
   /** `gearbox` - ar roku ievadītā (J30 `V2Tech.gearbox`), ja ir; citādi CSDD tirdzniecības reģistra `registry.gearbox`. */
-  tech?: { firstRegDate?: string; displacementCm3?: number | null; powerKw?: number | null; gearbox?: string } | null;
+  tech?: {
+    firstRegDate?: string;
+    displacementCm3?: number | null;
+    powerKw?: number | null;
+    gearbox?: string;
+    /** Ar roku labotais nobraukums (Pamatdati) - pirms CSDD reģistra. */
+    mileageKm?: number | null;
+    /** Pamatdati (IRISS 18.11): atslēgu skaits un otrais disku/riteņu komplekts. */
+    keysCount?: number | null;
+    secondWheels?: string;
+  } | null;
   /** Iepirkuma dati (izsole, Lot/stock nr., PVN režīms) - Autoparka v2 `purchase`. */
   purchase?: { auction?: string; auctionNo?: string; vat?: { mode?: V2VatMode } } | null;
   location?: string;
@@ -104,7 +114,10 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
   const reg = car.registry;
   const makeModel = txt(extras.displayName) || txt(car.displayName) || txt(`${car.make} ${car.model}`) || txt(reg?.makeModel);
   const firstReg = txt(extras.tech?.firstRegDate) || txt(reg?.firstRegDate) || txt(car.year, 40);
-  const odometer = km(reg?.odometerKm ?? null) || km(car.mileageKm);
+  // Ar roku labotais (Pamatdati) -> CSDD reģistrs -> v1 (tā pati secība kā kabinetā).
+  const odometer = km(extras.tech?.mileageKm ?? null) || km(reg?.odometerKm ?? null) || km(car.mileageKm);
+  const keys = extras.tech?.keysCount;
+  const wheels = txt(extras.tech?.secondWheels, 80);
   const vatMode = extras.purchase?.vat?.mode;
   const equipmentLine = txt(extras.equipmentLine, 600) || txt(car.equipmentLine, 600);
   const aprakstiSeed = extras.service
@@ -135,7 +148,9 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
       auctionPlatform: txt(extras.purchase?.auction, 80),
       auctionStockNumber: txt(extras.purchase?.auctionNo, 80),
       vatStatus: vatMode ? txt(V2_VAT_MODE_LV[vatMode], 40) : "",
+      keyCount: typeof keys === "number" && Number.isFinite(keys) && keys > 0 ? String(Math.round(keys)) : "",
     }),
+    ...(wheels && !/^(nē|ne|nav|no|-)$/i.test(wheels) ? { hasSecondWheelSet: true } : {}),
     ...aprakstiSeed,
   };
 }

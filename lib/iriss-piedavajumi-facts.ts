@@ -66,3 +66,26 @@ export function irissPdFactsFromAuto1(blocks: IrissPdAuto1Blocks | null, facts: 
     }
   });
 }
+
+export type IrissPdAutoparksStockFacts = { keysCount?: number | null; secondWheels?: string };
+
+/**
+ * 20.11: PD no Autoparka - atslēgu skaits un otrais riteņu komplekts no Pamatdatiem (ar roku ievadīti).
+ * Tāpat kā Auto1: tikai šablona rindas, kuras admins vēl nav mainījis.
+ */
+export function irissPdFactsFromAutoparks(stock: IrissPdAutoparksStockFacts | null | undefined, facts: readonly IrissPdCheckItem[]): IrissPdCheckItem[] {
+  if (!stock) return facts.map((f) => ({ ...f }));
+  const tpl = new Map(IRISS_PD_FACTS_TEMPLATE.map((t) => [t.text, t]));
+  const untouched = (f: IrissPdCheckItem) => tpl.has(f.text) && tpl.get(f.text)!.on === f.on;
+  const keys = typeof stock.keysCount === "number" && Number.isFinite(stock.keysCount) ? Math.round(stock.keysCount) : null;
+  const wheels = (stock.secondWheels ?? "").trim();
+  return facts.map((f) => {
+    if (!untouched(f)) return { ...f };
+    if (f.text === "2 atslēgas" && keys != null && keys > 0) return { text: `${keys} ${plural(keys, "atslēga", "atslēgas")}`, on: true };
+    if (f.text === "Otrs riteņu komplekts" && wheels) {
+      if (isNo(wheels) || /^nav$/i.test(wheels)) return { text: f.text, on: false };
+      return { text: isYes(wheels) ? f.text : `Otrs riteņu komplekts: ${wheels}`, on: true };
+    }
+    return { ...f };
+  });
+}

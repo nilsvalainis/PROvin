@@ -265,6 +265,7 @@ export async function POST(req: Request) {
         auditReportVin: notifyVin || null,
         checkoutLine: order.checkoutLine ?? null,
         amountTotalCents: order.amountTotal ?? null,
+        lang: reportLang,
       });
       manualAttachments = attachments.map((a) => ({
         filename: a.filename,

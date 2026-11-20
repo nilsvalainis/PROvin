@@ -19,3 +19,13 @@ export function PdQuestionTag({ count }: { count: number }) {
     </span>
   );
 }
+
+/** Audits 20.11: apstiprināts, bet Autoparka auto jau bija rezervēts/pārdots - rezervācija neveikta. */
+export function PdCarConflictTag({ on }: { on?: boolean }) {
+  if (!on) return null;
+  return (
+    <span className="pd-chip pd-q" data-testid="pd-car-conflict-tag" title="Auto jau bija rezervēts vai pārdots - rezervācija neveikta">
+      Auto aizņemts
+    </span>
+  );
+}

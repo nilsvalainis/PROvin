@@ -499,8 +499,11 @@ export type { AutoparksRegistryImportResult };
  * Nila labotos laukus un arhīvu neaiztiek.
  */
 export async function applyAutoparksRegistryFile(file: RegistryFile, importFile: string): Promise<AutoparksRegistryImportResult> {
+  // Pamatdatu labojumi (VIN, īpašnieks) ir v2 - saskaņošanai vajag efektīvās vērtības (tikai lasīšana).
+  const { readAutoparksV2State } = await import("@/lib/iriss-autoparks-v2-store");
+  const v2 = await readAutoparksV2State();
   return mutateAutoparksState((state) => {
-    const { result, changed } = applyRegistryFileToState(state, file, importFile);
+    const { result, changed } = applyRegistryFileToState(state, file, importFile, new Date().toISOString(), v2);
     return { result, write: changed };
   });
 }

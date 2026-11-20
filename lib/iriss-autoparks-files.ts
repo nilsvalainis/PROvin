@@ -1,5 +1,6 @@
 import "server-only";
 
+import { effectiveAutoparksOwner } from "@/lib/iriss-autoparks-effective";
 import { autoparksOwner, type AutoparksCar, type AutoparksFile, type AutoparksStage } from "@/lib/iriss-autoparks";
 import {
   autoparksDropboxFileName,
@@ -65,13 +66,15 @@ export async function findStockFolderByCarDataVin(client: DropboxClient, folders
  */
 export async function resolveAutoparksCarFolder(
   client: DropboxClient,
-  car: Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "orderId" | "dropboxFolderId" | "owner">,
+  rawCar: Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "orderId" | "dropboxFolderId" | "owner"> & { id?: string },
   opts: { create?: boolean; auction?: string | null } = {},
 ): Promise<AutoparksFolderRef | null> {
-  if (car.dropboxFolderId) {
-    const meta = await client.getMetadata(car.dropboxFolderId);
+  if (rawCar.dropboxFolderId) {
+    const meta = await client.getMetadata(rawCar.dropboxFolderId);
     if (meta?.tag === "folder") return { id: meta.id, path: meta.pathDisplay };
   }
+  // Efektīvie Pamatdati (v2 labotais VIN/īpašnieks/marka): pareizā firmas sakne un mape pēc VIN.
+  const car = await withEffectiveBasics(rawCar);
   const root = autoparksDropboxRoot(autoparksOwner(car));
   const rootMeta = await client.getMetadata(root);
   if (!rootMeta || rootMeta.tag !== "folder") throw new AutoparksFolderError("root_missing");
@@ -94,6 +97,19 @@ export async function resolveAutoparksCarFolder(
   if (auction == null && car.orderId) auction = (await getLogisticsOrder(car.orderId).catch(() => null))?.auction ?? null;
   const created = await client.ensureFolder(joinDropboxPath(rootMeta.pathDisplay || root, autoparksStockFolderName(car, auction)));
   return { id: created.id, path: created.pathDisplay };
+}
+
+async function withEffectiveBasics<T extends Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "owner"> & { id?: string }>(car: T): Promise<T> {
+  if (!car.id) return car;
+  try {
+    const { readAutoparksV2State } = await import("@/lib/iriss-autoparks-v2-store");
+    const v2 = (await readAutoparksV2State()).cars[car.id];
+    if (!v2) return car;
+    const f = v2.fields;
+    return { ...car, vin: f.vin || car.vin, make: f.make || car.make, model: f.model || car.model, year: f.year || car.year, color: f.color || car.color, owner: effectiveAutoparksOwner(car, v2) };
+  } catch {
+    return car;
+  }
 }
 
 /** ~30 KB JPEG sīktēls (garākā mala 480 px). Kļūdas gadījumā `null` - sīktēls nav obligāts. */

@@ -48,6 +48,7 @@ describe("Autoparks v2 saraksts", () => {
       "inTrade",
       "make",
       "owner",
+      "plate",
       "priceSheetState",
       "purchaseDate",
       "purchasePriceEur",

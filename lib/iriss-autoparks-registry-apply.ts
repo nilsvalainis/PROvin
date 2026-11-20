@@ -19,6 +19,8 @@ import {
   type RegistryFileVehicle,
   type RegistryKey,
 } from "@/lib/iriss-autoparks-registry";
+import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
+import type { AutoparksV2State } from "@/lib/iriss-autoparks-v2";
 
 export const REGISTRY_IMPORT_ACTOR_NAME = "CSDD reģistrs";
 
@@ -97,7 +99,12 @@ export function applyRegistryFileToState(
   file: RegistryFile,
   importFile: string,
   now: string = new Date().toISOString(),
+  /** v2 Pamatdati: auto meklē pēc efektīvā VIN un īpašnieka (ar roku labotie); v1 lauki netiek mainīti. */
+  v2?: Pick<AutoparksV2State, "cars"> | null,
 ): { result: AutoparksRegistryImportResult; changed: boolean } {
+  // Tikai saskaņošanai: efektīvā kopija nekad netiek ierakstīta krātuvē.
+  const eff = (car: AutoparksCar) => effectiveAutoparksCar(car, v2?.cars[car.id]);
+  const effVin = (car: AutoparksCar) => eff(car).vin.trim().toUpperCase();
   const byVin = new Map(file.vehicles.map((v) => [v.vin, v]));
   const meta = { importedAt: now, importFile, registryDate: file.generatedAt };
   const snapshot = file.snapshot?.complete ? file.snapshot : undefined;
@@ -120,10 +127,10 @@ export function applyRegistryFileToState(
   const guarded = new Set<string>();
   if (snapshot) {
     for (const owner of snapshotOwners) {
-      const accepted = listTradeAcceptedCars(state.cars).filter((c) => c.vin && autoparksOwner(c) === owner);
+      const accepted = listTradeAcceptedCars(state.cars).filter((c) => effVin(c) && autoparksOwner(eff(c)) === owner);
       const listed = file.vehicles.some((v) => v.owner === owner || (!v.owner && owner === "IRISS"));
       // Skaita tikai pazudušos; tieši "pārdots" statuss reģistrā ir uzticams un slieksnī neietilpst.
-      const missing = accepted.filter((c) => !byVin.has(c.vin)).length;
+      const missing = accepted.filter((c) => !byVin.has(effVin(c))).length;
       if (accepted.length > 0 && (!listed || (missing >= 3 && missing / accepted.length > REGISTRY_REMOVAL_GUARD_SHARE))) {
         guarded.add(owner);
       }
@@ -134,11 +141,12 @@ export function applyRegistryFileToState(
   let changed = false;
   state.cars = state.cars.map((car) => {
     // Arhīvs ar roku - reģistrs to vairs neskata; «Pārdots» automātiskais arhīvs - skata (pavadzīmēm, līdz CSDD noņem).
-    if (!car.vin || autoparksCarArchivedManually(car)) return car;
-    const rec = byVin.get(car.vin);
+    const vin = effVin(car);
+    if (!vin || autoparksCarArchivedManually(car)) return car;
+    const rec = byVin.get(vin);
     if (!rec) {
       // Pilnajā nolasījumā šīs firmas pieņemtā auto vairs nav -> "izņemts" (tikai reģistra lauki).
-      const owner = autoparksOwner(car);
+      const owner = autoparksOwner(eff(car));
       if (!snapshot || !snapshotOwners.has(owner) || guarded.has(owner)) return car;
       if (!hasTradeAct(car.registry) || car.registry?.removedAt) return car;
       return markRemoved(car);
@@ -172,7 +180,8 @@ export function applyRegistryFileToState(
       next.mileageKm = registry.odometerKm;
       filled += 1;
     }
-    if (!next.make && !next.model && registry.makeModel) {
+    const effCar = eff(car);
+    if (!next.make && !next.model && !effCar.make && !effCar.model && registry.makeModel) {
       Object.assign(next, splitMakeModel(registry.makeModel));
       filled += 1;
     }
@@ -196,7 +205,7 @@ export function applyRegistryFileToState(
     return { ...car, updatedAt: now, registry: { ...reg, status, removedAt: now, registryDate: file.generatedAt || reg.registryDate } };
   }
 
-  const archivedVins = new Set(state.cars.filter((c) => c.vin && autoparksCarArchivedManually(c)).map((c) => c.vin));
+  const archivedVins = new Set(state.cars.filter((c) => effVin(c) && autoparksCarArchivedManually(c)).map((c) => effVin(c)));
   for (const v of byVin.values()) {
     if (seen.has(v.vin)) continue;
     if (archivedVins.has(v.vin)) {

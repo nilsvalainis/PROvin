@@ -1,5 +1,13 @@
 /** PROVIN audita sagatavošanas SLA: 48 h no pasūtījuma laika (Stripe `created`). */
 
+/**
+ * Pasūtījums nav aktīvs (neskaitās «aktīvs» / «kavē»): «Izpildīts», B2B paka vai audits 20.11 -
+ * pilnībā atmaksāts vai zaudēts strīds (`fullyReversed`). Viena definīcija visiem skaitītājiem un sarakstiem.
+ */
+export function isAdminOrderInactive(r: { auditComplete?: boolean; isB2bPack?: boolean; fullyReversed?: boolean }): boolean {
+  return Boolean(r.auditComplete || r.isB2bPack || r.fullyReversed);
+}
+
 export const AUDIT_PREPARATION_DEADLINE_MS = 48 * 60 * 60 * 1000;
 /** Pill + proaktīvais brīdinājums: atlikušas ≤ 3 h. */
 export const AUDIT_PREPARATION_URGENT_MS = 3 * 60 * 60 * 1000;
@@ -56,11 +64,12 @@ export function collectAuditSlaWarningCandidates<
     deadlineFromUnix?: number | null;
     auditComplete?: boolean;
     isB2bPack?: boolean;
+    fullyReversed?: boolean;
   },
 >(rows: T[], nowMs: number): T[] {
   const out: T[] = [];
   for (const r of rows) {
-    if (r.auditComplete || r.isB2bPack) continue;
+    if (isAdminOrderInactive(r)) continue;
     const { status } = formatAuditDeadlineRemaining(r.deadlineFromUnix ?? r.created, nowMs);
     if (status === "urgent") out.push(r);
   }

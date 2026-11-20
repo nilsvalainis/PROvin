@@ -1,7 +1,9 @@
 import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { notFound } from "next/navigation";
 import { PiedavajumsDetail } from "@/components/admin/iriss-piedavajumi/PiedavajumsDetail";
+import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { irissPdClientOptions } from "@/lib/iriss-piedavajumi";
+import { irissPdAutoparksCarId } from "@/lib/iriss-piedavajumi-approve";
 import { irissPdForViewer, irissPdViewerCanEdit, irissPdViewerFromActor } from "@/lib/iriss-piedavajumi-staff";
 import { readIrissPdFresh } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
@@ -26,6 +28,13 @@ export default async function IrissPiedavajumsPage({ params, searchParams }: Pro
   if (!rec) notFound();
   const orders = isIrissPasutijumiStoreEnabled() ? await listIrissPasutijumi().catch(() => []) : [];
   const sp = (await searchParams) ?? {};
+  // Audits 20.11: Autoparka auto pašreizējais statuss (brīdinājums, ja jau «Rezervēts»/«Pārdots»).
+  const carId = irissPdAutoparksCarId(rec.sourceRef);
+  const sourceCarStatus = carId
+    ? await readAutoparksState()
+        .then((st) => st.cars.find((c) => c.id === carId)?.status ?? "")
+        .catch(() => "")
+    : "";
   return (
     <PiedavajumsDetail
       initial={irissPdForViewer(rec, viewer)}
@@ -33,6 +42,7 @@ export default async function IrissPiedavajumsPage({ params, searchParams }: Pro
       note={typeof sp.note === "string" ? sp.note.slice(0, 300) : ""}
       staff={viewer.kind === "staff"}
       readOnly={!irissPdViewerCanEdit(rec, viewer)}
+      sourceCarStatus={sourceCarStatus}
     />
   );
 }

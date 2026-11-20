@@ -48,6 +48,7 @@ type SearchableRow = {
   activityUnix?: number;
   auditComplete?: boolean;
   isB2bPack?: boolean;
+  fullyReversed?: boolean;
   vin?: string | null;
   makeModel?: string | null;
   customerEmail?: string | null;

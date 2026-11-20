@@ -41,7 +41,7 @@ export function authorizeMorningSummaryCron(
 
 function itemLine(item: MorningQueueItem): { title: string; detail: string } {
   const detail = item.deadlineLabel ?? (item.isNew ? "Jauns" : item.unanswered ? "Neatbildēts" : "Atvērts");
-  return { title: item.title, detail };
+  return { title: item.product ? `${item.product} · ${item.title}` : item.title, detail };
 }
 
 function capLines(items: readonly MorningQueueItem[]): { title: string; detail: string }[] {

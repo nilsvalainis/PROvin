@@ -11,7 +11,7 @@ import {
 import { requireLogisticsPage } from "@/lib/staff-auth";
 import { staffHasSection } from "@/lib/staff-roles";
 import { autoparksCarIdsByLogisticsOrder } from "@/lib/iriss-car-share";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { readAutoparksEffectiveCars } from "@/lib/iriss-autoparks-v2-store";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2CanOpen } from "@/lib/iriss-autoparks-v2-perms";
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
@@ -56,7 +56,7 @@ export default async function IrissLogistikaPage() {
   // Kravu rindām saite "Kartīte" uz Autoparka auto - tikai tiem, kas Autoparku drīkst atvērt.
   const autoparksByOrder =
     storeEnabled && autoparksV2CanOpen(autoparksV2Perms(actor))
-      ? autoparksCarIdsByLogisticsOrder(orders, (await readAutoparksState().catch(() => null))?.cars ?? [])
+      ? autoparksCarIdsByLogisticsOrder(orders, (await readAutoparksEffectiveCars().catch(() => null)) ?? [])
       : {};
 
   return (

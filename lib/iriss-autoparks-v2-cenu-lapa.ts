@@ -49,6 +49,8 @@ export type V2PriceSheet = {
   stateMode: V2PriceSheetState | null;
   /** Ko dotu «Automātiski» (redaktoram). */
   stateAuto: V2PriceSheetState;
+  /** 20.11: auto «Pārdots» un lapas stāvoklis nav izvēlēts ar roku - pārdošanas lapu nedrukā (poga neaktīva, čips «Pārdots»). */
+  sold: boolean;
   /** Drošība «Gaida pārbaudi» + teikums «pārbaude tiks veikta pirms pārdošanas» (ja nav apliecinājuma). */
   pendingCheck: boolean;
   /** Drīzumā/Rezervēts lapā rādīt cenas rindu zem līnijām (false = variants D). */
@@ -68,6 +70,11 @@ export const PRICE_SHEET_STATE_LV: Record<V2PriceSheetState, string> = {
 export function priceSheetStateAuto(car: Pick<AutoparksCar, "registry" | "status">): V2PriceSheetState {
   if (car.status === "reserved") return "reserved";
   return hasTradeAct(car.registry) ? "normal" : "soon";
+}
+
+/** Pārdotam auto pārdošanas lapu automātiski nedrukā; manuāla stāvokļa izvēle to atļauj. */
+export function priceSheetSold(car: Pick<AutoparksCar, "status">, ps: Pick<AutoparksCarV2["priceSheet"], "sheetState">): boolean {
+  return car.status === "sold" && ps.sheetState == null;
 }
 
 export function priceSheetState(car: Pick<AutoparksCar, "registry" | "status">, v2: Pick<AutoparksCarV2, "priceSheet">): V2PriceSheetState {
@@ -178,7 +185,8 @@ export function engineLabel(cm3: number | null, kw: number | null, fuel = ""): s
 
 export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, basics: AutoparksV2Basics): V2PriceSheet {
   const ps = v2.priceSheet;
-  const title = `${car.make} ${car.model}`.trim().toUpperCase();
+  // Efektīvie Pamatdati (ar roku labotā marka/modelis un gads), nevis v1 lauki.
+  const title = `${basics.make} ${basics.model}`.replace(/\s+/g, " ").trim().toUpperCase();
   const equipmentLine = ps.equipmentLine || car.equipmentLine || "";
   const listPriceEur = ps.listPriceEur ?? car.listPriceEur ?? ps.salePriceEur ?? car.salePriceEur ?? null;
   const vatMode = v2.purchase.vat.mode;
@@ -202,11 +210,12 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
     state,
     stateMode: ps.sheetState ?? null,
     stateAuto,
+    sold: priceSheetSold(car, ps),
     pendingCheck: waitSafety,
     showPlannedPrice: ps.showPlannedPrice !== false,
     salePriceEur: ps.salePriceEur ?? car.salePriceEur ?? null,
     listPriceEur,
-    year: car.year,
+    year: basics.year,
     firstRegDate: { value: fmtDateLv(basics.firstRegDate.value), csdd: basics.firstRegDate.csdd },
     mileage: { value: fmtKm(basics.mileageKm.value), csdd: basics.mileageKm.csdd },
     engine: basics.engine.value

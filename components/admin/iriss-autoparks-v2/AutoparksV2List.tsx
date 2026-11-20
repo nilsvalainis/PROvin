@@ -118,7 +118,7 @@ export function AutoparksV2List({
         <span className="ap2-top-n">{base.length} auto</span>
         <div className="ap2-search ap2-search-d">
           <span aria-hidden>⌕</span>
-          <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
+          <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis, VIN vai numurs" aria-label="Meklēt" />
         </div>
         {canAddCar ? (
           <button type="button" className="ap2-btn dark sm ap2-add" onClick={() => setAdding(true)}>
@@ -129,7 +129,7 @@ export function AutoparksV2List({
 
       <div className="ap2-search ap2-search-m">
         <span aria-hidden>⌕</span>
-        <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
+        <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis, VIN vai numurs" aria-label="Meklēt" />
       </div>
 
       {registryFresh ? <RegistryStaleBanner fresh={registryFresh} /> : null}
