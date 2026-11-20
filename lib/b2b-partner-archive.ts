@@ -1,5 +1,6 @@
 import "server-only";
 
+import { dealerDataJobHistoryReady } from "@/lib/dealer-data-job-types";
 import { listManualOrders } from "@/lib/admin-manual-orders";
 import { listPaidCheckoutSessions } from "@/lib/admin-orders";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
@@ -130,7 +131,7 @@ export async function listPartnerArchiveRows(args: {
               product: marks.product,
               priceCents: marks.priceCents,
               refunded: job?.refund?.kind === "wallet",
-              rawReady: job?.status === "done",
+              rawReady: dealerDataJobHistoryReady(job),
             }
           : null,
       }),

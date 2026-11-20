@@ -198,6 +198,25 @@ export async function sendAdminB2bCreditOrdersEmail(opts: {
   await sendSmtpMail({ to: opts.to, subject: opts.subject, text, html, headers: { "X-Priority": "1", Importance: "high" } });
 }
 
+/** Admin: dīlera datu ielases problēma (nav VIN, kļūda pēc visiem mēģinājumiem, rezultāts nav melnrakstā). */
+export async function sendAdminDealerDataAlertEmail(opts: {
+  to: string;
+  title: string;
+  body: string;
+  sessionId: string;
+  adminUrl: string;
+}): Promise<void> {
+  const subject = `PROVIN: ${opts.title}`;
+  const text = [opts.body, "", `Sesijas ID: ${opts.sessionId}`, `Admin: ${opts.adminUrl}`].join("\n");
+  const html = adminNewOrderHtml([
+    { label: "Problēma", value: opts.title },
+    { label: "Kas jādara", value: opts.body },
+    { label: "Sesijas ID", value: opts.sessionId },
+    { label: "Admin", value: opts.adminUrl },
+  ]);
+  await sendSmtpMail({ to: opts.to, subject, text, html, headers: { "X-Priority": "1", Importance: "high" } });
+}
+
 export type AdminAuditSlaWarningEmailPayload = {
   sessionId: string;
   vin: string | null;

@@ -6,6 +6,7 @@ import { partnerNotesMatchId } from "@/lib/b2b-partner-orders";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { refundB2bWalletOrderIfNoData } from "@/lib/b2b-wallet-refund";
 import { readDealerDataJob } from "@/lib/dealer-data-job-store";
+import { dealerDataJobHistoryReady } from "@/lib/dealer-data-job-types";
 import { buildOneautoDisplay, filledOneautoServiceEvents, type OneautoProductId } from "@/lib/oneauto-catalog";
 
 export const runtime = "nodejs";
@@ -34,7 +35,8 @@ export async function GET(_req: Request, ctx: Ctx) {
     job = await readDealerDataJob(id);
   }
 
-  const status = job?.status ?? "pending";
+  // Vēsture melnrakstā, gaida tikai VIN dekodēšanas atkārtojumu - partnerim rāda kā gatavu.
+  const status = dealerDataJobHistoryReady(job) ? "done" : job?.status ?? "pending";
   const base = {
     orderId: id,
     vin: draft.orderEdits?.vin ?? job?.vin ?? "",
@@ -42,7 +44,7 @@ export async function GET(_req: Request, ctx: Ctx) {
     refunded: Boolean(job?.refund),
     refundCents: job?.refund?.amountCents ?? 0,
   };
-  if (status !== "done") return NextResponse.json({ ...base, serviceTimeline: [], vehicle: [] });
+  if (!dealerDataJobHistoryReady(job)) return NextResponse.json({ ...base, serviceTimeline: [], vehicle: [] });
 
   const ingest = mergeSourceBlocksWithDefaults(draft.workspace?.sourceBlocks).auto_records.oneautoIngest;
   const payloads: Partial<Record<OneautoProductId, unknown>> = {};

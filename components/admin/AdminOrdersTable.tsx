@@ -128,6 +128,12 @@ export function adminOrderDayLabel(dayKey: string, nowMs: number): string {
 }
 
 /** Stripe atmaksa / strīds: sarkans teksts tajā pašā čipa formā. */
+/** Dīlera datu ielases problēma - sarkana atzīme, lai neviens klients nepaliek nepamanīts. */
+function DealerJobAlertTag({ label }: { label?: string }) {
+  if (!label) return null;
+  return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{label}</span>;
+}
+
 function PaymentAdjustmentTag({ row }: { row: { paymentAdjustmentLabel?: string } }) {
   if (!row.paymentAdjustmentLabel) return null;
   return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{row.paymentAdjustmentLabel}</span>;
@@ -1186,6 +1192,7 @@ export function AdminOrdersTable({
                 {view.paidServiceLabel ? <span className={CALM_TAG}>{view.paidServiceLabel}</span> : null}
                 {view.reportLangLabel ? <span className={CALM_TAG}>{view.reportLangLabel}</span> : null}
                 {view.miniHighlight ? <span className={CALM_TAG}>MINI</span> : null}
+                <DealerJobAlertTag label={row.dealerJobAlert} />
                 {row.repeatVin ? <span className={CALM_TAG}>Atkārtots VIN</span> : null}
                 {row.upsellBadge ? <span className={CALM_TAG}>{row.upsellBadge}</span> : null}
               </div>
@@ -1362,6 +1369,7 @@ export function AdminOrdersTable({
                           ↻ Atkārtots VIN
                         </span>
                       ) : null}
+                      <DealerJobAlertTag label={o.dealerJobAlert} />
                       {o.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                       {isPack ? (
                         <span className={CALM_TAG}>Paka</span>

@@ -23,6 +23,8 @@ import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVi
 import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 import { headers } from "next/headers";
+import { readDealerDataJobs } from "@/lib/dealer-data-job-store";
+import { dealerDataListAlertLabel, isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -143,7 +145,27 @@ export default async function AdminOrdersPage({
       ...(notes && !isPack ? { notes } : {}),
     };
   });
-  const ordersWithUpsell = ordersWithInvoice.map((o) => {
+  // Dīlera datu ielases problēmas sarakstā (Nils 20.11): «Nav VIN», kļūda, rezultāts nav melnrakstā, datu nav.
+  // Tikai neizpildītiem dīlera pasūtījumiem pēdējās 60 dienās (Blob lasījumi uz rindu).
+  const dealerAlertSince = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
+  const dealerIdsForAlerts = ordersWithInvoice
+    .filter(
+      (o) =>
+        !o.isB2bPack &&
+        !o.auditComplete &&
+        o.created >= dealerAlertSince &&
+        isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal }),
+    )
+    .map((o) => o.id);
+  const dealerJobs =
+    dealerIdsForAlerts.length > 0
+      ? await readDealerDataJobs(dealerIdsForAlerts).catch(() => new Map<string, never>())
+      : new Map<string, never>();
+  const ordersWithDealerAlert = ordersWithInvoice.map((o) => {
+    const label = dealerDataListAlertLabel(dealerJobs.get(o.id) ?? null);
+    return label ? { ...o, dealerJobAlert: label } : o;
+  });
+  const ordersWithUpsell = ordersWithDealerAlert.map((o) => {
     const overlay = upsellListOverlay(upsellOffers.get(o.id) ?? []);
     if (!overlay) return o;
     return {

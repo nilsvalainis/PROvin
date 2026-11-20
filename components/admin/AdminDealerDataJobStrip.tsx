@@ -62,6 +62,7 @@ const STATUS_TONE: Record<DealerDataJob["status"], string> = {
   done: "bg-emerald-50 text-emerald-700 border-emerald-200",
   no_data: "bg-orange-50 text-orange-700 border-orange-200",
   failed: "bg-rose-50 text-rose-700 border-rose-200",
+  no_vin: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 const btn =
@@ -314,7 +315,7 @@ export function AdminDealerDataJobStrip({
         {job ? (
           <button
             type="button"
-            className={job.status === "failed" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
+            className={job.status === "failed" || job.status === "no_vin" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
             disabled={!editable || busy !== null}
             onClick={() => void rerun(job.status === "done" || job.status === "no_data")}
           >

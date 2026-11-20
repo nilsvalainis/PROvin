@@ -37,6 +37,7 @@ const STATUS_TONE: Record<DealerDataJob["status"], string> = {
   done: "background:#ecfdf5;color:#047857;border:1px solid #a7f3d0",
   no_data: "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa",
   failed: "background:#fff1f2;color:#be123c;border:1px solid #fecdd3",
+  no_vin: "background:#fff1f2;color:#be123c;border:1px solid #fecdd3",
 };
 
 function stripHtml(j: DealerDataJob, extra: string): string {

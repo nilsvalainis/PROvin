@@ -3,13 +3,22 @@ import "server-only";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { get, put } from "@vercel/blob";
+import { createHash } from "crypto";
 
+import { normalizeBlobEtag } from "@/lib/blob-etag";
+import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { isNodeNotFoundError, readPrivateBlobText } from "@/lib/blob-read";
+import { compareAndSwap, ConditionalWriteConflict } from "@/lib/conditional-write";
 import {
-  mergeDealerPaidOutcomes,
+  dealerDataJobBelongsInSweepIndex,
+  mergeDealerDataJobPatch,
+  type DealerDataJobPatch,
+} from "@/lib/dealer-data-job-merge";
+import {
+  dealerDataJobRetryDue,
+  decideDealerDataRun,
   normalizeDealerDataJob,
   type DealerDataJob,
-  type DealerDataJobStatus,
 } from "@/lib/dealer-data-job-types";
 
 /**
@@ -60,66 +69,97 @@ export function isSafeDealerJobSessionId(id: string): boolean {
   return /^[a-zA-Z0-9_]+$/.test(id);
 }
 
-async function readJson(key: string): Promise<unknown | null> {
+type Snapshot = { value: unknown | null; etag: string | null };
+
+function hashBody(body: string): string {
+  return createHash("sha256").update(body).digest("hex");
+}
+
+/** Nolasa ar ETag (Blob) vai satura hash (fails). Blob kļūda tiek izmesta - nekad nekļūst par «tukšu». */
+async function snapshot(key: string): Promise<Snapshot> {
   const blob = resolveBlob();
   if (blob) {
-    try {
-      const res = await get(`${blob.prefix}${key}.json`, {
-        access: "private",
-        token: blob.token,
-        useCache: false,
-      });
-      if (res && res.statusCode === 200 && res.stream) {
-        const text = await new Response(res.stream).text();
-        return JSON.parse(text) as unknown;
-      }
-    } catch {
-      /* krītam atpakaļ uz failsistēmu */
-    }
+    const snap = await readPrivateBlobText({ pathname: `${blob.prefix}${key}.json`, token: blob.token });
+    if (snap.state === "missing") return { value: null, etag: null };
+    return { value: JSON.parse(snap.text) as unknown, etag: snap.etag };
   }
-
   const dir = resolveDir();
-  if (!dir) return null;
+  if (!dir) return { value: null, etag: null };
   try {
     const text = await fs.readFile(path.join(dir, `${key}.json`), "utf8");
-    return JSON.parse(text) as unknown;
+    return { value: JSON.parse(text) as unknown, etag: hashBody(text) };
+  } catch (err) {
+    if (isNodeNotFoundError(err)) return { value: null, etag: null };
+    throw err;
+  }
+}
+
+async function readJson(key: string): Promise<unknown | null> {
+  try {
+    return (await snapshot(key)).value;
   } catch {
     return null;
   }
 }
 
-async function writeJson(key: string, value: unknown): Promise<boolean> {
+/** Nosacīta rakstīšana (Blob `ifMatch`; failam - hash pārbaude). Konflikts -> ConditionalWriteConflict. */
+async function writeConditional(key: string, value: unknown, etag: string | null): Promise<void> {
   const body = JSON.stringify(value);
-  let wrote = false;
-
   const blob = resolveBlob();
   if (blob) {
-    try {
-      await put(`${blob.prefix}${key}.json`, body, {
-        access: "private",
-        token: blob.token,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "application/json",
-      });
-      wrote = true;
-    } catch {
-      /* mēģinām failsistēmu */
-    }
+    await putBlobBodyIfMatch({
+      pathname: `${blob.prefix}${key}.json`,
+      body,
+      token: blob.token,
+      etag: normalizeBlobEtag(etag),
+      seen: etag != null,
+    });
+    return;
   }
-
   const dir = resolveDir();
-  if (dir) {
+  if (!dir) throw new Error("dealer_job_store_disabled");
+  const fp = path.join(dir, `${key}.json`);
+  // Lokālais fails (dev/testi): procesa slēdzene, lai pārbaude + rakstīšana būtu atomiska.
+  await withFileLock(fp, async () => {
+    let currentHash: string | null = null;
     try {
-      await fs.mkdir(dir, { recursive: true });
-      await fs.writeFile(path.join(dir, `${key}.json`), body, "utf8");
-      wrote = true;
-    } catch {
-      /* nerakstāma vide */
+      currentHash = hashBody(await fs.readFile(fp, "utf8"));
+    } catch (err) {
+      if (!isNodeNotFoundError(err)) throw err;
     }
-  }
+    if (currentHash !== etag) throw new ConditionalWriteConflict();
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(fp, body, "utf8");
+  });
+}
 
-  return wrote;
+const fileLocks = new Map<string, Promise<unknown>>();
+async function withFileLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const prev = fileLocks.get(key) ?? Promise.resolve();
+  const run = prev.catch(() => undefined).then(fn);
+  fileLocks.set(key, run);
+  try {
+    return await run;
+  } finally {
+    if (fileLocks.get(key) === run) fileLocks.delete(key);
+  }
+}
+
+/** Compare-and-swap viena darba ierakstam. */
+async function casJob<R>(
+  sessionId: string,
+  mutate: (current: DealerDataJob | null) => { value: R; next?: DealerDataJob },
+): Promise<R> {
+  return compareAndSwap<unknown, R>({
+    read: () => snapshot(sessionId),
+    write: (next, etag) => writeConditional(sessionId, next, etag),
+    update: (raw) => {
+      const current = raw ? normalizeDealerDataJob(raw, sessionId) : null;
+      const d = mutate(current);
+      return d.next ? { next: d.next, result: d.value } : { result: d.value };
+    },
+    maxAttempts: 8,
+  });
 }
 
 export async function readDealerDataJob(sessionId: string): Promise<DealerDataJob | null> {
@@ -140,11 +180,12 @@ export async function readDealerDataJobs(sessionIds: readonly string[]): Promise
   return out;
 }
 
-/** Statusi, kas cron slaucītājam vēl jāpārņem. */
-const UNFINISHED: readonly DealerDataJobStatus[] = ["pending", "running", "failed"];
-
 async function readPendingIndex(): Promise<string[]> {
   const raw = await readJson(INDEX_KEY);
+  return parseIndex(raw);
+}
+
+function parseIndex(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
   for (const item of raw) {
@@ -155,12 +196,22 @@ async function readPendingIndex(): Promise<string[]> {
   return out.slice(-PENDING_INDEX_MAX);
 }
 
+/** Indeksa atjaunošana ar CAS, lai vienlaicīgi darbi nepazaudē viens otra ierakstu. */
 async function updatePendingIndex(sessionId: string, unfinished: boolean): Promise<void> {
-  const current = await readPendingIndex();
-  const without = current.filter((id) => id !== sessionId);
-  const next = unfinished ? [...without, sessionId].slice(-PENDING_INDEX_MAX) : without;
-  if (next.length === current.length && next.every((id, i) => id === current[i])) return;
-  await writeJson(INDEX_KEY, next);
+  await compareAndSwap<unknown, void>({
+    read: () => snapshot(INDEX_KEY),
+    write: (next, etag) => writeConditional(INDEX_KEY, next, etag),
+    update: (raw) => {
+      const current = parseIndex(raw);
+      const without = current.filter((id) => id !== sessionId);
+      const next = unfinished ? [...without, sessionId].slice(-PENDING_INDEX_MAX) : without;
+      if (next.length === current.length && next.every((id, i) => id === current[i])) return { result: undefined };
+      return { next, result: undefined };
+    },
+    maxAttempts: 8,
+  }).catch((err) => {
+    console.error("[dealer-data-job-store] index update failed", { sessionId, err });
+  });
 }
 
 export async function listUnfinishedDealerDataJobs(): Promise<DealerDataJob[]> {
@@ -168,92 +219,123 @@ export async function listUnfinishedDealerDataJobs(): Promise<DealerDataJob[]> {
   const jobs: DealerDataJob[] = [];
   for (const id of ids) {
     const job = await readDealerDataJob(id);
-    if (job && UNFINISHED.includes(job.status)) jobs.push(job);
+    if (job && dealerDataJobBelongsInSweepIndex(job)) jobs.push(job);
+    else if (job) await updatePendingIndex(id, false);
   }
   return jobs;
 }
 
 export async function writeDealerDataJob(job: DealerDataJob): Promise<boolean> {
   if (!isSafeDealerJobSessionId(job.sessionId)) return false;
-  const normalized = normalizeDealerDataJob(
-    { ...job, updatedAt: new Date().toISOString() },
-    job.sessionId,
-  );
+  const normalized = normalizeDealerDataJob({ ...job, updatedAt: new Date().toISOString() }, job.sessionId);
   if (!normalized) return false;
-  const wrote = await writeJson(normalized.sessionId, normalized);
-  if (wrote) await updatePendingIndex(normalized.sessionId, UNFINISHED.includes(normalized.status));
-  return wrote;
+  try {
+    await casJob(normalized.sessionId, () => ({ value: true, next: normalized }));
+  } catch (err) {
+    console.error("[dealer-data-job-store] write failed", { sessionId: job.sessionId, err });
+    return false;
+  }
+  await updatePendingIndex(normalized.sessionId, dealerDataJobBelongsInSweepIndex(normalized));
+  return true;
 }
 
-/** Izveido vai atjauno darbu, saglabājot `createdAt` un mēģinājumu skaitu. */
+/**
+ * Izveido vai atjauno darbu (CAS). `expectRunId`: rakstīt tikai, ja darbam joprojām ir šī noma
+ * (citādi cita palaišana jau pārņēma - nepārrakstām tās stāvokli). Atgriež null, ja neierakstīja.
+ */
 export async function upsertDealerDataJob(
   sessionId: string,
-  patch: Partial<Omit<DealerDataJob, "sessionId">> & { vin: string },
+  patch: DealerDataJobPatch,
+  opts: { expectRunId?: string } = {},
 ): Promise<DealerDataJob | null> {
   if (!isSafeDealerJobSessionId(sessionId)) return null;
-  const now = new Date().toISOString();
-  const current = await readDealerDataJob(sessionId);
-  const next: DealerDataJob = {
-    sessionId,
-    vin: patch.vin.trim().toUpperCase(),
-    status: patch.status ?? current?.status ?? "pending",
-    attempts: patch.attempts ?? current?.attempts ?? 0,
-    createdAt: current?.createdAt ?? now,
-    updatedAt: now,
-    ...(patch.startedAt ?? current?.startedAt ? { startedAt: patch.startedAt ?? current?.startedAt } : {}),
-    ...(patch.finishedAt ?? current?.finishedAt ? { finishedAt: patch.finishedAt ?? current?.finishedAt } : {}),
-    ...(patch.serviceEventCount !== undefined
-      ? { serviceEventCount: patch.serviceEventCount }
-      : current?.serviceEventCount !== undefined
-        ? { serviceEventCount: current.serviceEventCount }
-        : {}),
-    ...(patch.aiGenerated !== undefined
-      ? { aiGenerated: patch.aiGenerated }
-      : current?.aiGenerated !== undefined
-        ? { aiGenerated: current.aiGenerated }
-        : {}),
-    ...(patch.error
-      ? { error: patch.error }
-      : patch.status === "done" || patch.status === "no_data" || patch.status === "running"
-        ? {}
-        : current?.error
-          ? { error: current.error }
-          : {}),
-    ...(patch.trigger ?? current?.trigger ? { trigger: patch.trigger ?? current?.trigger } : {}),
-    ...(patch.paidOutcomes || current?.paidOutcomes
-      ? {
-          paidOutcomes: mergeDealerPaidOutcomes(current?.paidOutcomes, patch.paidOutcomes),
-        }
-      : {}),
-    ...(patch.skipTranslate !== undefined
-      ? { skipTranslate: patch.skipTranslate }
-      : current?.skipTranslate !== undefined
-        ? { skipTranslate: current.skipTranslate }
-        : {}),
-    ...(patch.commentLang ?? current?.commentLang
-      ? { commentLang: patch.commentLang ?? current?.commentLang }
-      : {}),
-    ...(patch.oneautoResults || current?.oneautoResults
-      ? {
-          oneautoResults: {
-            ...(current?.oneautoResults ?? {}),
-            ...(patch.oneautoResults ?? {}),
-          },
-        }
-      : {}),
-    // Atmaksa ir neatgriezeniska: reizi ierakstītu ierakstu patch nedrīkst nomest.
-    // emailSentAt drīkst pievienot vēlāk (viens e-pasts uz atmaksu).
-    ...(current?.refund || patch.refund
-      ? {
-          refund: {
-            ...(current?.refund ?? patch.refund!),
-            ...(patch.refund?.emailSentAt && !current?.refund?.emailSentAt
-              ? { emailSentAt: patch.refund.emailSentAt }
-              : {}),
-          },
-        }
-      : {}),
-  };
-  const ok = await writeDealerDataJob(next);
-  return ok ? next : null;
+  let next: DealerDataJob | null = null;
+  try {
+    next = await casJob(sessionId, (current) => {
+      if (opts.expectRunId && current?.runId !== opts.expectRunId) return { value: null };
+      const merged = normalizeDealerDataJob(mergeDealerDataJobPatch(sessionId, current, patch), sessionId);
+      return merged ? { value: merged, next: merged } : { value: null };
+    });
+  } catch (err) {
+    console.error("[dealer-data-job-store] upsert failed", { sessionId, err });
+    return null;
+  }
+  if (next) await updatePendingIndex(sessionId, dealerDataJobBelongsInSweepIndex(next));
+  return next;
+}
+
+export type DealerDataClaimResult =
+  | { ok: true; job: DealerDataJob; previous: DealerDataJob | null }
+  | { ok: false; reason: string; job: DealerDataJob | null };
+
+/**
+ * Atomiska palaišanas nomas iegūšana (CAS): svaigā ierakstā pārbauda `decideDealerDataRun`
+ * un (cron) `nextRetryAt`, tad uzliek status=running ar unikālu `runId`. Divas paralēlas
+ * palaišanas nevar abas iegūt nomu.
+ */
+export async function claimDealerDataJobRun(args: {
+  sessionId: string;
+  vin: string;
+  runId: string;
+  trigger: DealerDataJob["trigger"];
+  force?: boolean;
+  /** Cron: respektē nextRetryAt. */
+  respectNextRetry?: boolean;
+  nowMs?: number;
+  patch?: Partial<DealerDataJobPatch>;
+}): Promise<DealerDataClaimResult> {
+  if (!isSafeDealerJobSessionId(args.sessionId)) return { ok: false, reason: "invalid_session", job: null };
+  const nowMs = args.nowMs ?? Date.now();
+  try {
+    const result = await casJob<DealerDataClaimResult>(args.sessionId, (current) => {
+      const decision = decideDealerDataRun({
+        job: current,
+        vin: args.vin,
+        force: args.force,
+        trigger: args.trigger,
+        nowMs,
+      });
+      if (!decision.run) return { value: { ok: false, reason: decision.reason, job: current } };
+      // Cron vienmēr; arī «Atkārtot», ja OneAuto vēl apstrādā (202) - lai nesūta jaunu pieprasījumu priekšlaikus.
+      if (
+        (args.respectNextRetry || Boolean(current?.pendingRequestId)) &&
+        current &&
+        current.status === "failed" &&
+        !dealerDataJobRetryDue(current, nowMs)
+      ) {
+        return { value: { ok: false, reason: "not_due", job: current } };
+      }
+      const base = mergeDealerDataJobPatch(args.sessionId, current, { vin: args.vin });
+      const merged = normalizeDealerDataJob(
+        mergeDealerDataJobPatch(args.sessionId, base, {
+          ...(args.patch ?? {}),
+          vin: args.vin,
+          status: "running",
+          attempts: base.attempts + 1,
+          startedAt: new Date(nowMs).toISOString(),
+          trigger: args.trigger,
+          runId: args.runId,
+        }),
+        args.sessionId,
+      );
+      if (!merged) return { value: { ok: false, reason: "invalid_job", job: current } };
+      return { value: { ok: true, job: merged, previous: current }, next: merged };
+    });
+    if (result.ok) await updatePendingIndex(args.sessionId, true);
+    return result;
+  } catch (err) {
+    console.error("[dealer-data-job-store] claim failed", { sessionId: args.sessionId, err });
+    return { ok: false, reason: "claim_conflict", job: null };
+  }
+}
+
+/** Pirms katra maksas soļa: vai šī palaišana joprojām tur nomu (svaigs nolasījums). */
+export async function dealerDataRunLeaseHeld(sessionId: string, runId: string): Promise<boolean> {
+  try {
+    const raw = (await snapshot(sessionId)).value;
+    const job = raw ? normalizeDealerDataJob(raw, sessionId) : null;
+    return Boolean(job && job.runId === runId && job.status === "running");
+  } catch {
+    return false;
+  }
 }
