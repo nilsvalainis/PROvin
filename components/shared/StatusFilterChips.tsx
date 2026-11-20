@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   statusChipClass,
@@ -51,6 +52,8 @@ export function StatusFilterChip({
       data-tone={tone}
       className={`${statusChipClass(pressed, tone)} disabled:cursor-default disabled:opacity-40`}
     >
+      {/* 20.11: daudzizvēles filtrs - atzīmētajam ķeksis (iPhone visi ieslēgtie bija vienādi melni bez skaidras atzīmes). */}
+      {pressed ? <Check className="iriss-status-chip-check h-3.5 w-3.5 shrink-0" strokeWidth={3} aria-hidden /> : null}
       {label}
       {typeof count === "number" ? <span className={STATUS_CHIP_COUNT_CLASS}>{count}</span> : null}
     </button>

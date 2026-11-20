@@ -62,7 +62,10 @@ export const WAYBILL_TUKUMS_STREET = "Rīgas iela 75";
 /** accepted: auto ir CSDD tirdzniecībā pieņemto sarakstā (pavadzīme no akta, bez maršruta). */
 export type WaybillMobileCar = { brandModel: string; vin: string; id: string; accepted?: boolean; owner?: AutoparksOwner };
 
-/** Auto ievades ceļš. Noklusējums "none": nepiespiež sarakstu; abi ceļi vienādi pieejami. */
+/**
+ * Auto ievades ceļš. Noklusējums "list" (20.11): visiem numuriem vienādi «No saraksta» aktīvs un redzams «Izvēlies auto»
+ * (agrāk "none" - B192-7 rādīja divas neaktīvas pogas bez auto lauka). "none" paliek tikai notīrīšanai.
+ */
 export type WaybillAutoChoice = "none" | "list" | "manual";
 
 export type WaybillMobileFormState = {
@@ -106,7 +109,7 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
     plateTouched: false,
     car: null,
     manual: false,
-    autoChoice: "none",
+    autoChoice: "list",
     manualBrandModel: "",
     manualVin: "",
     hoursPreset: WAYBILL_FORM_DEFAULT_HOURS,
@@ -135,6 +138,18 @@ export function applyWaybillAutoChoice(state: WaybillMobileFormState, choice: Wa
     manualVin: "",
     representative: "",
   };
+}
+
+/**
+ * Numura maiņa: auto ievade paliek tāda pati visiem numuriem («No saraksta» pēc noklusējuma). B192-7 (Dzintarzeme Auto)
+ * drīkst tikai DZA auto - citas firmas izvēlētais auto tiek notīrīts (sk. `dzintarzemeAcceptedCars`).
+ */
+export function waybillAutoForPlate(state: WaybillMobileFormState, plate: string): WaybillMobileFormState {
+  const isB192 = displayDealerPlate(plate) === "B192-7";
+  const wrongOwner = isB192 && state.car != null && state.car.owner !== "DZA";
+  const autoChoice = state.autoChoice === "none" ? "list" : state.autoChoice;
+  if (!wrongOwner && autoChoice === state.autoChoice) return state;
+  return { ...state, autoChoice, ...(wrongOwner ? { car: null, representative: "" } : {}) };
 }
 
 /** Manuālie lauki (marka, modelis) redzami tikai pēc "Ar roku". */

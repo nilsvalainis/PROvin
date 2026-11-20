@@ -783,9 +783,12 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                       setMore(false);
                       setLimitsOpen(true);
                     }}
-                    className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+                    className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-left text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
                   >
-                    LIMITI
+                    {/* 20.11: kā pārējie «Vairāk» ieraksti - ikona, nosaukums, bultiņa (agrāk tikai «LIMITI» lielajiem burtiem). */}
+                    <AdminMobileIcon name="statistika" className="h-5 w-5 text-[var(--am-ink2)]" />
+                    <span className="min-w-0 flex-1 truncate">Limiti</span>
+                    <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
                   </button>
                 ) : null}
                 <button

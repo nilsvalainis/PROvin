@@ -25,7 +25,7 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     expect(text).toContain("Izvēlēties formā");
   });
 
-  it("aizņemtā kartīte: PDF, Pagarināt, Pārtraukt; CSDD bez indeksa (tukšs id) - bez darbībām", () => {
+  it("aizņemtā kartīte: PDF, Pagarināt, Pārtraukt; CSDD bez indeksa (tukšs id) - tās pašas darbības, PDF/Pārtraukt neaktīvi", () => {
     const busy = {
       plate: "B193-7",
       busy: true,
@@ -45,9 +45,17 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     const html = renderHtml(<WaybillPlateCards gauges={[busy]} loading={false} />);
     expect(html).toMatch(/iriss-btn--danger-outline[^"]*">Pārtraukt</);
     expect(html).toMatch(/iriss-btn--secondary[^"]*">Pagarināt</);
-    const csddOnly = renderText(<WaybillPlateCards gauges={[{ ...busy, id: "" }]} loading={false} />);
-    expect(csddOnly).not.toContain("Pārtraukt");
-    expect(csddOnly).not.toContain("Pagarināt");
+    const csddOnly = renderHtml(<WaybillPlateCards gauges={[{ ...busy, id: "" }]} loading={false} />);
+    expect(csddOnly).toMatch(/disabled=""[^>]*>Pārtraukt</);
+    expect(csddOnly).toMatch(/disabled=""[^>]*>PDF</);
+    expect(csddOnly).toMatch(/<button[^>]*class="[^"]*iriss-btn--secondary[^"]*">Pagarināt</);
+    expect(csddOnly).toContain("PDF vēl nav indeksā");
+  });
+
+  it("CSDD stāvoklis kartītēs - tikai vienreiz (20.11)", () => {
+    const g = (plate: "B193-7" | "B762-7" | "B192-7") => ({ plate, busy: false, status: "free", hoursLeft: 0, minutesLeft: 0, share: 0, brandModel: "", validUntil: "", id: "", number: "", csddCheckedAt: "2026-11-20T09:00:00Z", csddCheckOk: true }) as const;
+    const text = renderText(<WaybillPlateCards gauges={[g("B193-7"), g("B762-7"), g("B192-7")]} loading={false} nowMs={Date.parse("2026-11-20T10:00:00Z")} />);
+    expect(text.match(/Stāvoklis no CSDD/g)?.length).toBe(1);
   });
 
   it("kartītes režīms saglabā virsrakstu sānjoslai / lapai", () => {

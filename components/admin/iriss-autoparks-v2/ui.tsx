@@ -110,6 +110,33 @@ export function CameraIcon() {
   );
 }
 
+/*
+ * Autoparka apakšvirsraksts («2019 · Sudraba · Iegāde 05.11.2026»).
+ * 20.11: izsoles importā krāsas laukā mēdz iekļūt nākamā lauka etiķete bez vērtības («Power:») - to nekad nerāda.
+ * Tikai attēlošana: saglabātie dati netiek mainīti.
+ */
+/** Tukša etiķete: «Power:», «Leistung :», «Krāsa:» - teksts ar kolu beigās un bez vērtības. */
+const EMPTY_LABEL = /^[^:]{1,40}:\s*$/u;
+/** Nav krāsa: jauda vai cits tehnisks lauks, kas iekļuvis krāsas vietā. */
+const NOT_A_COLOR = /\b(power|leistung|jauda|kw|ps|hp|engine|motor)\b/iu;
+
+function cleanAutoparksMetaPart(raw: string | null | undefined): string {
+  const value = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!value || EMPTY_LABEL.test(value)) return "";
+  return value;
+}
+
+export function cleanAutoparksColor(raw: string | null | undefined): string {
+  const value = cleanAutoparksMetaPart(raw);
+  if (!value || NOT_A_COLOR.test(value)) return "";
+  return value;
+}
+
+/** «2019 · Sudraba»: tukšas un etiķešu daļas izlaistas. */
+export function autoparksYearColor(year: string | null | undefined, color: string | null | undefined): string {
+  return [cleanAutoparksMetaPart(year), cleanAutoparksColor(color)].filter(Boolean).join(" · ");
+}
+
 export function yearColor(year: string, color: string): string {
-  return [year, color].filter(Boolean).join(" · ");
+  return autoparksYearColor(year, color);
 }

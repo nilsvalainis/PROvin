@@ -87,6 +87,11 @@ describe("B192-7 (Dzintarzeme Auto) auto izvēle: tikai šīs firmas tirdzniecī
     expect(dzintarzemeAcceptedCars([])).toEqual([]);
     expect(dzintarzemeAcceptedCars([tradeCar({ owner: "IRISS", accepted: true }), tradeCar({ owner: "DZA", accepted: false })])).toEqual([]);
   });
+
+  it("Autoparka rezerves saraksts (reģistrs nav nolasīts, neviens nav accepted) - B192-7 rāda DZA auto, ne ĪRISS", () => {
+    const cars = [tradeCar({ id: "dza", owner: "DZA", accepted: false }), tradeCar({ id: "iriss", owner: "IRISS", accepted: false })];
+    expect(dzintarzemeAcceptedCars(cars).map((c) => c.id)).toEqual(["dza"]);
+  });
 });
 
 describe("waybill trade cars before the first CSDD registry read", () => {

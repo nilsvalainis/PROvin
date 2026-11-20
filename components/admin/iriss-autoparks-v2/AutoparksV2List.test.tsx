@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AutoparksV2List, AutoparksV2ListBody } from "@/components/admin/iriss-autoparks-v2/AutoparksV2List";
 import type { AutoparksV2ListRow } from "@/lib/iriss-autoparks-v2-list";
 import { renderHtml, renderText } from "@/lib/test-render";
+import { autoparksYearColor, cleanAutoparksColor } from "@/components/admin/iriss-autoparks-v2/ui";
 
 const rows: AutoparksV2ListRow[] = [
   {
@@ -114,5 +115,25 @@ describe("Pasūtījums (Nils 27.10)", () => {
     const text = renderText(<AutoparksV2ListBody rows={[{ ...rows[0]!, clientOrder: true }]} />);
     expect(text).toContain("Pasūtījums");
     expect(renderText(<AutoparksV2ListBody rows={rows} />)).not.toContain("Pasūtījums");
+  });
+});
+
+describe("Autoparka apakšvirsraksts (20.11: «2019 · Power:»)", () => {
+  it("tukša etiķete krāsas vietā netiek rādīta", () => {
+    expect(autoparksYearColor("2019", "Power:")).toBe("2019");
+    expect(autoparksYearColor("2019", " Leistung : ")).toBe("2019");
+    expect(cleanAutoparksColor("Power: 140 kW")).toBe("");
+  });
+  it("īsta krāsa paliek", () => {
+    expect(autoparksYearColor("2019", "Sudraba metālisks")).toBe("2019 · Sudraba metālisks");
+    expect(autoparksYearColor("", "Melna")).toBe("Melna");
+    expect(autoparksYearColor("2020", "")).toBe("2020");
+  });
+});
+
+describe("saraksta rinda ar «Power:» krāsas vietā", () => {
+  it("nerāda tukšu etiķeti", () => {
+    const text = renderText(<AutoparksV2ListBody rows={[{ ...rows[0]!, color: "Power:" }]} />);
+    expect(text).not.toContain("Power:");
   });
 });
