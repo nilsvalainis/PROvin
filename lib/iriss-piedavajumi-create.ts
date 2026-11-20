@@ -9,7 +9,13 @@ import "server-only";
 import { irissAuctionDetailToSeed, mergeListedIntoDetailHit, type IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { fetchIrissAuctionDetailViaRelay } from "@/lib/iriss-auction-detail-relay";
 import { findIrissOrderRoomHitForAuctionLink } from "@/lib/iriss-auction-link-read";
-import type { IrissAuctionLink } from "@/lib/iriss-auction-link";
+import { findListingForAuctionLink, type IrissAuctionLink } from "@/lib/iriss-auction-link";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
+import { readIrissRelayConfig } from "@/lib/iriss-listings-relay";
+import { fetchLotVinsViaRelay } from "@/lib/vin-memory-lot-vins-run";
+import type { LotVinRelayResult } from "@/lib/vin-memory-lot-vins";
+import { autobidLotPageUrl, irissPdAutobidImport } from "@/lib/iriss-piedavajumi-autobid";
+import { irissPdImportFromListing } from "@/lib/iriss-piedavajumi-from-listing";
 import { loadOfferSeed } from "@/lib/iriss-offer-source";
 import type { IrissOrderRoomHit } from "@/lib/iriss-order-room";
 import { irissPdAuto1BlocksFromDetail, irissPdAuto1FieldCount, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
@@ -120,6 +126,21 @@ function manualImport(link: IrissPdDetectedLink, note: string): IrissPdImport {
 }
 
 /**
+ * Autobid: Sludinājumu ieraksts (lauki, foto, cena) + releja `/lot-vins` (VIN, nobraukums, 1. reģ., virsraksts).
+ * Releja `/detail` Autobid neatbalsta. Nekad neatgriež kļūdu - sliktākajā gadījumā nosaukums no saites.
+ */
+async function importAutobidLink(link: IrissPdDetectedLink): Promise<IrissPdImport> {
+  const latest = await readIrissListingsLatestViewWithMarketplace().catch(() => null);
+  const vehicle = findListingForAuctionLink(latest?.vehicles ?? [], { platform: "autobid", key: link.key, url: link.url });
+  const listing = vehicle ? irissPdImportFromListing(vehicle) : null;
+  const lotUrl = autobidLotPageUrl(link.url) || autobidLotPageUrl(listing?.sourceUrl ?? "");
+  const cfg = lotUrl ? readIrissRelayConfig() : null;
+  let lot: LotVinRelayResult | null = null;
+  if (cfg && lotUrl) lot = await fetchLotVinsViaRelay(cfg, "autobid", [lotUrl], { timeoutMs: 60_000 }).catch(() => null);
+  return irissPdAutobidImport(link, listing, lot);
+}
+
+/**
  * Saite -> importa dati. `manual`: ja nolasīt neizdodas vai avots ir stub, izveido ar saiti un tukšiem laukiem.
  */
 export async function importIrissPdFromLink(raw: string, opts: { manual?: boolean } = {}): Promise<IrissPdLinkImportResult> {
@@ -128,6 +149,7 @@ export async function importIrissPdFromLink(raw: string, opts: { manual?: boolea
   const adapter = IRISS_PD_ADAPTERS[link.source];
   if (adapter.mode === "stub") return { ok: true, data: manualImport(link, adapter.stubNote) };
   if (opts.manual) return { ok: true, data: manualImport(link, "") };
+  if (adapter.mode === "relay_autobid") return { ok: true, data: await importAutobidLink(link) };
   const rl = relayLink(link)!;
   const listed = await findIrissOrderRoomHitForAuctionLink(rl).catch(() => null);
   const relay = await fetchIrissAuctionDetailViaRelay(rl);

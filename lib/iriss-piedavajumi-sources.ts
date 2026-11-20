@@ -1,7 +1,8 @@
 /**
  * j70: izsoles/portāla saite -> avots + auto atslēga. Adapteru saraksts nosaka, ko katram avotam var nolasīt.
  * Auto1 - pilnībā (releja detaļu lapa + 5 bloki). Openlane - releja detaļu lapa (bez Auto1 blokiem).
- * Autobid un mobile.de - tikai atpazīšana (stub): piedāvājums izveidojas ar saiti, lauki jāaizpilda ar roku,
+ * Autobid - Sludinājumu ieraksts + releja lotes lapa (VIN, nobraukums, 1. reģ.; sk. iriss-piedavajumi-autobid).
+ * mobile.de - tikai atpazīšana (stub): piedāvājums izveidojas ar saiti, lauki jāaizpilda ar roku,
  * kamēr nav piekļuves (API vai releja lasītāja). Jaunu adapteri pievieno šeit un `from-link` maršrutā.
  */
 
@@ -12,7 +13,7 @@ export type IrissPdLinkSource = Exclude<IrissPdSource, "autoparks" | "logistics"
 
 export type IrissPdDetectedLink = { source: IrissPdLinkSource; key: string; url: string };
 
-export type IrissPdAdapterMode = "relay_auto1" | "relay_basic" | "stub";
+export type IrissPdAdapterMode = "relay_auto1" | "relay_basic" | "relay_autobid" | "stub";
 
 export type IrissPdAdapter = {
   source: IrissPdLinkSource;
@@ -24,7 +25,7 @@ export type IrissPdAdapter = {
 export const IRISS_PD_ADAPTERS: Record<IrissPdLinkSource, IrissPdAdapter> = {
   auto1: { source: "auto1", mode: "relay_auto1", stubNote: "" },
   openlane: { source: "openlane", mode: "relay_basic", stubNote: "" },
-  autobid: { source: "autobid", mode: "stub", stubNote: "Autobid datu nolasīšana vēl nav pieslēgta - saite saglabāta, lauki jāaizpilda ar roku." },
+  autobid: { source: "autobid", mode: "relay_autobid", stubNote: "" },
   mobilede: { source: "mobilede", mode: "stub", stubNote: "mobile.de datu nolasīšana vēl nav pieslēgta - saite saglabāta, lauki jāaizpilda ar roku." },
   // Šie nāk no Sludinājumiem (dati jau ielasīti) - saites atpazīšana vēl nav.
   ecarstrade: { source: "ecarstrade", mode: "stub", stubNote: "eCarsTrade saiti izveido no Sludinājumiem (poga «Izveidot piedāvājumu»)." },

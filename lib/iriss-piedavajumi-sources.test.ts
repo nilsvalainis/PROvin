@@ -31,7 +31,7 @@ describe("Piedāvājumi: izsoles saites atpazīšana", () => {
   it("adapteri: Auto1 pilns, Openlane caur releju, Autobid un mobile.de - stub ar LV paskaidrojumu", () => {
     expect(IRISS_PD_ADAPTERS.auto1.mode).toBe("relay_auto1");
     expect(IRISS_PD_ADAPTERS.openlane.mode).toBe("relay_basic");
-    expect(IRISS_PD_ADAPTERS.autobid.mode).toBe("stub");
+    expect(IRISS_PD_ADAPTERS.autobid.mode).toBe("relay_autobid");
     expect(IRISS_PD_ADAPTERS.mobilede.stubNote).toContain("ar roku");
   });
 
