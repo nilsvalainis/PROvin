@@ -79,7 +79,7 @@ export type AiSourceCommentInput = {
 
 /** Dīlera automātiskās ielases papildu norāde abiem laukiem (eļļa + komentāri). */
 export const DEALER_MAJOR_ASSEMBLIES_DIRECTIVE =
-  "LIELIE MEZGLI: ja oficiālā dīlera datos ir darbi pie lielajiem mezgliem (dzinējs, ātrumkārba, sadales mehānisms - zobsiksna vai ķēde, turbokompresors, sajūgs / divmasu spararats, diferenciālis / reduktors, mehatronika, augstsprieguma akumulators), nosauc mezglu skaidri ar datumu un km. Neizdomā mezglu darbus, kas nav datos. Nelieto vārdus „eksperts” un „eksperta slēdziens”. Tikai īsā defise „-”, nekad garā.";
+  "LIELIE MEZGLI: ja oficiālā dīlera datos ir darbi pie lielajiem mezgliem (dzinējs, ātrumkārba, sadales mehānisms - zobsiksna vai ķēde, turbokompresors, sajūgs / divmasu spararats, diferenciālis / reduktors, mehatronika, augstsprieguma akumulators), nosauc mezglu skaidri ar datumu un km. Neizdomā mezglu darbus, kas nav datos. Tikai īsā defise „-”, nekad garā.";
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
 function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
