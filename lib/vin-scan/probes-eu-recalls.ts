@@ -3,11 +3,13 @@ import "server-only";
 import { scanFetch } from "@/lib/vin-scan/http";
 import {
   buildSafetyGateResult,
+  mergeSafetyGatePages,
   parseSafetyGateDetail,
   parseSafetyGateSearch,
   safetyGateBrandKey,
   safetyGateSearchBody,
   selectSafetyGateAlerts,
+  SAFETY_GATE_CHUNKS,
   SAFETY_GATE_DETAIL_URL,
   SAFETY_GATE_MAX_ALERTS,
   SAFETY_GATE_SEARCH_URL,
@@ -67,16 +69,25 @@ export async function probeEuSafetyGate(ctx: VinScanContext): Promise<VinScanInd
   if (!make) return done(ctx, { status: "skipped", summary: "ES Safety Gate: marka no VIN nav nosakāma" });
   try {
     const nowYear = new Date().getFullYear();
-    const [res, vpic] = await Promise.all([
-      scanFetch(SAFETY_GATE_SEARCH_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
-        body: safetyGateSearchBody(make, nowYear),
-        timeoutMs: SEARCH_TIMEOUT_MS,
-      }),
+    // Lapas prasām paralēli: viena liela lapa markām ar daudz brīdinājumiem pārsniedz noildzi.
+    const [pages, vpic] = await Promise.all([
+      Promise.allSettled(
+        Array.from({ length: SAFETY_GATE_CHUNKS }, (_, page) =>
+          scanFetch(SAFETY_GATE_SEARCH_URL, {
+            method: "POST",
+            headers: { "content-type": "application/json", accept: "application/json" },
+            body: safetyGateSearchBody(make, nowYear, page),
+            timeoutMs: SEARCH_TIMEOUT_MS,
+          }),
+        ),
+      ),
       vpicPromise,
     ]);
-    const search = parseSafetyGateSearch(res.status, res.text);
+    const first = pages[0];
+    if (!first || first.status === "rejected") throw first?.reason ?? new Error("no_page");
+    const search = mergeSafetyGatePages(
+      pages.map((page) => (page.status === "fulfilled" ? parseSafetyGateSearch(page.value.status, page.value.text) : null)),
+    );
     if (!search.ok) return done(ctx, { status: "unknown", summary: search.summary });
     // vPIC modeli ņemam tikai tad, ja tas runā par to pašu marku, ko WMI.
     const sameMake = vpic && safetyGateBrandKey(vpic.make) === safetyGateBrandKey(make);
