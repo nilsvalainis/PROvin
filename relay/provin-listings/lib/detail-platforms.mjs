@@ -38,6 +38,8 @@ export const DETAIL_PLATFORMS = {
     loggedOutUrlRe: /\/merchant\/signin|\/login\b|\/signin\b/i,
     photoHostRe: /auto1\.(?:com|cloud|eu)|img-pa\./i,
     tabTexts: [/^\s*(?:Condition|Damages?)\s*$/i, /^\s*(?:Car )?Equipment\s*$/i, /^\s*Service\s*$/i, /^\s*Documents\s*$/i],
+    /** Nils 20.11: «Dati pēc VIN» / aprīkojums izvēršas ar aria-expanded «+» pogām - spiest arī tās (tikai drošās). */
+    expandAria: true,
     mapItem: (obj) => (obj && (obj.stockNumber || obj.manufacturerName) ? mapAuto1Car(obj) : null),
   },
   openlane: {

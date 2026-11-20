@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   DAMAGE_TABLE_HEAD,
+  EXPAND_TEXT_RE,
+  FORBIDDEN_CONTROL_RE,
   damageSectionTable,
   fetchAuctionDetail,
   filterDetailPhotos,
@@ -11,6 +13,7 @@ import {
   flattenJsonFields,
   mergeDetailExtracts,
   photoIdentity,
+  pickExpandControls,
   validDetailUrl,
 } from "./detail-page.mjs";
 
@@ -147,40 +150,91 @@ test("fetchAuctionDetail: login lapa -> login_required, 404 -> not_found", async
 });
 
 test("fetchAuctionDetail: «Show more +» tiek atvērts un saraksts nolasīts vēlreiz (Nils 30.10, DATI PĒC VIN)", async () => {
-  let clicks = 0;
+  let clicked = [];
   let expanded = false;
   const base = { title: "BMW", fields: [["a", "1"], ["b", "2"], ["c", "3"], ["d", "4"], ["e", "5"], ["f", "6"], ["g", "7"], ["h", "8"]], tables: [], photos: [], text: "" };
+  const cands = () => [
+    { id: "0", tag: "BUTTON", text: expanded ? "Show less" : "Show more +", expanded: null },
+    { id: "1", tag: "BUTTON", text: "Bid now", expanded: null },
+    { id: "2", tag: "BUTTON", text: "", label: "Kaufen", expanded: "false" },
+  ];
   const page = {
     on: () => undefined,
     off: () => undefined,
     url: () => "https://www.auto1.com/en/app/merchant/car/DE1",
     goto: async () => ({ status: () => 200 }),
-    evaluate: async (fn) =>
-      fn.name === "extractDetailDom"
-        ? { ...base, lists: [{ heading: "Equipment according to the identification number", items: expanded ? ["A", "B", "C"] : ["A"] }] }
-        : undefined,
-    locator: () => ({
-      filter: ({ hasText }) => {
-        const isMore = hasText instanceof RegExp && hasText.test("Show more +");
-        return {
-          first: () => ({ count: async () => 0 }),
-          count: async () => (isMore && !expanded ? 1 : 0),
-          nth: () => ({
-            isVisible: async () => true,
-            click: async () => {
-              clicks += 1;
-              expanded = true;
-            },
-          }),
-        };
-      },
-    }),
+    evaluate: async (fn, arg) => {
+      if (fn.name === "extractDetailDom") return { ...base, lists: [{ heading: "Equipment according to the identification number", items: expanded ? ["A", "B", "C"] : ["A"] }] };
+      if (fn.name === "collectExpandCandidatesDom") return cands();
+      if (fn.name === "clickExpandControlsDom") {
+        clicked.push(...arg);
+        expanded = true;
+        return arg.length;
+      }
+      if (fn.name === "detailContentSizeDom") return expanded ? 3 : 1;
+      return undefined;
+    },
+    locator: () => ({ filter: () => ({ first: () => ({ count: async () => 0 }) }) }),
   };
   const out = await fetchAuctionDetail(page, "auto1", "https://www.auto1.com/en/app/merchant/car/DE1", { sleep: async () => undefined });
   assert.equal(out.status, "ok");
-  assert.equal(clicks, 1);
+  assert.deepEqual(clicked, ["0"]);
   const vinList = out.detail.lists.find((l) => /identification/.test(l.heading));
   assert.ok(vinList.items.includes("C"));
+});
+
+test("pickExpandControls: tikai izvēršanas pogas, nekad solīšana / pirkšana (Nils 20.11)", () => {
+  const c = (id, o) => ({ id, tag: "BUTTON", text: "", label: "", title: "", testid: "", elId: "", href: "", type: "", expanded: null, haspopup: null, inChrome: false, inForm: false, disabled: false, parent: "", clicks: 0, ...o });
+  const cands = [
+    c("0", { text: "Show more +" }),
+    c("1", { text: "Mehr anzeigen" }),
+    c("2", { text: "+" }),
+    c("3", { text: "Rādīt vairāk" }),
+    c("4", { text: "", label: "Show more", expanded: "false" }),
+    c("5", { text: "Vehicle data by VIN", expanded: "false" }),
+    c("6", { text: "Show all (25)" }),
+    c("7", { text: "+ 15" }),
+    // aizliegtās
+    c("10", { text: "Bid" }),
+    c("11", { text: "Bid now", expanded: "false" }),
+    c("12", { text: "Buy now" }),
+    c("13", { text: "Sofortkauf" }),
+    c("14", { text: "Gebot abgeben", expanded: "false" }),
+    c("15", { text: "+", label: "Increase bid" }),
+    c("16", { text: "+", testid: "bid-increment-plus" }),
+    c("17", { text: "Kaufen" }),
+    c("18", { text: "Show more", type: "submit" }),
+    c("19", { text: "Show more", inForm: true }),
+    c("20", { text: "EN", expanded: "false", haspopup: "true" }),
+    c("21", { text: "Menu", expanded: "false", inChrome: true }),
+    c("22", { tag: "A", text: "Show more", href: "/en/app/merchant/cars" }),
+    c("23", { text: "Show less" }),
+    c("24", { text: "Equipment", expanded: "true" }),
+    c("25", { text: "Show more", clicks: 3 }),
+    c("26", { text: "Add to cart" }),
+    c("27", { text: "Solīt" }),
+    c("28", { text: "Pirkt" }),
+    c("29", { text: "Höchstgebot +" }),
+    c("30", { text: "Purchase" }),
+    c("31", { text: "Show more", disabled: true }),
+  ];
+  assert.deepEqual(pickExpandControls(cands, { aria: true }), ["0", "1", "2", "3", "4", "5", "6", "7"]);
+  // Bez aria: tikai pēc teksta (Openlane)
+  assert.deepEqual(pickExpandControls(cands, { aria: false }), ["0", "1", "2", "3", "4", "6", "7"]);
+  // Ligzdotas: vecāks izvēlēts -> bērnu nespiež
+  assert.deepEqual(pickExpandControls([c("0", { text: "Equipment", expanded: "false" }), c("1", { text: "+", parent: "0" })], { aria: true }), ["0"]);
+});
+
+test("FORBIDDEN_CONTROL_RE / EXPAND_TEXT_RE: stingrs aizsargs", () => {
+  for (const t of ["Bid", "bid now", "Place bid", "Gebot", "Bieten", "Jetzt kaufen", "Buy", "Checkout", "Purchase", "Pay now", "Confirm", "Bestätigen", "Solīt", "Nopirkt", "Submit offer"]) {
+    assert.ok(FORBIDDEN_CONTROL_RE.test(t), t);
+    assert.deepEqual(pickExpandControls([{ id: "0", tag: "BUTTON", text: t, expanded: "false" }], { aria: true }), [], t);
+  }
+  for (const t of ["Show more", "Show more +", "Mehr anzeigen", "+", "Rādīt vairāk", "Voir plus", "Show all", "Load more"]) {
+    assert.ok(EXPAND_TEXT_RE.test(t), t);
+    assert.ok(!FORBIDDEN_CONTROL_RE.test(t), t);
+  }
+  for (const t of ["Show less", "Bid +", "Weniger anzeigen", "Equipment"]) assert.ok(!EXPAND_TEXT_RE.test(t), t);
 });
 
 test("mergeDetailExtracts: krāsas mērījumi - pilnākais saraksts, dublikāti saglabāti", () => {

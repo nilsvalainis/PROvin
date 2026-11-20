@@ -281,3 +281,15 @@ describe("releja DAMAGE SUMMARY tabula no div režģa (TF43858, 20.11)", () => {
     expect(irissPdDamageTable(b.damage).map((g) => g.area)).toEqual(["exterior", "interior"]);
   });
 });
+
+describe("Dati pēc VIN - pilns saraksts (Nils 20.11)", () => {
+  it("netiek apgriezts līdz 10; LV/DE virsraksti atpazīti; garākais saraksts uzvar", () => {
+    const all = Array.from({ length: 25 }, (_, i) => `VIN option ${i + 1}`);
+    for (const heading of ["Car data according to identification number (VIN)", "Dati pēc VIN", "Fahrzeugdaten laut FIN"]) {
+      const detail = { fields: [], tables: [], lists: [{ heading, items: all.slice(0, 10) }, { heading, items: all }], photos: [] } as unknown as IrissRelayAuctionDetail;
+      const b = irissPdAuto1BlocksFromDetail(detail);
+      expect(b.vinData).toEqual(all);
+      expect(normalizeIrissPdAuto1Blocks(JSON.parse(JSON.stringify(b)))?.vinData).toEqual(all);
+    }
+  });
+});
