@@ -288,6 +288,9 @@ export function mergeListingPricesFromRelay(
     if (!extra) return v;
     const next = {
       ...v,
+      // Kartītes HTML bez pirmās reģistrācijas (eCarsTrade) - gads no releja items[].
+      year: v.year || extra.year,
+      firstRegistration: v.firstRegistration || extra.firstRegistration,
       priceBuyNow: extra.priceBuyNow ?? v.priceBuyNow,
       priceCurrent: extra.priceCurrent ?? v.priceCurrent,
       priceStart: extra.priceStart ?? v.priceStart,

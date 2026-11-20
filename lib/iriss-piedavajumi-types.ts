@@ -274,7 +274,10 @@ export type IrissPdListRow = {
   source: IrissPdSource;
   sourceRef: string;
   sourceKey: string;
+  /** Izsoles saite (avota etiķete sarakstā pēc platformas). Vecās indeksa rindās var nebūt. */
+  sourceUrl?: string;
   hasAuto1: boolean;
+  /** Cena klientam; ja `price` tukšs - cenu bloka summa (iepirkums + izmaksas + komisija). */
   price: string;
   validUntil: string;
   approvedOrderId: string;

@@ -124,7 +124,7 @@ describe("Statusu čipi un saraksts", () => {
     expect(text).toEqual(["Pieprasīts", "Melnraksts", "Nosūtīts", "Apstiprināts", "Noraidīts", "Beidzies termiņš"]);
   });
 
-  it("saraksts: darbība pēc statusa un beigušais rāda «Izveidot jaunu uz šī bāzes»", () => {
+  it("saraksts: darbība pēc statusa un beigušais rāda «Jauns uz šī bāzes»", () => {
     const rows = [
       irissPdToListRow(rec({ status: "requested", number: 1, id: "11111111-1111-4111-8111-111111111111" })),
       irissPdToListRow(rec({ status: "sent", number: 2, id: "22222222-2222-4222-8222-222222222222", validUntil: "2026-10-20" })),
@@ -135,7 +135,7 @@ describe("Statusu čipi un saraksts", () => {
     expect(text).toContain("3 piedāvājumi");
     expect(text).toContain("Aizpildīt");
     expect(text).toContain("Dzēst");
-    expect(text).toContain("Izveidot jaunu uz šī bāzes");
+    expect(text).toContain("Jauns uz šī bāzes");
     expect(text).toContain("Beidzies termiņš");
     expect(html).toContain('href="/admin/iriss/pasutijumi/44444444-4444-4444-8444-444444444444"');
     expect(text).toContain("✓ Auto1 dati ielasīti");
