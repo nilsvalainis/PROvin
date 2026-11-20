@@ -233,7 +233,8 @@ export async function fetchOneautoProducts(opts: {
   }
 
   const costCents = oneautoChargedCostCents(opts.products, results);
-  void persistOneautoChargedCosts(opts.vin, opts.products, results);
+  // Gaidām (ne fonā): serverless funkcija citādi var beigties pirms izmaksu ieraksta.
+  await persistOneautoChargedCosts(opts.vin, opts.products, results);
   return {
     source: ONEAUTO_SOURCE_TAG,
     vin: opts.vin,
@@ -250,15 +251,16 @@ async function persistOneautoChargedCosts(
   results: Partial<Record<OneautoProductId, OneautoProductResult>>,
 ): Promise<void> {
   try {
-    const { persistPaidSourceCost } = await import("@/lib/admin-costs-persist");
+    const { persistPaidSourceCostAsync } = await import("@/lib/admin-costs-persist");
     const { adminCostsEurToUsd } = await import("@/lib/admin-costs-live");
+    // Pa vienam (ne paralēli), lai viena mēneša Blob dokumentā nerastos CAS konflikti.
     for (const row of oneautoChargedCostEventDrafts({
       vin,
       products,
       results,
       eurToUsd: adminCostsEurToUsd(),
     })) {
-      persistPaidSourceCost({
+      await persistPaidSourceCostAsync({
         source: "oneauto",
         sku: row.sku,
         units: row.units,

@@ -241,6 +241,17 @@ export async function upsertDealerDataJob(
           },
         }
       : {}),
+    ...(patch.plate ?? current?.plate ? { plate: patch.plate ?? current?.plate } : {}),
+    // Pabeigtam darbam nākamā mēģinājuma laiks vairs nav aktuāls.
+    ...(patch.status === "done" || patch.status === "no_data" || patch.status === "running"
+      ? {}
+      : patch.nextRetryAt ?? current?.nextRetryAt
+        ? { nextRetryAt: patch.nextRetryAt ?? current?.nextRetryAt }
+        : {}),
+    ...(patch.pendingRetries ?? current?.pendingRetries
+      ? { pendingRetries: patch.pendingRetries ?? current?.pendingRetries }
+      : {}),
+    ...(patch.alert ?? current?.alert ? { alert: patch.alert ?? current?.alert } : {}),
     // Atmaksa ir neatgriezeniska: reizi ierakstītu ierakstu patch nedrīkst nomest.
     // emailSentAt drīkst pievienot vēlāk (viens e-pasts uz atmaksu).
     ...(current?.refund || patch.refund

@@ -70,7 +70,16 @@ export type AiSourceCommentInput = {
   isolateDealerComments?: boolean | null;
   /** B2B dīlera automātika: PRO = klienta valoda, RAW = OEM oriģināls. Admin ✨ atstāj tukšu = LV. */
   outputLang?: DealerCommentOutputLang | null;
+  /**
+   * Dīlera automātiskā ielase (Nils 20.11): lielos mezglus (dzinējs, kārba, sadales u.c.) nosaukt
+   * skaidri; treknrakstu pēc tam ieliek kods (`highlightMajorAssembliesInRichHtml`).
+   */
+  highlightMajorAssemblies?: boolean;
 };
+
+/** Dīlera automātiskās ielases papildu norāde abiem laukiem (eļļa + komentāri). */
+export const DEALER_MAJOR_ASSEMBLIES_DIRECTIVE =
+  "LIELIE MEZGLI: ja oficiālā dīlera datos ir darbi pie lielajiem mezgliem (dzinējs, ātrumkārba, sadales mehānisms - zobsiksna vai ķēde, turbokompresors, sajūgs / divmasu spararats, diferenciālis / reduktors, mehatronika, augstsprieguma akumulators), nosauc mezglu skaidri ar datumu un km. Neizdomā mezglu darbus, kas nav datos. Nelieto vārdus „eksperts” un „eksperta slēdziens”. Tikai īsā defise „-”, nekad garā.";
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
 function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
@@ -196,7 +205,9 @@ PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera d
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
 Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera - jālūdz pārdevēja rēķins/apliecinājums. To pašu NESAUC par pirkuma risku un NEAPGALVO, ka intervāls ir pārkāpts.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
-Garums: 2–4 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sākas tieši ar „Ražotāja intervāls:”. Pārējām rindkopām virsraksts savā rindā, tad rindkopa. Bez *, **.`,
+Garums: 2–4 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sākas tieši ar „Ražotāja intervāls:”. Pārējām rindkopām virsraksts savā rindā, tad rindkopa. Bez *, **.${
+          input.highlightMajorAssemblies ? `\n\n${DEALER_MAJOR_ASSEMBLIES_DIRECTIVE}` : ""
+        }${input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""}`,
         {
           operatorNotes: input.operatorNotes,
           existingDraftPlain: input.existingDraftPlain,
@@ -272,6 +283,8 @@ ${
     : `Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) - tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
 `
 }Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}${
+          isDealerComments && input.highlightMajorAssemblies ? `\n\n${DEALER_MAJOR_ASSEMBLIES_DIRECTIVE}` : ""
+        }${
           powertrainBlock ? `\n\n${powertrainBlock}` : ""
         }${
           input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""

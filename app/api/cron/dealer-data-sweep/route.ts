@@ -1,14 +1,20 @@
 /**
  * Slaucītājs dīlera datu ielasēm, kuras webhook fona izpilde nepabeidza
  * (funkcija apturēta, deploy vidū, OneAuto pollings pārtrūka).
+ * Ik 5 min: OneAuto 202 «apstrādē» atkārto pēc ~3 min, citas kļūdas pēc 30 min (`nextRetryAt`).
  *
  * Env: `ADMIN_DEALER_DATA_CRON_SECRET`.
  */
 import { NextResponse } from "next/server";
 
 import { runDealerDataJob } from "@/lib/dealer-data-job";
-import { DEALER_DATA_MAX_AUTO_ATTEMPTS } from "@/lib/dealer-data-job-types";
-import { listUnfinishedDealerDataJobs } from "@/lib/dealer-data-job-store";
+import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import {
+  DEALER_DATA_MAX_AUTO_ATTEMPTS,
+  DEALER_DATA_STALE_RUNNING_MS,
+  dealerDataJobRetryDue,
+} from "@/lib/dealer-data-job-types";
+import { listUnfinishedDealerDataJobs, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
@@ -39,8 +45,10 @@ export async function GET(req: Request) {
 
   try {
     const unfinished = await listUnfinishedDealerDataJobs();
+    if (unfinished.length === 0) return NextResponse.json({ ok: true, unfinished: 0, processed: [] });
+    const now = Date.now();
     const due = unfinished
-      .filter((job) => job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS)
+      .filter((job) => job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS && dealerDataJobRetryDue(job, now))
       .slice(0, MAX_JOBS_PER_RUN);
 
     const processed: Array<{ sessionId: string; status: string; reason: string }> = [];
@@ -51,6 +59,17 @@ export async function GET(req: Request) {
         trigger: "cron",
       });
       processed.push({ sessionId: job.sessionId, status: r.status, reason: r.reason });
+    }
+
+    // Neviens klients nepamanīts: gala kļūdas (arī iestrēgušas «running») -> admina paziņojums, vienreiz.
+    for (const job of unfinished) {
+      if (job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) continue;
+      if (job.status === "running") {
+        const started = Date.parse(job.startedAt ?? job.updatedAt);
+        if (Number.isFinite(started) && now - started < DEALER_DATA_STALE_RUNNING_MS) continue;
+        await upsertDealerDataJob(job.sessionId, { vin: job.vin, status: "failed", error: job.error || "stalled" });
+      }
+      await sendDealerDataAlertIfNeeded(job.sessionId, { trigger: "cron" });
     }
 
     return NextResponse.json({

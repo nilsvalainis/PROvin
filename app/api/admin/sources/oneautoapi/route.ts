@@ -7,7 +7,13 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
-import { parseOneautoProductIds } from "@/lib/oneauto-catalog";
+import { buildOneautoDisplay, parseOneautoProductIds, type OneautoProductId } from "@/lib/oneauto-catalog";
+import {
+  readStoredOneautoResults,
+  recordManualOneautoPurchase,
+  splitOneautoAlreadyPurchased,
+} from "@/lib/oneauto-manual-purchase";
+import { mergeOneautoProductResults } from "@/lib/oneauto-to-auto-records";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +44,50 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_products_selected" }, { status: 400 });
   }
 
+  // Jau nopirktais (automātika vai iepriekšēja manuāla ielāde) netiek pirkts vēlreiz bez «Pirkt vēlreiz».
+  const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
+  const force = o.force === true;
+  const stored = sessionId ? await readStoredOneautoResults(sessionId, vin) : {};
+  const { toFetch, reused } = splitOneautoAlreadyPurchased(products, stored, force);
+
   try {
-    const fetched = await fetchOneautoProducts({ vin, products });
-    const allFailed = products.every(
+    if (toFetch.length === 0) {
+      const results: typeof stored = {};
+      for (const id of reused) if (stored[id]) results[id] = stored[id];
+      const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+      for (const id of Object.keys(stored) as OneautoProductId[]) payloads[id] = stored[id]?.payload;
+      const original = buildOneautoDisplay(payloads);
+      const display = await translateOneautoWorksOnIngest(original);
+      return NextResponse.json({
+        ok: true,
+        source: "oneautoapi",
+        vin,
+        costEur: "0.00",
+        costCents: 0,
+        results: stored,
+        reused,
+        display,
+        displayOriginal: original,
+      });
+    }
+    const fetchedRaw = await fetchOneautoProducts({ vin, products: toFetch });
+    if (sessionId) {
+      // Uzreiz serverī: dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
+      await recordManualOneautoPurchase({ sessionId, vin, results: fetchedRaw.results });
+    }
+    const fetched =
+      reused.length > 0
+        ? (() => {
+            const results = mergeOneautoProductResults(stored, fetchedRaw.results);
+            const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+            for (const id of Object.keys(results) as OneautoProductId[]) payloads[id] = results[id]?.payload;
+            return { ...fetchedRaw, results, display: buildOneautoDisplay(payloads) };
+          })()
+        : fetchedRaw;
+    const allFailed = toFetch.every(
       (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",
     );
-    const allPending = products.every((id) => fetched.results[id]?.error === "pending");
+    const allPending = toFetch.every((id) => fetched.results[id]?.error === "pending");
     const balanceFail = Object.values(fetched.results).some((r) => r?.error === "insufficient_balance");
     if (allFailed && balanceFail) {
       return NextResponse.json({ error: "insufficient_balance", ...fetched }, { status: 402 });
@@ -58,6 +102,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       ...fetched,
+      reused,
       display,
       displayOriginal: fetched.display,
     });

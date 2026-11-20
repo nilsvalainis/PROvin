@@ -54,6 +54,8 @@ export type SerializedAdminOrderTableRow = {
   paymentAdjustmentTone?: "refund" | "dispute";
   /** Audits 20.11: pilnībā atmaksāts / zaudēts strīds - nav aktīvs, nekavē. */
   fullyReversed?: boolean;
+  /** Dīlera datu ielases problēma («Nav VIN», «Dīlera ielase: kļūda» u.c.) - sarkana atzīme. */
+  dealerJobAlert?: string;
 };
 
 type RowInput = {
@@ -88,6 +90,7 @@ type RowInput = {
   repeatVin?: unknown;
   clientOrders?: unknown;
   paymentAdjustment?: unknown;
+  dealerJobAlert?: unknown;
 };
 
 function paymentAdjustmentFields(
@@ -197,6 +200,9 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
         ? { packQty: Math.trunc(o.packQty) }
         : {}),
       ...paymentAdjustmentFields(o.paymentAdjustment),
+      ...(typeof o.dealerJobAlert === "string" && o.dealerJobAlert.trim()
+        ? { dealerJobAlert: o.dealerJobAlert.trim().slice(0, 60) }
+        : {}),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),
     };

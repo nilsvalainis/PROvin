@@ -15,9 +15,15 @@ import {
   isDealerPaidProductSettled,
   mergeDealerPaidOutcomes,
   normalizeDealerDataJob,
+  describeDealerDataJob,
   resolveDealerCommentOutputLang,
   selectDealerAutoProductsToFetch,
   shouldAutoFetchOeVinLookup,
+  planDealerVinDecodeStep,
+  decideDealerDataAlert,
+  dealerDataAlertText,
+  dealerDataListAlertLabel,
+  dealerDataJobRetryDue,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 
@@ -265,9 +271,8 @@ describe("normalizeDealerDataJob", () => {
 });
 
 describe("dealer auto paid products", () => {
-  it("automātika iekasē OE Service History; VIN Lookup tikai pēc ierakstiem", () => {
-    expect(DEALER_AUTO_PRODUCT_IDS).toEqual(["oe_service_history", "oe_vin_lookup"]);
-    expect(DEALER_AUTO_PRODUCT_IDS).not.toContain("vin_decoder");
+  it("automātika iekasē OE Service History; VIN dekodēšana tikai pēc ierakstiem", () => {
+    expect(DEALER_AUTO_PRODUCT_IDS).toEqual(["oe_service_history", "oe_vin_lookup", "vin_decoder"]);
     expect(selectDealerAutoProductsToFetch({})).toEqual(["oe_service_history"]);
   });
 
@@ -350,5 +355,94 @@ describe("dealer comment language", () => {
     expect(DEALER_DATA_RETRY_NO_RECHARGE_HINT).not.toMatch(/\u2014|\u2013/);
     expect(dealerDataRetryButtonLabel(job({ status: "failed" }))).toBe("Atkārtot");
     expect(dealerDataRetryButtonLabel(job({ status: "done" }))).toBe("Ielasīt vēlreiz");
+  });
+});
+
+describe("planDealerVinDecodeStep (Nils 20.11)", () => {
+  it("tukša vēsture - neviens dekodēšanas produkts", () => {
+    expect(planDealerVinDecodeStep({ historyHasEntries: false, lookupGaveData: false })).toBeNull();
+  });
+  it("vispirms OE VIN Lookup", () => {
+    expect(planDealerVinDecodeStep({ historyHasEntries: true, lookupGaveData: false })).toBe("oe_vin_lookup");
+  });
+  it("Lookup deva datus - Decoder nepērk", () => {
+    expect(
+      planDealerVinDecodeStep({ historyHasEntries: true, lookupOutcome: "ok", lookupGaveData: true }),
+    ).toBeNull();
+  });
+  it("Lookup 206 / kļūda - Decoder; Lookup otrreiz nepērk", () => {
+    for (const lookupOutcome of ["no_data", "failed", "pending"] as const) {
+      expect(planDealerVinDecodeStep({ historyHasEntries: true, lookupOutcome, lookupGaveData: false })).toBe(
+        "vin_decoder",
+      );
+    }
+  });
+  it("Decoder jau settled - nekā vairs", () => {
+    expect(
+      planDealerVinDecodeStep({
+        historyHasEntries: true,
+        lookupOutcome: "no_data",
+        lookupGaveData: false,
+        decoderOutcome: "ok",
+        decoderGaveData: true,
+      }),
+    ).toBeNull();
+    expect(
+      planDealerVinDecodeStep({
+        historyHasEntries: true,
+        lookupOutcome: "no_data",
+        lookupGaveData: false,
+        decoderOutcome: "no_data",
+      }),
+    ).toBeNull();
+  });
+  it("Decoder tehniska kļūda - drīkst atkārtot", () => {
+    expect(
+      planDealerVinDecodeStep({
+        historyHasEntries: true,
+        lookupOutcome: "failed",
+        lookupGaveData: false,
+        decoderOutcome: "failed",
+      }),
+    ).toBe("vin_decoder");
+  });
+});
+
+describe("dealer alerts (Nils 20.11)", () => {
+  const base = { status: "failed" as const, attempts: 1, error: "x" };
+  it("no_vin un draft_write_failed - uzreiz; gala kļūda pēc 3 mēģinājumiem", () => {
+    expect(decideDealerDataAlert({ job: { status: "no_vin", attempts: 0 } })).toBe("no_vin");
+    expect(decideDealerDataAlert({ job: { ...base, error: "draft_write_failed" } })).toBe("draft_write_failed");
+    expect(decideDealerDataAlert({ job: base })).toBeNull();
+    expect(decideDealerDataAlert({ job: { ...base, attempts: 3 } })).toBe("failed_final");
+  });
+  it("viens paziņojums uz problēmu; operatora poga nepaziņo", () => {
+    expect(
+      decideDealerDataAlert({ job: { ...base, attempts: 3, alert: { key: "failed_final", at: "x" } } }),
+    ).toBeNull();
+    expect(decideDealerDataAlert({ job: { ...base, attempts: 3 }, trigger: "manual" })).toBeNull();
+    expect(decideDealerDataAlert({ job: { status: "done", attempts: 3 } })).toBeNull();
+  });
+  it("teksti latviski, bez garās defises un bez «eksperts»", () => {
+    for (const key of ["no_vin", "draft_write_failed", "failed_final"] as const) {
+      const t = dealerDataAlertText(key, { vin: "", plate: "AB1234", error: "x", attempts: 3 });
+      expect(`${t.title} ${t.body}`).not.toMatch(/\u2014|\u2013|ekspert/i);
+    }
+  });
+  it("saraksta atzīme", () => {
+    expect(dealerDataListAlertLabel({ status: "no_vin", attempts: 0 })).toBe("Nav VIN");
+    expect(dealerDataListAlertLabel({ status: "failed", attempts: 1, error: "http_502" })).toBeNull();
+    expect(dealerDataListAlertLabel({ status: "failed", attempts: 3, error: "http_502" })).toBe(
+      "Dīlera ielase: kļūda",
+    );
+    expect(dealerDataListAlertLabel({ status: "done", attempts: 1 })).toBeNull();
+    expect(describeDealerDataJob({ ...normalizeDealerDataJob({ status: "no_vin", plate: "ab1234" }, "s")! })).toBe(
+      "Nav VIN (numurs AB1234)",
+    );
+  });
+  it("nextRetryAt - cron atkārto tikai, kad laiks pienācis", () => {
+    expect(dealerDataJobRetryDue({}, 1000)).toBe(true);
+    expect(dealerDataJobRetryDue({ nextRetryAt: new Date(5000).toISOString() }, 1000)).toBe(false);
+    expect(dealerDataJobRetryDue({ nextRetryAt: new Date(500).toISOString() }, 1000)).toBe(true);
   });
 });

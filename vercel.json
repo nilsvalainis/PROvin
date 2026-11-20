@@ -134,7 +134,7 @@
     },
     {
       "path": "/api/cron/dealer-data-sweep",
-      "schedule": "*/30 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/quick-eval-cleanup",

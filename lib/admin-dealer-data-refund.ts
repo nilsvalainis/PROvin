@@ -23,7 +23,7 @@ export function shouldShowDealerRefundButton(opts: {
   if (!opts.canRefund) return false;
   if (opts.job?.refund) return false;
   if (!opts.job) return true;
-  return opts.job.status === "no_data" || opts.job.status === "failed";
+  return opts.job.status === "no_data" || opts.job.status === "failed" || opts.job.status === "no_vin";
 }
 
 /** API `override: true`, ja statuss nav tīrs no_data (failed vai job nav). */

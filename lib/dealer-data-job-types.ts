@@ -3,7 +3,7 @@
  * Tīri tipi un lēmumi (bez server-only), lai loģiku var pārbaudīt testos.
  */
 
-import { oneautoPayloadIsNoData } from "@/lib/oneauto-catalog";
+import { oneautoPayloadIsNoData, oneautoResultTone } from "@/lib/oneauto-catalog";
 
 export type DealerDataJobStatus =
   /** Apmaksāts, ielase vēl nav sākta. */
@@ -15,7 +15,9 @@ export type DealerDataJobStatus =
   /** API atbildēja, ka konkrētajam VIN datu nav - refund kandidāts. */
   | "no_data"
   /** Tehniska kļūda; operators var mēģināt vēlreiz. */
-  | "failed";
+  | "failed"
+  /** Klients ievadīja numurzīmi, bet VIN caur CSDD neizdevās atrast - ielase nav iespējama. */
+  | "no_vin";
 
 export type DealerDataJob = {
   sessionId: string;
@@ -48,6 +50,20 @@ export type DealerDataJob = {
   commentLang?: DealerCommentOutputLang;
   /** Saglabātie OneAuto rezultāti, lai retry varētu pārrakstīt melnrakstu bez jauna maksas zvana. */
   oneautoResults?: Record<string, unknown>;
+  /** Agrākais brīdis nākamajam automātiskajam mēģinājumam (cron ik 5 min). */
+  nextRetryAt?: string;
+  /** Cik reizes OneAuto atbildēja 202 «apstrādē» (ātrie atkārtojumi, neskaita pie griestiem). */
+  pendingRetries?: number;
+  /** Pasūtījuma numurzīme (ja klients ievadīja numuru, ne VIN). */
+  plate?: string;
+  /** Pēdējais admina paziņojums par šo darbu (push + e-pasts) - viens paziņojums uz problēmu. */
+  alert?: DealerDataAlertRecord;
+};
+
+export type DealerDataAlertRecord = {
+  /** Problēmas atslēga (piem. "no_vin", "failed_final"); tā pati atslēga otrreiz netiek sūtīta. */
+  key: string;
+  at: string;
 };
 
 export type DealerRefundRecord = {
@@ -115,22 +131,23 @@ export const DEALER_DATA_STALE_RUNNING_MS = 10 * 60 * 1000;
 export const DEALER_DATA_MAX_AUTO_ATTEMPTS = 3;
 
 /**
- * Automātiski ielasāmie OneAuto produkti pēc dīlera RAW/PRO apmaksas.
- * OE Service History Europe (€3.00) vienmēr; OE VIN Lookup (€0.36) tikai ja
- * vēsturei ir ieraksti. VIN Decoder (€0.18) nekad netiek ielasīts automātiski.
+ * Automātiski ielasāmie OneAuto produkti pēc dīlera RAW/PRO apmaksas (Nila lēmums 20.11.2026).
+ * OE Service History Europe (€3.00) vienmēr. Ja vēsturei ir ieraksti - OBLIGĀTI viens VIN
+ * dekodēšanas avots: OE VIN Lookup (€0.36); ja tas datus nedod (206 / nav ierakstu / kļūda),
+ * tad VIN Decoder (€0.18). Ja vēsture tukša - neviens no tiem. Katrs maksas produkts tiek
+ * pirkts ne vairāk kā vienreiz uz pasūtījumu.
  */
 export const DEALER_ALWAYS_AUTO_PRODUCT_IDS = ["oe_service_history"] as const;
-export const DEALER_FOLLOWUP_AUTO_PRODUCT_IDS = ["oe_vin_lookup"] as const;
-export const DEALER_AUTO_PRODUCT_IDS = ["oe_service_history", "oe_vin_lookup"] as const;
+export const DEALER_FOLLOWUP_AUTO_PRODUCT_IDS = ["oe_vin_lookup", "vin_decoder"] as const;
+export const DEALER_AUTO_PRODUCT_IDS = ["oe_service_history", "oe_vin_lookup", "vin_decoder"] as const;
 export type DealerAutoProductId = (typeof DEALER_AUTO_PRODUCT_IDS)[number];
-export const DEALER_NEVER_AUTO_PRODUCT_IDS = ["vin_decoder"] as const;
 
 export type DealerPaidProductOutcome = "ok" | "no_data" | "failed" | "pending";
 
 export type DealerCommentOutputLang = "lv" | "en" | "de" | "ru" | "source";
 
 export const DEALER_DATA_RETRY_NO_RECHARGE_HINT =
-  "Atkārtot ielasi? Jau saņemtie maksas avoti (OE Service History un OE VIN Lookup) netiks izsaukti vēlreiz.";
+  "Atkārtot ielasi? Jau saņemtie maksas avoti (OE Service History, OE VIN Lookup, VIN Decoder) netiks izsaukti vēlreiz.";
 
 export function dealerPaidOutcomeFromResult(
   result: { ok?: boolean; error?: string; payload?: unknown; message?: string } | null | undefined,
@@ -189,6 +206,36 @@ export function shouldAutoFetchOeVinLookup(args: {
   return args.historyHasEntries && !isDealerPaidProductSettled(args.lookupOutcome ?? null);
 }
 
+/** Vai VIN dekodēšanas produkts (OE VIN Lookup / VIN Decoder) tiešām atdeva datus (ir iekasēts). */
+export function dealerDecodeResultGaveData(
+  result: { ok?: boolean; error?: string; payload?: unknown } | null | undefined,
+): boolean {
+  if (!result) return false;
+  return oneautoResultTone(result) === "ok";
+}
+
+export type DealerVinDecodeStep = "oe_vin_lookup" | "vin_decoder" | null;
+
+/**
+ * Nākamais VIN dekodēšanas solis (Nils 20.11): tikai, ja vēsturē ir ieraksti.
+ * - OE VIN Lookup: tikai, ja tas šim pasūtījumam vēl nav mēģināts (nekad divreiz).
+ * - VIN Decoder: ja Lookup datus nedeva (206 / nav ierakstu / kļūda / gaida) un Decoder vēl nav
+ *   settled. Tehniska Decoder kļūda (nav iekasēta) drīkst atkārtoties.
+ */
+export function planDealerVinDecodeStep(args: {
+  historyHasEntries: boolean;
+  lookupOutcome?: DealerPaidProductOutcome | null;
+  lookupGaveData: boolean;
+  decoderOutcome?: DealerPaidProductOutcome | null;
+  decoderGaveData?: boolean;
+}): DealerVinDecodeStep {
+  if (!args.historyHasEntries) return null;
+  if (args.lookupGaveData || args.decoderGaveData) return null;
+  if (!args.lookupOutcome) return "oe_vin_lookup";
+  if (isDealerPaidProductSettled(args.decoderOutcome ?? null)) return null;
+  return "vin_decoder";
+}
+
 export function dealerOeHistoryIsNoData(
   outcome: DealerPaidProductOutcome | null | undefined,
 ): boolean {
@@ -239,6 +286,7 @@ export function dealerCommentLanguageDirective(lang: DealerCommentOutputLang): s
 
 export function dealerDataRetryButtonLabel(job: DealerDataJob | null): string {
   if (job?.status === "failed") return "Atkārtot";
+  if (job?.status === "no_vin") return "Palaist ar VIN";
   return "Ielasīt vēlreiz";
 }
 
@@ -320,6 +368,91 @@ export function decideDealerDataRun(args: {
   return { run: true };
 }
 
+/**
+ * Admina paziņojums (Nils 20.11: neviens klients nedrīkst palikt nepamanīts).
+ * - no_vin: numurzīmei VIN neatrasts;
+ * - draft_write_failed: samaksātais rezultāts nav ierakstīts melnrakstā (uzreiz);
+ * - failed_final: ielase beidzās ar kļūdu pēc visiem automātiskajiem mēģinājumiem.
+ * Viena atslēga = viens paziņojums. Operatora poga („manual”) paziņojumu nesūta - viņš to redz.
+ */
+export type DealerDataAlertKey = "no_vin" | "draft_write_failed" | "failed_final";
+
+export function decideDealerDataAlert(args: {
+  job: Pick<DealerDataJob, "status" | "attempts" | "error" | "alert"> | null;
+  trigger?: DealerDataJob["trigger"];
+}): DealerDataAlertKey | null {
+  const job = args.job;
+  if (!job || args.trigger === "manual") return null;
+  let key: DealerDataAlertKey | null = null;
+  if (job.status === "no_vin") key = "no_vin";
+  else if (job.status === "failed" && job.error === "draft_write_failed") key = "draft_write_failed";
+  else if (job.status === "failed" && job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS) key = "failed_final";
+  if (!key) return null;
+  if (job.alert?.key === key) return null;
+  // Pēc „draft_write_failed” paziņojuma gala kļūdu vairs neatkārtojam - operators jau zina.
+  if (key === "failed_final" && job.alert?.key === "draft_write_failed") return null;
+  return key;
+}
+
+export function dealerDataAlertText(
+  key: DealerDataAlertKey,
+  job: Pick<DealerDataJob, "vin" | "plate" | "error" | "attempts">,
+): { title: string; body: string } {
+  const who = job.vin ? `VIN ${job.vin}` : job.plate ? `Numurs ${job.plate}` : "Pasūtījums";
+  switch (key) {
+    case "no_vin":
+      return {
+        title: "Dīlera dati: nav VIN",
+        body: `${who} - CSDD neatrada VIN. Ievadi VIN pasūtījumā un palaid ielasi.`,
+      };
+    case "draft_write_failed":
+      return {
+        title: "Dīlera dati: rezultāts nav melnrakstā",
+        body: `${who} - samaksātie dati saņemti, bet melnrakstā nav ierakstīti. Atver pasūtījumu un spied «Atkārtot».`,
+      };
+    case "failed_final":
+      return {
+        title: "Dīlera dati: ielase neizdevās",
+        body: `${who} - ${job.attempts} mēģinājumi beidzās ar kļūdu (${job.error ?? "nezināma"}). Vajag operatoru.`,
+      };
+  }
+}
+
+/** Īsa sarkanā atzīme pasūtījumu sarakstā (null - nekas nav jādara). */
+export function dealerDataListAlertLabel(
+  job: Pick<DealerDataJob, "status" | "attempts" | "error" | "refund"> | null,
+): string | null {
+  if (!job) return null;
+  if (job.status === "no_vin") return "Nav VIN";
+  if (job.status === "failed") {
+    if (job.error === "draft_write_failed") return "Dīlera dati nav melnrakstā";
+    return job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS ? "Dīlera ielase: kļūda" : null;
+  }
+  if (job.status === "no_data" && !job.refund) return "Dīlera datu nav";
+  return null;
+}
+
+/**
+ * Vai vēsture jau ir melnrakstā (RAW partnerim var rādīt): pabeigts, vai gaida tikai VIN dekodēšanas
+ * atkārtojumu (vēsture ierakstīta, sk. `vin_decode:` kļūdu).
+ */
+export function dealerDataJobHistoryReady(
+  job: Pick<DealerDataJob, "status" | "error"> | null | undefined,
+): boolean {
+  if (!job) return false;
+  return job.status === "done" || (job.status === "failed" && Boolean(job.error?.startsWith("vin_decode:")));
+}
+
+/** Vai cron drīkst šo darbu atkārtot tagad (nextRetryAt pagājis vai nav iestatīts). */
+export function dealerDataJobRetryDue(
+  job: Pick<DealerDataJob, "nextRetryAt">,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!job.nextRetryAt) return true;
+  const t = Date.parse(job.nextRetryAt);
+  return !Number.isFinite(t) || t <= nowMs;
+}
+
 /** Vai statuss ir pamats piedāvāt atmaksu operatoram. */
 export function dealerDataJobSuggestsRefund(job: DealerDataJob | null): boolean {
   return job?.status === "no_data";
@@ -331,6 +464,7 @@ const STATUSES: readonly DealerDataJobStatus[] = [
   "done",
   "no_data",
   "failed",
+  "no_vin",
 ];
 
 function asStatus(v: unknown): DealerDataJobStatus {
@@ -358,6 +492,14 @@ function asCommentLang(v: unknown): DealerCommentOutputLang | undefined {
 function asOneautoResults(raw: unknown): Record<string, unknown> | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   return raw as Record<string, unknown>;
+}
+
+function asAlert(raw: unknown): DealerDataAlertRecord | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const key = asStr(o.key, 40);
+  const at = asStr(o.at, 40);
+  return key && at ? { key, at } : undefined;
 }
 
 function asStr(v: unknown, max = 200): string {
@@ -422,6 +564,8 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
   const paidOutcomes = asPaidOutcomes(o.paidOutcomes);
   const commentLang = asCommentLang(o.commentLang);
   const oneautoResults = asOneautoResults(o.oneautoResults);
+  const alert = asAlert(o.alert);
+  const plate = asStr(o.plate, 16).toUpperCase();
   return {
     sessionId: asStr(o.sessionId, 200) || sessionId,
     vin: asStr(o.vin, 24).toUpperCase(),
@@ -442,6 +586,12 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(typeof o.skipTranslate === "boolean" ? { skipTranslate: o.skipTranslate } : {}),
     ...(commentLang ? { commentLang } : {}),
     ...(oneautoResults ? { oneautoResults } : {}),
+    ...(plate ? { plate } : {}),
+    ...(alert ? { alert } : {}),
+    ...(asStr(o.nextRetryAt, 40) ? { nextRetryAt: asStr(o.nextRetryAt, 40) } : {}),
+    ...(typeof o.pendingRetries === "number" && Number.isFinite(o.pendingRetries)
+      ? { pendingRetries: Math.max(0, Math.floor(o.pendingRetries)) }
+      : {}),
   };
 }
 
@@ -455,17 +605,27 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
       return "Ielasa datus…";
     case "done": {
       const lookup = job.paidOutcomes?.oe_vin_lookup;
-      const lookupBit =
-        lookup === "ok" ? "OE VIN Lookup" : lookup === "no_data" ? "OE VIN Lookup (nav datu)" : null;
-      const parts = [
-        lookupBit,
-        `${job.serviceEventCount ?? 0} servisa ieraksti`,
-      ].filter(Boolean);
+      const decoder = job.paidOutcomes?.vin_decoder;
+      const decodeBit =
+        lookup === "ok"
+          ? "OE VIN Lookup"
+          : decoder === "ok"
+            ? "VIN Decoder"
+            : lookup === "no_data" || decoder === "no_data"
+              ? "VIN dekodēšana (nav datu)"
+              : null;
+      const parts = [decodeBit, `${job.serviceEventCount ?? 0} servisa ieraksti`].filter(Boolean);
       return `Ielasīts: ${parts.join(", ")}`;
     }
     case "no_data":
       return "Dīlera dati nav pieejami";
     case "failed":
+      if (job.error?.startsWith("vin_decode:")) {
+        return `Ielasīts: ${job.serviceEventCount ?? 0} servisa ieraksti, VIN dekodēšana atkārtosies`;
+      }
+      if (job.error === "pending" || job.error === "http_202") return "OneAuto apstrādā - atkārtos pēc dažām min";
       return `Kļūda: ${job.error ?? "nezināma"}`;
+    case "no_vin":
+      return job.plate ? `Nav VIN (numurs ${job.plate})` : "Nav VIN";
   }
 }

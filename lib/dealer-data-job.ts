@@ -2,7 +2,7 @@ import "server-only";
 
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
-import { aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPlainText, aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import {
   isSafeOrderDraftSessionId,
   patchOrderDraft,
@@ -18,13 +18,14 @@ import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import {
   DEALER_AUTO_PRODUCT_IDS,
   dealerAutoFetchHasTechnicalFail,
+  dealerDecodeResultGaveData,
   dealerOeHistoryIsNoData,
   dealerPaidOutcomeFromResult,
   decideDealerDataRun,
   mergeDealerPaidOutcomes,
+  planDealerVinDecodeStep,
   resolveDealerCommentOutputLang,
   selectDealerAutoProductsToFetch,
-  shouldAutoFetchOeVinLookup,
   type DealerAutoProductId,
   type DealerCommentOutputLang,
   type DealerDataJob,
@@ -36,6 +37,13 @@ import {
   toGeneratedAgainst,
 } from "@/lib/comment-powertrain-guard";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
+import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
+import {
+  dealerCommentPlainCleanup,
+  highlightMajorAssembliesInRichHtml,
+  type DealerReviewField,
+} from "@/lib/dealer-comments-review-core";
 import { refundB2bWalletOrderIfNoData } from "@/lib/b2b-wallet-refund";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
 import {
@@ -55,11 +63,11 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /**
  * Dīlera datu A-Z ķēde: pēc apmaksas ielasa OE Service History Europe (€3.00).
- * Ja vēsturei ir ieraksti, vienreiz ielasa arī OE VIN Lookup (€0.36).
- * VIN Decoder (€0.18) nekad netiek ielasīts automātiski. Citi OneAuto
- * produkti paliek operatora rokās. Klientam nekas netiek nosūtīts.
+ * Ja vēsturei ir ieraksti - obligāti viens VIN dekodēšanas avots: OE VIN Lookup (€0.36),
+ * ja tas datus nedod - VIN Decoder (€0.18). Katrs maksas produkts ne vairāk kā vienreiz.
+ * Tad divi AI komentāri (eļļas intervāli + „Komentāri”) un Claude Opus noslēguma pārbaude.
+ * Citi OneAuto produkti paliek operatora rokās. Klientam nekas netiek nosūtīts.
  */
-const AUTO_PRODUCTS: readonly OneautoProductId[] = [...DEALER_AUTO_PRODUCT_IDS];
 
 export type DealerDataRunResult = {
   ok: boolean;
@@ -101,80 +109,133 @@ async function writeAutoRecords(
   return true;
 }
 
+type DealerNoteField = "oilChangeIntervalNotes" | "comments";
+
+const DEALER_NOTE_LABEL: Record<DealerNoteField, string> = {
+  oilChangeIntervalNotes: "Oficiālā dīlera dati - Eļļas maiņas intervāli",
+  comments: "Oficiālā dīlera dati - Komentāri",
+};
+
+function richIsEmpty(html: string | null | undefined): boolean {
+  return !adminRichHtmlToPlainText(html ?? "").trim();
+}
+
 /**
- * AI melnraksts dīlera komentāram. Automātiskā API ielase ģenerē TIKAI lauku
- * „Komentāri” un tajā pašā rindkopu kopā iekļauj arī eļļas maiņas intervālu
- * matemātiku (nevis atsevišķu „Eļļas maiņas intervāli” lauku) — operators to
- * lauku var vēlāk ģenerēt manuāli, ja vēlas atsevišķu versiju.
- * Ģenerē tikai tukšu lauku, lai atkārtota palaišana nepārrakstītu operatora tekstu.
+ * Divi AI melnraksti (Nils 20.11.2026): (a) „Eļļas maiņas intervāli” un (b) „Komentāri” bloka
+ * apakšā. Līdz šim (kopš b4467c4d, 25.09.2026) ielase ģenerēja TIKAI „Komentāri” ar iekļautu eļļas
+ * lomu, tāpēc atsevišķais komentārs vairs neradās. Abi ar Gemini (kā līdz šim), tad viens Claude
+ * Opus noslēguma pārbaudes izsaukums pret dīlera datiem (FLASH MAX mehānisms), ieteikumi
+ * piemēroti automātiski; lielie mezgli treknrakstā.
+ * Ģenerē tikai tukšus laukus - operatora teksts vienmēr uzvar; atkārtota palaišana neko nepārraksta.
  */
 async function generateDealerNotes(
   sessionId: string,
   vin: string,
   commentLang: DealerCommentOutputLang,
-): Promise<boolean> {
+): Promise<Set<DealerNoteField>> {
+  const none = new Set<DealerNoteField>();
   const draft = await readOrderDraft(sessionId);
   const baseline = draft?.workspace;
-  if (!baseline) return false;
+  if (!baseline) return none;
   const blocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
 
   const identity = extractLoadedPowertrainIdentity(blocks, { vin });
-  const existingPlain = blocks.auto_records.comments.trim()
-    ? blocks.auto_records.comments
-    : "";
-  const mustReplace =
-    Boolean(existingPlain) && commentContradictsPowertrain(existingPlain, identity);
-  if (existingPlain && !mustReplace) return false;
+  const existingComments = richIsEmpty(blocks.auto_records.comments) ? "" : blocks.auto_records.comments;
+  const replaceComments =
+    Boolean(existingComments) && commentContradictsPowertrain(existingComments, identity);
+  const targets: DealerNoteField[] = [];
+  if (richIsEmpty(blocks.auto_records.oilChangeIntervalNotes)) targets.push("oilChangeIntervalNotes");
+  if (!existingComments || replaceComments) targets.push("comments");
+  if (targets.length === 0) return none;
 
-  let generatedComments = "";
-  try {
-    generatedComments = (
-      await generateSourceCommentWithAi({
+  const generateOne = async (field: DealerNoteField): Promise<string> => {
+    try {
+      return dealerCommentPlainCleanup(
+        await generateSourceCommentWithAi({
+          sessionId,
+          blockKey: "auto_records",
+          vin,
+          listingUrl: draft?.orderEdits?.listingUrl ?? null,
+          customerName: draft?.orderEdits?.customerName ?? null,
+          notes: draft?.orderEdits?.notes ?? null,
+          sourceBlocks: blocks,
+          iriss: baseline.iriss,
+          apskatesPlāns: baseline.apskatesPlāns,
+          tehniskoRiskuAnalize: baseline.tehniskoRiskuAnalize,
+          cenasAtbilstiba: baseline.cenasAtbilstiba,
+          internalComment: draft?.orderEdits?.internalComment ?? null,
+          targetField: field,
+          isolateDealerComments: true,
+          checkoutLine: "dealer",
+          outputLang: commentLang,
+          highlightMajorAssemblies: true,
+          // Avota komentāri vienmēr ar Gemini, ne noklusējuma Claude ceļu.
+          modelTier: "gemini-flash",
+        }),
+      );
+    } catch (e) {
+      console.warn("[dealer-data-job] AI note failed", {
         sessionId,
-        blockKey: "auto_records",
-        vin,
-        listingUrl: draft?.orderEdits?.listingUrl ?? null,
-        customerName: draft?.orderEdits?.customerName ?? null,
-        notes: draft?.orderEdits?.notes ?? null,
-        sourceBlocks: blocks,
-        iriss: baseline.iriss,
-        apskatesPlāns: baseline.apskatesPlāns,
-        tehniskoRiskuAnalize: baseline.tehniskoRiskuAnalize,
-        cenasAtbilstiba: baseline.cenasAtbilstiba,
-        internalComment: draft?.orderEdits?.internalComment ?? null,
-        targetField: "comments",
-        includeOilIntervalSummary: true,
-        isolateDealerComments: true,
-        checkoutLine: "dealer",
-        outputLang: commentLang,
-        // Avota komentāri vienmēr ar Gemini, ne noklusējuma Claude ceļu.
-        modelTier: "gemini-flash",
-      })
-    ).trim();
-  } catch (e) {
-    console.warn("[dealer-data-job] AI note failed", {
-      sessionId,
-      field: "comments",
-      error: e instanceof Error ? e.message : "unknown",
-    });
-  }
-  if (!generatedComments) return false;
+        field,
+        error: e instanceof Error ? e.message : "unknown",
+      });
+      return "";
+    }
+  };
 
-  return writeAutoRecords(sessionId, (current) => ({
-    ...current,
-    auto_records: {
-      ...current.auto_records,
-      // Operatora teksts vienmēr uzvar: rakstām tikai, ja lauks joprojām tukšs.
-      comments: mustReplace
-        ? aiExpertSourceCommentToRichHtml(generatedComments)
-        : current.auto_records.comments.trim() ||
-          aiExpertSourceCommentToRichHtml(generatedComments),
-      oneautoIngest: {
-        ...(current.auto_records.oneautoIngest ?? emptyOneautoIngest()),
-        generatedAgainst: toGeneratedAgainst(identity),
+  const generatedList = await Promise.all(targets.map((field) => generateOne(field)));
+  const fields: DealerReviewField[] = [];
+  targets.forEach((field, i) => {
+    const text = generatedList[i] ?? "";
+    if (text) fields.push({ id: field, label: DEALER_NOTE_LABEL[field], text });
+  });
+  if (fields.length === 0) return none;
+
+  // Opus pārbaude: ieteikumi latviski, tāpēc tikai LV komentāriem (PRO EN/DE/RU un RAW - bez tās).
+  let texts: Record<string, string> = Object.fromEntries(fields.map((f) => [f.id, f.text]));
+  if (commentLang === "lv") {
+    try {
+      const review = await reviewDealerCommentsWithOpus({ vin, sourceBlocks: blocks, fields });
+      texts = review.texts;
+      if (review.applied > 0) {
+        console.info("[dealer-data-job] Opus review applied", { sessionId, applied: review.applied });
+      }
+    } catch (e) {
+      console.warn("[dealer-data-job] Opus review failed", {
+        sessionId,
+        error: e instanceof Error ? e.message : "unknown",
+      });
+    }
+  }
+  const toHtml = (text: string | undefined): string =>
+    text?.trim() ? highlightMajorAssembliesInRichHtml(aiExpertSourceCommentToRichHtml(dealerCommentPlainCleanup(text))) : "";
+  const oilHtml = toHtml(texts.oilChangeIntervalNotes);
+  const commentsHtml = toHtml(texts.comments);
+
+  const wrote = await writeAutoRecords(sessionId, (current) => {
+    const ar = current.auto_records;
+    // Operatora teksts vienmēr uzvar: rakstām tikai, ja lauks joprojām tukšs (vai pretrunīgs komentārs).
+    const nextOil = richIsEmpty(ar.oilChangeIntervalNotes) && oilHtml ? oilHtml : ar.oilChangeIntervalNotes;
+    const nextComments =
+      commentsHtml && (replaceComments || richIsEmpty(ar.comments)) ? commentsHtml : ar.comments;
+    return {
+      ...current,
+      auto_records: {
+        ...ar,
+        oilChangeIntervalNotes: nextOil,
+        comments: nextComments,
+        oneautoIngest: {
+          ...(ar.oneautoIngest ?? emptyOneautoIngest()),
+          generatedAgainst: toGeneratedAgainst(identity),
+        },
       },
-    },
-  }));
+    };
+  });
+  if (!wrote) return none;
+  const out = new Set<DealerNoteField>();
+  if (oilHtml) out.add("oilChangeIntervalNotes");
+  if (commentsHtml) out.add("comments");
+  return out;
 }
 
 /**
@@ -193,6 +254,8 @@ export async function enqueueDealerDataJob(args: {
     vin,
     status: "pending",
     trigger: "webhook",
+    // Webhook fona darbs sāk uzreiz; cron to pārņem tikai, ja tas nesākās (bez sacensības).
+    nextRetryAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
   });
   return job !== null;
 }
@@ -218,7 +281,33 @@ function resultsRecord(
   return out;
 }
 
-export async function runDealerDataJob(args: {
+function centsFromEur(raw: string | null | undefined): number {
+  const n = Number.parseFloat(String(raw ?? "").replace(",", ".").replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+/** Ielases izmaksas summa (vēsture + VIN dekodēšana), formātā „3.36”. */
+function addCostEur(prev: string, add: string): string {
+  const cents = centsFromEur(prev) + centsFromEur(add);
+  return cents > 0 ? (cents / 100).toFixed(2) : prev || add;
+}
+
+/** OneAuto 202 «In Progress»: ātrs atkārtojums (cron ik 5 min), mēģinājumu neskaita līdz griestiem. */
+export const DEALER_PENDING_RETRY_MS = 3 * 60 * 1000;
+export const DEALER_PENDING_MAX_RETRIES = 6;
+/** Citas kļūdas: nākamais automātiskais mēģinājums pēc 30 min (kā līdz šim). */
+export const DEALER_FAILED_RETRY_MS = 30 * 60 * 1000;
+
+export async function runDealerDataJob(args: Parameters<typeof runDealerDataJobInner>[0]): Promise<DealerDataRunResult> {
+  const result = await runDealerDataJobInner(args);
+  if (!result.ok || result.status === "failed") {
+    // Neviens klients nedrīkst palikt nepamanīts: push + e-pasts, ja problēma prasa operatoru.
+    await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: args.trigger });
+  }
+  return result;
+}
+
+async function runDealerDataJobInner(args: {
   sessionId: string;
   vin: string;
   trigger: DealerDataJob["trigger"];
@@ -302,7 +391,14 @@ export async function runDealerDataJob(args: {
       fetched = await fetchOneautoProducts({ vin, products: toFetch });
     } catch (e) {
       const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
-      await upsertDealerDataJob(sessionId, { vin, status: "failed", attempts, error, trigger: args.trigger });
+      await upsertDealerDataJob(sessionId, {
+        vin,
+        status: "failed",
+        attempts,
+        error,
+        trigger: args.trigger,
+        nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
+      });
       return { ok: false, status: "failed", reason: error };
     }
     mergedResults = mergeOneautoProductResults(storedResults, fetched.results);
@@ -328,10 +424,16 @@ export async function runDealerDataJob(args: {
   });
   if (historyTechnical) {
     const error = String(mergedResults[historyTechnical]?.error ?? `${historyTechnical}_failed`).slice(0, 200);
+    const pending = paidOutcomes.oe_service_history === "pending";
+    const pendingRetries = (existing?.pendingRetries ?? 0) + (pending ? 1 : 0);
+    const fastRetry = pending && pendingRetries <= DEALER_PENDING_MAX_RETRIES;
     await upsertDealerDataJob(sessionId, {
       vin,
       status: "failed",
-      attempts,
+      // 202 «apstrādē» nav kļūda: ātrs atkārtojums, mēģinājumu skaits nepieaug.
+      attempts: fastRetry ? attempts - 1 : attempts,
+      pendingRetries,
+      nextRetryAt: new Date(Date.now() + (fastRetry ? DEALER_PENDING_RETRY_MS : DEALER_FAILED_RETRY_MS)).toISOString(),
       error,
       trigger: args.trigger,
       skipTranslate,
@@ -354,60 +456,54 @@ export async function runDealerDataJob(args: {
     oneautoPayloadIsNoData(mergedResults.oe_service_history.payload) ||
     historyEventCount === 0;
 
-  if (
-    !oeNoData &&
-    shouldAutoFetchOeVinLookup({
-      historyHasEntries: true,
+  // VIN dekodēšana (Nils 20.11): OE VIN Lookup, ja tas datus nedod - VIN Decoder. Ne vairāk kā 2 soļi.
+  for (let step = 0; step < 2; step++) {
+    const next = planDealerVinDecodeStep({
+      historyHasEntries: !oeNoData,
       lookupOutcome: paidOutcomes.oe_vin_lookup,
-    })
-  ) {
+      lookupGaveData: dealerDecodeResultGaveData(mergedResults.oe_vin_lookup),
+      decoderOutcome: paidOutcomes.vin_decoder,
+      decoderGaveData: dealerDecodeResultGaveData(mergedResults.vin_decoder),
+    });
+    if (!next) break;
+    let decodeFetched: Awaited<ReturnType<typeof fetchOneautoProducts>> | null = null;
     try {
-      const lookupFetched = await fetchOneautoProducts({ vin, products: ["oe_vin_lookup"] });
-      mergedResults = mergeOneautoProductResults(mergedResults, lookupFetched.results);
-      lastCostEur = lookupFetched.costEur || lastCostEur;
-      paidOutcomes = mergeDealerPaidOutcomes(paidOutcomes, outcomesFromResults(mergedResults));
-      await upsertDealerDataJob(sessionId, {
-        vin,
-        status: "running",
-        attempts,
-        trigger: args.trigger,
-        skipTranslate,
-        commentLang,
-        paidOutcomes,
-        oneautoResults: resultsRecord(mergedResults),
-      });
+      decodeFetched = await fetchOneautoProducts({ vin, products: [next] });
     } catch (e) {
       const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
-      await upsertDealerDataJob(sessionId, {
-        vin,
-        status: "failed",
-        attempts,
-        error,
-        trigger: args.trigger,
-        skipTranslate,
-        commentLang,
-        paidOutcomes,
-        oneautoResults: resultsRecord(mergedResults),
+      console.warn("[dealer-data-job] decode fetch failed", { sessionId, product: next, error });
+      // Tīkla kļūda: atzīmējam kā mēģinātu (Lookup otrreiz nepērkam), Decoder - atkārtojams.
+      mergedResults = mergeOneautoProductResults(mergedResults, {
+        [next]: { ok: false, error, payload: null },
       });
-      return { ok: false, status: "failed", reason: error };
     }
-    const lookupTechnical = dealerAutoFetchHasTechnicalFail({
-      oe_vin_lookup: paidOutcomes.oe_vin_lookup,
+    if (decodeFetched) {
+      mergedResults = mergeOneautoProductResults(mergedResults, decodeFetched.results);
+      lastCostEur = addCostEur(lastCostEur, decodeFetched.costEur);
+    }
+    paidOutcomes = mergeDealerPaidOutcomes(paidOutcomes, outcomesFromResults(mergedResults));
+    if (!paidOutcomes[next]) paidOutcomes = { ...paidOutcomes, [next]: "failed" };
+    await upsertDealerDataJob(sessionId, {
+      vin,
+      status: "running",
+      attempts,
+      trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
     });
-    if (lookupTechnical) {
-      const error = String(mergedResults[lookupTechnical]?.error ?? `${lookupTechnical}_failed`).slice(0, 200);
-      await upsertDealerDataJob(sessionId, {
-        vin,
-        status: "failed",
-        attempts,
-        error,
-        trigger: args.trigger,
-        skipTranslate,
-        commentLang,
-        paidOutcomes,
-        oneautoResults: resultsRecord(mergedResults),
-      });
-      return { ok: false, status: "failed", reason: error };
+  }
+
+  let decodeError = "";
+  if (!oeNoData) {
+    const lookupData = dealerDecodeResultGaveData(mergedResults.oe_vin_lookup);
+    const decoderData = dealerDecodeResultGaveData(mergedResults.vin_decoder);
+    const decoderTechnical = dealerAutoFetchHasTechnicalFail({ vin_decoder: paidOutcomes.vin_decoder });
+    // Tehniska VIN dekodēšanas kļūda NEbloķē jau samaksātās vēstures ierakstu melnrakstā:
+    // vēsture + komentāri tiek ierakstīti, dekodēšana atkārtojas atsevišķi (cron).
+    if (!lookupData && !decoderData && decoderTechnical) {
+      decodeError = String(mergedResults.vin_decoder?.error ?? "vin_decoder_failed").slice(0, 200);
     }
     for (const id of Object.keys(mergedResults) as OneautoProductId[]) {
       payloads[id] = mergedResults[id]?.payload;
@@ -451,7 +547,12 @@ export async function runDealerDataJob(args: {
       lastFetchedVin: vin,
       fetchedAt: new Date().toISOString(),
       lastCostEur: lastCostEur || prevIngest.lastCostEur,
-      selectedProducts: Array.from(new Set([...prevIngest.selectedProducts, ...AUTO_PRODUCTS])),
+      selectedProducts: Array.from(
+        new Set([
+          ...prevIngest.selectedProducts,
+          ...DEALER_AUTO_PRODUCT_IDS.filter((id) => results[id] != null),
+        ]),
+      ),
       results,
       serviceTimelineOriginal:
         freshOriginal.length > 0 ? freshOriginal : prevIngest.serviceTimelineOriginal,
@@ -461,7 +562,9 @@ export async function runDealerDataJob(args: {
       auto_records: applyOneautoToAutoRecords(blocks.auto_records, {
         display,
         ingest,
-        vehicleOverride: Boolean(mergedResults.oe_vin_lookup?.ok),
+        vehicleOverride:
+          dealerDecodeResultGaveData(mergedResults.oe_vin_lookup) ||
+          dealerDecodeResultGaveData(mergedResults.vin_decoder),
       }),
     };
   });
@@ -481,23 +584,25 @@ export async function runDealerDataJob(args: {
     return { ok: false, status: "failed", reason: "draft_write_failed" };
   }
 
-  const wroteNotes = args.skipAi ? false : await generateDealerNotes(sessionId, vin, commentLang);
-  const commentsAfter = args.skipAi
-    ? ""
-    : (
-        await readOrderDraft(sessionId).then((d) =>
-          d?.workspace
-            ? mergeSourceBlocksWithDefaults(d.workspace.sourceBlocks).auto_records.comments.trim()
-            : "",
-        )
+  const wroteNotes = args.skipAi
+    ? new Set<DealerNoteField>()
+    : await generateDealerNotes(sessionId, vin, commentLang);
+  const arAfter = args.skipAi
+    ? null
+    : await readOrderDraft(sessionId).then((d) =>
+        d?.workspace ? mergeSourceBlocksWithDefaults(d.workspace.sourceBlocks).auto_records : null,
       );
-  const aiGenerated = Boolean(wroteNotes || commentsAfter);
+  const hasNote = (field: DealerNoteField) =>
+    wroteNotes.has(field) || !richIsEmpty(arAfter?.[field] ?? "");
+  // Abiem komentāriem jābūt (eļļas intervāli + „Komentāri”); trūkstošo ģenerē nākamais mēģinājums.
+  const aiGenerated = hasNote("oilChangeIntervalNotes") && hasNote("comments");
   if (!args.skipAi && !aiGenerated) {
     await upsertDealerDataJob(sessionId, {
       vin,
       status: "failed",
       attempts,
       error: "ai_generation_failed",
+      nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
       trigger: args.trigger,
       skipTranslate,
       commentLang,
@@ -507,6 +612,25 @@ export async function runDealerDataJob(args: {
       aiGenerated: false,
     });
     return { ok: false, status: "failed", reason: "ai_generation_failed", serviceEventCount };
+  }
+
+  if (decodeError) {
+    // Vēsture un komentāri ir melnrakstā; atkārtojas tikai VIN dekodēšana (Decoder, nav iekasēts).
+    await upsertDealerDataJob(sessionId, {
+      vin,
+      status: "failed",
+      attempts,
+      error: `vin_decode:${decodeError}`.slice(0, 200),
+      nextRetryAt: new Date(Date.now() + DEALER_FAILED_RETRY_MS).toISOString(),
+      trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
+      serviceEventCount,
+      aiGenerated,
+    });
+    return { ok: false, status: "failed", reason: "vin_decode_failed", serviceEventCount };
   }
 
   await upsertDealerDataJob(sessionId, {
