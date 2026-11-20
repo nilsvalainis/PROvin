@@ -1,4 +1,28 @@
 import { IRISS_CAR_SHARE_PUBLIC_BRAND, IRISS_CAR_SHARE_PUBLIC_LEGAL, type IrissCarSharePublicView } from "@/lib/iriss-car-share";
+import { IRISS_PUBLIC_CAR_SOLD_TITLE, IRISS_PUBLIC_DZA_CONTACT_LINES, IRISS_PUBLIC_SOLD_BODY } from "@/lib/iriss-public-availability";
+
+/** Nils 20.11: auto pārdots - neitrāls teksts + kontakti, bez auto detaļām un statusiem. */
+export function IrissCarSharePublicSold() {
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-16 text-center">
+      <p className="text-[13px] font-semibold tracking-[0.12em] text-[#9a3412]">{IRISS_CAR_SHARE_PUBLIC_BRAND}</p>
+      <h1 className="mt-6 text-[26px] font-semibold tracking-tight">{IRISS_PUBLIC_CAR_SOLD_TITLE}</h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-[#6e6e73]">{IRISS_PUBLIC_SOLD_BODY}</p>
+      <p className="mt-4 text-[15px] leading-relaxed text-[#3a3a3c]">
+        {IRISS_PUBLIC_DZA_CONTACT_LINES.map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))}
+      </p>
+      <p className="mt-8 text-[10px] leading-relaxed text-[#c7c7cc]">
+        {IRISS_CAR_SHARE_PUBLIC_BRAND}
+        <br />
+        {IRISS_CAR_SHARE_PUBLIC_LEGAL}
+      </p>
+    </main>
+  );
+}
 
 export function IrissCarSharePublicUnavailable() {
   return (

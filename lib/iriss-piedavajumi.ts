@@ -232,6 +232,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     history: normalizeHistory(o.history),
     messages: normalizeIrissPdMessages(o.messages),
     declinedByClient: o.declinedByClient === true && o.status === "declined",
+    ...(o.status === "cancelled" && clean(o.cancelledAt, 40) ? { cancelledAt: clean(o.cancelledAt, 40) } : {}),
+    ...(o.status === "cancelled" && clean(o.cancelReason, 300) ? { cancelReason: clean(o.cancelReason, 300) } : {}),
     createdById: clean(o.createdById, 80),
     createdByName: clean(o.createdByName, 120),
   };
@@ -576,7 +578,42 @@ export function applyIrissPdAction(
 
 /** «Izveidot jaunu uz šī bāzes»: no beigušā vai noraidītā. Termiņš tukšs - jāievada no jauna. */
 export function canRebaseIrissPd(status: IrissPdStatus): boolean {
-  return status === "expired" || status === "declined";
+  return status === "expired" || status === "declined" || status === "cancelled";
+}
+
+/* ---------------- Darījuma atcelšana (Nils 20.11, audits 1) ---------------- */
+
+export const IRISS_PD_CANCEL_LV = "Atcelt darījumu";
+export const IRISS_PD_CANCEL_CONFIRM_LV =
+  "Atcelt apstiprināto darījumu? Piedāvājums kļūs «Atcelts», Autoparka auto (ja to rezervēja šis piedāvājums) atgriezīsies «Pārdošanā», pasūtījums - «Aktīvs». Klienta saite vairs nebūs aktuāla.";
+/** PD vēstures teksts, ar ko apstiprināšana reģistrē, ka auto rezervēja tieši šis PD (sk. iriss-piedavajumi-approve). */
+export const IRISS_PD_CAR_RESERVED_TEXT = "Autoparka auto pārslēgts uz «Rezervēts»";
+
+export function canCancelIrissPd(status: IrissPdStatus): boolean {
+  return status === "approved";
+}
+
+/** Vai Autoparka auto rezervēja šis PD (pēc vēstures; pēc atcelšanas - vairs nē). */
+export function irissPdReservedCar(rec: Pick<IrissPiedavajums, "history">): boolean {
+  let reserved = false;
+  for (const h of rec.history) {
+    if (h.text === IRISS_PD_CAR_RESERVED_TEXT) reserved = true;
+    else if (h.text.startsWith("Autoparka auto atgriezts")) reserved = false;
+  }
+  return reserved;
+}
+
+/** Tīrā daļa: apstiprināts -> atcelts (iekšēji). Sekas auto un pasūtījumam - `runIrissPdCancelEffects`. */
+export function applyIrissPdCancel(
+  rec: IrissPiedavajums,
+  ctx: { by: string; at: string; reason?: string },
+): { ok: true; record: IrissPiedavajums } | { ok: false; error: string } {
+  if (!canCancelIrissPd(rec.status)) {
+    return { ok: false, error: `Statusā «${IRISS_PD_STATUS_LV[rec.status]}» darījumu atcelt nevar.` };
+  }
+  const reason = clean(ctx.reason ?? "", 300);
+  const next: IrissPiedavajums = { ...rec, status: "cancelled", cancelledAt: ctx.at, updatedAt: ctx.at, ...(reason ? { cancelReason: reason } : {}) };
+  return { ok: true, record: appendIrissPdHistory(next, { at: ctx.at, by: ctx.by, text: reason ? `Darījums atcelts: ${reason}` : "Darījums atcelts" }) };
 }
 
 export function rebaseIrissPd(
@@ -716,7 +753,7 @@ export function filterIrissPdRows(rows: readonly IrissPdListRow[], f: IrissPdLis
 }
 
 export function countIrissPdByStatus(rows: readonly IrissPdListRow[], nowMs: number): Record<IrissPdStatus | "all", number> {
-  const out = { all: rows.length, requested: 0, draft: 0, sent: 0, approved: 0, declined: 0, expired: 0 };
+  const out = { all: rows.length, requested: 0, draft: 0, sent: 0, approved: 0, declined: 0, expired: 0, cancelled: 0 };
   for (const r of rows) out[irissPdRowEffectiveStatus(r, nowMs)] += 1;
   return out;
 }

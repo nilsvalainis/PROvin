@@ -15,6 +15,7 @@ import {
   writeIrissPd,
 } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdToken, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
+import { irissPdPublicNotCurrentFor } from "@/lib/iriss-public-availability";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -72,6 +73,8 @@ export async function POST(req: Request) {
   if (!rec) return hidden();
   const view = buildIrissPdPublicView(rec, "link", nowMs);
   if (view.state === "closed") return json({ ok: false, error: "closed" }, 410);
+  // Nils 20.11: auto pārdots citam / darījums atcelts - klients vairs nevar ne apstiprināt, ne jautāt.
+  if (await irissPdPublicNotCurrentFor(rec)) return json({ ok: false, error: "closed" }, 410);
   const at = new Date(nowMs).toISOString();
 
   if (action === "question") {

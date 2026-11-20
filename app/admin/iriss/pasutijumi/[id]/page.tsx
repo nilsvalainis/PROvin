@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
 import { PdOrderStrip } from "@/components/admin/iriss-piedavajumi/PdOrderStrip";
-import { listIrissPdRowsForOrder } from "@/lib/iriss-piedavajumi-store";
+import { listIrissPdRowsForOrder, readIrissPd, readIrissPdFirstView } from "@/lib/iriss-piedavajumi-store";
+import { irissPdCommunicationEvents, type IrissCommunicationEvent } from "@/lib/iriss-communication-timeline";
 import { irissPdRowsForViewer, irissPdViewerFromActor } from "@/lib/iriss-piedavajumi-staff";
 import {
   getIrissListingsStorageState,
@@ -61,6 +62,15 @@ export default async function IrissPasutijumsDetailPage({
       .then((rows) => irissPdRowsForViewer(rows, irissPdViewerFromActor(actor)))
       .catch(() => []),
   ]);
+  // Nils 20.11 (audits 4): PD notikumi «Komunikācija» laika joslā (tikai skatītājam redzamie PD).
+  const pdCommEvents: IrissCommunicationEvent[] = (
+    await Promise.all(
+      pdRows.map(async (row) => {
+        const [pd, firstViewedAt] = await Promise.all([readIrissPd(row.id).catch(() => null), readIrissPdFirstView(row.id).catch(() => "")]);
+        return pd ? irissPdCommunicationEvents(pd, { firstViewedAt }) : [];
+      }),
+    )
+  ).flat();
   const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled
     ? await prepareIrissListingMatchWorkspace(listable, []).catch(() => null)
@@ -87,6 +97,7 @@ export default async function IrissPasutijumsDetailPage({
         googleContactsConfigured={Boolean(readGoogleContactsConfig())}
         pdEntry
         pdRows={pdRows}
+        pdCommEvents={pdCommEvents}
       />
     </>
   );

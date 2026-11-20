@@ -7,7 +7,7 @@
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import type { IrissPdEquipmentSummary } from "@/lib/iriss-pd-equipment-summary";
 
-export const IRISS_PD_STATUSES = ["requested", "draft", "sent", "approved", "declined", "expired"] as const;
+export const IRISS_PD_STATUSES = ["requested", "draft", "sent", "approved", "declined", "expired", "cancelled"] as const;
 export type IrissPdStatus = (typeof IRISS_PD_STATUSES)[number];
 
 export const IRISS_PD_STATUS_LV: Record<IrissPdStatus, string> = {
@@ -17,6 +17,7 @@ export const IRISS_PD_STATUS_LV: Record<IrissPdStatus, string> = {
   approved: "Apstiprināts",
   declined: "Noraidīts",
   expired: "Beidzies termiņš",
+  cancelled: "Atcelts",
 };
 
 /** Saraksta filtru čipiem īsāks teksts (maketā «Beidzies»). */
@@ -32,6 +33,7 @@ export const IRISS_PD_STATUS_HINT_LV: Record<IrissPdStatus, string> = {
   approved: "Automātiski Pasūtījums un Autoparka auto «Rezervēts»",
   declined: "Klients atteicās vai admins atzīmēja",
   expired: "Pēc manuālā termiņa - «Izveidot jaunu uz šī bāzes»",
+  cancelled: "Apstiprināts darījums atcelts - auto atpakaļ «Pārdošanā», pasūtījums «Aktīvs»",
 };
 
 /** Statusi, kuros auto ir «aizņemts» (1 auto = 1 piedāvājums). */
@@ -263,6 +265,9 @@ export type IrissPiedavajums = {
   messages: IrissPdMessage[];
   /** «Noraidīts» ar klienta pogu saitē (nevis admina atzīmi) - tad saitē rāda noraidīto stāvokli. */
   declinedByClient: boolean;
+  /** Nils 20.11 (audits 1): «Atcelt darījumu» apstiprinātam PD - kad un iemesls (iekšēji, klients neredz). */
+  cancelledAt?: string;
+  cancelReason?: string;
   /**
    * P4 (Nils 20.11): kas izveidoja («env-admin» vai darbinieka id). Darbinieks labo tikai savus;
    * vecajiem ierakstiem tukšs (= administratora).

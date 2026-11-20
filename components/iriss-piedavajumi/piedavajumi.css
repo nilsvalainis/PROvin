@@ -140,6 +140,7 @@
 .pd-chip.st-approved { background: #e3f6e8; color: #1f7a37; }
 .pd-chip.st-declined { background: #fdeaea; color: #c4281c; }
 .pd-chip.st-expired { background: #f3eefb; color: #6b3fb0; }
+.pd-chip.st-cancelled { background: #eeeef0; color: #52525b; }
 /* Nils 07.11: neatbildēts klienta jautājums (sarakstā blakus statusam) */
 .pd-chip.pd-q { background: #fff3e0; color: #9a3412; }
 .pd-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
@@ -1239,6 +1240,7 @@ button.pd-lv {
 :is(.pdv, .pdc) .pd-chip.st-approved { color: #1f7a37; }
 :is(.pdv, .pdc) .pd-chip.st-declined { color: #c4281c; }
 :is(.pdv, .pdc) .pd-chip.st-expired { color: #6b3fb0; }
+:is(.pdv, .pdc) .pd-chip.st-cancelled { color: #52525b; }
 :is(.pdv, .pdc) .pd-btn.p,
 :is(.pdv, .pdc) a.pd-btn.p { color: #fff; }
 :is(.pdv, .pdc) .pd-btn.bad.bad { color: var(--bad); }

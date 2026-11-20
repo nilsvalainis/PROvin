@@ -3,6 +3,7 @@ import { isSafeIrissCarShareToken } from "@/lib/iriss-car-share";
 import { readIrissCarShareByToken } from "@/lib/iriss-car-share-store";
 import { autoparksV2MainPhoto } from "@/lib/iriss-autoparks-v2-photo";
 import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
+import { irissCarIsSold } from "@/lib/iriss-public-availability";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   const rec = await readIrissCarShareByToken(token);
   if (!rec?.autoparksCarId) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const found = await readAutoparksV2Car(rec.autoparksCarId).catch(() => null);
-  if (!found) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!found || irissCarIsSold(found.car)) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const bytes = await autoparksV2MainPhoto(found.car, found.v2);
   if (!bytes) return NextResponse.json({ error: "no_photo" }, { status: 404 });
   return new NextResponse(new Uint8Array(bytes), {

@@ -21,7 +21,12 @@ import type { IrissOfferNotifyFacts } from "@/lib/iriss-offer-notify-shared";
 import { irissWorkspaceRevision } from "@/lib/iriss-pasutijumi-save-safety";
 import { createIrissPasutijums, readIrissPasutijums, writeIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
-import { appendIrissPdHistory, formatIrissPdPrice, splitIrissPdClientName } from "@/lib/iriss-piedavajumi";
+import {
+  appendIrissPdHistory,
+  formatIrissPdPrice,
+  IRISS_PD_CAR_RESERVED_TEXT,
+  splitIrissPdClientName,
+} from "@/lib/iriss-piedavajumi";
 import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 
 /**
@@ -153,6 +158,61 @@ async function reserveSourceCar(rec: IrissPiedavajums, opts: { at: string; by: s
     adminPath: irissPdAdminPath(rec.id),
   });
   return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: irissOfferCarReserveText(outcome) });
+}
+
+/* ---------------- Darījuma atcelšana (Nils 20.11, audits 1) ---------------- */
+
+/** Pasūtījums «Rezervēts» -> «Aktīvs» (tikai, ja joprojām rezervēts; izpildītu / citu statusu nepārraksta). */
+async function releaseOrder(orderId: string, rec: IrissPiedavajums, at: string, by: string): Promise<"released" | "skipped" | "failed"> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const order = await readIrissPasutijums(orderId);
+    if (!order || isIrissRecordDeleted(order)) return "skipped";
+    if (order.listStatus !== "reserved") return "skipped";
+    const next = appendIrissStatusHistory(order, "active", { at, by });
+    const note = `Darījums atcelts (piedāvājums ${irissPdNumberLabel(rec.number)}, ${irissPdAdminPath(rec.id)}) - atpakaļ «Aktīvs».`;
+    next.internalNotes = [order.internalNotes.trim(), note].filter(Boolean).join("\n");
+    const saved = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(order), historyBy: by });
+    if (saved.ok) return "released";
+    if (!saved.stale) return "failed";
+  }
+  return "failed";
+}
+
+/**
+ * Atceltā PD sekas: pasūtījums atpakaļ «Aktīvs», Autoparka auto atpakaļ «Pārdošanā» (ja to rezervēja šis PD un tas
+ * joprojām «Rezervēts»). Katrs solis vēsturē; kļūda neaptur atcelšanu (vēsturē - ko iestatīt ar roku).
+ */
+export async function runIrissPdCancelEffects(
+  rec: IrissPiedavajums,
+  opts: { at: string; by: string; carWasReserved: boolean },
+): Promise<IrissPiedavajums> {
+  let next = rec;
+  const note = (text: string) => {
+    next = appendIrissPdHistory(next, { at: opts.at, by: opts.by, text });
+  };
+  if (rec.approvedOrderId) {
+    try {
+      const r = await releaseOrder(rec.approvedOrderId, rec, opts.at, opts.by);
+      if (r === "released") note("Pasūtījums atgriezts «Aktīvs»");
+      else if (r === "failed") note("Pasūtījumu neizdevās atgriezt «Aktīvs» - iestati ar roku");
+    } catch (e) {
+      console.error("[iriss-piedavajumi] cancel order", e instanceof Error ? e.message : e);
+      note("Pasūtījumu neizdevās atgriezt «Aktīvs» - iestati ar roku");
+    }
+  }
+  const carId = irissPdAutoparksCarId(rec.sourceRef);
+  if (carId && opts.carWasReserved) {
+    try {
+      const { releaseAutoparksCarAfterOfferCancel } = await import("@/lib/iriss-autoparks-v2-store");
+      const res = await releaseAutoparksCarAfterOfferCancel(carId, { id: "pd", name: `Piedāvājums ${irissPdNumberLabel(rec.number)}` });
+      if (res.ok) note("Autoparka auto atgriezts «Pārdošanā»");
+      else if (res.reason === "not_reserved" || res.reason === "conflict") note("Autoparka auto atgriezts netika - statuss jau mainīts ar roku");
+    } catch (e) {
+      console.error("[iriss-piedavajumi] cancel autoparks", e instanceof Error ? e.message : e);
+      note("Autoparka auto neizdevās atgriezt «Pārdošanā» - iestati ar roku");
+    }
+  }
+  return next;
 }
 
 /** Paziņojuma fakti (bez klienta kontaktiem pushā - tos nerāda bloķētajā ekrānā). */
