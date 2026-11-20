@@ -10,6 +10,7 @@ import {
   type IrissOfferImageFormat,
 } from "@/lib/iriss-offer-image-thumb";
 import { shouldServeOriginalOfferDisplay } from "@/lib/iriss-offer-public-photo";
+import { irissOfferLinkNotCurrentFor } from "@/lib/iriss-public-availability";
 import {
   buildIrissOfferPublicView,
   irissOfferPublicViewContainsSecret,
@@ -32,6 +33,26 @@ export async function openUsableIrissOfferLink(token: string, nowMs = Date.now()
   const offer = order.offers.find((item) => item.id === link.offerId);
   if (!offer) return null;
   return { link, offer, order };
+}
+
+/**
+ * Nils 20.11 (audits): vecā `/p/<token>` saite, kuras avota auto (`autoparks:`/`logistics:`) ir pārdots citam -
+ * klientam neitrāls «Piedāvājums vairs nav aktuāls» (tāpat kā `/p/d/`). Klients, kas pats apstiprināja, redz kā agrāk.
+ */
+export async function irissOfferLinkNotCurrent(
+  opened: { link: { tokenHash: string; decision: string }; offer: { sourceRef?: string } },
+): Promise<boolean> {
+  if (!/^(autoparks|logistics):/.test((opened.offer.sourceRef ?? "").trim())) return false;
+  let approved = opened.link.decision === "approve";
+  if (!approved && !opened.link.decision) approved = (await readIrissOfferClaimedDecision(opened.link.tokenHash).catch(() => null))?.decision === "approve";
+  return irissOfferLinkNotCurrentFor({ sourceRef: opened.offer.sourceRef, approvedByClient: approved });
+}
+
+/** `/p/<token>` lapai: saite ir, bet vairs nav aktuāla (auto pārdots citam). Skatījumu neskaita. */
+export async function irissOfferLinkTokenNotCurrent(token: string, nowMs = Date.now()): Promise<boolean> {
+  const opened = await openUsableIrissOfferLink(token, nowMs);
+  if (!opened) return false;
+  return irissOfferLinkNotCurrent(opened);
 }
 
 export async function loadIrissOfferPublicView(token: string, nowMs = Date.now()): Promise<IrissOfferPublicView | null> {
@@ -68,6 +89,7 @@ export async function readIrissOfferPublicPhoto(
   if (!isSafeIrissOfferAttachmentId(attachmentId)) return null;
   const opened = await openUsableIrissOfferLink(token, nowMs);
   if (!opened) return null;
+  if (await irissOfferLinkNotCurrent(opened)) return null;
   const att = opened.offer.attachments.find((item) => item.id === attachmentId);
   if (!att || !isIrissOfferPublicImageMime(att.mimeType)) return null;
 

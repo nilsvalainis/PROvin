@@ -425,3 +425,66 @@ describe("DE iepirkumi: mape bez VIN nosaukumā, VIN car-data.json (20.11)", () 
     expect((await store.getAutoparksRoom(car.id))?.car.dropboxFolderPath).toBe(DE);
   });
 });
+
+describe("20.11 audits: auto piesaistīts tukšai mapei, īstā mape ar to pašu VIN (XC90)", () => {
+  const EMPTY = `/STOCK/Volvo XC90 D5 Executive 2009${SEP}518193`;
+  const DE = "/STOCK/Volvo XC90 DE Iepirkums";
+  const VIN = "YV1CZ714691518193";
+  const carData = JSON.stringify({ fields: { VIN: { value: VIN } } });
+
+  async function setup(opts: { emptyHasFile?: boolean; deHasData?: boolean } = {}) {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", EMPTY);
+    db.add("folder", `${EMPTY}/doc`);
+    if (opts.emptyHasFile) db.add("file", `${EMPTY}/doc/rekins.pdf`, "pdf");
+    db.add("folder", DE);
+    if (opts.deHasData !== false) db.add("file", `${DE}/car-data.json`, carData);
+    db.add("folder", `${DE}/bildes-izsole`);
+    db.add("file", `${DE}/bildes-izsole/1.jpg`, "img");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Volvo", model: "XC90", year: "2009", vin: VIN }, actor);
+    // Sākuma stāvoklis kā prod: piesaistīts tukšajai mapei.
+    const emptyId = (await db.client.getMetadata(EMPTY))!.id;
+    await store.mutateAutoparksState((s) => {
+      const c = s.cars.find((x) => x.id === car.id)!;
+      c.dropboxFolderId = emptyId;
+      c.dropboxFolderPath = EMPTY;
+      return { result: null, write: true };
+    });
+    return { db, store, sync, car };
+  }
+
+  it("pārsaista no tukšās mapes uz mapi ar car-data.json VIN un failiem; tukšo mapi nedzēš", async () => {
+    const { db, store, sync, car } = await setup();
+    const r = await sync.linkAutoparksCarToDropbox(car.id);
+    expect(r).toMatchObject({ linked: true, path: DE });
+    const room = await store.getAutoparksRoom(car.id);
+    expect(room?.car.dropboxFolderPath).toBe(DE);
+    expect(await db.client.getMetadata(EMPTY)).not.toBeNull();
+    expect(db.client.ensureFolder).not.toHaveBeenCalled();
+    // Atkārtoti - nekas nemainās.
+    expect(await sync.linkAutoparksCarToDropbox(car.id)).toMatchObject({ linked: true, path: DE });
+  });
+
+  it("piesaistītajā mapē ir fails -> nepārsaista", async () => {
+    const { sync, car } = await setup({ emptyHasFile: true });
+    expect(await sync.linkAutoparksCarToDropbox(car.id)).toMatchObject({ linked: true, path: EMPTY });
+  });
+
+  it("citai mapei nav ne VIN6 nosaukumā, ne car-data.json -> paliek piesaistīts tukšajai", async () => {
+    const { sync, car } = await setup({ deHasData: false });
+    expect(await sync.linkAutoparksCarToDropbox(car.id)).toMatchObject({ linked: true, path: EMPTY });
+  });
+
+  it("īstā mape ar VIN6 nosaukumā un failiem -> pārsaista arī bez car-data.json", async () => {
+    const { db, store, sync, car } = await setup({ deHasData: false });
+    const A1 = `/STOCK/Volvo XC90 2009${SEP}518193${SEP}A1`;
+    db.add("folder", A1);
+    db.add("file", `${A1}/1.jpg`, "img");
+    expect(await sync.linkAutoparksCarToDropbox(car.id)).toMatchObject({ linked: true, path: A1 });
+    const room = await store.getAutoparksRoom(car.id);
+    expect(room?.car.dropboxFolderId).toBe((await db.client.getMetadata(A1))!.id);
+  });
+});

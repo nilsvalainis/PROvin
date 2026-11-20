@@ -56,9 +56,9 @@ export function PdImportPanel({ id, onDone }: { id: string; onDone: (rec: IrissP
           {cars === null ? <p className="pd-hint">Ielādē...</p> : null}
           {query.trim()
             ? shown.map((c) => (
-                <button type="button" key={c.id} className="pd-carrow" disabled={busy || Boolean(c.takenBy)} onClick={() => void run({ kind: "autoparks", carId: c.id })}>
+                <button type="button" key={c.id} className="pd-carrow" disabled={busy || Boolean(c.takenBy) || Boolean(c.busy)} onClick={() => void run({ kind: "autoparks", carId: c.id })}>
                   <span className="pd-el">{c.title}</span>
-                  <b className="pd-mono">{c.takenBy || c.vinTail}</b>
+                  {c.busy ? <span className="pd-chip">Aizņemts</span> : <b className="pd-mono">{c.takenBy || c.vinTail}</b>}
                 </button>
               ))
             : null}

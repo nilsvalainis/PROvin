@@ -985,17 +985,27 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
 
 /* ---------------- Izveide no Autoparka ---------------- */
 
-export type IrissPdCarPick = { id: string; title: string; vinTail: string; plate: string; search: string; takenBy: string };
+export type IrissPdCarPick = {
+  id: string;
+  title: string;
+  vinTail: string;
+  plate: string;
+  search: string;
+  takenBy: string;
+  /** Nils 20.11 (audits): «Rezervēts» - rāda neaktīvu ar čipu «Aizņemts». */
+  busy?: boolean;
+};
 
 /**
- * Autoparka auto izvēlei. Arhivētie un pārdotie netiek rādīti; auto ar aktīvu piedāvājumu nav izvēlams (1 auto = 1 piedāvājums).
+ * Autoparka auto izvēlei. Arhivētie un pārdotie (arī arhīvs ar iemeslu «Pārdots») netiek rādīti;
+ * rezervētie rādās neaktīvi (`busy`, čips «Aizņemts»).
  */
 export function irissPdCarPicks(
-  cars: ReadonlyArray<{ id: string; make: string; model: string; vin: string; plate: string; status: string; archivedAt: string; displayName?: string }>,
+  cars: ReadonlyArray<{ id: string; make: string; model: string; vin: string; plate: string; status: string; archivedAt: string; archiveReason?: string; displayName?: string }>,
   rows: readonly IrissPdListRow[],
 ): IrissPdCarPick[] {
   return cars
-    .filter((c) => !c.archivedAt && c.status !== "sold")
+    .filter((c) => !c.archivedAt && c.status !== "sold" && c.archiveReason !== "sold")
     .map((c) => {
       const title = clean(c.displayName) || clean(`${c.make} ${c.model}`) || clean(c.vin);
       const vin = clean(c.vin).toUpperCase();
@@ -1007,6 +1017,7 @@ export function irissPdCarPicks(
         plate: clean(c.plate),
         search: fold(`${title} ${c.make} ${c.model} ${vin} ${c.plate} ${c.plate.replace(/[\s-]/g, "")}`),
         takenBy: taken ? irissPdNumberLabel(taken.number) : "",
+        ...(c.status === "reserved" ? { busy: true } : {}),
       };
     })
     .filter((r) => r.title);

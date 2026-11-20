@@ -70,13 +70,14 @@ function CarList({
             key={c.id}
             className="pd-carrow"
             // Nils 28.10: vairāki piedāvājumi vienam auto atļauti - esošais tikai kā norāde.
-            disabled={disabled}
-            title={c.takenBy ? `Jau ir piedāvājums ${c.takenBy} - var veidot vēl vienu` : undefined}
+            disabled={disabled || Boolean(c.busy)}
+            title={c.busy ? "Auto rezervēts" : c.takenBy ? `Jau ir piedāvājums ${c.takenBy} - var veidot vēl vienu` : undefined}
             onClick={() => onPick(c.id)}
           >
             <span style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
               <span className="pd-el">{c.title}</span>
               {c.takenBy ? <span className="pd-mu" style={{ fontSize: 11.5 }}>· {c.takenBy}</span> : null}
+              {c.busy ? <span className="pd-chip">Aizņemts</span> : null}
             </span>
             <b className="pd-mono">{c.vinTail || c.plate}</b>
           </button>

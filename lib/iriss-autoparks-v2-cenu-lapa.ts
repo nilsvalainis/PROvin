@@ -72,9 +72,16 @@ export function priceSheetStateAuto(car: Pick<AutoparksCar, "registry" | "status
   return hasTradeAct(car.registry) ? "normal" : "soon";
 }
 
-/** Pārdotam auto pārdošanas lapu automātiski nedrukā; manuāla stāvokļa izvēle to atļauj. */
-export function priceSheetSold(car: Pick<AutoparksCar, "status">, ps: Pick<AutoparksCarV2["priceSheet"], "sheetState">): boolean {
-  return car.status === "sold" && ps.sheetState == null;
+/**
+ * Pārdotam auto pārdošanas lapu automātiski nedrukā; manuāla stāvokļa izvēle to atļauj.
+ * Pārdots = statuss «Pārdots» vai arhīvs ar iemeslu «sold» (20.11 audits).
+ */
+export function priceSheetSold(
+  car: Pick<AutoparksCar, "status"> & { archivedAt?: string; archiveReason?: string },
+  ps: Pick<AutoparksCarV2["priceSheet"], "sheetState">,
+): boolean {
+  const sold = car.status === "sold" || (Boolean(car.archivedAt) && car.archiveReason === "sold");
+  return sold && ps.sheetState == null;
 }
 
 export function priceSheetState(car: Pick<AutoparksCar, "registry" | "status">, v2: Pick<AutoparksCarV2, "priceSheet">): V2PriceSheetState {

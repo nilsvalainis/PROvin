@@ -22,7 +22,12 @@ export function autoparksDropboxEnabled(env: NodeJS.ProcessEnv = process.env): b
   return getDropboxClient() !== null;
 }
 
-export type AutoparksFolderRef = { id: string; path: string };
+export type AutoparksFolderRef = {
+  id: string;
+  path: string;
+  /** `relinkEmpty`: piesaistītā mape bija tukša, atrasta cita ar failiem (ieraksts jāpārsaista; neko nedzēš). */
+  replaces?: { id: string; path: string };
+};
 
 export class AutoparksFolderError extends Error {
   constructor(readonly code: "root_missing" | "ambiguous" | "no_vin_and_no_name") {
@@ -67,11 +72,17 @@ export async function findStockFolderByCarDataVin(client: DropboxClient, folders
 export async function resolveAutoparksCarFolder(
   client: DropboxClient,
   rawCar: Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "orderId" | "dropboxFolderId" | "owner"> & { id?: string },
-  opts: { create?: boolean; auction?: string | null } = {},
+  opts: { create?: boolean; auction?: string | null; relinkEmpty?: boolean } = {},
 ): Promise<AutoparksFolderRef | null> {
   if (rawCar.dropboxFolderId) {
     const meta = await client.getMetadata(rawCar.dropboxFolderId);
-    if (meta?.tag === "folder") return { id: meta.id, path: meta.pathDisplay };
+    if (meta?.tag === "folder") {
+      if (opts.relinkEmpty) {
+        const target = await findAutoparksRelinkTarget(client, await withEffectiveBasics(rawCar), meta).catch(() => null);
+        if (target) return { id: target.id, path: target.pathDisplay, replaces: { id: meta.id, path: meta.pathDisplay } };
+      }
+      return { id: meta.id, path: meta.pathDisplay };
+    }
   }
   // Efektīvie Pamatdati (v2 labotais VIN/īpašnieks/marka): pareizā firmas sakne un mape pēc VIN.
   const car = await withEffectiveBasics(rawCar);
@@ -97,6 +108,41 @@ export async function resolveAutoparksCarFolder(
   if (auction == null && car.orderId) auction = (await getLogisticsOrder(car.orderId).catch(() => null))?.auction ?? null;
   const created = await client.ensureFolder(joinDropboxPath(rootMeta.pathDisplay || root, autoparksStockFolderName(car, auction)));
   return { id: created.id, path: created.pathDisplay };
+}
+
+async function folderFileCount(client: DropboxClient, folder: DropboxEntry): Promise<number> {
+  // Rekursīvi: tukšas apakšmapes (piem. `doc/`) nav faili - tāda mape skaitās tukša.
+  const { entries } = await client.listAll(folder.pathDisplay, { recursive: true });
+  return entries.filter((e) => e.tag === "file").length;
+}
+
+/**
+ * 20.11 audits (XC90 «D5 Executive 2009 – 518193» vs «Volvo XC90 DE Iepirkums»): auto piesaistīts TUKŠAI mapei,
+ * bet tajā pašā firmas saknē ir cita mape ar šī auto VIN (VIN6 nosaukumā vai pilns VIN `car-data.json`) un failiem.
+ * Atgriež to mapi tikai, ja piesaistītā tiešām tukša (0 failu) un kandidāts ar failiem ir tieši viens. Neko nedzēš.
+ */
+export async function findAutoparksRelinkTarget(
+  client: DropboxClient,
+  car: Pick<AutoparksCar, "vin" | "owner">,
+  linked: DropboxEntry,
+): Promise<DropboxEntry | null> {
+  const vin = car.vin.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (vin.length !== 17) return null;
+  if ((await folderFileCount(client, linked)) > 0) return null;
+  const root = autoparksDropboxRoot(autoparksOwner(car));
+  const { entries } = await client.listAll(root, { recursive: false });
+  const others = entries.filter((e) => e.tag === "folder" && e.id !== linked.id && !e.name.trim().startsWith("_") && !/^arh[iī]vs/i.test(e.name.trim()));
+  const candidates = new Map<string, DropboxEntry>();
+  others.forEach((f) => {
+    if (matchStockFolderByVin([f.name], vin).kind === "found") candidates.set(f.id, f);
+  });
+  const byData = await findStockFolderByCarDataVin(client, others, vin);
+  if (byData) candidates.set(byData.id, byData);
+  const withFiles: DropboxEntry[] = [];
+  for (const f of candidates.values()) {
+    if ((await folderFileCount(client, f).catch(() => 0)) > 0) withFiles.push(f);
+  }
+  return withFiles.length === 1 ? withFiles[0]! : null;
 }
 
 async function withEffectiveBasics<T extends Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "owner"> & { id?: string }>(car: T): Promise<T> {

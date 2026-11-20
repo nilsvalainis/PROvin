@@ -42,6 +42,22 @@ export function irissPdMatchCar<C extends { id: string; vin: string }>(
   return cars.find((c) => c.vin.trim().toUpperCase() === vin) ?? null;
 }
 
+/**
+ * Vecās formas piedāvājuma (`/p/<token>`) avota auto: `autoparks:<id>` pēc id, `logistics:<id>` pēc
+ * Autoparka auto piesaistītā loģistikas pasūtījuma. Citādi - nav zināms (saite paliek kā bija).
+ */
+export function irissOfferSourceCar<C extends { id: string; orderId?: string }>(sourceRef: string | undefined, cars: readonly C[]): C | null {
+  const m = /^(autoparks|logistics):([\w-]{1,80})$/.exec((sourceRef ?? "").trim());
+  if (!m) return null;
+  if (m[1] === "autoparks") return cars.find((c) => c.id === m[2]) ?? null;
+  return cars.find((c) => c.orderId === m[2]) ?? null;
+}
+
+/** Vecā saite vairs nav aktuāla: auto pārdots, un šis klients to nav apstiprinājis (apstiprinājums = darījums ar viņu). */
+export function irissOfferLinkPublicNotCurrent(approvedByClient: boolean, carSold: boolean): boolean {
+  return carSold && !approvedByClient;
+}
+
 async function readCars() {
   return (await readAutoparksState().catch(() => null))?.cars ?? [];
 }
@@ -62,4 +78,11 @@ export async function irissPdPublicNotCurrentFor(rec: IrissPiedavajums): Promise
   if (irissPdPublicNotCurrent(rec, false)) return true;
   if (rec.status === "approved") return false;
   return irissPdPublicNotCurrent(rec, irissCarIsSold(irissPdMatchCar(rec, await readCars())));
+}
+
+/** `/p/<token>` (vecā forma): auto pārdots citam - saite vairs nav aktuāla. */
+export async function irissOfferLinkNotCurrentFor(input: { sourceRef?: string; approvedByClient: boolean }): Promise<boolean> {
+  if (input.approvedByClient) return false;
+  if (!/^(autoparks|logistics):/.test((input.sourceRef ?? "").trim())) return false;
+  return irissOfferLinkPublicNotCurrent(false, irissCarIsSold(irissOfferSourceCar(input.sourceRef, await readCars())));
 }

@@ -100,9 +100,15 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
   return (
     <div className="ap2-pane wide ap2-twocol ap2-clp">
       <div>
-        <a className="ap2-btn dark ap2-a4btn ap2-cl-printm" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
-          Priekšskatīt un drukāt A4
-        </a>
+        {s.sold ? (
+          <button type="button" className="ap2-btn dark ap2-a4btn ap2-cl-printm" disabled aria-disabled="true">
+            Pārdots - nedrukā
+          </button>
+        ) : (
+          <a className="ap2-btn dark ap2-a4btn ap2-cl-printm" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
+            Priekšskatīt un drukāt A4
+          </a>
+        )}
         <div className="ap2-card">
           <h3>Cenu lapa</h3>
           {field("displayName", "Nosaukums", s.displayName, s.displayName)}
