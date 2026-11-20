@@ -7,6 +7,8 @@ type ServerOwnedSlice = {
   statusChangedAt?: string;
   statusHistory?: unknown[];
   inactiveReason?: string;
+  /** P5: darījuma lauks ir daļa no posma - serveris (PD apstiprinājums/atcelšana) to maina kopā ar statusu. */
+  dealWorkflowStatus?: string;
   generatedDocuments?: IrissGeneratedDocument[];
   googleContactResourceName?: string;
   googleContactStatus?: IrissGoogleContactStatus;
@@ -35,6 +37,7 @@ export function mergeServerOwnedIrissFields<T extends ServerOwnedSlice>(local: T
     next.statusChangedAt = server.statusChangedAt;
     if (server.statusHistory) next.statusHistory = server.statusHistory;
     if (server.inactiveReason !== undefined) next.inactiveReason = server.inactiveReason;
+    if (server.dealWorkflowStatus !== undefined) next.dealWorkflowStatus = server.dealWorkflowStatus;
   }
   if (server.googleContactResourceName) next.googleContactResourceName = server.googleContactResourceName;
   else if (local.googleContactResourceName) next.googleContactResourceName = local.googleContactResourceName;

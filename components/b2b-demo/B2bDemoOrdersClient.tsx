@@ -10,7 +10,8 @@ import { B2B_DEMO_APP_PREFIX } from "@/lib/b2b-demo-host";
 import { irissListBudgetText } from "@/lib/iriss-pasutijumi-list-view";
 import {
   B2B_DEMO_DEAL_DETAIL_OPTIONS,
-  B2B_DEMO_ORDER_STATUSES,
+  B2B_DEMO_ORDER_PICKER_STATUSES,
+  B2B_DEMO_ORDER_STATUS_TONE,
   B2B_DEMO_ORDER_STATUS_LV,
   type B2bDemoOffer,
   type B2bDemoOrder,
@@ -92,11 +93,11 @@ export function B2bDemoOrdersList({ initial }: { initial: B2bDemoOrderListPage }
             void load(1, "");
           }}
         />
-        {B2B_DEMO_ORDER_STATUSES.map((s) => (
+        {B2B_DEMO_ORDER_PICKER_STATUSES.map((s) => (
           <StatusFilterChip
             key={s}
             label={B2B_DEMO_ORDER_STATUS_LV[s]}
-            tone={s}
+            tone={B2B_DEMO_ORDER_STATUS_TONE[s]}
             pressed={status === s}
             onClick={() => {
               setStatus(s);
@@ -307,8 +308,12 @@ export function B2bDemoOrderForm({
           <Field label="Pasūtījuma datums" value={order.orderDate} onChange={(v) => patch("orderDate", v)} type="date" />
           <label className="block text-sm font-medium">
             Statuss
-            <select className={`${fieldClass} mt-1`} value={order.status} onChange={(e) => patch("status", e.target.value as B2bDemoOrderStatus)}>
-              {B2B_DEMO_ORDER_STATUSES.map((s) => (
+            <select
+              className={`${fieldClass} mt-1`}
+              value={order.status === "active" ? "searching" : order.status}
+              onChange={(e) => patch("status", e.target.value as B2bDemoOrderStatus)}
+            >
+              {B2B_DEMO_ORDER_PICKER_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {B2B_DEMO_ORDER_STATUS_LV[s]}
                 </option>

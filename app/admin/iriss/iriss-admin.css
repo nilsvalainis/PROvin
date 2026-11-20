@@ -985,7 +985,11 @@ input[data-offer-field="empty"],
 
 /* Pārskats v3: galvenes statuss - zaļš Aktīvs/Rezervēts, pelēks pārējie (bija melns). */
 .admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="active"],
-.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="reserved"] {
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="searching"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="offered"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="reserved"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="transit"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="sold"] {
   border-color: #b7e2c5 !important;
   background-color: #e8f5ec !important;
   color: #14532d !important;

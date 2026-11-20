@@ -137,7 +137,7 @@ export function paginateB2bDemoOrderIndex(
 ): B2bDemoOrderListPage {
   assertSameTenant(index, tenantId);
   const { page, limit, status } = parseB2bDemoOrderListQuery(query);
-  const filtered = sortB2bDemoOrderListRows(index.rows.filter((row) => row.tenantId === tenantId && (!status || row.status === status)));
+  const filtered = sortB2bDemoOrderListRows(index.rows.filter((row) => row.tenantId === tenantId && (!status || row.status === status || (status === "searching" && row.status === "active"))));
   const start = (page - 1) * limit;
   return {
     tenantId,

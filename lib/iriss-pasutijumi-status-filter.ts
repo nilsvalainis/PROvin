@@ -1,59 +1,62 @@
-import {
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  type IrissPasutijumsPickerStatus,
-} from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGES, type IrissOrderStage } from "@/lib/iriss-pasutijumi-types";
 
-export const IRISS_LIST_STATUS_FILTER_KEY = "iriss-pasutijumi-list-status-filter-v3";
+/** P5: filtrs pa posmiem. v3 (Aktīvs/Rezervēts/Izpildīts/Neaktīvs) tiek pārnests uz posmiem. */
+export const IRISS_LIST_STATUS_FILTER_KEY = "iriss-pasutijumi-list-status-filter-v4";
+const LEGACY_FILTER_KEY = "iriss-pasutijumi-list-status-filter-v3";
 export const IRISS_LIST_STATUS_FILTER_EVENT = "iriss-pasutijumi-list-status-filter-change";
 export const IRISS_LIST_TRASH_KEY = "iriss-pasutijumi-list-trash-v1";
 export const IRISS_LIST_TRASH_EVENT = "iriss-pasutijumi-list-trash-change";
 
-export type IrissListStatusFilterState = Record<IrissPasutijumsPickerStatus, boolean>;
+export type IrissListStatusFilterState = Record<IrissOrderStage, boolean>;
 
+/** Noklusēti ieslēgti darbā esošie: Meklējam, Piedāvāts, Rezervēts, Ceļā. */
 export const IRISS_LIST_STATUS_DEFAULT_FILTER: IrissListStatusFilterState = {
-  active: true,
+  searching: true,
+  offered: true,
   reserved: true,
-  completed: false,
+  transit: true,
+  sold: false,
   inactive: false,
 };
 
 export const IRISS_LIST_STATUS_FILTER_ALL: IrissListStatusFilterState = {
-  active: true,
+  searching: true,
+  offered: true,
   reserved: true,
-  completed: true,
+  transit: true,
+  sold: true,
   inactive: true,
 };
 
-function emptyFilter(o: Partial<IrissListStatusFilterState>): IrissListStatusFilterState {
+function fromStageObject(o: Record<string, unknown>): IrissListStatusFilterState {
+  const next = { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
+  for (const k of IRISS_ORDER_STAGES) if (typeof o[k] === "boolean") next[k] = o[k] as boolean;
+  return next;
+}
+
+/** v3 -> v4: Aktīvs -> Meklējam+Piedāvāts, Rezervēts -> Rezervēts+Ceļā, Izpildīts -> Pārdots. */
+function fromLegacyObject(o: Record<string, unknown>): IrissListStatusFilterState {
+  const active = o.active !== false && o.searching !== false && o.offered !== false;
+  const reserved = o.reserved !== false;
   return {
-    active: o.active !== false,
-    reserved: o.reserved !== false,
-    completed: o.completed === true,
+    searching: active,
+    offered: active,
+    reserved,
+    transit: reserved,
+    sold: o.completed === true,
     inactive: o.inactive === true,
   };
 }
 
-function migrateLegacyFilterObject(o: Record<string, unknown>): Partial<IrissListStatusFilterState> {
-  const hasLegacy = "searching" in o || "offered" in o;
-  const onlyV3 = IRISS_PASUTIJUMS_PICKER_STATUSES.every((k) => k in o) && !hasLegacy;
-  if (onlyV3) return o as Partial<IrissListStatusFilterState>;
-
-  const activeOn = o.active !== false || o.searching !== false || o.offered !== false;
-  return {
-    active: activeOn,
-    reserved: o.reserved !== false,
-    completed: o.completed === true,
-    inactive: o.inactive === true,
-  };
-}
-
-export function parseIrissListStatusFilter(raw: string | null): IrissListStatusFilterState {
-  if (!raw) return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
+export function parseIrissListStatusFilter(raw: string | null, legacyRaw: string | null = null): IrissListStatusFilterState {
+  const src = raw ?? legacyRaw;
+  if (!src) return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
   try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const o = migrateLegacyFilterObject(parsed);
-    const next = emptyFilter(o);
-    if (!IRISS_PASUTIJUMS_PICKER_STATUSES.some((k) => next[k])) return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
+    const parsed = JSON.parse(src) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object") return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
+    const isStage = "transit" in parsed || "sold" in parsed;
+    const next = isStage ? fromStageObject(parsed) : fromLegacyObject(parsed);
+    if (!IRISS_ORDER_STAGES.some((k) => next[k])) return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
     return next;
   } catch {
     return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
@@ -62,7 +65,11 @@ export function parseIrissListStatusFilter(raw: string | null): IrissListStatusF
 
 export function readIrissListStatusFilter(): IrissListStatusFilterState {
   if (typeof window === "undefined") return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
-  return parseIrissListStatusFilter(localStorage.getItem(IRISS_LIST_STATUS_FILTER_KEY));
+  try {
+    return parseIrissListStatusFilter(localStorage.getItem(IRISS_LIST_STATUS_FILTER_KEY), localStorage.getItem(LEGACY_FILTER_KEY));
+  } catch {
+    return { ...IRISS_LIST_STATUS_DEFAULT_FILTER };
+  }
 }
 
 export function dispatchIrissListStatusFilter(next: IrissListStatusFilterState): void {
@@ -74,12 +81,12 @@ export function dispatchIrissListStatusFilter(next: IrissListStatusFilterState):
   window.dispatchEvent(new CustomEvent(IRISS_LIST_STATUS_FILTER_EVENT, { detail: next }));
 }
 
-export function irissStatusFilterKeys(): IrissPasutijumsPickerStatus[] {
-  return [...IRISS_PASUTIJUMS_PICKER_STATUSES];
+export function irissStatusFilterKeys(): IrissOrderStage[] {
+  return [...IRISS_ORDER_STAGES];
 }
 
-export function isKnownFilterStatus(v: string): v is IrissPasutijumsPickerStatus {
-  return (IRISS_PASUTIJUMS_PICKER_STATUSES as readonly string[]).includes(v);
+export function isKnownFilterStatus(v: string): v is IrissOrderStage {
+  return (IRISS_ORDER_STAGES as readonly string[]).includes(v);
 }
 
 export function readIrissListTrashFilter(): boolean {

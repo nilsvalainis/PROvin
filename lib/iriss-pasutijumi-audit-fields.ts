@@ -5,6 +5,7 @@
 
 import { parseClearedFields } from "@/lib/admin-cleared-fields";
 import {
+  isIrissOrderStage,
   isIrissPasutijumsListStatus,
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
@@ -96,6 +97,7 @@ export function parseIrissStatusHistory(raw: unknown): IrissStatusHistoryEntry[]
       by: by || "operators",
       ...(reason ? { reason } : {}),
       ...(carId ? { autoparksCarId: carId } : {}),
+      ...(isIrissOrderStage(o.stage) ? { stage: o.stage } : {}),
     });
   }
   return out;

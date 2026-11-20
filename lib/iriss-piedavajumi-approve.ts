@@ -9,6 +9,7 @@ import "server-only";
  * Kļūdas nekad neaptur klienta atbildi; neizdevušos pasūtījumu admins izveido ar pogu detaļā.
  */
 
+import { applyIrissOrderStage } from "@/lib/iriss-order-stage";
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   irissOfferCarIsConflict,
@@ -34,7 +35,8 @@ import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavaju
  */
 export function irissDealStatusAfterApproval(current: string | undefined): string {
   const cur = (current ?? "").trim();
-  return !cur || cur === "jauns" || cur === "meklejam" ? "piedavats" : cur;
+  // P5: atcelts/nodots iepriekšējais darījums nedrīkst jaunu apstiprinājumu rādīt kā «Neaktīvs»/«Pārdots».
+  return !cur || cur === "jauns" || cur === "meklejam" || cur === "atcelts" || cur === "nodots" ? "piedavats" : cur;
 }
 
 export function irissPdAdminPath(id: string): string {
@@ -167,8 +169,9 @@ async function releaseOrder(orderId: string, rec: IrissPiedavajums, at: string, 
     const order = await readIrissPasutijums(orderId);
     if (!order || isIrissRecordDeleted(order)) return "skipped";
     if (order.listStatus !== "reserved") return "skipped";
-    const next = appendIrissStatusHistory(order, "active", { at, by });
-    const note = `Darījums atcelts (piedāvājums ${irissPdNumberLabel(rec.number)}, ${irissPdAdminPath(rec.id)}) - atpakaļ «Aktīvs».`;
+    // P5 (3A): atcelts PD -> pats atpakaļ «Meklējam» (arī darījuma lauks, citādi paliktu «Piedāvāts»).
+    const next = applyIrissOrderStage(order, "searching", { at, by });
+    const note = `Darījums atcelts (piedāvājums ${irissPdNumberLabel(rec.number)}, ${irissPdAdminPath(rec.id)}) - atpakaļ «Meklējam».`;
     next.internalNotes = [order.internalNotes.trim(), note].filter(Boolean).join("\n");
     const saved = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(order), historyBy: by });
     if (saved.ok) return "released";

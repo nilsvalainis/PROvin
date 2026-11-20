@@ -334,7 +334,7 @@ describe("Integrācija: atcelšana un «Pārdots» krātuvēs", () => {
     expect(done.listStatus).toBe("completed");
     expect(done.statusHistory?.at(-1)).toMatchObject({ from: "reserved", to: "completed", autoparksCarId: t.car.id });
     const hist = await t.v2.listAutoparksV2History(t.car.id);
-    expect(hist.some((h) => h.field === "clientOrder" && h.to === "Izpildīts")).toBe(true);
+    expect(hist.some((h) => h.field === "clientOrder" && h.to === "Pārdots")).toBe(true);
     // Apstiprinātajam klientam saite paliek; citam (pēc VIN) - «nav aktuāls».
     expect(await t.avail.irissPdPublicNotCurrentFor((await t.pdStore.readIrissPd(rec.id))!)).toBe(false);
     expect(await t.avail.irissPdPublicNotCurrentFor((await t.pdStore.readIrissPd(other.id))!)).toBe(true);

@@ -71,12 +71,12 @@ import {
 } from "@/lib/iriss-generated-documents";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
-  IRISS_DEAL_WORKFLOW_STATUSES,
   formatIrissOverviewFinancingChip,
   formatIrissOverviewPlatformsLine,
   formatIrissOverviewSavedCapsule,
-  irissDealWorkflowStatusOf,
 } from "@/lib/iriss-order-overview-view";
+import { IrissOrderStagePath, IrissOrderStageSelect } from "@/components/admin/IrissOrderStagePath";
+import { irissOrderStage } from "@/lib/iriss-order-stage";
 import {
   newIrissCommunicationEvent,
   timelineFromPasutijums,
@@ -135,13 +135,12 @@ import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
-  canonicalIrissPasutijumsListStatus,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
+  IRISS_ORDER_STAGE_LV,
   defaultIrissDzintarzemeTameDraft,
   type IrissGeneratedDocument,
   type IrissOfferRecord,
-  type IrissPasutijumsListStatus,
+  type IrissOrderStage,
+  type IrissOrderStageSignals,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
@@ -914,7 +913,8 @@ export function IrissOrderRoom({
   onPatchRange,
   onPatchRecord,
   onInactiveReason,
-  onSetStatus,
+  onSetStage,
+  stageSignals = null,
   onSave,
   onSaveCriteria,
   onPdf,
@@ -970,7 +970,10 @@ export function IrissOrderRoom({
   onPatchRange: (field: IrissOrderRangeField, raw: string) => void;
   onPatchRecord: (patch: Partial<IrissPasutijumsRecord>) => void;
   onInactiveReason: (value: string) => void;
-  onSetStatus: (status: IrissPasutijumsListStatus) => void;
+  /** P5: posma maiņa ar roku (raksta listStatus + dealWorkflowStatus). */
+  onSetStage: (stage: IrissOrderStage) => void;
+  /** P5: PD/Autoparka signāli no servera. */
+  stageSignals?: IrissOrderStageSignals | null;
   onSave: () => Promise<IrissOrderSaveResult>;
   onSaveCriteria: (patch: CriteriaDraft) => Promise<IrissOrderSaveResult>;
   onPdf: () => void;
@@ -1176,6 +1179,7 @@ export function IrissOrderRoom({
   );
   const chips = irissOrderRoomCriteriaChips(rec);
   const dealPill = irissOrderRoomDealPill(rec);
+  const orderStage = irissOrderStage(rec, stageSignals);
   const financingChip = formatIrissOverviewFinancingChip(rec.clientFinancingPercent, rec.orderDate);
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const savedTime = irissOrderRoomStamp(rec.updatedAt).split(" ")[1] ?? "";
@@ -1349,19 +1353,7 @@ export function IrissOrderRoom({
           <div className="flex h-8 items-center gap-2">
             <label className="inline-flex min-w-0 items-center">
               <span className="sr-only">Statuss</span>
-              <select
-                className="iriss-status-pill h-8 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] outline-none"
-                data-status={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                aria-label="Pasūtījuma statuss"
-                onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
-              >
-                {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
-                  </option>
-                ))}
-              </select>
+              <IrissOrderStageSelect stage={orderStage} onChange={onSetStage} />
             </label>
             <span className="min-w-0 truncate text-[13px] text-[var(--am-ink2)]">{clientName || refLabel}</span>
             <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -1423,19 +1415,7 @@ export function IrissOrderRoom({
                   <h1 className="text-[16px] font-bold leading-tight text-[var(--iriss-ink)] md:text-[22px] md:font-bold">{title}</h1>
                   <label className="hidden items-center md:inline-flex">
                     <span className="sr-only">Statuss</span>
-                    <select
-                      className="iriss-status-pill h-8 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] outline-none"
-                      data-status={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                      value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                      aria-label="Pasūtījuma statuss"
-                      onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
-                    >
-                      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
-                        </option>
-                      ))}
-                    </select>
+                    <IrissOrderStageSelect stage={orderStage} onChange={onSetStage} />
                   </label>
                   {financingChip ? (
                     <span className="iriss-deal-pill hidden h-8 items-center rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] md:inline-flex">
@@ -1659,30 +1639,8 @@ export function IrissOrderRoom({
           <aside className="space-y-3">
             <section className={cardClass} aria-label="Statuss">
               <CardTitle>Statuss</CardTitle>
-              <Segmented
-                label="Pasūtījuma statuss"
-                grid
-                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                options={IRISS_PASUTIJUMS_PICKER_STATUSES.map((st) => ({ value: st, label: IRISS_PASUTIJUMS_PICKER_STATUS_LV[st] }))}
-                onChange={(value) => value && onSetStatus(value as IrissPasutijumsListStatus)}
-              />
-              <label className="mt-3 flex min-h-[40px] items-center justify-between gap-3 border-t border-[var(--iriss-line)] pt-2">
-                <span className="text-[14px] text-[var(--iriss-ink-2)]">Darījums</span>
-                <select
-                  className="h-8 rounded-full bg-[var(--fill)] px-2.5 text-[13px] text-[var(--ink)] outline-none"
-                  value={irissDealWorkflowStatusOf(rec.dealWorkflowStatus)}
-                  onChange={(e) => {
-                    onPatchRecord({ dealWorkflowStatus: e.target.value });
-                    void onSave();
-                  }}
-                >
-                  {IRISS_DEAL_WORKFLOW_STATUSES.map((status) => (
-                    <option key={status.id} value={status.id}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* P5 (Nils 20.11): viens ceļš - aizstāj 4 pogas + «Darījums» izvēli (dealWorkflowStatus paliek datos). */}
+              <IrissOrderStagePath rec={rec} signals={stageSignals} onChange={onSetStage} />
             </section>
             {/* Nils 28.10: klients dublēts labajā pusē; tālrunis atver WhatsApp lietotni datorā. */}
             <section className={cardClass} aria-label="Klients">
@@ -1737,7 +1695,7 @@ export function IrissOrderRoom({
                   {history.slice(0, 8).map((entry) => (
                     <li key={`${entry.at}-${entry.from}-${entry.to}`} className="flex items-start justify-between gap-3 border-b border-dashed border-[var(--hair)] py-1.5 text-[13px] text-[var(--ink)] last:border-0">
                       <span className="min-w-0 rounded-full bg-[var(--fill)] px-2.5 py-1 text-[12px] font-semibold">
-                        {irissOrderRoomStatusLabel(entry.to)}
+                        {entry.stage ? IRISS_ORDER_STAGE_LV[entry.stage] : irissOrderRoomStatusLabel(entry.to)}
                         {entry.reason ? ` (${entry.reason})` : ""}
                       </span>
                       <span className="shrink-0 text-[12px] text-[var(--ink2)]">

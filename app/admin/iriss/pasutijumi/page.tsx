@@ -10,6 +10,9 @@ import {
   readIrissListOrder,
 } from "@/lib/iriss-pasutijumi-store";
 import { requireIrissSectionPage } from "@/lib/staff-auth";
+import { attachIrissOrderStageSignals } from "@/lib/iriss-order-stage";
+import { listIrissPdRows } from "@/lib/iriss-piedavajumi-store";
+import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 
 export const dynamic = "force-dynamic";
 
@@ -25,14 +28,17 @@ export default async function IrissPasutijumiListPage() {
   let offerSummary: Awaited<ReturnType<typeof readIrissOfferLinkSummary>> = {};
   if (storeEnabled) {
     try {
-      const [listed, order, match, summary] = await Promise.all([
+      const [listed, order, match, summary, pdRows, autoparks] = await Promise.all([
         listIrissPasutijumi({ includeDeleted: true }),
         readIrissListOrder(),
         loadIrissListingMatchState().catch(() => null),
         readIrissOfferLinkSummary().catch(() => ({})),
+        // P5: posmi «Piedāvāts»/«Ceļā»/«Pārdots» no PD un Autoparka (viens nolasījums katram).
+        listIrissPdRows().catch(() => []),
+        readAutoparksState().catch(() => null),
       ]);
       offerSummary = summary;
-      rows = listed;
+      rows = attachIrissOrderStageSignals(listed, pdRows, autoparks?.cars ?? [], Date.now());
       initialListOrder = order;
       if (match) newHitsByOrder = countIrissNewHitsByOrder(match.entries);
     } catch (e) {

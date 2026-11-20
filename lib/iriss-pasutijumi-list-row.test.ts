@@ -139,9 +139,11 @@ describe("IRISS saraksta rinda", () => {
       listStatus: "inactive",
     });
     expect(countIrissListStatuses([a, b, c])).toEqual({
-      active: 1,
+      searching: 1,
+      offered: 0,
       reserved: 0,
-      completed: 1,
+      transit: 0,
+      sold: 1,
       inactive: 1,
     });
   });
@@ -151,9 +153,11 @@ describe("IRISS statusa filtrs", () => {
   it("defaults to working statuses", () => {
     expect(parseIrissListStatusFilter(null)).toEqual(IRISS_LIST_STATUS_DEFAULT_FILTER);
     expect(IRISS_LIST_STATUS_DEFAULT_FILTER).toEqual({
-      active: true,
+      searching: true,
+      offered: true,
       reserved: true,
-      completed: false,
+      transit: true,
+      sold: false,
       inactive: false,
     });
   });
@@ -162,11 +166,21 @@ describe("IRISS statusa filtrs", () => {
     expect(IRISS_LIST_TRASH_KEY).toBe("iriss-pasutijumi-list-trash-v1");
   });
 
-  it("keeps old v2 JSON and turns new statuses on so existing data stay visible", () => {
+  it("keeps old v2/v3 JSON and maps it to stages so existing data stay visible", () => {
     expect(parseIrissListStatusFilter(JSON.stringify({ active: true, completed: false, inactive: false }))).toEqual({
-      active: true,
+      searching: true,
+      offered: true,
       reserved: true,
-      completed: false,
+      transit: true,
+      sold: false,
+      inactive: false,
+    });
+    expect(parseIrissListStatusFilter(null, JSON.stringify({ active: false, reserved: true, completed: true, inactive: false }))).toEqual({
+      searching: false,
+      offered: false,
+      reserved: true,
+      transit: true,
+      sold: true,
       inactive: false,
     });
   });
