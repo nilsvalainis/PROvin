@@ -7,15 +7,8 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
-import { buildOneautoDisplay, parseOneautoProductIds, type OneautoProductId } from "@/lib/oneauto-catalog";
-import {
-  readStoredOneautoResults,
-  recordManualOneautoPurchase,
-  splitOneautoAlreadyPurchased,
-} from "@/lib/oneauto-manual-purchase";
-import { mergeOneautoProductResults } from "@/lib/oneauto-to-auto-records";
-import { readDealerDataJob } from "@/lib/dealer-data-job-store";
-import { DEALER_AUTO_PRODUCT_IDS, dealerDataJobBlocksManualPurchase } from "@/lib/dealer-data-job-types";
+import { parseOneautoProductIds } from "@/lib/oneauto-catalog";
+import { recordManualOneautoPurchase } from "@/lib/oneauto-manual-purchase";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const dynamic = "force-dynamic";
@@ -46,49 +39,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_products_selected" }, { status: 400 });
   }
 
-  // Jau nopirktais (automātika vai iepriekšēja manuāla ielāde) netiek pirkts vēlreiz bez «Pirkt vēlreiz».
+  // Nila lēmums 20.11: manuālā poga vienmēr ielasa uzreiz no OneAuto (atkārtota tā paša VIN
+  // OE vēsture netiek iekasēta). Pirkums tiek saglabāts serverī uzreiz un sapludināts ar
+  // automātikas rezultātiem (ne pārrakstīts).
   const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
-  const force = o.force === true;
-  const stored = sessionId ? await readStoredOneautoResults(sessionId, vin) : {};
-
-  // Automātiskā dīlera ielase vēl notiek / gaida OneAuto 202: manuāls pirkums var nopirkt to pašu
-  // vēlreiz. Atļauts tikai ar skaidru «Pirkt vēlreiz».
-  if (sessionId && !force && products.some((id) => (DEALER_AUTO_PRODUCT_IDS as readonly string[]).includes(id))) {
-    const job = await readDealerDataJob(sessionId).catch(() => null);
-    if (job && normalizeVin(job.vin) === vin && dealerDataJobBlocksManualPurchase(job)) {
-      return NextResponse.json(
-        {
-          error: "dealer_job_active",
-          message:
-            "Automātiskā dīlera ielase šim pasūtījumam vēl notiek vai gaida OneAuto atbildi. Pagaidi dažas minūtes vai spied «Pirkt vēlreiz».",
-        },
-        { status: 409 },
-      );
-    }
-  }
-  const { toFetch, reused } = splitOneautoAlreadyPurchased(products, stored, force);
+  const toFetch = products;
 
   try {
-    if (toFetch.length === 0) {
-      const results: typeof stored = {};
-      for (const id of reused) if (stored[id]) results[id] = stored[id];
-      const payloads: Partial<Record<OneautoProductId, unknown>> = {};
-      for (const id of Object.keys(stored) as OneautoProductId[]) payloads[id] = stored[id]?.payload;
-      const original = buildOneautoDisplay(payloads);
-      const display = await translateOneautoWorksOnIngest(original);
-      return NextResponse.json({
-        ok: true,
-        source: "oneautoapi",
-        vin,
-        costEur: "0.00",
-        costCents: 0,
-        results: stored,
-        reused,
-        display,
-        displayOriginal: original,
-      });
-    }
-    const fetchedRaw = await fetchOneautoProducts({
+    const fetched = await fetchOneautoProducts({
       vin,
       products: toFetch,
       // Uzreiz serverī (pirms izmaksu ieraksta): dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
@@ -96,15 +54,6 @@ export async function POST(req: Request) {
         ? (results) => recordManualOneautoPurchase({ sessionId, vin, results })
         : undefined,
     });
-    const fetched =
-      reused.length > 0
-        ? (() => {
-            const results = mergeOneautoProductResults(stored, fetchedRaw.results);
-            const payloads: Partial<Record<OneautoProductId, unknown>> = {};
-            for (const id of Object.keys(results) as OneautoProductId[]) payloads[id] = results[id]?.payload;
-            return { ...fetchedRaw, results, display: buildOneautoDisplay(payloads) };
-          })()
-        : fetchedRaw;
     const allFailed = toFetch.every(
       (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",
     );
@@ -123,7 +72,6 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       ...fetched,
-      reused,
       display,
       displayOriginal: fetched.display,
     });

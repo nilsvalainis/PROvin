@@ -1,16 +1,13 @@
 /**
- * Manuālā OneAuto josla adminā (izmeklēšana 20.11.2026): automātika jau nopirktos datus josla
- * neredzēja un pirka vēlreiz (~19 € lieki 3 nedēļās). Šeit:
- * - jau nopirktie produkti (darba ierakstā vai melnrakstā, tam pašam VIN) netiek pirkti vēlreiz,
- *   ja vien operators skaidri neapstiprina «Pirkt vēlreiz» (`force`);
+ * Manuālā OneAuto josla adminā. Nila lēmums 20.11.2026: poga vienmēr ielasa no OneAuto
+ * (atkārtota tā paša VIN OE vēsture netiek iekasēta), bloķēšanas nav. Šeit:
  * - pēc manuāla pirkuma rezultāti uzreiz tiek saglabāti serverī (dīlera darba ierakstā), lai
  *   tie nepazūd, ja lapu aizver pirms melnraksta saglabāšanas, un «Atkārtot» tos izmanto bez maksas;
  * - ja vēsture ar ierakstiem ir nopirkta, darba statuss kļūst «Ielasīts».
  */
 import "server-only";
 
-import { readOrderDraft, isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
-import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_AUTO_PRODUCT_IDS,
@@ -24,29 +21,10 @@ import {
   filledOneautoServiceEvents,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
-import { splitOneautoAlreadyPurchased } from "@/lib/oneauto-manual-purchase-core";
 import { mergeOneautoProductResults } from "@/lib/oneauto-to-auto-records";
 import { normalizeVin } from "@/lib/order-field-validation";
 
 type ResultMap = Partial<Record<OneautoProductId, OneautoProductResult>>;
-
-/** Šim pasūtījumam un VIN jau saglabātie OneAuto rezultāti (darba ieraksts + melnraksts). */
-export async function readStoredOneautoResults(sessionId: string, vin: string): Promise<ResultMap> {
-  if (!isSafeOrderDraftSessionId(sessionId)) return {};
-  const v = normalizeVin(vin);
-  const [job, draft] = await Promise.all([
-    readDealerDataJob(sessionId).catch(() => null),
-    readOrderDraft(sessionId).catch(() => null),
-  ]);
-  const fromJob = job && normalizeVin(job.vin) === v ? parseResultMap(job.oneautoResults) : {};
-  const ingest = draft?.workspace
-    ? mergeSourceBlocksWithDefaults(draft.workspace.sourceBlocks).auto_records.oneautoIngest
-    : null;
-  const fromDraft = ingest && normalizeVin(ingest.lastFetchedVin) === v ? ingest.results : {};
-  return mergeOneautoProductResults(fromJob, fromDraft);
-}
-
-export { splitOneautoAlreadyPurchased };
 
 /** Saglabā manuāli nopirkto serverī uzreiz (dīlera darba ierakstā). Kļūda pirkumu neaptur. */
 export async function recordManualOneautoPurchase(args: {

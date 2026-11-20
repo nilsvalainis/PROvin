@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { dealerDataJobBelongsInSweepIndex, mergeDealerDataJobPatch } from "@/lib/dealer-data-job-merge";
-import { dealerDataJobBlocksManualPurchase, type DealerDataJob } from "@/lib/dealer-data-job-types";
+import type { DealerDataJob } from "@/lib/dealer-data-job-types";
 
 const VIN = "WAUZZZ4M0JD000001";
 const base: DealerDataJob = {
@@ -58,25 +58,5 @@ describe("slaucīšanas indekss", () => {
     expect(dealerDataJobBelongsInSweepIndex({ status: "failed", attempts: 1 })).toBe(true);
     expect(dealerDataJobBelongsInSweepIndex({ status: "done", attempts: 1 })).toBe(false);
     expect(dealerDataJobBelongsInSweepIndex({ status: "no_vin", attempts: 0 })).toBe(false);
-  });
-});
-
-describe("manuālās joslas bloķēšana", () => {
-  const now = Date.parse("2026-11-20T12:00:00.000Z");
-  it("running (svaigs), pending un 202 gaidīšana bloķē; iestrēdzis/pabeigts - nē", () => {
-    expect(dealerDataJobBlocksManualPurchase({ status: "pending", updatedAt: "x" }, now)).toBe(true);
-    expect(
-      dealerDataJobBlocksManualPurchase({ status: "running", startedAt: "2026-11-20T11:58:00.000Z", updatedAt: "x" }, now),
-    ).toBe(true);
-    expect(
-      dealerDataJobBlocksManualPurchase({ status: "running", startedAt: "2026-11-20T11:00:00.000Z", updatedAt: "x" }, now),
-    ).toBe(false);
-    expect(
-      dealerDataJobBlocksManualPurchase(
-        { status: "failed", pendingRequestId: "r", nextRetryAt: "2026-11-20T12:02:00.000Z", updatedAt: "x" },
-        now,
-      ),
-    ).toBe(true);
-    expect(dealerDataJobBlocksManualPurchase({ status: "done", updatedAt: "x" }, now)).toBe(false);
   });
 });

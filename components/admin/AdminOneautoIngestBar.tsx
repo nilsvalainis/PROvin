@@ -12,7 +12,6 @@ import {
   oneautoDisplayHasRows,
   oneautoProductStatusLabel,
   oneautoProductsCostCents,
-  oneautoProductsInSoftCooldown,
   oneautoResultIsNoData,
   oneautoResultIsPending,
   oneautoResultIsUnavailable,
@@ -100,7 +99,6 @@ export function AdminOneautoIngestBar({
   const [busy, setBusy] = useState(false);
   /** Dubultklikšķa aizsardzība: state atjaunojas tikai pēc renderēšanas, ref - uzreiz. */
   const inFlight = useRef(false);
-  const [reusedNote, setReusedNote] = useState<string | null>(null);
   const [imagesBusy, setImagesBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imagesNote, setImagesNote] = useState<string | null>(null);
@@ -120,9 +118,6 @@ export function AdminOneautoIngestBar({
     historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload),
   );
   const selectedHaveProblem = oneautoSelectedHaveProblem(value.selectedProducts, value.results);
-  const cooldownProducts = cachedForVin
-    ? oneautoProductsInSoftCooldown(value.selectedProducts, value.results, value.fetchedAt)
-    : [];
   const canFetchImages = Boolean(sessionId && photosEnabled && onImagesFetched);
 
   const toggleProduct = (id: OneautoProductId, checked: boolean) => {
@@ -132,30 +127,20 @@ export function AdminOneautoIngestBar({
     onIngestChange({ ...value, selectedProducts: next });
   };
 
-  const fetchData = async (forceProducts?: OneautoProductId[]): Promise<void> => {
+  /**
+   * Nila lēmums 20.11: poga vienmēr ielasa uzreiz no OneAuto (bez «jau ielādēts» bloķēšanas).
+   * Dubultklikšķa aizsardzība: viena poga = viens pieprasījums.
+   */
+  const fetchData = async (): Promise<void> => {
     if (!editable || busy || imagesBusy || inFlight.current) return;
     if (value.selectedProducts.length === 0) {
       setError(oneautoFetchErrorLv("no_products_selected"));
       return;
     }
-    let productsToFetch = forceProducts ? [...forceProducts] : [...value.selectedProducts];
-    if (!forceProducts && cooldownProducts.length > 0) {
-      const labels = cooldownProducts
-        .map((id) => ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id)
-        .join(", ");
-      const override = window.confirm(
-        `Šim VIN pēdējās 24h jau ir ielādēts: ${labels}. Ielādēt šos produktus no jauna? Tas var atkārtoti iekasēt maksu.`,
-      );
-      if (!override) {
-        productsToFetch = productsToFetch.filter((id) => !cooldownProducts.includes(id));
-        if (productsToFetch.length === 0) return;
-      }
-    }
+    const productsToFetch = [...value.selectedProducts];
     inFlight.current = true;
     setBusy(true);
     setError(null);
-    setReusedNote(null);
-    let rebuy: OneautoProductId[] = [];
     try {
       const res = await fetch("/api/admin/sources/oneautoapi", {
         method: "POST",
@@ -165,7 +150,6 @@ export function AdminOneautoIngestBar({
           vin: effectiveVin,
           products: productsToFetch,
           ...(sessionId ? { sessionId } : {}),
-          ...(forceProducts ? { force: true } : {}),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -175,20 +159,7 @@ export function AdminOneautoIngestBar({
         results?: AutoRecordsOneautoIngest["results"];
         display?: OneautoDisplaySections;
         displayOriginal?: OneautoDisplaySections;
-        reused?: OneautoProductId[];
       };
-      if (res.status === 409 && body.error === "dealer_job_active") {
-        if (
-          window.confirm(
-            "Automātiskā dīlera ielase šim pasūtījumam vēl notiek vai gaida OneAuto atbildi.\n\nPirkt vēlreiz tagad? Tas var iekasēt maksu atkārtoti.",
-          )
-        ) {
-          rebuy = productsToFetch;
-        } else {
-          setError("Automātiskā ielase vēl notiek - pagaidi dažas minūtes un pārlādē lapu.");
-        }
-        return;
-      }
       if (!res.ok && !body.results) {
         setError(oneautoFetchErrorLv(body.error ?? "upstream_error"));
         return;
@@ -238,25 +209,11 @@ export function AdminOneautoIngestBar({
         serviceTimelineOriginal,
       };
       onFetched(nextIngest, nextDisplay);
-      const reused = (body.reused ?? []).filter((id) => ONEAUTO_PRODUCTS.some((p) => p.id === id));
-      if (reused.length > 0) {
-        const labels = reused.map((id) => ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id).join(", ");
-        setReusedNote(`Jau nopirkts: ${labels} - parādīti saglabātie dati, maksa nav iekasēta.`);
-        if (
-          window.confirm(
-            `Šim pasūtījumam jau nopirkts: ${labels}. Parādīti saglabātie dati.\n\nPirkt vēlreiz? Tas iekasēs maksu atkārtoti.`,
-          )
-        ) {
-          rebuy = reused;
-        }
-      }
     } catch {
       setError(oneautoFetchErrorLv("upstream_error"));
     } finally {
       setBusy(false);
       inFlight.current = false;
-      // «Pirkt vēlreiz» - otrs pieprasījums ar force (arī pēc 409 agrīnā return).
-      if (rebuy.length > 0) void fetchData(rebuy);
     }
   };
 
@@ -419,11 +376,6 @@ export function AdminOneautoIngestBar({
       {cachedForVin && historyEmpty && !hasMappedData && oneautoIngestHasMeta(value) ? (
         <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700">
           Ielādēts. OEM atbilde šim VIN ir tukša: servisa ierakstu nav.
-        </p>
-      ) : null}
-      {reusedNote ? (
-        <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
-          {reusedNote}
         </p>
       ) : null}
       {imagesNote ? (

@@ -458,23 +458,6 @@ export function dealerDataJobHistoryReady(
   return job.status === "done" || (job.status === "failed" && Boolean(job.error?.startsWith("vin_decode:")));
 }
 
-/**
- * Manuālā OneAuto josla nedrīkst pirkt dīlera produktus, kamēr automātiskā ielase notiek
- * (running, nav iestrēgusi), gaida rindā (pending) vai gaida OneAuto 202 atkārtojumu.
- */
-export function dealerDataJobBlocksManualPurchase(
-  job: Pick<DealerDataJob, "status" | "startedAt" | "updatedAt" | "pendingRequestId" | "nextRetryAt">,
-  nowMs: number = Date.now(),
-): boolean {
-  if (job.status === "pending") return true;
-  if (job.status === "running") {
-    const started = Date.parse(job.startedAt ?? job.updatedAt);
-    return Number.isFinite(started) && nowMs - started < DEALER_DATA_STALE_RUNNING_MS;
-  }
-  if (job.status === "failed" && job.pendingRequestId) return !dealerDataJobRetryDue(job, nowMs);
-  return false;
-}
-
 /** Vai cron drīkst šo darbu atkārtot tagad (nextRetryAt pagājis vai nav iestatīts). */
 export function dealerDataJobRetryDue(
   job: Pick<DealerDataJob, "nextRetryAt">,
