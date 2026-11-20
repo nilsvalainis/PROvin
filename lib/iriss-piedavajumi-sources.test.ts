@@ -46,7 +46,10 @@ describe("Piedāvājumi: tikai Admin", () => {
 
   it("darbinieks (pat ar visām sadaļām) neatver lapas un API; admins atver", () => {
     expect(decideAdminPageAccess("/admin/iriss/piedavajumi", staff)).toBe("forbidden");
-    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", staff)).toBe("forbidden");
+    // Audits P1 (20.11): «jauns» ieeja darbiniekam ar Pasūtījumiem - lapa pati novirza uz veco formu (bez PD datiem).
+    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", staff)).toBe("allow");
+    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", { kind: "staff", sections: ["logistika"] })).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/x1", staff)).toBe("forbidden");
     expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi", staff)).toBe("forbidden");
     expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi/x/foto/0", staff)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/piedavajumi", { kind: "admin" })).toBe("allow");

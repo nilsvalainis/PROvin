@@ -23,7 +23,7 @@ const APP_DIR = path.resolve(__dirname, "../app");
 
 /** Sadaļa -> atļautie API prefiksi (neatkarīga kopija no lib/staff-roles.ts). */
 const API_ALLOW: Record<IrissSection, readonly string[]> = {
-  pasutijumi: ["/api/admin/iriss-pasutijumi", "/api/admin/change-history"],
+  pasutijumi: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed", "/api/admin/change-history"],
   sludinajumi: ["/api/admin/iriss-listings", "/api/admin/change-history"],
   radars: ["/api/admin/iriss-scan", "/api/admin/iriss-marketplace"],
   logistika: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
@@ -42,7 +42,7 @@ const API_ALLOW: Record<IrissSection, readonly string[]> = {
 
 /** Sadaļa -> atļautās lapas. */
 const PAGE_ALLOW: Record<IrissSection, readonly string[]> = {
-  pasutijumi: ["/admin/iriss/pasutijumi"],
+  pasutijumi: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi/jauns"],
   sludinajumi: ["/admin/iriss/sludinajumi"],
   radars: ["/admin/iriss/scan"],
   logistika: ["/admin/iriss/logistika", "/admin/iriss/autoparks"],
@@ -80,6 +80,14 @@ const ROLES: Role[] = [
   { name: "Autoparks D - pamatdati + serviss + summas", kind: "staff", sections: ["ap_pamatdati", "ap_serviss", "ap_summas"] },
   { name: "Autoparks E - grāmatvede", kind: "staff", sections: ["ap_pamatdati", "ap_iegade", "ap_izdevumi", "ap_summas"] },
   { name: "tikai Summas (bez kategorijas)", kind: "staff", sections: ["ap_summas"] },
+  // IRISS audits P1 (20.11): lomu simulācija.
+  { name: "tikai Grāmatvede", kind: "staff", sections: ["gramatvede"] },
+  { name: "tikai ap_iegade", kind: "staff", sections: ["ap_iegade"] },
+  { name: "tikai ap_serviss", kind: "staff", sections: ["ap_serviss"] },
+  { name: "tikai ap_izdevumi", kind: "staff", sections: ["ap_izdevumi"] },
+  { name: "tikai ap_cenu_lapa", kind: "staff", sections: ["ap_cenu_lapa"] },
+  { name: "PD veidotājs (tikai Pasūtījumi)", kind: "staff", sections: ["pasutijumi"] },
+  { name: "Pasūtījumi + Loģistika + ap_pamatdati", kind: "staff", sections: ["pasutijumi", "logistika", "ap_pamatdati"] },
   { name: "admin", kind: "admin" },
 ];
 
