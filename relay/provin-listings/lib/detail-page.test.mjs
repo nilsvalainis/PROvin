@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  DAMAGE_TABLE_HEAD,
+  damageSectionTable,
   fetchAuctionDetail,
   filterDetailPhotos,
   findDetailObject,
@@ -190,4 +192,76 @@ test("mergeDetailExtracts: krāsas mērījumi - pilnākais saraksts, dublikāti 
     { ...base },
   ]);
   assert.deepEqual(m.paint, [["left", "110 μm"], ["left", "110 μm"], ["right", "270 μm"], ["roof", "N/A Material not measurable"]]);
+});
+
+// Nils 20.11: Auto1 «DAMAGE SUMMARY» (piem. TF43858 Skoda Kodiaq) ir div režģis, nevis <table> - šūnas ar koordinātām.
+const cell = (t, x, y, w = 100, h = 20) => ({ t, x, y, w, h });
+const DAMAGE_GRID = {
+  cells: [
+    cell("AREA", 0, 100), cell("DAMAGE", 120, 100), cell("SEVERITY", 240, 100), cell("DESCRIPTION", 420, 100), cell("QUANTITY", 600, 100, 60), cell("PARTS AFFECTED", 680, 100),
+    cell("Exterior", 0, 130, 100, 80), cell("Dent", 120, 130, 100, 50), cell("Width: ≥20mm & <50mm", 240, 130, 160), cell("Paint damage", 420, 130), cell("2", 625, 130, 10), cell("Rear left fender (2)", 680, 130, 140), cell("Show photos", 830, 130),
+    cell("Width: ≥5mm & <20mm", 240, 160, 160), cell("Paint damage", 420, 160), cell("1", 625, 160, 10), cell("Front right door (1)", 680, 160, 140),
+    cell("Repaint", 120, 190), cell("Thickness: ≥250µm & <500µm", 240, 190, 170), cell("1", 625, 190, 10), cell("Hood (1)", 680, 190),
+    cell("Interior", 0, 230), cell("Dirty", 120, 230), cell("Stains", 420, 230), cell("2", 625, 230, 10), cell("Driver seat (1)", 680, 230), cell("Rear seat (1)", 680, 248),
+  ],
+  lines: [],
+};
+
+test("damageSectionTable: div režģis pēc koordinātām -> kanoniska tabula ar zonām", () => {
+  const t = damageSectionTable(DAMAGE_GRID);
+  assert.deepEqual(t[0], DAMAGE_TABLE_HEAD);
+  assert.deepEqual(t.slice(1), [
+    ["Exterior", "Dent", "Width: ≥20mm & <50mm", "Paint damage", "2", "Rear left fender (2)"],
+    ["Exterior", "Dent", "Width: ≥5mm & <20mm", "Paint damage", "1", "Front right door (1)"],
+    ["Exterior", "Repaint", "Thickness: ≥250µm & <500µm", "", "1", "Hood (1)"],
+    ["Interior", "Dirty", "", "Stains", "2", "Driver seat (1), Rear seat (1)"],
+  ]);
+});
+
+test("damageSectionTable: bez Area kolonnas «Exterior» virsraksts kļūst par zonu", () => {
+  const t = damageSectionTable({
+    cells: [
+      cell("Damage", 0, 10), cell("Severity", 150, 10), cell("Quantity", 400, 10), cell("Parts affected", 500, 10),
+      cell("Exterior damages", 0, 40, 300),
+      cell("Scratch", 0, 70), cell("Length: <20mm", 150, 70), cell("3", 420, 70, 10), cell("Front bumper (3)", 500, 70),
+    ],
+  });
+  assert.deepEqual(t.slice(1), [["Exterior damages", "Scratch", "Length: <20mm", "", "3", "Front bumper (3)"]]);
+});
+
+test("damageSectionTable: bez koordinātām - pēc teksta rindām", () => {
+  const t = damageSectionTable({
+    cells: [],
+    lines: [
+      "Area", "Damage", "Severity", "Description", "Quantity", "Parts affected",
+      "Exterior", "Dent", "Width: ≥20mm & <50mm", "Paint damage", "2", "Rear left fender (2)",
+      "Width: ≥5mm & <20mm", "Paint damage", "1", "Front right door (1)",
+      "Stone chip", "Minor", "4", "Hood (3)", "Windscreen (1)",
+      "Interior", "Dirty", "2", "Driver seat (2)",
+      "Show more +",
+    ],
+  });
+  assert.deepEqual(t.slice(1), [
+    ["Exterior", "Dent", "Width: ≥20mm & <50mm", "Paint damage", "2", "Rear left fender (2)"],
+    ["Exterior", "Dent", "Width: ≥5mm & <20mm", "Paint damage", "1", "Front right door (1)"],
+    ["Exterior", "Stone chip", "Minor", "", "4", "Hood (3), Windscreen (1)"],
+    ["Interior", "Dirty", "", "", "2", "Driver seat (2)"],
+  ]);
+  assert.equal(damageSectionTable({ cells: [], lines: ["No damages"] }), null);
+  assert.equal(damageSectionTable(null), null);
+});
+
+test("mergeDetailExtracts: bojājumu sadaļa -> pilnākā tabula pirmā; īsta <table> paliek priekšroka", () => {
+  const partial = { cells: DAMAGE_GRID.cells.slice(0, 13), lines: [] };
+  const m = mergeDetailExtracts([
+    { title: "Skoda Kodiaq", fields: [], tables: [[["Year", "Km", "Owner"], ["2019", "1", "x"]]], lists: [], damageRaw: [partial], photos: [], text: "" },
+    { title: "", fields: [], tables: [], lists: [], damageRaw: [DAMAGE_GRID], photos: [], text: "" },
+  ]);
+  assert.deepEqual(m.tables[0][0], DAMAGE_TABLE_HEAD);
+  assert.equal(m.tables[0].length, 5);
+  assert.equal(m.tables.length, 2);
+  const real = [["Area", "Damage", "Quantity"], ["Exterior", "Dent", "1"]];
+  const m2 = mergeDetailExtracts([{ title: "", fields: [], tables: [real], lists: [], damageRaw: [DAMAGE_GRID], photos: [], text: "" }]);
+  assert.deepEqual(m2.tables, [real]);
+  assert.equal("damageRaw" in m2, false);
 });
