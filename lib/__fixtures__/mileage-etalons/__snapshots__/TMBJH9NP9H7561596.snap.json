@@ -23,8 +23,8 @@
   "20.01.2020 | 238200 | Zviedrija | CITI AVOTI - ZVIEDRIJAS OFICIĀLAIS REĢISTRS + ZVIEDRIJAS OFICIĀLAIS REĢISTRS + AutoDNA + CarVertical",
   "01.05.2020 | 253756 | Zviedrija | AutoDNA + CarVertical",
   "11.05.2020 | 253760 | Zviedrija | AutoDNA + CITI AVOTI - ZVIEDRIJAS OFICIĀLAIS REĢISTRS + ZVIEDRIJAS OFICIĀLAIS REĢISTRS",
-  "28.09.2020 | 181345 | Latvija | CarVertical + CSDD + AutoDNA | nav grafikā, novecojis dokuments",
-  "26.10.2021 | 195748 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA",
+  "28.09.2020 | 181345 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA",
+  "26.10.2021 | 195748 | Latvija | CarVertical + CSDD + AutoDNA",
   "01.06.2022 | 201017 | Latvija | CarVertical | mēnesis",
   "27.10.2022 | 207739 | Latvija | CarVertical + CSDD + AutoDNA",
   "23.10.2023 | 223342 | Latvija | CarVertical + CSDD + AutoDNA",
@@ -35,12 +35,12 @@
  ],
  "sarkanaJosla": true,
  "klases": [
-  "rollback: 11.05.2020 253760 -> 26.10.2021 195748 (kritums 58012) [26.10.2021 | 195748 | CarVertical + CSDD + AutoDNA]"
+  "rollback: 11.05.2020 253760 -> 28.09.2020 181345 (kritums 72415) [28.09.2020 | 181345 | CarVertical + CSDD + AutoDNA]"
  ],
  "kritumsBezNilaLemumiem": true,
  "nilaLemumi": [],
  "klasesPecNilaLemumiem": [
-  "rollback: 26.10.2021 195748"
+  "rollback: 28.09.2020 181345"
  ],
  "faktuLapa": {
   "odometerAnomaly": true,

@@ -57,9 +57,10 @@ describe("classifyOdometerAnomalies", () => {
     ];
     const out = classifyOdometerAnomalies(rows);
     expect(out.map((a) => a.class)).toEqual(["rollback"]);
-    // 181 345 (≈ SE 05.2019 181 849) ir „novecojis dokuments”; kritums redzams pret nākamo LV rādījumu.
+    // 20.11 (B6): 181 345 nejauši ≈ SE 05.2019 181 849, bet valsts maiņā tas nav "novecojis dokuments" -
+    // kritums ir tieši uz pirmā LV rādījuma.
     expect(out[0]?.fromKm).toBe(253760);
-    expect(out[0]?.toKm).toBe(195748);
+    expect(out[0]?.toKm).toBe(181345);
     expect(hasActiveRollbackAnomaly(rows)).toBe(true);
   });
 

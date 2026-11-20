@@ -290,3 +290,33 @@ describe("differsBySingleDigit", () => {
     expect(differsBySingleDigit(9_044, 90_044)).toBe(false);
   });
 });
+
+describe("20.11 (B6): valsts maiņā kritums nav 'novecojis dokuments'", () => {
+  it("SE 253 760 -> LV 181 345 (nejauši ~ SE 2019 181 850): sarkans tieši pirmais LV rādījums", () => {
+    const SE = "Zviedrija";
+    const rows = [
+      row("23.05.2019", 181_850, "REĢISTRS", SE),
+      row("20.01.2020", 238_200, "REĢISTRS", SE),
+      row("11.05.2020", 253_760, "REĢISTRS", SE),
+      row("28.09.2020", 181_345, "CSDD", "Latvija"),
+      row("26.10.2021", 195_748, "CSDD", "Latvija"),
+      row("03.11.2025", 270_970, "CSDD", "Latvija"),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect(a.staleDocumentSourceOrders.size).toBe(0);
+    expect(redRows(rows)).toEqual(["28.09.2020:181345"]);
+    expect(classes(rows)).toEqual(["rollback:28.09.2020:181345"]);
+  });
+
+  it("tajā pašā valstī vecā līmeņa atkārtojums paliek novecojis dokuments", () => {
+    const rows = [
+      row("01.09.2019", 146_500, "IZSOĻU PORTĀLU ARHĪVS"),
+      row("19.03.2020", 170_984, "CSDD"),
+      row("01.09.2020", 146_500, "IZSOĻU PORTĀLU ARHĪVS"),
+      row("28.04.2022", 216_060, "CSDD"),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect([...a.staleDocumentSourceOrders]).toEqual([rows[2]!.sourceOrder]);
+    expect(redRows(rows)).toEqual([]);
+  });
+});
