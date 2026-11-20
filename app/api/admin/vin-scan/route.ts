@@ -20,6 +20,7 @@ import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { overlayVinScanBrowserImports } from "@/lib/vin-scan/browser-import-overlay";
+import { mergeVinScanPlates, vinScanPlateStaleSourceIds } from "@/lib/vin-scan/plate-cache";
 import {
   listVinScanHistory,
   readVinScanBrowserImports,
@@ -162,7 +163,8 @@ export async function POST(req: Request) {
   const force = body.force === true;
   if (isValidVin(vin) && !force) {
     const cached = await readVinScanSnapshot(vin).catch(() => null);
-    if (cached && vinScanSnapshotFresh(cached)) {
+    // Jauns vai cits numurs (NL/LT/UK/SE) -> numura avotu kešs neder, ejam uz skenēšanu zemāk.
+    if (cached && vinScanSnapshotFresh(cached) && vinScanPlateStaleSourceIds(cached.plates, plates).size === 0) {
       if (isPlausibleListingUrl(listingUrl)) {
         const listing = await runVinScan({ vin, plates, listingUrl, sourceIds: ["listing_history"] });
         const rest = (Array.isArray(cached.indicators) ? cached.indicators : []).filter(
@@ -205,17 +207,27 @@ export async function POST(req: Request) {
   const prevRaw = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
   const prev = prevRaw && prevRaw.vin === vin ? prevRaw : null;
   const nowMs = Date.now();
+  // Numura avotu rindas no cita numura nedrīkst atkārtoti lietot.
+  const plateStale = prev ? vinScanPlateStaleSourceIds(prev.plates, plates) : new Set<string>();
+  const scanPlates = prev ? mergeVinScanPlates(prev.plates, plates) : plates;
   // Katra rinda pēc sava avota TTL (reģistri 7 d / 3 d, izsoļu arhīvi 30 d, sludinājumi 12 h).
-  const reusable = prev ? pickReusableVinScanRows(prev.indicators, prev.scannedAt, nowMs, force) : [];
+  const reusable = prev
+    ? pickReusableVinScanRows(prev.indicators, prev.scannedAt, nowMs, force).filter((row) => !plateStale.has(row.id))
+    : [];
   const cachedIds = new Set(reusable.map((row) => row.id));
   const toScan = requested.filter((id) => !cachedIds.has(id));
   const scanned = stampVinScanRows(
-    toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan, ignoreBreaker: force }) : [],
+    toScan.length ? await runVinScan({ vin, plates: scanPlates, listingUrl, sourceIds: toScan, ignoreBreaker: force }) : [],
     new Date(nowMs).toISOString(),
     true,
   );
   // Vecās rindas patur savu laiku, citādi jaunais momentuzņēmuma scannedAt tās padarītu "svaigas".
-  const base = prev ? stampVinScanRows(prev.indicators, prev.scannedAt) : [];
+  const base = prev
+    ? stampVinScanRows(
+        prev.indicators.filter((row) => !plateStale.has(row.id)),
+        prev.scannedAt,
+      )
+    : [];
   const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
   // Skenēšana ilgst līdz ~105 s; pa to laiku saglabātie pārlūka importi nav `prev`, tāpēc tos pārlasa tieši pirms rakstīšanas.
   const lateImports = isValidVin(vin) && scanned.length ? await readVinScanBrowserImports(vin).catch(() => []) : [];
@@ -225,11 +237,11 @@ export async function POST(req: Request) {
       scannedAt,
       lateImports,
     ),
-    plates,
+    scanPlates,
   );
   after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
   if (isValidVin(vin) && scanned.length) {
-    await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch((err) => {
+    await writeVinScanSnapshot({ vin, plates: scanPlates, scannedAt, indicators }).catch((err) => {
       console.warn(
         JSON.stringify({
           vinScanStore: true,
@@ -242,7 +254,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     vin,
-    plates,
+    plates: scanPlates,
     scannedAt,
     indicators,
     cached: false,

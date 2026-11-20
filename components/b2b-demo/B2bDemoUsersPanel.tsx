@@ -44,6 +44,11 @@ export function B2bDemoUsersPanel({ users }: { users: B2bDemoUserPublic[] }) {
   return (
     <div className="space-y-6">
       <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+        {list.length === 0 ? (
+          <li className="px-4 py-3 text-sm text-slate-500" data-testid="b2b-users-empty">
+            Nav lietotāju
+          </li>
+        ) : null}
         {list.map((u) => (
           <li key={u.userId} className="flex items-center justify-between px-4 py-3">
             <span>

@@ -95,8 +95,16 @@ export function readFixieProxyUrl(env: NodeJS.ProcessEnv = process.env): string 
   }
 }
 
+const autodnaProxyAgents = new Map<string, ProxyAgent>();
+
+/** Viens `ProxyAgent` uz proxy URL (savienojumu pūls), nevis jauns katram pieprasījumam. */
 export function createAutodnaFixieDispatcher(proxyUrl: string): Dispatcher {
-  return new ProxyAgent(proxyUrl);
+  let agent = autodnaProxyAgents.get(proxyUrl);
+  if (!agent) {
+    agent = new ProxyAgent(proxyUrl);
+    autodnaProxyAgents.set(proxyUrl, agent);
+  }
+  return agent;
 }
 
 type AutodnaFetchInit = RequestInit & { dispatcher?: Dispatcher };

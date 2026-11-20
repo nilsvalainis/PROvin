@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PdClientMessagesView } from "@/components/admin/iriss-piedavajumi/PdClientMessages";
-import { PdClientActionsView, pdClientErrorText, pdContactValid, type PdClientActionsViewProps } from "@/components/iriss-piedavajumi/PdClientActions";
+import { PdClientActionsView, pdAskAfter, pdClientErrorText, pdContactValid, type PdClientActionsViewProps } from "@/components/iriss-piedavajumi/PdClientActions";
 import { PdQuestionTag } from "@/components/iriss-piedavajumi/PdStatusChip";
 import type { IrissPdMessage } from "@/lib/iriss-piedavajumi-types";
 import { renderHtml, renderText } from "@/lib/test-render";
@@ -51,6 +51,15 @@ describe("Klienta atbilde piedāvājuma saitē", () => {
   it("pēc noraidīšanas: skaidrs stāvoklis, apstiprināt nevar, jautāt var", () => {
     const html = renderHtml(<PdClientActionsView {...base} state="declined" />);
     expect(renderText(<PdClientActionsView {...base} state="declined" />)).toContain("Piedāvājums noraidīts");
+    expect(buttons(html)).toEqual(["Uzdot jautājumu"]);
+  });
+
+  it("pēc «Noraidīt» jautājuma forma aizveras un melnraksts notīrās (nepaliek atvērta)", () => {
+    expect(pdAskAfter("step", { askOpen: true, draft: "Vai var apskatīt?" })).toEqual({ askOpen: false, draft: "Vai var apskatīt?" });
+    const after = pdAskAfter("decided", { askOpen: true, draft: "Vai var apskatīt?" });
+    expect(after).toEqual({ askOpen: false, draft: "" });
+    const html = renderHtml(<PdClientActionsView {...base} state="declined" {...after} />);
+    expect(html).not.toContain('id="pd-question"');
     expect(buttons(html)).toEqual(["Uzdot jautājumu"]);
   });
 
