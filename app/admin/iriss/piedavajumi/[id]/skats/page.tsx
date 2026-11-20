@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
  * Nils 30.10: «opcija apskatīt priekšskatījumu ar visu saturu ... pirms sūtīt klientam linku».
  * Tieši tas, ko klients redz saitē (saites redzamības slēdži), no saglabātā ieraksta.
  */
+// P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
 export default async function IrissPiedavajumsPreviewPage({ params }: { params: Promise<{ id: string }> }) {
-  // P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
   await requireIrissSectionPage("pasutijumi");
   const { id } = await params;
   if (!isSafeIrissPdId(id)) notFound();

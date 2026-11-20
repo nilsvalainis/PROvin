@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
  * Klienta PDF: tas pats klienta skats ar PDF redzamības slēdžiem; pārlūka «Drukāt -> Saglabāt kā PDF».
  * Drukā redzams tikai `.pdc-print` (sānjosla un admin rāmis paslēpti).
  */
+// P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
 export default async function IrissPiedavajumsPdfPage({ params }: { params: Promise<{ id: string }> }) {
-  // P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
   await requireIrissSectionPage("pasutijumi");
   const { id } = await params;
   if (!isSafeIrissPdId(id)) notFound();
