@@ -44,6 +44,13 @@ export function parseJsonDocText(text: string): unknown {
   }
 }
 
+const JSON_RETRY_DELAY_MS = 300;
+
+/** JSON.parse kļūda (piem. nepilns teksts), ne «json_not_object». */
+export function isJsonSyntaxReadError(err: unknown): boolean {
+  return err instanceof BlobReadFailedError && err.message !== "json_not_object";
+}
+
 /** Dokumenta saknei jābūt objektam. `null` / masīvs / skalārs nav „tukšs” - citādi nākamais raksts izdzēš datus. */
 export function parseJsonDocObject(text: string): Record<string, unknown> {
   const raw = parseJsonDocText(text);
@@ -68,9 +75,23 @@ export function createJsonDocStore<T>(opts: {
   const blobKey = (key: string) => `${opts.blobPrefix}${key}.json`;
 
   async function readBlob(key: string, token: string): Promise<{ value: T; etag: string } | null> {
-    const snap = await readPrivateBlobText({ pathname: blobKey(key), token });
-    if (snap.state === "missing") return null;
-    return { value: opts.parse(parseJsonDocObject(snap.text)), etag: snap.etag };
+    // 20.11: Blob reizēm atdod nepilnu tekstu («Unterminated string in JSON» waybill-requests). Lasīšana ir droša -
+    // JSON sintakses kļūdu atkārto VIENREIZ; otrā kļūda tiek mesta (nekad nekļūst par tukšu dokumentu).
+    for (let attempt = 0; ; attempt += 1) {
+      const snap = await readPrivateBlobText({ pathname: blobKey(key), token });
+      if (snap.state === "missing") return null;
+      let obj: Record<string, unknown>;
+      try {
+        obj = parseJsonDocObject(snap.text);
+      } catch (err) {
+        if (attempt === 0 && isJsonSyntaxReadError(err)) {
+          await new Promise((r) => setTimeout(r, JSON_RETRY_DELAY_MS));
+          continue;
+        }
+        throw err;
+      }
+      return { value: opts.parse(obj), etag: snap.etag };
+    }
   }
 
   async function readFile(key: string): Promise<{ value: T; etag: string } | null> {
