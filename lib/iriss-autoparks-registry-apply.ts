@@ -20,6 +20,7 @@ import {
   type RegistryKey,
 } from "@/lib/iriss-autoparks-registry";
 import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
+import { findAutoparksDuplicate } from "@/lib/iriss-autoparks-dedup";
 import type { AutoparksV2State } from "@/lib/iriss-autoparks-v2";
 
 export const REGISTRY_IMPORT_ACTOR_NAME = "CSDD reģistrs";
@@ -214,6 +215,11 @@ export function applyRegistryFileToState(
     }
     const owner = v.owner ?? "IRISS";
     if (snapshot && snapshotOwners.has(owner) && inTrade(v)) {
+      // Bugfix 20.11: auto jau Autoparkā ar saīsinātu VIN / VIN6 - jaunu kartīti neveido (paliek «nesaskaņots» admina lēmumam).
+      if (findAutoparksDuplicate(state.cars, v2, { vins: [v.vin] })) {
+        result.unmatched.push(v.vin);
+        continue;
+      }
       const car = newCarFromRegistry(v, { now, importFile, registryDate: file.generatedAt });
       state.cars.push(car);
       state.events.push(newEvent(car.id, now, "Pievienots no CSDD tirdzniecības reģistra"));
