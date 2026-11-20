@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getAdminOrStaffActor } from "@/lib/staff-auth";
+import type { AdminOrStaffActor } from "@/lib/staff-auth";
 import { ENV_ADMIN_USER_ID } from "@/lib/staff-roles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -12,8 +12,7 @@ import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 export type TransitFixRow = { id: string; title: string; vin: string; purchaseDate: string };
 
 /** P2 (Nils 20.11, 4A): tikai administrators (ne darbinieki). */
-export async function getTransitFixAdmin(): Promise<{ id: string; name: string } | null> {
-  const actor = await getAdminOrStaffActor();
+export function transitFixAdminOf(actor: AdminOrStaffActor | null): { id: string; name: string } | null {
   return actor?.kind === "admin" ? { id: ENV_ADMIN_USER_ID, name: actor.name } : null;
 }
 
