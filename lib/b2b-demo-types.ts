@@ -11,19 +11,36 @@ export const B2B_DEMO_ORDER_STATUSES = [
   "searching",
   "offered",
   "reserved",
+  "transit",
   "completed",
   "inactive",
 ] as const;
 export type B2bDemoOrderStatus = (typeof B2B_DEMO_ORDER_STATUSES)[number];
 
+/** P5: tie paši posmi kā IRISS adminā (vecais «active» = Meklējam). Demo nav PD/Autoparka - tikai ar roku. */
 export const B2B_DEMO_ORDER_STATUS_LV: Record<B2bDemoOrderStatus, string> = {
-  active: "Aktīvs",
-  searching: "Meklē",
+  active: "Meklējam",
+  searching: "Meklējam",
   offered: "Piedāvāts",
   reserved: "Rezervēts",
-  completed: "Izpildīts",
+  transit: "Ceļā",
+  completed: "Pārdots",
   inactive: "Neaktīvs",
 };
+
+/** Izvēlnei un čipiem (bez dublējošā «active»). */
+export const B2B_DEMO_ORDER_PICKER_STATUSES = ["searching", "offered", "reserved", "transit", "completed", "inactive"] as const;
+
+/** Čipu tonis - tās pašas krāsas kā IRISS posmiem. */
+export const B2B_DEMO_ORDER_STATUS_TONE = {
+  active: "active",
+  searching: "active",
+  offered: "searching",
+  reserved: "offered",
+  transit: "transit",
+  completed: "sold",
+  inactive: "trash",
+} as const;
 
 export const B2B_DEMO_DEAL_DETAIL_OPTIONS = [
   { key: "dealLeasingOrCredit", label: "Līzings, kredīts" },

@@ -128,14 +128,37 @@ export const IRISS_PASUTIJUMS_LIST_STATUSES = [
 
 export type IrissPasutijumsListStatus = (typeof IRISS_PASUTIJUMS_LIST_STATUSES)[number];
 
+/** P5 (Nils 20.11): vecie lauki rāda posmu nosaukumus (Aktīvs/Meklē -> Meklējam, Izpildīts -> Pārdots). */
 export const IRISS_PASUTIJUMS_LIST_STATUS_LV: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvs",
-  searching: "Meklē",
+  active: "Meklējam",
+  searching: "Meklējam",
   offered: "Piedāvāts",
   reserved: "Rezervēts",
-  completed: "Izpildīts",
+  completed: "Pārdots",
   inactive: "Neaktīvs",
 };
+
+/**
+ * P5 (Nils 20.11): viens pasūtījuma statusa ceļš. Posmu aprēķina lasot (`lib/iriss-order-stage.ts`)
+ * no `listStatus`, `dealWorkflowStatus`, PD un Autoparka - glabātie JSON netiek pārrakstīti.
+ */
+export const IRISS_ORDER_STAGES = ["searching", "offered", "reserved", "transit", "sold", "inactive"] as const;
+export type IrissOrderStage = (typeof IRISS_ORDER_STAGES)[number];
+/** Ceļa posmi (bez «Neaktīvs»). */
+export const IRISS_ORDER_PATH_STAGES = ["searching", "offered", "reserved", "transit", "sold"] as const;
+
+export const IRISS_ORDER_STAGE_LV: Record<IrissOrderStage, string> = {
+  searching: "Meklējam",
+  offered: "Piedāvāts",
+  reserved: "Rezervēts",
+  transit: "Ceļā",
+  sold: "Pārdots",
+  inactive: "Neaktīvs",
+};
+
+export function isIrissOrderStage(v: unknown): v is IrissOrderStage {
+  return typeof v === "string" && (IRISS_ORDER_STAGES as readonly string[]).includes(v);
+}
 
 /** Admin statusa izvēle un filtri — tikai šie četri (saglabātajos JSON var palikt searching/offered). */
 export const IRISS_PASUTIJUMS_PICKER_STATUSES = ["active", "reserved", "completed", "inactive"] as const;
@@ -143,9 +166,9 @@ export const IRISS_PASUTIJUMS_PICKER_STATUSES = ["active", "reserved", "complete
 export type IrissPasutijumsPickerStatus = (typeof IRISS_PASUTIJUMS_PICKER_STATUSES)[number];
 
 export const IRISS_PASUTIJUMS_PICKER_STATUS_LV: Record<IrissPasutijumsPickerStatus, string> = {
-  active: "Aktīvs",
+  active: "Meklējam",
   reserved: "Rezervēts",
-  completed: "Izpildīts",
+  completed: "Pārdots",
   inactive: "Neaktīvs",
 };
 
@@ -156,7 +179,7 @@ export function canonicalIrissPasutijumsListStatus(st: IrissPasutijumsListStatus
 }
 
 export function displayIrissPasutijumsListStatusLabel(st: IrissPasutijumsListStatus): string {
-  return IRISS_PASUTIJUMS_PICKER_STATUS_LV[canonicalIrissPasutijumsListStatus(st)];
+  return IRISS_PASUTIJUMS_LIST_STATUS_LV[st] ?? IRISS_PASUTIJUMS_PICKER_STATUS_LV[canonicalIrissPasutijumsListStatus(st)];
 }
 
 export const IRISS_PASUTIJUMS_WORKING_STATUSES: readonly IrissPasutijumsListStatus[] = [
@@ -290,6 +313,8 @@ export type IrissStatusHistoryEntry = {
   reason?: string;
   /** Nils 20.11 (audits 3): maiņu veica automātika, jo šis Autoparka auto kļuva «Pārdots» (atsaukšanai). */
   autoparksCarId?: string;
+  /** P5: posms pēc maiņas ar roku (neobligāts; vecie ieraksti bez tā). */
+  stage?: IrissOrderStage;
 };
 
 export type IrissPasutijumsRecord = {
@@ -455,6 +480,20 @@ export type IrissPasutijumsListRow = {
   /** Jaunākā piedāvājuma validUntil (YYYY-MM-DD). Tukšs vecajos JSON. */
   latestOfferValidUntil?: string;
   hasExpiredOffer?: boolean;
+  /** P5: darījuma lauks posma aprēķinam. Nav vecajā indeksā (tad indekss tiek pārbūvēts). */
+  dealWorkflowStatus?: string;
+  /** P5: avansa datums (atzīme «Avanss ✓»). */
+  advancePaidAt?: string;
+  /** P5: servera aprēķinātie PD/Autoparka signāli (indeksā netiek glabāti). */
+  stageSignals?: IrissOrderStageSignals;
+};
+
+/** P5: ārējie signāli posmam - PD un Autoparks (aprēķina serverī, glabātajos JSON nav). */
+export type IrissOrderStageSignals = {
+  /** Piesaistīts PD statusā «Nosūtīts» (termiņš nav beidzies). */
+  pdSent?: { label: string; at: string };
+  /** Saistītais Autoparka auto (apstiprināts PD vai tas pats VIN). */
+  car?: { status: string; label: string };
 };
 
 /** Saraksta kārtība (Blob/FS JSON) — piespraustie un pārējie atsevišķi. */

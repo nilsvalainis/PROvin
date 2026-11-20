@@ -1,10 +1,4 @@
-import {
-  canonicalIrissPasutijumsListStatus,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
-  type IrissPasutijumsListStatus,
-  type IrissPasutijumsPickerStatus,
-} from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGES, IRISS_ORDER_STAGE_LV, type IrissOrderStage } from "@/lib/iriss-pasutijumi-types";
 
 export const IRISS_PASUTIJUMI_STATUS_MENU_CLASS =
   "iriss-ov-menu iriss-ov-menu-portal fixed z-[200] min-w-[8.5rem] overflow-hidden rounded-2xl bg-[var(--s1,#fff)] py-1 text-[var(--ink,#0b0c10)] shadow-[var(--gsh,0_8px_22px_rgba(16,24,40,0.12))]";
@@ -14,14 +8,14 @@ export function IrissPasutijumiStatusMenuItems({
   busy = false,
   onPick,
 }: {
-  currentStatus: IrissPasutijumsListStatus;
+  currentStatus: IrissOrderStage;
   busy?: boolean;
-  onPick: (status: IrissPasutijumsPickerStatus) => void;
+  onPick: (stage: IrissOrderStage) => void;
 }) {
-  const current = canonicalIrissPasutijumsListStatus(currentStatus);
+  const current = currentStatus;
   return (
     <>
-      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
+      {IRISS_ORDER_STAGES.map((s) => (
         <button
           key={s}
           type="button"
@@ -36,7 +30,7 @@ export function IrissPasutijumiStatusMenuItems({
             current === s ? "bg-[var(--fill)] text-[var(--ink)]" : "text-[var(--ink)] hover:bg-[var(--fill)]"
           }`}
         >
-          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
+          {IRISS_ORDER_STAGE_LV[s]}
         </button>
       ))}
     </>
@@ -50,9 +44,9 @@ export function IrissPasutijumiStatusMenuSurface({
   onPick,
   style,
 }: {
-  currentStatus: IrissPasutijumsListStatus;
+  currentStatus: IrissOrderStage;
   busy?: boolean;
-  onPick?: (status: IrissPasutijumsPickerStatus) => void;
+  onPick?: (stage: IrissOrderStage) => void;
   style?: { top: number; left: number };
 }) {
   return (

@@ -7,7 +7,8 @@ import {
 } from "@/lib/admin-riga-calendar";
 import { formatIrissClientName } from "@/lib/iriss-pasutijumi-list-row";
 import { formatIrissReportClientName } from "@/lib/iriss-monthly-report-view";
-import { parseIrissPasutijumsListStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import type { IrissOrderStage, IrissOrderStageSignals, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { irissOrderStage } from "@/lib/iriss-order-stage";
 
 /**
  * TODO(multi-tenant): kad IRISS B2B dīleru tenanti būs, filtrēt pēc tenantId.
@@ -27,6 +28,9 @@ export type IrissMonthlyOrderInput = {
   updatedAt?: string;
   orderDate?: string;
   listStatus?: IrissPasutijumsListStatus | string;
+  /** P5: posma aprēķinam. */
+  dealWorkflowStatus?: string;
+  stageSignals?: IrissOrderStageSignals;
   clientFirstName?: string;
   clientLastName?: string;
   brandModel?: string;
@@ -37,7 +41,8 @@ export type IrissMonthlyReportRow = {
   id: string;
   clientName: string;
   brandModel: string;
-  status: IrissPasutijumsListStatus;
+  /** P5: posms (Meklējam ... Pārdots, Neaktīvs). */
+  status: IrissOrderStage;
   createdAt: string;
   offerCount: number;
   offersCreatedInMonth: number;
@@ -50,6 +55,7 @@ export type IrissMonthlyReport = {
   monthLabel: string;
   tenantMode: typeof IRISS_MONTHLY_REPORT_TENANT_MODE;
   ordersCreated: number;
+  /** P5: active = darbā (Meklējam..Ceļā), completed = Pārdots, inactive = Neaktīvs. */
   ordersByStatus: { active: number; completed: number; inactive: number };
   offersCreated: number;
   offersUpdated: number;
@@ -58,10 +64,6 @@ export type IrissMonthlyReport = {
   pdfGenerationsTracked: false;
   rows: IrissMonthlyReportRow[];
 };
-
-function normalizeStatus(raw: string | undefined): IrissPasutijumsListStatus {
-  return parseIrissPasutijumsListStatus(raw);
-}
 
 export function resolveIrissReportMonth(
   raw: string | null | undefined,
@@ -95,8 +97,8 @@ export function buildIrissMonthlyReport(
   }
 
   const rows: IrissMonthlyReportRow[] = inMonth.map((rec) => {
-    const status = normalizeStatus(rec.listStatus);
-    if (status === "completed") completed += 1;
+    const status = irissOrderStage(rec, rec.stageSignals);
+    if (status === "sold") completed += 1;
     else if (status === "inactive") inactive += 1;
     else active += 1;
     const offers = rec.offers ?? [];
@@ -146,8 +148,8 @@ export function formatIrissMonthlyReportCsv(report: IrissMonthlyReport): string 
     ["Mēneša atslēga", report.monthKey].map(csvCell).join(","),
     ["Tenants", report.tenantMode].map(csvCell).join(","),
     ["Pasūtījumi (izveidoti mēnesī)", report.ordersCreated].map(csvCell).join(","),
-    ["Aktīvi", report.ordersByStatus.active].map(csvCell).join(","),
-    ["Izpildīti", report.ordersByStatus.completed].map(csvCell).join(","),
+    ["Darbā", report.ordersByStatus.active].map(csvCell).join(","),
+    ["Pārdoti", report.ordersByStatus.completed].map(csvCell).join(","),
     ["Neaktīvi", report.ordersByStatus.inactive].map(csvCell).join(","),
     ["Piedāvājumi (izveidoti mēnesī)", report.offersCreated].map(csvCell).join(","),
     ["Piedāvājumi (laboti mēnesī)", report.offersUpdated].map(csvCell).join(","),

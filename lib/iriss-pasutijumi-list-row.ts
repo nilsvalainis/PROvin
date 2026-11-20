@@ -1,9 +1,10 @@
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { deriveOfferValidUntil, isIrissOfferExpired } from "@/lib/iriss-offer-valid-until";
+import { irissListRowStage } from "@/lib/iriss-order-stage";
 import {
-  canonicalIrissPasutijumsListStatus,
   IRISS_DEAL_DETAIL_OPTIONS,
+  type IrissOrderStage,
   type IrissPasutijumsListRow,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
@@ -57,6 +58,9 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     ...parseIrissPasutijumsListingLinks(rec),
     latestOfferValidUntil: latest.validUntil,
     hasExpiredOffer: latest.expired,
+    // P5: vienmēr virkne (arī tukša) - indeksa rindas bez šī lauka nozīmē vecu indeksu.
+    dealWorkflowStatus: (rec.dealWorkflowStatus ?? "").trim(),
+    advancePaidAt: (rec.advance?.paidAt ?? "").trim(),
   };
 }
 
@@ -147,18 +151,9 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
   return hay.includes(q);
 }
 
-export function countIrissListStatuses(
-  rows: readonly IrissPasutijumsListRow[],
-): Record<import("@/lib/iriss-pasutijumi-types").IrissPasutijumsPickerStatus, number> {
-  const counts = {
-    active: 0,
-    reserved: 0,
-    completed: 0,
-    inactive: 0,
-  };
-  for (const row of rows) {
-    const st = row.listStatus ?? "active";
-    counts[canonicalIrissPasutijumsListStatus(st)] += 1;
-  }
+/** P5: skaitītāji pa posmiem (bez Miskastes - tās rindas padod atsevišķi). */
+export function countIrissListStatuses(rows: readonly IrissPasutijumsListRow[]): Record<IrissOrderStage, number> {
+  const counts: Record<IrissOrderStage, number> = { searching: 0, offered: 0, reserved: 0, transit: 0, sold: 0, inactive: 0 };
+  for (const row of rows) counts[irissListRowStage(row)] += 1;
   return counts;
 }

@@ -2,12 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
-import {
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
-  type IrissPasutijumsPickerStatus,
-} from "@/lib/iriss-pasutijumi-types";
-import type { StatusChipRowLayout } from "@/lib/iriss-status-chip";
+import { IRISS_ORDER_STAGES, IRISS_ORDER_STAGE_LV, type IrissOrderStage } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGE_TONE, type StatusChipRowLayout } from "@/lib/iriss-status-chip";
 import {
   dispatchIrissListStatusFilter,
   dispatchIrissListTrashFilter,
@@ -31,7 +27,7 @@ export {
 
 type Props = {
   className?: string;
-  counts?: Record<IrissPasutijumsPickerStatus, number>;
+  counts?: Record<IrissOrderStage, number>;
   trashCount?: number;
   /** scroll: one phone row. wrap: desktop toolbar and the filter sheet. */
   layout?: StatusChipRowLayout;
@@ -63,10 +59,10 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
     };
   }, []);
 
-  const toggle = useCallback((key: IrissPasutijumsPickerStatus) => {
+  const toggle = useCallback((key: IrissOrderStage) => {
     setFilter((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      const countOn = IRISS_PASUTIJUMS_PICKER_STATUSES.filter((k) => next[k]).length;
+      const countOn = IRISS_ORDER_STAGES.filter((k) => next[k]).length;
       if (countOn === 0) return prev;
       dispatchIrissListStatusFilter(next);
       return next;
@@ -78,20 +74,20 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
     setFilter(IRISS_LIST_STATUS_FILTER_ALL);
   }, []);
 
-  const isAllOn = IRISS_PASUTIJUMS_PICKER_STATUSES.every((k) => filter[k]);
+  const isAllOn = IRISS_ORDER_STAGES.every((k) => filter[k]);
   const allCount = counts
-    ? IRISS_PASUTIJUMS_PICKER_STATUSES.reduce((n, key) => n + (counts[key] ?? 0), 0)
+    ? IRISS_ORDER_STAGES.reduce((n, key) => n + (counts[key] ?? 0), 0)
     : undefined;
 
   return (
     <StatusFilterChipRow layout={layout} className={className}>
-      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((key) => (
+      {IRISS_ORDER_STAGES.map((key) => (
         <StatusFilterChip
           key={key}
-          label={IRISS_PASUTIJUMS_PICKER_STATUS_LV[key]}
+          label={IRISS_ORDER_STAGE_LV[key]}
           count={counts?.[key]}
           pressed={filter[key]}
-          tone={key}
+          tone={IRISS_ORDER_STAGE_TONE[key]}
           onClick={() => toggle(key)}
         />
       ))}

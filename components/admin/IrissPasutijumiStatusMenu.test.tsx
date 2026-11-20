@@ -5,7 +5,7 @@ import { IRISS_ANCHORED_POPOVER_Z, placeAnchoredPopover } from "@/lib/iriss-anch
 import { renderHtml, renderText } from "@/lib/test-render";
 
 describe("IRISS pasūtījumu statusa izvēlne (atvērta)", () => {
-  it("rāda Aktīvs un Rezervēts fiksētā izvēlnē virs nākamās rindas", () => {
+  it("rāda posmus fiksētā izvēlnē virs nākamās rindas", () => {
     const html = renderHtml(
       <IrissPasutijumiStatusMenuSurface currentStatus="reserved" style={{ top: 156, left: 234 }} />,
     );
@@ -20,9 +20,7 @@ describe("IRISS pasūtījumu statusa izvēlne (atvērta)", () => {
     expect(html).toContain("z-[200]");
     expect(html).toContain("top:156px");
     expect(html).toContain("left:234px");
-    expect(text).toContain("Aktīvs");
-    expect(text).toContain("Rezervēts");
-    expect(text).toContain("Izpildīts");
+    for (const label of ["Meklējam", "Piedāvāts", "Rezervēts", "Ceļā", "Pārdots"]) expect(text).toContain(label);
     expect(text).toContain("Neaktīvs");
     expect(IRISS_PASUTIJUMI_STATUS_MENU_CLASS).toContain("fixed");
     expect(IRISS_ANCHORED_POPOVER_Z).toBe(200);

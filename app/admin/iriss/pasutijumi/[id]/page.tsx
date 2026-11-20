@@ -22,6 +22,8 @@ import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-image
 import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
+import { irissOrderStageSignals } from "@/lib/iriss-order-stage";
+import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +54,7 @@ export default async function IrissPasutijumsDetailPage({
   // latest, dismissed un match darbavieta ir 45 s atmiņas kešs (IRISS_LISTINGS_READ_CACHE_TTL_MS).
   // Šis lasījums neraksta latest.json: ne pilnā atvēršanā, ne prefetch.
   const storage = getIrissListingsStorageState();
-  const [latest, dismissedView, orderOv, offerLinks, pdRows] = await Promise.all([
+  const [latest, dismissedView, orderOv, offerLinks, pdRows, allPdRows, autoparks] = await Promise.all([
     storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     readIrissListingOrderOv().catch(() => ({})),
@@ -61,7 +63,11 @@ export default async function IrissPasutijumsDetailPage({
     listIrissPdRowsForOrder(id)
       .then((rows) => irissPdRowsForViewer(rows, irissPdViewerFromActor(actor)))
       .catch(() => []),
+    // P5: posma signāli (PD «Nosūtīts», saistītais Autoparka auto).
+    listIrissPdRowsForOrder(id).catch(() => []),
+    readAutoparksState().catch(() => null),
   ]);
+  const stageSignals = irissOrderStageSignals(rec, allPdRows, autoparks?.cars ?? [], Date.now());
   // Nils 20.11 (audits 4): PD notikumi «Komunikācija» laika joslā (tikai skatītājam redzamie PD).
   const pdCommEvents: IrissCommunicationEvent[] = (
     await Promise.all(
@@ -98,6 +104,7 @@ export default async function IrissPasutijumsDetailPage({
         pdEntry
         pdRows={pdRows}
         pdCommEvents={pdCommEvents}
+        stageSignals={stageSignals}
       />
     </>
   );

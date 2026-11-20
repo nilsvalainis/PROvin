@@ -19,9 +19,9 @@ import {
   irissMonthlyMetricDeltas,
   irissMonthlyMetricSnapshot,
 } from "@/lib/iriss-monthly-report-view";
-import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGE_LV } from "@/lib/iriss-pasutijumi-types";
 
-const STATUS_LV = IRISS_PASUTIJUMS_LIST_STATUS_LV;
+const STATUS_LV = IRISS_ORDER_STAGE_LV;
 
 function hrefForMonth(year: number, month: number): string {
   return `/admin/iriss/atskaite?month=${formatYearMonthKey(year, month)}`;
@@ -145,8 +145,8 @@ export function IrissMonthlyReportView({
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Stat label="Pasūtījumi" value={report.ordersCreated} hint={formatIrissMonthlyDelta(deltas.ordersCreated, prevLoc)} />
-        <Stat label="Aktīvi" value={report.ordersByStatus.active} hint={formatIrissMonthlyDelta(deltas.active, prevLoc)} />
-        <Stat label="Izpildīti" value={report.ordersByStatus.completed} hint={formatIrissMonthlyDelta(deltas.completed, prevLoc)} />
+        <Stat label="Darbā" value={report.ordersByStatus.active} hint={formatIrissMonthlyDelta(deltas.active, prevLoc)} />
+        <Stat label="Pārdoti" value={report.ordersByStatus.completed} hint={formatIrissMonthlyDelta(deltas.completed, prevLoc)} />
         <Stat label="Neaktīvi" value={report.ordersByStatus.inactive} hint={formatIrissMonthlyDelta(deltas.inactive, prevLoc)} />
         <Stat label="Piedāvājumi" value={report.offersCreated} hint={formatIrissMonthlyDelta(deltas.offersCreated, prevLoc)} />
         <Stat label="Ar piedāvājumu" value={report.ordersWithOffers} hint={formatIrissMonthlyDelta(deltas.ordersWithOffers, prevLoc)} />

@@ -26,14 +26,14 @@ import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
 import { IRISS_LIST_SORT_LABEL } from "@/lib/iriss-pasutijumi-list-view";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
-  canonicalIrissPasutijumsListStatus,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
+  IRISS_ORDER_STAGES,
+  IRISS_ORDER_STAGE_LV,
+  type IrissOrderStage,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
-  type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
+import { applyIrissOrderStage, irissListRowStage } from "@/lib/iriss-order-stage";
 import {
   IRISS_LIST_STATUS_FILTER_EVENT,
   IrissPasutijumiStatusFilter,
@@ -46,7 +46,7 @@ import {
   parseIrissListStatusFilter,
   readIrissListTrashFilter,
 } from "@/lib/iriss-pasutijumi-status-filter";
-import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
+import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLimitsMobileDot, IrissLimitsSidebarCard, useIrissLimits } from "@/components/admin/IrissLimitsSidebarCard";
@@ -163,8 +163,7 @@ function rowMatchesStatusFilter(
   const deleted = isIrissRecordDeleted(row);
   if (trashOn) return deleted;
   if (deleted) return false;
-  const st = canonicalIrissPasutijumsListStatus(row.listStatus ?? "active");
-  return Boolean(f[st]);
+  return Boolean(f[irissListRowStage(row)]);
 }
 
 async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolean> {
@@ -391,7 +390,7 @@ export function IrissPasutijumiListClient({
   const statusCounts = useMemo(() => countIrissListStatuses(liveRows), [liveRows]);
 
   const allStatusesInFilter = useMemo(
-    () => statusFilter.active && statusFilter.reserved && statusFilter.completed && statusFilter.inactive,
+    () => IRISS_ORDER_STAGES.every((k) => statusFilter[k]),
     [statusFilter],
   );
 
@@ -494,7 +493,8 @@ export function IrissPasutijumiListClient({
         return;
       }
       const nextRow = irissPasutijumsToListRow(patchData.record);
-      setLocalRows((prev) => prev.map((r) => (r.id === id ? nextRow : r)));
+      // P5: PD/Autoparka signāli nāk no servera lapas - pēc labojuma paliek tie paši.
+      setLocalRows((prev) => prev.map((r) => (r.id === id ? { ...nextRow, stageSignals: r.stageSignals } : r)));
       setListOrder((prev) => {
         const wasPinned = prev.pinnedOrder.includes(id);
         const nowPinned = Boolean(nextRow.pinnedAt);
@@ -520,17 +520,14 @@ export function IrissPasutijumiListClient({
   }, [patchRow]);
 
   const onSetStatus = useCallback(
-    (id: string, status: IrissPasutijumsListStatus) => {
-      const filterKey = canonicalIrissPasutijumsListStatus(status);
+    (id: string, stage: IrissOrderStage) => {
       setStatusFilter((prev) => {
-        if (prev[filterKey]) return prev;
-        const next = { ...prev, [filterKey]: true };
+        if (prev[stage]) return prev;
+        const next = { ...prev, [stage]: true };
         dispatchIrissListStatusFilter(next);
         return next;
       });
-      void patchRow(id, (record) =>
-        appendIrissStatusHistory(record, status, { at: new Date().toISOString() }),
-      );
+      void patchRow(id, (record) => applyIrissOrderStage(record, stage, { at: new Date().toISOString() }));
     },
     [patchRow],
   );
@@ -780,7 +777,7 @@ export function IrissPasutijumiListClient({
         onClose={() => setStatusSheetId(null)}
       >
         <div className="overflow-hidden rounded-xl bg-[var(--s1)]">
-          {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
+          {IRISS_ORDER_STAGES.map((s) => (
             <button
               key={s}
               type="button"
@@ -790,7 +787,7 @@ export function IrissPasutijumiListClient({
               }}
               className="flex min-h-12 w-full items-center border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
             >
-              {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
+              {IRISS_ORDER_STAGE_LV[s]}
             </button>
           ))}
         </div>
