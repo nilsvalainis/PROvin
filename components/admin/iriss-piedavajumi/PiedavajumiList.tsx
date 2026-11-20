@@ -113,7 +113,9 @@ function RowAction({
   }
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <button type="button" className="pd-btn s" onClick={onRebase} disabled={busy}>Izveidot jaunu uz šī bāzes</button>
+      <button type="button" className="pd-btn s" style={{ whiteSpace: "nowrap" }} title="Izveidot jaunu uz šī bāzes" onClick={onRebase} disabled={busy}>
+        Jauns uz šī bāzes
+      </button>
       {del}
     </span>
   );

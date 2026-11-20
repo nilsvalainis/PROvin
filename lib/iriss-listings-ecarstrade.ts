@@ -232,13 +232,65 @@ function attr(html: string, name: string): string {
   return decodeHtmlEntities(re.exec(html)?.[1] ?? "").trim();
 }
 
+/** Tooltip nosaukums: Bootstrap 4 `data-original-title`, Bootstrap 5 `data-bs-original-title`, vai `title`. */
+const FEATURE_TITLE_ATTR = `(?:data-(?:bs-)?original-title|data-title|title|aria-label)`;
+
 function featureByTitle(html: string, title: string): string {
   const re = new RegExp(
-    `data-original-title="${title}"[\\s\\S]*?<div class="feature-value">([\\s\\S]*?)</div>`,
+    `${FEATURE_TITLE_ATTR}="${title}"[\\s\\S]{0,800}?<div class="feature-value[^"]*">([\\s\\S]*?)</div>`,
     "i",
   );
   const m = html.match(re);
   return m ? stripTags(m[1] ?? "") : "";
+}
+
+/** Pirmās reģistrācijas lauka nosaukumi kartītē (EN/DE/FR/NL varianti). */
+const ECARSTRADE_FIRST_REG_TITLES = [
+  "First registration date",
+  "First registration",
+  "1st registration",
+  "Registration date",
+  "Erstzulassung",
+  "Date de première immatriculation",
+  "Eerste inschrijving",
+];
+
+/** JSON (future_api `data` / /api/v1/cars) lauki ar pirmo reģistrāciju vai gadu. */
+const ECARSTRADE_FIRST_REG_KEYS = [
+  "first_registration_date",
+  "first_registration",
+  "firstRegistrationDate",
+  "firstRegistration",
+  "date_first_registration",
+  "registration_date",
+  "registrationDate",
+  "first_reg",
+  "reg_date",
+];
+const ECARSTRADE_YEAR_KEYS = ["year", "registration_year", "production_year", "build_year", "model_year", "construction_year"];
+
+/** Pirmā reģistrācija: kartītes HTML, tad JSON lauki. Tukšs, ja nekur nav. */
+export function ecarstradeFirstRegistration(html: string, data: Rec = {}): string {
+  for (const t of ECARSTRADE_FIRST_REG_TITLES) {
+    const v = featureByTitle(html, t);
+    if (v && /\d/.test(v)) return v;
+  }
+  for (const k of ECARSTRADE_FIRST_REG_KEYS) {
+    const v = str(data[k]);
+    if (v && /(?:19|20)\d{2}/.test(v)) return v;
+  }
+  return "";
+}
+
+/** Gads no pirmās reģistrācijas vai JSON gada lauka. */
+export function ecarstradeYear(firstRegistration: string, data: Rec = {}): string {
+  const fromReg = yearFromRegistration(firstRegistration);
+  if (fromReg) return fromReg;
+  for (const k of ECARSTRADE_YEAR_KEYS) {
+    const y = yearFromRegistration(str(data[k]));
+    if (y) return y;
+  }
+  return "";
 }
 
 function spanByTitle(html: string, title: string): string {
@@ -630,7 +682,7 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
   const sub = stripTags(/<div class="small text-muted">([\s\S]*?)<\/div>/i.exec(html)?.[1] ?? "");
   const makeFromSub = sub.replace(/^#\d+\s*-\s*/i, "").split(/\s+/)[0] ?? "";
   const manufacturer = makeFromSub || title.split(/\s+/)[0] || "";
-  const firstRegistration = featureByTitle(html, "First registration date");
+  const firstRegistration = ecarstradeFirstRegistration(html, data);
   const transmission = featureByTitle(html, "Gearbox");
   const mileageKm = mileageFromText(featureByTitle(html, "Mileage"));
   const fuel = spanByTitle(html, "Fuel") || featureByTitle(html, "Fuel");
@@ -662,7 +714,7 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
     imageUrl: images[0] ?? "",
     imageUrls: images,
     firstRegistration,
-    year: yearFromRegistration(firstRegistration),
+    year: ecarstradeYear(firstRegistration, data),
     mileageKm,
     fuel,
     transmission,
@@ -809,8 +861,11 @@ export function mergeEcarstradeJsonPrices(v: EcarstradeVehicle, json: Rec): Ecar
     estimate: parsed.estimate ?? v.priceEstimate,
     total: parsed.total ?? v.priceTotal,
   });
+  const firstRegistration = v.firstRegistration || ecarstradeFirstRegistration("", data);
   return {
     ...v,
+    firstRegistration,
+    year: v.year || ecarstradeYear(firstRegistration, data),
     priceStart: priced.priceStart ?? v.priceStart,
     priceCurrent: priced.priceCurrent ?? v.priceCurrent,
     priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
@@ -850,6 +905,8 @@ export function mergeEcarstradeHtmlPrices(v: EcarstradeVehicle, html: string): E
   return {
     ...v,
     ...next,
+    firstRegistration: v.firstRegistration || fromCard?.firstRegistration || "",
+    year: v.year || fromCard?.year || "",
     priceTotal: priced.priceTotal ?? v.priceTotal,
     priceState: ecarstradePriceState(html, next, v.priceState),
     auctionEndAt: v.auctionEndAt || fromCard?.auctionEndAt || ecarstradeAuctionEndAt(html, {}, sale),

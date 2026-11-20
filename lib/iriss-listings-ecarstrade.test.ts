@@ -362,3 +362,30 @@ describe("eCarsTrade parser", () => {
     expect(listingCardPriceLabel({ ...withBid!, platform: "ecarstrade" })).toBe("Solījums");
   });
 });
+
+describe("eCarsTrade gads (pirmā reģistrācija)", () => {
+  it("nolasa gadu no Bootstrap 5 kartītes (data-bs-original-title, feature-value ar papildu klasēm)", () => {
+    const v = parseEcarstradeCard(card("card-kodiaq-bs5.html"));
+    expect(v?.firstRegistration).toBe("03/2021");
+    expect(v?.year).toBe("2021");
+    expect(v?.mileageKm).toBe(98500);
+  });
+
+  it("kartītē nav reģistrācijas - gads no future_api data lauka", () => {
+    const v = parseEcarstradeCard(card("card-kodiaq-noreg.html"), { id: "8812346", first_registration_date: "2020-06-15" });
+    expect(v?.firstRegistration).toBe("2020-06-15");
+    expect(v?.year).toBe("2020");
+    const onlyYear = parseEcarstradeCard(card("card-kodiaq-noreg.html"), { id: "8812346", year: 2019 });
+    expect(onlyYear?.year).toBe("2019");
+  });
+
+  it("/api/v1/cars JSON aizpilda trūkstošo gadu, esošo nepārraksta", () => {
+    const v = parseEcarstradeCard(card("card-kodiaq-noreg.html"))!;
+    expect(v.year).toBe("");
+    const merged = mergeEcarstradeJsonPrices(v, { data: { first_registration: "09/2018" } });
+    expect(merged.year).toBe("2018");
+    expect(merged.firstRegistration).toBe("09/2018");
+    const kept = mergeEcarstradeJsonPrices({ ...v, year: "2021", firstRegistration: "03/2021" }, { data: { first_registration: "09/2018" } });
+    expect(kept.year).toBe("2021");
+  });
+});

@@ -4,7 +4,9 @@ import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } fro
 import { irissPdImportFromListing } from "@/lib/iriss-piedavajumi-from-listing";
 import { irissPdFactsFromAuto1 } from "@/lib/iriss-piedavajumi-facts";
 import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
-import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
+import { detectIrissPdLink, irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
+import { findRecentDuplicateIrissPd, irissPdCreateIdentityKey, type IrissPdCreateIdentity } from "@/lib/iriss-piedavajumi-list-display";
+import { irissPdListingRef } from "@/lib/iriss-piedavajumi-from-listing";
 import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
 import { emptyIrissPdClient, emptyIrissPiedavajums, isSafeIrissPdId, type IrissPdClient, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
@@ -76,6 +78,24 @@ function clientFrom(raw: unknown): IrissPdClient {
 }
 
 /**
+ * Dubultklikšķis / atkārtots POST: tas pats sludinājums (vai izsoles saite) + tas pats pasūtījums.
+ * Vienā instancē - kopīgs solījums; starp instancēm - indeksā svaigs melnraksts/nosūtīts (N minūtes).
+ */
+const inFlightCreates = new Map<string, Promise<Response>>();
+
+function createIdentity(body: Body, client: IrissPdClient): IrissPdCreateIdentity | null {
+  if (body.kind === "listing") {
+    const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";
+    return listingId ? { sourceRef: irissPdListingRef(listingId), source: "", sourceKey: "", orderId: client.orderId } : null;
+  }
+  if (body.kind === "link") {
+    const link = detectIrissPdLink(typeof body.url === "string" ? body.url : "");
+    return link ? { sourceRef: "", source: link.source, sourceKey: link.key, orderId: client.orderId } : null;
+  }
+  return null;
+}
+
+/**
  * POST - jauns piedāvājums:
  *   { kind: "autoparks" | "logistics", carId }  no Autoparka / Loģistikas (autofill + /STOCK bildes)
  *   { kind: "manual" }                    tukšs piedāvājums, visi lauki ar roku
@@ -95,8 +115,24 @@ export async function POST(req: Request) {
   } catch {
     return fail(400, "invalid_json");
   }
+  const identity = createIdentity(body, clientFrom(body.client));
+  if (!identity) return createPd(body, gate.actor.name || "Admins");
+  const existing = findRecentDuplicateIrissPd(await listIrissPdRows().catch(() => []), identity, Date.now());
+  if (existing) return NextResponse.json({ ok: true, id: existing, existing: true, note: "" }, { headers: noStore });
+  const key = irissPdCreateIdentityKey(identity);
+  const pending = inFlightCreates.get(key);
+  if (pending) return (await pending).clone();
+  const run = createPd(body, gate.actor.name || "Admins");
+  inFlightCreates.set(key, run);
+  try {
+    return (await run).clone();
+  } finally {
+    inFlightCreates.delete(key);
+  }
+}
+
+async function createPd(body: Body, by: string): Promise<Response> {
   const at = new Date().toISOString();
-  const by = gate.actor.name || "Admins";
   const id = crypto.randomUUID();
 
   let build: ((number: number) => IrissPiedavajums) | null = null;

@@ -44,11 +44,13 @@ function labeledValue(v: unknown): string {
  * «BFF496D701AD5C23E»), kas izskatās pēc VIN, bet nav (Auto1 VIN neatklāj līdz pirkumam).
  * Tikai 0-9/A-F virkni pieņem tikai Ziemeļamerikas WMI (1-5, kur kontrolcipars obligāts) ar derīgu
  * ISO 3779 kontrolciparu - kontrolcipars viens pats nejaušam hash sakrīt ~1/11 (7B7A... sakrīt).
+ * 20.11: arī «23631FD56A3D73DC7» (Skoda Kodiaq PD) sakrita ar kontrolciparu, tāpēc vēl jābūt ISO 3779
+ * secības numuram - pēdējās 4 zīmes tikai cipari (nejaušam hash ~1/2,4 vēl).
  */
 export function isPlausibleListingVin(raw: string): boolean {
   const n = normalizeVin(raw);
   if (!isValidVin(n)) return false;
-  if (/^[0-9A-F]{17}$/.test(n)) return /^[1-5]/.test(n) && hasIso3779CheckDigit(n);
+  if (/^[0-9A-F]{17}$/.test(n)) return /^[1-5]/.test(n) && /\d{4}$/.test(n) && hasIso3779CheckDigit(n);
   return true;
 }
 

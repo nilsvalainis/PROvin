@@ -218,3 +218,15 @@ test("Aplēses cena is the estimate, Kopējā cena is the total, calc_bid on a b
   assert.equal(fromJson?.priceTotal, 17300);
   assert.equal(fromJson?.priceBuyNow, null);
 });
+
+test("eCarsTrade relejs: gads no Bootstrap 5 kartītes un no data lauka", () => {
+  const bs5 = readFileSync(new URL("../../../../lib/__fixtures__/iriss-ecarstrade/card-kodiaq-bs5.html", import.meta.url), "utf8");
+  const a = extractEcarstradeRelayItem(bs5, { id: "8812345" });
+  assert.equal(a.year, "2021");
+  assert.equal(a.firstRegistration, "03/2021");
+  const noReg = readFileSync(new URL("../../../../lib/__fixtures__/iriss-ecarstrade/card-kodiaq-noreg.html", import.meta.url), "utf8");
+  const b = extractEcarstradeRelayItem(noReg, { id: "8812346", first_registration_date: "2020-06-15" });
+  assert.equal(b.year, "2020");
+  const c = extractEcarstradeRelayItem(noReg, { id: "8812346" });
+  assert.equal(c.year, "");
+});
