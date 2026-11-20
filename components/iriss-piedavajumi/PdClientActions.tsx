@@ -236,6 +236,14 @@ export function PdClientActionsView(p: PdClientActionsViewProps) {
   );
 }
 
+/**
+ * Jautājuma formas stāvoklis pēc lēmuma soļa (20.11): atverot «Apstiprināt»/«Noraidīt» soli
+ * forma aizveras; pēc lēmuma (apstiprināts/noraidīts) - aizveras un melnraksts notīrās.
+ */
+export function pdAskAfter(event: "step" | "decided", prev: { askOpen: boolean; draft: string }): { askOpen: boolean; draft: string } {
+  return { askOpen: false, draft: event === "decided" ? "" : prev.draft };
+}
+
 export function pdContactValid(name: string, phone: string): boolean {
   return name.trim().length >= 2 && phone.replace(/\D/g, "").length >= 6;
 }
@@ -290,6 +298,7 @@ export function PdClientActions({
       setErr(L.contactRequired);
       return;
     }
+    if (s !== "idle") setAskOpen(pdAskAfter("step", { askOpen, draft }).askOpen);
     setStepRaw(s);
   }
 
@@ -329,6 +338,10 @@ export function PdClientActions({
         // Arī «jau izlemts» (otrā cilnē): rāda faktisko stāvokli.
         setState(st);
         setStepRaw("idle");
+        const next = pdAskAfter("decided", { askOpen, draft });
+        setAskOpen(next.askOpen);
+        setDraft(next.draft);
+        setReason("");
         return;
       }
       setErr(pdClientErrorText(typeof r.data.error === "string" ? r.data.error : undefined, r.status));

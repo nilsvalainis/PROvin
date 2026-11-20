@@ -282,15 +282,6 @@ export function IrissStaffUsersClient() {
               <span>Statuss</span>
               <span>Pēdējā pieteikšanās</span>
             </div>
-            {directory.length === 0 ? (
-              <StaffListPlaceholder
-                state={listState}
-                onRetry={() => {
-                  setListState("loading");
-                  void load();
-                }}
-              />
-            ) : null}
             <ul>
               {directory.map((user) => {
                 const st = statusLabel(user.status);
@@ -342,6 +333,16 @@ export function IrissStaffUsersClient() {
                 );
               })}
             </ul>
+            {directory.length === 0 || (listState === "ready" && users.length === 0) ? (
+              <StaffListPlaceholder
+                state={listState}
+                empty={users.length === 0}
+                onRetry={() => {
+                  setListState("loading");
+                  void load();
+                }}
+              />
+            ) : null}
           </section>
 
           <IrissDisclosure title="Darbību žurnāls" count={`${audit.length} ieraksti`}>
@@ -720,12 +721,14 @@ function UserDetailCard({
   );
 }
 
-/** Tukša saraksta vieta: ielādes rindas vai kļūda ar «Mēģināt vēlreiz» (nevis 1-2 s tukšs saraksts). */
+/** Tukša saraksta vieta: ielādes rindas, kļūda ar «Mēģināt vēlreiz» vai «Nav lietotāju» (nevis tukšs saraksts). */
 export function StaffListPlaceholder({
   state,
+  empty = false,
   onRetry,
 }: {
   state: "loading" | "ready" | "error";
+  empty?: boolean;
   onRetry: () => void;
 }) {
   if (state === "loading") {
@@ -755,6 +758,13 @@ export function StaffListPlaceholder({
           Mēģināt vēlreiz
         </button>
       </div>
+    );
+  }
+  if (empty) {
+    return (
+      <p className="px-4 py-4 text-[13px] text-[var(--iriss-ink-2)]" data-testid="staff-list-empty">
+        Nav lietotāju
+      </p>
     );
   }
   return null;
