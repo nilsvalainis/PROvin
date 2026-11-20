@@ -84,7 +84,10 @@ import {
 } from "@/lib/iriss-communication-timeline";
 import { type IrissCommTypeFilter } from "@/lib/iriss-order-comm-view";
 import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
-import { IRISS_OFFERS_CONTINUE, IRISS_OFFERS_SEND, formatIrissOffersLinksSummary, irissOfferCardPrimary } from "@/lib/iriss-order-offers-view";
+import { formatIrissOffersLinksSummary } from "@/lib/iriss-order-offers-view";
+import { formatOfferValidUntilLv } from "@/lib/iriss-offer-valid-until";
+import { formatIrissPdPrice, irissPdRowEffectiveStatus } from "@/lib/iriss-piedavajumi";
+import { IRISS_PD_STATUS_LV, irissPdNumberLabel, type IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 import { IRISS_SEARCH_BUCKETS, formatIrissHitSourceLine, irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
 import {
   IRISS_ORDER_ROOM_TABS,
@@ -97,7 +100,6 @@ import {
   irissOrderRoomExcludeTokens,
   irissOrderRoomHitBucket,
   irissOrderRoomHitPassesCriteria,
-  irissOrderRoomHitShareText,
   irissOrderRoomListingLinkCount,
   irissOrderRoomMatch,
   irissOrderRoomNextSteps,
@@ -511,13 +513,6 @@ function Field({
   );
 }
 
-function offerShareText(offer: IrissOfferRecord): string {
-  const total = irissOrderRoomOfferTotal(offer);
-  const bits = [offer.brandModel.trim() || offer.title.trim(), offer.firstRegistration.trim() || offer.year.trim()];
-  if (total != null) bits.push(listingFmtEur(total));
-  return [`Sveiki! Piedāvājums: ${bits.filter(Boolean).join(", ")}.`, "", "Labu dienu,", "PROVIN.LV"].join("\n");
-}
-
 function offerPortfolioBadge(
   offer: IrissOfferRecord,
   link: IrissOfferClientLinkAdminView | null,
@@ -572,6 +567,7 @@ function replyHistoryRows(offers: IrissOfferRecord[], links: IrissOfferClientLin
 
 /** Stabili noklusējumi (nevis `= []` katrā renderī). */
 const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
+const EMPTY_PD_ROWS: IrissPdListRow[] = [];
 const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
 const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
 
@@ -944,6 +940,9 @@ export function IrissOrderRoom({
   onAlbumFiles,
   albumBusy = false,
   onMarketplaceLoaded,
+  pdRows = EMPTY_PD_ROWS,
+  onLegacyToPd,
+  legacyToPdBusyId = "",
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
@@ -997,6 +996,11 @@ export function IrissOrderRoom({
   onAlbumFiles?: (album: "inspection" | "documents", files: FileList | null) => void;
   albumBusy?: boolean;
   onMarketplaceLoaded?: () => void | Promise<void>;
+  /** P4: šī klienta jaunie PD (sadaļa «Piedāvājumi») - sarakstā pirms vecajiem. */
+  pdRows?: IrissPdListRow[];
+  /** P4 (3A): «Jauns PD uz šī bāzes» no vecā /p/ piedāvājuma. */
+  onLegacyToPd?: (offer: IrissOfferRecord) => void;
+  legacyToPdBusyId?: string;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
   // Vienotā saglabāšanas poga: saglabā / zaļš ķeksis / kļūda no tās pašas ziņas.
@@ -1899,9 +1903,6 @@ export function IrissOrderRoom({
                           </a>
                         ) : null}
                         <IrissOverflowMenu label="Vairāk">
-                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(irissOrderRoomHitShareText(hit))}>
-                            Nosūtīt klientam
-                          </IrissOverflowItem>
                           <IrissOverflowItem href={searchHref}>Atvērt meklētājā</IrissOverflowItem>
                           {extraLinks.map((link) => (
                             <IrissOverflowItem key={link.url} href={link.url}>
@@ -1928,7 +1929,7 @@ export function IrissOrderRoom({
       {tab === "offers" ? (
         <div className="iriss-mekletajs-view mt-3 min-w-0 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[15px] font-semibold text-[var(--ink)]">Piedāvājumi · {rec.offers.length}</p>
+            <p className="text-[15px] font-semibold text-[var(--ink)]">Piedāvājumi · {rec.offers.length + pdRows.length}</p>
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={onCreateOffer} className={roomBtnDark}>
                 <Plus className="h-4 w-4" aria-hidden />
@@ -1941,8 +1942,34 @@ export function IrissOrderRoom({
               </IrissOverflowMenu>
             </div>
           </div>
+          {pdRows.length > 0 ? (
+            <ul className="grid min-w-0 gap-3" data-pd-rows="">
+              {pdRows.map((row) => {
+                const status = irissPdRowEffectiveStatus(row, Date.now());
+                return (
+                  <li key={row.id} className="min-w-0 overflow-hidden rounded-[22px] bg-[var(--s1)] shadow-[var(--sh)]">
+                    <Link href={`/admin/iriss/piedavajumi/${row.id}`} className="flex items-center gap-3 p-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[14px] font-bold leading-snug text-[var(--ink)]">{row.title || irissPdNumberLabel(row.number)}</p>
+                          <span className="shrink-0 rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-bold text-[var(--ink2)]">{IRISS_PD_STATUS_LV[status]}</span>
+                        </div>
+                        <p className="mt-1 text-[12px] text-[var(--ink2)]">
+                          {irissPdNumberLabel(row.number)}
+                          {row.validUntil ? ` · līdz ${formatOfferValidUntilLv(row.validUntil)}` : ""}
+                        </p>
+                        <p className="mt-1 text-[18px] font-extrabold text-[var(--ink)]">{formatIrissPdPrice(row.price) || "Cena nav"}</p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           {rec.offers.length === 0 ? (
-            <p className="rounded-[22px] bg-[var(--s1)] px-4 py-6 text-[14px] text-[var(--ink2)] shadow-[var(--sh)]">Šim klientam vēl nav piedāvājumu.</p>
+            pdRows.length === 0 ? (
+              <p className="rounded-[22px] bg-[var(--s1)] px-4 py-6 text-[14px] text-[var(--ink2)] shadow-[var(--sh)]">Šim klientam vēl nav piedāvājumu.</p>
+            ) : null
           ) : (
             <ul className="grid min-w-0 gap-3">
               {rec.offers.map((offer, index) => {
@@ -1952,7 +1979,6 @@ export function IrissOrderRoom({
                 const badge = offerPortfolioBadge(offer, link);
                 const sent = link ? formatIrissOfferLinkStamp(link.createdAt) : "";
                 const opened = link && link.viewCount > 0 ? formatIrissOfferLinkStamp(link.statusAt) : "";
-                const primary = irissOfferCardPrimary(offer, link);
                 const source = [offerSourceLabel(offer.sourceRef), offer.auctionPlatform.trim()].filter(Boolean).join(" · ");
                 return (
                   <li key={offer.id} className="min-w-0 overflow-hidden rounded-[22px] bg-[var(--s1)] shadow-[var(--sh)]">
@@ -1969,7 +1995,11 @@ export function IrissOrderRoom({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-[14px] font-bold leading-snug text-[var(--ink)]">{offer.title || `Piedāvājums ${index + 1}`}</p>
-                          <span className="shrink-0 rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-bold text-[var(--ink2)]">{badge.label}</span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            {/* P4 (Nils 20.11): vecie /p/ piedāvājumi - tikai lasīšanai. */}
+                            <span className="rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-bold text-[var(--ink)]" data-legacy-offer="">Vecā forma</span>
+                            <span className="rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-bold text-[var(--ink2)]">{badge.label}</span>
+                          </span>
                         </div>
                         <p className="mt-1 text-[13px] text-[var(--ink)]">{offer.brandModel.trim() || "Marka nav norādīta"}</p>
                         <p className="mt-1 text-[18px] font-extrabold text-[var(--ink)]">{total != null ? listingFmtEur(total) : "Cena nav"}</p>
@@ -1984,23 +2014,17 @@ export function IrissOrderRoom({
                     </div>
                     <div className="space-y-2 px-3 pb-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <button type="button" onClick={() => onEditOffer(offer)} className={roomBtnDark}>
-                          {primary.label === IRISS_OFFERS_CONTINUE
-                            ? "Turpināt rediģēt"
-                            : primary.label === IRISS_OFFERS_SEND
-                              ? "Nosūtīt"
-                              : "Atvērt piedāvājumu"}
+                        <button type="button" onClick={() => onEditOffer(offer)} className={roomBtn}>
+                          Atvērt
                         </button>
+                        {onLegacyToPd ? (
+                          <button type="button" onClick={() => onLegacyToPd(offer)} disabled={legacyToPdBusyId !== ""} className={roomBtnDark}>
+                            {legacyToPdBusyId === offer.id ? "Veido..." : "Jauns PD uz šī bāzes"}
+                          </button>
+                        ) : null}
                         <IrissOverflowMenu label="Vairāk">
-                          <IrissOverflowItem onClick={() => onEditOffer(offer)}>Labot</IrissOverflowItem>
                           <IrissOverflowItem onClick={() => onOpenOfferPdf(offer.id)}>PDF</IrissOverflowItem>
                           <IrissOverflowItem onClick={() => onOpenOfferPdf(offer.id, true)}>PDF bez attēliem</IrissOverflowItem>
-                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(offerShareText(offer))}>
-                            WhatsApp
-                          </IrissOverflowItem>
-                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(offerShareText(offer))}>
-                            Nosūtīt
-                          </IrissOverflowItem>
                         </IrissOverflowMenu>
                       </div>
                       <IrissOfferClientLinkBar
@@ -2012,6 +2036,7 @@ export function IrissOrderRoom({
                         busy={linkBusyId === offer.id}
                         deadlineAt={offer.validUntilAt ?? ""}
                         deadlineDate={offer.validUntil ?? ""}
+                        readOnly
                         onCreate={(expiresInDays) => void mutateOfferLink(offer.id, { action: "create", expiresInDays })}
                         onRevoke={() => void mutateOfferLink(offer.id, { action: "revoke" })}
                         onExtend={(validUntilAt) => void mutateOfferLink(offer.id, { action: "extend", validUntilAt })}

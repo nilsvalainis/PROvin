@@ -237,10 +237,16 @@ export function PiedavajumsDetail({
   initial,
   clientOptions,
   note,
+  staff = false,
+  readOnly = false,
 }: {
   initial: IrissPiedavajums;
   clientOptions: IrissPdClientOption[];
   note: string;
+  /** P4 (Nils 20.11): darbinieks - bez iekšējām summām, avota un piezīmēm (dati maskēti jau serverī). */
+  staff?: boolean;
+  /** P4: cita veidots PD darbiniekam - tikai skatīt. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState(initial);
@@ -250,7 +256,7 @@ export function PiedavajumsDetail({
   const [info, setInfo] = useState(note);
   const { rebase, rebaseBusy, rebaseError } = usePdRebase();
 
-  const editable = isIrissPdEditable(rec.status);
+  const editable = isIrissPdEditable(rec.status) && !readOnly;
   const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(rec));
   // Drošā saglabāšana (Nils 29.10): automātiski, ar atkārtošanu, stāvokli galvenē un rezerves kopiju pārlūkā.
   const dRef = useRef(d);
@@ -598,12 +604,12 @@ export function PiedavajumsDetail({
               <button type="button" className="pd-btn" onClick={() => void copyLink()}>
                 Kopēt saiti
               </button>
-            ) : actions.includes("send") ? (
+            ) : readOnly ? null : actions.includes("send") ? (
               <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ")} onClick={() => void act("send")}>
                 {IRISS_PD_MARK_SENT_LV}
               </button>
             ) : null}
-            {sentLinkToken || actions.includes("send") ? (
+            {!readOnly && (sentLinkToken || actions.includes("send")) ? (
               <>
                 <button
                   type="button"
@@ -627,20 +633,28 @@ export function PiedavajumsDetail({
                 </button>
               </>
             ) : null}
-            <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
-              {busy === "delete" ? "Dzēš..." : "Dzēst"}
-            </button>
-            <span
-              className={`pd-save-st ${saveStatus.kind}`}
-              role="status"
-              aria-live="polite"
-              data-save-kind={saveStatus.kind}
-            >
-              {saveStatus.label}
-            </span>
-            <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
-              {saveLabel}
-            </button>
+            {readOnly || (staff && rec.status === "approved") ? null : (
+              <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
+                {busy === "delete" ? "Dzēš..." : "Dzēst"}
+              </button>
+            )}
+            {readOnly ? (
+              <span className="pd-chip">Tikai lasīšanai</span>
+            ) : (
+              <>
+                <span
+                  className={`pd-save-st ${saveStatus.kind}`}
+                  role="status"
+                  aria-live="polite"
+                  data-save-kind={saveStatus.kind}
+                >
+                  {saveStatus.label}
+                </span>
+                <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
+                  {saveLabel}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -663,7 +677,11 @@ export function PiedavajumsDetail({
       <div className="pde-body">
         {err || rebaseError ? <p className="pd-err" role="alert">{err || rebaseError}</p> : null}
         {info ? <p className="pd-note" role="status">{info}</p> : null}
-        {!editable ? (
+        {readOnly ? (
+          <p className="pd-note">
+            Šo piedāvājumu veidoja {rec.createdByName || "administrators"} - to var tikai skatīt.
+          </p>
+        ) : !editable ? (
           <p className="pd-note">
             Statuss «{IRISS_PD_STATUS_LV[rec.status]}» - lauki vairs nav labojami (izņemot iekšējās piezīmes).
             {canRebaseIrissPd(rec.status) ? " Izveido jaunu piedāvājumu uz šī bāzes." : ""}
@@ -678,7 +696,7 @@ export function PiedavajumsDetail({
         </Card>
 
         <Card title="Pamatdati" sub={rec.auto1 ? "Ielasīts no Auto1 · labojams" : "Labojams"}>
-          {editable && rec.sourceRef.startsWith("autoparks:") ? (
+          {editable && !staff && rec.sourceRef.startsWith("autoparks:") ? (
             <button type="button" className="pd-btn" style={{ marginBottom: 12 }} disabled={busy !== ""} onClick={() => void act("fill-from-stock")}>
               {busy === "fill-from-stock" ? "Ielasa..." : "Papildināt tukšos laukus no Autoparka"}
             </button>
@@ -716,7 +734,7 @@ export function PiedavajumsDetail({
             </div>
             <div className="pd-fld">
               <label htmlFor="pd-client">Klients</label>
-              <PdClientPicker value={d.client} options={clientOptions} disabled={rec.status === "approved"} onChange={(cl) => set("client", cl)} />
+              <PdClientPicker value={d.client} options={clientOptions} disabled={readOnly || rec.status === "approved"} onChange={(cl) => set("client", cl)} />
             </div>
             <div className="pd-fld">
               <label htmlFor="pd-valid">
@@ -899,6 +917,27 @@ export function PiedavajumsDetail({
           </Card>
         ) : null}
 
+        {staff ? (
+          <Card title="Cena klientam" sub="Klients redz kopsummu un PVN režīmu">
+            <div className="pd-vat" role="group" aria-label="PVN">
+              {IRISS_PD_VAT_MODES.map((m) => (
+                <button key={m} type="button" className="pd-vat-chip" aria-pressed={d.vatMode === m} disabled={!editable} onClick={() => set("vatMode", m)}>
+                  {IRISS_PD_VAT_LV[m]}
+                </button>
+              ))}
+            </div>
+            <p className="pd-miss" data-pd-staff-hidden="">
+              Paslēpts: izsoles cena, piegāde, sagatavošana, komisija, marža, PVN no maržas, avots, iekšējās piezīmes
+            </p>
+            <div className="pd-pr-total">
+              <span>Klientam kopā</span>
+              <span className="pd-pr-in">
+                <input aria-label="Klientam kopā" value={eurGrouped(d.price)} placeholder="0" disabled={!editable} inputMode="numeric" onChange={(e) => set("price", irissPdEurDigits(e.target.value))} />
+                <i aria-hidden>€</i>
+              </span>
+            </div>
+          </Card>
+        ) : (
         <Card title="Cena klientam" sub="Klients redz tikai kopsummu un PVN režīmu">
           <div className="pd-vat" role="group" aria-label="PVN">
             {IRISS_PD_VAT_MODES.map((m) => (
@@ -970,6 +1009,7 @@ export function PiedavajumsDetail({
             <textarea id="pd-notes" value={d.internalNotes} onChange={(e) => set("internalNotes", e.target.value)} />
           </div>
         </Card>
+        )}
 
         {rec.auto1 ? (
           <Card id="pd-auto1-full" title="Auto1 pilnā atskaite" sub={`Ielasīts ${stamp(rec.auto1ImportedAt)} · klientam rāda ieslēgtos blokus`}>
@@ -983,6 +1023,7 @@ export function PiedavajumsDetail({
           </Card>
         ) : null}
 
+        {readOnly ? null : (
         <Card
           id="pd-client-messages"
           title="Klienta ziņas"
@@ -994,35 +1035,36 @@ export function PiedavajumsDetail({
         >
           <PdClientMessages id={rec.id} messages={rec.messages} onRecord={(r) => applyRecord(r as IrissPiedavajums)} />
         </Card>
+        )}
 
         <Card title="Statuss un vēsture" sub="Klienta lēmums, PDF un saistītie ieraksti">
           <div className="pd-acts" style={{ marginBottom: 12 }}>
-            {actions.includes("revert") ? (
+            {!readOnly && actions.includes("revert") ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("revert")}>
                 Atsaukt uz melnrakstu
               </button>
             ) : null}
-            {actions.includes("approve") ? (
+            {!readOnly && !staff && actions.includes("approve") ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("approve")}>
                 Atzīmēt apstiprinātu
               </button>
             ) : null}
-            {actions.includes("decline") ? (
+            {!readOnly && actions.includes("decline") ? (
               <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void act("decline")}>
                 Atzīmēt noraidītu
               </button>
             ) : null}
-            {actions.includes("reopen") ? (
+            {!readOnly && actions.includes("reopen") ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("reopen")}>
                 Atjaunot (klientam atkal pieejams)
               </button>
             ) : null}
-            {rec.status === "approved" && !rec.approvedOrderId ? (
+            {!staff && rec.status === "approved" && !rec.approvedOrderId ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("create-order")}>
                 Izveidot pasūtījumu
               </button>
             ) : null}
-            {canRebaseIrissPd(rec.status) ? (
+            {!readOnly && canRebaseIrissPd(rec.status) ? (
               <button type="button" className="pd-btn p" disabled={rebaseBusy} onClick={() => void rebase(rec.id, router)}>
                 Izveidot jaunu uz šī bāzes
               </button>

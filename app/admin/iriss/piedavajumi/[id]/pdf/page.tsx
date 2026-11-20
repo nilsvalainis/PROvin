@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PdPrintTrigger } from "@/components/admin/iriss-piedavajumi/PdPrintTrigger";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 
@@ -15,7 +15,8 @@ export const dynamic = "force-dynamic";
  * Drukā redzams tikai `.pdc-print` (sānjosla un admin rāmis paslēpti).
  */
 export default async function IrissPiedavajumsPdfPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPage();
+  // P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
+  await requireIrissSectionPage("pasutijumi");
   const { id } = await params;
   if (!isSafeIrissPdId(id)) notFound();
   const rec = await readIrissPd(id);

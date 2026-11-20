@@ -76,6 +76,13 @@ function normalizePhoto(raw: unknown): IrissPdPhoto | null {
   if (o.kind === "url" && typeof o.url === "string" && /^https:\/\//i.test(o.url.trim()) && o.url.length <= 2000) {
     return { kind: "url", url: o.url.trim() };
   }
+  if (o.kind === "order") {
+    const safe = (v: unknown) => (typeof v === "string" && /^[\w-]{1,80}$/.test(v) ? v : "");
+    const orderId = safe(o.orderId);
+    const offerId = safe(o.offerId);
+    const attId = safe(o.attId);
+    return orderId && offerId && attId ? { kind: "order", orderId, offerId, attId } : null;
+  }
   return null;
 }
 
@@ -223,6 +230,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     history: normalizeHistory(o.history),
     messages: normalizeIrissPdMessages(o.messages),
     declinedByClient: o.declinedByClient === true && o.status === "declined",
+    createdById: clean(o.createdById, 80),
+    createdByName: clean(o.createdByName, 120),
   };
 }
 
@@ -405,7 +414,9 @@ export function applyIrissPdPatch(
 }
 
 export function photoKey(p: IrissPdPhoto): string {
-  return p.kind === "dropbox" ? `d:${p.ref}:${p.id}` : `u:${p.url}`;
+  if (p.kind === "dropbox") return `d:${p.ref}:${p.id}`;
+  if (p.kind === "order") return `o:${p.orderId}:${p.offerId}:${p.attId}`;
+  return `u:${p.url}`;
 }
 
 /* ---------------- Darbības ---------------- */
@@ -527,10 +538,13 @@ export function canRebaseIrissPd(status: IrissPdStatus): boolean {
 
 export function rebaseIrissPd(
   base: IrissPiedavajums,
-  input: { id: string; number: number; at: string; by: string },
+  input: { id: string; number: number; at: string; by: string; byId?: string },
 ): IrissPiedavajums {
   const rec: IrissPiedavajums = {
     ...base,
+    // P4: jaunais pieder tam, kas to izveidoja (ne bāzes autoram).
+    createdById: input.byId ?? "",
+    createdByName: input.by,
     id: input.id,
     number: input.number,
     status: "draft",
@@ -599,6 +613,8 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     cover: rec.photos[0] ?? null,
     updatedAt: rec.updatedAt,
     openQuestions: irissPdOpenQuestionCount(rec.messages),
+    createdById: rec.createdById,
+    createdByName: rec.createdByName,
   };
 }
 
@@ -626,6 +642,8 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     cover,
     updatedAt: clean(o.updatedAt, 40),
     openQuestions: typeof o.openQuestions === "number" && Number.isFinite(o.openQuestions) ? Math.max(0, Math.min(999, Math.floor(o.openQuestions))) : 0,
+    ...(typeof o.createdById === "string" ? { createdById: clean(o.createdById, 80) } : {}),
+    ...(typeof o.createdByName === "string" ? { createdByName: clean(o.createdByName, 120) } : {}),
   };
 }
 

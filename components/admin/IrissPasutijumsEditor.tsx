@@ -4,7 +4,7 @@ import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSa
 import { ArrowLeft, FileDown, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -85,6 +85,7 @@ import {
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
 import { createIrissPdFromListing, irissPdHref } from "@/lib/iriss-pd-from-listing-client";
+import type { IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 import {
   clearIrissOrderBackup,
   formatIrissBackupTime,
@@ -331,7 +332,8 @@ export function IrissPasutijumsEditor({
   duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
   googleContactsConfigured: googleContactsConfiguredInitial = false,
-  pdEntry = false,
+  pdEntry = true,
+  pdRows,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -349,8 +351,13 @@ export function IrissPasutijumsEditor({
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
   googleContactsConfigured?: boolean;
-  /** Administrators: jauni piedāvājumi tikai PD sadaļā (Nils 27.10, viena sistēma). Darbinieks - esošā forma. */
+  /**
+   * Jauni piedāvājumi tikai PD sadaļā (Nils 27.10, viena sistēma). P4 (Nils 20.11): arī darbiniekiem;
+   * vecie /p/ piedāvājumi atveras tikai lasīšanai ar «Jauns PD uz šī bāzes».
+   */
   pdEntry?: boolean;
+  /** P4: šī klienta jaunie PD Piedāvājumu cilnē. */
+  pdRows?: IrissPdListRow[];
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -1078,11 +1085,40 @@ export function IrissPasutijumsEditor({
 
   // Viena piedāvājumu sistēma (Nils 27.10): saglabātā pasūtījumā administrators veido piedāvājumu PD,
   // klients un pasūtījums piesaistās automātiski. Vecie piedāvājumi šeit paliek lasāmi un nosūtāmi.
-  const pdNew = pdEntry && !unsavedDraft;
+  // P4: arī nesaglabātam pasūtījumam - PD bez pasūtījuma saites (klientu var piesaistīt PD).
+  const pdNew = pdEntry;
   const createOfferEntry = useCallback(() => {
-    if (pdNew) router.push(irissPdNewHref({ orderId: rec.id }));
+    if (pdNew) router.push(irissPdNewHref(persistedIdRef.current ? { orderId: persistedIdRef.current } : {}));
     else openCreateOffer();
-  }, [pdNew, router, rec.id, openCreateOffer]);
+  }, [pdNew, router, openCreateOffer]);
+
+  /** P4 (3A): «Jauns PD uz šī bāzes» - jauns PD ar vecā /p/ piedāvājuma datiem (vecais netiek mainīts). */
+  const [legacyToPdBusyId, setLegacyToPdBusyId] = useState("");
+  const legacyToPd = useCallback(
+    async (offer: IrissOfferRecord) => {
+      const orderId = persistedIdRef.current;
+      if (!orderId || legacyToPdBusyId) return;
+      setLegacyToPdBusyId(offer.id);
+      try {
+        const res = await fetch("/api/admin/iriss-piedavajumi", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ kind: "legacy", orderId, offerId: offer.id }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean; id?: string; message?: string };
+        if (data.ok && data.id) {
+          router.push(irissPdHref(data.id));
+          return;
+        }
+        setSaveMsg(data.message || "Neizdevās izveidot jauno piedāvājumu.");
+      } catch {
+        setSaveMsg("Neizdevās izveidot jauno piedāvājumu.");
+      }
+      setLegacyToPdBusyId("");
+    },
+    [legacyToPdBusyId, router],
+  );
 
   // Nils 29.10: piedāvājums no Meklētāja atbilstības - tieši no sludinājuma datiem, šī pasūtījuma klientam.
   const hitOfferBusy = useRef(false);
@@ -1091,16 +1127,17 @@ export function IrissPasutijumsEditor({
       if (hitOfferBusy.current) return;
       hitOfferBusy.current = true;
       const name = [rec.clientFirstName, rec.clientLastName].map((x) => x.trim()).filter(Boolean).join(" ");
-      const res = await createIrissPdFromListing(hit.id, { name, phone: rec.phone, email: rec.email, orderId: rec.id });
+      const orderId = persistedIdRef.current;
+      const res = await createIrissPdFromListing(hit.id, { name, phone: rec.phone, email: rec.email, orderId });
       hitOfferBusy.current = false;
       if (res.ok) {
         router.push(irissPdHref(res.id));
         return;
       }
       // Sludinājums vairs nav kopā (piem. pazudis) - kā agrāk, no izsoles saites.
-      router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id }));
+      router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), ...(orderId ? { orderId } : {}) }));
     },
-    [rec.clientFirstName, rec.clientLastName, rec.phone, rec.email, rec.id, router],
+    [rec.clientFirstName, rec.clientLastName, rec.phone, rec.email, router],
   );
 
   const retryGoogleContact = useCallback(async () => {
@@ -1363,9 +1400,15 @@ export function IrissPasutijumsEditor({
     }
     if (!autoOpenNewOffer) return;
     autoOpenOfferDone.current = true;
+    if (pdEntry) {
+      // P4: vecās formas ieeja (?newOffer=1, vecas grāmatzīmes) ved uz jauno PD ar to pašu avotu.
+      const ref = parseOfferSourceRef(seedFrom);
+      router.replace(irissPdNewHref(ref ? { from: ref.kind, id: ref.id } : {}));
+      return;
+    }
     if (seedFrom) openCreateOfferFromSource(seedFrom);
     else openCreateOffer();
-  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openCreateOfferFromSource, openEditOffer, rec.offers, seedFrom]);
+  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openCreateOfferFromSource, openEditOffer, rec.offers, seedFrom, pdEntry, router]);
 
   const offerAttachmentCount = offerDraft.attachments.length;
   const onOfferFilesPick = useCallback(
@@ -1647,6 +1690,28 @@ export function IrissPasutijumsEditor({
   const pageSaveState = useSaveMessageState(saveMsg, busy || orderPdfBusy);
   const offerSaveState = useSaveMessageState(saveMsg, offerBusy);
   const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
+  // P4 (Nils 20.11): vecā forma vairs netiek lietota jaunu piedāvājumu veidošanai - esošie atveras tikai lasīšanai.
+  const legacyReadOnly = pdEntry;
+  const noopSetOfferDraft = useCallback<Dispatch<SetStateAction<OfferDraft>>>(() => {}, []);
+  const [legacyLinkCopied, setLegacyLinkCopied] = useState(false);
+  const legacyLinkPath = useCallback(
+    (offerId: string) => initialOfferLinks.find((l) => l.offerId === offerId && l.status !== "revoked")?.path ?? "",
+    [initialOfferLinks],
+  );
+  const copyLegacyLink = useCallback(
+    async (offerId: string) => {
+      const path = legacyLinkPath(offerId);
+      if (!path) return;
+      try {
+        await navigator.clipboard.writeText(`${window.location.origin}${path}`);
+        setLegacyLinkCopied(true);
+        window.setTimeout(() => setLegacyLinkCopied(false), 1600);
+      } catch {
+        setSaveMsg(`${window.location.origin}${path}`);
+      }
+    },
+    [legacyLinkPath],
+  );
   const offerPersistedInRecord = Boolean(persistedOfferRecord);
   const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
   const offerReadyForPdfActions = useMemo(
@@ -2215,6 +2280,9 @@ export function IrissPasutijumsEditor({
           onCreateOffer={pdNew ? createOfferEntry : () => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
           onPrepareOffer={pdNew ? (hit) => void prepareOfferFromHit(hit) : openCreateOfferFromHit}
+          pdRows={pdRows}
+          onLegacyToPd={pdNew && persistedIdRef.current ? (offer) => void legacyToPd(offer) : undefined}
+          legacyToPdBusyId={legacyToPdBusyId}
           googleContactsConfigured={googleContactsConfigured}
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}
@@ -2238,7 +2306,33 @@ export function IrissPasutijumsEditor({
           orderId={persistedIdRef.current}
           savedPendingPhotos={persistedOfferRecord ? pendingDropboxPhotoCount(persistedOfferRecord.attachments) : 0}
           draft={offerDraft}
-          setDraft={setOfferDraft}
+          setDraft={legacyReadOnly ? noopSetOfferDraft : setOfferDraft}
+          readOnly={legacyReadOnly}
+          readOnlyBar={
+            legacyReadOnly && persistedOfferRecord ? (
+              <>
+                {legacyLinkPath(persistedOfferRecord.id) ? (
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center rounded-full border border-slate-200 bg-white px-3 text-[13px] font-semibold"
+                    onClick={() => void copyLegacyLink(persistedOfferRecord.id)}
+                  >
+                    {legacyLinkCopied ? "Nokopēts" : "Kopēt saiti"}
+                  </button>
+                ) : null}
+                {persistedIdRef.current ? (
+                  <button
+                    type="button"
+                    disabled={legacyToPdBusyId !== ""}
+                    className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-graphite)] px-3 text-[13px] font-semibold text-white disabled:opacity-50"
+                    onClick={() => void legacyToPd(persistedOfferRecord)}
+                  >
+                    {legacyToPdBusyId === persistedOfferRecord.id ? "Veido..." : "Jauns PD uz šī bāzes"}
+                  </button>
+                ) : null}
+              </>
+            ) : null
+          }
           autoFields={offerAutoFields}
           busy={offerBusy}
           filePrepare={offerFilePrepare}

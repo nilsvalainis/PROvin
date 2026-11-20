@@ -85,6 +85,8 @@ export type IrissPdVisibility = { group: IrissPdToggle; blocks: Record<IrissPdBl
 export type IrissPdPhoto =
   /** Autoparka /STOCK bilde (Dropbox id), `ref` = "autoparks:<id>". */
   | { kind: "dropbox"; ref: string; id: string }
+  /** P4 (20.11): bilde no vecā /p/ piedāvājuma pasūtījumā (Blob caur IRISS krātuvi). */
+  | { kind: "order"; orderId: string; offerId: string; attId: string }
   /** Izsoles bilde (https). Klientam vienmēr caur mūsu starpniekceļu - izsoles adrese netiek rādīta. */
   | { kind: "url"; url: string };
 
@@ -261,6 +263,12 @@ export type IrissPiedavajums = {
   messages: IrissPdMessage[];
   /** «Noraidīts» ar klienta pogu saitē (nevis admina atzīmi) - tad saitē rāda noraidīto stāvokli. */
   declinedByClient: boolean;
+  /**
+   * P4 (Nils 20.11): kas izveidoja («env-admin» vai darbinieka id). Darbinieks labo tikai savus;
+   * vecajiem ierakstiem tukšs (= administratora).
+   */
+  createdById: string;
+  createdByName: string;
 };
 
 export type IrissPdListRow = {
@@ -285,6 +293,9 @@ export type IrissPdListRow = {
   updatedAt: string;
   /** Neatbildēti klienta jautājumi (sarakstā - zīme «Jautājums»). */
   openQuestions: number;
+  /** P4: veidotājs (saraksts «Mani» / «Visi»). Vecās indeksa rindās nav. */
+  createdById?: string;
+  createdByName?: string;
 };
 
 export const IRISS_PD_MAX_PHOTOS = 60;
@@ -373,6 +384,8 @@ export function emptyIrissPiedavajums(id: string, nowIso: string): IrissPiedavaj
     history: [],
     messages: [],
     declinedByClient: false,
+    createdById: "",
+    createdByName: "",
   };
 }
 

@@ -3,6 +3,7 @@ import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
 import { PdOrderStrip } from "@/components/admin/iriss-piedavajumi/PdOrderStrip";
 import { listIrissPdRowsForOrder } from "@/lib/iriss-piedavajumi-store";
+import { irissPdRowsForViewer, irissPdViewerFromActor } from "@/lib/iriss-piedavajumi-staff";
 import {
   getIrissListingsStorageState,
   readIrissListingsDismissed,
@@ -55,8 +56,10 @@ export default async function IrissPasutijumsDetailPage({
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     readIrissListingOrderOv().catch(() => ({})),
     readIrissOfferClientLinksForOrder(id, { deadlines: irissOfferDeadlinesByOfferId(rec.offers) }).catch(() => []),
-    // j70: šī klienta piedāvājumi no sadaļas «Piedāvājumi» (tikai adminam).
-    actor.kind === "admin" ? listIrissPdRowsForOrder(id).catch(() => []) : Promise.resolve([]),
+    // j70: šī klienta piedāvājumi no sadaļas «Piedāvājumi». P4: arī darbiniekam (bez avota).
+    listIrissPdRowsForOrder(id)
+      .then((rows) => irissPdRowsForViewer(rows, irissPdViewerFromActor(actor)))
+      .catch(() => []),
   ]);
   const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled
@@ -82,7 +85,8 @@ export default async function IrissPasutijumsDetailPage({
         duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
         initialRoomTab={initialRoomTab}
         googleContactsConfigured={Boolean(readGoogleContactsConfig())}
-        pdEntry={actor.kind === "admin"}
+        pdEntry
+        pdRows={pdRows}
       />
     </>
   );

@@ -250,6 +250,12 @@ export type IrissOfferFormProps = {
   /** Paziņojums pēc "Links" (piem. "Saite nokopēta") + pati saite, ja kopēšana neizdevās. */
   linkNotice?: { text: string; url: string } | null;
   onLinkNoticeClose?: () => void;
+  /**
+   * P4 (Nils 20.11): vecais /p/ piedāvājums - tikai lasīšanai (lauki nav labojami, nav Saglabāt / Dzēst / sūtīšanas).
+   * `readOnlyBar` - josla zem galvenes («Kopēt saiti», «Jauns PD uz šī bāzes»).
+   */
+  readOnly?: boolean;
+  readOnlyBar?: React.ReactNode;
 };
 
 export function IrissOfferForm({
@@ -281,6 +287,8 @@ export function IrissOfferForm({
   linkBusy = false,
   linkNotice = null,
   onLinkNoticeClose,
+  readOnly = false,
+  readOnlyBar = null,
 }: IrissOfferFormProps) {
   const vinWarning = useMemo(() => irissVinWarning(draft.vin), [draft.vin]);
   const carPriceWarning = useMemo(() => irissPriceFormatWarning(draft.carPrice), [draft.carPrice]);
@@ -408,14 +416,20 @@ export function IrissOfferForm({
             aria-label="Dzēst piedāvājumu"
             title="Dzēst piedāvājumu"
             onClick={() => onDelete()}
-            className="-mr-1.5 inline-flex h-11 w-11 shrink-0 items-center justify-center disabled:opacity-40 sm:hidden"
+            className={`-mr-1.5 h-11 w-11 shrink-0 items-center justify-center disabled:opacity-40 sm:hidden ${readOnly ? "hidden" : "inline-flex"}`}
           >
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,59,48,0.10)] text-[#ff3b30]">
               <Trash2 className="h-[17px] w-[17px]" strokeWidth={1.9} aria-hidden />
             </span>
           </button>
         </div>
-        {restoreCandidate ? (
+        {readOnly ? (
+          <div className="mx-4 mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-[12.5px] text-[var(--color-apple-text)] sm:mx-5" role="note" data-offer-readonly="">
+            <span className="min-w-0 flex-1 font-semibold">Vecais piedāvājums atvērts - tikai lasīšanai</span>
+            {readOnlyBar}
+          </div>
+        ) : null}
+        {!readOnly && restoreCandidate ? (
           <div
             className="mx-4 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-[12px] leading-snug text-amber-950 sm:mx-5"
             role="status"
@@ -474,7 +488,7 @@ export function IrissOfferForm({
               </button>
             ))}
           </div>
-          <div className={`space-y-3 ${leftTab === "pamatinfo" ? "" : "hidden"}`}>
+          <div className={`space-y-3 ${leftTab === "pamatinfo" ? "" : "hidden"}`} inert={readOnly || undefined}>
             <IrissOfferSectionCard title="Transportlīdzeklis" visible={sectionOn("vehicle")} onVisibleChange={(v) => setSection("vehicle", v)}>
               <div className="grid grid-cols-2 gap-x-2.5 gap-y-3 lg:grid-cols-3">{VEHICLE_FIELDS.map((f) => renderField(f))}</div>
             </IrissOfferSectionCard>
@@ -482,7 +496,7 @@ export function IrissOfferForm({
               <div className="grid grid-cols-2 gap-x-2.5 gap-y-3">{AUCTION_FIELDS.map((f) => renderField(f))}</div>
             </IrissOfferSectionCard>
           </div>
-          <div className={`space-y-3 ${leftTab === "apraksti" ? "" : "hidden"}`}>
+          <div className={`space-y-3 ${leftTab === "apraksti" ? "" : "hidden"}`} inert={readOnly || undefined}>
             <IrissOfferSectionCard
               title="Īpašas atzīmes"
               visible={sectionOn("specialNotes")}
@@ -579,7 +593,7 @@ export function IrissOfferForm({
             </IrissOfferSectionCard>
           </div>
 
-          <div className={`space-y-3 ${leftTab === "cenas" ? "" : "hidden"}`}>
+          <div className={`space-y-3 ${leftTab === "cenas" ? "" : "hidden"}`} inert={readOnly || undefined}>
             <IrissOfferSectionCard title="Cenas" visible={sectionOn("pricing")} onVisibleChange={(v) => setSection("pricing", v)}>
               <div className="grid grid-cols-2 gap-x-2.5 gap-y-3">
                 <label className="col-span-2 block min-w-0">
@@ -640,7 +654,7 @@ export function IrissOfferForm({
             <IrissOfferBlocksSheet blocks={resolvedBlocks} photoCount={photoCount} onChange={setBlocks} />
           </div>
           </div>
-          <div className={`min-w-0 lg:rounded-xl lg:border lg:border-[#e5e7eb] lg:bg-white lg:p-3 ${tab === "bildes" ? "" : "hidden lg:block"}`}>
+          <div className={`min-w-0 lg:rounded-xl lg:border lg:border-[#e5e7eb] lg:bg-white lg:p-3 ${tab === "bildes" ? "" : "hidden lg:block"}`} inert={readOnly || undefined}>
           <div className="select-none">
             <IrissOfferSectionCard
               title="Bildes"
@@ -780,7 +794,7 @@ export function IrissOfferForm({
                     disabled={exportBusy}
                     onClick={() => onPdf()}
                   />
-                  {shareWhatsAppEnabled ? (
+                  {shareWhatsAppEnabled && !readOnly ? (
                     <FloatDockButton
                       label="WhatsApp"
                       icon={whatsappBusy ? <Loader2 className="h-[19px] w-[19px] animate-spin" aria-hidden /> : <MessageCircle className="h-[19px] w-[19px]" strokeWidth={1.8} aria-hidden />}
@@ -788,7 +802,7 @@ export function IrissOfferForm({
                       onClick={onWhatsApp}
                     />
                   ) : null}
-                  {onLink ? (
+                  {onLink && !readOnly ? (
                     <FloatDockButton
                       label="Links"
                       primary
@@ -798,7 +812,7 @@ export function IrissOfferForm({
                     />
                   ) : null}
                 </>
-              ) : (
+              ) : readOnly ? null : (
                 <button
                   type="button"
                   disabled={!!filePrepare || pdfBusy || whatsappBusy || saveState === "saving"}
@@ -822,7 +836,7 @@ export function IrissOfferForm({
               type="button"
               disabled={busy || !!filePrepare || deleteBusy}
               onClick={() => onDelete()}
-              className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full px-2 text-[13px] font-semibold text-slate-500 transition hover:text-[var(--color-apple-text)] disabled:opacity-50 sm:border sm:border-slate-200 sm:bg-white sm:px-4 sm:text-[var(--color-apple-text)] sm:shadow-sm"
+              className={`${readOnly ? "hidden" : "inline-flex"} min-h-[44px] shrink-0 items-center justify-center rounded-full px-2 text-[13px] font-semibold text-slate-500 transition hover:text-[var(--color-apple-text)] disabled:opacity-50 sm:border sm:border-slate-200 sm:bg-white sm:px-4 sm:text-[var(--color-apple-text)] sm:shadow-sm`}
             >
               Dzēst
             </button>
@@ -845,7 +859,7 @@ export function IrissOfferForm({
                   >
                     {pdfBusy ? "PDF..." : "PDF"}
                   </button>
-                  {shareWhatsAppEnabled ? (
+                  {shareWhatsAppEnabled && !readOnly ? (
                     <button
                       type="button"
                       disabled={busy || !!filePrepare || pdfBusy || whatsappBusy}
@@ -859,13 +873,15 @@ export function IrissOfferForm({
                   ) : null}
                 </>
               ) : null}
-              <AdminSaveButton
-                onSave={onSave}
-                state={saveState}
-                label="Saglabāt melnrakstu"
-                disabled={!!filePrepare || pdfBusy || whatsappBusy}
-                className="h-11 min-w-0 flex-1 sm:flex-none"
-              />
+              {readOnly ? null : (
+                <AdminSaveButton
+                  onSave={onSave}
+                  state={saveState}
+                  label="Saglabāt melnrakstu"
+                  disabled={!!filePrepare || pdfBusy || whatsappBusy}
+                  className="h-11 min-w-0 flex-1 sm:flex-none"
+                />
+              )}
             </div>
           </div>
           {pdfNotice ? (

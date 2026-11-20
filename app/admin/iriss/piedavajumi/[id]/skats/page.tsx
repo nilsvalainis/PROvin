@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 
@@ -15,7 +15,8 @@ export const dynamic = "force-dynamic";
  * Tieši tas, ko klients redz saitē (saites redzamības slēdži), no saglabātā ieraksta.
  */
 export default async function IrissPiedavajumsPreviewPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPage();
+  // P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
+  await requireIrissSectionPage("pasutijumi");
   const { id } = await params;
   if (!isSafeIrissPdId(id)) notFound();
   const rec = await readIrissPd(id);

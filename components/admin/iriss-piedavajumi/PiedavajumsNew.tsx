@@ -100,6 +100,7 @@ export function PiedavajumsNew({
   entry,
   client = null,
   clientOptions = [],
+  tabs = TABS,
 }: {
   cars: IrissPdCarPick[];
   carsError: string;
@@ -109,6 +110,8 @@ export function PiedavajumsNew({
   client?: IrissPdClient | null;
   /** Nils 30.10: klientu var izvēlēties arī šeit (pasūtījuma klients vai jauns). */
   clientOptions?: IrissPdClientOption[];
+  /** P4: darbiniekam bez Autoparka / Loģistikas sadaļas šīs cilnes nav. */
+  tabs?: IrissPdEntryTab[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<IrissPdEntryTab>(entry?.tab ?? "link");
@@ -172,8 +175,8 @@ export function PiedavajumsNew({
       </header>
 
       <section className="pd-card pd-new" aria-label="Piedāvājuma avots">
-        <div className="pd-seg" role="tablist" aria-label="Avots">
-          {TABS.map((t) => (
+        <div className="pd-seg" role="tablist" aria-label="Avots" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+          {tabs.map((t) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t} disabled={busy !== ""} onClick={() => setTab(t)}>
               {IRISS_PD_ENTRY_TAB_LV[t]}
             </button>
