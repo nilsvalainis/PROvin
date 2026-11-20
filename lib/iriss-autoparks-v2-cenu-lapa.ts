@@ -65,12 +65,20 @@ export const PRICE_SHEET_STATE_LV: Record<V2PriceSheetState, string> = {
 };
 
 /**
- * Automātiskais stāvoklis (Nils 20.11): Autoparka statuss «Rezervēts» -> Rezervēts (prioritāte);
- * citādi, ja auto NAV pieņemts tirdzniecībā (CSDD akts nr. vai datums) -> Drīzumā; citādi parastā lapa.
+ * Cenu lapai auto pieņemts tirdzniecībā: CSDD reģistra akts (nr. vai datums) VAI Pamatdatos ar roku ievadīts
+ * akta numurs (Nils 20.11 - konsekventi ar «Trūkst», «Drīzumā» un «tehniski atbilst» noklusējumu).
  */
-export function priceSheetStateAuto(car: Pick<AutoparksCar, "registry" | "status">): V2PriceSheetState {
+export function priceSheetAccepted(car: Pick<AutoparksCar, "registry">, v2?: { tech?: { tradeActNo?: string } } | null): boolean {
+  return hasTradeAct(car.registry) || Boolean(v2?.tech?.tradeActNo?.trim());
+}
+
+/**
+ * Automātiskais stāvoklis (Nils 20.11): Autoparka statuss «Rezervēts» -> Rezervēts (prioritāte);
+ * citādi, ja auto NAV pieņemts tirdzniecībā (`priceSheetAccepted`) -> Drīzumā; citādi parastā lapa.
+ */
+export function priceSheetStateAuto(car: Pick<AutoparksCar, "registry" | "status">, v2?: { tech?: { tradeActNo?: string } } | null): V2PriceSheetState {
   if (car.status === "reserved") return "reserved";
-  return hasTradeAct(car.registry) ? "normal" : "soon";
+  return priceSheetAccepted(car, v2) ? "normal" : "soon";
 }
 
 /**
@@ -85,8 +93,11 @@ export function priceSheetSold(
   return sold && ps.sheetState == null;
 }
 
-export function priceSheetState(car: Pick<AutoparksCar, "registry" | "status">, v2: Pick<AutoparksCarV2, "priceSheet">): V2PriceSheetState {
-  return v2.priceSheet.sheetState ?? priceSheetStateAuto(car);
+export function priceSheetState(
+  car: Pick<AutoparksCar, "registry" | "status">,
+  v2: Pick<AutoparksCarV2, "priceSheet"> & { tech?: { tradeActNo?: string } },
+): V2PriceSheetState {
+  return v2.priceSheet.sheetState ?? priceSheetStateAuto(car, v2);
 }
 
 export const PRICE_SHEET_SAFETY_LABELS: ReadonlyArray<{ key: V2SafetyKey; label: string; short: string }> = [
@@ -240,13 +251,14 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
   const equipmentLine = ps.equipmentLine || car.equipmentLine || "";
   const listPriceEur = ps.listPriceEur ?? car.listPriceEur ?? ps.salePriceEur ?? car.salePriceEur ?? null;
   const vatMode = v2.purchase.vat.mode;
+  const accepted = priceSheetAccepted(car, v2);
   // Bez saglabātas izvēles: pieņemtam tirdzniecībā «tehniski atbilst» ieslēgts (Nils 20.11); saglabātā izvēle uzvar.
-  const safetyState = ps.safety ?? defaultV2PriceSheetSafety(hasTradeAct(car.registry));
+  const safetyState = ps.safety ?? defaultV2PriceSheetSafety(accepted);
   const allRows = priceSheetAllRows(car, basics, ps.rowVisibility ?? {});
-  const stateAuto = priceSheetStateAuto(car);
+  const stateAuto = priceSheetStateAuto(car, v2);
   const state = priceSheetState(car, v2);
   // Drošība kā Drīzumā («Gaida pārbaudi», teikums par pārbaudi): Drīzumā vienmēr; Rezervēts - ja auto vēl nav pieņemts tirdzniecībā.
-  const waitSafety = state === "soon" || (state === "reserved" && !hasTradeAct(car.registry));
+  const waitSafety = state === "soon" || (state === "reserved" && !accepted);
   return {
     displayName: ps.displayName || car.displayName || title,
     equipmentLine,

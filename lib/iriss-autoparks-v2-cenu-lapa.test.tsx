@@ -463,3 +463,31 @@ describe("Cenu lapa - obligātie lauki kā vecajā DZA paraugā (Nils 20.11)", (
     expect(s.allRows.find((r) => r.key === "tradeStatus")?.value).toBe("Pieņemts");
   });
 });
+
+describe("Cenu lapa - ar roku ievadīts akta numurs = pieņemts tirdzniecībā (Nils 20.11)", () => {
+  const car = normalizeAutoparksCar({ id: "m", make: "Skoda", model: "Superb", vin: "TMBJH7NP0J7001122", status: "for_sale", listPriceEur: 14990 })!;
+  const sheet = (v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+
+  it("bez CSDD akta, bet ar roku akta nr.: parastā lapa, «tehniski atbilst» ieslēgts, obligātie «Trūkst»", () => {
+    expect(sheet().state).toBe("soon");
+    const v2 = emptyCarV2();
+    v2.tech.tradeActNo = "GDZ00301";
+    const s = sheet(v2);
+    expect(s.state).toBe("normal");
+    expect(s.stateAuto).toBe("normal");
+    expect(s.roadworthy).toBe(true);
+    expect(s.pendingCheck).toBe(false);
+    expect(s.safetyRows[0]!.checked).toBe("Nav pārbaudīts");
+    expect(s.allRows.some((r) => r.required && !r.value)).toBe(true);
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).not.toContain("DRĪZUMĀ");
+    expect(text).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
+  });
+
+  it("ar roku akta nr., bet manuāli izslēgts apliecinājums - paliek izslēgts", () => {
+    const v2 = emptyCarV2();
+    v2.tech.tradeActNo = "GDZ00301";
+    v2.priceSheet.safety = { ...sheet(v2).safetyState, roadworthy: false };
+    expect(sheet(v2).roadworthy).toBe(false);
+  });
+});
