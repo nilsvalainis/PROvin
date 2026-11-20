@@ -7,6 +7,8 @@ import {
   autoparksOwner,
   isAutoparksOwner,
   AUTOPARKS_STAGE_LV,
+  AUTOPARKS_ARCHIVE_RESTORED_TEXT,
+  autoparksArchiveOnStatusChange,
   autoparksRoom,
   isAutoparksStatus,
   normalizeAutoparksState,
@@ -92,12 +94,16 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
     createdAt: now,
     updatedAt: now,
   };
+  // Nils 20.11: jauns auto uzreiz ar statusu «Pārdots» - uzreiz arhīvā.
+  const archive = car.status === "sold" ? autoparksArchiveOnStatusChange({ ...car, status: "prep_waiting" }, "sold", now) : null;
+  if (archive) Object.assign(car, { archivedAt: archive.car.archivedAt, archiveReason: archive.car.archiveReason });
   return mutateAutoparksState((state) => {
     // Atkārtots "Uz Autoparku" paralēli: tas pats pasūtījums netiek pievienots divreiz.
     const dup = input.orderId ? state.cars.find((c) => c.orderId === car.orderId) : undefined;
     if (dup) return { result: dup, write: false };
     state.cars.push(car);
     state.events.push(event(car.id, actor, input.orderId ? "Pārvietots no Loģistikas" : "Pievienots Autoparkam"));
+    if (archive) state.events.push(event(car.id, actor, archive.text));
     return { result: car };
   });
 }
@@ -232,7 +238,7 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
   if (idx < 0) return { result: null, write: false };
   const prev = state.cars[idx]!;
   const now = new Date().toISOString();
-  const next: AutoparksCar = { ...prev, updatedAt: now };
+  let next: AutoparksCar = { ...prev, updatedAt: now };
   const text = (v: string | undefined, max: number) => (v === undefined ? undefined : v.trim().slice(0, max));
   next.vin = text(patch.vin, 32)?.toUpperCase() ?? prev.vin;
   next.make = text(patch.make, 60) ?? prev.make;
@@ -254,26 +260,60 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
     state.events.push(event(id, actor, `Īpašnieks: ${AUTOPARKS_OWNER_LV[autoparksOwner(prev)]} -> ${AUTOPARKS_OWNER_LV[patch.owner]}`));
   }
   if (isAutoparksStatus(patch.status) && patch.status !== prev.status) {
+    const archive = autoparksArchiveOnStatusChange(next, patch.status, now);
+    if (archive) next = archive.car;
     next.status = patch.status;
     next.statusChangedAt = now;
     state.events.push(event(id, actor, `Statuss: ${AUTOPARKS_STATUS_LV[prev.status]} -> ${AUTOPARKS_STATUS_LV[patch.status]}`));
+    if (archive) state.events.push(event(id, actor, archive.text));
   }
   state.cars[idx] = next;
   return { result: next };
   });
 }
 
-/** Pēc "Pārdots": uz arhīvu (vai atpakaļ). Dati paliek, sarakstā redzams cilnē "Arhīvs". */
+/** Statuss, uz kuru pārdotu auto atgriež «Atjaunot no arhīva» (Nils 20.11). */
+export const AUTOPARKS_RESTORE_SOLD_STATUS: AutoparksStatus = "for_sale";
+
+export type AutoparksRestoreResult = { car: AutoparksCar; prevStatus: AutoparksStatus; statusChanged: boolean; changed: boolean };
+
+/**
+ * Nils 20.11: «Atjaunot no arhīva». Noņem `archivedAt`; ja statuss «Pārdots» (arī vecs pārdotais bez `archivedAt`,
+ * kas arhīvā ir atvasināti), statuss -> «Pārdošanā», citādi auto paliktu arhīvā. null - nav atrasts; write: false - nav arhīvā.
+ */
+export async function restoreAutoparksCarFromArchive(id: string, actor: AutoparksActor): Promise<AutoparksRestoreResult | null> {
+  return mutateAutoparksState<AutoparksRestoreResult | null>((state) => {
+    const idx = state.cars.findIndex((c) => c.id === id);
+    if (idx < 0) return { result: null, write: false };
+    const prev = state.cars[idx]!;
+    const sold = prev.status === "sold";
+    if (!prev.archivedAt && !sold) return { result: { car: prev, prevStatus: prev.status, statusChanged: false, changed: false }, write: false };
+    const now = new Date().toISOString();
+    const { archiveReason: _drop, ...rest } = prev;
+    const next: AutoparksCar = { ...rest, archivedAt: "", updatedAt: now };
+    if (sold) {
+      next.status = AUTOPARKS_RESTORE_SOLD_STATUS;
+      next.statusChangedAt = now;
+      state.events.push(event(id, actor, `Statuss: ${AUTOPARKS_STATUS_LV.sold} -> ${AUTOPARKS_STATUS_LV[AUTOPARKS_RESTORE_SOLD_STATUS]}`));
+    }
+    state.cars[idx] = next;
+    state.events.push(event(id, actor, AUTOPARKS_ARCHIVE_RESTORED_TEXT));
+    return { result: { car: next, prevStatus: prev.status, statusChanged: sold, changed: true } };
+  });
+}
+
+/** Arhīvs ar roku (vai atpakaļ). Dati paliek, sarakstā redzams cilnē "Arhīvs". Atjaunošana - `restoreAutoparksCarFromArchive`. */
 export async function setAutoparksArchived(id: string, archived: boolean, actor: AutoparksActor): Promise<AutoparksCar | null> {
+  if (!archived) return (await restoreAutoparksCarFromArchive(id, actor))?.car ?? null;
   return mutateAutoparksState((state) => {
   const idx = state.cars.findIndex((c) => c.id === id);
   if (idx < 0) return { result: null, write: false };
   const prev = state.cars[idx]!;
-  if (Boolean(prev.archivedAt) === archived) return { result: prev, write: false };
+  if (prev.archivedAt) return { result: prev, write: false };
   const now = new Date().toISOString();
-  const next: AutoparksCar = { ...prev, archivedAt: archived ? now : "", updatedAt: now };
+  const next: AutoparksCar = { ...prev, archivedAt: now, updatedAt: now };
   state.cars[idx] = next;
-  state.events.push(event(id, actor, archived ? "Pārvietots uz arhīvu" : "Atjaunots no arhīva"));
+  state.events.push(event(id, actor, "Pārvietots uz arhīvu"));
   return { result: next };
   });
 }

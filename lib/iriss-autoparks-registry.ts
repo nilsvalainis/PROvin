@@ -334,7 +334,7 @@ export function registryFieldSource(reg: AutoparksRegistry | undefined, key: Reg
  */
 const TRADE_REMOVED_STATUS = /no[nņ]em|izsl[eē]g|p[aā]rdot|anul|dz[eē]st|iz[nņ]em|atsauk|sold|removed/i;
 
-export type TradeAcceptedCarInput = Pick<AutoparksCar, "status" | "archivedAt" | "registry">;
+export type TradeAcceptedCarInput = Pick<AutoparksCar, "status" | "archivedAt" | "registry"> & { archiveReason?: AutoparksCar["archiveReason"] };
 
 /**
  * Vai kartītē ir CSDD tirdzniecības akta pazīme: akta nr. VAI akta (pieņemšanas) datums.
@@ -351,10 +351,12 @@ export function hasTradeAct(reg: Pick<AutoparksRegistry, "tradeActNo" | "tradeAc
  * un pēdējā pilnajā reģistra nolasījumā (Hetzner cron) auto nav atzīmēts kā izņemts (`registry.removedAt`).
  * Autoparka statuss «Pārdots» auto NEizslēdz: kamēr CSDD reģistrā tas vēl ir pieņemts, tam var vajadzēt pavadzīmi
  * (piem. aizvest pircējam); no saraksta to izņem reģistra nolasījums (`removedAt`), kad CSDD to noņem (Nils 20.11).
+ * Arī «Pārdots» automātiskais arhīvs (`archiveReason: "sold"`) neizslēdz - izslēdz tikai arhīvs ar roku.
  * Lieto pavadzīmju auto saraksts un ikdienas reģistra sinhronizācija - citur šo filtru nedublēt.
  */
 export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
-  if (car.archivedAt) return false;
+  // Tas pats kā `autoparksCarArchivedManually` (iriss-autoparks.ts; tur imports būtu cikls).
+  if (car.archivedAt && car.archiveReason !== "sold") return false;
   const reg = car.registry;
   if (!hasTradeAct(reg)) return false;
   if (reg!.removedAt) return false;

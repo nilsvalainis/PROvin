@@ -2,13 +2,16 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import {
+  AUTOPARKS_ARCHIVE_RESTORED_TEXT,
   AUTOPARKS_STATUS_LV,
+  autoparksArchiveOnStatusChange,
+  autoparksCarArchived,
   autoparksStatusReservable,
   isAutoparksStatus,
   type AutoparksCar,
   type AutoparksStatus,
 } from "@/lib/iriss-autoparks";
-import { mutateAutoparksState, readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { mutateAutoparksState, readAutoparksState, restoreAutoparksCarFromArchive } from "@/lib/iriss-autoparks-store";
 import {
   AUTOPARKS_V2_FILE,
   capHistory,
@@ -88,17 +91,20 @@ export async function readAutoparksV2Car(carId: string): Promise<{ car: Autopark
   return car ? { car, v2: carV2Of(v2, carId) } : null;
 }
 
-function v1StatusEvent(carId: string, actor: AutoparksV2Actor, from: AutoparksStatus, to: AutoparksStatus) {
-  return {
-    id: `ae-${randomUUID()}`,
-    carId,
-    at: new Date().toISOString(),
-    actorName: actor.name,
-    text: `Statuss: ${AUTOPARKS_STATUS_LV[from]} -> ${AUTOPARKS_STATUS_LV[to]}`,
-  };
+function v1Event(carId: string, actor: AutoparksV2Actor, text: string) {
+  return { id: `ae-${randomUUID()}`, carId, at: new Date().toISOString(), actorName: actor.name, text };
 }
 
-type SetStatusResult = { ok: true; prev: AutoparksStatus } | { ok: false; reason: "not_found" | "conflict" | "same" };
+function v1StatusEvent(carId: string, actor: AutoparksV2Actor, from: AutoparksStatus, to: AutoparksStatus) {
+  return v1Event(carId, actor, `Statuss: ${AUTOPARKS_STATUS_LV[from]} -> ${AUTOPARKS_STATUS_LV[to]}`);
+}
+
+/** v2 vēstures lauks arhīva ierakstiem (Nils 20.11): «Pārdots - pārcelts uz arhīvu» / «Atjaunots no arhīva». */
+export const V2_ARCHIVE_HISTORY_FIELD = "archive";
+
+type SetStatusResult =
+  | { ok: true; prev: AutoparksStatus; archiveText: string; archived: boolean }
+  | { ok: false; reason: "not_found" | "conflict" | "same" };
 
 /**
  * Nosacīta statusa maiņa v1 failā (statuss ir v1 lauks): raksta tikai, ja pašreizējais statuss ir `expect`.
@@ -117,26 +123,65 @@ async function setV1StatusIf(
     if (expect && prev.status !== expect) return { result: { ok: false as const, reason: "conflict" as const }, write: false };
     if (prev.status === next) return { result: { ok: false as const, reason: "same" as const }, write: false };
     const now = new Date().toISOString();
-    state.cars[idx] = { ...prev, status: next, statusChangedAt: now, updatedAt: now };
+    // Nils 20.11: «Pārdots» -> arhīvā; no «Pārdots» uz citu -> ārā no arhīva (tas pats noteikums visiem ceļiem).
+    const archive = autoparksArchiveOnStatusChange(prev, next, now);
+    const car = { ...(archive?.car ?? prev), status: next, statusChangedAt: now, updatedAt: now };
+    state.cars[idx] = car;
     state.events.push(v1StatusEvent(carId, actor, prev.status, next));
-    return { result: { ok: true as const, prev: prev.status } };
+    if (archive) state.events.push(v1Event(carId, actor, archive.text));
+    return { result: { ok: true as const, prev: prev.status, archiveText: archive?.text ?? "", archived: autoparksCarArchived(car) } };
   });
+}
+
+/** v2 vēsture statusa maiņai: statusa rinda (+ arhīva rinda, ja arhīvs mainījās). Atgriež statusa rindu. */
+async function pushStatusHistory(
+  carId: string,
+  actor: AutoparksV2Actor,
+  from: AutoparksStatus,
+  to: AutoparksStatus,
+  archiveText: string,
+  extra: { undoOf?: string } = {},
+): Promise<V2HistoryRow> {
+  const row = v2HistoryRow(carId, actor, "status", from, to, extra);
+  await mutateAutoparksV2State((state) => {
+    state.history.push(row);
+    if (archiveText) state.history.push(v2HistoryRow(carId, actor, V2_ARCHIVE_HISTORY_FIELD, "", archiveText));
+    return { result: null };
+  });
+  return row;
 }
 
 export async function changeAutoparksStatusV2(
   carId: string,
   status: unknown,
   actor: AutoparksV2Actor,
-): Promise<{ ok: true; historyId: string; status: AutoparksStatus } | { ok: false; reason: "invalid" | "not_found" | "conflict" | "same" }> {
+): Promise<
+  { ok: true; historyId: string; status: AutoparksStatus; archived: boolean } | { ok: false; reason: "invalid" | "not_found" | "conflict" | "same" }
+> {
   if (!isAutoparksStatus(status)) return { ok: false, reason: "invalid" };
   const res = await setV1StatusIf(carId, status, null, actor);
   if (!res.ok) return res;
-  const row = v2HistoryRow(carId, actor, "status", res.prev, status);
+  const row = await pushStatusHistory(carId, actor, res.prev, status, res.archiveText);
+  return { ok: true, historyId: row.id, status, archived: res.archived };
+}
+
+/**
+ * Nils 20.11: kabineta poga «Atjaunot no arhīva» (pēc apstiprinājuma lapā). Pārdotam auto statuss -> «Pārdošanā».
+ * Vēsturē: statusa rinda (ja mainījās) + «Atjaunots no arhīva».
+ */
+export async function restoreAutoparksCarV2(
+  carId: string,
+  actor: AutoparksV2Actor,
+): Promise<{ ok: true; status: AutoparksStatus } | { ok: false; reason: "not_found" | "not_archived" }> {
+  const res = await restoreAutoparksCarFromArchive(carId, actor);
+  if (!res) return { ok: false, reason: "not_found" };
+  if (!res.changed) return { ok: false, reason: "not_archived" };
   await mutateAutoparksV2State((state) => {
-    state.history.push(row);
+    if (res.statusChanged) state.history.push(v2HistoryRow(carId, actor, "status", res.prevStatus, res.car.status));
+    state.history.push(v2HistoryRow(carId, actor, V2_ARCHIVE_HISTORY_FIELD, "", AUTOPARKS_ARCHIVE_RESTORED_TEXT));
     return { result: null };
   });
-  return { ok: true, historyId: row.id, status };
+  return { ok: true, status: res.car.status };
 }
 
 /**
@@ -153,10 +198,7 @@ export async function reserveAutoparksCarAfterOffer(
   if (!autoparksStatusReservable(car.status)) return { ok: false, reason: car.status === "reserved" ? "same" : "later_stage" };
   const res = await setV1StatusIf(carId, "reserved", car.status, actor);
   if (!res.ok) return res;
-  await mutateAutoparksV2State((state) => {
-    state.history.push(v2HistoryRow(carId, actor, "status", res.prev, "reserved"));
-    return { result: null };
-  });
+  await pushStatusHistory(carId, actor, res.prev, "reserved", res.archiveText);
   return { ok: true, prev: res.prev };
 }
 
@@ -178,10 +220,7 @@ export async function undoAutoparksStatusV2(
   if (!decision.ok) return decision;
   const res = await setV1StatusIf(carId, decision.revertTo, decision.row.to as AutoparksStatus, actor);
   if (!res.ok) return { ok: false, reason: res.reason === "same" ? "changed" : res.reason === "conflict" ? "changed" : res.reason };
-  await mutateAutoparksV2State((state) => {
-    state.history.push(v2HistoryRow(carId, actor, "status", decision.row.to, decision.revertTo, { undoOf: decision.row.id }));
-    return { result: null };
-  });
+  await pushStatusHistory(carId, actor, decision.row.to as AutoparksStatus, decision.revertTo, res.archiveText, { undoOf: decision.row.id });
   return { ok: true, status: decision.revertTo };
 }
 

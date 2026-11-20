@@ -7,6 +7,7 @@
 import {
   AUTOPARKS_OWNER_LV,
   AUTOPARKS_STATUS_LV,
+  autoparksCarArchived,
   autoparksOwner,
   isAutoparksOwner,
   type AutoparksCar,
@@ -613,7 +614,7 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     // J52b LABOJUMS: kad "Atvests" ar roku notīrīts (v2 pārraksts = ""), tas vairs nedrīkst
     // atgriezties pie v1 vērtības - `sources.arrivedAt === "manual"` nozīmē v2 vērtība (arī tukša) ir galīgā.
     arrivedAt: v2.sources.arrivedAt === "manual" ? v2.fields.arrivedAt : v2.fields.arrivedAt || car.arrivedAt,
-    archived: Boolean(car.archivedAt),
+    archived: autoparksCarArchived(car),
     mileageKm:
       v2.tech.mileageKm != null
         ? { value: v2.tech.mileageKm, csdd: csdd("tech.mileageKm") }

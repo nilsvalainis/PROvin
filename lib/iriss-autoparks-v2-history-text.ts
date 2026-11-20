@@ -2,6 +2,7 @@ import type { V2HistoryRow } from "@/lib/iriss-autoparks-v2";
 
 const FIELD_LV: Record<string, string> = {
   status: "Statuss",
+  archive: "Arhīvs",
   plate: "Numurzīme",
   location: "Atrašanās vieta",
   arrivedAt: "Atvests",
