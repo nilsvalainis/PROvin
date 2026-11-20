@@ -49,7 +49,27 @@ function blobStatusCode(res: { statusCode?: number; status?: number } | null | u
 export async function readPrivateBlobText(opts: {
   pathname: string;
   token: string;
+  /** Tikai testiem: pauze pirms atkārtojuma (nokl. 300 ms). */
+  retryDelayMs?: number;
 }): Promise<PrivateBlobTextSnapshot> {
+  // 19.11: Vercel Blob reizēm atbild 500 (~1x dienā, IRISS worker «pending_http_500»). Lasīšana ir droša -
+  // pārejošu kļūdu atkārto VIENREIZ; otrā kļūda tiek mesta kā līdz šim (nekad nekļūst par tukšu dokumentu).
+  try {
+    return await readPrivateBlobTextOnce(opts);
+  } catch (err) {
+    if (!isTransientBlobReadError(err)) throw err;
+    await new Promise((r) => setTimeout(r, opts.retryDelayMs ?? 300));
+    return readPrivateBlobTextOnce(opts);
+  }
+}
+
+/** Pārejoša lasīšanas kļūda: 5xx, tīkls, pārtraukta straume. Ne: JSON/etag bojājums. */
+export function isTransientBlobReadError(err: unknown): boolean {
+  if (!(err instanceof BlobReadFailedError)) return false;
+  return !/^blob_get_missing_etag$|^json_/.test(err.message) && !/blob_get_status_4\d\d/.test(err.message);
+}
+
+async function readPrivateBlobTextOnce(opts: { pathname: string; token: string }): Promise<PrivateBlobTextSnapshot> {
   let res: Awaited<ReturnType<typeof get>>;
   try {
     res = await get(opts.pathname, {

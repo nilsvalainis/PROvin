@@ -58,8 +58,9 @@ const DZA_REPS: Opt[] = [
 const MAKES: Opt[] = [
   { value: "", text: "" },
   { value: "13644", text: "AUDI" },
-  { value: "875", text: "VOLKSWAGEN" },
-  { value: "900", text: "MERCEDES-BENZ" },
+  // 19.11: CSDD sarakstā kā reģistrā - «VW», «MERCEDES BENZ» (akts GDZ00220 «VW ARTEON», 198-vklase forma).
+  { value: "875", text: "VW" },
+  { value: "900", text: "MERCEDES BENZ" },
   { value: "910", text: "BMW" },
 ];
 const MODELS: Record<string, Opt[]> = {
@@ -451,6 +452,78 @@ describe("waybill-adapter: ĪRISS jauna standarta pavadzīme", () => {
     const job = { ...iriss, vehicle: { ...iriss.vehicle, plate: "B192-7" } };
     const out = await refill({ input: input(job), ledger: ledger(), driver: setup(fake) });
     expect(out).toMatchObject({ ok: false, error: expect.stringContaining("nav ĪRISS") });
+  });
+});
+
+describe("waybill-adapter: marka un modelis (19.11)", () => {
+  const { resolveMakeIn, resolveModelIn } = adapterMod;
+  const makes = [
+    { value: "", text: "" },
+    { value: "875", text: "VW" },
+    { value: "900", text: "MERCEDES BENZ" },
+    { value: "910", text: "BMW" },
+    { value: "920", text: "LAND ROVER" },
+  ];
+
+  it("VW / Volkswagen -> CSDD «VW» (07.11: VW Golf, Volkswagen Golf, VW Arteon, VW Touran)", () => {
+    for (const [bm, model] of [
+      ["VW Golf", "GOLF"],
+      ["Volkswagen Golf", "GOLF"],
+      ["VW Arteon", "ARTEON"],
+      ["VW Touran", "TOURAN"],
+    ]) {
+      expect(resolveMakeIn(makes, bm)).toMatchObject({ make: { value: "875" }, model });
+    }
+  });
+
+  it("ja sarakstā būtu VOLKSWAGEN, arī VW atrod to; abi reizē -> neviennozīmīgi", () => {
+    expect(resolveMakeIn([{ value: "1", text: "VOLKSWAGEN" }], "VW Golf")).toMatchObject({ make: { value: "1" } });
+    expect(() => resolveMakeIn([{ value: "1", text: "VOLKSWAGEN" }, { value: "2", text: "VW" }], "VW Golf")).toThrow(/neviennozīmīga/);
+  });
+
+  it("MB / Mercedes / Mercedes-Benz -> «MERCEDES BENZ»; divu vārdu markas; nezināma -> kļūda", () => {
+    for (const bm of ["MB E350", "Mercedes E350", "Mercedes-Benz E350", "Mercedes Benz E350"]) {
+      expect(resolveMakeIn(makes, bm)).toMatchObject({ make: { value: "900" }, model: "E350" });
+    }
+    expect(resolveMakeIn(makes, "Land Rover Discovery Sport")).toMatchObject({ make: { value: "920" }, model: "DISCOVERY SPORT" });
+    expect(() => resolveMakeIn(makes, "TESTS VW Golf")).toThrow(/marka nav atrasta/);
+    expect(() => resolveMakeIn(makes, "Tesla Model 3")).toThrow(/marka nav atrasta/);
+  });
+
+  it("BMW «3ER 325D»: modeļa kods, ja tāds sarakstā; citādi sērija «3ER»", () => {
+    const withCode = [
+      { value: "1", text: "320D" },
+      { value: "2", text: "325D" },
+      { value: "3", text: "3ER" },
+    ];
+    expect(resolveModelIn(withCode, "3ER 325D", "BMW")).toMatchObject({ value: "2" });
+    const seriesOnly = [
+      { value: "3", text: "3ER" },
+      { value: "5", text: "5ER" },
+      { value: "6", text: "X5" },
+    ];
+    expect(resolveModelIn(seriesOnly, "3ER 325D", "BMW")).toMatchObject({ value: "3" });
+    expect(resolveModelIn(seriesOnly, "325d", "BMW")).toMatchObject({ value: "3" });
+    expect(resolveModelIn([{ value: "9", text: "3 SERIES" }], "3 Series 325d Touring", "BMW")).toMatchObject({ value: "9" });
+    expect(resolveModelIn(seriesOnly, "X5 xDrive30d", "BMW")).toMatchObject({ value: "6" });
+  });
+
+  it("BMW: vairāki kandidāti vienā līmenī vai nekā -> kļūda (Aivaram), neminam", () => {
+    expect(() => resolveModelIn([{ value: "3", text: "3ER" }, { value: "4", text: "3 SERIES" }], "3ER 325D", "BMW")).toThrow(/neviennozīmīgs/);
+    expect(() => resolveModelIn([{ value: "5", text: "5ER" }], "3ER 325D", "BMW")).toThrow(/nav atrasts/);
+    expect(() => resolveModelIn([{ value: "1", text: "330" }, { value: "2", text: "330" }], "330", "BMW")).toThrow(/neviennozīmīgs/);
+  });
+
+  it("Mercedes: «E 350» -> «E350», citādi klase «E-KLASSE»; «V-KLASSE» precīzi", () => {
+    expect(resolveModelIn([{ value: "1", text: "E350" }, { value: "2", text: "E-KLASSE" }], "E 350", "MERCEDES BENZ")).toMatchObject({ value: "1" });
+    expect(resolveModelIn([{ value: "2", text: "E-KLASSE" }], "E350 CDI", "MERCEDES BENZ")).toMatchObject({ value: "2" });
+    expect(resolveModelIn([{ value: "7", text: "V-KLASSE" }], "V-Klasse", "MERCEDES BENZ")).toMatchObject({ value: "7" });
+    expect(() => resolveModelIn([{ value: "2", text: "C-KLASSE" }], "E 350", "MERCEDES BENZ")).toThrow(/nav atrasts/);
+  });
+
+  it("citām markām tikai precīzs teksts (VW Golf), bez minēšanas", () => {
+    expect(resolveModelIn([{ value: "1", text: "GOLF" }], "Golf", "VW")).toMatchObject({ value: "1" });
+    expect(() => resolveModelIn([{ value: "1", text: "GOLF" }], "Golf GTI", "VW")).toThrow(/nav atrasts/);
   });
 });
 

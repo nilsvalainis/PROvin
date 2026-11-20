@@ -191,6 +191,9 @@ export async function POST(req: Request, ctx: Ctx) {
     try {
       const result = await cancelWaybillRequest({ id, actorId, actorName });
       if (!result.ok) {
+        if (result.reason === "already_cancelled") {
+          return NextResponse.json({ error: "Jau atcelts.", alreadyCancelled: true }, { status: 409, ...NO_STORE });
+        }
         return result.reason === "not_found"
           ? NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE })
           : NextResponse.json(
