@@ -1,0 +1,20 @@
+[Unit]
+Description=PROVIN mnt.ee split proxy (mnt.ee + reCAPTCHA via Fixie static IP, rest direct)
+After=network-online.target
+Wants=network-online.target
+Before=provin-mnt.service
+
+[Service]
+Type=simple
+User=provinmnt
+Group=provinmnt
+EnvironmentFile=/etc/provin-mnt-split.env
+ExecStart=/usr/bin/node /opt/provin-mnt/split-proxy.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
