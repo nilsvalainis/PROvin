@@ -43,7 +43,7 @@ describe("translateTextLv igauņu frāzes", () => {
   it("tulko vārdus ar õ / ü / ä (\\b tur nestrādāja)", () => {
     expect(translateTextLv("Võõrandamisest teatamine", "et")).toBe("paziņojums par atsavināšanu");
     expect(translateTextLv("Majanduslikus mõttes hävinenud", "et")).toBe(
-      "ekonomiski neizdevīgi remontēt (norakstīts)",
+      "ekonomiski iznīcināts (norakstīts)",
     );
     expect(translateTextLv("12.03.2021 Liiklusõnnetus", "et")).toBe("12.03.2021 ceļu satiksmes negadījums");
     expect(translateTextLv("Kontroll: ülevaatus puudustega", "et")).toBe("Kontroll: tehniskā apskate ar trūkumiem");

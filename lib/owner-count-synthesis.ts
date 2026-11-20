@@ -249,14 +249,80 @@ export function formatOwnerCountAiContext(synthesis: OwnerCountSynthesis): strin
 const OWNER_CHANGE_EVENT_RE =
   /main[īi]tas?\s+[īi]pa[sš]umties|[īi]pa[sš]nieka\s+mai[nņ]|ownership\s+change|owner\s+change/i;
 
-/** CarVertical / AutoDNA laikposma „Mainītas īpašumtiesības” - ja nav „N īpašnieki”. */
+/** Mēneša atslēga `YYYY-MM` no `dd.mm.yyyy` / `yyyy-mm-dd` / `mm.yyyy` / `yyyy-mm`; `null`, ja nav. */
+export function ownerEventMonthKey(raw: string | null | undefined): string | null {
+  const t = (raw ?? "").trim().replace(/\.$/, "");
+  if (!t) return null;
+  const pad = (m: string) => m.padStart(2, "0");
+  let m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+  if (m) return `${m[3]}-${pad(m[2]!)}`;
+  m = t.match(/^(\d{4})-(\d{1,2})(?:-\d{1,2})?/);
+  if (m) return `${m[1]}-${pad(m[2]!)}`;
+  m = t.match(/^(\d{1,2})[./](\d{4})$/);
+  if (m) return `${m[2]}-${pad(m[1]!)}`;
+  return null;
+}
+
+const LATVIA_COUNTRY_RE = /^\s*(?:latvij|latvia|\blv\b|lettland|латви)/i;
+
+/**
+ * Latvijas periods pēc CSDD: sākuma mēnesis (`firstRegistrationLatvia` vai īpašnieku vēstures
+ * „Pirmā reģistrācija Latvijā”, citādi agrākais CSDD īpašnieku notikums) un visu CSDD maiņu mēneši.
+ */
+function csddLatviaPeriod(csdd: CsddFormFields | null | undefined): {
+  startMonth: string | null;
+  csddMonths: Set<string>;
+} {
+  const events = (csdd?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim());
+  const csddMonths = new Set<string>();
+  for (const e of events) {
+    const k = ownerEventMonthKey(e.date);
+    if (k) csddMonths.add(k);
+  }
+  let startMonth = ownerEventMonthKey(csdd?.firstRegistrationLatvia);
+  if (!startMonth) {
+    const firstLv = events.find((e) => /pirm[āa]\s+reģistr[āa]cija\s+latvij/i.test(e.label));
+    startMonth = ownerEventMonthKey(firstLv?.date);
+  }
+  if (!startMonth && csddMonths.size > 0) startMonth = [...csddMonths].sort()[0]!;
+  return { startMonth, csddMonths };
+}
+
+/**
+ * CarVertical / AutoDNA laikposma „Mainītas īpašumtiesības” - ja nav „N īpašnieki”.
+ * Ar `csdd`: tikai ārvalstu posms - bez notikumiem Latvijā, Latvijas periodā (no CSDD pirmās
+ * reģistrācijas Latvijā mēneša) un tajā pašā mēnesī kā CSDD maiņa; CV un AutoDNA viena mēneša
+ * ieraksts ir viens notikums (dublikāts, ne saskaitāms).
+ */
 export function countVendorOwnershipChangeEvents(
   blocks: ClientManualVendorBlockPdf[] | null | undefined,
+  csdd?: CsddFormFields | null,
 ): number {
+  if (csdd === undefined) {
+    let n = 0;
+    for (const b of blocks ?? []) {
+      for (const t of b.vehicleHistoryTimeline ?? []) {
+        if (OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) n += 1;
+      }
+    }
+    return n;
+  }
+  const { startMonth, csddMonths } = csddLatviaPeriod(csdd);
+  const seen = new Set<string>();
   let n = 0;
   for (const b of blocks ?? []) {
     for (const t of b.vehicleHistoryTimeline ?? []) {
-      if (OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) n += 1;
+      if (!OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) continue;
+      if (LATVIA_COUNTRY_RE.test(t.country ?? "")) continue;
+      const month = ownerEventMonthKey(t.date);
+      if (month) {
+        if (startMonth && month >= startMonth) continue;
+        if (csddMonths.has(month)) continue;
+      }
+      const key = month ?? `${(t.date ?? "").trim()}|${(t.description ?? "").trim().toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      n += 1;
     }
   }
   return n;
@@ -381,7 +447,7 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   if (asvCount != null) {
     pushCandidate(candidates, "other", asvCount, "ASV", 2);
   }
-  const changeCount = countVendorOwnershipChangeEvents(input.manualVendorBlocks);
+  const changeCount = countVendorOwnershipChangeEvents(input.manualVendorBlocks, input.csddForm ?? null);
   if (changeCount > 0 && !candidates.some((c) => c.source === TITLE.carvertical || c.source === TITLE.autodna)) {
     pushCandidate(candidates, "other", changeCount, TITLE.carvertical, 3);
   }
@@ -470,7 +536,7 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
         comments: "",
         vehicleHistoryTimeline: blocks.autodna.vehicleHistoryTimeline,
       },
-    ]);
+    ], blocks.csdd ?? null);
     if (changeCount > 0) pushCandidate(candidates, "other", changeCount, TITLE.carvertical, 3);
   }
 

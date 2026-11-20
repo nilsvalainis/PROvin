@@ -101,6 +101,7 @@ import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styl
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
+import { stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
 import {
   buildDealerSectionCoverHtml,
@@ -244,7 +245,7 @@ import { type OneautoBlockState } from "@/lib/oneauto-block";
 import { OFFICIAL_DEALER_SECTION_TITLE, oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
 import { oneautoBlockHasFoldableContent, resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
-import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPdfSafeHtml, stripIrissBrandStamp } from "@/lib/admin-rich-comment-html";
 import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   PDF_IRISS_SECTION_INSPECTION,
@@ -270,6 +271,7 @@ import {
   formatSmokeCoefficient,
 } from "@/lib/csdd-inspection-history-html";
 import {
+  csddPreviousRegistrationCountryForPdf,
   emptyCsddPreviousInspectionBlock,
   isoDateToLvDisplay,
   previousInspectionBlockHasData,
@@ -1124,7 +1126,7 @@ function formatListedForSaleDaysCellHtml(raw: string): string {
 
 /** Komentāru bloks - vienots stils visā atskaitē; „Komentārs” virsraksts netiek rādīts. */
 function pdfReportCommentBox(text: string, label = ""): string {
-  const body = adminRichHtmlToPdfSafeHtml(text).trim();
+  const body = adminRichHtmlToPdfSafeHtml(stripIrissBrandStamp(text)).trim();
   if (!body) return "";
   const shownLabel = label.trim().toLowerCase() === PDF_REPORT_COMMENT_LABEL.toLowerCase() ? "" : label.trim();
   const head = shownLabel ? `<p class="pdf-subhead pdf-subhead--flush">${escapeHtml(shownLabel)}</p>` : "";
@@ -1523,7 +1525,9 @@ export function buildCsddAvotuZoneHtml(
         ? formatSmokeCoefficient(topEmissions.smokeCoefficient)
         : key === "particulateMatter"
           ? topEmissions.particleNumber
-          : (form[key] as string).trim();
+          : key === "previousRegistrationCountry"
+            ? csddPreviousRegistrationCountryForPdf(form[key] as string)
+            : (form[key] as string).trim();
     if (!v || isPdfEmptyPlaceholder(v)) continue;
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
@@ -2089,7 +2093,6 @@ function buildVendorAvotuSubsection(
   if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
   if (b.title === L.carinfo && !vis.carinfo) return "";
   if (b.title === L.traficom_fi && !vis.traficom_fi) return "";
-  const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const omitOwners = b.title === L.carinfo;
   // Igaunijas reģistru teksti vecajos melnrakstos var būt netulkoti - tulko drukāšanas brīdī.
   const etText = (v: string | undefined) => {
@@ -2098,9 +2101,10 @@ function buildVendorAvotuSubsection(
       ? t.split("\n").map((line) => translateTextLv(line, "et") || line).join("\n")
       : t;
   };
-  const owners = omitOwners ? "" : etText(b.ownersSummary);
-  const status = etText(b.statusRecords);
-  const notes = etText(b.autoNotes);
+  const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, etText(b.comments));
+  const owners = omitOwners ? "" : stripRegistryPersonNames(etText(b.ownersSummary));
+  const status = stripRegistryPersonNames(etText(b.statusRecords));
+  const notes = stripRegistryPersonNames(etText(b.autoNotes));
   const hasComments = commentBlock.trim().length > 0;
   const photosHtml = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,
@@ -2394,7 +2398,8 @@ function buildAvotuDatiSectionHtml(
 }
 
 function buildExpertPdfSectionHtml(icon: string, title: string, html: string): string {
-  const body = adminRichHtmlToPdfSafeHtml(html).trim();
+  // PROVIN atskaitē nekad nav IRISS zīmoga („Inspected by IRISS”) - arī vecajos melnrakstos.
+  const body = adminRichHtmlToPdfSafeHtml(stripIrissBrandStamp(html)).trim();
   if (!body) return "";
   const boxes = buildPdfCommentBoxes(body);
   if (!boxes.first) return "";

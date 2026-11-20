@@ -42,3 +42,18 @@ export function sanitizeVinRegistryClientLine(raw: string): string {
   if (/^(īpašnieka maiņa:?|,)\s*$/i.test(s)) return "";
   return s;
 }
+
+/**
+ * Personas / uzņēmuma vārdi pēc īpašnieka lomas („Pirmais īpašnieks: Jānis Bērziņš”,
+ * car.info „04.09.2023 īpašnieka maiņa: Anna Svensson”) klienta PDF nenonāk - paliek tikai loma.
+ */
+const REGISTRY_OWNER_NAME_RE =
+  /((?:^|[\s(,;])(?:(?:pirmais|otrais|trešais|ceturtais|piektais|sestais|cits|iepriekšējais|pašreizējais|esošais)\s+)?(?:īpašnieks|operators(?:\s*\(lietotājs\))?|lietotājs|turētājs)|īpašnieka\s+maiņa)\s*:\s*[^\n]*/giu;
+
+export function stripRegistryPersonNames(raw: string): string {
+  if (!raw) return "";
+  return raw
+    .split("\n")
+    .map((line) => line.replace(REGISTRY_OWNER_NAME_RE, "$1").replace(/[ \t]+$/g, ""))
+    .join("\n");
+}

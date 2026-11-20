@@ -496,7 +496,7 @@ OPERATORA KOMANDAS (obligāti):
 
 DALĪJUMS:
 - „1. Tehnisko risku analīze” / „2. Ieteikumi…” / avotu komentāri = detalizācija citur; kopsavilkumā max 1 īsa atsaukšanās, ja vajag.
-- CLIENT VALUE DENSITY: „Fakti” (+ „Rekomendācija” TIKAI ja ir ko pārbaudīt servisā) + „Inspected by IRISS”. Garāks tikai, ja operators to prasa.
+- CLIENT VALUE DENSITY: „Fakti” (+ „Rekomendācija” TIKAI ja ir ko pārbaudīt servisā). Garāks tikai, ja operators to prasa.
 
 STRUKTŪRA (obligāti):
 1) „Fakti” — VIENA rindkopa ar fiksētajiem, apspriestajiem faktiem (3-5 teikumi). Sāc ar faktu, ne ar vēstures vērtējumu. NAV dual-history ievada. NAV on-one-hand pretstatījuma.
@@ -516,7 +516,7 @@ Rekomendācija
 ${AI_HIDDEN_MAINTENANCE_MILEAGE_RULES}
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes - ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana - tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav - par plēvi NERAKSTI.
 - Neapgalvo mezgla defektu, ja tas datos nav fiksēts. Ja jāpārbauda - saki to rekomendācijā, ne kā pierādītu faktu.
-- Pēdējā rindā atsevišķā rindkopā (bez **bold**): Inspected by IRISS
+- Beigās NERAKSTI zīmolu zīmogu vai parakstu (nekad „Inspected by IRISS” - tas ir cita zīmola teksts).
 
 Atbildi tikai ar gala tekstu — bez meta-komentāriem par AI.`;
 

@@ -41,7 +41,7 @@ export {
 } from "@/lib/oneauto-block";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
-import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
+import { sanitizeVinRegistryClientText, stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
   mergeProvinBannerPdfInclude,
@@ -1916,9 +1916,10 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
   for (const k of REGISTRY_STYLE_BLOCK_KEYS) {
     const b = blocks[k];
     if (!vinRegistryBlockHasContent(b)) continue;
-    const ownersSummary = sanitizeVinRegistryClientText(b.ownersSummary ?? "");
-    const statusRecords = sanitizeVinRegistryClientText(b.statusRecords ?? "");
-    const autoNotes = sanitizeVinRegistryClientText(b.autoNotes ?? "");
+    // Personu vārdi (Traficom „Pirmais īpašnieks: …”, car.info „īpašnieka maiņa: …”) PDF nenonāk.
+    const ownersSummary = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.ownersSummary ?? ""));
+    const statusRecords = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.statusRecords ?? ""));
+    const autoNotes = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.autoNotes ?? ""));
     const timeline = (b.timeline ?? []).filter(vinRegistryTimelineRowHasData);
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
@@ -1942,7 +1943,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
             vehicleHistoryTimeline: timeline.map((r) => ({
               date: r.date,
               country: r.country,
-              description: r.event,
+              description: stripRegistryPersonNames(r.event),
               ...(wsStr(r.odometer).trim() ? { odometer: r.odometer } : {}),
               includeInPdf: true,
             })),

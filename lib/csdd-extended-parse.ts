@@ -774,9 +774,28 @@ const CSDD_COUNTRY_LABEL_RE = /Iepriekšēj[āa]s?\s+reģistrācijas\s+valsts/i;
 const CSDD_COUNTRY_VALUE_STOP_RE =
   /\s+(?=Transportlīdzekļa\s|Reģistrācija\s+Latvijā|Statuss\s|Marka\s|Degviela\s|VIN\s|Reģistrācijas\s+numurs|Nobraukuma\s|Tehnisko\s|Pēdējā\s|Īpašnieku\s)/i;
 
+/** CSDD izdrukā valsts mēdz būt ar defisi („-LATVIJA”, „VĀCIJA -”) - defise nav daļa no nosaukuma. */
+export function stripCsddCountryDashes(raw: string): string {
+  return (raw ?? "")
+    .replace(/^[\s\-–—:.,;]+/u, "")
+    .replace(/[\s\-–—:.,;]+$/u, "")
+    .trim();
+}
+
+/**
+ * „Iepriekšējās reģistrācijas valsts” klienta PDF: bez lieka defises; „Latvija” nav iepriekšēja
+ * ārvalsts (jauns auto Latvijā) - tad lauku nerāda.
+ */
+export function csddPreviousRegistrationCountryForPdf(raw: string): string {
+  const v = stripCsddCountryDashes(raw);
+  if (!v) return "";
+  if (/^(?:latvija|latvia|lv)$/i.test(v)) return "";
+  return v;
+}
+
 function cleanCsddCountryValue(raw: string): string {
   const cut = raw.split(CSDD_COUNTRY_VALUE_STOP_RE)[0] ?? raw;
-  const v = cut.replace(/\s+/g, " ").trim();
+  const v = stripCsddCountryDashes(cut.replace(/\s+/g, " "));
   if (!v || /^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas\s+numurs|Īpašnieku\s+skaits)/i.test(v)) {
     return "";
   }

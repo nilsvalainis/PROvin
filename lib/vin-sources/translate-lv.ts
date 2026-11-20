@@ -218,7 +218,13 @@ const ET_TERMS: Record<string, string> = {
   // frāzes (garākā sakritība uzvar pār atsevišķiem vārdiem, piem. „korras”)
   "tehniliselt korras": "tehniski kārtībā",
   "võõrandamisest teatamine": "paziņojums par atsavināšanu",
-  "majanduslikus mõttes hävinenud": "ekonomiski neizdevīgi remontēt (norakstīts)",
+  "majanduslikus mõttes hävinenud": "ekonomiski iznīcināts (norakstīts)",
+  "ajutine registrist kustutamine": "pagaidu izslēgšana no reģistra",
+  "registrist ajutine kustutamine": "pagaidu izslēgšana no reģistra",
+  "ajutiselt registrist kustutatud": "uz laiku izslēgts no reģistra",
+  "registrist kustutamine": "izslēgšana no reģistra",
+  "registrisse kandmine": "reģistrācija",
+  "registreerimine": "reģistrācija",
   liiklusõnnetus: "ceļu satiksmes negadījums",
   "registreerimistunnistuse vahetus": "reģistrācijas apliecības maiņa",
   "reg.tunnistuse vahetus": "reģistrācijas apliecības maiņa",
@@ -259,7 +265,7 @@ const ET_TERMS: Record<string, string> = {
 
 /** Viena termina tulkojums; nezināmu tekstu atgriež neizmainītu. */
 export function translateTermLv(value: string, lang: "da" | "et"): string {
-  const raw = (value ?? "").trim();
+  const raw = (value ?? "").normalize("NFC").trim();
   if (!raw) return "";
   const dict = lang === "da" ? DA_TERMS : ET_TERMS;
   const hit = dict[raw.toLowerCase()];
@@ -292,7 +298,8 @@ export function capitalizeFactValue(value: string): string {
  * lai operators redz latviskus jēdzienus arī tur, kur nav precīzas sakritības.
  */
 export function translateTextLv(value: string, lang: "da" | "et"): string {
-  const raw = (value ?? "").trim();
+  // Avotu teksts var būt NFD („o” + kombinējošā tilde) - vārdnīca ir NFC.
+  const raw = (value ?? "").normalize("NFC").trim();
   if (!raw) return "";
   const exact = translateTermLv(raw, lang);
   if (exact !== raw) return exact;
@@ -308,7 +315,7 @@ export function translateTextLv(value: string, lang: "da" | "et"): string {
  * Dāņu valodai papildus tulko īsos novietojuma vārdus („for”, „bag”).
  */
 export function translateTextLvChecked(value: string, lang: "da" | "et"): { text: string; complete: boolean } {
-  const raw = (value ?? "").trim();
+  const raw = (value ?? "").normalize("NFC").trim();
   if (!raw) return { text: "", complete: true };
   const { re, byKey } = textTermMatcher(lang, true);
   let rest = "";
