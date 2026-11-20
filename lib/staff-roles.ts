@@ -143,8 +143,10 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "pasutijumi",
     label: "Pasūtījumi",
-    pagePrefixes: ["/admin/iriss/pasutijumi"],
-    apiPrefixes: ["/api/admin/iriss-pasutijumi"],
+    // PD ieeja darbiniekam tikai novirza uz veco piedāvājuma formu (lapa pati to dara); offer-seed route
+    // paši prasa Pasūtījumi + avota sadaļu (ap_pamatdati / logistika) un slēpj summas (audits P1 20.11).
+    pagePrefixes: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi/jauns"],
+    apiPrefixes: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed"],
   },
   {
     id: "sludinajumi",

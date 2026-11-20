@@ -147,6 +147,166 @@ export function filterDetailPhotos(platform, candidates) {
   return out;
 }
 
+/** Kanoniskā bojājumu tabulas galva (PROVIN `parseIrissPdDamageTable` to atpazīst). */
+export const DAMAGE_TABLE_HEAD = ["Area", "Damage", "Severity", "Description", "Quantity", "Parts affected"];
+const DMG_COLS = [
+  /^(area|zone|location|position|bereich|zona|vieta)$/i,
+  /^(damage|damage type|type|schaden|schadensart|schadenart|art|bojājums|bojājuma veids)$/i,
+  /^(severity|size|dimension|schwere|größe|grösse|schweregrad|nopietnība|izmērs)$/i,
+  /^(description|details?|beschreibung|apraksts)$/i,
+  /^(quantity|qty|count|amount|anzahl|menge|daudzums|skaits)$/i,
+  /^(parts affected|affected parts|parts?|component|betroffene teile|bauteile?|ietekmētās daļas|detaļas)$/i,
+];
+const DMG_AREA_RE = /^(exterior|interior|technical|other|außen|aussen|innen|technik|sonstiges|ārpuse|salons|tehniskie)(\s+(damages?|schäden|bojājumi))?$/i;
+const DMG_UI_RE = /^(show (more|less|all|photos?|images?|original)|hide|mehr anzeigen|weniger anzeigen|rādīt (vairāk|mazāk)|some content has been automatically translated\.?|\+|-|i)\s*[+-]?$/i;
+const DMG_NONE_RE = /^(no damages?( (found|reported))?|keine schäden|bojājumu nav)\.?$/i;
+const DMG_QTY_RE = /^(\d{1,3})\s*[x×]?$/i;
+const DMG_PARTS_RE = /\(\s*\d{1,3}\s*\)\s*$/;
+const DMG_SEV_RE = /[≥≤<>]|\d\s*(mm|cm|µm|μm|um)\b|^(minor|moderate|major|severe|light|heavy|small|medium|large|leicht|mittel|schwer|gering|stark)\b|\b(thickness|width|length|diameter|depth|size|breite|länge|tiefe|durchmesser)\b/i;
+
+const dmgCol = (t) => DMG_COLS.findIndex((re) => re.test(clean(t)));
+
+/** Šūnas (teksts + koordinātas) -> rindas pēc galvas kolonnu x un rindu y. null, ja galvas nav. */
+function damageRowsFromCells(cells) {
+  const list = (cells ?? []).filter((c) => c && typeof c.t === "string" && clean(c.t) && Number.isFinite(c.x) && Number.isFinite(c.y));
+  // Galva: vienā y līnijā ≥3 atpazīti kolonnu nosaukumi, starp tiem Damage vai Quantity.
+  let head = null;
+  for (const c of list) {
+    const col = dmgCol(c.t);
+    if (col < 0) continue;
+    const same = list.filter((o) => Math.abs(o.y - c.y) <= 6 && dmgCol(o.t) >= 0);
+    const cols = new Map();
+    for (const o of same) if (!cols.has(dmgCol(o.t))) cols.set(dmgCol(o.t), o.x);
+    if (cols.size >= 3 && (cols.has(1) || cols.has(4)) && (!head || cols.size > head.cols.size)) head = { y: c.y, cols };
+  }
+  if (!head) return null;
+  const xs = [...head.cols.entries()].sort((a, b) => a[1] - b[1]);
+  const colOf = (c) => {
+    const cx = c.x + (Number(c.w) || 0) / 2;
+    let col = xs[0][0];
+    for (const [k, x] of xs) if (cx >= x - 8) col = k;
+    return col;
+  };
+  const body = list
+    .filter((c) => c.y > head.y + 4 && !DMG_UI_RE.test(clean(c.t)) && dmgCol(c.t) < 0)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const lines = [];
+  for (const c of body) {
+    const last = lines[lines.length - 1];
+    if (last && Math.abs(c.y - last.y) <= 6) last.cells.push(c);
+    else lines.push({ y: c.y, cells: [c] });
+  }
+  const keyCols = [2, 3, 4].filter((k) => head.cols.has(k));
+  const rows = [];
+  let pending = ["", ""];
+  // Vertikāli centrēta apvienotā šūna nonāk grupas vidū - iepriekšējās tukšās rindas pieder tai pašai grupai.
+  const backfill = (has) => {
+    for (const k of [0, 1]) {
+      if (!has(k)) continue;
+      for (let i = rows.length - 1; i >= 0 && !rows[i][k]; i -= 1) rows[i][k] = pending[k];
+    }
+  };
+  for (const line of lines) {
+    const byCol = new Map();
+    for (const c of line.cells) {
+      // Bez Area kolonnas «Exterior» / «Interior» ir grupas virsraksts.
+      if (!head.cols.has(0) && DMG_AREA_RE.test(clean(c.t))) {
+        pending = [clean(c.t), ""];
+        continue;
+      }
+      const k = colOf(c);
+      byCol.set(k, [...(byCol.get(k) ?? []), clean(c.t)]);
+    }
+    if (byCol.size === 0) continue;
+    const has = (k) => byCol.has(k);
+    const val = (k) => (byCol.get(k) ?? []).join(", ");
+    if ([...byCol.keys()].every((k) => k <= 1)) {
+      // Tikai zona / bojājuma veids (apvienota šūna savā rindā) - attiecas uz nākamajām rindām.
+      pending = [has(0) ? val(0) : pending[0], has(1) ? val(1) : has(0) ? "" : pending[1]];
+      backfill(has);
+      continue;
+    }
+    const cur = rows[rows.length - 1];
+    if (cur && !keyCols.some(has) && !has(0) && !has(1)) {
+      // Daļu saraksts pāri vairākām līnijām - turpinājums.
+      for (const [k, v] of byCol) cur[k] = cur[k] ? `${cur[k]}, ${v.join(", ")}` : v.join(", ");
+      continue;
+    }
+    if (has(0)) pending = [val(0), ""];
+    if (has(1)) pending[1] = val(1);
+    backfill(has);
+    rows.push([pending[0], pending[1], val(2), val(3), val(4), val(5)]);
+  }
+  return rows;
+}
+
+/** Teksta rindas (innerText) -> rindas pēc satura veida, ja koordinātu nav. */
+function damageRowsFromLines(lines) {
+  const ls = (lines ?? []).map(clean).filter((l) => l && !DMG_UI_RE.test(l));
+  // Galva: pēc kārtas ≥3 kolonnu nosaukumi; citādi saturs sākas uzreiz.
+  let start = 0;
+  for (let i = 0; i < ls.length; i += 1) {
+    let n = 0;
+    while (i + n < ls.length && dmgCol(ls[i + n]) >= 0) n += 1;
+    if (n >= 3) {
+      start = i + n;
+      break;
+    }
+  }
+  const rows = [];
+  let row = null;
+  let next = 0;
+  let area = "";
+  let damage = "";
+  for (const l of ls.slice(start)) {
+    if (DMG_NONE_RE.test(l)) continue;
+    let k;
+    if (DMG_AREA_RE.test(l)) k = 0;
+    else if (DMG_QTY_RE.test(l)) k = 4;
+    else if (DMG_PARTS_RE.test(l)) k = 5;
+    else if (DMG_SEV_RE.test(l)) k = 2;
+    else k = next <= 1 || next > 5 ? 1 : 3;
+    if (k === 0) {
+      area = l;
+      damage = "";
+      row = null;
+      next = 1;
+      continue;
+    }
+    if (k === 1) {
+      damage = l;
+      row = null;
+      next = 2;
+      continue;
+    }
+    const partsMore = k === 5 && row && row[5];
+    if (!partsMore && (!row || k < next)) {
+      row = [area, damage, "", "", "", ""];
+      rows.push(row);
+    }
+    row[k] = k === 4 ? l.match(DMG_QTY_RE)[1] : row[k] ? `${row[k]}, ${l}` : l;
+    next = k + 1;
+  }
+  return rows.filter((r) => r[2] || r[3] || r[4] || r[5]);
+}
+
+/**
+ * Nils 20.11: Auto1 «DAMAGE SUMMARY» div režģis -> tabula ar kanonisku galvu (DAMAGE_TABLE_HEAD), vai null.
+ * Vispirms pēc koordinātām (kolonnas zem galvas), tad pēc teksta rindām.
+ */
+export function damageSectionTable(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  let rows = damageRowsFromCells(raw.cells);
+  if (!rows || rows.length === 0) rows = damageRowsFromLines(raw.lines);
+  rows = rows.filter((r) => r.slice(1).some(Boolean)).slice(0, 80);
+  return rows.length ? [DAMAGE_TABLE_HEAD, ...rows] : null;
+}
+
+const isDamageTable = (t) => {
+  const head = (t?.[0] ?? []).map((c) => clean(c).toLowerCase());
+  return head.some((h) => /^(damage|schaden|bojājums)$/.test(h)) && head.some((h) => /^(area|zone|bereich|quantity|anzahl)$/.test(h));
+};
+
 /** Vairāku ciļņu DOM izvilkumi -> viens (lauki bez dublikātiem, foto pirmās parādīšanās secībā). */
 export function mergeDetailExtracts(extracts) {
   const fields = [];
@@ -159,6 +319,7 @@ export function mergeDetailExtracts(extracts) {
   let title = "";
   let text = "";
   let paint = [];
+  let damageTable = null;
   for (const e of extracts) {
     if (!e) continue;
     if (!title && e.title) title = clean(e.title);
@@ -192,9 +353,16 @@ export function mergeDetailExtracts(extracts) {
       listSeen.add(k);
       lists.push(l);
     }
+    for (const raw of e.damageRaw ?? []) {
+      const t = damageSectionTable(raw);
+      if (t && (!damageTable || t.length > damageTable.length)) damageTable = t;
+    }
     photos.push(...(e.photos ?? []));
     if (e.text && e.text.length > text.length) text = e.text;
   }
+  // Sadaļas tabula pirmā (lietotne ņem pirmo bojājumu tabulu), ja lapā nav īstas <table> / ARIA bojājumu tabulas.
+  if (damageTable && !tables.some(isDamageTable)) tables.unshift(damageTable);
+  if (tables.length > 12) tables.length = 12;
   return { title, fields, tables, lists, photos, paint, text: text.slice(0, 40_000) };
 }
 
@@ -336,6 +504,60 @@ export function extractDetailDom() {
     const p = paintOf(root);
     if (p.length > paint.length) paint = p;
   });
+  // Nils 20.11: Auto1 «DAMAGE SUMMARY» nav <table> un nav ARIA (div režģis) - savāc sadaļas šūnas ar koordinātām
+  // un teksta rindas; tabulu no tām uzbūvē Node pusē (damageSectionTable), lai loģiku var testēt.
+  const DMG_HEAD = /^(damage summary|summary of damages|schadens?übersicht|schadenszusammenfassung|bojājumu kopsavilkums|résumé des dommages|riepilogo (dei )?danni|resumen de daños|schadeoverzicht)$/i;
+  const damageRaw = [];
+  const isHeadingEl = (el) => /^H[1-6]$/.test(el.tagName) || el.getAttribute("role") === "heading";
+  [...document.querySelectorAll("h1, h2, h3, h4, h5, h6, [role=heading], div, span, p, strong, b, header, summary, button")]
+    .filter((el) => (el.textContent || "").length <= 60 && DMG_HEAD.test(txt(el)) && ![...el.children].some((c) => DMG_HEAD.test(txt(c))))
+    .map((el) => {
+      // Virsraksta ārējais elements (span klases nav; .Title klase ir uz ietvara) - salīdzināšanai ar nākamo sadaļu.
+      let h = el;
+      while (h.parentElement && clean(h.parentElement.textContent) === clean(el.textContent)) h = h.parentElement;
+      return h;
+    })
+    .filter((h, i, arr) => arr.indexOf(h) === i)
+    .slice(0, 4)
+    .forEach((h) => {
+      // Paslēptā (telefona / datora) kopija: innerText = textContent vienā rindā, kastīte uzkāptu līdz <body>.
+      const hr = h.getBoundingClientRect();
+      if (!hr.width || !hr.height) return;
+      let box = h.parentElement;
+      for (let d = 0; d < 6 && box && box !== document.body; d += 1) {
+        if (String(box.innerText || "").split("\n").map(clean).filter(Boolean).length >= 4) break;
+        box = box.parentElement;
+      }
+      if (!box || box === document.body || box === document.documentElement) return;
+      const br = box.getBoundingClientRect();
+      if (!br.width || !br.height) return;
+      const hClass = h.getAttribute("class") || "";
+      const peer = (el) =>
+        el !== h && el.tagName === h.tagName && (isHeadingEl(h) || hClass) && (el.getAttribute("class") || "") === hClass && (el.textContent || "").trim().length > 0;
+      const cells = [];
+      let after = false;
+      for (const el of box.querySelectorAll("*")) {
+        if (el === h) {
+          after = true;
+          continue;
+        }
+        if (!after || h.contains(el)) continue;
+        if (peer(el)) break;
+        if ([...el.children].some((c) => (c.textContent || "").trim())) continue;
+        const t = txt(el);
+        if (!t || t.length > 200) continue;
+        let outer = el;
+        while (outer.parentElement && outer.parentElement !== box && clean(outer.parentElement.textContent) === clean(el.textContent)) outer = outer.parentElement;
+        const r = outer.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        cells.push({ t, x: Math.round(r.left), y: Math.round(r.top + window.scrollY), w: Math.round(r.width), h: Math.round(r.height) });
+        if (cells.length >= 500) break;
+      }
+      const all = String(box.innerText || "").split("\n").map(clean).filter(Boolean);
+      const hi = all.findIndex((l) => DMG_HEAD.test(l));
+      const lines = all.slice(hi + 1, hi + 401).filter((l) => l.length <= 200);
+      if (cells.length || lines.length) damageRaw.push({ cells, lines });
+    });
   const h1 = document.querySelector("h1");
   return {
     title: txt(h1) || clean(document.title),
@@ -343,6 +565,7 @@ export function extractDetailDom() {
     fields: fields.slice(0, 600),
     tables: tables.slice(0, 12),
     lists: lists.slice(0, 24),
+    damageRaw: damageRaw.slice(0, 3),
     photos,
     text: clean(document.body ? document.body.innerText : "").slice(0, 40000),
   };

@@ -28,8 +28,12 @@ import { PdEquipmentSummaryEditor } from "@/components/admin/iriss-piedavajumi/P
 import type { IrissPdEquipmentSummary } from "@/lib/iriss-pd-equipment-summary";
 import { irissPdOpenQuestionCount } from "@/lib/iriss-piedavajumi-messages";
 import {
+  buildIrissPdClientMessage,
   canRebaseIrissPd,
+  IRISS_PD_MARK_SENT_LV,
   irissPdDeleteConfirm,
+  irissPdMailtoHref,
+  irissPdWhatsAppHref,
   formatIrissPdPrice,
   irissPdAvailableActions,
   irissPdEurDigits,
@@ -448,11 +452,14 @@ export function PiedavajumsDetail({
     savedTime: formatIrissSavedTime(rec.updatedAt),
   });
 
-  async function act(action: IrissPdAction | "create-order" | "fill-from-stock") {
-    if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return;
-    if (action === "approve" && !window.confirm("Atzīmēt kā apstiprinātu? Tiks izveidots/rezervēts Pasūtījums.")) return;
-    if (action === "reopen" && !window.confirm("Atjaunot piedāvājumu? Klients saitē atkal varēs apstiprināt vai noraidīt.")) return;
-    if (dirty && !(await save())) return;
+  async function act(
+    action: IrissPdAction | "create-order" | "fill-from-stock",
+    opts: { quiet?: boolean } = {},
+  ): Promise<IrissPiedavajums | null> {
+    if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return null;
+    if (action === "approve" && !window.confirm("Atzīmēt kā apstiprinātu? Tiks izveidots/rezervēts Pasūtījums.")) return null;
+    if (action === "reopen" && !window.confirm("Atjaunot piedāvājumu? Klients saitē atkal varēs apstiprināt vai noraidīt.")) return null;
+    if (dirty && !(await save())) return null;
     setBusy(action);
     setErr("");
     try {
@@ -465,16 +472,47 @@ export function PiedavajumsDetail({
       const data = (await res.json()) as { ok?: boolean; record?: IrissPiedavajums; message?: string };
       if (!data.ok || !data.record) throw new Error(data.message || "Neizdevās.");
       applyRecord(data.record);
-      if (action === "send" && data.record.linkToken) {
+      if (action === "send" && data.record.linkToken && !opts.quiet) {
         const ok = await copyText(irissPdAbsoluteLink(data.record.linkToken));
         setInfo(ok ? "Nosūtīts - klienta saite nokopēta. Ielīmē to e-pastā vai WhatsApp." : "Nosūtīts - klienta saite gatava (Kopēt saiti).");
       }
       router.refresh();
+      return data.record;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Neizdevās.");
+      return null;
     } finally {
       setBusy("");
     }
+  }
+
+  /** Saite jau ir klientam (nosūtīts / apstiprināts / klienta noraidīts) - melnrakstu var atvērt atkārtoti. */
+  const sentLinkToken =
+    rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? rec.linkToken : "";
+
+  /**
+   * Nils 20.11 (audits P1, A): WhatsApp / e-pasts tikai atver melnrakstu ar gatavu tekstu un saiti - sūta cilvēks.
+   * Melnrakstam statuss kļūst «Nosūtīts» tāpat kā ar «Atzīmēt nosūtītu».
+   */
+  async function openClientDraft(channel: "whatsapp" | "email") {
+    // iPhone Safari bloķē logu, ko atver pēc await - tukšo cilni atver uzreiz klikšķī.
+    const win = channel === "whatsapp" ? window.open("", "_blank") : null;
+    if (win) win.opener = null;
+    let token = sentLinkToken;
+    if (!token) token = (await act("send", { quiet: true }))?.linkToken ?? "";
+    if (!token) {
+      win?.close();
+      return;
+    }
+    const msg = buildIrissPdClientMessage(d, irissPdAbsoluteLink(token));
+    const href = channel === "whatsapp" ? irissPdWhatsAppHref(d.client.phone, msg) : irissPdMailtoHref(d.client.email, msg);
+    if (win) win.location.href = href;
+    else window.location.href = href;
+    setInfo(
+      channel === "whatsapp"
+        ? "WhatsApp melnraksts atvērts - pārbaudi tekstu un nosūti pats."
+        : "E-pasta melnraksts atvērts - pārbaudi tekstu un nosūti pats.",
+    );
   }
 
   async function copyLink() {
@@ -556,14 +594,38 @@ export function PiedavajumsDetail({
             >
               Priekšskatījums
             </button>
-            {rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? (
+            {sentLinkToken ? (
               <button type="button" className="pd-btn" onClick={() => void copyLink()}>
                 Kopēt saiti
               </button>
             ) : actions.includes("send") ? (
               <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ")} onClick={() => void act("send")}>
-                Nosūtīt un kopēt saiti
+                {IRISS_PD_MARK_SENT_LV}
               </button>
+            ) : null}
+            {sentLinkToken || actions.includes("send") ? (
+              <>
+                <button
+                  type="button"
+                  className="pd-btn"
+                  data-pd-draft="whatsapp"
+                  disabled={busy !== "" || (!sentLinkToken && blockers.length > 0)}
+                  title={sentLinkToken ? "Atver WhatsApp ar gatavu tekstu un saiti" : blockers.join(" ") || "Atver WhatsApp ar gatavu tekstu un saiti"}
+                  onClick={() => void openClientDraft("whatsapp")}
+                >
+                  WhatsApp
+                </button>
+                <button
+                  type="button"
+                  className="pd-btn"
+                  data-pd-draft="email"
+                  disabled={busy !== "" || (!sentLinkToken && blockers.length > 0)}
+                  title={sentLinkToken ? "Atver e-pastu ar gatavu tekstu un saiti" : blockers.join(" ") || "Atver e-pastu ar gatavu tekstu un saiti"}
+                  onClick={() => void openClientDraft("email")}
+                >
+                  E-pasts
+                </button>
+              </>
             ) : null}
             <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
               {busy === "delete" ? "Dzēš..." : "Dzēst"}

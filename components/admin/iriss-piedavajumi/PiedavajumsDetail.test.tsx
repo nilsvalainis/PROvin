@@ -80,10 +80,23 @@ describe("j75 Piedāvājuma redaktors (makets 01-redaktors)", () => {
     expect(html.match(/role="switch"/g)?.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("melnrakstā saites vēl nav - galvenē «Nosūtīt un kopēt saiti»", () => {
+  it("melnrakstā saites vēl nav - galvenē «Atzīmēt nosūtītu un kopēt saiti», WhatsApp, E-pasts", () => {
     const text = renderText(render(rec({ status: "draft", linkToken: "" })));
-    expect(text).toContain("Nosūtīt un kopēt saiti");
+    expect(text).toContain("Atzīmēt nosūtītu un kopēt saiti WhatsApp E-pasts Dzēst");
+    expect(text).not.toContain("Nosūtīt un kopēt saiti");
     expect(text).not.toContain("Kopēt saiti Dzēst");
+  });
+
+  it("nosūtītam - «Kopēt saiti», WhatsApp un E-pasts (melnrakstu var atvērt atkārtoti)", () => {
+    const html = renderHtml(render(rec()));
+    expect(renderText(render(rec()))).toContain("Kopēt saiti WhatsApp E-pasts Dzēst");
+    expect(html).toContain('data-pd-draft="whatsapp"');
+    expect(html).toContain('data-pd-draft="email"');
+  });
+
+  it("apstiprinātam bez saites un beigušamies - melnraksta pogu nav", () => {
+    const html = renderHtml(render(rec({ status: "expired" })));
+    expect(html).not.toContain("data-pd-draft");
   });
 
   it("apstiprinātā lauki nav labojami (izņemot iekšējās piezīmes)", () => {

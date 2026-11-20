@@ -260,3 +260,24 @@ describe("Aprīkojuma tabula (Nils 20.11)", () => {
     expect(b?.service).toEqual([]);
   });
 });
+
+describe("releja DAMAGE SUMMARY tabula no div režģa (TF43858, 20.11)", () => {
+  it("kanoniskā galva ar pilnām rindām -> bojājumu bloks un skaits", () => {
+    const tables = [
+      [
+        ["Area", "Damage", "Severity", "Description", "Quantity", "Parts affected"],
+        ["Exterior", "Dent", "Width: ≥20mm & <50mm", "Paint damage", "2", "Rear left fender (2)"],
+        ["Exterior", "Repaint", "Thickness: ≥250µm & <500µm", "", "1", "Hood (1)"],
+        ["Interior", "Dirty", "", "Stains", "2", "Driver seat (1), Rear seat (1)"],
+      ],
+    ];
+    const b = irissPdAuto1BlocksFromDetail({ ...DETAIL, tables });
+    expect(b.damage.map((r) => [r.area, r.damage, r.quantity])).toEqual([
+      ["exterior", "Dent", "2"],
+      ["exterior", "Repaint", "1"],
+      ["interior", "Dirty", "2"],
+    ]);
+    expect(irissPdAuto1BlockCount(b, "damage")).toBe(3);
+    expect(irissPdDamageTable(b.damage).map((g) => g.area)).toEqual(["exterior", "interior"]);
+  });
+});

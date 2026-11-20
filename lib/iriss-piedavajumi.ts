@@ -52,6 +52,11 @@ import { irissPdOpenQuestionCount, irissPdPublicQuestions, normalizeIrissPdMessa
 import { formatIrissEurWhole, parsePriceLike } from "@/lib/iriss-price-format";
 import { irissPdListPrice } from "@/lib/iriss-piedavajumi-list-display";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil, rigaLocalToUtcIso } from "@/lib/iriss-offer-valid-until";
+import {
+  buildIrissOfferClientLinkMailto,
+  buildIrissOfferClientLinkWhatsAppUrl,
+  IRISS_OFFER_PUBLIC_BRAND,
+} from "@/lib/iriss-offer-client-link";
 
 export const IRISS_PD_SYSTEM_ACTOR = "Sistēma";
 export const IRISS_PD_CLIENT_ACTOR = "Klients (piedāvājuma saite)";
@@ -414,6 +419,45 @@ export const IRISS_PD_ACTION_LV: Record<IrissPdAction, string> = {
   approve: "Atzīmēt apstiprinātu",
   reopen: "Atjaunot (klientam atkal pieejams)",
 };
+
+/** Galvenes poga, kas tikai atzīmē nosūtītu (sūta cilvēks pats - WhatsApp / e-pasts ir tikai melnraksti). */
+export const IRISS_PD_MARK_SENT_LV = "Atzīmēt nosūtītu un kopēt saiti";
+
+/**
+ * Nils 20.11 (audits P1, A): PD «Nosūtīt» = melnraksts. Teksts klientam WhatsApp / e-pastam ar saiti.
+ * Zīmols kā publiskajā saitē (`/p/d/...` - «Dzintarzeme Auto»); PROVIN nekur neparādās.
+ */
+export function buildIrissPdClientMessage(
+  rec: Pick<IrissPiedavajums, "vehicle" | "validUntil">,
+  url: string,
+  brand: string = IRISS_OFFER_PUBLIC_BRAND,
+): { subject: string; text: string } {
+  const vehicle = rec.vehicle.title.replace(/\s+/g, " ").trim().slice(0, 160);
+  const until = rec.validUntil ? formatOfferValidUntilLv(rec.validUntil) : "";
+  const subject = vehicle ? `${brand} piedāvājums - ${vehicle}` : `${brand} piedāvājums`;
+  const text = [
+    "Labdien!",
+    "",
+    vehicle ? `Nosūtām Jums piedāvājumu: ${vehicle}.` : "Nosūtām Jums piedāvājumu.",
+    "Bildes, aprakstu un cenu varat apskatīt šajā saitē - tur arī varat apstiprināt piedāvājumu vai uzdot jautājumu:",
+    url,
+    ...(until ? ["", `Piedāvājums spēkā līdz ${until}.`] : []),
+    "",
+    "Ar cieņu,",
+    brand,
+  ].join("\n");
+  return { subject, text };
+}
+
+/** wa.me ar gatavu tekstu (bez numura - WhatsApp ļauj izvēlēties kontaktu). Tikai atver, nesūta. */
+export function irissPdWhatsAppHref(phone: string, message: { text: string }): string {
+  return buildIrissOfferClientLinkWhatsAppUrl(phone, message.text);
+}
+
+/** mailto ar tematu un tekstu. Tikai atver e-pasta programmu, nesūta. */
+export function irissPdMailtoHref(email: string, message: { subject: string; text: string }): string {
+  return buildIrissOfferClientLinkMailto(email, message);
+}
 
 export function irissPdAvailableActions(status: IrissPdStatus): IrissPdAction[] {
   if (status === "requested" || status === "draft") return ["send", "decline", "approve"];
