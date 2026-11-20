@@ -220,6 +220,11 @@ export function maskEurAmountsInText(text: string): string {
 export function maskOrderSums<T extends { priceEur: number | null }>(order: T, hideSums: boolean): T {
   if (!hideSums) return order;
   const out: Record<string, unknown> = { ...order, priceEur: null };
+  // Sludinājuma parsētā cena (listingParsed.priceEur) - tā pati auto cena.
+  const parsed = out.listingParsed;
+  if (parsed && typeof parsed === "object" && "priceEur" in parsed) {
+    out.listingParsed = { ...(parsed as Record<string, unknown>), priceEur: null };
+  }
   for (const f of LOGISTICS_SUM_TEXT_FIELDS) {
     const v = out[f];
     if (typeof v === "string") out[f] = maskEurAmountsInText(v);

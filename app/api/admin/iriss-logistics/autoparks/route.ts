@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { autoparksListRows, filterAutoparksByOwner } from "@/lib/iriss-autoparks";
-import { autoparksActor, autoparksHidesSums, autoparksRowsForActor } from "@/lib/iriss-autoparks-access";
+import { autoparksActor, autoparksHidesSums, autoparksRowsForActor, stripCar } from "@/lib/iriss-autoparks-access";
+import { maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
 import { createAutoparksCar, ensureAutoparksCarFromOrder, markAutoparksCarArrived, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
   const actor = autoparksActor(gate.actor);
+  const hide = autoparksHidesSums(gate.actor);
   const fromOrderId = typeof body.fromOrderId === "string" ? body.fromOrderId.trim() : "";
   if (fromOrderId) {
     const order = await getLogisticsOrder(fromOrderId);
@@ -47,13 +49,16 @@ export async function POST(req: Request) {
     const archived = await setLogisticsOrderArchiveState(order.id, "delivered");
     // Jaunam auto /STOCK mape (atrod pēc VIN vai izveido) pēc atbildes - auto izveide no Dropbox neatkarīga.
     if (created) after(() => linkAutoparksCarToDropbox(car.id));
-    return NextResponse.json({ ok: true, car, created, order: archived ?? order }, { headers: irissLogisticsScopeHeader() });
+    return NextResponse.json(
+      { ok: true, car: hide ? stripCar(car) : car, created, order: maskOrderSums(archived ?? order, hide) },
+      { headers: irissLogisticsScopeHeader() },
+    );
   }
-  const input = parseAutoparksCarInput(body, autoparksHidesSums(gate.actor));
+  const input = parseAutoparksCarInput(body, hide);
   if (!input.make && !input.model && !input.vin) {
     return NextResponse.json({ error: "missing_car" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
   const car = await createAutoparksCar(input, actor);
   after(() => linkAutoparksCarToDropbox(car.id));
-  return NextResponse.json({ ok: true, car, created: true }, { headers: irissLogisticsScopeHeader() });
+  return NextResponse.json({ ok: true, car: hide ? stripCar(car) : car, created: true }, { headers: irissLogisticsScopeHeader() });
 }
