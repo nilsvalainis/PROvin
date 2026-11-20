@@ -5273,3 +5273,12 @@
   letter-spacing: 8px;
   margin-right: -8px;
 }
+/* «Dati lapai» (Nils 20.11): katrai rindai Rādīt/Slēpt; paslēptā - pelēka. */
+.ap2.ap2.ap2 .ap2-cl-rowv {
+  grid-template-columns: 8px 1fr auto auto;
+}
+.ap2.ap2.ap2 .ap2-cl-rowv.off .k,
+.ap2.ap2.ap2 .ap2-cl-rowv.off .v {
+  opacity: 0.45;
+  text-decoration: line-through;
+}

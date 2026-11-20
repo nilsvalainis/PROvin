@@ -43,7 +43,7 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
     };
   }, [api]);
 
-  async function save(body: Record<string, string | boolean | null>) {
+  async function save(body: Record<string, string | boolean | null | Record<string, boolean>>) {
     setEdit(null);
     setError("");
     setRetry(null);
@@ -179,11 +179,20 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
         <div className="ap2-card">
           <h3>Dati lapai</h3>
           <p className="ap2-cl-vat">No Pamatdatiem un CSDD reģistra. Labo Pamatdatos; tukšās rindas lapā nerāda.</p>
-          {s.rows.map((r) => (
-            <div key={r.label} className="ap2-f">
-              <i className="ap2-cd" />
+          {s.allRows.map((r) => (
+            <div key={r.key} className={`ap2-f ap2-cl-rowv ${r.shown ? "" : "off"}`}>
+              <i className={r.csdd ? "ap2-cd on" : "ap2-cd"} />
               <span className="k">{r.label}</span>
               <span className="v mut">{r.value}</span>
+              <button
+                type="button"
+                className="iriss-btn iriss-btn--secondary iriss-btn--sm"
+                aria-pressed={r.shown}
+                aria-label={`${r.shown ? "Slēpt" : "Rādīt"} lapā: ${r.label}`}
+                onClick={() => void save({ rowVisibility: { [r.key]: !r.shown } })}
+              >
+                {r.shown ? "Slēpt" : "Rādīt"}
+              </button>
             </div>
           ))}
         </div>

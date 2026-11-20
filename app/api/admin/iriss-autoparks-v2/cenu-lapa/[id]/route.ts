@@ -19,7 +19,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   return autoparksV2Json({ ok: true, cenuLapa: autoparksV2PriceSheet(found.car, found.v2, autoparksV2Basics(found.car, found.v2)) });
 }
 
-/** `{ displayName?, equipmentLine?, salePriceEur?, listPriceEur?, safety?, sheetState?, showPlannedPrice? }` -> v2 (v1 netiek pārrakstīts). */
+/** `{ displayName?, equipmentLine?, salePriceEur?, listPriceEur?, safety?, sheetState?, showPlannedPrice?, rowVisibility? }` -> v2 (v1 netiek pārrakstīts). */
 export async function PATCH(req: Request, ctx: Ctx) {
   const gate = await requireAutoparksV2Api("cenu_lapa");
   if (!gate.ok) return gate.response;
@@ -66,6 +66,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
           hist.push({ field: "priceSheet.sheetState", from: c.priceSheet.sheetState ?? null, to: v });
           c.priceSheet.sheetState = v;
         }
+      }
+      if (body.rowVisibility && typeof body.rowVisibility === "object" && !Array.isArray(body.rowVisibility)) {
+        // «Dati lapai» rindu rādīt/slēpt (Nils 20.11): sapludina ar esošo.
+        const next = { ...(c.priceSheet.rowVisibility ?? {}) };
+        for (const [k, v] of Object.entries(body.rowVisibility as Record<string, unknown>)) {
+          if (/^[a-zA-Z0-9]{1,40}$/.test(k) && typeof v === "boolean") next[k] = v;
+        }
+        hist.push({ field: "priceSheet.rowVisibility", from: c.priceSheet.rowVisibility ?? {}, to: next });
+        c.priceSheet.rowVisibility = next;
       }
       if (typeof body.showPlannedPrice === "boolean") {
         hist.push({ field: "priceSheet.showPlannedPrice", from: c.priceSheet.showPlannedPrice ?? null, to: body.showPlannedPrice });

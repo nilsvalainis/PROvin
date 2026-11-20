@@ -278,3 +278,44 @@ describe("Cenu lapa - drošības tabula (Nils 28.10)", () => {
     expect(renderText(<A4Sheet s={s} />)).not.toContain("tehniski atbilst");
   });
 });
+
+describe("Cenu lapa - tirdzniecībā pieņemts un «Dati lapai» (Nils 20.11)", () => {
+  const car = normalizeAutoparksCar({
+    id: "p",
+    make: "Skoda",
+    model: "Octavia",
+    vin: "TMBJJ7NE5ML998877",
+    plate: "AB1234",
+    color: "Pelēka",
+    status: "for_sale",
+    listPriceEur: 11990,
+    registry: { status: "Pieņemts", tradeActDate: "2026-11-18", odometerKm: 154000, importedAt: "x" },
+  })!;
+  const sheet = (v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+
+  it("akta datums bez akta nr. -> lapā «Tirdzniecībā pieņemts: 18.11.2026», parastā lapa", () => {
+    const s = sheet();
+    expect(s.state).toBe("normal");
+    expect(s.rows).toContainEqual({ label: "Tirdzniecībā pieņemts", value: "18.11.2026" });
+    expect(s.rows.map((r) => r.label)).not.toContain("Akta numurs");
+    expect(s.rows).toContainEqual({ label: "Odometra rādījums", value: "154 000 km" });
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("Tirdzniecībā pieņemts");
+    expect(text).toContain("18.11.2026");
+    expect(text).not.toContain("DRĪZUMĀ");
+  });
+
+  it("jaunās rindas pieejamas redaktorā (paslēptas), var parādīt un paslēpt", () => {
+    const s = sheet();
+    const plate = s.allRows.find((r) => r.key === "plate")!;
+    expect(plate).toMatchObject({ value: "AB1234", shown: false });
+    expect(s.allRows.find((r) => r.key === "color")?.shown).toBe(false);
+    expect(s.rows.map((r) => r.label)).not.toContain("Reģistrācijas numurs");
+    const v2 = emptyCarV2();
+    v2.priceSheet.rowVisibility = { plate: true, tradeAccepted: false };
+    const s2 = sheet(v2);
+    expect(s2.rows).toContainEqual({ label: "Reģistrācijas numurs", value: "AB1234" });
+    expect(s2.rows.map((r) => r.label)).not.toContain("Tirdzniecībā pieņemts");
+    expect(normalizeCarV2({ priceSheet: { rowVisibility: { plate: true, "x y": true, vin: "1" } } }).priceSheet.rowVisibility).toEqual({ plate: true });
+  });
+});

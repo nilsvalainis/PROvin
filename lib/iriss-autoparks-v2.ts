@@ -194,6 +194,8 @@ export type AutoparksCarV2 = {
     sheetState?: V2PriceSheetState | null;
     /** «Drīzumā»/«Rezervēts» lapā rādīt cenu (noklusējums - jā; false = variants D bez cenas). */
     showPlannedPrice?: boolean | null;
+    /** «Dati lapai» rindu redzamība (Nils 20.11): atslēga -> rādīt/slēpt; nav atslēgas = noklusējums. */
+    rowVisibility?: Record<string, boolean>;
   };
 };
 
@@ -218,6 +220,16 @@ export type V2PriceSheetSafety = {
 export function defaultV2PriceSheetSafety(): V2PriceSheetSafety {
   const it = { present: true, checked: false };
   return { items: { esp: { ...it }, eps: { ...it }, abs: { ...it }, airbags: { ...it } }, roadworthy: false };
+}
+
+function normalizeRowVisibility(raw: unknown): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  if (!isObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw)) {
+    if (/^[a-zA-Z0-9]{1,40}$/.test(k) && typeof v === "boolean") out[k] = v;
+    if (Object.keys(out).length >= 60) break;
+  }
+  return out;
 }
 
 export function normalizeV2PriceSheetSafety(raw: unknown): V2PriceSheetSafety | null {
@@ -459,6 +471,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       safety: normalizeV2PriceSheetSafety(ps.safety),
       sheetState: isV2PriceSheetState(ps.sheetState) ? ps.sheetState : null,
       showPlannedPrice: typeof ps.showPlannedPrice === "boolean" ? ps.showPlannedPrice : null,
+      rowVisibility: normalizeRowVisibility(ps.rowVisibility),
     },
   };
 }
