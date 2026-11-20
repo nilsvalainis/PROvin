@@ -1,10 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { IrissWaybillAutoEntry, IrissWaybillCarPicker } from "@/components/admin/IrissWaybillMobileForm";
+import {
+  IrissWaybillAutoEntry,
+  IrissWaybillCarPicker,
+  IrissWaybillCarPickerDialog,
+  waybillCarPickerHeading,
+} from "@/components/admin/IrissWaybillMobileForm";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
 import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
-import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   DEFAULT_WAYBILL_ROUTE_FROM,
   DEFAULT_WAYBILL_ROUTE_TO,
@@ -76,7 +80,6 @@ export function IrissWaybillDesktopCreateForm({
   const showManual = waybillShowsManualFields(auto);
   const showList = waybillShowsTradeList(auto);
   const b192Empty = isB192 && showList && !auto.car && dzaCars !== null && dzaCars.length === 0;
-  const backdropClose = useModalBackdropClose(() => setPickerOpen(false));
 
   function choosePath(choice: Exclude<WaybillAutoChoice, "none">) {
     onAuto(applyWaybillAutoChoice(auto, choice));
@@ -251,41 +254,15 @@ export function IrissWaybillDesktopCreateForm({
         </p>
       </form>
       {pickerOpen ? (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
-          <div
-            className={`${styles.mf} w-full max-w-[420px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4`}
-            role="dialog"
-            aria-modal="true"
-            aria-label={isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)]">
-              {isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
-            </h3>
-            <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">
-              {pickerCars === null
-                ? "Ielādē..."
-                : isB192
-                  ? `${pickerCars.length} auto - tikai šī numura (B192-7) firma`
-                  : tradeCarsFromAutoparks
-                    ? `${pickerCars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
-                    : `${pickerCars.length} auto`}
-            </p>
-            <IrissWaybillCarPicker
-              cars={pickerCars}
-              selected={auto.manual ? "manual" : auto.car?.vin || auto.car?.brandModel || ""}
-              onChoose={chooseCar}
-              ownerBadge={isB192 ? "DZA" : undefined}
-            />
-            <button
-              type="button"
-              className="mt-3 h-10 w-full rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
-              onClick={() => setPickerOpen(false)}
-            >
-              Aizvērt
-            </button>
-          </div>
-        </div>
+        <IrissWaybillCarPickerDialog {...waybillCarPickerHeading(pickerCars, { isB192, fromAutoparks: tradeCarsFromAutoparks })} onClose={() => setPickerOpen(false)}>
+          <IrissWaybillCarPicker
+            cars={pickerCars}
+            selected={auto.manual ? "manual" : auto.car?.vin || auto.car?.brandModel || ""}
+            onChoose={chooseCar}
+            ownerBadge={isB192 ? "DZA" : undefined}
+            inSheet
+          />
+        </IrissWaybillCarPickerDialog>
       ) : null}
     </>
   );

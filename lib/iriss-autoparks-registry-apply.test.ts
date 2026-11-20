@@ -5,6 +5,7 @@ import { applyManualRegistryPatch, emptyAutoparksRegistry, parseRegistryFile, RE
 import { applyRegistryFileToState, REGISTRY_REMOVED_STATUS } from "@/lib/iriss-autoparks-registry-apply";
 import { isOlderRegistry } from "@/lib/iriss-autoparks-registry-dropbox";
 import { verifyCsddRegistrsToken } from "@/lib/iriss-csdd-registrs-token";
+import { dzintarzemeAcceptedCars, waybillTradeCars, waybillTradeCarsWithSource } from "@/lib/iriss-waybill-trade-cars";
 
 const NOW = "2026-10-23T00:30:00.000Z";
 
@@ -163,20 +164,24 @@ describe("CSDD reģistra pilnais nolasījums (snapshot)", () => {
 });
 
 describe("listAcceptedForTradeVehicles", () => {
-  it("keeps only currently accepted, not sold, not archived; no prices; owner filter", () => {
+  it("keeps only currently accepted (act nr. or act date), not archived; no prices; owner filter", () => {
     const cars = [
       car("ok", V1, { registry: accepted("TA-1") }),
       car("dza", V2, { owner: "DZA", make: "", model: "", registry: accepted("TA-2", { makeModel: "VW GOLF" }) }),
-      car("noact", V3, { registry: accepted("") }),
+      // 20.11: Hetzner nolasījumā akta nr. nav, ir tikai datums - auto tik un tā ir pieņemts.
+      car("dateonly", V3, { registry: accepted("") }),
+      car("noact", "WBA00000000000008", { registry: accepted("", { tradeActDate: "" }) }),
+      // Autoparkā «Pārdots», bet CSDD reģistrā vēl pieņemts - pavadzīmi var vajadzēt (Nils 20.11).
       car("sold", V4, { status: "sold", registry: accepted("TA-4") }),
       car("arch", "WBA00000000000005", { archivedAt: "2026-10-01", registry: accepted("TA-5") }),
       car("removed", "WBA00000000000006", { registry: accepted("TA-6", { removedAt: NOW }) }),
       car("regsold", "WBA00000000000007", { registry: accepted("TA-7", { status: "Pārdots" }) }),
     ];
     const all = listAcceptedForTradeVehicles(cars);
-    expect(all.map((v) => v.id)).toEqual(["ok", "dza"]);
-    expect(all[1]).toMatchObject({ owner: "DZA", brandModel: "VW GOLF", tradeActNo: "TA-2" });
+    expect(all.map((v) => v.id).sort()).toEqual(["dateonly", "dza", "ok", "sold"]);
+    expect(all.find((v) => v.id === "dza")).toMatchObject({ owner: "DZA", brandModel: "VW GOLF", tradeActNo: "TA-2" });
     expect(Object.keys(all[0]!)).not.toContain("salePriceEur");
+    expect(listAcceptedForTradeVehicles(cars, { owner: "IRISS" }).map((v) => v.id).sort()).toEqual(["dateonly", "ok", "sold"]);
     expect(listAcceptedForTradeVehicles(cars, { owner: "DZA" }).map((v) => v.id)).toEqual(["dza"]);
   });
 });
@@ -195,5 +200,40 @@ describe("importa palīgi", () => {
     expect(verifyCsddRegistrsToken("Bearer wrong", env)).toBe(false);
     expect(verifyCsddRegistrsToken(null, env)).toBe(false);
     expect(verifyCsddRegistrsToken("Bearer short", { IRISS_CSDD_REGISTRS_TOKEN: "short" })).toBe(false);
+  });
+});
+
+describe("pavadzīmju saraksts pēc Hetzner reģistra nolasījuma (20.11: akta nr. nav, ir tikai datums)", () => {
+  // Faila forma kā /var/lib/csdd-registrs/registrs-*.json: vin, owner, makeModel, tradeAct.date (bez number un status).
+  const hetznerRow = (vin: string, owner: "IRISS" | "DZA") => ({ vin, owner, makeModel: "BMW 330", tradeAct: { date: "2026-11-10" } });
+
+  it("visi reģistrā esošie abu firmu auto (arī Autoparkā bez akta nr. un «Pārdots») ir pavadzīmju sarakstā", () => {
+    const s = state([
+      car("bez-reg", V1),
+      car("vecs-nr", V2, { registry: accepted("TA-2") }),
+      car("pardots", V3, { status: "sold" }),
+      car("dza", V4, { owner: "DZA" }),
+    ]);
+    const f = file(
+      [hetznerRow(V1, "IRISS"), hetznerRow(V2, "IRISS"), hetznerRow(V3, "IRISS"), hetznerRow(V4, "DZA"), hetznerRow("WBA00000000000009", "IRISS")],
+      FULL,
+    );
+    const { result } = applyRegistryFileToState(s, f, "registrs-auto.json", NOW);
+    expect(result).toMatchObject({ matched: 4, added: 1, removed: 0 });
+    const waybill = waybillTradeCarsWithSource(s.cars);
+    expect(waybill.source).toBe("registry");
+    expect(waybill.cars).toHaveLength(5);
+    expect(waybill.cars.every((c) => c.accepted)).toBe(true);
+    expect(dzintarzemeAcceptedCars(waybill.cars).map((c) => c.id)).toEqual(["dza"]);
+    expect(listAcceptedForTradeVehicles(s.cars)).toHaveLength(5);
+  });
+
+  it("auto tikai ar akta datumu, kas nākamajā pilnajā nolasījumā vairs nav, tiek atzīmēts kā izņemts un pazūd no saraksta", () => {
+    const s = state([car("a", V1), car("b", V2)]);
+    applyRegistryFileToState(s, file([hetznerRow(V1, "IRISS"), hetznerRow(V2, "IRISS")], FULL), "d1.json", NOW);
+    expect(waybillTradeCars(s.cars)).toHaveLength(2);
+    const { result } = applyRegistryFileToState(s, file([hetznerRow(V1, "IRISS")], FULL), "d2.json", "2026-10-24T00:30:00.000Z");
+    expect(result.removed).toBe(1);
+    expect(waybillTradeCars(s.cars).map((c) => c.id)).toEqual(["a"]);
   });
 });

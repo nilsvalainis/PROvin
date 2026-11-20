@@ -337,18 +337,28 @@ const TRADE_REMOVED_STATUS = /no[nņ]em|izsl[eē]g|p[aā]rdot|anul|dz[eē]st|iz[
 export type TradeAcceptedCarInput = Pick<AutoparksCar, "status" | "archivedAt" | "registry">;
 
 /**
+ * Vai kartītē ir CSDD tirdzniecības akta pazīme: akta nr. VAI akta (pieņemšanas) datums.
+ * Hetzner reģistra nolasījumā (csdd-registrs) akta numura kolonnas nav - ir tikai datums (20.11: 19 no 19 auto bez nr.),
+ * tāpēc tikai akta nr. prasība izmeta no pavadzīmju saraksta visus auto, kas Autoparkā nonāca tikai no reģistra.
+ */
+export function hasTradeAct(reg: Pick<AutoparksRegistry, "tradeActNo" | "tradeActDate"> | undefined | null): boolean {
+  return Boolean(reg?.tradeActNo?.trim() || reg?.tradeActDate?.trim());
+}
+
+/**
  * VIENĪGAIS avots: vai auto pašlaik ir CSDD tirdzniecības reģistrā pieņemts tirdzniecībā.
- * Nosacījumi: ir tirdzniecības akta nr., Autoparkā nav "Pārdots", nav arhīvā, reģistra statuss nav noņemts/pārdots,
+ * Nosacījumi: ir tirdzniecības akta pazīme (`hasTradeAct`: nr. vai datums), nav arhīvā, reģistra statuss nav noņemts/pārdots,
  * un pēdējā pilnajā reģistra nolasījumā (Hetzner cron) auto nav atzīmēts kā izņemts (`registry.removedAt`).
+ * Autoparka statuss «Pārdots» auto NEizslēdz: kamēr CSDD reģistrā tas vēl ir pieņemts, tam var vajadzēt pavadzīmi
+ * (piem. aizvest pircējam); no saraksta to izņem reģistra nolasījums (`removedAt`), kad CSDD to noņem (Nils 20.11).
  * Lieto pavadzīmju auto saraksts un ikdienas reģistra sinhronizācija - citur šo filtru nedublēt.
  */
 export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
   if (car.archivedAt) return false;
-  if (car.status === "sold") return false;
   const reg = car.registry;
-  if (!reg?.tradeActNo?.trim()) return false;
-  if (reg.removedAt) return false;
-  return registryStatusInTrade(reg.status);
+  if (!hasTradeAct(reg)) return false;
+  if (reg!.removedAt) return false;
+  return registryStatusInTrade(reg!.status);
 }
 
 /** Autoparka auto, kas pašlaik pieņemti tirdzniecībā (secība kā krātuvē). Sk. `isTradeAcceptedCar`. */
@@ -361,7 +371,7 @@ export function listTradeAcceptedCars<T extends TradeAcceptedCarInput>(cars: Rea
  * Ja nav - reģistrs vēl ne reizi nav nolasīts, un "pieņemto" saraksts būtu tukšs nevis tāpēc, ka auto nav, bet datu trūkuma dēļ.
  */
 export function tradeRegistryKnown(cars: ReadonlyArray<Pick<AutoparksCar, "registry">>): boolean {
-  return cars.some((c) => Boolean(c.registry?.tradeActNo?.trim() || c.registry?.importedAt || c.registry?.removedAt));
+  return cars.some((c) => Boolean(hasTradeAct(c.registry) || c.registry?.importedAt || c.registry?.removedAt));
 }
 
 export type WaybillCarsSource = "registry" | "autoparks";

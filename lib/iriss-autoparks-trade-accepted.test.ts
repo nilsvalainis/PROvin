@@ -3,7 +3,7 @@ import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyAutoparksRegistry, isTradeAcceptedCar, listTradeAcceptedCars } from "@/lib/iriss-autoparks-registry";
 import { waybillTradeCars } from "@/lib/iriss-waybill-trade-cars";
 
-function car(id: string, over: Partial<AutoparksCar> = {}, reg: { tradeActNo?: string; status?: string } | null = { tradeActNo: "A-1" }): AutoparksCar {
+function car(id: string, over: Partial<AutoparksCar> = {}, reg: { tradeActNo?: string; tradeActDate?: string; status?: string } | null = { tradeActNo: "A-1" }): AutoparksCar {
   return {
     id,
     orderId: "",
@@ -23,7 +23,7 @@ function car(id: string, over: Partial<AutoparksCar> = {}, reg: { tradeActNo?: s
     archivedAt: "",
     createdAt: "",
     updatedAt: "",
-    ...(reg ? { registry: { ...emptyAutoparksRegistry(), tradeActNo: reg.tradeActNo ?? "", status: reg.status ?? "" } } : {}),
+    ...(reg ? { registry: { ...emptyAutoparksRegistry(), tradeActNo: reg.tradeActNo ?? "", tradeActDate: reg.tradeActDate ?? "", status: reg.status ?? "" } } : {}),
     ...over,
   };
 }
@@ -33,7 +33,10 @@ describe("listTradeAcceptedCars (vienīgais tirdzniecībā pieņemto auto avots)
     car("ok"),
     car("intrade", {}, { tradeActNo: "A-2", status: "Tirdzniecībā" }),
     car("service", { status: "in_service" }),
+    // Autoparkā «Pārdots», bet CSDD reģistrā vēl pieņemts - paliek (Nils 20.11; izņem reģistra nolasījums).
     car("sold", { status: "sold" }),
+    // Hetzner nolasījums: akta nr. nav, ir akta datums (20.11).
+    car("dateonly", {}, { tradeActDate: "2026-11-10" }),
     car("arch", { archivedAt: "2026-10-01T00:00:00Z" }),
     car("noact", {}, { tradeActNo: "  " }),
     car("noreg", {}, null),
@@ -42,8 +45,8 @@ describe("listTradeAcceptedCars (vienīgais tirdzniecībā pieņemto auto avots)
     car("excl", {}, { tradeActNo: "A-5", status: "Izslēgts" }),
   ];
 
-  it("atstāj tikai auto ar akta nr., nepārdotus, nearhivētus un reģistrā nenoņemtus, krātuves secībā", () => {
-    expect(listTradeAcceptedCars(cars).map((c) => c.id)).toEqual(["ok", "intrade", "service"]);
+  it("atstāj tikai auto ar akta nr. vai datumu, nearhivētus un reģistrā nenoņemtus, krātuves secībā", () => {
+    expect(listTradeAcceptedCars(cars).map((c) => c.id)).toEqual(["ok", "intrade", "service", "sold", "dateonly"]);
   });
 
   it("atdod pilnus auto ierakstus (sinhronizācijai), nevis kopijas", () => {
