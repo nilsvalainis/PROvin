@@ -4,6 +4,12 @@
  * Termiņš ir obligāts nosūtīšanai, bez noklusējuma. Beidzies automātiski pēc Rīgas dienas beigām.
  */
 
+import {
+  applyIrissPdEquipmentSummaryEdit,
+  buildIrissPdEqSummaryPublic,
+  normalizeIrissPdEquipmentSummary,
+  type IrissPdEqSummaryStructured,
+} from "@/lib/iriss-pd-equipment-summary";
 import { irissPdAuto1BlockCount, normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import {
   defaultIrissPdContent,
@@ -203,6 +209,7 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     auto1ImportedAt: clean(o.auto1ImportedAt, 40),
     visibility: normalizeIrissPdVisibility(o.visibility),
     content: normalizeIrissPdContent(o.content),
+    equipmentSummaryLv: normalizeIrissPdEquipmentSummary(o.equipmentSummaryLv),
     linkToken: isSafeIrissPdToken(o.linkToken) ? o.linkToken : "",
     decidedAt: clean(o.decidedAt, 40),
     approvedOrderId: isSafeIrissPdId(approvedOrderId) ? approvedOrderId : "",
@@ -258,6 +265,8 @@ export type IrissPdPatch = Partial<{
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
   content: Partial<IrissPdContent>;
+  /** Tikai `text` un `on` (labots teksts -> editedByAdmin). */
+  equipmentSummaryLv: { text?: string; on?: boolean } | null;
   status: IrissPdStatus;
 }>;
 
@@ -343,6 +352,13 @@ export function applyIrissPdPatch(
     if (JSON.stringify(c) !== JSON.stringify(rec.content)) {
       next.content = c;
       log.push("Klienta apraksts mainīts");
+    }
+  }
+  if (patch.equipmentSummaryLv) {
+    const es = applyIrissPdEquipmentSummaryEdit(rec.equipmentSummaryLv, patch.equipmentSummaryLv, ctx.at);
+    if (es !== rec.equipmentSummaryLv) {
+      next.equipmentSummaryLv = es;
+      log.push("Komplektācijas kopsavilkums mainīts");
     }
   }
   if (typeof patch.internalNotes === "string") {
@@ -684,6 +700,8 @@ export type IrissPdPublicView = {
   needsContact: boolean;
   /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
   content: IrissPdPublicContent | null;
+  /** Nils 20.11: komplektācijas kopsavilkums (pēc VIN); null - nerāda. */
+  equipmentSummary?: IrissPdEqSummaryStructured | null;
   /** Klienta paša jautājumi (pēdējie). Admina piezīmes šeit nekad nenonāk. */
   questions: { at: string; text: string; from: "client" | "admin" }[];
 };
@@ -813,6 +831,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,
     content: buildIrissPdPublicContent(rec.content),
+    equipmentSummary: buildIrissPdEqSummaryPublic(rec.equipmentSummaryLv),
     questions: mode === "link" ? irissPdPublicQuestions(rec.messages) : [],
   };
 }

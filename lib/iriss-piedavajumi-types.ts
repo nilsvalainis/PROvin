@@ -5,6 +5,7 @@
  */
 
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
+import type { IrissPdEquipmentSummary } from "@/lib/iriss-pd-equipment-summary";
 
 export const IRISS_PD_STATUSES = ["requested", "draft", "sent", "approved", "declined", "expired"] as const;
 export type IrissPdStatus = (typeof IRISS_PD_STATUSES)[number];
@@ -245,6 +246,8 @@ export type IrissPiedavajums = {
   auto1ImportedAt: string;
   visibility: IrissPdVisibility;
   content: IrissPdContent;
+  /** Nils 20.11: «Automašīnas komplektācijas kopsavilkums (pēc VIN)» (AI, admins var labot). */
+  equipmentSummaryLv: IrissPdEquipmentSummary | null;
   /* ---- Saite, lēmums, saistītie ieraksti ---- */
   /** Publiskās saites tokens (privātajā krātuvē; saitē - tikai tas). */
   linkToken: string;
@@ -359,6 +362,7 @@ export function emptyIrissPiedavajums(id: string, nowIso: string): IrissPiedavaj
     auto1ImportedAt: "",
     visibility: defaultIrissPdVisibility(),
     content: defaultIrissPdContent(),
+    equipmentSummaryLv: null,
     linkToken: "",
     decidedAt: "",
     approvedOrderId: "",
