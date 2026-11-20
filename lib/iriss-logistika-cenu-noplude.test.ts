@@ -105,13 +105,13 @@ beforeEach(() => {
 
 describe("maskOrderSums", () => {
   it("masko arī listingParsed.priceEur; bez hideSums nemaina neko", () => {
-    const masked = maskOrderSums(order, true);
+    const masked = maskOrderSums(order, true, true);
     expect(masked.priceEur).toBeNull();
     expect(masked.listingParsed.priceEur).toBeNull();
     expect(masked.listingParsed.mileageKm).toBe(100000);
     expect(masked.notes).not.toContain("12 500");
     expect(order.listingParsed.priceEur).toBe(12500);
-    expect(maskOrderSums(order, false)).toBe(order);
+    expect(maskOrderSums(order, false, false)).toBe(order);
   });
 });
 

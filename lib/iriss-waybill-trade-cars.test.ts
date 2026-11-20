@@ -38,6 +38,7 @@ describe("waybill trade cars", () => {
     car({ id: "sold", make: "BMW", model: "320d", status: "sold", registry: registry("A-14") }),
     car({ id: "arch", make: "BMW", model: "520d", archivedAt: "2026-10-01", registry: registry("A-15") }),
     car({ id: "noact", make: "Škoda", model: "Superb", registry: registry("") }),
+    // Autoparkā «Pārdots», bet CSDD reģistrā vēl pieņemts - sarakstā ir (Nils 20.11).
     car({ id: "noreg", make: "Opel", model: "Astra" }),
     car({ id: "reg", vin: "W1K2132041A876543", registry: registry("A-16", "MERCEDES-BENZ E 220 D") }),
     // Reģistra nolasījumā vairs nav / statuss "Pārdots" - pavadzīmju sarakstā neparādās (tas pats avots kā Autoparkam).
@@ -45,12 +46,12 @@ describe("waybill trade cars", () => {
     car({ id: "regsold", make: "Kia", model: "Sportage", registry: registry("A-18", "", { status: "Pārdots" }) }),
   ];
 
-  it("lists only accepted-for-trade (act no.), unsold, unarchived cars, sorted, without prices", () => {
+  it("lists only accepted-for-trade (act), unarchived cars, sorted, without prices", () => {
     const out = waybillTradeCars(cars);
-    expect(out.map((c) => c.id)).toEqual(["b", "reg", "a"]);
+    expect(out.map((c) => c.id)).toEqual(["b", "sold", "reg", "a"]);
     expect(out[0]).toEqual({ id: "b", brandModel: "Audi A6 Avant", vin: "WAUZZZF27LN004512", year: "", statusLabel: "Servisā", accepted: true, owner: "IRISS" });
-    expect(out[1]?.brandModel).toBe("MERCEDES-BENZ E 220 D");
-    expect(out[2]?.vin).toBe("YV1UZA8V1M1765432");
+    expect(out[2]?.brandModel).toBe("MERCEDES-BENZ E 220 D");
+    expect(out[3]?.vin).toBe("YV1UZA8V1M1765432");
     expect(JSON.stringify(out)).not.toMatch(/12000|15000|Price/);
   });
 
@@ -59,7 +60,7 @@ describe("waybill trade cars", () => {
     expect(filterWaybillTradeCars(out, "audi").map((c) => c.id)).toEqual(["b"]);
     expect(filterWaybillTradeCars(out, "xc60 2021").map((c) => c.id)).toEqual(["a"]);
     expect(filterWaybillTradeCars(out, "876543").map((c) => c.id)).toEqual(["reg"]);
-    expect(filterWaybillTradeCars(out, "  ")).toHaveLength(3);
+    expect(filterWaybillTradeCars(out, "  ")).toHaveLength(4);
   });
 
   it("registry data present -> strict trade-accepted list, source registry", () => {

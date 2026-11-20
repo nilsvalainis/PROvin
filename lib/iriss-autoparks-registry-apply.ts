@@ -3,7 +3,7 @@
  *
  * - Visi faili: esošās (ne arhīva) kartītes pēc VIN papildina ar reģistra laukiem; Nila labotos laukus nepārraksta.
  * - Tikai pilns nolasījums (`snapshot.complete`, Hetzner cron): jauni pieņemtie auto tiek pievienoti,
- *   un auto, kas iepriekš bija pieņemts (ir akta nr.), bet nolasījumā vairs nav, saņem `registry.removedAt`.
+ *   un auto, kas iepriekš bija pieņemts (ir akta nr. vai datums), bet nolasījumā vairs nav, saņem `registry.removedAt`.
  * - Autoparka manuālie lauki (statuss, cenas, piezīmes, nosaukums, aprīkojums) netiek mainīti nekad.
  */
 
@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { autoparksOwner, type AutoparksCar, type AutoparksEvent, type AutoparksState } from "@/lib/iriss-autoparks";
 import {
   emptyAutoparksRegistry,
+  hasTradeAct,
   listTradeAcceptedCars,
   mergeRegistryValues,
   registryStatusInTrade,
@@ -138,7 +139,7 @@ export function applyRegistryFileToState(
       // Pilnajā nolasījumā šīs firmas pieņemtā auto vairs nav -> "izņemts" (tikai reģistra lauki).
       const owner = autoparksOwner(car);
       if (!snapshot || !snapshotOwners.has(owner) || guarded.has(owner)) return car;
-      if (!car.registry?.tradeActNo || car.registry.removedAt) return car;
+      if (!hasTradeAct(car.registry) || car.registry?.removedAt) return car;
       return markRemoved(car);
     }
     seen.add(rec.vin);

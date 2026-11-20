@@ -1,12 +1,14 @@
 "use client";
 
 import { Car, Check, ChevronDown, ChevronRight, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { publishWaybillFormPlate, WAYBILL_SELECT_PLATE_EVENT } from "@/lib/iriss-waybill-live-plates";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { IRISS_DESKTOP_MEDIA } from "@/lib/iriss-mobile-menu";
 import {
   NOTE_UNTRUSTED_MAX,
   WAYBILL_REPRESENTATIVE_MAX,
@@ -539,28 +541,15 @@ export function IrissWaybillMobileForm({
         />
       ) : null}
 
-      <AdminMobileSheet
+      <IrissWaybillCarPickerPopup
         open={pickerOpen}
-        title={isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
-        subtitle={
-          pickerCars === null
-            ? "Ielādē..."
-            : isB192
-              ? `${pickerCars.length} auto - tikai šī numura (B192-7) firma`
-              : tradeCarsFromAutoparks
-                ? `${pickerCars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
-                : `${pickerCars.length} auto`
-        }
+        cars={pickerCars}
+        isB192={isB192}
+        fromAutoparks={tradeCarsFromAutoparks}
+        selected={form.manual ? "manual" : (form.car?.vin || form.car?.brandModel || "")}
+        onChoose={chooseCar}
         onClose={() => setPickerOpen(false)}
-      >
-        <IrissWaybillCarPicker
-          cars={pickerCars}
-          selected={form.manual ? "manual" : (form.car?.vin || form.car?.brandModel || "")}
-          onChoose={chooseCar}
-          ownerBadge={isB192 ? "DZA" : undefined}
-          inSheet
-        />
-      </AdminMobileSheet>
+      />
     </div>
   );
 }
@@ -1093,6 +1082,125 @@ export function CsddModelHintButton({ brandModel, onApply }: { brandModel: strin
     <button type="button" className={styles.modelHint} onClick={() => onApply(hint.apply)} aria-label={`Lietot CSDD modeli ${hint.model}`}>
       CSDD modelis: <b>{hint.model}</b>
     </button>
+  );
+}
+
+/** Auto izvēles loga virsraksts un apakšvirsraksts (telefona lapa un datora logs - viens teksts). */
+export function waybillCarPickerHeading(cars: WaybillTradeCar[] | null, opts: { isB192: boolean; fromAutoparks: boolean }): {
+  title: string;
+  subtitle: string;
+} {
+  const title = opts.isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto";
+  const subtitle =
+    cars === null
+      ? "Ielādē..."
+      : opts.isB192
+        ? `${cars.length} auto - tikai šī numura (B192-7) firma`
+        : opts.fromAutoparks
+          ? `${cars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
+          : `${cars.length} auto`;
+  return { title, subtitle };
+}
+
+/** Datora platums (no md, 768px) - tas pats slieksnis kā `md:` klasēm. Serverī un pirms mount - false (telefons). */
+export function useWaybillDesktopMedia(): boolean {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia(IRISS_DESKTOP_MEDIA);
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener?.("change", sync);
+    return () => mq.removeEventListener?.("change", sync);
+  }, []);
+  return desktop;
+}
+
+/**
+ * Datora auto izvēles logs (centrā, portālā virs lapas). Telefona lapa `AdminMobileSheet` ir `md:hidden`, tāpēc datorā
+ * poga «Izvēlies auto» atvēra neredzamu logu un nekas nenotika (20.11). Saraksts ritinās loga iekšā, meklēšana paliek augšā.
+ */
+export function IrissWaybillCarPickerDialog({
+  title,
+  subtitle,
+  onClose,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const backdropClose = useModalBackdropClose(onClose);
+  return (
+    <AdminBodyPortal>
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a66] p-4"
+        data-waybill-car-dialog=""
+        {...backdropClose}
+      >
+        <div
+          className={`${styles.mf} flex max-h-[85dvh] w-full max-w-[460px] flex-col rounded-2xl border border-[var(--iriss-line)] bg-white p-4`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="m-0 shrink-0 text-[15px] font-semibold text-[var(--iriss-ink)]">{title}</h3>
+          <p className="mt-1 shrink-0 text-[12px] text-[var(--iriss-ink-2)]">{subtitle}</p>
+          <div className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+          <button
+            type="button"
+            className="mt-3 h-10 w-full shrink-0 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            onClick={onClose}
+          >
+            Aizvērt
+          </button>
+        </div>
+      </div>
+    </AdminBodyPortal>
+  );
+}
+
+/** Auto izvēle: telefonā apakšējā lapa (#1022 ritināšana), datorā logs centrā. */
+export function IrissWaybillCarPickerPopup({
+  open,
+  cars,
+  isB192,
+  fromAutoparks,
+  selected,
+  onChoose,
+  onClose,
+}: {
+  open: boolean;
+  cars: WaybillTradeCar[] | null;
+  isB192: boolean;
+  fromAutoparks: boolean;
+  selected: string;
+  onChoose: (car: WaybillMobileCar | "manual") => void;
+  onClose: () => void;
+}) {
+  const desktop = useWaybillDesktopMedia();
+  const { title, subtitle } = waybillCarPickerHeading(cars, { isB192, fromAutoparks });
+  const picker = <IrissWaybillCarPicker cars={cars} selected={selected} onChoose={onChoose} ownerBadge={isB192 ? "DZA" : undefined} inSheet />;
+  if (desktop) {
+    return open ? (
+      <IrissWaybillCarPickerDialog title={title} subtitle={subtitle} onClose={onClose}>
+        {picker}
+      </IrissWaybillCarPickerDialog>
+    ) : null;
+  }
+  return (
+    <AdminMobileSheet open={open} title={title} subtitle={subtitle} onClose={onClose}>
+      {picker}
+    </AdminMobileSheet>
   );
 }
 

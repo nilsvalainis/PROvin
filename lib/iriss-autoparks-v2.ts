@@ -13,7 +13,7 @@ import {
   type AutoparksOwner,
   type AutoparksStatus,
 } from "@/lib/iriss-autoparks";
-import { registryStatusInTrade } from "@/lib/iriss-autoparks-registry";
+import { hasTradeAct, registryStatusInTrade } from "@/lib/iriss-autoparks-registry";
 
 export const AUTOPARKS_V2_FILE = "autoparks-v2.json";
 
@@ -506,8 +506,8 @@ export const V2_REGISTRY_STATUS_LV: Record<V2RegistryStatus, string> = {
 export function v2RegistryStatus(car: Pick<AutoparksCar, "registry">): V2RegistryStatus {
   const reg = car.registry;
   if (!reg) return "none";
-  if (reg.removedAt || (reg.status && !registryStatusInTrade(reg.status))) return reg.tradeActNo || reg.removedAt ? "removed" : "none";
-  return reg.tradeActNo ? "accepted" : "none";
+  if (reg.removedAt || (reg.status && !registryStatusInTrade(reg.status))) return hasTradeAct(reg) || reg.removedAt ? "removed" : "none";
+  return hasTradeAct(reg) ? "accepted" : "none";
 }
 
 /** Rinda ar avota punktu: `csdd` = zaļš punkts (19:53-7). */

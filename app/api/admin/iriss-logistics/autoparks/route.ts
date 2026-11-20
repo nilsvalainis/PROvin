@@ -1,11 +1,11 @@
 import { after, NextResponse } from "next/server";
 import { autoparksListRows, filterAutoparksByOwner } from "@/lib/iriss-autoparks";
 import { autoparksActor, autoparksHidesSums, autoparksRowsForActor, stripCar } from "@/lib/iriss-autoparks-access";
-import { maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorSeesTransportCost, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
 import { createAutoparksCar, ensureAutoparksCarFromOrder, markAutoparksCarArrived, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
-import { irissLogisticsScopeHeader, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
 import { getLogisticsOrder, setLogisticsOrderArchiveState } from "@/lib/iriss-logistics-store";
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     // Jaunam auto /STOCK mape (atrod pēc VIN vai izveido) pēc atbildes - auto izveide no Dropbox neatkarīga.
     if (created) after(() => linkAutoparksCarToDropbox(car.id));
     return NextResponse.json(
-      { ok: true, car: hide ? stripCar(car) : car, created, order: maskOrderSums(archived ?? order, hide) },
+      { ok: true, car: hide ? stripCar(car) : car, created, order: maskOrderSums(archived ?? order, hide, !cabinetActorSeesTransportCost(logisticsCabinetAccessQuery(gate.actor, ""))) },
       { headers: irissLogisticsScopeHeader() },
     );
   }
