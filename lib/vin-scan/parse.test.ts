@@ -78,6 +78,7 @@ describe("vin scan catalog", () => {
         lt: "",
         fi: "",
         uk: "",
+        se: "",
       }),
     ).toContain("kenteken=");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");

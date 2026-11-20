@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { emptyAutoRecordsBlock } from "@/lib/admin-source-blocks";
+import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 
 import {
   PDF_TIGHT_GAP_BLOCK,
@@ -32,6 +33,7 @@ describe("pdf-tight-comment-spacing", () => {
   it("dealer OEM HTML embeds tight comment rules", () => {
     const block = emptyAutoRecordsBlock();
     block.oneautoIngest = {
+      ...emptyOneautoIngest(),
       ...block.oneautoIngest,
       lastFetchedVin: "TESTVIN123",
       results: {

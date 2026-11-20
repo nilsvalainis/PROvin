@@ -4,18 +4,19 @@ import {
   readConsultationRecoveryEmail,
   readConsultationRecoveryPhone,
 } from "./consultation-recovery-artis-milicins";
+import { testEnv } from "@/lib/test-process-env";
 
 describe("consultation recovery contacts", () => {
   it("bez env neatgriež e-pastu vai tālruni", () => {
-    expect(readConsultationRecoveryEmail({})).toBe("");
-    expect(readConsultationRecoveryPhone({})).toBe("");
+    expect(readConsultationRecoveryEmail(testEnv())).toBe("");
+    expect(readConsultationRecoveryPhone(testEnv())).toBe("");
   });
 
   it("ņem kontaktus tikai no env", () => {
-    const env = {
+    const env = testEnv({
       CONSULTATION_RECOVERY_EMAIL: "  recovery@example.lv ",
       CONSULTATION_RECOVERY_PHONE: " 20000000 ",
-    };
+    });
     expect(readConsultationRecoveryEmail(env)).toBe("recovery@example.lv");
     expect(readConsultationRecoveryPhone(env)).toBe("20000000");
   });

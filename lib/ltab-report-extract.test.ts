@@ -150,6 +150,8 @@ Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.`;
         manualLtabBlock: { rows: ltabCertificateToIncidentRows(cert), comments: "", certificate: cert },
         pdfVisibility: mergePdfVisibility({ ltab: true, unifiedIncidents: false }),
       } as ClientReportPayload,
+      portfolio: [],
+      pdfInsights: [],
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });

@@ -65,7 +65,7 @@ describe("verifyTurnstileToken", () => {
   });
 
   it("posts secret+response to siteverify and accepts success", async () => {
-    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       expect(url).toBe(TURNSTILE_SITEVERIFY_URL);
       const posted = decodeURIComponent(String(init?.body));
       expect(posted).toContain(`secret=${SECRET}`);

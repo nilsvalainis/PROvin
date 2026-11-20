@@ -251,6 +251,9 @@ function req(over: Partial<WaybillRequest>): WaybillRequest {
     representative: "",
     stage: "",
     stageAt: "",
+    dropboxPath: "",
+    dropboxError: "",
+    dropboxAt: "",
     ...over,
   };
 }

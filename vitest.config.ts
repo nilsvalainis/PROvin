@@ -9,7 +9,9 @@ export default defineConfig({
     environment: "node",
     // Aizsardzība: testi nekad neraksta produkcijas Blob (sk. failu).
     setupFiles: ["lib/test-setup-no-prod-blob.ts"],
-    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "components/**/*.test.tsx"],
+    // Visi TS testi lib/, components/, app/. Releja .mjs testi (relay/) iet ar node --test.
+    include: ["{lib,components,app}/**/*.test.{ts,tsx}"],
+    exclude: ["**/node_modules/**", "**/e2e/**", "**/*.spec.{ts,tsx}"],
   },
   resolve: {
     alias: {

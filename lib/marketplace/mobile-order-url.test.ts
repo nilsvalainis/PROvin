@@ -4,21 +4,19 @@ import { marketplaceQueryFromOrder } from "@/lib/marketplace/query-from-order";
 import { buildMobileDeOrderSearchUrl } from "@/lib/marketplace/search-urls";
 
 describe("Nils 30.10: mobile.de «Izveidot» pēc Nila manuālo filtru principa", () => {
-  const url = new URL(
-    buildMobileDeOrderSearchUrl(
-      marketplaceQueryFromOrder({
-        brandModel: "Volvo XC60",
-        productionYears: "2014-2016",
-        maxMileage: "200000",
-        totalBudget: "11000-15000",
-        engineType: "Dīzelis",
-        transmission: "Automāts",
-        driveType: "Priekšpiedziņa",
-        equipmentRequired: "Ādas salons\nKondicionieris",
-        preferredColors: "Melna",
-      }),
-    ),
-  );
+  // Pilns pasūtījums: aprīkojums un krāsas ir pasūtījumā, bet meklēšanā apzināti netiek ņemti.
+  const order = {
+    brandModel: "Volvo XC60",
+    productionYears: "2014-2016",
+    maxMileage: "200000",
+    totalBudget: "11000-15000",
+    engineType: "Dīzelis",
+    transmission: "Automāts",
+    driveType: "Priekšpiedziņa",
+    equipmentRequired: "Ādas salons\nKondicionieris",
+    preferredColors: "Melna",
+  };
+  const url = new URL(buildMobileDeOrderSearchUrl(marketplaceQueryFromOrder(order)));
   const p = url.searchParams;
 
   it("cena no 55 % līdz budžets mīnus 2 000 €, gadi, km, degviela, kārba, tirgotāji, bez bojājumiem", () => {

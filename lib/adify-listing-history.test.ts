@@ -167,8 +167,8 @@ describe("fetchAdifyListingHistory", () => {
     ok: false,
     status: 403,
     headers: { get: () => "cloudflare", getSetCookie: () => [] },
-    clone: () => ({ text: async () => "<title>Just a moment...</title>" }),
-    text: async () => "<title>Just a moment...</title>",
+    clone: () => ({ text: async (): Promise<string> => "<title>Just a moment...</title>" }),
+    text: async (): Promise<string> => "<title>Just a moment...</title>",
   });
 
   afterEach(() => {
@@ -179,7 +179,7 @@ describe("fetchAdifyListingHistory", () => {
   it("reads the SSR page through an own HTTP relay when the datacenter IP gets HTTP 403", async () => {
     const fetchMock = vi.fn(async (input: unknown) =>
       String(input).startsWith("https://relay.own.test/")
-        ? { ok: true, status: 200, text: async () => SSR_HTML }
+        ? { ok: true, status: 200, text: async (): Promise<string> => SSR_HTML }
         : blocked(),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -195,7 +195,7 @@ describe("fetchAdifyListingHistory", () => {
   it("does not spend time on Jina for Adify (Jina never passes the Adify challenge)", async () => {
     const fetchMock = vi.fn(async (input: unknown) =>
       String(input).startsWith("https://r.jina.ai/")
-        ? { ok: true, status: 200, text: async () => SSR_HTML }
+        ? { ok: true, status: 200, text: async (): Promise<string> => SSR_HTML }
         : blocked(),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -224,7 +224,7 @@ describe("fetchAdifyListingHistory", () => {
   it("reads SSR HTML from CapSolver + Fixie and does not queue Chrome", async () => {
     const fetchMock = vi.fn(async (input: unknown) => {
       if (String(input).startsWith("https://r.jina.ai/")) {
-        return { ok: true, status: 200, text: async () => "<title>Just a moment...</title>" };
+        return { ok: true, status: 200, text: async (): Promise<string> => "<title>Just a moment...</title>" };
       }
       return blocked();
     });
@@ -247,12 +247,12 @@ describe("fetchAdifyListingHistory", () => {
         return {
           ok: true,
           status: 200,
-          text: async () =>
+          text: async (): Promise<string> =>
             JSON.stringify({ ok: true, status: 200, html: SSR_HTML, finalUrl: "https://adify.lv/history" }),
         };
       }
       if (url.startsWith("https://r.jina.ai/")) {
-        return { ok: true, status: 200, text: async () => "<title>Just a moment...</title>" };
+        return { ok: true, status: 200, text: async (): Promise<string> => "<title>Just a moment...</title>" };
       }
       return blocked();
     });
@@ -275,13 +275,13 @@ describe("fetchAdifyListingHistory", () => {
       "fetch",
       vi.fn(async (input: unknown) => {
         if (String(input).startsWith("https://r.jina.ai/")) {
-          return { ok: true, status: 200, text: async () => cfHtml };
+          return { ok: true, status: 200, text: async (): Promise<string> => cfHtml };
         }
         return {
           ok: false,
           status: 403,
           headers: { get: () => "cloudflare", getSetCookie: () => [] },
-          text: async () => cfHtml,
+          text: async (): Promise<string> => cfHtml,
         };
       }),
     );

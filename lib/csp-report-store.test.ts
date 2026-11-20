@@ -7,9 +7,10 @@ import {
   resetCspBlobWriteBudget,
   type CspBlobIo,
 } from "@/lib/csp-report-store";
+import { testEnv } from "@/lib/test-process-env";
 
 const summary = { violatedDirective: "script-src-elem", blockedUri: "unpkg.com", documentHost: "www.provin.lv" };
-const env = { UPSTASH_REDIS_REST_URL: "https://redis.example", UPSTASH_REDIS_REST_TOKEN: "t" } as NodeJS.ProcessEnv;
+const env = testEnv({ UPSTASH_REDIS_REST_URL: "https://redis.example", UPSTASH_REDIS_REST_TOKEN: "t" });
 
 describe("recordCspReport", () => {
   it("bez Redis un Blob neko nesūta", async () => {
