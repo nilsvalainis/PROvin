@@ -5,6 +5,7 @@
 
 import {
   emptyAutoRecordsBlock,
+  ltabRowHasData,
   REGISTRY_STYLE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   type AutoRecordsBlockState,
@@ -54,6 +55,8 @@ import {
 } from "@/lib/listing-price-lifecycle";
 import { resolveListingCountry } from "@/lib/listing-odometer";
 import { isVendorTimelineListingRecord } from "@/lib/vendor-timeline-listing";
+import { stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
+import { csddHasLatvianRegistryRecord } from "@/lib/owner-count-synthesis";
 import {
   isCsddFirstRegistrationInLatviaLabel,
   ownerFirstRegistrationInLatvia,
@@ -655,9 +658,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       if (t.includeInPdf === false) continue;
       if (!t.date.trim() && !t.description.trim()) continue;
       // Vecajos melnrakstos Igaunijas notikumi var būt netulkoti („Majanduslikus mõttes hävinenud”).
-      const description = estonian
+      const translated = estonian
         ? capitalizeRegistryEvent(translateTextLv(t.description, "et")) || t.description
         : t.description;
+      // Reģistra hronoloģijā personu vārdi pēc lomas („Pirmais īpašnieks: …”) PDF nenonāk.
+      const description = informational ? translated : stripRegistryPersonNames(translated);
       const kind = informational
         ? classifyInformationalVendorTimelineKind(description)
         : classifyVendorTimelineKind(description);
@@ -1135,6 +1140,46 @@ function sortAscending(events: LifecycleEvent[]): LifecycleEvent[] {
   });
 }
 
+function isListingOnlySourceSet(sources: string[]): boolean {
+  const list = sources.map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0) return false;
+  return list.every((s) => isListingLikeSource(s) || /\(sludin[āa]jums\)\s*$/i.test(s));
+}
+
+const LV_REGISTRY_SOURCE_RE = /^(?:csdd|ltab)\b/i;
+
+/** Publisko reģistru hronoloģija (tjekbil, mnt.ee, Traficom u.c.) ir reģistra notikums, ne sludinājums. */
+function isPublicRegistrySource(source: string): boolean {
+  const t = source.trim();
+  return REGISTRY_STYLE_BLOCK_KEYS.some((k) => SOURCE_BLOCK_LABELS[k] === t);
+}
+
+/**
+ * Valsts maiņu un „Reģistrācija Latvijā” veido tikai reģistra notikumi, nekad sludinājums.
+ * 1) Notikums, kura vienīgie avoti ir sludinājumi, ir `countryUnverified`.
+ * 2) Ja CSDD ir pārbaudīts, bet CSDD / LTAB nav Latvijas reģistra ieraksta, „Latvija” no ne-reģistra avota
+ *    (sludinājums, CarVertical/AutoDNA, dīlera vizīte) ir informatīva - tā nerada „X → Latvija” pāreju.
+ */
+function softenUnregisteredCountryClaims(events: LifecycleEvent[], input: LifecycleInput): void {
+  // Bez CSDD bloka (nav pārbaudīts) reģistra statusu nezinām - Latvijas atzīmes nemīkstina.
+  const lvRegistered =
+    !input.csddForm ||
+    csddHasLatvianRegistryRecord(input.csddForm) ||
+    (input.manualLtabBlock?.rows ?? []).some((r) => ltabRowHasData(r));
+  for (const e of events) {
+    if (!e.country || lifecycleCountryIsSoft(e)) continue;
+    if (e.kind === "import" || e.kind === "gap") continue;
+    if (isListingOnlySourceSet(e.sources)) {
+      e.countryUnverified = true;
+      continue;
+    }
+    if (!lvRegistered && countryLabelToIso2(e.country) === "LV") {
+      if (e.sources.some((s) => LV_REGISTRY_SOURCE_RE.test(s.trim()) || isPublicRegistrySource(s))) continue;
+      e.timelineInformational = true;
+    }
+  }
+}
+
 /** Pilns dzīves cikls, vecākais notikums pirmais. */
 export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEvent[] {
   const facts = collectFactEvents(input);
@@ -1142,6 +1187,7 @@ export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEve
   const merged = mergeOdometerIntoFacts(facts, odo);
   const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);
   if (deduped.length === 0) return [];
+  softenUnregisteredCountryClaims(deduped, input);
   for (const e of deduped) collapseCountryOnlyDetail(e);
   return collapseSameDayCountryTransitions(
     addDerivedEvents(sortAscending(deduped), input.csddForm?.previousRegistrationCountry ?? ""),

@@ -67,7 +67,7 @@ describe("dīlera dati - jauda", () => {
 describe("Igaunijas reģistra teksti", () => {
   it("tulko norakstīšanu un reģ. apliecības maiņu", () => {
     expect(translateTextLv("Majanduslikus mõttes hävinenud", "et")).toBe(
-      "ekonomiski neizdevīgi remontēt (norakstīts)",
+      "ekonomiski iznīcināts (norakstīts)",
     );
     expect(translateTextLv("Reg.tunnistuse vahetus", "et")).toBe("reģistrācijas apliecības maiņa");
   });
@@ -91,7 +91,7 @@ describe("Igaunijas reģistra teksti", () => {
     } as unknown as Parameters<typeof buildVehicleLifecycleEvents>[0]);
     const text = JSON.stringify(events);
     expect(text).not.toMatch(/hävinenud|tunnistuse/i);
-    expect(text).toContain("Ekonomiski neizdevīgi remontēt (norakstīts)");
+    expect(text).toContain("Ekonomiski iznīcināts (norakstīts)");
     expect(text).toContain("Reģistrācijas apliecības maiņa");
   });
 });

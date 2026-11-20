@@ -7,7 +7,7 @@ import {
   buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
-import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { adminRichHtmlToPlainText, stripIrissBrandStamp } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
 import {
@@ -21,8 +21,9 @@ import {
 } from "@/lib/source-summary-comment-format";
 
 function finalizeSummaryComment(text: string): string {
-  return stripUnauthorizedEuroAmounts(
-    normalizeProvinExpertAiComment(stripSummaryDualismOpener(text)),
+  // PROVIN kopsavilkumā nav IRISS zīmoga (zīmolu nošķiršana).
+  return stripIrissBrandStamp(
+    stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(stripSummaryDualismOpener(text))),
   );
 }
 
@@ -72,13 +73,13 @@ OBLIGĀTI:
 - Šī ir vieta, kur avotu dati tiek sasaistīti - pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
-- „Fakti” (fiksētais, apspriestais) + „Rekomendācija” TIKAI ja kāds punkts nav 100% pierādīts un prasa servisa / klātienes pārbaudi. Tad Inspected by IRISS. Ja slēdziena nav vajadzības, rekomendāciju IZLAID.
+- „Fakti” (fiksētais, apspriestais) + „Rekomendācija” TIKAI ja kāds punkts nav 100% pierādīts un prasa servisa / klātienes pārbaudi. Ja slēdziena nav vajadzības, rekomendāciju IZLAID.
 - Neapgalvo defektu, kas datos nav fiksēts. Nav pirkuma verdikta esejas (pirkt / nepirkt).
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm.
 - NESĀC ar „Sveiki” vai sarunas uzrunu. NESĀC ar dual-history / on-one-hand ievadu.
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas - tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
 - Īpašnieku skaitu ņem no sadaļas „Īpašnieku skaits (reconcilēts)” - neskaiti AutoDNA+CarVertical+reģistrus kopā.
-- Beigās: Inspected by IRISS.
+- Neraksti nekādu zīmolu zīmogu / parakstu beigās (nekad „Inspected by IRISS”).
 - WRAP_FILM: tikai ja ŠĪ pasūtījuma datos jau ir fiksēta aplīmēšana. Šī rinda NAV fakts. Ja datos nav - par plēvi NERAKSTI.
 - Eļļas maiņas intervālu tabulu / matemātiku NEATKĀRTO - tas ir laukā „Eļļas maiņas intervāli”.`,
     {

@@ -21,7 +21,7 @@ const MILES_RE = /\d[\d\s.,]*\s?(?:mi|miles?|jūdz\p{L}*)(?![\p{L}\p{N}])/iu;
 const USD_RE = /(?:\$\s?\d|\d[\d\s.,]*\s?(?:USD|\$))/u;
 const EURO_PREFIX_RE = /€\s?\d/u;
 const TOTAL_LOSS_MENTION_RE =
-  /noraksti?t\p{L}*|norakstīšan\p{L}*|pilnīg\p{L}*\s+zaudējum\p{L}*|total\s+loss|bojāej\p{L}*|ekonomiski\s+neizdevīg\p{L}*/iu;
+  /noraksti?t\p{L}*|norakstīšan\p{L}*|pilnīg\p{L}*\s+zaudējum\p{L}*|total\s+loss|bojāej\p{L}*|ekonomiski\s+(?:neizdevīg|iznīcin)\p{L}*/iu;
 
 function lintFlag(id: string, message: string, label: string, quote: string): FactCheckFlag {
   return { id, kind: "contradiction", level: "E", message, sentence: `${label}: ${quote}` };

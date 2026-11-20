@@ -323,7 +323,7 @@ function normalizeRichHtmlBlockLineBreaks(html: string): string {
 
 /** Admin bagātinātais HTML → vienots plakanais teksts (PDF / AI polish nosūtei). */
 export function adminRichHtmlToPlainText(html: string | null | undefined): string {
-  const s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
+  const s = stripPastedStylesheetText(sanitizeDraftTextForStorage(typeof html === "string" ? html : ""));
   if (!s.trim()) return "";
   let t = normalizeRichHtmlBlockLineBreaks(s);
   t = t.replace(/<[^>]+>/g, "");
@@ -335,9 +335,45 @@ export function adminRichHtmlToPlainText(html: string | null | undefined): strin
     .trim();
 }
 
+/**
+ * Mac TextEdit / Notes / Pages kopētā HTML stila atliekas („p.p1 {margin: 0.0px …}”,
+ * „span.s1 {font-kerning: none}”) - gan `<style>` bloks, gan jau par tekstu kļuvušas CSS rindas.
+ */
+const PASTED_CSS_RULE_RE =
+  /(?:^|(?<=[\s>;}]))(?:p|span|li|div|ul|ol|td|tr|table|body|h[1-6])\.[A-Za-z][\w-]*(?:\s*,\s*(?:p|span|li|div|ul|ol|td|tr|table|body|h[1-6])\.[A-Za-z][\w-]*)*\s*\{[^{}<]*\}[ \t]*\n?/gi;
+
+export function stripPastedStylesheetText(html: string): string {
+  if (!html) return "";
+  let s = html;
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, "");
+  s = s.replace(/<head[\s\S]*?<\/head>/gi, "");
+  s = s.replace(/<meta[^>]*>/gi, "");
+  s = s.replace(/<title[\s\S]*?<\/title>/gi, "");
+  s = s.replace(PASTED_CSS_RULE_RE, "");
+  return s;
+}
+
+/**
+ * „Inspected by IRISS” (un „Approved/Checked/Verified by IRISS”) ir IRISS zīmola zīmogs -
+ * PROVIN klienta atskaitē tas nedrīkst parādīties (zīmolu nošķiršana).
+ */
+const IRISS_STAMP_RE =
+  /(?:<(?:p|div)[^>]*>\s*)?(?:<(?:strong|b|em|i|u|span)[^>]*>\s*)*\b(?:inspected|approved|checked|verified)\s+by\s+iriss\b\.?(?:\s*<\/(?:strong|b|em|i|u|span)>)*(?:\s*<\/(?:p|div)>)?/gi;
+
+export function stripIrissBrandStamp(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(IRISS_STAMP_RE, "")
+    .replace(/(?:\s*<br\s*\/?>)+\s*$/i, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 /** Tikai tik daudz, lai uz admin lasīšanu ar dangerouslySetInnerHTML neielīstu skriptu. */
 export function coerceAdminRichHtmlForDisplay(html: string | null | undefined): string {
   let s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
+  s = stripPastedStylesheetText(s);
   s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
   s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)+/gi, "");
   return s;

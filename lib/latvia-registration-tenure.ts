@@ -1,5 +1,5 @@
 /**
- * Latvijā reģistrācijas ilgums — no CSDD, AutoDNA/CarVertical un LTAB datiem.
+ * Latvijā reģistrācijas ilgums - tikai no reģistra notikumiem (CSDD, LTAB).
  */
 
 import {
@@ -10,8 +10,9 @@ import {
   type ClientManualVendorBlockPdf,
   type CsddFormFields,
 } from "@/lib/admin-source-blocks";
-import { autoRecordsRowHasData, formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { formatSourceDatePreservingMonth } from "@/lib/auto-records-paste-parse";
 import { isLatviaCountryName } from "@/lib/country-names-lv";
+import { ownerFirstRegistrationInLatvia } from "@/lib/csdd-extended-parse";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
 
 export type LatviaRegistrationTenure = {
@@ -41,7 +42,8 @@ function pushCandidate(out: DateCandidate[], dateRaw: string, source: string): v
 }
 
 function formatDisplayDate(raw: string): string {
-  return formatAutoRecordsDateForOutput(raw) || raw.trim();
+  // Mēneša precizitāte („06.2023”) paliek mēnesis - nekad neizdomā „01.06.2023”.
+  return formatSourceDatePreservingMonth(raw) || raw.trim();
 }
 
 function daysBetweenUtc(fromMs: number, toMs: number): number {
@@ -72,24 +74,30 @@ function lvMenesisForm(n: number): string {
   return "mēnešu";
 }
 
+/**
+ * Tikai reģistra notikumi (CSDD, LTAB pēc LV numura). Sludinājumi, dīlera serviss un
+ * CarVertical/AutoDNA rindas ar valsti „Latvija” NAV reģistrācija Latvijā.
+ * Ja CSDD ir „Pirmā reģistrācija Latvijā” - tas ir precīzais sākuma datums.
+ */
 function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCandidate[] {
   const out: DateCandidate[] = [];
+  const csdd = input.csddForm;
 
-  for (const r of input.csddForm?.mileageHistory ?? []) {
+  const firstLv = csdd?.firstRegistrationLatvia?.trim() ?? "";
+  if (firstLv) pushCandidate(out, firstLv, "CSDD");
+  if (out.length > 0) return out;
+
+  const firstLvEvent = ownerFirstRegistrationInLatvia(csdd?.ownerRegistrationEvents);
+  if (firstLvEvent) pushCandidate(out, firstLvEvent.date, "CSDD");
+  if (out.length > 0) return out;
+
+  for (const e of csdd?.ownerRegistrationEvents ?? []) {
+    pushCandidate(out, e.date, "CSDD");
+  }
+
+  for (const r of csdd?.mileageHistory ?? []) {
     if (!csddMileageRowHasData(r)) continue;
     if (isLatviaCountryName(r.country)) pushCandidate(out, r.date, "CSDD");
-  }
-
-  for (const r of input.autoRecordsBlock?.serviceHistory ?? []) {
-    if (!autoRecordsRowHasData(r)) continue;
-    if (isLatviaCountryName(r.country)) pushCandidate(out, r.date, "OFICIĀLĀ DĪLERA DATI");
-  }
-
-  for (const b of input.manualVendorBlocks ?? []) {
-    for (const r of b.mileageRows ?? []) {
-      if (!autoRecordsRowHasData(r)) continue;
-      if (isLatviaCountryName(r.country)) pushCandidate(out, r.date, b.title);
-    }
   }
 
   for (const r of input.manualLtabBlock?.rows ?? []) {
