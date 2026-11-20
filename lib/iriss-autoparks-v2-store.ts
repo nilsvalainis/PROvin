@@ -19,6 +19,7 @@ import {
   decideStatusUndo,
   normalizeAutoparksV2State,
   v2PlausibleTech,
+  v2SaleNum,
   type AutoparksCarV2,
   type AutoparksV2State,
   type V2HistoryRow,
@@ -317,6 +318,20 @@ export async function refreshAutoparksV2Tech(car: AutoparksCar, v2: AutoparksCar
           c.tech.powerKw = kw;
           c.sources["tech.powerKw"] = "csdd";
           hist.push({ field: "tech.powerKw", from: "", to: kw });
+        }
+        // Cenu lapas obligātie lauki (Nils 20.11): tikai tukšos, ar roku ievadīto nepārraksta.
+        for (const [k, v] of [["vehicleType", (d.vehicleKind ?? "").trim()], ["fuel", (d.fuel ?? "").trim()]] as const) {
+          if (!c.tech[k] && v) {
+            c.tech[k] = v;
+            c.sources[`tech.${k}`] = "csdd";
+            hist.push({ field: `tech.${k}`, from: "", to: v });
+          }
+        }
+        const mass = v2SaleNum("grossMassKg", d.grossMassKg);
+        if (c.tech.grossMassKg == null && mass != null) {
+          c.tech.grossMassKg = mass;
+          c.sources["tech.grossMassKg"] = "csdd";
+          hist.push({ field: "tech.grossMassKg", from: "", to: mass });
         }
       }
       return { result: c, history: hist, write: true };

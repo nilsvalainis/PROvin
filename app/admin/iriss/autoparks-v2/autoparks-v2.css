@@ -2514,7 +2514,7 @@
     align-items: center;
   }
 
-  /* Cenu lapa: mobilajā paliek tikai "Priekšskatīt A4" poga (atveras jaunā cilnē) - A4 priekšskats
+  /* Cenu lapa: mobilajā paliek tikai "Drukāt A4" poga (drukā uzreiz; iPhone - lapa ar autoprint) - A4 priekšskats
      saspiests 390px platumā nebija lasāms un maketā to nerāda. */
   .ap2.ap2.ap2 .ap2-a4wrap {
     display: none;
@@ -3853,12 +3853,16 @@
 .ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r {
   font-size: 10.5px;
 }
+/* Cenu lapa ar >12 tehnisko datu rindām (Nils 20.11, obligātie lauki): mazāka atstarpe starp rindām. */
+.ap2.ap2.ap2 .ap2-cl-rows.dense .ap2-cl-r > span {
+  padding: 3px 0;
+}
 .ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span {
   padding: 2.5px 0;
 }
 .ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span:last-child {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 118px minmax(0, 1fr);
 }
 .ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > i {
   opacity: 0;
@@ -5281,4 +5285,10 @@
 .ap2.ap2.ap2 .ap2-cl-rowv.off .v {
   opacity: 0.45;
   text-decoration: line-through;
+}
+/* Obligāts tukšs lauks (Nils 20.11): sarkans «Trūkst», saite uz Pamatdatiem. */
+.ap2.ap2.ap2 .ap2-cl-rowv .ap2-cl-miss {
+  color: #c62828;
+  font-weight: 600;
+  text-decoration: underline;
 }

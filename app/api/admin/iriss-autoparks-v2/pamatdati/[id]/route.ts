@@ -2,6 +2,9 @@ import { isAutoparksOwner } from "@/lib/iriss-autoparks";
 import {
   autoparksV2Basics,
   normalizeInspectionUntil,
+  v2SaleNum,
+  V2_SALE_NUM_RANGE,
+  type V2SaleNumKey,
   v2CountInput,
   v2Num,
   v2PlausibleTech,
@@ -44,6 +47,9 @@ const TEXT_MAX: Record<string, number> = {
   clientOrder: 1,
   secondWheels: 80,
   inspectionUntil: 20,
+  vehicleType: 80,
+  fuel: 40,
+  tradeActNo: 30,
 };
 
 /**
@@ -99,6 +105,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const inspectionUntil = inspectionRaw === undefined ? undefined : normalizeInspectionUntil(inspectionRaw);
   if (inspectionUntil === "invalid") return autoparksV2Json({ error: "invalid_inspection" }, 400);
   const secondWheels = text("secondWheels");
+  // Cenu lapas obligātie lauki (Nils 20.11): TL veids, degviela, akta nr. (teksts); sēdvietas, pilna masa, CO2 (skaitļi).
+  const saleText = { vehicleType: text("vehicleType"), fuel: text("fuel"), tradeActNo: text("tradeActNo")?.toUpperCase() };
+  const saleNums: Partial<Record<V2SaleNumKey, number | null>> = {};
+  for (const k of Object.keys(V2_SALE_NUM_RANGE) as V2SaleNumKey[]) {
+    if (!Object.prototype.hasOwnProperty.call(body, k)) continue;
+    const raw = body[k];
+    const empty = raw == null || (typeof raw === "string" && !raw.trim());
+    const n = empty ? null : v2SaleNum(k, raw);
+    if (!empty && n == null) return autoparksV2Json({ error: "invalid_sale_num" }, 400);
+    saleNums[k] = n;
+  }
   const v2 = await updateCarV2(
     id,
     (c) => {
@@ -169,6 +186,18 @@ export async function PATCH(req: Request, ctx: Ctx) {
         hist.push({ field: "tech.secondWheels", from: c.tech.secondWheels, to: secondWheels });
         c.tech.secondWheels = secondWheels;
         c.sources["tech.secondWheels"] = "manual";
+      }
+      for (const k of ["vehicleType", "fuel", "tradeActNo"] as const) {
+        const v = saleText[k];
+        if (v === undefined) continue;
+        hist.push({ field: `tech.${k}`, from: c.tech[k] ?? "", to: v });
+        c.tech[k] = v;
+        c.sources[`tech.${k}`] = "manual";
+      }
+      for (const k of Object.keys(saleNums) as V2SaleNumKey[]) {
+        hist.push({ field: `tech.${k}`, from: c.tech[k] ?? null, to: saleNums[k] ?? null });
+        c.tech[k] = saleNums[k] ?? null;
+        c.sources[`tech.${k}`] = "manual";
       }
       if (inspectionUntil !== undefined) {
         hist.push({ field: "tech.inspectionUntil", from: c.tech.inspectionUntil, to: inspectionUntil });

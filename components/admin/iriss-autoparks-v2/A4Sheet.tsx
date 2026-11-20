@@ -46,7 +46,8 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
       {s.rows.length > 0 ? (
         <>
           <div className="ap2-cl-lab">Tehniskie dati</div>
-          <div className="ap2-cl-rows">
+          {/* Daudz rindu (obligātie lauki + papildu, Nils 20.11) - blīvāk, lai A4 lapa nepārplūst. */}
+          <div className={s.rows.length > 12 ? "ap2-cl-rows dense" : "ap2-cl-rows"}>
             {s.rows.map((r) => (
               <div key={r.label} className="ap2-cl-r">
                 <span>{r.label}</span>
@@ -65,8 +66,8 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
               <span>Transportlīdzekļa drošības sistēmas</span>
               <i />
               <span>
-                <span>Esamība</span>
-                <span>Pārbaude</span>
+                <span>Informācija par esamību</span>
+                <span>Informācija par pārbaudi</span>
               </span>
             </div>
             {s.safetyRows.map((r) => (

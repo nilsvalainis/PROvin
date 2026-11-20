@@ -58,3 +58,31 @@ describe("PATCH Pamatdati - atslēgas, īpašnieki, otrs disku komplekts, TA/HU"
     expect(mem.history).toHaveLength(0);
   });
 });
+
+describe("PATCH Pamatdati - cenu lapas obligātie lauki (Nils 20.11)", () => {
+  beforeEach(() => {
+    mem.v2 = emptyCarV2();
+    mem.history = [];
+  });
+
+  it("TL veids, degviela, sēdvietas, pilna masa, CO2, akta numurs - saglabā ar roku", async () => {
+    const res = await patch({ vehicleType: "Vieglais plašlietojuma", fuel: "Dīzeļdegviela", seats: "5", grossMassKg: "2 530", co2GKm: 189, tradeActNo: "gdz00287" });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { basics: { sale: Record<string, { value: unknown; csdd: boolean }> } };
+    expect(body.basics.sale.vehicleType).toEqual({ value: "Vieglais plašlietojuma", csdd: false });
+    expect(body.basics.sale.seats.value).toBe(5);
+    expect(body.basics.sale.grossMassKg.value).toBe(2530);
+    expect(body.basics.sale.co2GKm.value).toBe(189);
+    expect(body.basics.sale.tradeActNo.value).toBe("GDZ00287");
+    expect(mem.history.map((h) => h.field)).toContain("tech.tradeActNo");
+  });
+
+  it("neticama vērtība - 400; tukšs notīra", async () => {
+    expect((await patch({ seats: "999" })).status).toBe(400);
+    expect((await patch({ grossMassKg: "daudz" })).status).toBe(400);
+    await patch({ seats: 7 });
+    expect(mem.v2.tech.seats).toBe(7);
+    await patch({ seats: "" });
+    expect(mem.v2.tech.seats).toBeNull();
+  });
+});

@@ -73,3 +73,25 @@ describe("Autoparks v2 Pamatdati - lauki no izsoles (IRISS 18.11)", () => {
     expect(text).not.toMatch(/cena|€/i);
   });
 });
+
+describe("Autoparks v2 Pamatdati - cenu lapas obligātie lauki (Nils 20.11)", () => {
+  it("lauki redzami un labojami; CSDD vērtība ar zaļo punktu", () => {
+    const sale = {
+      vehicleType: { value: "Vieglais plašlietojuma", csdd: true },
+      fuel: { value: "Benzīns", csdd: true },
+      seats: { value: 5, csdd: true },
+      grossMassKg: { value: 1850, csdd: true },
+      co2GKm: { value: 132, csdd: true },
+      tradeActNo: { value: "GDZ00287", csdd: true },
+    };
+    const text = renderText(<AutoparksV2Pamatdati basics={{ ...basics, sale }} onBasics={() => undefined} />);
+    expect(text).toMatch(/Akta numurs\s*GDZ00287/);
+    expect(text).toMatch(/TL veids\s*Vieglais plašlietojuma/);
+    expect(text).toMatch(/Degviela\s*Benzīns/);
+    expect(text).toMatch(/Sēdvietas\s*5/);
+    expect(text).toMatch(/Pilna masa\s*1 850 kg/);
+    expect(text).toMatch(/CO2\s*132 g\/km/);
+    const empty = renderText(<AutoparksV2Pamatdati basics={basics} onBasics={() => undefined} />);
+    expect(empty).toMatch(/Sēdvietas\s*\+ Pievienot/);
+  });
+});

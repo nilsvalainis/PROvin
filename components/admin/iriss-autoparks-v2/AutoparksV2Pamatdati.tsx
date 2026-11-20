@@ -25,7 +25,13 @@ type EditKey =
   | "keysCount"
   | "ownersCount"
   | "secondWheels"
-  | "inspectionUntil";
+  | "inspectionUntil"
+  | "vehicleType"
+  | "fuel"
+  | "seats"
+  | "grossMassKg"
+  | "co2GKm"
+  | "tradeActNo";
 
 /** IRISS 18.11: lauki no izsoles (ar roku, bez CSDD zaļā punkta). */
 const EXTRA_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => string>> = {
@@ -45,9 +51,27 @@ const CSDD_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => { value: str
   displacementCm3: (b) => ({ value: b.displacementCm3.value == null ? "" : String(b.displacementCm3.value), csdd: b.displacementCm3.csdd }),
   powerKw: (b) => ({ value: b.powerKw.value == null ? "" : String(b.powerKw.value), csdd: b.powerKw.csdd }),
   mileageKm: (b) => ({ value: b.mileageKm.value == null ? "" : String(b.mileageKm.value), csdd: b.mileageKm.csdd }),
+  // Cenu lapas obligātie lauki (Nils 20.11): ar roku vai no CSDD (tehniskie dati / tirdzniecības reģistrs).
+  vehicleType: (b) => b.sale?.vehicleType ?? { value: "", csdd: false },
+  fuel: (b) => b.sale?.fuel ?? { value: "", csdd: false },
+  tradeActNo: (b) => b.sale?.tradeActNo ?? { value: "", csdd: false },
+  seats: (b) => saleNum(b.sale?.seats),
+  grossMassKg: (b) => saleNum(b.sale?.grossMassKg),
+  co2GKm: (b) => saleNum(b.sale?.co2GKm),
 };
 
+function saleNum(v: { value: number | null; csdd: boolean } | undefined): { value: string; csdd: boolean } {
+  return v && v.value != null ? { value: String(v.value), csdd: v.csdd } : { value: "", csdd: false };
+}
+
+/** Skaitļi, ko pārbauda serveris (robežas `V2_SALE_NUM_RANGE`); "" = notīrīt. */
+const SALE_NUM_KEYS: ReadonlySet<EditKey> = new Set(["seats", "grossMassKg", "co2GKm"]);
+
 const NUM_KEYS: ReadonlySet<EditKey> = new Set(["displacementCm3", "powerKw", "mileageKm"]);
+
+function fmtUnit(n: number | null | undefined, unit: string): string {
+  return n == null ? "" : `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ${unit}`;
+}
 
 /** Pamatdati (T2): Auto, Tehniskie dati. CSDD reģistrs ir sava cilne (j63 / m03). Zaļš punkts = no CSDD. Tukšs = "+ Pievienot" (autosave). */
 export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
@@ -79,13 +103,14 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     setRetry(null);
     const r = await ap2PatchJson<{ basics?: AutoparksV2Basics; error?: string }>(
       `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`,
-      { [key]: NUM_KEYS.has(key) ? num : COUNT_KEYS.has(key) ? (next === "" ? null : Number(next)) : next },
+      { [key]: NUM_KEYS.has(key) ? num : COUNT_KEYS.has(key) ? (next === "" ? null : Number(next)) : SALE_NUM_KEYS.has(key) ? next.replace(/\s/g, "") : next },
     );
     const data = r.data;
     if (r.ok && data?.basics) onBasics(data.basics);
     else if (data?.error === "invalid_power") setError("Jauda nav ticama (1-2000 kW) - lauks netika mainīts");
     else if (data?.error === "invalid_displacement") setError("Tilpums nav ticams (50-20000 cm3) - lauks netika mainīts");
     else if (data?.error === "invalid_mileage") setError("Nobraukums nav ticams - lauks netika mainīts");
+    else if (data?.error === "invalid_sale_num") setError("Vērtība nav ticama - lauks netika mainīts");
     else if (data?.error === "invalid_count") setError("Skaits nav ticams - lauks netika mainīts");
     else if (data?.error === "invalid_inspection") setError("TA/HU: ievadi mēnesi un gadu, piem., 04.2028 - lauks netika mainīts");
     else if (key === "vin" && r.status !== null && r.status < 500) setError("Nederīgs VIN (17 zīmes, bez I/O/Q)");
@@ -166,6 +191,7 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("color", "Krāsa", basics.color, basics.color)}
         {editable("vin", "VIN", basics.vin, basics.vin)}
         {editable("plate", "Numurzīme", basics.plate, basics.plate)}
+        {editable("tradeActNo", "Akta numurs", CSDD_VALUE.tradeActNo!(basics).value, CSDD_VALUE.tradeActNo!(basics).value)}
         {editable("mileageKm", "Nobraukums", basics.mileageKm.value == null ? "" : String(basics.mileageKm.value), fmtKm(basics.mileageKm.value), "number")}
         {editable("ownersCount", "Īpašnieku skaits", EXTRA_VALUE.ownersCount!(basics), EXTRA_VALUE.ownersCount!(basics), "number")}
         {editable("keysCount", "Atslēgas", EXTRA_VALUE.keysCount!(basics), EXTRA_VALUE.keysCount!(basics), "number")}
@@ -182,6 +208,11 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("powerKw", "Jauda", basics.powerKw.value == null ? "" : String(basics.powerKw.value), fmtKw(basics.powerKw.value), "number")}
         {editable("gearbox", "Pārnesumkārba", basics.gearbox.value, basics.gearbox.value)}
         {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
+        {editable("fuel", "Degviela", CSDD_VALUE.fuel!(basics).value, CSDD_VALUE.fuel!(basics).value)}
+        {editable("vehicleType", "TL veids", CSDD_VALUE.vehicleType!(basics).value, CSDD_VALUE.vehicleType!(basics).value)}
+        {editable("seats", "Sēdvietas", CSDD_VALUE.seats!(basics).value, CSDD_VALUE.seats!(basics).value, "number")}
+        {editable("grossMassKg", "Pilna masa", CSDD_VALUE.grossMassKg!(basics).value, fmtUnit(basics.sale?.grossMassKg.value, "kg"), "number")}
+        {editable("co2GKm", "CO2", CSDD_VALUE.co2GKm!(basics).value, fmtUnit(basics.sale?.co2GKm.value, "g/km"), "number")}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
         {editable("secondWheels", "Otrs disku komplekts", EXTRA_VALUE.secondWheels!(basics), EXTRA_VALUE.secondWheels!(basics))}
       </div>

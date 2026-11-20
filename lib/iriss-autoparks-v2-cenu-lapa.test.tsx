@@ -33,10 +33,10 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     const v2 = emptyCarV2();
     const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
     const labels = s.rows.map((r) => r.label);
-    expect(labels).toContain("Akta numurs");
+    expect(labels).toContain("Akta par pieņemšanu tirdzniecībā numurs");
     expect(labels).not.toContain("Izmešu daudzums (CO2)");
     expect(labels).not.toContain("Transportlīdzekļa veids");
-    expect(s.rows.find((r) => r.label === "Pilna masa")?.value).toBe("2 530 kg");
+    expect(s.rows.find((r) => r.label === "Pilna masa (kg)")?.value).toBe("2 530");
     // Nils 28.10: drošības tabula vienmēr; spilveni pēdējie. Nils 20.11: bez saglabātas izvēles - "Nav pārbaudīts"; pieņemtam tirdzniecībā apliecinājums ieslēgts.
     expect(s.safetyRows.map((r) => r.label)).toEqual([
       "Elektroniskā stabilitātes sistēma (ESP)",
@@ -114,7 +114,7 @@ describe("Cenu lapa «Drīzumā» (Nils 20.11, variants A)", () => {
     expect(text).toContain("Plānotā cena");
     expect(text).toContain("13 990 €");
     expect(text).toContain("cena ar PVN");
-    expect(s.rows.map((r) => r.label)).not.toContain("Akta numurs");
+    expect(s.rows.map((r) => r.label)).not.toContain("Akta par pieņemšanu tirdzniecībā numurs");
   });
 
   it("D: «Rādīt plānoto cenu» izslēgts - bez cenas", () => {
@@ -294,14 +294,14 @@ describe("Cenu lapa - tirdzniecībā pieņemts un «Dati lapai» (Nils 20.11)", 
   })!;
   const sheet = (v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
 
-  it("akta datums bez akta nr. -> lapā «Tirdzniecībā pieņemts: 18.11.2026», parastā lapa", () => {
+  it("akta datums bez akta nr. -> lapā «Pieņemts tirdzniecībā: 18.11.2026», parastā lapa", () => {
     const s = sheet();
     expect(s.state).toBe("normal");
-    expect(s.rows).toContainEqual({ label: "Tirdzniecībā pieņemts", value: "18.11.2026" });
-    expect(s.rows.map((r) => r.label)).not.toContain("Akta numurs");
+    expect(s.rows).toContainEqual({ label: "Pieņemts tirdzniecībā", value: "18.11.2026" });
+    expect(s.rows.map((r) => r.label)).not.toContain("Akta par pieņemšanu tirdzniecībā numurs");
     expect(s.rows).toContainEqual({ label: "Odometra rādījums", value: "154 000 km" });
     const text = renderText(<A4Sheet s={s} />);
-    expect(text).toContain("Tirdzniecībā pieņemts");
+    expect(text).toContain("Pieņemts tirdzniecībā");
     expect(text).toContain("18.11.2026");
     expect(text).not.toContain("DRĪZUMĀ");
   });
@@ -316,7 +316,7 @@ describe("Cenu lapa - tirdzniecībā pieņemts un «Dati lapai» (Nils 20.11)", 
     v2.priceSheet.rowVisibility = { plate: true, tradeAccepted: false };
     const s2 = sheet(v2);
     expect(s2.rows).toContainEqual({ label: "Reģistrācijas numurs", value: "AB1234" });
-    expect(s2.rows.map((r) => r.label)).not.toContain("Tirdzniecībā pieņemts");
+    expect(s2.rows.map((r) => r.label)).not.toContain("Pieņemts tirdzniecībā");
     expect(normalizeCarV2({ priceSheet: { rowVisibility: { plate: true, "x y": true, vin: "1" } } }).priceSheet.rowVisibility).toEqual({ plate: true });
   });
 });
@@ -355,5 +355,111 @@ describe("Cenu lapa - «tehniski atbilst» noklusējums pieņemtam tirdzniecīb�
     expect(s.roadworthy).toBe(false);
     expect(roadBox(renderHtml(<SafetyTable state={s.safetyState} onChange={() => {}} />))).not.toContain("checked");
     expect(renderText(<A4Sheet s={s} />)).not.toContain("tehniski atbilst");
+  });
+});
+
+describe("Cenu lapa - obligātie lauki kā vecajā DZA paraugā (Nils 20.11)", () => {
+  const full = normalizeAutoparksCar({
+    id: "a8",
+    make: "Audi",
+    model: "A8",
+    vin: "WAUZZZ4H5DN012345",
+    listPriceEur: 21900,
+    registry: {
+      makeModel: "AUDI A8",
+      firstRegDate: "2013-03-12",
+      odometerKm: 201000,
+      vehicleType: "Vieglais plašlietojuma",
+      fuel: "Dīzeļdegviela",
+      gearbox: "Automātiskā",
+      seats: 5,
+      grossMassKg: 2530,
+      co2GKm: 189,
+      tradeActNo: "GDZ00287",
+      tradeActDate: "2026-11-10",
+      importedAt: "x",
+    },
+  })!;
+  const sheet = (car: typeof full, v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+
+  it("secība un noklusējumi: obligātie redzami (ar Jaudu), tilpums redzams, akta datums ar numuru paslēpts", () => {
+    const v2 = emptyCarV2();
+    v2.tech.powerKw = 190;
+    v2.tech.displacementCm3 = 2967;
+    const s = sheet(full, v2);
+    expect(s.rows.map((r) => r.label)).toEqual([
+      "Marka/modelis",
+      "Pirmās reģistrācijas datums",
+      "Odometra rādījums",
+      "Transportlīdzekļa veids",
+      "Degvielas tips",
+      "Ātrumkārbas tips",
+      "Dzinēja tilpums (cm³)",
+      "Jauda (kW)",
+      "Sēdvietu skaits",
+      "Pilna masa (kg)",
+      "Oglekļa dioksīda (CO2) izmešu daudzums (g/km)",
+      "Identifikācijas numurs",
+      "Akta par pieņemšanu tirdzniecībā numurs",
+    ]);
+    expect(s.rows).toContainEqual({ label: "Akta par pieņemšanu tirdzniecībā numurs", value: "GDZ00287" });
+    expect(s.rows).toContainEqual({ label: "Jauda (kW)", value: "190" });
+    expect(s.allRows.find((r) => r.key === "tradeAccepted")?.shown).toBe(false);
+    expect(s.allRows.find((r) => r.key === "engine")?.shown).toBe(false);
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("Informācija par esamību");
+    expect(text).toContain("Informācija par pārbaudi");
+  });
+
+  it("ar akta numuru: obligāts tukšs redaktorā «Trūkst» (required, tukša vērtība), A4 lapā rindas nav", () => {
+    const withAct = normalizeAutoparksCar({ id: "b", make: "Audi", model: "A8", vin: "WAUZZZ4H5DN012345", registry: { tradeActNo: "GDZ00287", importedAt: "x" } })!;
+    const s = sheet(withAct);
+    const missing = s.allRows.filter((r) => r.required && !r.value).map((r) => r.key);
+    expect(missing).toEqual(["firstReg", "mileage", "vehicleType", "fuel", "gearbox", "power", "seats", "grossMass", "co2"]);
+    expect(s.rows.map((r) => r.label)).not.toContain("Jauda (kW)");
+    // Nekas netiek izdomāts: tukšajiem laukiem vērtība tukša, lapā rindas nav.
+    for (const k of missing) expect(s.allRows.find((r) => r.key === k)?.value).toBe("");
+    expect(renderText(<A4Sheet s={s} />)).not.toMatch(/Sēdvietu skaits|Pilna masa|Oglekļa dioksīda|Transportlīdzekļa veids/);
+  });
+
+  it("bez akta numura (Drīzumā vai tikai datums): «Trūkst» nerāda, tukšos izlaiž", () => {
+    const dateOnly = normalizeAutoparksCar({ id: "b", make: "Audi", model: "A8", vin: "WAUZZZ4H5DN012345", registry: { tradeActDate: "2026-11-10", importedAt: "x" } })!;
+    const s = sheet(dateOnly);
+    expect(s.allRows.some((r) => r.required)).toBe(false);
+    expect(s.allRows.some((r) => !r.value.trim())).toBe(false);
+    // Bez akta numura, bet ar datumu - «Pieņemts tirdzniecībā» ar datumu.
+    expect(s.rows).toContainEqual({ label: "Pieņemts tirdzniecībā", value: "10.11.2026" });
+    const notAcc = normalizeAutoparksCar({ id: "c", make: "Audi", model: "A8", vin: "WAUZZZ4H5DN012345" })!;
+    const n = sheet(notAcc);
+    expect(n.state).toBe("soon");
+    expect(n.allRows.some((r) => r.required || !r.value.trim())).toBe(false);
+  });
+
+  it("Pamatdatu manuālā vērtība aizpilda trūkstošo; ar roku uzvar reģistru", () => {
+    const bare = normalizeAutoparksCar({ id: "b", make: "Audi", model: "A8", vin: "WAUZZZ4H5DN012345", registry: { tradeActDate: "2026-11-10", seats: 5, importedAt: "x" } })!;
+    const v2 = emptyCarV2();
+    v2.tech.vehicleType = "Vieglais plašlietojuma";
+    v2.tech.grossMassKg = 2530;
+    v2.tech.co2GKm = 0;
+    v2.tech.tradeActNo = "GDZ00287";
+    v2.tech.seats = 4;
+    const s = sheet(bare, v2);
+    expect(s.rows).toContainEqual({ label: "Transportlīdzekļa veids", value: "Vieglais plašlietojuma" });
+    expect(s.rows).toContainEqual({ label: "Pilna masa (kg)", value: "2 530" });
+    expect(s.rows).toContainEqual({ label: "Oglekļa dioksīda (CO2) izmešu daudzums (g/km)", value: "0" });
+    expect(s.rows).toContainEqual({ label: "Akta par pieņemšanu tirdzniecībā numurs", value: "GDZ00287" });
+    expect(s.rows).toContainEqual({ label: "Sēdvietu skaits", value: "4" });
+    expect(s.allRows.find((r) => r.key === "tradeAccepted")?.shown).toBe(false);
+  });
+
+  it("saglabātā izvēle noteicošā: ar roku paslēpts obligātais paliek paslēpts; jaunie papildu lauki pēc noklusējuma slēpti", () => {
+    const v2 = emptyCarV2();
+    v2.priceSheet.rowVisibility = { co2: false };
+    v2.tech.secondWheels = "Ziemas 18";
+    const s = sheet(full, v2);
+    expect(s.rows.map((r) => r.label)).not.toContain("Oglekļa dioksīda (CO2) izmešu daudzums (g/km)");
+    expect(s.rows.map((r) => r.label)).toContain("Pilna masa (kg)");
+    for (const k of ["secondWheels", "owner", "tradeStatus"]) expect(s.allRows.find((r) => r.key === k)?.shown).toBe(false);
+    expect(s.allRows.find((r) => r.key === "tradeStatus")?.value).toBe("Pieņemts");
   });
 });

@@ -5,6 +5,7 @@
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import {
   defaultV2PriceSheetSafety,
+  V2_REGISTRY_STATUS_LV,
   type AutoparksCarV2,
   type AutoparksV2Basics,
   type V2PriceSheetSafety,
@@ -123,45 +124,87 @@ export function priceSheetTitlePx(title: string): number {
 
 const group = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-export type PriceSheetRow = { key: string; label: string; value: string; shown: boolean; csdd: boolean };
+export type PriceSheetRow = {
+  key: string;
+  label: string;
+  value: string;
+  shown: boolean;
+  csdd: boolean;
+  /** Obligāts lauks (vecais DZA paraugs, Nils 20.11; tikai, ja ir akta numurs): tukšs redaktorā sarkans «Trūkst», A4 lapā nerāda. */
+  required: boolean;
+};
+
+/** Obligātie cenu lapas lauki secībā kā vecajā DZA paraugā (Nils 20.11). */
+export const PRICE_SHEET_REQUIRED_KEYS = [
+  "makeModel",
+  "firstReg",
+  "mileage",
+  "vehicleType",
+  "fuel",
+  "gearbox",
+  "power",
+  "seats",
+  "grossMass",
+  "co2",
+  "vin",
+  "tradeActNo",
+] as const;
 
 /**
- * «Dati lapai» (Nils 27.10, 20.11): visi cenu lapai jēgpilnie lauki no Pamatdatiem un CSDD reģistra.
- * Tukšās rindas nerāda; katru var paslēpt/parādīt (`priceSheet.rowVisibility`). Rindas, kas lapā nebija līdz 20.11
- * (numurs, dzinējs, krāsa u.c.), pēc noklusējuma paslēptas, lai esošās lapas nemainās; «Tirdzniecībā pieņemts» - redzama.
+ * «Dati lapai» (Nils 27.10, 20.11): visi cenu lapai jēgpilnie lauki no Pamatdatiem, CSDD tehniskajiem datiem un
+ * CSDD reģistra. Secība kā vecajā DZA paraugā. Obligātie (`PRICE_SHEET_REQUIRED_KEYS`) pēc noklusējuma redzami;
+ * ja ir akta numurs, tie sarakstā ir arī tukši («Trūkst»). Pārējās tukšās rindas sarakstā nerāda. Katru var paslēpt/parādīt
+ * (`priceSheet.rowVisibility`) - saglabātā izvēle vienmēr noteicošā.
  */
 export function priceSheetAllRows(car: AutoparksCar, basics: AutoparksV2Basics, visibility: Record<string, boolean> = {}): PriceSheetRow[] {
   const r = car.registry;
   const makeModel = (r?.makeModel || `${basics.make} ${basics.model}`).replace(/\s+/g, " ").trim().toUpperCase();
   const reg = basics.registry;
   const ex = basics.extras;
-  const engine = basics.engine.value || engineLabel(basics.displacementCm3.value, basics.powerKw.value, r?.fuel ?? "");
+  const sale = basics.sale;
+  const manualEngine = basics.engine.value;
+  const engine = manualEngine || engineLabel(basics.displacementCm3.value, basics.powerKw.value, sale?.fuel.value ?? r?.fuel ?? "");
+  const num = (v: number | null | undefined) => (v == null ? "" : group(v));
+  const accepted = reg.status === "accepted";
+  const actNo = sale?.tradeActNo ?? { value: reg.actNo, csdd: Boolean(reg.actNo) };
   // [atslēga, nosaukums, vērtība, noklusējumā redzama, no CSDD]
   const rows: Array<[string, string, string, boolean, boolean]> = [
     ["makeModel", "Marka/modelis", makeModel, true, Boolean(r?.makeModel)],
     ["firstReg", "Pirmās reģistrācijas datums", fmtDateLv(basics.firstRegDate.value), true, basics.firstRegDate.csdd],
     ["mileage", "Odometra rādījums", fmtKm(basics.mileageKm.value), true, basics.mileageKm.csdd],
-    ["vehicleType", "Transportlīdzekļa veids", r?.vehicleType ?? "", true, true],
-    ["fuel", "Degvielas tips", r?.fuel ?? "", true, true],
+    ["vehicleType", "Transportlīdzekļa veids", sale?.vehicleType.value ?? "", true, sale?.vehicleType.csdd ?? false],
+    ["fuel", "Degvielas tips", sale?.fuel.value ?? "", true, sale?.fuel.csdd ?? false],
     ["gearbox", "Ātrumkārbas tips", basics.gearbox.value, true, basics.gearbox.csdd],
-    ["engine", "Dzinējs", engine, false, basics.displacementCm3.csdd || basics.powerKw.csdd],
-    ["seats", "Sēdvietu skaits", r?.seats ? String(r.seats) : "", true, true],
-    ["grossMass", "Pilna masa", r?.grossMassKg ? `${group(r.grossMassKg)} kg` : "", true, true],
-    ["co2", "Izmešu daudzums (CO2)", r?.co2GKm ? `${group(r.co2GKm)} g/km` : "", true, true],
+    // Tilpums nav obligāts, bet pārdošanai noderīgs - pēc noklusējuma redzams (Nils 20.11).
+    ["displacement", "Dzinēja tilpums (cm³)", num(basics.displacementCm3.value), true, basics.displacementCm3.csdd],
+    ["power", "Jauda (kW)", num(basics.powerKw.value), true, basics.powerKw.csdd],
+    ["seats", "Sēdvietu skaits", num(sale?.seats.value), true, sale?.seats.csdd ?? false],
+    ["grossMass", "Pilna masa (kg)", num(sale?.grossMassKg.value), true, sale?.grossMassKg.csdd ?? false],
+    ["co2", "Oglekļa dioksīda (CO2) izmešu daudzums (g/km)", num(sale?.co2GKm.value), true, sale?.co2GKm.csdd ?? false],
+    ["vin", "Identifikācijas numurs", basics.vin, true, false],
+    ["tradeActNo", "Akta par pieņemšanu tirdzniecībā numurs", actNo.value, true, actNo.csdd],
+    // Ja akta numura nav, bet ir datums - rāda datumu (Nils 20.11); ar numuru datums pēc noklusējuma paslēpts.
+    ["tradeAccepted", "Pieņemts tirdzniecībā", accepted ? fmtDateLv(reg.actDate) || reg.actDate : "", !actNo.value, true],
+    // Papildu (pēc noklusējuma paslēpti): no Pamatdatiem / CSDD.
+    // Dzinējs: ar roku ievadīts apraksts redzams; aprēķinātais (tilpums + jauda) - paslēpts, jo tās ir atsevišķas rindas.
+    ["engine", "Dzinējs", engine, Boolean(manualEngine), basics.displacementCm3.csdd || basics.powerKw.csdd],
     ["color", "Krāsa", basics.color, false, false],
     ["tyres", "Riepu izmērs", basics.tyreSize.value, false, false],
+    ["secondWheels", "Otrs disku komplekts", ex.secondWheels, false, false],
     ["owners", "Īpašnieku skaits", ex.ownersCount != null && ex.ownersCount > 0 ? String(ex.ownersCount) : "", false, false],
     ["keys", "Atslēgu skaits", ex.keysCount != null && ex.keysCount > 0 ? String(ex.keysCount) : "", false, false],
     ["inspection", "Tehniskā apskate līdz", fmtDateLv(ex.inspectionUntil) || ex.inspectionUntil, false, false],
     ["plate", "Reģistrācijas numurs", basics.plate, false, false],
-    ["vin", "Identifikācijas numurs", basics.vin, true, false],
-    // Tirdzniecībā pieņemts (Nils 20.11): CSDD reģistra akta datums (akta nr. reģistra nolasījumā bieži nav).
-    ["tradeAccepted", "Tirdzniecībā pieņemts", reg.status === "accepted" ? fmtDateLv(reg.actDate) || reg.actDate : "", true, true],
-    ["tradeActNo", "Akta numurs", r?.tradeActNo ?? "", true, true],
+    ["owner", "Īpašnieks", basics.ownerLabel, false, false],
+    ["tradeStatus", "Tirdzniecības statuss", reg.known ? V2_REGISTRY_STATUS_LV[reg.status] : "", false, true],
   ];
+  // Lapa pilnvērtīga tikai ar akta numuru (Nils 20.11): tad visi obligātie lauki jābūt («Trūkst» redaktorā);
+  // kamēr numura nav (Drīzumā u.c.), dati drīkst būt nepilnīgi - tukšos vienkārši izlaiž, bez brīdinājuma.
+  // Vērtības tikai no avotiem (Pamatdati / CSDD tehniskie dati / CSDD reģistrs) - nekas netiek minēts vai pieņemts.
+  const required = new Set<string>(actNo.value.trim() ? PRICE_SHEET_REQUIRED_KEYS : []);
   return rows
-    .filter(([, , v]) => v.trim())
-    .map(([key, label, value, def, csdd]) => ({ key, label, value, shown: visibility[key] ?? def, csdd }));
+    .filter(([key, , v]) => v.trim() || required.has(key))
+    .map(([key, label, value, def, csdd]) => ({ key, label, value, shown: visibility[key] ?? def, csdd, required: required.has(key) }));
 }
 
 /** Drošības tabula (Nils 28.10): pēc noklusējuma viss "Ir" un "Pārbaudīts" kā CSDD paraugā; Nils maina pats. */
@@ -210,7 +253,7 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
     highlights: priceSheetHighlights(equipmentLine),
     priceEur: listPriceEur,
     vatNote: vatMode === "gross" || vatMode === "net" ? "cena ar PVN" : "",
-    rows: allRows.filter((r) => r.shown).map(({ label, value }) => ({ label, value })),
+    rows: allRows.filter((r) => r.shown && r.value.trim()).map(({ label, value }) => ({ label, value })),
     allRows,
     safetyRows: priceSheetSafetyRows(safetyState, waitSafety),
     safetyState,

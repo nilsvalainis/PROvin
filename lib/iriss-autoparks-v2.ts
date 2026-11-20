@@ -72,7 +72,31 @@ export type V2Tech = {
   secondWheels: string;
   /** TA/HU derīga līdz: «MM.GGGG» vai «DD.MM.GGGG» (tikai informācija, termiņu atgādinājumu nav). */
   inspectionUntil: string;
+  /**
+   * Cenu lapas obligātie lauki (Nils 20.11, vecais DZA paraugs): ar roku vai no CSDD tehniskajiem datiem.
+   * Tukšs/null = ņem CSDD tirdzniecības reģistra vērtību (`registry.*`).
+   */
+  vehicleType?: string;
+  fuel?: string;
+  seats?: number | null;
+  grossMassKg?: number | null;
+  co2GKm?: number | null;
+  /** Akta par pieņemšanu tirdzniecībā numurs (ar roku), ja reģistra nolasījumā nav. */
+  tradeActNo?: string;
 };
+
+/** Cenu lapas skaitlisko lauku robežas (ārpus tām - nav ticams). */
+export const V2_SALE_NUM_RANGE = { seats: [1, 60], grossMassKg: [300, 60000], co2GKm: [0, 1000] } as const;
+export type V2SaleNumKey = keyof typeof V2_SALE_NUM_RANGE;
+
+/** Ticams vesels skaitlis robežās vai null (arī "", null, nederīgs). */
+export function v2SaleNum(key: V2SaleNumKey, raw: unknown): number | null {
+  const n = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() ? Number(raw.replace(/\s/g, "").replace(",", ".")) : NaN;
+  if (!Number.isFinite(n)) return null;
+  const [min, max] = V2_SALE_NUM_RANGE[key];
+  const r = Math.round(n);
+  return r >= min && r <= max ? r : null;
+}
 
 /** Atslēgu/īpašnieku skaita robežas (ievade ārpus tām - kļūda, lauks netiek mainīts). */
 export const V2_COUNT_MAX = { keysCount: 20, ownersCount: 99 } as const;
@@ -321,7 +345,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 export function emptyCarV2(): AutoparksCarV2 {
   return {
     fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "", clientOrder: "" },
-    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "", keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
+    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "", keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "", vehicleType: "", fuel: "", seats: null, grossMassKg: null, co2GKm: null, tradeActNo: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
     numberCheck: { fileId: "", scannedAt: "", extraFileIds: [] },
@@ -445,6 +469,12 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       })(),
       secondWheels: str(tech.secondWheels, 80),
       inspectionUntil: str(tech.inspectionUntil, 10),
+      vehicleType: str(tech.vehicleType, 80),
+      fuel: str(tech.fuel, 40),
+      seats: v2SaleNum("seats", tech.seats),
+      grossMassKg: v2SaleNum("grossMassKg", tech.grossMassKg),
+      co2GKm: v2SaleNum("co2GKm", tech.co2GKm),
+      tradeActNo: str(tech.tradeActNo, 30).toUpperCase(),
     },
     sources: normalizeSources(raw.sources),
     purchase: {
@@ -578,6 +608,18 @@ export type AutoparksV2Basics = {
   hasPhoto: boolean;
   /** IRISS 18.11: no izsoles - atslēgas, īpašnieki, otrs disku komplekts, TA/HU (ar roku, nav CSDD). */
   extras: { keysCount: number | null; ownersCount: number | null; secondWheels: string; inspectionUntil: string };
+  /**
+   * Cenu lapas obligātie lauki (Nils 20.11): ar roku / CSDD tehniskie dati -> CSDD tirdzniecības reģistrs.
+   * Neobligāts tipā tikai vecu testu/klientu dēļ - `autoparksV2Basics` vienmēr aizpilda.
+   */
+  sale?: {
+    vehicleType: V2Value<string>;
+    fuel: V2Value<string>;
+    seats: V2Value<number | null>;
+    grossMassKg: V2Value<number | null>;
+    co2GKm: V2Value<number | null>;
+    tradeActNo: V2Value<string>;
+  };
 };
 
 /** `v2` - ar roku labotā marka/modelis (J29 C) aizstāj v1 vērtību attēlošanā; v1 pats netiek mainīts. */
@@ -648,6 +690,15 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
       ownersCount: v2.tech.ownersCount,
       secondWheels: v2.tech.secondWheels,
       inspectionUntil: v2.tech.inspectionUntil,
+    },
+    sale: {
+      vehicleType: v2.tech.vehicleType ? { value: v2.tech.vehicleType, csdd: csdd("tech.vehicleType") } : { value: reg?.vehicleType ?? "", csdd: Boolean(reg?.vehicleType) },
+      fuel: v2.tech.fuel ? { value: v2.tech.fuel, csdd: csdd("tech.fuel") } : { value: reg?.fuel ?? "", csdd: Boolean(reg?.fuel) },
+      seats: v2.tech.seats != null ? { value: v2.tech.seats, csdd: csdd("tech.seats") } : { value: reg?.seats || null, csdd: Boolean(reg?.seats) },
+      grossMassKg:
+        v2.tech.grossMassKg != null ? { value: v2.tech.grossMassKg, csdd: csdd("tech.grossMassKg") } : { value: reg?.grossMassKg || null, csdd: Boolean(reg?.grossMassKg) },
+      co2GKm: v2.tech.co2GKm != null ? { value: v2.tech.co2GKm, csdd: csdd("tech.co2GKm") } : { value: reg?.co2GKm ?? null, csdd: reg?.co2GKm != null },
+      tradeActNo: v2.tech.tradeActNo ? { value: v2.tech.tradeActNo, csdd: false } : { value: reg?.tradeActNo ?? "", csdd: Boolean(reg?.tradeActNo) },
     },
   };
 }
