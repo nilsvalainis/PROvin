@@ -3,7 +3,7 @@ import { autoparksListRows, filterAutoparksByOwner } from "@/lib/iriss-autoparks
 import { autoparksActor, autoparksHidesSums, autoparksRowsForActor, stripCar } from "@/lib/iriss-autoparks-access";
 import { cabinetActorSeesTransportCost, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
-import { createAutoparksCar, ensureAutoparksCarFromOrder, markAutoparksCarArrived, readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { createAutoparksCarDedup, ensureAutoparksCarFromOrder, markAutoparksCarArrived, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
@@ -68,7 +68,8 @@ export async function POST(req: Request) {
     if (order) orderId = order.id;
     else input.status = "prep_waiting";
   }
-  const car = await createAutoparksCar({ ...input, orderId }, actor);
-  after(() => linkAutoparksCarToDropbox(car.id));
-  return NextResponse.json({ ok: true, car: hide ? stripCar(car) : car, created: true }, { headers: irissLogisticsScopeHeader() });
+  // Bugfix 20.11: auto jau Autoparkā (VIN, arī v2 / saīsināts) - atgriež esošo, dublikātu neveido.
+  const { car, created, matchedBy } = await createAutoparksCarDedup({ ...input, orderId }, actor);
+  if (created) after(() => linkAutoparksCarToDropbox(car.id));
+  return NextResponse.json({ ok: true, car: hide ? stripCar(car) : car, created, existing: !created, matchedBy }, { headers: irissLogisticsScopeHeader() });
 }

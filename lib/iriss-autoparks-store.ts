@@ -28,6 +28,15 @@ import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import { readLogisticsJsonFile, mutateLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 import { readAutoparksStoredBytes, storeAutoparksFileBytes } from "@/lib/iriss-autoparks-files";
 import { autoparksSyncForLogisticsAction, findAutoparksCarForOrder, type LogisticsSyncAction } from "@/lib/iriss-autoparks-transit";
+import { AUTOPARKS_V2_FILE, normalizeAutoparksV2State, type AutoparksV2State } from "@/lib/iriss-autoparks-v2";
+import {
+  AUTOPARKS_DEDUP_BY_LV,
+  bestOrderVin,
+  carDedupVins,
+  findAutoparksDuplicate,
+  orderVinCandidates,
+  type AutoparksDedupBy,
+} from "@/lib/iriss-autoparks-dedup";
 
 /** Tā pati Loģistikas krātuve (Blob vai mape), atsevišķs fails. Esošos Loģistikas datus neaiztiek. */
 const AUTOPARKS_FILE = "autoparks.json";
@@ -68,7 +77,34 @@ export type AutoparksCarInput = Partial<
   registry?: Partial<RegistryValues>;
 };
 
+/** v2 stāvoklis tikai dublikātu meklēšanai pēc efektīvā VIN (bez cikliskā importa no v2-store). */
+async function readV2ForDedup(): Promise<AutoparksV2State | null> {
+  try {
+    return normalizeAutoparksV2State(await readLogisticsJsonFile(AUTOPARKS_V2_FILE));
+  } catch {
+    return null;
+  }
+}
+
+export type AutoparksCreateDedup = {
+  /** Papildu VIN varianti (piem. no Loģistikas piezīmēm). */
+  vins?: string[];
+  stockNo?: string;
+};
+
+export type AutoparksCreateResult = { car: AutoparksCar; created: boolean; matchedBy: AutoparksDedupBy | null };
+
+/** Jauns ieraksts ar dublikātu aizsardzību: ja auto jau ir (sk. `findAutoparksDuplicate`), atgriež esošo. */
 export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: string }, actor: AutoparksActor): Promise<AutoparksCar> {
+  return (await createAutoparksCarDedup(input, actor)).car;
+}
+
+export async function createAutoparksCarDedup(
+  input: AutoparksCarInput & { orderId?: string },
+  actor: AutoparksActor,
+  dedup: AutoparksCreateDedup = {},
+): Promise<AutoparksCreateResult> {
+  const v2 = await readV2ForDedup();
   const now = new Date().toISOString();
   const car: AutoparksCar = {
     id: `ap-${randomUUID()}`,
@@ -97,14 +133,71 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
   // Nils 20.11: jauns auto uzreiz ar statusu «Pārdots» - uzreiz arhīvā.
   const archive = car.status === "sold" ? autoparksArchiveOnStatusChange({ ...car, status: "prep_waiting" }, "sold", now) : null;
   if (archive) Object.assign(car, { archivedAt: archive.car.archivedAt, archiveReason: archive.car.archiveReason });
-  return mutateAutoparksState((state) => {
-    // Atkārtots "Uz Autoparku" paralēli: tas pats pasūtījums netiek pievienots divreiz.
-    const dup = input.orderId ? state.cars.find((c) => c.orderId === car.orderId) : undefined;
-    if (dup) return { result: dup, write: false };
+  return mutateAutoparksState<AutoparksCreateResult>((state) => {
+    // Atkārtots "Uz Autoparku" paralēli vai auto jau Autoparkā (arī ar VIN tikai v2 / saīsinātu VIN): jaunu neveido.
+    const dup = findAutoparksDuplicate(state.cars, v2, { orderId: car.orderId, vins: [car.vin, ...(dedup.vins ?? [])], stockNo: dedup.stockNo });
+    if (dup) return { result: { car: dup.car, created: false, matchedBy: dup.by }, write: false };
     state.cars.push(car);
     state.events.push(event(car.id, actor, input.orderId ? "Pārvietots no Loģistikas" : "Pievienots Autoparkam"));
     if (archive) state.events.push(event(car.id, actor, archive.text));
-    return { result: car };
+    return { result: { car, created: true, matchedBy: null } };
+  });
+}
+
+type OrderForAutoparks = Pick<LogisticsOrder, "id" | "vin" | "title" | "make" | "model" | "mileageKm"> &
+  Partial<Pick<LogisticsOrder, "notes" | "stockNo" | "listingParsed">>;
+
+/**
+ * Esošam auto (atrasts kā dublikāts) no Loģistikas aizpilda TIKAI tukšos laukus: VIN (ja tukšs gan v1, gan v2),
+ * saiti uz pasūtījumu (ja auto vēl nav cita un pasūtījums nav piesaistīts citam auto), marku/modeli/gadu/nobraukumu.
+ * Aizpildītos laukus nekad nepārraksta.
+ */
+async function fillAutoparksCarFromOrder(
+  carId: string,
+  order: OrderForAutoparks,
+  fill: { vin: string; make: string; model: string; year: string },
+  v2: AutoparksV2State | null,
+  matchedBy: AutoparksDedupBy,
+  actor: AutoparksActor,
+): Promise<AutoparksCar | null> {
+  const v2f = v2?.cars[carId]?.fields;
+  return mutateAutoparksState<AutoparksCar | null>((state) => {
+    const idx = state.cars.findIndex((c) => c.id === carId);
+    if (idx < 0) return { result: null, write: false };
+    const prev = state.cars[idx]!;
+    const next: AutoparksCar = { ...prev };
+    const filled: string[] = [];
+    if (!prev.orderId && !state.cars.some((c) => c.orderId === order.id)) {
+      next.orderId = order.id;
+      filled.push("Loģistikas saite");
+    }
+    if (!carDedupVins(prev, v2).length && fill.vin) {
+      next.vin = fill.vin.slice(0, 32);
+      filled.push("VIN");
+    }
+    if (!prev.make && !v2f?.make && fill.make) {
+      next.make = fill.make.slice(0, 60);
+      filled.push("marka");
+    }
+    if (!prev.model && !v2f?.model && fill.model) {
+      next.model = fill.model.slice(0, 80);
+      filled.push("modelis");
+    }
+    if (!prev.year && !v2f?.year && fill.year) {
+      next.year = fill.year.slice(0, 8);
+      filled.push("gads");
+    }
+    if (prev.mileageKm == null && v2?.cars[carId]?.tech?.mileageKm == null && order.mileageKm != null) {
+      next.mileageKm = order.mileageKm;
+      filled.push("nobraukums");
+    }
+    if (!filled.length) return { result: prev, write: false };
+    next.updatedAt = new Date().toISOString();
+    state.cars[idx] = next;
+    state.events.push(
+      event(carId, actor, `Loģistika: auto jau Autoparkā (${AUTOPARKS_DEDUP_BY_LV[matchedBy]}) - jauns ieraksts netika veidots; aizpildīts: ${filled.join(", ")}`),
+    );
+    return { result: next };
   });
 }
 
@@ -113,34 +206,36 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
  * Nils 27.10 (Loģistika = Autoparka posms «Ceļā»): «+ Nopirkts» izveido auto ar statusu `in_transit`.
  */
 export async function ensureAutoparksCarFromOrder(
-  order: LogisticsOrder,
+  order: OrderForAutoparks,
   actor: AutoparksActor,
   opts: { status?: AutoparksStatus } = {},
-): Promise<{ car: AutoparksCar; created: boolean }> {
-  const state = await readAutoparksState();
-  const existing = state.cars.find((c) => c.orderId === order.id || (order.vin && c.vin === order.vin.toUpperCase()));
-  if (existing) {
-    // Agrāk bez VIN izveidots ieraksts: VIN no Loģistikas aizpilda tukšo lauku (citu VIN nepārraksta).
-    if (!existing.vin && order.vin) {
-      const filled = await patchAutoparksCar(existing.id, { vin: order.vin }, actor);
-      if (filled) return { car: filled, created: false };
-    }
-    return { car: existing, created: false };
-  }
+): Promise<{ car: AutoparksCar; created: boolean; matchedBy?: AutoparksDedupBy | null }> {
+  const [state, v2] = await Promise.all([readAutoparksState(), readV2ForDedup()]);
+  // Bugfix 20.11: VIN arī no piezīmēm / sludinājuma; esošo auto meklē pēc efektīvā VIN, saīsināta VIN, VIN6, stock nr.
+  const vins = orderVinCandidates(order);
+  const vin = bestOrderVin(order);
   const titleParts = order.title.trim().split(/\s+/);
-  const car = await createAutoparksCar(
-    {
-      orderId: order.id,
-      vin: order.vin,
-      make: order.make || titleParts[0] || "",
-      model: (order.model || titleParts.slice(1).join(" ")).replace(/\s*\(?(19|20)\d{2}\)?\s*$/, ""),
-      year: order.title.match(/\b(19|20)\d{2}\b/)?.[0] ?? "",
-      mileageKm: order.mileageKm,
-      status: opts.status,
-    },
+  const fill = {
+    vin,
+    make: order.make || titleParts[0] || "",
+    model: (order.model || titleParts.slice(1).join(" ")).replace(/\s*\(?(19|20)\d{2}\)?\s*$/, ""),
+    year: order.title.match(/\b(19|20)\d{2}\b/)?.[0] ?? "",
+  };
+  const existing = findAutoparksDuplicate(state.cars, v2, { orderId: order.id, vins, stockNo: order.stockNo });
+  if (existing) {
+    const car = (await fillAutoparksCarFromOrder(existing.car.id, order, fill, v2, existing.by, actor)) ?? existing.car;
+    return { car, created: false, matchedBy: existing.by };
+  }
+  const res = await createAutoparksCarDedup(
+    { orderId: order.id, vin: fill.vin, make: fill.make, model: fill.model, year: fill.year, mileageKm: order.mileageKm, status: opts.status },
     actor,
+    { vins, stockNo: order.stockNo },
   );
-  return { car, created: true };
+  if (!res.created && res.matchedBy) {
+    const car = (await fillAutoparksCarFromOrder(res.car.id, order, fill, v2, res.matchedBy, actor)) ?? res.car;
+    return { car, created: false, matchedBy: res.matchedBy };
+  }
+  return res;
 }
 
 /**
@@ -172,13 +267,21 @@ export async function markAutoparksCarArrived(carId: string, actor: AutoparksAct
  * (pēc `orderId`, tad VIN). Noteikumi - `autoparksSyncForLogisticsAction`. Nekad nedzēš.
  */
 export async function syncAutoparksCarWithLogisticsAction(
-  order: Pick<LogisticsOrder, "id" | "vin">,
+  order: Pick<LogisticsOrder, "id" | "vin"> & Partial<Pick<LogisticsOrder, "notes" | "title" | "stockNo" | "listingParsed">>,
   action: LogisticsSyncAction,
   actor: AutoparksActor,
   today = new Date(),
 ): Promise<AutoparksCar | null> {
+  const v2 = await readV2ForDedup();
   return mutateAutoparksState((state) => {
-    const car = findAutoparksCarForOrder(state.cars, order);
+    // Bugfix 20.11: ja nav sasaistes / precīza v1 VIN - meklē pēc efektīvā VIN, piezīmju VIN, saīsināta VIN (tikai aktīvie auto).
+    const car =
+      findAutoparksCarForOrder(state.cars, order) ??
+      findAutoparksDuplicate(
+        state.cars.filter((c) => !c.archivedAt),
+        v2,
+        { vins: orderVinCandidates(order), stockNo: order.stockNo },
+      )?.car;
     if (!car) return { result: null, write: false };
     const plan = autoparksSyncForLogisticsAction(car, action);
     if (!plan) return { result: car, write: false };
