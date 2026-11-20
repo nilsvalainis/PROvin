@@ -270,7 +270,11 @@ describe("ES Safety Gate zonde", () => {
     expect(row.flags?.recallCount).toBeUndefined();
     expect(row.vehicle).toBeUndefined();
 
-    expect(searchCalls()).toHaveLength(1);
+    // 100 jaunākie tiek prasīti kā 4 lapas pa 25 (viena liela lapa lēnā dienā pārsniedz noildzi).
+    expect(searchCalls()).toHaveLength(4);
+    const paging = searchCalls().map(([, init]) => (JSON.parse((init as { body: string }).body) as { pagination: { page: number; numberElements: number } }).pagination);
+    expect(paging.map((p) => p.page)).toEqual([0, 1, 2, 3]);
+    expect(paging.map((p) => p.numberElements)).toEqual([25, 25, 25, 25]);
     const [url, init] = searchCalls()[0] as [string, { method: string; body: string; headers: Record<string, string> }];
     expect(url).toBe("https://ec.europa.eu/safety-gate-alerts/public/api/search");
     expect(init.method).toBe("POST");
@@ -331,6 +335,49 @@ describe("ES Safety Gate zonde", () => {
     const broken = await probeEuSafetyGate(ctx(SKODA_VIN));
     expect(broken.status).toBe("unknown");
     expect(broken.summary).toBe("Avotu neizdevās nolasīt");
+  });
+
+  it("lapas tiek saliktas kopā: brīdinājums no 2. lapas ir rezultātā, dublikāti netiek skaitīti divreiz", async () => {
+    const all = (JSON.parse(fixture("search-skoda.json").text) as { content: unknown[] }).content;
+    const pageReply = (page: number): Reply => ({
+      status: 200,
+      // Lapa aiz saraksta beigām atgriež totalElements 0, tāpat kā īstais serveris.
+      text: JSON.stringify(
+        page === 0
+          ? { content: all.slice(0, 7), totalElements: all.length, last: false }
+          : page === 1
+            ? { content: all.slice(6), totalElements: all.length, last: true }
+            : { content: [], totalElements: 0, last: true },
+      ),
+    });
+    scanFetch.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (!url.endsWith("/public/api/search")) return { status: url.includes("vpic") ? 500 : 404, text: "", cookie: "" };
+      const page = (JSON.parse(init?.body ?? "{}") as { pagination: { page: number } }).pagination.page;
+      return { ...(pageReply(page) as { status: number; text: string }), cookie: "" };
+    });
+    const row = await probeEuSafetyGate(ctx(SKODA_VIN));
+    expect(row.status).toBe("found");
+    expect(row.summary).toContain("rādīti 8 jaunākie no 13");
+  });
+
+  it("nākamās lapas noildze: atrastais paliek, bet tukšs rezultāts nav none", async () => {
+    const all = (JSON.parse(fixture("search-skoda.json").text) as { content: unknown[] }).content;
+    const firstOnly = (content: unknown[]) => {
+      scanFetch.mockImplementation(async (url: string, init?: { body?: string }) => {
+        if (!url.endsWith("/public/api/search")) return { status: url.includes("vpic") ? 500 : 404, text: "", cookie: "" };
+        const page = (JSON.parse(init?.body ?? "{}") as { pagination: { page: number } }).pagination.page;
+        if (page > 0) throw new Error("timeout");
+        return { status: 200, text: JSON.stringify({ content, totalElements: 60, last: false }), cookie: "" };
+      });
+    };
+    firstOnly(all.slice(0, 5));
+    const found = await probeEuSafetyGate(ctx(SKODA_VIN));
+    expect(found.status).toBe("found");
+
+    firstOnly([]);
+    const incomplete = await probeEuSafetyGate(ctx(SKODA_VIN));
+    expect(incomplete.status).toBe("unknown");
+    expect(incomplete.summary).toContain("pārbaudi saitē");
   });
 
   it("nezināma marka: skipped, Safety Gate netiek saukts", async () => {

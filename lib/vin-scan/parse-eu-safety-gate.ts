@@ -12,8 +12,14 @@ export const SAFETY_GATE_DETAIL_URL = "https://ec.europa.eu/safety-gate-alerts/p
 export const SAFETY_GATE_BROWSER_URL = "https://ec.europa.eu/safety-gate-alerts/screen/search?resetSearch=true";
 /** Cik gadus atpakaļ meklējam (ieskaitot tekošo). */
 export const SAFETY_GATE_YEARS = 5;
-/** Vienā lapā prasāmo brīdinājumu skaits (jaunākie vispirms). */
+/** Cik jaunākos brīdinājumus nolasām kopā (jaunākie vispirms). */
 export const SAFETY_GATE_PAGE_SIZE = 100;
+/**
+ * Vienā pieprasījumā prasāmo brīdinājumu skaits. Serveris atbild ~0,14 s uz ierakstu, tāpēc 100 vienā lapā
+ * markām ar daudz brīdinājumiem (BMW, VW) aizņem 13 s. Četras lapas pa 25 paralēli atnāk ~4 s.
+ */
+export const SAFETY_GATE_CHUNK_SIZE = 25;
+export const SAFETY_GATE_CHUNKS = SAFETY_GATE_PAGE_SIZE / SAFETY_GATE_CHUNK_SIZE;
 /** Cik brīdinājumus rādām un kuriem ielādējam detaļas. */
 export const SAFETY_GATE_MAX_ALERTS = 8;
 export const SAFETY_GATE_MODEL_LEVEL_NOTE = "var neattiekties uz šo auto";
@@ -128,7 +134,7 @@ export function safetyGateAlertUrl(id: number): string {
   return `https://ec.europa.eu/safety-gate-alerts/screen/webReport/alertDetail/${id}?lang=lv`;
 }
 
-export function safetyGateSearchBody(make: string, nowYear: number): string {
+export function safetyGateSearchBody(make: string, nowYear: number, page = 0): string {
   const year = Array.from({ length: SAFETY_GATE_YEARS }, (_, i) => nowYear - i);
   // Vietnes pašas meklēšanas forma: bez visiem šiem laukiem serveris atbild ar 405.
   return JSON.stringify({
@@ -136,7 +142,7 @@ export function safetyGateSearchBody(make: string, nowYear: number): string {
     searchCriteriaForNotification: false,
     isLaunched: true,
     isLaunchSearch: true,
-    pagination: { sortField: "PUBLICATION_DATE", sortOrder: "DESC", totalElements: 0, numberElements: SAFETY_GATE_PAGE_SIZE, page: 0 },
+    pagination: { sortField: "PUBLICATION_DATE", sortOrder: "DESC", totalElements: 0, numberElements: SAFETY_GATE_CHUNK_SIZE, page },
     fullTextSearch: safetyGateSearchTerm(make),
     language: "en",
     displayDefaultResults: false,
@@ -177,6 +183,24 @@ export function parseSafetyGateSearch(status: number, text: string): SafetyGateS
   alerts.sort((a, b) => b.date.localeCompare(a.date));
   const total = typeof page.totalElements === "number" ? page.totalElements : alerts.length;
   return { ok: true, alerts, total, truncated: page.last === false || total > page.content.length };
+}
+
+/**
+ * Saliek paralēli nolasītās lapas vienā rezultātā. Pirmā lapa ir obligāta: tās kļūda ir visa avota kļūda,
+ * un kopskaitu ņemam tikai no tās (lapa aiz saraksta beigām atgriež totalElements 0).
+ * Ja kāda nākamā lapa nav nolasīta (null vai kļūda), rezultāts ir nepilnīgs (`truncated`), nevis "nav".
+ */
+export function mergeSafetyGatePages(pages: readonly (SafetyGateSearch | null)[]): SafetyGateSearch {
+  const first = pages[0];
+  if (!first) return { ok: false, summary: "ES Safety Gate: atbildes forma nav atpazīta" };
+  if (!first.ok) return first;
+  const byId = new Map<number, SafetyGateAlert>();
+  for (const page of pages) {
+    if (!page?.ok) continue;
+    for (const alert of page.alerts) if (!byId.has(alert.id)) byId.set(alert.id, alert);
+  }
+  const alerts = [...byId.values()].sort((a, b) => b.date.localeCompare(a.date));
+  return { ok: true, alerts, total: first.total, truncated: first.total > alerts.length };
 }
 
 const DATE_YEAR_PATTERNS = [

@@ -5,6 +5,9 @@ import { createAutoparksCar, readAutoparksState } from "@/lib/iriss-autoparks-st
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2ListRows } from "@/lib/iriss-autoparks-v2-list";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
+import { carIdsWithActiveLogistics, findActiveOrderForVin } from "@/lib/iriss-autoparks-transit";
+import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
+import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,11 +16,15 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const gate = await requireAutoparksV2Api("pamatdati");
   if (!gate.ok) return gate.response;
-  const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
-  return autoparksV2Json({ ok: true, cars: autoparksV2ListRows(v1.cars, v2) });
+  const [v1, v2, orders] = await Promise.all([readAutoparksState(), readAutoparksV2State(), listLogisticsOrders().catch(() => null)]);
+  const activeLogistics = orders ? carIdsWithActiveLogistics(v1.cars, orders, isLogisticsOrderActive) : undefined;
+  return autoparksV2Json({ ok: true, cars: autoparksV2ListRows(v1.cars, v2, { activeLogistics }) });
 }
 
-/** "+ Auto": jauns ieraksts (vecie netiek aiztikti); /STOCK mape tiek sasaistīta pēc atbildes. */
+/**
+ * "+ Auto": jauns ieraksts (vecie netiek aiztikti); /STOCK mape tiek sasaistīta pēc atbildes.
+ * P2 (Nils 20.11): noklusējums «Noliktavā»; «Ceļā» tikai, ja ir aktīvs Loģistikas ieraksts ar šo VIN (tiek sasaistīts).
+ */
 export async function POST(req: Request) {
   const gate = await requireAutoparksV2Api("pamatdati");
   if (!gate.ok) return gate.response;
@@ -30,14 +37,21 @@ export async function POST(req: Request) {
   const t = (k: string) => (typeof body[k] === "string" ? (body[k] as string) : "");
   const vin = t("vin").replace(/[\s-]/g, "");
   if (!t("make").trim() && !t("model").trim() && !vin) return autoparksV2Json({ error: "missing_car" }, 400);
+  let orderId = "";
+  if (body.status === "in_transit") {
+    const order = findActiveOrderForVin(await listLogisticsOrders(), vin, isLogisticsOrderActive);
+    if (!order) return autoparksV2Json({ error: "no_logistics" }, 409);
+    orderId = order.id;
+  }
   const car = await createAutoparksCar(
     {
+      orderId,
       make: t("make"),
       model: t("model"),
       vin,
       year: t("year"),
       color: t("color"),
-      status: "in_transit",
+      status: orderId ? "in_transit" : "prep_waiting",
       owner: isAutoparksOwner(body.owner) ? body.owner : "IRISS",
     },
     { id: gate.actorId, name: gate.actorName },

@@ -3,6 +3,8 @@ import { cabinetActorHidesSums, cabinetActorSeesTransportCost, maskOrderSums, sa
 import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { getLogisticsOrder, removeManualLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
+import { autoparksActor } from "@/lib/iriss-autoparks-access";
+import { syncAutoparksCarWithLogisticsAction } from "@/lib/iriss-autoparks-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +48,12 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive" || row.action === "other_company") {
     const order = await setLogisticsOrderArchiveState(id, row.action);
     if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
+    // P2 (Nils 20.11): saistītais Autoparka auto pēc tiem pašiem noteikumiem kā «Uz Autoparku» (nekad nedzēš).
+    if (row.action === "delivered" || row.action === "archive" || row.action === "other_company") {
+      await syncAutoparksCarWithLogisticsAction(order, row.action, autoparksActor(gate.actor)).catch((e) =>
+        console.error("[iriss-logistics] autoparks sync", id, e instanceof Error ? e.message : e),
+      );
+    }
     return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums, hideTransport) }, { headers: irissLogisticsScopeHeader() });
   }
   const existing = await getLogisticsOrder(id);

@@ -137,3 +137,22 @@ describe("saraksta rinda ar «Power:» krāsas vietā", () => {
     expect(text).not.toContain("Power:");
   });
 });
+
+describe("P2: «Ceļā bez Loģistikas» (Nils 20.11)", () => {
+  const transit = (id: string, noLog: boolean): AutoparksV2ListRow => ({ ...rows[0]!, id, title: `Auto ${id}`, status: "in_transit", transitNoLogistics: noLog });
+
+  it("brīdinājuma zīme tikai auto bez aktīva Loģistikas ieraksta", () => {
+    const html = renderHtml(<AutoparksV2ListBody rows={[transit("x", true), transit("y", false)]} />);
+    expect(html.match(/ap2-nolog-badge/g)?.length).toBe(2); // telefona statuss + datora virsraksts tikai rindai x
+    const textOk = renderText(<AutoparksV2ListBody rows={[transit("y", false)]} />);
+    expect(textOk).not.toContain("Ceļā bez Loģistikas");
+  });
+
+  it("«Ceļā» skaits neskaita auto bez Loģistikas; admina saite redzama tikai ar href", () => {
+    const html = renderHtml(<AutoparksV2List initialCars={[transit("x", true), transit("y", false)]} transitFixHref="/admin/iriss/autoparks-v2/cela-bez-logistikas" />);
+    expect(html).toContain("/admin/iriss/autoparks-v2/cela-bez-logistikas");
+    expect(html).toMatch(/<span class="n">1<\/span><span class="l">Ceļā<\/span>/);
+    const plain = renderHtml(<AutoparksV2List initialCars={[transit("x", true)]} />);
+    expect(plain).not.toContain("cela-bez-logistikas");
+  });
+});

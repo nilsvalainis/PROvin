@@ -583,12 +583,17 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     /**
      * Pārtrauc (CSDD "Pārtraukt!", Nila "anulēt") TIEŠI vienu pavadzīmi, ko lietotājs apstiprināja. Kā Aivara stop-p02806:
      * kartīte pēc numura -> jābūt šim numuram, šai numurzīmei un "Derīgs" -> lapv_par -> forma ar šo numuru -> "Pārtraukt!"
-     * -> kartīte vēlreiz: vairs nav Derīgs. Izsauc tikai annul.js (worker: IRISS_WAYBILL_ANNUL_LIVE=1). Testi ar imitāciju.
+     * -> kartīte vēlreiz: vairs nav Derīgs. Izsauc stop.js (aizstāšana) vai annul.js (tikai ar IRISS_WAYBILL_ANNUL_LIVE=1). Testi ar imitāciju.
      */
-    async annulWaybill(page, { waybillNo, plate }, h) {
+    async annulWaybill(page, q, h) {
+      return this.stopWaybill(page, q, h);
+    },
+
+    /** stop.js (aizstāšana, Nils 20.11) un annul.js: viens un tas pats CSDD «Pārtraukt» solis. */
+    async stopWaybill(page, { waybillNo, plate }, h) {
       const c = ctxOf(page, h);
       const no = String(waybillNo || "").toUpperCase();
-      if (!/^P\d{5,6}$/.test(no)) throw new Error("anulējamās pavadzīmes numurs nederīgs");
+      if (!/^P\d{5,6}$/.test(no)) throw new Error("pārtraucamās pavadzīmes numurs nederīgs");
       const before = await lookupWaybill(c, h, no);
       if (!before) throw new Error(`${no} CSDD nav atrasta - neko nepārtraucu`);
       if (compact(before.plate) !== compact(plate)) throw new Error(`${no} nav uz ${plate} - neko nepārtraucu`);

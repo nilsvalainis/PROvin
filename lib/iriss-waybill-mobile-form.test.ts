@@ -538,3 +538,23 @@ describe("waybillAutoForPlate (20.11: numura maiņa)", () => {
     expect(waybillAutoForPlate(manual, "B192-7")).toBe(manual);
   });
 });
+
+describe("20.11 aizstāšana: pieprasījumā redzams, ka vispirms pārtrauc veco", () => {
+  const now = Date.parse("2026-10-22T10:05:00.000Z");
+  it("rindā / darbā: «Aizstāj P0xxxx: vispirms pārtrauc, tad izraksta jaunu»; parastam un izdotam - nē", () => {
+    for (const status of ["queued", "in_progress"] as const) {
+      const [row] = waybillMobileRequestRows([req({ status, plateBusyAtCreate: true, replaceWaybillNo: "P02812" })], [], 5, { nowMs: now, which: "all" });
+      expect(row.note).toBe("Aizstāj P02812: vispirms pārtrauc, tad izraksta jaunu");
+      expect(row.note).not.toMatch(/anul|[–—]/i);
+    }
+    expect(waybillMobileRequestRows([req({})], [], 5, { nowMs: now, which: "all" })[0].note).toBe("");
+    expect(waybillMobileRequestRows([req({ plateBusyAtCreate: true, replaceWaybillNo: "" })], [], 5, { nowMs: now, which: "all" })[0].note).toBe("");
+    const [done] = waybillMobileRequestRows(
+      [req({ status: "error", plateBusyAtCreate: true, replaceWaybillNo: "P02812", errorReason: "x" })],
+      [],
+      5,
+      { nowMs: now, which: "all" },
+    );
+    expect(done.note).toBe("");
+  });
+});

@@ -273,6 +273,19 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
     fsImpl.renameSync(tmp, file(id));
   };
   const hasLock = (id) => fsImpl.existsSync(lock(id));
+  /** Pārtraukšanas ieraksti (`<jobId>.annul.json`, `<jobId>.stop.json`) - atsevišķi no saglabāšanas ieraksta. */
+  const readSide = (id, kind) => {
+    try {
+      return JSON.parse(fsImpl.readFileSync(path.join(dir, `${id}.${kind}.json`), "utf8"));
+    } catch {
+      return null;
+    }
+  };
+  const writeSide = (id, kind, rec) => {
+    const f = path.join(dir, `${id}.${kind}.json`);
+    fsImpl.writeFileSync(`${f}.tmp`, JSON.stringify({ ...rec, jobId: id, at: new Date(now()).toISOString() }), { mode: 0o600 });
+    fsImpl.renameSync(`${f}.tmp`, f);
+  };
 
   return {
     read,
@@ -286,7 +299,7 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
     recentSameplate(id, plate) {
       const want = compactPlate(plate);
       for (const name of fsImpl.readdirSync(dir)) {
-        if (!name.endsWith(".json") || name.endsWith(".annul.json") || name === `${id}.json`) continue;
+        if (!name.endsWith(".json") || name.endsWith(".annul.json") || name.endsWith(".stop.json") || name === `${id}.json`) continue;
         const rec = read(name.slice(0, -5));
         if (!rec || compactPlate(rec.plate) !== want) continue;
         if (rec.state !== "saved" && !(rec.state === "saving" && rec.clicked)) continue;
@@ -314,16 +327,17 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
       write(id, { ...read(id), ...data, state: "saved" });
     },
     readAnnul(id) {
-      try {
-        return JSON.parse(fsImpl.readFileSync(path.join(dir, `${id}.annul.json`), "utf8"));
-      } catch {
-        return null;
-      }
+      return readSide(id, "annul");
     },
     writeAnnul(id, rec) {
-      const f = path.join(dir, `${id}.annul.json`);
-      fsImpl.writeFileSync(`${f}.tmp`, JSON.stringify({ ...rec, jobId: id, at: new Date(now()).toISOString() }), { mode: 0o600 });
-      fsImpl.renameSync(`${f}.tmp`, f);
+      writeSide(id, "annul", rec);
+    },
+    /** stop.js (20.11 aizstāšana): «Pārtraukt» vecajai pavadzīmei, vienreiz uz darbu (`<jobId>.stop.json`). */
+    readStop(id) {
+      return readSide(id, "stop");
+    },
+    writeStop(id, rec) {
+      writeSide(id, "stop", rec);
     },
     /** Kļūda pirms klikšķa: drīkst mēģināt vēlreiz (lock noņem). Pēc klikšķa lock paliek. */
     abortSave(id, error) {
@@ -497,6 +511,43 @@ export async function runAnnul({ input, ledger, driver, log = () => {} }) {
   }
 }
 
+/**
+ * stop.js (Nils 20.11, A): aizstāšanas darbā vispirms CSDD «Pārtraukt» (lapv_par -> "Pārtraukt!") TIKAI lietotāja
+ * apstiprinātajai vecajai pavadzīmei input.replaceWaybillNo uz input.plate. Nekad «Anulēt», nekad «Paziņot klientam»,
+ * Saglabāt nespiež. Tas pats CSDD solis, ko Aivars dara «Pārtraukt» darbam (driver.stopWaybill), bet NE annul.js.
+ * Vienreiz uz darbu (ledger `<jobId>.stop.json`); atkārtojums atgriež iepriekšējo rezultātu.
+ */
+export async function runStop({ input, ledger, driver, log = () => {} }) {
+  const no = String(input.replaceWaybillNo || "").toUpperCase();
+  if (!/^P\d{5,6}$/.test(no)) return { ok: false, error: "nav apstiprinātas pārtraucamās pavadzīmes" };
+  const prev = ledger.readStop(input.jobId);
+  if (prev?.done) return { ok: true, repeated: true, waybillNo: prev.waybillNo };
+  if (prev?.started) return { ok: false, error: `${prev.waybillNo} pārtraukšana jau sākta - pārbaudi CSDD` };
+  if (!driver.stopWaybill) return { ok: false, error: "draiverim nav stopWaybill" };
+  try {
+    await driver.open(input);
+    ledger.writeStop(input.jobId, { waybillNo: no, plate: input.plate, started: true });
+    const res = await driver.stopWaybill({ waybillNo: no, plate: input.plate });
+    ledger.writeStop(input.jobId, { waybillNo: no, plate: input.plate, started: true, done: true, ...res });
+    log("stopped", { jobId: input.jobId, waybillNo: no, already: Boolean(res.already) });
+    return { ok: true, waybillNo: no, already: Boolean(res.already), statusAfter: res.statusAfter || "" };
+  } catch (err) {
+    const msg = (err instanceof Error ? err.message : String(err)).slice(0, 200);
+    const rec = ledger.readStop(input.jobId);
+    // Pirms klikšķa (nav atrasts / cits numurs) - drīkst mēģināt vēlreiz; citādi stāvoklis paliek "sākts".
+    if (rec && /neko nepārtraucu/.test(msg)) ledger.writeStop(input.jobId, { ...rec, started: false, error: msg });
+    return { ok: false, error: msg };
+  } finally {
+    await driver.close({ keepPage: false }).catch(() => {});
+  }
+}
+
+/** IRISS_WAYBILL_REPLACE_STOP: aizstāšana ar «Pārtraukt» ieslēgta pēc noklusējuma (Nils 20.11); "0" - izslēgta. */
+export function replaceStopEnabled(raw) {
+  const v = String(raw ?? "").trim().toLowerCase();
+  return !(v === "0" || v === "false" || v === "no");
+}
+
 /** Kopīgs CLI ietvars: rezultāts vienmēr pēdējā stdout rindā kā JSON; žurnāls uz stderr. */
 export async function runCli(step, { env, makeDriver, ledgerDir, dateFormat = undefined, stdout, stderr, platesForCtx = null }) {
   const log = (msg, extra = {}) => stderr.write(`${JSON.stringify({ t: new Date().toISOString(), step, msg, ...extra })}\n`);
@@ -511,6 +562,11 @@ export async function runCli(step, { env, makeDriver, ledgerDir, dateFormat = un
       if (env.IRISS_WAYBILL_ANNUL_LIVE !== "1") throw new Error("anulēšana izslēgta (IRISS_WAYBILL_ANNUL_LIVE)");
       const input = parseJobInput(env.IRISS_JOB_JSON);
       out = await runAnnul({ input, ledger: createLedger(ledgerDir), driver: await makeDriver("annul"), log });
+    } else if (step === "stop") {
+      // Aizstāšana (Nils 20.11): «Pārtraukt» vecajai. NEatkarīgs no IRISS_WAYBILL_ANNUL_LIVE; atslēdzams ar IRISS_WAYBILL_REPLACE_STOP=0.
+      if (!replaceStopEnabled(env.IRISS_WAYBILL_REPLACE_STOP)) throw new Error("aizstāšana izslēgta (IRISS_WAYBILL_REPLACE_STOP)");
+      const input = parseJobInput(env.IRISS_JOB_JSON);
+      out = await runStop({ input, ledger: createLedger(ledgerDir), driver: await makeDriver("stop"), log });
     } else {
       const input = parseJobInput(env.IRISS_JOB_JSON);
       const ledger = createLedger(ledgerDir);

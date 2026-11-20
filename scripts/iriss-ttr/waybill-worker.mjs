@@ -2,12 +2,12 @@
 // iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas (akts "Noformēt pavadzīmi" vai jauna).
 // Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
 // -> lokāla pārbaude -> VPN /status (Nils lieto VPN -> neko nedara) -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl)
-// -> sync.js (numura statuss CSDD, momentuzņēmums -> POST /api/iriss/aivars/waybill-plates) -> [annul.js] -> refill.js -> save.js -> PDF -> result
+// -> sync.js (numura statuss CSDD, momentuzņēmums -> POST /api/iriss/aivars/waybill-plates) -> [stop.js + sync.js] -> refill.js -> save.js -> PDF -> result
 // -> VPN release (vienmēr, finally). Katrs solis tiek ziņots serverim (events stage), UI rāda tikai reālos soļus.
-// Nestandarta darbus neaiztiek (Aivars). Pats nekad nepārtrauc/neanulē; annul.js tikai lietotāja apstiprinātai pavadzīmei un
-// tikai ar IRISS_WAYBILL_ANNUL_LIVE=1 (noklusējumā izslēgts).
+// Nestandarta darbus neaiztiek (Aivars). Nekad neanulē. Aizstāšana (Nils 20.11, A): stop.js «Pārtraukt» TIKAI lietotāja
+// apstiprinātai vecajai pavadzīmei, tad jaunā; IRISS_WAYBILL_REPLACE_STOP=0 to izslēdz. annul.js worker nelieto.
 // Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo),
-// IRISS_WAYBILL_ANNUL_LIVE=1 (anulēt iepriekšējo un izveidot jaunu; noklusējumā nē),
+// IRISS_WAYBILL_REPLACE_STOP (aizstāšana ar «Pārtraukt»; noklusējumā ieslēgts, "0" - izslēgts). IRISS_WAYBILL_ANNUL_LIVE vairs netiek lietots.
 // CSDD numuru sync (j13, Nils 23.10): tieši pirms un pēc katra darba (processJob) + periodiski TIKAI 08:00-19:00 Rīgas laikā
 // ik ~60-75 min ar nejaušu nobīdi, ne uz apaļām minūtēm (csdd-sync-schedule.mjs), tikai ja VPN jau ieslēgts. Naktī neko.
 // IRISS_CSDD_SYNC_PERIODIC=0 - periodisko izslēdz (pirms/pēc darba paliek). Vecais IRISS_CSDD_SYNC_MIN vairs netiek lietots.
@@ -22,6 +22,7 @@ import {
   csddPeriodicSyncEnabled,
   periodicPlateSync,
   processJob,
+  replaceStopEnabled,
   resolveWorkerScript,
 } from "./waybill-worker-core.mjs";
 
@@ -30,7 +31,7 @@ const TTR_DIR = process.env.IRISS_TTR_DIR || "/root/iriss-ttr";
 const API_BASE = (process.env.IRISS_API_BASE || "https://www.provin.lv").replace(/\/+$/, "");
 const TOKEN = process.env.IRISS_AIVARS_API_TOKEN || "";
 const LIVE = process.env.IRISS_WAYBILL_WORKER_LIVE === "1";
-const ANNUL_LIVE = process.env.IRISS_WAYBILL_ANNUL_LIVE === "1";
+const REPLACE_STOP = replaceStopEnabled(process.env.IRISS_WAYBILL_REPLACE_STOP);
 const PERIODIC_SYNC = csddPeriodicSyncEnabled(process.env.IRISS_CSDD_SYNC_PERIODIC);
 const POLL_MS = 10_000;
 const SCRIPT_TIMEOUT_MS = 180_000;
@@ -117,7 +118,8 @@ async function vpnRelease() {
 
 /** Palaiž tikai allowlist skriptu; darbu nodod caur env IRISS_JOB_JSON, rezultāts = pēdējā stdout JSON rinda. */
 async function runScript(step, input) {
-  const file = resolveWorkerScript(step, { annulEnabled: ANNUL_LIVE });
+  // annul.js worker nepalaiž nekad (annulEnabled netiek padots); aizstāšana = stop.js.
+  const file = resolveWorkerScript(step, { replaceStopEnabled: REPLACE_STOP });
   const { stdout } = await run("node", [path.join(TTR_DIR, file)], {
     cwd: TTR_DIR,
     env: { ...process.env, IRISS_JOB_JSON: JSON.stringify(input), IRISS_AUTO: "1" },
@@ -170,7 +172,7 @@ async function tick() {
         now: () => Date.now(),
         log,
         dryRun: !LIVE,
-        annulEnabled: ANNUL_LIVE,
+        replaceStopEnabled: REPLACE_STOP,
         vpnBusyNotified,
       });
       log("job_done", { id: job.id, ...res });
@@ -191,6 +193,6 @@ if (!TOKEN) {
   log("missing_token_env");
   process.exit(2);
 }
-log("started", { live: LIVE, annul: ANNUL_LIVE, periodicSync: PERIODIC_SYNC, nextSync: new Date(nextSyncMs).toISOString() });
+log("started", { live: LIVE, replaceStop: REPLACE_STOP, periodicSync: PERIODIC_SYNC, nextSync: new Date(nextSyncMs).toISOString() });
 setInterval(() => void tick(), POLL_MS);
 void tick();
