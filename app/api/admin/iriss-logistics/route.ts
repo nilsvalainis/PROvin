@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetActorSeesTransportCost, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
 import { logisticsCabinetAccessQuery, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
@@ -39,7 +39,8 @@ export async function GET(req: Request) {
     const scoped = orders.filter((order) =>
       cabinetCarVisibleToActor({ ...actorQuery, carId: order.id }, rules),
     );
-    const visible = scoped.map((order) => maskOrderSums(order, hideSums));
+    const hideTransport = !cabinetActorSeesTransportCost(actorQuery);
+    const visible = scoped.map((order) => maskOrderSums(order, hideSums, hideTransport));
     const filtered = filterLogisticsOrdersByView(visible, view);
     const previous = includePrevious ? await listPreviousLogisticsPoints() : [];
     return NextResponse.json(

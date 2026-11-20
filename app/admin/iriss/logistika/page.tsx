@@ -15,7 +15,7 @@ import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2CanOpen } from "@/lib/iriss-autoparks-v2-perms";
 import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
-import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetActorSeesTransportCost, cabinetCarVisibleToActor, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery } from "@/lib/iriss-logistics-access";
 
 export const metadata = {
@@ -40,9 +40,10 @@ export default async function IrissLogistikaPage() {
   // Tā pati tvēruma un summu maska kā GET /api/admin/iriss-logistics (Loģistika/Serviss neredz cenas arī SSR).
   const actorQuery = logisticsCabinetAccessQuery(actor, "");
   const hideSums = cabinetActorHidesSums(actorQuery);
+  const hideTransport = !cabinetActorSeesTransportCost(actorQuery);
   const orders = allOrders
     .filter((order) => cabinetCarVisibleToActor({ ...actorQuery, carId: order.id }, rules))
-    .map((order) => maskOrderSums(order, hideSums));
+    .map((order) => maskOrderSums(order, hideSums, hideTransport));
   const viewerName = actor.kind === "admin" ? actor.name : actor.user.name;
   const canEnableTotp = actor.kind === "staff" && !actor.user.totpEnabled;
   // Piedāvājumu veido tikai ar Pasūtījumu tiesību (Nila atbilde 5).

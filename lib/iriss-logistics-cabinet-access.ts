@@ -196,6 +196,24 @@ export function cabinetActorHidesSums(query: Pick<CabinetAccessQuery, "userId" |
   return query.roles.includes("logistika") || query.roles.includes("serviss");
 }
 
+/**
+ * Nils 20.11: transporta izmaksas (Auto1 transporta rēķina summa, `transportCostEur`) redz un labo tikai admins -
+ * ne Loģistika, Serviss, Grāmatvede u.c.
+ */
+export function cabinetActorSeesTransportCost(query: Pick<CabinetAccessQuery, "userId" | "roles">): boolean {
+  return isCabinetAdminQuery(query);
+}
+
+/** Pasūtījuma lauki, ko redz un raksta tikai admins. */
+export const ADMIN_ONLY_ORDER_FIELDS = ["transportCostEur", "transportCostAuto"] as const;
+
+/** Ne-admina PATCH/POST: izmet tikai-admina laukus (transporta izmaksas), lai tos nevar pārrakstīt. */
+export function stripAdminOnlyOrderFields<T extends object>(patch: T): T {
+  const next = { ...patch } as unknown as Record<string, unknown>;
+  for (const f of ADMIN_ONLY_ORDER_FIELDS) delete next[f];
+  return next as unknown as T;
+}
+
 /** Aizstājējs slēptai summai brīvtekstā (Loģistika/Serviss). */
 export const HIDDEN_SUM_TOKEN = "•• €";
 
@@ -216,10 +234,17 @@ export function maskEurAmountsInText(text: string): string {
 /**
  * Loģistika/Serviss (hideSums): auto cena un € summas brīvtekstā nav redzamas nevienā atbildē
  * (SSR lapā, sarakstā, pēc PATCH/POST). Glabātie dati netiek mainīti.
+ * hideTransportCost (visi, izņemot adminu): transporta izmaksas nav redzamas.
  */
-export function maskOrderSums<T extends { priceEur: number | null }>(order: T, hideSums: boolean): T {
-  if (!hideSums) return order;
-  const out: Record<string, unknown> = { ...order, priceEur: null };
+export function maskOrderSums<T extends { priceEur: number | null }>(order: T, hideSums: boolean, hideTransportCost: boolean): T {
+  if (!hideSums && !hideTransportCost) return order;
+  const out: Record<string, unknown> = { ...order };
+  if (hideTransportCost) {
+    if ("transportCostEur" in out) out.transportCostEur = null;
+    if ("transportCostAuto" in out) out.transportCostAuto = false;
+  }
+  if (!hideSums) return out as T;
+  out.priceEur = null;
   // Sludinājuma parsētā cena (listingParsed.priceEur) - tā pati auto cena.
   const parsed = out.listingParsed;
   if (parsed && typeof parsed === "object" && "priceEur" in parsed) {

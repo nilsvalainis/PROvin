@@ -640,8 +640,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                     docsForType={(t) => docsB.filter((d) => d.type === t)}
                     canAdd={() => access.write}
                     onUpload={(t, file) => void uploadFile("B", t, file)}
-                    transportCostAuto={order.transportCostAuto}
-                    transportCostEur={order.transportCostEur}
+                    transportCostAuto={access.admin && order.transportCostAuto}
+                    transportCostEur={access.admin ? order.transportCostEur : null}
                   />
                 </>
               ) : null}
@@ -674,7 +674,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         </section>
       ) : null}
 
-      {/* Pašizmaksas transports: automātiski no Auto1 Transport Invoice PDF, ar manuālu override. */}
+      {/* Pašizmaksas transports: automātiski no Auto1 Transport Invoice PDF, ar manuālu override. Tikai admins (Nils 20.11). */}
+      {access.admin ? (
       <div className="mt-3 rounded-xl border border-[#eef1f4] px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[13px] font-semibold">Pašizmaksas transports</p>
@@ -709,6 +710,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         )}
         <p className="mt-1 text-[11px] text-[var(--ink3)]">No Auto1 Transport Invoice PDF. Ja PDF nav vai summa neatpazīta - ievadi ar roku.</p>
       </div>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         {pickupPdf ? (
