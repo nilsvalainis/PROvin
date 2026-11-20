@@ -29,6 +29,7 @@ import {
   waybillNoProgressMinutes,
   waybillNoProgressText,
   waybillRequestDismissable,
+  waybillReplaceNote,
   waybillReplaceOffer,
   waybillStuckStageText,
   type WaybillAivarsReply,
@@ -595,7 +596,10 @@ export function waybillMobileRequestRows(
         progress,
         line: writtenOff ? WAYBILL_WRITTEN_OFF_HINT : waybillMobileProgressLine(progress, { status, validUntil: request.validUntil }, nowMs),
         // PDF no Aivara/automātikas tiek ierakstīts pavadzīmju sarakstā (result -> uploadIrissPavadzime).
-        note: status === "issued" && !writtenOff && pdfUrl.startsWith("/api/admin/iriss-pavadzimes/") ? WAYBILL_SAVED_IN_ARCHIVE_TEXT : "",
+        note:
+          status === "issued" && !writtenOff && pdfUrl.startsWith("/api/admin/iriss-pavadzimes/")
+            ? WAYBILL_SAVED_IN_ARCHIVE_TEXT
+            : waybillReplaceNote({ ...request, status }),
         savePdfHref: status === "issued" && reply?.canSavePdf ? waybillPdfDownloadHref(request.id) : "",
         pdfFileName:
           waybillDropboxFileName({ waybillNo, brandModel: request.vehicle.brandModel, plate: request.vehicle.plate }) ||

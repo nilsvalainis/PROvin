@@ -14,9 +14,11 @@ import {
   normalizeFields,
   parseJobInput,
   parseRigaDate,
+  replaceStopEnabled,
   runCli,
   runRefill,
   runSave,
+  runStop,
 } from "@/scripts/iriss-ttr/waybill-scripts-core.mjs";
 
 const job = {
@@ -319,5 +321,102 @@ describe("CLI līgums ar worker", () => {
       expect(JSON.parse(out.trim().split("\n").pop()!)).toMatchObject({ ok: false, error: expect.stringContaining("waybill-ui.json") });
     }
     fs.rmSync(ttrDir, { recursive: true, force: true });
+  });
+});
+
+describe("stop.js (aizstāšana 20.11): «Pārtraukt» vecajai, nekad «Anulēt»", () => {
+  const sink = () => {
+    let s = "";
+    return { write: (c: string) => ((s += c), true), text: () => s };
+  };
+  const stopInput = (no = "P02812") => ({ ...newWaybillInput(), replaceWaybillNo: no });
+  const stopDriver = (stopWaybill = vi.fn(async (_q: unknown) => ({ ok: true, statusBefore: "Derīgs", statusAfter: "Pārtraukts" }))) => ({
+    ...mockDriver(),
+    stopWaybill,
+    annulWaybill: vi.fn(async () => {
+      throw new Error("annul nedrīkst");
+    }),
+  });
+
+  it("pārtrauc TIKAI apstiprināto numuru uz šīs numurzīmes; Saglabāt nespiež; annul netiek izsaukts", async () => {
+    const driver = stopDriver();
+    const out = await runStop({ input: parseJobInput(stopInput()), ledger: createLedger(dir), driver });
+    expect(out).toMatchObject({ ok: true, waybillNo: "P02812" });
+    expect(driver.stopWaybill).toHaveBeenCalledWith({ waybillNo: "P02812", plate: "B193-7" });
+    expect(driver.annulWaybill).not.toHaveBeenCalled();
+    expect(driver.clickSave).not.toHaveBeenCalled();
+    expect(driver.close).toHaveBeenCalled();
+  });
+
+  it("vienreiz uz darbu: atkārtojums atgriež iepriekšējo; sākts bez beigām -> neko neatkārto", async () => {
+    const ledger = createLedger(dir);
+    const driver = stopDriver();
+    await runStop({ input: parseJobInput(stopInput()), ledger, driver });
+    expect(await runStop({ input: parseJobInput(stopInput()), ledger, driver })).toMatchObject({ ok: true, repeated: true });
+    expect(driver.stopWaybill).toHaveBeenCalledTimes(1);
+
+    const hung = stopDriver(
+      vi.fn(async (_q: unknown): Promise<{ ok: boolean; statusBefore: string; statusAfter: string }> => {
+        throw new Error("timeout pēc klikšķa");
+      }),
+    );
+    const input = parseJobInput({ ...stopInput(), jobId: "wbr_hung" });
+    expect((await runStop({ input, ledger, driver: hung })).ok).toBe(false);
+    expect(await runStop({ input, ledger, driver: hung })).toMatchObject({ ok: false, error: expect.stringContaining("jau sākta") });
+    expect(hung.stopWaybill).toHaveBeenCalledTimes(1);
+  });
+
+  it("bez apstiprinātā numura vai bez draivera soļa - CSDD neaiztiek", async () => {
+    const driver = stopDriver();
+    expect((await runStop({ input: parseJobInput(newWaybillInput()), ledger: createLedger(dir), driver })).ok).toBe(false);
+    expect(driver.open).not.toHaveBeenCalled();
+    const noStep = mockDriver();
+    expect(await runStop({ input: parseJobInput(stopInput()), ledger: createLedger(dir), driver: noStep })).toMatchObject({
+      ok: false,
+      error: "draiverim nav stopWaybill",
+    });
+    expect(noStep.open).not.toHaveBeenCalled();
+  });
+
+  it("CLI: stop strādā bez IRISS_WAYBILL_ANNUL_LIVE, draiveris ir «stop» (ne «annul»); IRISS_WAYBILL_REPLACE_STOP=0 izslēdz", async () => {
+    const steps: string[] = [];
+    const driver = stopDriver();
+    const stdout = sink();
+    await runCli("stop", {
+      env: { IRISS_JOB_JSON: JSON.stringify(stopInput()), IRISS_WAYBILL_ANNUL_LIVE: "0" },
+      makeDriver: async (s: string) => {
+        steps.push(s);
+        return driver;
+      },
+      ledgerDir: dir,
+      stdout,
+      stderr: sink(),
+    });
+    expect(steps).toEqual(["stop"]);
+    expect(JSON.parse(stdout.text().trim().split("\n").pop()!)).toMatchObject({ ok: true, waybillNo: "P02812" });
+    expect(driver.annulWaybill).not.toHaveBeenCalled();
+
+    const off = sink();
+    const offSteps: string[] = [];
+    await runCli("stop", {
+      env: { IRISS_JOB_JSON: JSON.stringify(stopInput()), IRISS_WAYBILL_REPLACE_STOP: "0" },
+      makeDriver: async (s: string) => {
+        offSteps.push(s);
+        return stopDriver();
+      },
+      ledgerDir: dir,
+      stdout: off,
+      stderr: sink(),
+    });
+    expect(offSteps).toEqual([]);
+    expect(JSON.parse(off.text().trim().split("\n").pop()!)).toMatchObject({ ok: false, error: expect.stringContaining("aizstāšana izslēgta") });
+    expect(replaceStopEnabled(undefined)).toBe(true);
+    expect(replaceStopEnabled("0")).toBe(false);
+  });
+
+  it("stop ledger neietekmē dublikātu aizsardzību (recentSameplate)", async () => {
+    const ledger = createLedger(dir);
+    await runStop({ input: parseJobInput(stopInput()), ledger, driver: stopDriver() });
+    expect(ledger.recentSameplate("wbr_other", "B193-7")).toBeNull();
   });
 });

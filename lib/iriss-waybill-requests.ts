@@ -291,6 +291,21 @@ export function waybillReplaceButtonText(waybillNo: string): string {
   return `Pārrakstīt (pārtraukt ${waybillNo} un izrakstīt jaunu)`;
 }
 
+/** Aizstāšanas pieprasījums (jauna pavadzīme uz aizņemta numura, Nils 20.11): automātika vispirms «Pārtraukt» veco. */
+export function waybillReplaceNoteText(waybillNo: string): string {
+  return `Aizstāj ${waybillNo.trim().toUpperCase()}: vispirms pārtrauc, tad izraksta jaunu`;
+}
+
+/** Piezīme pieprasījumā, kamēr aizstāšana vēl nav pabeigta (rindā / darbā). */
+export function waybillReplaceNote(
+  req: Pick<WaybillRequest, "status"> & Partial<Pick<WaybillRequest, "kind" | "plateBusyAtCreate" | "replaceWaybillNo">>,
+): string {
+  if (req.kind === "stop" || !req.plateBusyAtCreate) return "";
+  if (req.status !== "queued" && req.status !== "in_progress") return "";
+  const no = (req.replaceWaybillNo ?? "").trim().toUpperCase();
+  return /^P\d{5,6}$/.test(no) ? waybillReplaceNoteText(no) : "";
+}
+
 /** «Pārrakstīt» POST ķermenis: «Pārtraukt» TIKAI šo pavadzīmi, tad tas pats pieprasījums vēlreiz (bez anulēšanas). */
 export function waybillReplaceRequestBody(waybillNo: string): { action: "replace"; replaceWaybillNo: string } {
   return { action: "replace", replaceWaybillNo: waybillNo.trim().toUpperCase() };
