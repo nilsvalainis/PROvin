@@ -6,7 +6,9 @@ import "server-only";
  * Ārējās bildes: tikai https, bez IP/lokāliem hostiem, tikai attēli līdz 15 MB.
  */
 
+import { isIrissOfferPublicImageMime } from "@/lib/iriss-offer-client-link";
 import { readOfferSourcePhoto } from "@/lib/iriss-offer-source";
+import { readIrissOfferAttachmentBytes, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { irissPdAuto1MaxPhotoUrl } from "@/lib/iriss-piedavajumi-import";
 import { parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 import type { IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
@@ -59,6 +61,14 @@ export async function loadIrissPdPhoto(
     if (!ref) return null;
     const bytes = await readOfferSourcePhoto(ref, photo.id, size).catch(() => null);
     return bytes ? { bytes, type: "image/jpeg" } : null;
+  }
+  if (photo.kind === "order") {
+    // P4: bilde no vecā /p/ piedāvājuma (pasūtījuma krātuvē). Sīktēls un lielā - tā pati bilde.
+    const order = await readIrissPasutijums(photo.orderId).catch(() => null);
+    const att = order?.offers.find((o) => o.id === photo.offerId)?.attachments.find((a) => a.id === photo.attId);
+    if (!att || !isIrissOfferPublicImageMime(att.mimeType)) return null;
+    const file = await readIrissOfferAttachmentBytes(att).catch(() => null);
+    return file ? { bytes: file.bytes, type: file.mimeType.split(";")[0]?.trim() || "image/jpeg" } : null;
   }
   // Lielajai bildei vispirms Auto1 «max-» variants; ja tāda nav, saglabātā adrese.
   const max = size === "full" ? irissPdAuto1MaxPhotoUrl(photo.url) : null;

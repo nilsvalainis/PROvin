@@ -181,18 +181,38 @@ describe("IRISS route aizsargi (otrais slānis pēc middleware)", () => {
 describe("PD veidotājs / Pasūtījumi", () => {
   const pd = staff(["pasutijumi"]);
 
-  it("PD (piedāvājumi ar maržu) paliek tikai administratoram; ieeja «jauns» novirza uz veco formu", () => {
-    for (const p of ["/admin/iriss/piedavajumi", "/admin/iriss/piedavajumi/x1", "/admin/iriss/piedavajumi/x1/pdf", "/admin/iriss/piedavajumi/x1/skats"]) {
-      expect([p, decideAdminPageAccess(p, pd)]).toEqual([p, "forbidden"]);
+  it("P4: PD lapas un API darbiniekam ar Pasūtījumiem atļautas; citām lomām - nē", () => {
+    for (const p of ["/admin/iriss/piedavajumi", "/admin/iriss/piedavajumi/jauns", "/admin/iriss/piedavajumi/x1", "/admin/iriss/piedavajumi/x1/pdf", "/admin/iriss/piedavajumi/x1/skats"]) {
+      expect([p, decideAdminPageAccess(p, pd)]).toEqual([p, "allow"]);
     }
     for (const p of ["/api/admin/iriss-piedavajumi", "/api/admin/iriss-piedavajumi/x1", "/api/admin/iriss-piedavajumi/cars", "/api/admin/iriss-piedavajumi/x1/foto/1"]) {
-      expect([p, decideAdminApiAccess(p, pd)]).toEqual([p, "forbidden"]);
+      expect([p, decideAdminApiAccess(p, pd)]).toEqual([p, "allow"]);
     }
-    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", pd)).toBe("allow");
-    const src = fs.readFileSync(path.join(APP, "admin/iriss/piedavajumi/jauns/page.tsx"), "utf8");
-    // Darbiniekam redirect PIRMS requireAdminPage un datu ielādes.
-    expect(src.indexOf("redirect(irissCreateOfferHrefLegacy")).toBeGreaterThan(0);
-    expect(src.indexOf("redirect(irissCreateOfferHrefLegacy")).toBeLessThan(src.indexOf("await requireAdminPage()"));
+    for (const s of ["logistika", "gramatvede", "serviss", "pavadzimes", "ap_pamatdati", "sludinajumi"] as const) {
+      expect([s, decideAdminPageAccess("/admin/iriss/piedavajumi/x1", staff([s]))]).toEqual([s, "forbidden"]);
+      expect([s, decideAdminApiAccess("/api/admin/iriss-piedavajumi/x1", staff([s]))]).toEqual([s, "forbidden"]);
+    }
+  });
+
+  it("P4: PD route maskē iekšējos datus darbiniekam un sanitizē PATCH (atpazīstami aizsargi)", () => {
+    const list = fs.readFileSync(path.join(API_DIR, "iriss-piedavajumi/route.ts"), "utf8");
+    expect(list).toContain('requireIrissSectionApi("pasutijumi")');
+    expect(list).toContain("irissPdRowsForViewer(");
+    expect(list).toContain("irissPdViewerCanUseStock(viewer, kind)");
+    const one = fs.readFileSync(path.join(API_DIR, "iriss-piedavajumi/[id]/route.ts"), "utf8");
+    expect(one).toContain("sanitizeIrissPdPatchForStaff(raw, rec)");
+    expect(one).toContain("irissPdViewerCanEdit(rec, viewer)");
+    expect(one).toContain("irissPdViewerCanDelete(rec, viewer)");
+    // Katra atbilde ar ierakstu iet caur skatītāja maskēšanu.
+    expect(one).not.toMatch(/record: (rec|next|res\.record)\b/);
+    for (const f of ["admin/iriss/piedavajumi/page.tsx", "admin/iriss/piedavajumi/[id]/page.tsx"]) {
+      const src = fs.readFileSync(path.join(APP, f), "utf8");
+      expect(src, f).toContain('requireIrissSectionPage("pasutijumi")');
+      expect(src, f).toMatch(/irissPd(RowsForViewer|ForViewer)\(/);
+    }
+    const jauns = fs.readFileSync(path.join(APP, "admin/iriss/piedavajumi/jauns/page.tsx"), "utf8");
+    expect(jauns).not.toContain("irissCreateOfferHrefLegacy");
+    expect(jauns).toContain("irissPdViewerCanUseStock(viewer");
   });
 
   it("vecās formas avoti (offer-seed) - Pasūtījumi + avota sadaļa route līmenī", () => {

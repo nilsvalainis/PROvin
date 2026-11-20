@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { loadIrissPdPhoto } from "@/lib/iriss-piedavajumi-photo";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
-import { requireAdminOnlyApi } from "@/lib/staff-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Piedāvājuma bilde adminam (?s=full - liela, citādi sīktēls). */
+/** Piedāvājuma bilde adminam un darbiniekam ar Pasūtījumiem (?s=full - liela, citādi sīktēls). Adrese netiek atklāta. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string; n: string }> }) {
-  const gate = await requireAdminOnlyApi();
+  const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
   const { id, n } = await params;
   const index = Number.parseInt(n, 10);

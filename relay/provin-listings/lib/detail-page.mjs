@@ -442,10 +442,10 @@ export function extractDetailDom() {
   // «Show more» ir citā elementā. Pilnais saraksts = sadaļas innerText rindas aiz virsraksta (bez pogām), konteinerā,
   // kurā vēl nav citas sadaļas virsraksta. Tas pats virsraksts -> mergeDetailExtracts paturēs garāko sarakstu.
   const HEAD_SEL = "h1, h2, h3, h4, h5, h6, [role=heading]";
-  const UI_LINE = /^(show (more|less|original)|mehr anzeigen|weniger anzeigen|rādīt (vairāk|mazāk)|some content has been automatically translated\.?)\s*[+-]?$/i;
+  const UI_LINE = /^(\+\s*\d*|-|show (more|less|original|all)|mehr anzeigen|weniger anzeigen|alle anzeigen|rādīt (vairāk|mazāk|visu)|some content has been automatically translated\.?)\s*[+-]?$/i;
   document.querySelectorAll(HEAD_SEL).forEach((h) => {
     const heading = txt(h);
-    if (!heading || heading.length > 100 || !/according to (the )?(identification number|vin)/i.test(heading)) return;
+    if (!heading || heading.length > 100 || !/according to (the )?(identification number|vin)|dati pēc vin|(laut|gemäß) (fin|vin)/i.test(heading)) return;
     let best = [];
     let box = h.parentElement;
     for (let depth = 0; depth < 6 && box; depth += 1) {
@@ -577,6 +577,135 @@ const sleepDefault = (ms) => new Promise((r) => setTimeout(r, ms));
  * Atver detaļu lapu jau ielogotā profilā (sesiju pārbauda izsaucējs) un atdod izvilkumu.
  * `page` - Playwright Page; `opts.sleep` testiem.
  */
+// --- Izvēršanas pogas (Nils 20.11: Auto1 «Dati pēc VIN» tikai 10 pozīcijas) ---
+
+/** Izvēršanas pogas teksts: «Show more», «+», «Mehr anzeigen», «Rādīt vairāk» u.c. (var būt ar skaitu / bultu). */
+export const EXPAND_TEXT_RE =
+  /^(?:\+\s*\d*|(?:show|see|view|load)\s+(?:more|all)(?:\s+\w+)?|(?:alle|mehr)(?:\s+\w+)?\s+anzeigen|weitere\s+anzeigen|mehr|rādīt\s+(?:vairāk|visu|visas)|vairāk|meer\s+(?:tonen|weergeven)|toon\s+meer|voir\s+plus|afficher\s+plus|mostra\s+(?:di\s+)?più|ver\s+más|mostrar\s+más|pokaż\s+więcej|zobrazit\s+více)\s*(?:\(?\+?\s*\d+\s*\)?)?\s*[+▾▼⌄›>]?$/i;
+
+/** Nekad nespiest: solīšana, pirkšana, apmaksa, apstiprināšana, konts. Pārbauda tekstu, aria-label, title, data-testid, id. */
+export const FORBIDDEN_CONTROL_RE =
+  /(?:^|[^a-z])(?:bid|bids|bidding|gebot|gebote|bieten|biete|überbieten|höchstgebot|buy|kaufen|kauf|sofortkauf|purchase|checkout|cart|warenkorb|basket|order|bestellen|pay|payment|bezahlen|zahlen|zahlung|offer|angebot|submit|absenden|senden|confirm|bestätigen|accept|akzeptieren|reserve|reservieren|solīt|solījum|pirkt|nopirkt|pasūtīt|apmaksāt|maksāt|apstiprināt|watch|merken|favou?rit|delete|löschen|remove|entfernen|logout|log out|sign out|abmelden|download|print|drucken|share|teilen)/i;
+
+/**
+ * Tīra loģika: kuras lapas vadīklas drīkst nospiest, lai izvērstu sarakstus. Atgriež kandidātu id.
+ * Kandidāts: { id, tag, text, label, title, testid, elId, href, type, expanded, haspopup, inChrome, inForm, disabled, parent, clicks }.
+ * `aria`: vai spiest arī aria-expanded="false" vadīklas bez izvēršanas teksta (Auto1 akordeoni / «+» ikonas).
+ */
+export function pickExpandControls(cands, { aria = false, maxClicksPerControl = 3 } = {}) {
+  const ok = new Set();
+  for (const c of Array.isArray(cands) ? cands : []) {
+    if (!c || typeof c.id !== "string") continue;
+    const text = clean(c.text);
+    const label = clean(c.label);
+    const meta = [text, label, clean(c.title), clean(c.testid), clean(c.elId)].join(" | ");
+    if (FORBIDDEN_CONTROL_RE.test(meta)) continue;
+    if (c.disabled || c.inChrome || c.inForm) continue;
+    if (c.type === "submit" || c.type === "reset") continue;
+    if (c.haspopup && c.haspopup !== "false") continue;
+    if (c.expanded === "true") continue;
+    if (String(c.tag).toUpperCase() === "A" && c.href && !/^(#|javascript:)/i.test(c.href)) continue;
+    if ((Number(c.clicks) || 0) >= maxClicksPerControl) continue;
+    const byText = EXPAND_TEXT_RE.test(text) || (!text && EXPAND_TEXT_RE.test(label));
+    const byAria = aria && c.expanded === "false" && text.length <= 80;
+    if (byText || byAria) ok.add(c.id);
+  }
+  // Ligzdotas vadīklas: ja izvēlēts arī vecāks, bērnu nespiež (citādi divi klikšķi aizver atpakaļ).
+  return [...ok].filter((id) => {
+    const c = cands.find((x) => x && x.id === id);
+    for (let p = c?.parent, guard = 0; p && guard < 50; guard += 1) {
+      if (ok.has(p)) return false;
+      p = cands.find((x) => x && x.id === p)?.parent;
+    }
+    return true;
+  });
+}
+
+/** Lapā: atzīmē iespējamās vadīklas (data-provin-expand) un atgriež to aprakstus (spiež tikai Node pusē izvēlētās). */
+export function collectExpandCandidatesDom() {
+  const clean = (s) => String(s || "").replace(/\s+/g, " ").trim();
+  const els = [...document.querySelectorAll('button, [role="button"], a, summary, [aria-expanded]')].slice(0, 600);
+  const ids = new Map();
+  els.forEach((el, i) => {
+    el.setAttribute("data-provin-expand", String(i));
+    ids.set(el, String(i));
+  });
+  return els.map((el, i) => {
+    let parent = "";
+    for (let p = el.parentElement; p && !parent; p = p.parentElement) parent = ids.get(p) || "";
+    return {
+      id: String(i),
+      tag: el.tagName,
+      text: clean(el.innerText || el.textContent).slice(0, 120),
+      label: clean(el.getAttribute("aria-label")).slice(0, 120),
+      title: clean(el.getAttribute("title")).slice(0, 120),
+      testid: clean(el.getAttribute("data-testid")).slice(0, 120),
+      elId: clean(el.id).slice(0, 120),
+      href: el.tagName === "A" ? el.getAttribute("href") || "" : "",
+      type: (el.getAttribute("type") || "").toLowerCase(),
+      expanded: el.getAttribute("aria-expanded"),
+      haspopup: el.getAttribute("aria-haspopup"),
+      inChrome: Boolean(el.closest('header, nav, [role="navigation"], [role="menu"], [role="menubar"], [role="listbox"], [role="dialog"], dialog')),
+      inForm: Boolean(el.closest("form")),
+      disabled: Boolean(el.disabled) || el.getAttribute("aria-disabled") === "true",
+      parent,
+      clicks: Number(el.getAttribute("data-provin-expand-n")) || 0,
+    };
+  });
+}
+
+/** Lapā: nospiež tikai norādītās (jau pārbaudītās) vadīklas. */
+export function clickExpandControlsDom(ids) {
+  let n = 0;
+  for (const id of Array.isArray(ids) ? ids : []) {
+    if (!/^\d+$/.test(String(id))) continue;
+    const el = document.querySelector(`[data-provin-expand="${id}"]`);
+    if (!el) continue;
+    el.setAttribute("data-provin-expand-n", String((Number(el.getAttribute("data-provin-expand-n")) || 0) + 1));
+    try {
+      el.click();
+      n += 1;
+    } catch {
+      /* ignore */
+    }
+  }
+  return n;
+}
+
+/** Lapā: satura apjoms (li skaits + teksta garums) - lai redzētu, kad saraksts pēc klikšķa beidz augt. */
+export function detailContentSizeDom() {
+  return document.querySelectorAll("li").length * 100_000 + String(document.body ? document.body.innerText || "" : "").length;
+}
+
+/**
+ * Izvērš sadaļu sarakstus: līdz `maxRounds` kārtām - savāc vadīklas, izvēlas drošās, nospiež, gaida, kamēr saturs
+ * pieaug un nostabilizējas (līdz `settleMs`). Atgriež nospiesto skaitu.
+ */
+export async function expandDetailSections(page, { sleep = (ms) => new Promise((r) => setTimeout(r, ms)), aria = false, maxRounds = 4, settleMs = 3_000 } = {}) {
+  let total = 0;
+  for (let round = 0; round < maxRounds; round += 1) {
+    const cands = await page.evaluate(collectExpandCandidatesDom).catch(() => null);
+    if (!Array.isArray(cands)) break;
+    const ids = pickExpandControls(cands, { aria });
+    if (!ids.length) break;
+    const before = Number(await page.evaluate(detailContentSizeDom).catch(() => 0)) || 0;
+    const n = Number(await page.evaluate(clickExpandControlsDom, ids).catch(() => 0)) || 0;
+    if (!n) break;
+    total += n;
+    let last = before;
+    let stable = 0;
+    for (let t = 0; t < settleMs; t += 300) {
+      await sleep(300);
+      const size = Number(await page.evaluate(detailContentSizeDom).catch(() => last)) || last;
+      if (size !== last) {
+        last = size;
+        stable = 0;
+      } else if (size > before && (stable += 1) >= 2) break;
+    }
+  }
+  return total;
+}
+
 export async function fetchAuctionDetail(page, platform, url, opts = {}) {
   const cfg = DETAIL_PLATFORMS[platform];
   const sleep = opts.sleep ?? sleepDefault;
@@ -642,24 +771,11 @@ export async function fetchAuctionDetail(page, platform, url, opts = {}) {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => undefined);
       await sleep(800);
       await grab();
+      if (await expandDetailSections(page, { sleep, aria: Boolean(cfg.expandAria) })) await grab();
     }
-    // Nils 30.10: Auto1 «DATI PĒC VIN» u.c. saraksti daļēji paslēpti zem «Show more +» - atver visus un nolasa vēlreiz.
-    for (let round = 0; round < 3; round += 1) {
-      const more = page.locator("button, a, [role=button]").filter({ hasText: /^\s*(show more|mehr anzeigen|rādīt vairāk|meer tonen|voir plus)\s*\+?\s*$/i });
-      const n = typeof more.count === "function" ? Math.min(await more.count().catch(() => 0), 12) : 0;
-      if (n === 0) break;
-      let clicked = 0;
-      for (let i = 0; i < n; i += 1) {
-        const btn = more.nth(i);
-        if (!(await btn.isVisible().catch(() => false))) continue;
-        await btn.click({ timeout: 3_000 }).catch(() => undefined);
-        clicked += 1;
-        await sleep(400);
-      }
-      if (clicked === 0) break;
-      await sleep(900);
-      await grab();
-    }
+    // Nils 30.10 / 20.11: Auto1 «Dati pēc VIN» u.c. saraksti paslēpti zem «Show more» / «+» / aria-expanded pogām,
+    // un pārējās pozīcijas DOM parādās tikai PĒC klikšķa. Spiež tikai izvēršanas pogas (pickExpandControls), gaida pieaugumu.
+    if (await expandDetailSections(page, { sleep, aria: Boolean(cfg.expandAria) })) await grab();
     const merged = mergeDetailExtracts(extracts);
     if (merged.fields.length === 0 && /sign in|log ?in|password/i.test(merged.text.slice(0, 2_000))) {
       return detailFail("login_required", `${cfg.label}: sesija beigusies, jāielogojas no jauna.`);

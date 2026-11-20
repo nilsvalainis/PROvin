@@ -36,6 +36,7 @@ export function IrissOfferClientLinkBar({
   onCreate,
   onRevoke,
   onExtend,
+  readOnly = false,
 }: {
   offerId: string;
   link: IrissOfferClientLinkAdminView | null;
@@ -50,6 +51,8 @@ export function IrissOfferClientLinkBar({
   onCreate: (expiresInDays: number | null) => void;
   onRevoke: () => void;
   onExtend?: (validUntilAt: string) => void;
+  /** P4 (Nils 20.11): vecais /p/ piedāvājums - tikai statuss un «Kopēt saiti» (saite paliek dzīva). */
+  readOnly?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
@@ -58,7 +61,7 @@ export function IrissOfferClientLinkBar({
   const deadlineMs = deadline ? Date.parse(deadline) : null;
   // Jaunai saitei termiņš obligāts un nākotnē (>= 5 min); API saderībai vēl pieņem arī vecās saites bez termiņa.
   const deadlineReady = deadlineMs != null && deadlineMs >= Date.now() + IRISS_OFFER_DEADLINE_MIN_LEAD_MS;
-  const canExtend = Boolean(onExtend && link && link.status !== "revoked" && !link.decision);
+  const canExtend = !readOnly && Boolean(onExtend && link && link.status !== "revoked" && !link.decision);
   const showExtendField = canExtend && (extendOpen || link?.status === "expired");
   const active = Boolean(link && link.status !== "revoked");
   const stamp = link ? formatIrissOfferLinkStamp(link.statusAt) : "";
@@ -109,6 +112,8 @@ export function IrissOfferClientLinkBar({
           >
             {copied ? "Nokopēts" : "Kopēt saiti"}
           </button>
+          {readOnly ? null : (
+          <>
           <button
             type="button"
             className="inline-flex h-9 items-center rounded-full bg-[#25D366] px-3 text-[13px] font-semibold text-white disabled:opacity-40"
@@ -142,8 +147,10 @@ export function IrissOfferClientLinkBar({
           <button type="button" className={miniBtn} disabled={busy} onClick={onRevoke}>
             Atsaukt
           </button>
+          </>
+          )}
         </div>
-      ) : (
+      ) : readOnly ? null : (
         <div className="space-y-1">
           <button
             type="button"

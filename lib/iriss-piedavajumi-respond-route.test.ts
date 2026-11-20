@@ -42,6 +42,12 @@ vi.mock("@/lib/staff-auth", async () => {
       if (gate.as === "none") return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
       return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
     },
+    // P4: PD route prasa sadaļu Pasūtījumi; darbinieks (cita PD skatītājs) tālāk saņem 403 no PD tiesību pārbaudes.
+    requireIrissSectionApi: async () => {
+      if (gate.as === "admin") return { ok: true, actor: { kind: "admin", name: "Nils" } };
+      if (gate.as === "none") return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+      return { ok: true, actor: { kind: "staff", user: { id: "usr_cits", name: "Cits", sections: ["pasutijumi"] }, sessionId: "ses_x" } };
+    },
   };
 });
 

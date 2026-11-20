@@ -31,7 +31,7 @@ describe("Piedāvājumi: izsoles saites atpazīšana", () => {
   it("adapteri: Auto1 pilns, Openlane caur releju, Autobid un mobile.de - stub ar LV paskaidrojumu", () => {
     expect(IRISS_PD_ADAPTERS.auto1.mode).toBe("relay_auto1");
     expect(IRISS_PD_ADAPTERS.openlane.mode).toBe("relay_basic");
-    expect(IRISS_PD_ADAPTERS.autobid.mode).toBe("stub");
+    expect(IRISS_PD_ADAPTERS.autobid.mode).toBe("relay_autobid");
     expect(IRISS_PD_ADAPTERS.mobilede.stubNote).toContain("ar roku");
   });
 
@@ -41,17 +41,17 @@ describe("Piedāvājumi: izsoles saites atpazīšana", () => {
   });
 });
 
-describe("Piedāvājumi: tikai Admin", () => {
+describe("Piedāvājumi: admins un darbinieks ar Pasūtījumiem (P4)", () => {
   const staff = { kind: "staff" as const, sections: [...IRISS_SECTIONS] };
 
-  it("darbinieks (pat ar visām sadaļām) neatver lapas un API; admins atver", () => {
-    expect(decideAdminPageAccess("/admin/iriss/piedavajumi", staff)).toBe("forbidden");
-    // Audits P1 (20.11): «jauns» ieeja darbiniekam ar Pasūtījumiem - lapa pati novirza uz veco formu (bez PD datiem).
+  it("P4 (Nils 20.11): darbinieks ar Pasūtījumiem atver PD lapas un API (route paši maskē); bez Pasūtījumiem - nē", () => {
+    expect(decideAdminPageAccess("/admin/iriss/piedavajumi", staff)).toBe("allow");
     expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", staff)).toBe("allow");
     expect(decideAdminPageAccess("/admin/iriss/piedavajumi/jauns", { kind: "staff", sections: ["logistika"] })).toBe("forbidden");
-    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/x1", staff)).toBe("forbidden");
-    expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi", staff)).toBe("forbidden");
-    expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi/x/foto/0", staff)).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/iriss/piedavajumi/x1", staff)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi", staff)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi/x/foto/0", staff)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-piedavajumi", { kind: "staff", sections: ["logistika"] })).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/piedavajumi", { kind: "admin" })).toBe("allow");
   });
 });

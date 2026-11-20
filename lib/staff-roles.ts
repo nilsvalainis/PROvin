@@ -143,10 +143,11 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "pasutijumi",
     label: "Pasūtījumi",
-    // PD ieeja darbiniekam tikai novirza uz veco piedāvājuma formu (lapa pati to dara); offer-seed route
-    // paši prasa Pasūtījumi + avota sadaļu (ap_pamatdati / logistika) un slēpj summas (audits P1 20.11).
-    pagePrefixes: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi/jauns"],
-    apiPrefixes: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed"],
+    // P4 (Nils 20.11): viena PD forma visiem - darbinieks ar Pasūtījumiem veido un labo savus PD.
+    // PD route paši maskē iekšējās summas, avotu un piezīmes un sanitizē PATCH (lib/iriss-piedavajumi-staff.ts);
+    // Autoparka / Loģistikas auto tikai ar attiecīgo sadaļu. offer-seed - vecās formas avoti (audits P1).
+    pagePrefixes: ["/admin/iriss/pasutijumi", "/admin/iriss/piedavajumi"],
+    apiPrefixes: ["/api/admin/iriss-pasutijumi", "/api/admin/iriss-offer-seed", "/api/admin/iriss-piedavajumi"],
   },
   {
     id: "sludinajumi",

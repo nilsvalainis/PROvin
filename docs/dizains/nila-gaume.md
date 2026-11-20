@@ -19,3 +19,8 @@ Formāts: `YYYY-MM-DD | jā/nē | kur | ko tieši | kāpēc (Nila vārdiem, ja i
 2026-11-19 | jā | Dīlera «Sūtīt klientam» logs | viena poga + logs ar kanālu, situāciju, ķekšiem, rediģējamu tekstu, «← Atpakaļ» | mazāk pogu, skaidra atgriešanās
 2026-11-19 | nē | Dīlera PDF svarīgo ierakstu izcelšana | bieza krāsaina kreisā mala + iekrāsots fons + papildu čips | «dizainiski nepatīk»
 2026-11-19 | jā | Tas pats, variants 2 | plāns ietvars + šaura galvenes josla ar ikonu un īsu tekstu | izvēlēts no 5 variantiem (ieteiktais bija 3 - ikonu kolonna)
+2026-11-20 | jā | DZA Business poga | Nila varianti jau produkcijā | nemainīt
+2026-11-20 | jā | Dīlera PDF izcelšana | variants 2 (plāns ietvars + galvenes josla) | izvēlēts no 5
+2026-11-20 | jā | IRISS P4 viena PD forma | admins/darbinieks blakus, darbiniekam bez iekšējām summām un avota | AAA
+2026-11-20 | jā | Cenu lapa «DRĪZUMĀ» | variants A - liels DRĪZUMĀ cenas vietā, «Plānotā cena» zemāk; viss rediģējams | no 5 variantiem
+2026-11-20 | nē→labot | PD aprīkojuma tabula | gari angļu teksti etiķešu kolonnā, krāsas tabula dublējas ar bildi | īsas LV etiķetes, tikai bilde

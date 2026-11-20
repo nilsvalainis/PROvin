@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Radar,
   ScanLine,
+  Tag,
   Wallet,
   Warehouse,
   Wrench,
@@ -144,6 +145,18 @@ export function IrissStaffAppShell({
               </Link>
             );
           })}
+          {/* P4 (Nils 20.11): PD saraksts darbiniekam ar Pasūtījumiem (tā pati sadaļas tiesība). */}
+          {sections.includes("pasutijumi") ? (
+            <Link
+              href="/admin/iriss/piedavajumi"
+              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[13.5px] font-medium ${
+                pathname.startsWith("/admin/iriss/piedavajumi") ? "bg-[#ececf3] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)] hover:bg-white"
+              }`}
+            >
+              <Tag className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+              Piedāvājumi
+            </Link>
+          ) : null}
         </nav>
         <button
           type="button"

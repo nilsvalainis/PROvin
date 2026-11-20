@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 
@@ -14,8 +14,9 @@ export const dynamic = "force-dynamic";
  * Nils 30.10: «opcija apskatīt priekšskatījumu ar visu saturu ... pirms sūtīt klientam linku».
  * Tieši tas, ko klients redz saitē (saites redzamības slēdži), no saglabātā ieraksta.
  */
+// P4: klienta skats (bez iekšējiem datiem) - arī darbiniekam ar Pasūtījumiem.
 export default async function IrissPiedavajumsPreviewPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPage();
+  await requireIrissSectionPage("pasutijumi");
   const { id } = await params;
   if (!isSafeIrissPdId(id)) notFound();
   const rec = await readIrissPd(id);

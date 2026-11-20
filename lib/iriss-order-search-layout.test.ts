@@ -13,7 +13,8 @@ describe("iriss order search and offers layout", () => {
     expect(room).toContain("Sagatavot piedāvājumu");
     expect(room).toContain("Atvērt izsolē");
     expect(room).toContain("auctionUrl={auctionUrl}");
-    expect(room).toContain("Nosūtīt klientam");
+    // P4 (Nils 20.11): Meklētāja «Nosūtīt klientam» (WhatsApp teksts) noņemts - «Sagatavot piedāvājumu» atver PD.
+    expect(room).not.toContain("Nosūtīt klientam");
     expect(room).toContain("Jauns piedāvājums");
     expect(room).toContain("Jauns piedāvājums bez klienta datiem");
     expect(room).toContain("Sludinājumu saites");

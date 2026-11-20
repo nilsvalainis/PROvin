@@ -4,6 +4,7 @@
  * Termiņš ir obligāts nosūtīšanai, bez noklusējuma. Beidzies automātiski pēc Rīgas dienas beigām.
  */
 
+import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
 import {
   applyIrissPdEquipmentSummaryEdit,
   buildIrissPdEqSummaryPublic,
@@ -75,6 +76,13 @@ function normalizePhoto(raw: unknown): IrissPdPhoto | null {
   }
   if (o.kind === "url" && typeof o.url === "string" && /^https:\/\//i.test(o.url.trim()) && o.url.length <= 2000) {
     return { kind: "url", url: o.url.trim() };
+  }
+  if (o.kind === "order") {
+    const safe = (v: unknown) => (typeof v === "string" && /^[\w-]{1,80}$/.test(v) ? v : "");
+    const orderId = safe(o.orderId);
+    const offerId = safe(o.offerId);
+    const attId = safe(o.attId);
+    return orderId && offerId && attId ? { kind: "order", orderId, offerId, attId } : null;
   }
   return null;
 }
@@ -223,6 +231,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     history: normalizeHistory(o.history),
     messages: normalizeIrissPdMessages(o.messages),
     declinedByClient: o.declinedByClient === true && o.status === "declined",
+    createdById: clean(o.createdById, 80),
+    createdByName: clean(o.createdByName, 120),
   };
 }
 
@@ -405,7 +415,9 @@ export function applyIrissPdPatch(
 }
 
 export function photoKey(p: IrissPdPhoto): string {
-  return p.kind === "dropbox" ? `d:${p.ref}:${p.id}` : `u:${p.url}`;
+  if (p.kind === "dropbox") return `d:${p.ref}:${p.id}`;
+  if (p.kind === "order") return `o:${p.orderId}:${p.offerId}:${p.attId}`;
+  return `u:${p.url}`;
 }
 
 /* ---------------- Darbības ---------------- */
@@ -447,6 +459,47 @@ export function buildIrissPdClientMessage(
     brand,
   ].join("\n");
   return { subject, text };
+}
+
+/**
+ * Nils 20.11 (P4): WhatsApp teksts PD klientam. Vietturi: {auto} - marka un modelis īsi, {saite} - publiskā PD saite.
+ * IRISS PD ziņu šablonu reģistra nav (PROVIN šabloni IRISS nedrīkst lietot) - teksts labojams šeit.
+ */
+export const IRISS_PD_WHATSAPP_TEMPLATE = "Sveiki! Nosūtu izskatīšanai {auto}, ja ir jautājumi, droši rakstiet vai zvaniet. {saite}";
+
+/** «Škoda Kodiaq 2.0 TDI Sportline» -> «Škoda Kodiaq» (marka + modelis). */
+export function irissPdShortModel(title: string): string {
+  return title.replace(/\s+/g, " ").trim().split(" ").slice(0, 2).join(" ");
+}
+
+export function buildIrissPdWhatsAppText(rec: Pick<IrissPiedavajums, "vehicle">, url: string, template: string = IRISS_PD_WHATSAPP_TEMPLATE): string {
+  const auto = irissPdShortModel(rec.vehicle.title) || "piedāvājumu";
+  return template.replace("{auto}", auto).replace("{saite}", url).replace(/\s+/g, " ").trim();
+}
+
+/** Klienta tālrunis WhatsApp pogai (tikai cipari, min. 8) vai "" - tad poga neaktīva. */
+export function irissPdClientWhatsAppPhone(client: Pick<IrissPdClient, "phone">): string {
+  const digits = client.phone.replace(/\D/g, "");
+  return digits.length >= 8 ? digits : "";
+}
+
+/** wa.me (atver WhatsApp lietotni, ne web.whatsapp.com) tieši klienta numuram. */
+export function irissPdClientWhatsAppHref(client: Pick<IrissPdClient, "phone">, text: string): string {
+  const phone = irissPdClientWhatsAppPhone(client);
+  return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : "";
+}
+
+/** Redaktora laukā: nobraukums «153 709 km», krāsa latviski (kā klienta pusē). Labojams - saglabājas ievadītais. */
+export function irissPdEditorValue(k: keyof IrissPdVehicle, raw: string): string {
+  if (k === "mileageKm" && /^\d[\d\s.,]*$/.test(raw.trim())) return `${raw.replace(/[\s.,]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ")} km`;
+  if (k === "color") return irissPdDisplayValue(raw);
+  return raw;
+}
+
+/** Nobraukuma ievade «153 709 km» -> «153709»; cits teksts paliek kā ievadīts. */
+export function irissPdEditorInput(k: keyof IrissPdVehicle, input: string): string {
+  if (k === "mileageKm" && /^[\d\s.,]*(km?)?\s*$/i.test(input)) return input.replace(/\D/g, "");
+  return input;
 }
 
 /** wa.me ar gatavu tekstu (bez numura - WhatsApp ļauj izvēlēties kontaktu). Tikai atver, nesūta. */
@@ -527,10 +580,13 @@ export function canRebaseIrissPd(status: IrissPdStatus): boolean {
 
 export function rebaseIrissPd(
   base: IrissPiedavajums,
-  input: { id: string; number: number; at: string; by: string },
+  input: { id: string; number: number; at: string; by: string; byId?: string },
 ): IrissPiedavajums {
   const rec: IrissPiedavajums = {
     ...base,
+    // P4: jaunais pieder tam, kas to izveidoja (ne bāzes autoram).
+    createdById: input.byId ?? "",
+    createdByName: input.by,
     id: input.id,
     number: input.number,
     status: "draft",
@@ -599,6 +655,8 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     cover: rec.photos[0] ?? null,
     updatedAt: rec.updatedAt,
     openQuestions: irissPdOpenQuestionCount(rec.messages),
+    createdById: rec.createdById,
+    createdByName: rec.createdByName,
   };
 }
 
@@ -626,6 +684,8 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     cover,
     updatedAt: clean(o.updatedAt, 40),
     openQuestions: typeof o.openQuestions === "number" && Number.isFinite(o.openQuestions) ? Math.max(0, Math.min(999, Math.floor(o.openQuestions))) : 0,
+    ...(typeof o.createdById === "string" ? { createdById: clean(o.createdById, 80) } : {}),
+    ...(typeof o.createdByName === "string" ? { createdByName: clean(o.createdByName, 120) } : {}),
   };
 }
 

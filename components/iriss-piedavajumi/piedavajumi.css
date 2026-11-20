@@ -2175,3 +2175,46 @@ button.pd-lv {
     inset: -10px -6px;
   }
 }
+
+/* P4 (Nils 20.11): darbinieka saraksts «Mani» / «Visi», kolonna «Veidoja», paslēptās iekšējās summas. */
+.pdv .pd-seg.pd-own {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 150px;
+}
+.pdv .pd-seg.pd-own button {
+  min-height: 34px;
+  font-size: 13px;
+}
+.pdv .pd-seg.pd-own button[aria-pressed="true"] {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.pdv .pd-who {
+  display: inline-flex;
+}
+.pdv .pd-av {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--iriss-surface-2, #f2f2f7);
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.pdv .pd-av.me {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.pdv .pd-miss {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+  color: var(--ink3);
+  font-size: 12.5px;
+}
