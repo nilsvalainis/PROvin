@@ -26,6 +26,12 @@ import type { RegistryFreshness } from "@/lib/iriss-autoparks-registry-freshness
 const SHOW_SUM_SORT = false;
 const BASE = "/admin/iriss/autoparks-v2";
 /** Datora statusu flīzes (D1): visi + statusi bez "Pārdots". */
+/** P2 (Nils 20.11): glabāts «Ceļā», bet aktīva Loģistikas ieraksta nav. */
+export const NO_LOGISTICS_LV = "Ceļā bez Loģistikas";
+/** «Ceļā» filtrs - tikai ar aktīvu Loģistikas ierakstu. */
+function rowInStatus(r: AutoparksV2ListRow, s: AutoparksStatus): boolean {
+  return r.status === s && !(s === "in_transit" && r.transitNoLogistics);
+}
 const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) => s !== "sold");
 
 export function AutoparksV2List({
@@ -36,7 +42,10 @@ export function AutoparksV2List({
   canChangeStatus = false,
   showVat = false,
   registryFresh = null,
+  transitFixHref = null,
 }: {
+  /** P2 (Nils 20.11): admina saraksts «Ceļā bez Loģistikas»; null - nerāda. */
+  transitFixHref?: string | null;
   initialCars: AutoparksV2ListRow[];
   /** CSDD reģistra svaigums (serveris); null - krātuve nav pieslēgta, nerāda. */
   registryFresh?: RegistryFreshness | null;
@@ -88,7 +97,7 @@ export function AutoparksV2List({
   }
   const statusCounts = useMemo(() => autoparksV2StatusCounts(base), [base]);
   const rows = useMemo(
-    () => sortAutoparksV2Rows(flattenAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), sort),
+    () => sortAutoparksV2Rows(flattenAutoparksV2Rows(status ? base.filter((r) => rowInStatus(r, status)) : base), sort),
     [base, status, sort],
   );
   const shown: "date" | "sum" | null = sort.startsWith("date_") ? "date" : sort.startsWith("sum_") ? "sum" : null;
@@ -132,6 +141,12 @@ export function AutoparksV2List({
           <Link href="/admin/iriss/logistika?view=map" className="ap2-pp ap2-pp-link" title="Auto ceļā: karte un kravas">
             <span className="n">{logisticsCount}</span>
             <span className="l">Loģistika →</span>
+          </Link>
+        ) : null}
+        {transitFixHref ? (
+          <Link href={transitFixHref} className="ap2-pp ap2-pp-link ap2-pp-warn">
+            <span className="n">{cars.filter((c) => c.transitNoLogistics && !c.archived).length}</span>
+            <span className="l">{NO_LOGISTICS_LV} →</span>
           </Link>
         ) : null}
         {PIPE.map((s) => (
@@ -246,7 +261,7 @@ export function AutoparksV2ListBody({
               {/* Telefonā (Nils 28.10, makets B): gads · krāsa · iegāde vienā rindā, apakšā neitrāls statuss + VIN. */}
               <span className="meta">{[yearColor(r.year, r.color), shown ? sortValueLabel(r, shown) : ""].filter(Boolean).join(" · ")}</span>
               <span className="ap2-mbot">
-                <span className="ap2-mst">{AUTOPARKS_STATUS_LV[r.status]}</span>
+                <span className={r.transitNoLogistics ? "ap2-mst ap2-nolog-badge" : "ap2-mst"}>{r.transitNoLogistics ? NO_LOGISTICS_LV : AUTOPARKS_STATUS_LV[r.status]}</span>
                 <VinCopy vin={r.vin} />
               </span>
             </span>
@@ -257,6 +272,7 @@ export function AutoparksV2ListBody({
               <b>
                 {r.title}
                 {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
+                {r.transitNoLogistics ? <span className="ap2-nolog-badge">{NO_LOGISTICS_LV}</span> : null}
               </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
               {shown === "sum" ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
@@ -289,9 +305,21 @@ export function AutoparksV2ListBody({
   );
 }
 
+const ADD_CAR_STATUSES = ["prep_waiting", "in_transit"] as const;
+type AddCarStatus = (typeof ADD_CAR_STATUSES)[number];
+
 function AddCarSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
-  const [form, setForm] = useState({ make: "", model: "", vin: "", year: "", color: "", owner: "IRISS" as AutoparksOwner });
+  // P2 (Nils 20.11): noklusējums «Noliktavā»; «Ceļā» serveris pieņem tikai ar aktīvu Loģistikas ierakstu (VIN).
+  const [form, setForm] = useState({
+    make: "",
+    model: "",
+    vin: "",
+    year: "",
+    color: "",
+    owner: "IRISS" as AutoparksOwner,
+    status: "prep_waiting" as AddCarStatus,
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -308,7 +336,7 @@ function AddCarSheet({ onClose }: { onClose: () => void }) {
     const data = (await res?.json().catch(() => null)) as { id?: string } | null;
     setBusy(false);
     if (!res?.ok || !data?.id) {
-      setError(res?.status === 400 ? "Ievadi marku, modeli vai VIN" : "Neizdevās saglabāt");
+      setError(res?.status === 400 ? "Ievadi marku, modeli vai VIN" : res?.status === 409 ? "Ceļā tikai ar Loģistikas ierakstu (VIN)" : "Neizdevās saglabāt");
       return;
     }
     router.push(`${BASE}/${encodeURIComponent(data.id)}`);
@@ -344,6 +372,20 @@ function AddCarSheet({ onClose }: { onClose: () => void }) {
           {(["IRISS", "DZA"] as const).map((o) => (
             <button key={o} type="button" className={`ap2-chip ${form.owner === o ? "on" : ""}`} onClick={() => setForm((f) => ({ ...f, owner: o }))}>
               {o === "IRISS" ? "ĪRISS" : "Dzintarzeme"}
+            </button>
+          ))}
+        </div>
+        <div className="ap2-chips" style={{ marginTop: 10 }} role="radiogroup" aria-label="Statuss">
+          {ADD_CAR_STATUSES.map((st) => (
+            <button
+              key={st}
+              type="button"
+              role="radio"
+              aria-checked={form.status === st}
+              className={`ap2-chip ${form.status === st ? "on" : ""}`}
+              onClick={() => setForm((f) => ({ ...f, status: st }))}
+            >
+              {AUTOPARKS_STATUS_LV[st]}
             </button>
           ))}
         </div>

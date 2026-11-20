@@ -7,7 +7,9 @@ import { createAutoparksCar, ensureAutoparksCarFromOrder, markAutoparksCarArrive
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
-import { getLogisticsOrder, setLogisticsOrderArchiveState } from "@/lib/iriss-logistics-store";
+import { getLogisticsOrder, listLogisticsOrders, setLogisticsOrderArchiveState } from "@/lib/iriss-logistics-store";
+import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
+import { findActiveOrderForVin } from "@/lib/iriss-autoparks-transit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +60,14 @@ export async function POST(req: Request) {
   if (!input.make && !input.model && !input.vin) {
     return NextResponse.json({ error: "missing_car" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
-  const car = await createAutoparksCar(input, actor);
+  // P2 (Nils 20.11): «Ceļā» tikai ar aktīvu Loģistikas ierakstu (pēc VIN, tiek sasaistīts); citādi «Noliktavā».
+  let orderId = "";
+  if (input.status === "in_transit") {
+    const order = findActiveOrderForVin(await listLogisticsOrders(), input.vin ?? "", isLogisticsOrderActive);
+    if (order) orderId = order.id;
+    else input.status = "prep_waiting";
+  }
+  const car = await createAutoparksCar({ ...input, orderId }, actor);
   after(() => linkAutoparksCarToDropbox(car.id));
   return NextResponse.json({ ok: true, car: hide ? stripCar(car) : car, created: true }, { headers: irissLogisticsScopeHeader() });
 }
