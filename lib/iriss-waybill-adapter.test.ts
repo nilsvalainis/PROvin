@@ -12,6 +12,7 @@ import {
   isClickAllowed,
   parseJobInput,
   runAnnul,
+  runStop,
   runRefill,
   runSave,
   runSync,
@@ -345,6 +346,7 @@ function setup(fake: ReturnType<typeof fakeCsdd>, env: Record<string, string> = 
     verifySavedWaybill: (i: unknown) => a.verifySavedWaybill(page, i, fake.h),
     readActiveWaybills: (q: unknown) => a.readActiveWaybills(page, q, fake.h),
     annulWaybill: async (q: unknown) => a.annulWaybill(page, q, fake.h),
+    stopWaybill: async (q: unknown) => a.stopWaybill(page, q, fake.h),
     downloadPdf: (n: string) => a.downloadPdf(page, n, fake.h),
     close: async () => {},
   };
@@ -749,6 +751,25 @@ describe("j10: anulēt iepriekšējo un izveidot jaunu (tikai imitācija, live n
     const again = await runAnnul({ input: replaceInput("P02812"), ledger: l, driver: setup(fake) });
     expect(again).toMatchObject({ ok: true, repeated: true });
     expect(fake.s.annulled).toEqual(["P02812"]);
+  });
+
+  it("20.11 stop.js: tas pats «Pārtraukt» solis (lapv_par -> 'Pārtraukt!'), bez annul.js", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), active("P02812")] });
+    const res = await runStop({ input: replaceInput("P02812"), ledger: ledger(), driver: setup(fake) });
+    expect(res).toMatchObject({ ok: true, waybillNo: "P02812" });
+    expect(fake.s.annulled).toEqual(["P02812"]);
+    expect(fake.s.exCalls.filter((c) => c === "lapv_par")).toHaveLength(1);
+    expect(fake.s.clicks.filter((c) => c.why === "annul").map((c) => c.phase)).toEqual(["annul"]);
+    expect(fake.s.saves).toBe(0);
+  });
+
+  it("20.11 stop.js: vecā pavadzīme uz citas numurzīmes -> neko nepārtrauc", async () => {
+    const other = fakeCsdd({ waybills: [...historyWaybills(), active("P02812", "B762-7")] });
+    expect(await runStop({ input: replaceInput("P02812"), ledger: ledger(), driver: setup(other) })).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("neko nepārtraucu"),
+    });
+    expect(other.s.exCalls).not.toContain("lapv_par");
   });
 
   it("pavadzīme uz cita numura vai nav atrasta -> neko nepārtrauc (nav lapv_par)", async () => {

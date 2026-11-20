@@ -93,7 +93,7 @@ function domGuardScript({ forbidden, save, phase, annulBtn, annulNever }) {
 }
 
 /**
- * @param {"fill" | "save" | "sync" | "annul"} step
+ * @param {"fill" | "save" | "sync" | "annul" | "stop"} step
  * @param {{ ttrDir: string, env: Record<string, string | undefined>, log: (m: string, e?: object) => void }} opts
  */
 export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
@@ -109,10 +109,12 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
   let phase = "fill";
   let own = false;
 
-  const annulOrigin = step === "annul" ? new URL(cfg.startUrl).origin : "";
+  /** Pārtraukšanas ("Pārtraukt!") fāze atļauta tikai stop.js (aizstāšana, 20.11) un annul.js (izslēgts ar ANNUL_LIVE). */
+  const stopStep = step === "annul" || step === "stop";
+  const annulOrigin = stopStep ? new URL(cfg.startUrl).origin : "";
 
   async function setPhase(p) {
-    if (p === "annul" && step !== "annul") throw new Error("pārtraukšana drīkst tikai annul.js");
+    if (p === "annul" && !stopStep) throw new Error("pārtraukšana drīkst tikai stop.js / annul.js");
     phase = p;
     await page.evaluate((v) => {
       window.__irissPhase = v;
@@ -219,6 +221,8 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
     verifySavedWaybill: adapter.verifySavedWaybill ? (input) => adapter.verifySavedWaybill(page, input, helpers) : undefined,
     annulWaybill:
       adapter.annulWaybill && step === "annul" ? (q) => adapter.annulWaybill(page, q, helpers) : undefined,
+    // stop.js: tas pats CSDD «Pārtraukt» solis (kartīte -> lapv_par -> "Pārtraukt!" -> vairs nav Derīga), nekad «Anulēt».
+    stopWaybill: adapter.stopWaybill && step === "stop" ? (q) => adapter.stopWaybill(page, q, helpers) : undefined,
     async openFromTradeAct(input) {
       if (adapter.openFromTradeAct) return adapter.openFromTradeAct(page, input, helpers);
       if (!sel.tradeActList || !sel.tradeActRow || !sel.tradeActIssue) return false;

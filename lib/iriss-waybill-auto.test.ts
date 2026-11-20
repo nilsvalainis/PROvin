@@ -286,13 +286,18 @@ function deps(over: Record<string, unknown> = {}) {
 const scriptCalls = (d: ReturnType<typeof deps>) => d.runScript.mock.calls.filter((c) => c[0] !== "sync") as unknown[][];
 
 describe("waybill worker (scripts/iriss-ttr)", () => {
-  it("script allowlist has only fill/save/sync; annul only with the explicit switch; never stop or cancel", () => {
+  it("script allowlist has only fill/save/sync; stop (Pārtraukt) / annul only with their explicit switches; never cancel", () => {
     expect(Object.values(ALLOWED_SCRIPTS).sort()).toEqual(["refill.js", "save.js", "sync.js"]);
     for (const step of ["partraukt", "pārtraukt", "anulet", "cancel", "stop", "x", "run", "annul"]) {
       expect(() => resolveWorkerScript(step)).toThrow(/script_not_allowed/);
     }
     expect(() => resolveWorkerScript("annul", { annulEnabled: "1" })).toThrow(/script_not_allowed/);
     expect(resolveWorkerScript("annul", { annulEnabled: true })).toBe("annul.js");
+    // Aizstāšana (20.11): «Pārtraukt» skripts tikai ar savu slēdzi; annul slēdzis to neatļauj un otrādi.
+    expect(() => resolveWorkerScript("stop", { annulEnabled: true })).toThrow(/script_not_allowed/);
+    expect(() => resolveWorkerScript("stop", { replaceStopEnabled: "1" })).toThrow(/script_not_allowed/);
+    expect(resolveWorkerScript("stop", { replaceStopEnabled: true })).toBe("stop.js");
+    expect(() => resolveWorkerScript("annul", { replaceStopEnabled: true })).toThrow(/script_not_allowed/);
     expect(resolveWorkerScript("fill")).toBe("refill.js");
   });
 
@@ -492,7 +497,11 @@ describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu",
   /** Lietotājs apstiprināja "anulēt iepriekšējo" (P02812); Vercel slēdzis ieslēgts. */
   const replaceJob = (no = "P02812") => {
     const r = req({ plateBusyAtCreate: true, replaceWaybillNo: no });
-    return { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, { ...free, plateBusyNow: true, replaceEnabled: true }) };
+    return {
+      ...toAivarsCreateWaybillAction(r),
+      auto: classifyWaybillForAuto(r, { ...free, plateBusyNow: true, replaceEnabled: true }),
+      knownWaybills: ["P02812", "P02811"],
+    };
   };
 
   it("CSDD numurs aizņemts (ar roku izrakstīta P02812): nav formas, nav Saglabāt, skaidrs teksts, momentuzņēmums uz Vercel", async () => {
@@ -523,56 +532,157 @@ describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu",
     expect(snap.plates.every((p) => p.ok === false)).toBe(true);
   });
 
-  it("anulēšanas darbs bez Hetzner slēdža (IRISS_WAYBILL_ANNUL_LIVE) netiek ņemts: bez claim, bez VPN", async () => {
-    const job = replaceJob();
-    expect(job.auto).toMatchObject({ standard: true, replace: { waybillNo: "P02812" } });
-    const d = deps();
-    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "anulēšana izslēgta" });
-    expect(d.api.claim).not.toHaveBeenCalled();
-    expect(d.vpnLease).not.toHaveBeenCalled();
-  });
-
-  it("ar slēdzi: anulē TIKAI apstiprināto P02812, pārbauda, ka numurs brīvs, tad izraksta jauno", async () => {
-    let annulled = false;
-    const d = deps({
-      annulEnabled: true,
-      sync: (input: unknown) => (annulled ? freeSync(input) : busySync(["P02812"])(input)),
+  /** Veiksmīga aizstāšana: stop.js pārtrauc P02812, pēc tam CSDD numurs brīvs. */
+  const stopOk = () => {
+    let stopped = false;
+    return {
+      sync: (input: unknown) => (stopped ? freeSync(input) : busySync(["P02812"])(input)),
       runScript: async (step: string) => {
-        if (step === "annul") {
-          annulled = true;
+        if (step === "stop") {
+          stopped = true;
           return { ok: true, waybillNo: "P02812" };
         }
         return step === "fill" ? { ok: true, fields: { plate: "B193-7", validHours: 48 } } : { ok: true, waybillNo: "P02814", pdfPath: "pdf/x.pdf" };
       },
-    });
+    };
+  };
+  const eventTexts = (d: ReturnType<typeof deps>) =>
+    d.api.event.mock.calls.map((c) => (c as unknown[])[1] as { text?: string; stage?: string }).filter((b) => !b.stage).map((b) => b.text);
+
+  it("aizstāšana bez slēdža (IRISS_WAYBILL_REPLACE_STOP=0) netiek ņemta: bez claim, bez VPN", async () => {
+    const job = replaceJob();
+    expect(job.auto).toMatchObject({ standard: true, replace: { waybillNo: "P02812" } });
+    const d = deps();
+    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "aizstāšana izslēgta" });
+    expect(d.api.claim).not.toHaveBeenCalled();
+    expect(d.vpnLease).not.toHaveBeenCalled();
+  });
+
+  it("20.11 (A): VISPIRMS «Pārtraukt» (stop.js) TIKAI P02812, CSDD pārbauda, ka tā vairs nav aktīva, TAD izraksta jauno", async () => {
+    const d = deps({ replaceStopEnabled: true, ...stopOk() });
     const res = await processJob(replaceJob(), d);
-    expect(res).toMatchObject({ outcome: "issued", waybillNo: "P02814" });
-    expect(d.runScript.mock.calls.map((c) => c[0])).toEqual(["sync", "annul", "sync", "fill", "save", "sync"]);
+    expect(res).toMatchObject({ outcome: "issued", waybillNo: "P02814", stoppedWaybillNo: "P02812" });
+    expect(d.runScript.mock.calls.map((c) => c[0])).toEqual(["sync", "stop", "sync", "fill", "save", "sync"]);
     expect((d.runScript.mock.calls[1] as unknown[])[1]).toMatchObject({ replaceWaybillNo: "P02812", plate: "B1937" });
     const stages = d.api.event.mock.calls.map((c) => (c as unknown[])[1] as { stage?: string }).filter((b) => b.stage).map((b) => b.stage);
     expect(stages).toEqual(["vpn", "checking", "annulling", "filling", "saving", "pdf"]);
+    // Abas izmaiņas pieprasījumā, bez tukšām ziņām.
+    const texts = eventTexts(d);
+    expect(texts.every((t) => typeof t === "string" && t.trim().length > 0)).toBe(true);
+    expect(texts).toContain("Iepriekšējā pavadzīme P02812 CSDD pārtraukta. Izraksta jauno.");
+    expect(texts.some((t) => /Aizstāta: P02812 pārtraukta, jaunā P02814/.test(t ?? ""))).toBe(true);
+    expect(texts.join(" ")).not.toMatch(/anul/i);
+    // Vecā atzīmēta kā pārtraukta: momentuzņēmums pēc Pārtraukt rāda numuru bez P02812.
+    const snaps = d.api.plates.mock.calls.map((c) => (c as unknown[])[0] as { plates: { plate: string; active: { waybillNo: string }[] }[] });
+    expect(snaps[1].plates.find((p) => p.plate === "B193-7")?.active).toEqual([]);
+    expect(d.vpnRelease).toHaveBeenCalledTimes(1);
   });
 
-  it("ar slēdzi: CSDD numuru aizņem cita pavadzīme, nevis apstiprinātā -> neko neanulē, jaunā nav izveidota", async () => {
-    const d = deps({ annulEnabled: true, sync: busySync(["P02813"]) });
+  it("annul.js aizstāšanā NEKAD netiek izsaukts - arī ar IRISS_WAYBILL_ANNUL_LIVE=1 (annulEnabled)", async () => {
+    // Tikai annul slēdzis: aizstāšana nav atļauta, darbs Aivaram.
+    const onlyAnnul = deps({ annulEnabled: true, sync: busySync(["P02812"]) });
+    expect(await processJob(replaceJob(), onlyAnnul)).toEqual({ outcome: "skipped", reason: "aizstāšana izslēgta" });
+    expect(onlyAnnul.runScript).not.toHaveBeenCalled();
+    // Abi slēdži: tiek lietots «Pārtraukt» (stop), ne annul.
+    const both = deps({ annulEnabled: true, replaceStopEnabled: true, ...stopOk() });
+    expect((await processJob(replaceJob(), both)).outcome).toBe("issued");
+    const steps = both.runScript.mock.calls.map((c) => c[0]);
+    expect(steps).toContain("stop");
+    expect(steps).not.toContain("annul");
+    // Arī kļūdu ceļos annul netiek izsaukts.
+    const failing = deps({
+      annulEnabled: true,
+      replaceStopEnabled: true,
+      sync: busySync(["P02812"]),
+      runScript: async () => ({ ok: false, error: "x" }),
+    });
+    await processJob(replaceJob(), failing);
+    expect(failing.runScript.mock.calls.map((c) => c[0])).not.toContain("annul");
+  });
+
+  it("CSDD numuru aizņem cita pavadzīme, nevis apstiprinātā -> neko nepārtrauc, jaunā nav izveidota", async () => {
+    const d = deps({ replaceStopEnabled: true, sync: busySync(["P02813"]) });
     const res = await processJob(replaceJob("P02812"), d);
     expect(res.outcome).toBe("plate_busy_other");
     expect(scriptCalls(d)).toEqual([]);
     expect(d.api.result).toHaveBeenCalledWith(
       "wbr_abc123",
-      expect.objectContaining({ ok: false, activeWaybillNo: "P02813", errorReason: expect.stringContaining("Neko neanulēju") }),
+      expect.objectContaining({ ok: false, activeWaybillNo: "P02813", errorReason: expect.stringContaining("Neko nepārtraucu") }),
     );
+    // Divas aktīvas (arī apstiprinātā) - nav pārliecības, neko nepārtrauc.
+    const two = deps({ replaceStopEnabled: true, sync: busySync(["P02812", "P02813"]) });
+    expect((await processJob(replaceJob("P02812"), two)).outcome).toBe("plate_busy_other");
+    expect(scriptCalls(two)).toEqual([]);
   });
 
-  it("ar slēdzi: anulēšana neizdodas -> Aivaram, jaunā netiek pildīta", async () => {
+  it("Pārtraukt neizdodas -> apstājas: jauno NEizraksta (nav fill/save), Aivaram ar skaidru iemeslu", async () => {
     const d = deps({
-      annulEnabled: true,
+      replaceStopEnabled: true,
       sync: busySync(["P02812"]),
-      runScript: async (step: string) => (step === "annul" ? { ok: false, error: "P02812 nav uz B193-7 - neko nepārtraucu" } : { ok: true }),
+      runScript: async (step: string) => (step === "stop" ? { ok: false, error: "P02812 nav uz B193-7 - neko nepārtraucu" } : { ok: true }),
     });
     const res = await processJob(replaceJob(), d);
     expect(res.outcome).toBe("released");
-    expect(scriptCalls(d).map((c) => c[0])).toEqual(["annul"]);
+    expect(scriptCalls(d).map((c) => c[0])).toEqual(["stop"]);
+    const reason = (d.api.release.mock.calls[0] as unknown[])[1] as string;
+    expect(reason).toContain("Aizstāšana apturēta: jaunā NAV izrakstīta");
+    expect(reason).toContain("P02812 pārtraukt neizdevās");
+    expect(d.api.result).not.toHaveBeenCalled();
+  });
+
+  it("pēc Pārtraukt CSDD vecā joprojām aktīva vai statusu nevar nolasīt -> jauno NEizraksta, Aivaram", async () => {
+    const still = deps({
+      replaceStopEnabled: true,
+      sync: busySync(["P02812"]),
+      runScript: async (step: string) => (step === "stop" ? { ok: true, waybillNo: "P02812" } : { ok: true }),
+    });
+    expect((await processJob(replaceJob(), still)).outcome).toBe("released");
+    expect(scriptCalls(still).map((c) => c[0])).toEqual(["stop"]);
+    expect((still.api.release.mock.calls[0] as unknown[])[1]).toContain("pēc pārtraukšanas numurs joprojām aizņemts (P02812)");
+    expect((still.api.release.mock.calls[0] as unknown[])[1]).toContain("Iepriekšējā P02812 pārtraukta, jauno izraksta Aivars");
+
+    let n = 0;
+    const unreadable = deps({
+      replaceStopEnabled: true,
+      sync: (input: unknown) => (n++ === 0 ? busySync(["P02812"])(input) : { ok: false, error: "timeout", platesChecked: ["B193-7", "B762-7"] }),
+      runScript: async (step: string) => (step === "stop" ? { ok: true, waybillNo: "P02812" } : { ok: true }),
+    });
+    expect((await processJob(replaceJob(), unreadable)).outcome).toBe("released");
+    expect(scriptCalls(unreadable).map((c) => c[0])).toEqual(["stop"]);
+
+    // stop.js atgriež citu numuru -> nav pārliecības.
+    const other = deps({
+      replaceStopEnabled: true,
+      sync: busySync(["P02812"]),
+      runScript: async (step: string) => (step === "stop" ? { ok: true, waybillNo: "P02813" } : { ok: true }),
+    });
+    expect((await processJob(replaceJob(), other)).outcome).toBe("released");
+    expect(scriptCalls(other).map((c) => c[0])).toEqual(["stop"]);
+  });
+
+  it("lietotājs atcēla pirms Pārtraukt -> neko nepārtrauc un neizraksta", async () => {
+    const d = deps({ replaceStopEnabled: true, ...stopOk() });
+    d.api.event.mockImplementation((async (_id: string, body: { stage?: string }) => (body.stage === "annulling" ? "cancelled" : "")) as never);
+    expect((await processJob(replaceJob(), d)).outcome).toBe("cancelled");
+    expect(scriptCalls(d)).toEqual([]);
+  });
+
+  it("lokālā pārbaude: numurs P\\d{5,6}, sakrīt ar lietotāja apstiprināto, zināms firmas numuriem; B192-7 tikai ar roku", () => {
+    const now = Date.parse("2026-10-22T18:01:00.000Z");
+    const ok = { replaceStopEnabled: true };
+    expect(localStandardCheck(replaceJob(), now, ok)).toMatchObject({ ok: true, flow: "new" });
+    const job = replaceJob();
+    expect(localStandardCheck({ ...job, auto: { ...job.auto, replace: { waybillNo: "X1" } } }, now, ok)).toEqual({
+      ok: false,
+      reason: "nav pārtraucamās pavadzīmes numura",
+    });
+    expect(localStandardCheck({ ...job, replaceWaybillNo: "P02813" }, now, ok)).toEqual({ ok: false, reason: "aizstājamā pavadzīme nesakrīt" });
+    expect(localStandardCheck({ ...job, knownWaybills: ["P02813"] }, now, ok)).toEqual({ ok: false, reason: "aizstājamā pavadzīme nav zināma" });
+    expect(localStandardCheck({ ...job, knownWaybills: undefined }, now, ok)).toEqual({ ok: false, reason: "aizstājamā pavadzīme nav zināma" });
+    const b192 = { ...job, vehicle: { ...job.vehicle, plate: "B1927" }, auto: { ...job.auto, plate: "B192-7" } };
+    expect(localStandardCheck(b192, now, ok)).toEqual({ ok: false, reason: "B192 - tikai ar roku" });
+    const otherPlate = { ...job, auto: { ...job.auto, plate: "B762-7" } };
+    expect(localStandardCheck(otherPlate, now, ok)).toEqual({ ok: false, reason: "numurs nesakrīt" });
   });
 
   it("Saglabāt: CSDD pārbaudīts - pavadzīme nav izveidota -> skaidrs 'NAV izveidota', nevis 'Pārbaudi CSDD'", async () => {
@@ -658,8 +768,8 @@ describe("j16: nekad kluss Gaida (worker ziņo, kāpēc darbu neņem)", () => {
   it("lokāli nestandarta darbs: paliek rindā, bet pieprasījumā ir iemesls; bez claim un VPN", async () => {
     const d = deps();
     const job = { ...tradeJob(), auto: { ...tradeJob().auto, replace: { waybillNo: "P02812" } } };
-    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "anulēšana izslēgta" });
-    expect(d.api.event).toHaveBeenCalledWith(job.id, expect.objectContaining({ kind: "message", text: expect.stringContaining("anulēšana izslēgta") }));
+    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "aizstāšana izslēgta" });
+    expect(d.api.event).toHaveBeenCalledWith(job.id, expect.objectContaining({ kind: "message", text: expect.stringContaining("aizstāšana izslēgta") }));
     expect(d.api.claim).not.toHaveBeenCalled();
     expect(d.vpnLease).not.toHaveBeenCalled();
   });

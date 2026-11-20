@@ -55,8 +55,17 @@ Serverim ir savs ĪRISS VPN konts (vairs neizmet Nilu/Tomu un otrādi). Vērtīb
 
 ### Anulēšana VIENMĒR izslēgta
 
-`IRISS_WAYBILL_ANNUL_LIVE=0` (vai nav iestatīts) - vienmēr. Serveris nekad neanulē pavadzīmi; aizņemta numura darbs iet Aivaram,
-kas izmanto tikai «Pārtraukt» pēc Nila «jā».
+`IRISS_WAYBILL_ANNUL_LIVE=0` (vai nav iestatīts) - vienmēr. Worker `annul.js` nepalaiž nekad (arī ar `=1`).
+
+### Aizstāšana: vispirms «Pārtraukt», tad jaunā (Nils 20.11, A)
+
+Jauna pavadzīme uz aizņemta numura, kad lietotājs apstiprināja aizstāt tieši šo veco (darbā `auto.replace.waybillNo` =
+`replaceWaybillNo`, Vercel `IRISS_WAYBILL_AUTO_REPLACE=1`): worker pats izpilda `stop.js`. Kārtība: VPN lease -> `sync.js`
+(numuram jābūt tieši vienai aktīvai - apstiprinātajai) -> `stop.js` (CSDD «Pārtraukt!», tas pats solis kā Aivara «Pārtraukt»;
+nekad «Anulēt», nekad «Paziņot klientam») -> `sync.js` (vecā vairs nav aktīva; momentuzņēmums uz Vercel) -> `refill.js` ->
+`save.js`. Ja «Pārtraukt» neizdodas vai pēc tā nav pārliecības - jaunā NAV izrakstīta, darbs Aivaram ar iemeslu.
+Lokālā pārbaude: numurs `P\d{5,6}`, sakrīt ar lietotāja apstiprināto, ir starp firmas zināmajiem numuriem (`knownWaybills`);
+B192-7 - tikai ar roku. Izslēgt: `/etc/iriss-ttr/env` `IRISS_WAYBILL_REPLACE_STOP=0` (tad darbs Aivaram).
 
 ### Tūlītēja numuru sinhronizācija (`plates-sync-now.mjs`)
 
@@ -85,10 +94,8 @@ Abām: numurs B193-7 / B762-7 (ĪRISS, ctx1) vai B192-7 (Dzintarzeme, ctx2) un B
 laiks jebkurš vesels 1-48 h (CSDD max, formā 1 / 12 / 48 h vai "Cits"), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
 pirmais mēģinājums. Pieprasījums = apstiprinājums. Viss pārējais (arī aizņemts numurs / confirmBusy, "Cits" pārstāvis) -> Aivars.
 
-STINGRI: worker pats NEKAD nepārtrauc un neanulē aktīvu pavadzīmi. Tas palaiž `refill.js`, `save.js` un `sync.js` (tikai lasa)
-(`ALLOWED_SCRIPTS`). `annul.js` - tikai, ja lietotājs apstiprināja "Vai tiešām anulēt iepriekšējo un izveidot jaunu?" (darbā
-`auto.replace.waybillNo`, Vercel `IRISS_WAYBILL_AUTO_REPLACE=1`) UN Hetzner `IRISS_WAYBILL_ANNUL_LIVE=1` UN CSDD šim numuram ir
-tieši šī viena derīgā pavadzīme. Noklusējumā abi slēdži izslēgti: aizņemta numura darbs iet Aivaram.
+STINGRI: worker NEKAD neanulē. Tas palaiž `refill.js`, `save.js` un `sync.js` (tikai lasa) (`ALLOWED_SCRIPTS`), un `stop.js`
+(«Pārtraukt») TIKAI aizstāšanas darbā (sk. "Aizstāšana" augstāk). `annul.js` worker nepalaiž.
 
 ### Numura statuss no CSDD (j10, incidents 23.10)
 
@@ -153,12 +160,12 @@ Serverī bija tikai `srv.js`, `main.js`, `jx.js`, `probe.js`, tāpēc `refill.js
 | Maršruts | adrešu koks (GET `v=kav`): Tukuma nov. > TUKUMS > RĪGAS IELA > 75 -> `setKavSel`; bez mājas mezgla iela + `mn_m1` 75; CSDD Tukums `ans_kiest_id` 24 |
 | Saglabāt | tikai `save.js`: `form[name=lapv_form] button:has-text('Saglabāt')`, numurs no `#p1` ("Pavadzīmes numurs: P0...") + `#lapv_id`; ja nav - kartītes pēc numura |
 | Aktīvās pavadzīmes (sync) | `rep_lapv`, `rep_lapv,1`, `tl` saraksti + kartīte `tl` -> `#lapv_num` -> `lapv a=2` / `lapv a=11&lapv_id=<cipari>` (tikai skats) |
-| Pārtraukt (annul.js) | kartīte -> numurs, numurzīme, "Derīgs" -> `lapv_par` -> forma ar šo numuru -> "Pārtraukt!" (fāze `annul`) -> kartīte vairs nav Derīga |
+| Pārtraukt (stop.js; annul.js izslēgts) | kartīte -> numurs, numurzīme, "Derīgs" -> `lapv_par` -> forma ar šo numuru -> "Pārtraukt!" (fāze `annul`) -> kartīte vairs nav Derīga |
 | PDF | GET `?main=1&pdf=lapv&id=<lapv_id>` -> `pdf/<jobId>-<numurs>.pdf` |
 
 Lapā adapteris drīkst izsaukt tikai `ex('lapv',0,'a=3')`, `ex('lapv_kmod')`, `ex('rep_lapt_tl')`, `tl`, `rep_lapv` (`ALLOWED_EX`) un
 `rep_lapt_tl` lapas, `lapt a=11&lapt_id=<cipari>`, `lapv a=0`, `lapv a=2`, `lapv a=11&lapv_id=<cipari>` (`ALLOWED_EX_PATTERNS`);
-`lapv_par` (pārtraukt) - TIKAI `annulWaybill` bruņotā stāvoklī (pārbaudīts numurs); viss cits - kļūda. Serveris sūta `ctx` kā `"ctx1"`/`"ctx2"`, `parseJobInput` pieņem abus formātus.
+`lapv_par` (pārtraukt) - TIKAI `stopWaybill` (`annulWaybill` ir tas pats) bruņotā stāvoklī (pārbaudīts numurs); viss cits - kļūda. Serveris sūta `ctx` kā `"ctx1"`/`"ctx2"`, `parseJobInput` pieņem abus formātus.
 - `browserUrl` tukšs: katrs skripts palaiž savu pārlūku, `save.js` formu aizpilda vēlreiz un pārbauda. `browserUrl`
   `http://127.0.0.1:9333` (ja `srv.js` dod CDP) vai `ws://...`: `refill.js` atstāj cilni (`window.name = iriss-job-<id>`), `save.js` to turpina.
 - Pieslēgšanās: sk. tabulu "Adapteris" (faili KEY=VALUE `CSDD_USER`/`CSDD_PASS` vai Aivara divu rindu `creds`). Vērtības netiek izdrukātas.
