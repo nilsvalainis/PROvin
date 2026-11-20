@@ -64,8 +64,10 @@ Momentuzņēmums nav pareizā atbilde. Mainot nobraukuma loģiku, katra atšķir
 ### Īstas manipulācijas (kontrole - josla jāpaliek)
 
 - Ford Galaxy (Dānijas taksometrs) `WF0K-maskets-VmX9EF`: DK reģistrs 20.04.2022 529 000 -> LV 09.2024 195 623.
-- Škoda Superb `TMBJH9NP9H7561596`: Zviedrija 11.05.2020 253 760 -> LV 28.09.2020 181 345.
-- Ford F-150 `1FTEX15NXSKB79831`: EE 10.07.2025 340 543 -> LV 05.03.2026 72 348 (Nils 18.11: manipulācija).
+- Škoda Superb `TMBJH9NP9H7561596`: Zviedrija 11.05.2020 253 760 -> LV 28.09.2020 181 345 (līdz 20.11 sistēma 181 345
+  sauca par "novecojušu dokumentu", jo tas nejauši ~ SE 2019 181 850, un josla bija uz 2021. gada rādījuma - labots).
+- Ford F-150 `1FTEX15NXSKB79831`: EE 10.07.2025 340 543 -> LV 05.03.2026 72 348 (Nils 18.11: manipulācija; PROVIN ADMINS 20.11
+  apstiprina, sk. B7 zemāk).
 - BMW 120d xDrive `WBA1B51010J842587` (Francija): CV 07.2023 167 422 -> dīleris 05.02.2024 159 891 (Nils 18.11:
   nepārprotama korekcija = manipulācija).
 - BMW X5 `WBAFF41030L065449`: Itālija 05.2026 279 560 -> LV CSDD 26.06.2026 277 681 (imports; Nils 18.11: korekcija =
@@ -76,6 +78,36 @@ labo komentārā). Neloģiski rādījumi ap valsts maiņu jāvērtē īpaši uzm
 
 ## Kontroles lietas (jāpaliek bez brīdinājuma)
 
-Bez brīdinājuma (32 lietas), piemēram: BMW M340i `WBA6N11090FM46528`, Audi Q5 `WAUZZZ8R1DA017696`, Audi A5
+Bez brīdinājuma (33 lietas, 20.11), piemēram: BMW M340i `WBA6N11090FM46528`, Audi Q5 `WAUZZZ8R1DA017696`, Audi A5
 `WAUZZZ8T48A014034`, Mercedes GLE `WDC1671191A002835`, Toyota Land Cruiser `JTEBZ29J500168234`, Renault Espace
 `VF1JK1HC647031151` (52 rindas), BMW 525 `WBAFW31060C941862` (95 rindas), Volvo V90 `YV1PZ68TCK1076852`.
+
+## Lēmumi B6-B8 (PROVIN ADMINS, 20.11.2026, Nila uzdevumā)
+
+Princips: šaubu gadījumā kritumu rāda; ievades kļūdas vai "novecojuša dokumenta" skaidrojums nedrīkst noslēpt īstu
+manipulāciju. Lēmumi nostiprināti testā `nobraukuma etalona kopa: kontroles lēmumi` (`MANIPULACIJAS` tabula) - to nevar
+"pārrakstīt" ar `-u`, maiņai vajag Nila lēmumu.
+
+**B6 - kuras lietas etalonā.** Visas 41 paliek. 8 ar sarkano joslu uz konkrēta rādījuma: 5 īstas manipulācijas (Galaxy,
+Superb, F-150, 120d xDrive, X5) + 3 aizdomas, kur josla paliek (330i, 640i, A6 Allroad). Pārējās 33 - bez joslas.
+Ievades kļūdas, ko sistēma pareizi izslēdz (318d CSDD 24.12.2019 60 966 = 28.11 rādījuma atkārtojums; 525 dīleris
+23.02.2012 59 448; 650i dīleris 18.03.2016 105 643; 640i izsoļu arhīvs 11.09.2015 81 116 - visos līkne nākamajā rādījumā
+atgriežas un vēlākā līkne nav nobīdīta uz leju), paliek bez joslas.
+Labots: zemāks rādījums valsts maiņas brīdī vairs netiek atzīts par "novecojušu dokumentu" (Superb).
+
+**B7 - F-150 ir īsta manipulācija.** Igaunijas TA 5 rādījumi 2022-2025 (337 418 -> 340 543, ~1 100 km gadā), pirmā LV
+reģistrācija 05.03.2026 72 348, nākamā LV TA 10.09.2026 74 968 - visa vēlākā līkne nobīdīta uz leju par ~268 000.
+Jūdzes to neizskaidro: 340 543 / 1,609 = 211 600, 72 348 x 1,609 = 116 400, arī "100 000 pārtīšana" neder.
+2022. gada "Salvage/Total Loss" ir pirms EE rādījumiem, kas turpinās no 337 000, tātad panelis toreiz nav mainīts.
+Paneļa maiņas dokumenta nav. Josla paliek.
+
+**Jūdzes (mi).** Pārrēķina tikai tad, ja avots skaidri norāda jūdzes (kā līdz šim); vienību neminam. Kritumu nekad
+nenoraksta uz jūdžu rēķina: ASV/UK/CA -> ES valsts maiņā kritums paliek sarkans arī tad, ja attiecība ir ~1,609 -
+"iespējams, jūdzes" drīkst būt tikai paskaidrojums klāt, ne joslas noņemšana. 330i: ja ASV 49 890 būtu jūdzes
+(80 290 km), kritums būtu vēl lielāks, tāpēc josla paliek jebkurā gadījumā.
+
+**B8 - legāla paneļa (odometra) maiņa.** Automātiski kritumu nekad neizslēdz. Legāla maiņa = dīlera vai reģistra ieraksts
+maiņas dienā ar veco rādījumu (piem. BMW "Kombiinstrument getauscht", CARFAX "odometer replaced"), un pēc tam līkne
+turpinās no jaunā paneļa bez lēcieniem. Klientam: sarkanā josla paliek ("nobraukuma kritums"), komentārā viens teikums
+"dīlera datos DD.MM.GGGG ir ieraksts par paneļa maiņu; vecais rādījums X km, faktiskais nobraukums ~X + Y km".
+Bez dokumenta tā ir manipulācija (Nila 18.11 noteikums). Lēmumu par konkrēto lietu Nils pieņem adminā (apstiprināt/noraidīt).

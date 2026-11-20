@@ -715,14 +715,14 @@ function findStaleDocumentSourceOrders(
   sorted: UnifiedMileageRow[],
   chartExclude: Set<number>,
 ): Set<number> {
-  const pts: { sourceOrder: number; km: number; documentValue: boolean }[] = [];
+  const pts: { sourceOrder: number; km: number; documentValue: boolean; row: UnifiedMileageRow }[] = [];
   for (const r of sorted) {
     if (chartExclude.has(r.sourceOrder)) continue;
     // 19.11: sludinājums nav dokuments - to vērtē sludinājuma zarā ("sludinājumā mazāk"), citādi noapaļots
     // sludinājuma km (200 000, 90 000), kas nejauši atkārto agrāku līmeni, kļūst par "novecojušu dokumentu".
     if (isListingMileageSource(r)) continue;
     const km = parseOdometerKm(r.odometer);
-    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, documentValue: r.documentValue === true });
+    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, documentValue: r.documentValue === true, row: r });
   }
 
   const candidates: StaleDocumentCandidate[] = [];
@@ -730,6 +730,7 @@ function findStaleDocumentSourceOrders(
   const staleValues: number[] = [];
   const kmAtCurrentPeak: number[] = [];
   let trustedMaxKm: number | null = null;
+  let trustedMaxRow: UnifiedMileageRow | undefined;
 
   for (const pt of pts) {
     const belowTrusted =
@@ -740,7 +741,11 @@ function findStaleDocumentSourceOrders(
     const mirrorsStaleValue = staleValues.some(
       (v) => Math.abs(v - pt.km) <= STALE_DOCUMENT_MIRROR_TOLERANCE_KM,
     );
-    if (belowTrusted && (repeatsPeakChainKm || mirrorsStaleValue)) {
+    // 20.11 (PROVIN ADMINS, B6): valsts maiņas brīdī zemāks rādījums nav "novecojis dokuments", pat ja tas nejauši
+    // atkārto agrāku līmeni (Škoda TMBJH9NP9H7561596: SE 253 760 -> LV CSDD 181 345 ~ SE 2019 181 850).
+    // Ievades kļūdas skaidrojums nedrīkst noslēpt importa attīšanu.
+    const atCountryChange = isMileageCountryChange(trustedMaxRow, pt.row);
+    if (belowTrusted && !atCountryChange && (repeatsPeakChainKm || mirrorsStaleValue)) {
       candidates.push({ sourceOrder: pt.sourceOrder, levelKm: trustedMaxKm! });
       candidateOrders.add(pt.sourceOrder);
       staleValues.push(pt.km);
@@ -749,6 +754,7 @@ function findStaleDocumentSourceOrders(
     if (trustedMaxKm === null || pt.km >= trustedMaxKm) {
       kmAtCurrentPeak.push(pt.km);
       trustedMaxKm = pt.km;
+      trustedMaxRow = pt.row;
     }
   }
 

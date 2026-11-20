@@ -117,3 +117,41 @@ describe("nobraukuma etalona kopa: pašreizējais rezultāts", () => {
     });
   }
 });
+
+/**
+ * 20.11 (PROVIN ADMINS, Nila B6-B8): etalona "pareizās atbildes" kontrolei. Momentuzņēmumu var atjaunot ar -u,
+ * bet šīs lietas nedrīkst mainīties bez Nila lēmuma: kritumu rāda tieši uz norādītā rādījuma; tīrās lietas bez joslas.
+ * Princips: šaubu gadījumā kritumu rāda; ievades kļūdas skaidrojums nedrīkst noslēpt īstu manipulāciju.
+ */
+const MANIPULACIJAS: Record<string, string> = {
+  // Īstas manipulācijas (Nils 17.-18.11)
+  "WF0K-maskets-VmX9EF": "01.09.2024 195623", // Galaxy, DK taksometrs 529 000 -> LV
+  TMBJH9NP9H7561596: "28.09.2020 181345", // Superb, SE 253 760 -> pirmais LV CSDD rādījums
+  "1FTEX15NXSKB79831": "05.03.2026 72348", // F-150, EE TA 340 543 -> LV 72 348; paneļa maiņa nav dokumentēta
+  WBA1B51010J842587: "05.02.2024 159891", // 120d xDrive, korekcija = manipulācija
+  WBAFF41030L065449: "26.06.2026 277681", // X5, IT 279 560 -> LV CSDD
+  // Aizdomas - josla paliek (šaubu gadījumā rāda)
+  WBA5R1C0XLFH42873: "22.06.2022 32552", // 330i, ASV 49 890 -> DE 32 552 (jūdzēs būtu vēl lielāks kritums)
+  WBALW3C59CC891863: "20.12.2019 112654", // 640i, AutoDNA 126 012 -> 112 654
+  WAUZZZ4G8DN015599: "01.07.2022 207000", // A6 Allroad, CSDD 216 060 -> izsoļu arhīvs 207 000
+};
+
+describe("nobraukuma etalona kopa: kontroles lēmumi (20.11)", () => {
+  const files = readdirSync(DIR).filter((f) => f.endsWith(".json")).sort();
+  for (const file of files) {
+    const vin = file.replace(".json", "");
+    const expected = MANIPULACIJAS[vin];
+    it(`${vin}: ${expected ? `kritums uz ${expected}` : "bez sarkanās joslas"}`, () => {
+      const fx = JSON.parse(readFileSync(path.join(DIR, file), "utf8")) as Fixture;
+      const snap = snapshotOf(fx);
+      expect(snap.sarkanaJosla).toBe(Boolean(expected));
+      const rollbacks = snap.klasesPecNilaLemumiem.filter((k) => k.startsWith("rollback: "));
+      if (expected) {
+        expect(rollbacks).toContain(`rollback: ${expected}`);
+        expect(snap.faktuLapa.odometerAnomaly).toBe(true);
+      } else {
+        expect(rollbacks).toEqual([]);
+      }
+    });
+  }
+});
