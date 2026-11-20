@@ -29,7 +29,8 @@ async function cargoExtras() {
   // Gatavības krāsai: kuriem auto kabinetā ir «Pickup dokuments».
   const activeIds = new Set(active.map((o) => o.id));
   const pickupDocCarIds = [...new Set(live.filter((d) => d.type === "pickup_pdf" && activeIds.has(d.carId)).map((d) => d.carId))];
-  return { orders: active, pickups, docCounts, templates, pickupDocCarIds };
+  // Pasūtījumus (ar cenām) šeit neatdodam - klienti tos ņem no /api/admin/iriss-logistics (maskēti pēc lomas).
+  return { pickups, docCounts, templates, pickupDocCarIds };
 }
 
 export async function GET() {
