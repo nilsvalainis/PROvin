@@ -59,4 +59,20 @@ describe("Loģistika = Autoparka posms «Ceļā» (Nils 27.10)", () => {
     expect(plan.map((p) => p.kind)).toEqual(["linked", "link_vin", "create", "create"]);
     expect(plan[2]!.title).toBe("Škoda Superb");
   });
+
+  it("bugfix 20.11: sasaiste pēc piezīmju VIN; neviennozīmīgs VIN6 - jauns ieraksts", () => {
+    const plan = planAutoparksLinks(
+      [
+        { id: "lo-1", vin: "", notes: "VIN: YV1CZ7146B1568808", title: "Volvo XC90", make: "", model: "" },
+        { id: "lo-2", vin: "112233", title: "Audi", make: "", model: "" },
+      ],
+      [
+        { id: "ap-1", orderId: "", vin: "YV1CZ7146B1568808" },
+        { id: "ap-2", orderId: "", vin: "WAUZZZ8K9EA112233" },
+        { id: "ap-3", orderId: "", vin: "WAUZZZ8K9EB112233" },
+      ],
+    );
+    expect(plan.map((p) => p.kind)).toEqual(["link_vin", "create"]);
+    expect(plan[0]).toMatchObject({ carId: "ap-1" });
+  });
 });

@@ -25,6 +25,12 @@ describe("P3 viens avots: sasaiste", () => {
   it("pēc VIN ≥11 tikai nearhivētiem", () => {
     expect(linkedCarForOrder(cars, { id: "x", vin: VIN })?.id).toBe("ap-1");
   });
+  it("bugfix 20.11: VIN piezīmēs / VIN6; neviennozīmīgs VIN6 nesasaista", () => {
+    expect(linkedCarForOrder(cars, { id: "x", vin: "", notes: `VIN: ${VIN}` })?.id).toBe("ap-1");
+    expect(linkedCarForOrder(cars, { id: "x", vin: VIN.slice(-6) })?.id).toBe("ap-1");
+    const twins = [...cars, { id: "ap-3", orderId: "", vin: "WBA1A1C0XLFH42873" }];
+    expect(linkedCarForOrder(twins, { id: "x", vin: VIN.slice(-6) })).toBeUndefined();
+  });
   it("īss VIN nesasaista", () => {
     expect(linkedCarForOrder(cars, { id: "x", vin: "WBA5R1" })).toBeUndefined();
   });

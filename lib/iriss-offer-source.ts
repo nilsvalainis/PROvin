@@ -11,6 +11,7 @@ import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
 import { resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { findCarForLogisticsOrder } from "@/lib/iriss-autoparks-dedup";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
 import { effectiveAutoparksCar } from "@/lib/iriss-autoparks-effective";
 import { offerSeedFromAutoparks, offerSeedFromLogistics, offerSeedTaggedKeys, type OfferSeedFields } from "@/lib/iriss-offer-seed";
@@ -59,7 +60,9 @@ async function findFolder(
   }
   const order = await getLogisticsOrder(ref.id);
   if (!order) return null;
-  const linked = state.cars.find((c) => c.orderId === order.id);
+  // Bugfix 20.11: kopējā Loģistika <-> Autoparks saskaņošana (sasaiste, efektīvais VIN, piezīmju VIN, saīsināts VIN, VIN6).
+  const v2 = await import("@/lib/iriss-autoparks-v2-store").then((m) => m.readAutoparksV2State()).catch(() => null);
+  const linked = findCarForLogisticsOrder(state.cars, v2, order)?.car;
   if (linked) {
     const folder = await resolveAutoparksCarFolder(client, linked, { create: false }).catch(() => null);
     if (folder) return { ...folder, mainPhotoId: await autoparksMainPhotoId(linked.id) };

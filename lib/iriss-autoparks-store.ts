@@ -274,14 +274,8 @@ export async function syncAutoparksCarWithLogisticsAction(
 ): Promise<AutoparksCar | null> {
   const v2 = await readV2ForDedup();
   return mutateAutoparksState((state) => {
-    // Bugfix 20.11: ja nav sasaistes / precīza v1 VIN - meklē pēc efektīvā VIN, piezīmju VIN, saīsināta VIN (tikai aktīvie auto).
-    const car =
-      findAutoparksCarForOrder(state.cars, order) ??
-      findAutoparksDuplicate(
-        state.cars.filter((c) => !c.archivedAt),
-        v2,
-        { vins: orderVinCandidates(order), stockNo: order.stockNo },
-      )?.car;
+    // Bugfix 20.11: kopējā saskaņošana - sasaiste, efektīvais VIN, piezīmju VIN, saīsināts VIN, VIN6 (tikai aktīvie auto).
+    const car = findAutoparksCarForOrder(state.cars, order, v2);
     if (!car) return { result: null, write: false };
     const plan = autoparksSyncForLogisticsAction(car, action);
     if (!plan) return { result: car, write: false };

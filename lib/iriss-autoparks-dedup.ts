@@ -148,6 +148,45 @@ export function findAutoparksDuplicate<C extends AutoparksDedupCar>(
   return null;
 }
 
+/* ---------------- Viena loģika: Loģistikas pasūtījums <-> Autoparka auto (bugfix 20.11) ---------------- */
+
+/** Loģistikas pasūtījuma lauki, ko izmanto saskaņošanā (pārējie neobligāti - VIN var būt piezīmēs / nosaukumā). */
+export type LogisticsOrderMatchInput = Pick<LogisticsOrder, "id"> &
+  Partial<Pick<LogisticsOrder, "vin" | "notes" | "title" | "stockNo">> & { listingParsed?: { vin?: string | null } | null };
+
+/**
+ * Autoparka auto Loģistikas pasūtījumam - tā pati secība kā `findAutoparksDuplicate`
+ * (sasaiste `orderId` -> efektīvais VIN v2 || v1, arī no piezīmēm -> saīsināts VIN ≥ 13 -> VIN6 -> stock nr.;
+ * nepilns VIN tikai, ja viennozīmīgi). `liveOnly` - arhīva auto neskata.
+ * Lieto visur: «Ceļā» pārbaude, Loģistikas sinhronizācija, viens avots, sasaiste, koplietošanas saites.
+ */
+export function findCarForLogisticsOrder<C extends AutoparksDedupCar>(
+  cars: readonly C[],
+  v2: Pick<AutoparksV2State, "cars"> | null | undefined,
+  order: LogisticsOrderMatchInput,
+  opts: { liveOnly?: boolean } = {},
+): AutoparksDedupMatch<C> | null {
+  const pool = opts.liveOnly ? cars.filter((c) => !c.archivedAt) : cars;
+  return findAutoparksDuplicate(pool, v2, { orderId: order.id, vins: orderVinCandidates(order), stockNo: order.stockNo });
+}
+
+/**
+ * Pretējais virziens: aktīvs Loģistikas pasūtījums auto VIN (piem. ar roku pievienots auto «Ceļā»).
+ * Pasūtījuma VIN no lauka / piezīmēm; precīzs VIN, tad saīsināts / VIN6 - tikai, ja atbilst viens pasūtījums.
+ */
+export function findOrderForCarVin<O extends LogisticsOrderMatchInput>(orders: readonly O[], vin: unknown): O | undefined {
+  const v = normalizeDedupVin(vin);
+  if (v.length < DEDUP_VIN_SUFFIX_MIN) return undefined;
+  const rel = (o: O, kind: "exact" | "prefix" | "suffix") => orderVinCandidates(o).some((ov) => vinRelation(v, ov) === kind);
+  const exact = orders.find((o) => rel(o, "exact"));
+  if (exact) return exact;
+  for (const kind of ["prefix", "suffix"] as const) {
+    const hits = orders.filter((o) => rel(o, kind));
+    if (hits.length === 1) return hits[0];
+  }
+  return undefined;
+}
+
 export const AUTOPARKS_DEDUP_BY_LV: Record<AutoparksDedupBy, string> = {
   order: "Loģistikas ieraksts",
   vin: "VIN",

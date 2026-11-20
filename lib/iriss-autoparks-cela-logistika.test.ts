@@ -55,6 +55,40 @@ describe("P2: «Ceļā» tikai ar aktīvu Loģistikas ierakstu", () => {
     expect(findAutoparksCarForOrder(cars, { id: "o2", vin: "" })).toBeUndefined();
   });
 
+  it("bugfix 20.11: VIN tikai pasūtījuma piezīmēs - auto nav «Ceļā bez Loģistikas»", () => {
+    const cars = [car("c1", "in_transit", { vin: VIN_A }), car("c2", "in_transit", { vin: VIN_B })];
+    const o = { ...order("o1", ""), notes: `Pickup Berlin. VIN: ${VIN_A}` };
+    const ids = carIdsWithActiveLogistics(cars, [o], isLogisticsOrderActive);
+    expect([...ids]).toEqual(["c1"]);
+    expect(isTransitWithoutLogistics(cars[1]!, ids)).toBe(true);
+    expect(findAutoparksCarForOrder(cars, o)?.id).toBe("c1");
+    expect(findActiveOrderForVin([o], VIN_A, isLogisticsOrderActive)?.id).toBe("o1");
+  });
+
+  it("bugfix 20.11: saīsināts VIN (≥13) un VIN6 sasaista, ja viennozīmīgi", () => {
+    const cars = [car("c1", "in_transit", { vin: VIN_A }), car("c2", "in_transit", { vin: VIN_B })];
+    expect([...carIdsWithActiveLogistics(cars, [order("o1", VIN_A.slice(0, 14))], isLogisticsOrderActive)]).toEqual(["c1"]);
+    expect([...carIdsWithActiveLogistics(cars, [{ ...order("o2", ""), notes: "VIN6: 445566" }], isLogisticsOrderActive)]).toEqual(["c2"]);
+    expect(findActiveOrderForVin([order("o3", "445566")], VIN_B, isLogisticsOrderActive)?.id).toBe("o3");
+  });
+
+  it("bugfix 20.11: efektīvais VIN (v2 Pamatdati) skaitās", () => {
+    const cars = [car("c1", "in_transit")];
+    const v2 = { cars: { c1: { fields: { vin: VIN_A } } } } as never;
+    expect([...carIdsWithActiveLogistics(cars, [order("o1", VIN_A)], isLogisticsOrderActive, v2)]).toEqual(["c1"]);
+    expect(carIdsWithActiveLogistics(cars, [order("o1", VIN_A)], isLogisticsOrderActive).size).toBe(0);
+  });
+
+  it("bugfix 20.11: neviennozīmīgs VIN6 netiek sasaistīts", () => {
+    const twinA = "WVWZZZ3CZKE999999";
+    const twinB = "WAUZZZ4G6JN999999";
+    const cars = [car("c1", "in_transit", { vin: twinA }), car("c2", "in_transit", { vin: twinB })];
+    const o = { ...order("o1", ""), notes: "VIN6 999999" };
+    expect(carIdsWithActiveLogistics(cars, [o], isLogisticsOrderActive).size).toBe(0);
+    expect(findAutoparksCarForOrder(cars, o)).toBeUndefined();
+    expect(findActiveOrderForVin([order("o1", "999999"), order("o2", "999999")], twinA, isLogisticsOrderActive)).toBeUndefined();
+  });
+
   it("darbību noteikumi: delivered/archive -> Noliktavā, other_company statusu nemaina, citus statusus neaiztiek", () => {
     expect(autoparksSyncForLogisticsAction({ status: "in_transit" }, "delivered")).toMatchObject({ status: "prep_waiting", setArrived: true });
     expect(autoparksSyncForLogisticsAction({ status: "in_transit" }, "archive")).toMatchObject({ status: "prep_waiting", setArrived: false });
@@ -99,6 +133,13 @@ describe("P2: krātuve (sinhronizācija un admina pārcelšana)", () => {
     expect(b).toMatchObject({ status: "in_transit" });
     const none = await store.syncAutoparksCarWithLogisticsAction({ id: "oz", vin: "" }, "delivered", actor);
     expect(none).toBeNull();
+  });
+
+  it("bugfix 20.11: sinhronizācija atrod auto pēc piezīmju VIN", async () => {
+    const store = await loadStore();
+    const c = await store.createAutoparksCar({ make: "VW", vin: VIN_A, status: "in_transit" }, actor);
+    const out = await store.syncAutoparksCarWithLogisticsAction({ id: "on", vin: "", notes: `vin ${VIN_A.toLowerCase()}` }, "delivered", actor);
+    expect(out).toMatchObject({ id: c.id, status: "prep_waiting" });
   });
 
   it("admina pārcelšana: tikai serverī pārbaudītie un «Ceļā» auto", async () => {
