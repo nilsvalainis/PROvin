@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SOURCE_BLOCK_LABELS, createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildListingNotCountryChangeBrief } from "@/lib/admin-ai-listing-country";
-import { vendorAvotuBlockToPlainText } from "@/lib/admin-source-blocks";
+import { emptyVendorAvotuBlock, vendorAvotuBlockToPlainText } from "@/lib/admin-source-blocks";
 import {
   isVendorTimelineListingRecord,
   VENDOR_TIMELINE_LISTING_AI_NOTE,
@@ -26,9 +26,7 @@ describe("isVendorTimelineListingRecord", () => {
 describe("AI konteksts laikposma sludinājumiem", () => {
   it("piezīmē, ka sludinājuma rinda nav fiziska valsts maiņa", () => {
     const text = vendorAvotuBlockToPlainText({
-      serviceHistory: [],
-      incidents: [],
-      comments: "",
+      ...emptyVendorAvotuBlock(),
       vehicleHistoryTimeline: [
         {
           date: "15.03.2024",

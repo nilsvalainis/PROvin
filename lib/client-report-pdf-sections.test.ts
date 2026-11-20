@@ -27,6 +27,7 @@ import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logos";
 import { emptyLtabCertificate } from "@/lib/ltab-report-extract";
+import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 
 beforeEach(() => {
@@ -1668,7 +1669,7 @@ describe("unified PDF sections single block", () => {
   });
 
   it("incidents zone is one card: table, source count, kopsavilkums", () => {
-    const p = {
+    const p = minimalPayload({
       internalComment: "Kopsavilkuma teksts",
       manualVendorBlocks: [
         {
@@ -1679,7 +1680,7 @@ describe("unified PDF sections single block", () => {
           pdfChecklist: { incidents: false, mileageHistory: false, mileageLine: false },
         },
       ],
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-unified-incidents-zone__body");
@@ -1701,7 +1702,7 @@ describe("unified PDF sections single block", () => {
 
   it("renders incident photos directly under the incidents summary comment", () => {
     const photoId = "inc_ph_aabbccddeeff001122334455";
-    const p = {
+    const p = minimalPayload({
       internalComment: "Kopsavilkuma teksts",
       incidentPhotos: [{ id: photoId }],
       incidentPhotoGroups: [{ id: "inc_phg_aabbccddeeff001122334455", title: "", photos: [{ id: photoId }] }],
@@ -1714,7 +1715,7 @@ describe("unified PDF sections single block", () => {
           pdfChecklist: { incidents: false, mileageHistory: false, mileageLine: false },
         },
       ],
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const urls = new Map<string, string>([[photoId, "data:image/jpeg;base64,/9j/4AAQ"]]);
     const html = buildUnifiedIncidentsTableHtml(p, vis, urls);
@@ -1725,7 +1726,7 @@ describe("unified PDF sections single block", () => {
   });
 
   it("renders source valuations as colored pills in one row", () => {
-    const p = {
+    const p = minimalPayload({
       manualVendorBlocks: [
         {
           title: "AutoDNA",
@@ -1745,7 +1746,7 @@ describe("unified PDF sections single block", () => {
         rows: [{ csngDate: "16.06.2021", lossAmount: "2778", incidentNo: "Latvija" }],
         comments: "",
       },
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-src-tags pdf-incident-card__srcs");
@@ -1759,7 +1760,7 @@ describe("unified PDF sections single block", () => {
   });
 
   it("renders damage zones and top-down silhouette on incident cards", () => {
-    const p = {
+    const p = minimalPayload({
       internalComment: "Kopsavilkums",
       manualVendorBlocks: [
         {
@@ -1778,7 +1779,7 @@ describe("unified PDF sections single block", () => {
           ],
         },
       ],
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("01.06.2024");
@@ -1803,7 +1804,7 @@ describe("unified PDF sections single block", () => {
   });
 
   it("renders silhouette from AutoDNA sourceRaw when damageDetails were never saved", () => {
-    const p = {
+    const p = minimalPayload({
       manualVendorBlocks: [
         {
           title: "AutoDNA",
@@ -1823,7 +1824,7 @@ Bojājumu zona
 `,
         },
       ],
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-dmg-sil");
@@ -1836,7 +1837,7 @@ Bojājumu zona
   });
 
   it("always draws the car silhouette even when the incident has no zone data", () => {
-    const p = {
+    const p = minimalPayload({
       manualVendorBlocks: [
         {
           title: "CarVertical",
@@ -1845,7 +1846,7 @@ Bojājumu zona
           comments: "",
         },
       ],
-    } as ClientReportPayload;
+    });
     const vis = mergePdfVisibility({ unifiedIncidents: true });
     const html = buildUnifiedIncidentsTableHtml(p, vis);
     expect(html).toContain("pdf-dmg-sil");
@@ -1956,6 +1957,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
         { date: "16.10.2023", odometer: "54338", location: "Forchheim", works: "Motoreļļa 0W-30 1000ml" },
       ],
       oneautoIngest: {
+        ...emptyOneautoIngest(),
         ...createDefaultSourceBlocks().auto_records.oneautoIngest,
         serviceTimelineOriginal: [
           {
@@ -2325,6 +2327,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
   it("PDF footer is a document colophon without website marketing or issuer personal data", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload(),
+      portfolio: [],
+      pdfInsights: [],
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });

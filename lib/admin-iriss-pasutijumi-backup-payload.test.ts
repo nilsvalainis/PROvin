@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
+import { emptyIrissOfferRecord, emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import {
   backupPayloadContainsOfferImages,
   buildIrissOrdersBackupPayload,
@@ -21,31 +21,9 @@ describe("buildIrissOrdersBackupPayload", () => {
     rec.brandModel = "BMW 520d";
     rec.offers = [
       {
-        id: "off-1",
-        title: "Piedāvājums 1",
+        ...emptyIrissOfferRecord("off-1", rec.createdAt),
         brandModel: "BMW 520d",
-        vin: "",
-        year: "",
-        mileage: "",
-        priceGermany: "",
-        comment: "",
-        firstRegistration: "",
-        odometerReading: "",
-        transmission: "",
-        location: "",
-        hasFullServiceHistory: false,
-        hasFactoryPaint: false,
-        hasNoRustBody: false,
-        hasSecondWheelSet: false,
-        specialNotes: "",
-        visualAssessment: "",
-        technicalAssessment: "",
-        summary: "",
         carPrice: "12000",
-        deliveryPrice: "",
-        commissionFee: "",
-        offerValidDays: "",
-        validUntil: "",
         attachments: [
           {
             id: "img-1",
@@ -55,7 +33,6 @@ describe("buildIrissOrdersBackupPayload", () => {
             dataUrl: "data:image/jpeg;base64,abc123",
           },
         ],
-        createdAt: rec.createdAt,
         updatedAt: rec.updatedAt,
       },
     ];

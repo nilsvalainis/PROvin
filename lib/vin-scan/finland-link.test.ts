@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { applyFinlandLink, detectFinlandLink, finlandLinkStatusLine, textMentionsFinland } from "@/lib/vin-scan/finland-link";
+import {
+  applyFinlandLink,
+  detectFinlandLink,
+  finlandLinkStatusLine,
+  textMentionsFinland,
+  type FinlandLinkRow,
+} from "@/lib/vin-scan/finland-link";
 
 describe("textMentionsFinland", () => {
   it("atpazīst Somiju un neatpazīst Fiat, Suomi.fi un mazos fi", () => {
@@ -103,7 +109,7 @@ describe("detectFinlandLink", () => {
 
 describe("applyFinlandLink", () => {
   it("liek karogu tikai Traficom rindai", () => {
-    const rows = applyFinlandLink(
+    const rows = applyFinlandLink<FinlandLinkRow>(
       [
         { id: "tjekbil", status: "found", summary: "SHARAN" },
         { id: "traficom", status: "unknown", summary: "Traficom captcha netika apieta" },
@@ -117,7 +123,7 @@ describe("applyFinlandLink", () => {
   });
 
   it("numura noņemšana noņem karogu, nevis atstāj iepriekšējo jā", () => {
-    const withPlate = applyFinlandLink(
+    const withPlate = applyFinlandLink<FinlandLinkRow>(
       [{ id: "traficom", status: "unknown", summary: "Traficom captcha netika apieta" }],
       { fi: "ABC123" },
     );

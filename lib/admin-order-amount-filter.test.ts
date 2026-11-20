@@ -36,7 +36,6 @@ describe("passesAdminOrderAmountFilter", () => {
         fulfillment: "b2b_pack",
         checkoutLine: "dealer",
         vin: null,
-        partnerId: "ptr_0123456789abcdef",
       }),
     ).toBe(true);
   });

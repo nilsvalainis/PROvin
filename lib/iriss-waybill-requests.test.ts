@@ -53,6 +53,9 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   representative: "",
   stage: "",
   stageAt: "",
+  dropboxPath: "",
+  dropboxError: "",
+  dropboxAt: "",
   ...over,
 });
 

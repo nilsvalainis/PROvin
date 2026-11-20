@@ -8,6 +8,11 @@ import {
 import { coalesceOrderWorkspacePersistBody, pickOrderWorkspaceHydrationServerFirst, workspaceHydrationFillScore } from "@/lib/admin-order-workspace-persist";
 import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import type { OrderWorkspacePersistBody } from "@/lib/admin-order-workspace-persist";
+
+/** Testa melnraksts ar tipizētiem `sourceBlocks` (serverī tos validē hidratācija). */
+type TestDraft = OrderDraftWorkspaceBody &
+  Pick<OrderWorkspacePersistBody, "sourceBlocks" | "vehicleAiExtraction" | "vehicleAiExtractionMeta">;
 import { enqueueWorkspacePersist, clearWorkspacePersistQueue, clearAllWorkspacePersistQueues } from "@/lib/admin-workspace-persist-queue";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
@@ -25,7 +30,7 @@ import {
 } from "@/lib/admin-workspace-persist-client";
 import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
 
-function draftWithComment(comment: string): OrderDraftWorkspaceBody {
+function draftWithComment(comment: string): TestDraft {
   const blocks = createDefaultSourceBlocks();
   blocks.autodna = { ...emptyVendorAvotuBlock(), comments: comment };
   return {
@@ -77,8 +82,12 @@ describe("verifyWorkspaceIntegrity", () => {
 describe("SSR server-wins hydration", () => {
   it("never drops server autodna when local is empty", () => {
     const serverBody = draftWithComment("Server canonical");
-    type H = typeof serverBody & { pdfVisibility?: object; pdfBannerInclude?: object };
-    const toH = (d: OrderDraftWorkspaceBody): H => ({ ...d, pdfVisibility: {}, pdfBannerInclude: {} });
+    type H = typeof serverBody;
+    const toH = (d: TestDraft): H => ({
+      ...d,
+      pdfVisibility: mergePdfVisibility(undefined),
+      pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
+    });
     const picked = pickOrderWorkspaceHydrationServerFirst(
       [
         {
@@ -170,10 +179,10 @@ describe("persist queue serialization", () => {
 
 describe("E2E persistence simulation", () => {
   it("upload → persist → reload without localStorage keeps server data", () => {
-    const store = new Map<number, OrderDraftWorkspaceBody>();
+    const store = new Map<number, TestDraft>();
     let revision = 0;
 
-    const persist = (body: OrderDraftWorkspaceBody) => {
+    const persist = (body: TestDraft) => {
       revision += 1;
       store.set(revision, body);
       return { revision, checksum: stableWorkspaceChecksum(body) };

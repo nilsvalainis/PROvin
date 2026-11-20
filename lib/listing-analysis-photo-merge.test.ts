@@ -24,6 +24,8 @@ describe("listing analysis photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     const incoming = normalizeOrderWorkspacePersistBody({
       sourceBlocks: {
@@ -39,6 +41,8 @@ describe("listing analysis photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     const merged = coalesceOrderWorkspacePersistBody(incoming, baseline);
     expect(merged.sourceBlocks.listing_analysis.photos).toHaveLength(1);
@@ -66,6 +70,8 @@ describe("listing analysis photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     const incoming = normalizeOrderWorkspacePersistBody({
       sourceBlocks: {
@@ -80,6 +86,8 @@ describe("listing analysis photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     const merged = coalesceOrderWorkspacePersistBody(incoming, baseline);
     expect(merged.sourceBlocks.listing_analysis.photos.map((p) => p.id)).toEqual([idB, idA]);
@@ -129,6 +137,8 @@ describe("incident photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     const stale = normalizeOrderWorkspacePersistBody({
       sourceBlocks: base,
@@ -137,6 +147,8 @@ describe("incident photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     expect(coalesceOrderWorkspacePersistBody(stale, withCover).sourceBlocks.listing_analysis.coverPhoto?.id).toBe(
       coverId,
@@ -152,6 +164,8 @@ describe("incident photo merge on coalesce", () => {
       tehniskoRiskuAnalize: "",
       cenasAtbilstiba: "",
       previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
     });
     expect(coalesceOrderWorkspacePersistBody(cleared, withCover).sourceBlocks.listing_analysis.coverPhoto?.id).toBeUndefined();
   });
