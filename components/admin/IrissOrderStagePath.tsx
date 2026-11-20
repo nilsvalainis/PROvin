@@ -74,9 +74,9 @@ export function IrissOrderStagePath({
                   aria-hidden
                   className={`grid h-5 w-5 flex-none place-items-center rounded-full border-2 text-[11px] text-white ${
                     state === "done"
-                      ? "border-[var(--iriss-ok,#17804a)] bg-[var(--iriss-ok,#17804a)]"
+                      ? "border-[var(--iriss-ok)] bg-[var(--iriss-ok)]"
                       : state === "cur"
-                        ? "border-[var(--color-provin-accent,#F26522)] bg-[var(--color-provin-accent,#F26522)]"
+                        ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)]"
                         : "border-[var(--hair)]"
                   }`}
                 >
@@ -98,7 +98,7 @@ export function IrissOrderStagePath({
         <div className="mt-2 flex min-h-9 items-center justify-between border-t border-[var(--iriss-line,var(--hair))] pt-1.5 text-[13px]">
           <span className="text-[var(--iriss-ink-2,var(--ink2))]">Avanss</span>
           {advanceOk ? (
-            <span className="font-semibold text-[var(--iriss-ok,#17804a)]">Saņemts {advanceDate} ✓</span>
+            <span className="font-semibold text-[var(--iriss-ok)]">Saņemts {advanceDate} ✓</span>
           ) : (
             <span className="text-[var(--ink3)]">Nav saņemts</span>
           )}
