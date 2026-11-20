@@ -49,6 +49,17 @@ describe("decodeVinLocal", () => {
     expect(isUsWmiVin("WBA5R1C0XLFH42873")).toBe(false);
   });
 
+  it("Kanādas (2...) un Meksikas (3...) VIN ir ASV tirgus, ne ES", () => {
+    expect(decodeVinLocal("2T1BURHE0JC123456").countryCode).toBe("CA");
+    expect(decodeVinLocal("3VWFE21C04M000001").countryCode).toBe("MX");
+    expect(isUsWmiVin("2T1BURHE0JC123456")).toBe(true);
+    expect(isUsWmiVin("3VWFE21C04M000001")).toBe(true);
+    expect(isEuWmiVin("2T1BURHE0JC123456")).toBe(false);
+    expect(isEuWmiVin("3VWFE21C04M000001")).toBe(false);
+    expect(isUsWmiVin("JTDKN3DU0A0123456")).toBe(false);
+    expect(isUsWmiVin("YV1DZ5251B2146640")).toBe(false);
+  });
+
   it("YS2 / YS3 / YV4 ir Ziemeļvalstis", () => {
     expect(isNordicVinOrigin("YS2G4X20001234567")).toBe(true);
     expect(isNordicVinOrigin("YS3EB59E631234567")).toBe(true);

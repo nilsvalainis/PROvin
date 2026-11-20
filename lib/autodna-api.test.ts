@@ -30,3 +30,12 @@ describe("readFixieProxyUrl / withAutodnaFixieProxy", () => {
     expect(out.dispatcher?.constructor.name).toBe("ProxyAgent");
   });
 });
+
+describe("createAutodnaFixieDispatcher", () => {
+  it("vienam proxy URL lieto to pašu ProxyAgent, citam - citu", async () => {
+    const { createAutodnaFixieDispatcher } = await import("@/lib/autodna-api");
+    const a = createAutodnaFixieDispatcher("http://u:p@proxy-a.example:80");
+    expect(createAutodnaFixieDispatcher("http://u:p@proxy-a.example:80")).toBe(a);
+    expect(createAutodnaFixieDispatcher("http://u:p@proxy-b.example:80")).not.toBe(a);
+  });
+});
