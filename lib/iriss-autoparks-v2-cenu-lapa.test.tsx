@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
-import { autoparksV2Basics, emptyCarV2, normalizeV2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
+import { autoparksV2Basics, emptyCarV2, normalizeCarV2, normalizeV2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2PriceSheet, engineLabel, priceSheetHighlights, priceSheetHighlightsLine, priceSheetTitlePx } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { renderText } from "@/lib/test-render";
 import { A4Sheet } from "@/components/admin/iriss-autoparks-v2/A4Sheet";
@@ -36,15 +36,16 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     expect(labels).not.toContain("Izmešu daudzums (CO2)");
     expect(labels).not.toContain("Transportlīdzekļa veids");
     expect(s.rows.find((r) => r.label === "Pilna masa")?.value).toBe("2 530 kg");
-    // Nils 28.10: drošības tabula vienmēr, pēc noklusējuma viss "Ir" un "Pārbaudīts"; spilveni pēdējie.
+    // Nils 28.10: drošības tabula vienmēr; spilveni pēdējie. Nils 20.11: bez saglabātas izvēles - "Nav pārbaudīts", bez apliecinājuma.
     expect(s.safetyRows.map((r) => r.label)).toEqual([
       "Elektroniskā stabilitātes sistēma (ESP)",
       "Elektriskais stūres pastiprinātājs (EPS)",
       "Bremžu antibloķēšanas sistēma (ABS)",
       "Drošības spilveni",
     ]);
-    expect(s.safetyRows[2]).toEqual({ label: "Bremžu antibloķēšanas sistēma (ABS)", present: "Ir", checked: "Pārbaudīts" });
-    expect(s.roadworthy).toBe(true);
+    expect(s.safetyRows[2]).toEqual({ label: "Bremžu antibloķēšanas sistēma (ABS)", present: "Ir", checked: "Nav pārbaudīts" });
+    expect(s.roadworthy).toBe(false);
+    expect(s.state).toBe("normal");
     expect(s.highlights).toEqual(["ACC DISTRONIC", "LANE ASSIST", "QUATTRO"]);
     expect(s.priceEur).toBe(17900);
   });
@@ -77,8 +78,111 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     expect(text).toContain("17 900 €");
     expect(text).toContain("GDZ00218");
     expect(text).toContain("+371 277 33 440");
-    expect(text).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
+    expect(text).not.toContain("DRĪZUMĀ");
+    expect(text).not.toContain("tehniski atbilst");
     expect(text).not.toContain("cena ar PVN");
+  });
+});
+
+describe("Cenu lapa «Drīzumā» (Nils 20.11, variants A)", () => {
+  const notAccepted = normalizeAutoparksCar({ id: "t", make: "Volkswagen", model: "Touran", vin: "WVGZZZ1TZHW012345", listPriceEur: 13990 })!;
+  const accepted = normalizeAutoparksCar({
+    id: "u",
+    make: "Volkswagen",
+    model: "Touran",
+    vin: "WVGZZZ1TZHW012345",
+    listPriceEur: 13990,
+    registry: { tradeActDate: "2026-11-10", importedAt: "x" },
+  })!;
+  const sheet = (car: typeof notAccepted, v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+
+  it("noklusējums: nav pieņemts tirdzniecībā -> Drīzumā; pieņemts -> parastā lapa", () => {
+    expect(sheet(notAccepted).state).toBe("soon");
+    expect(sheet(notAccepted).stateAuto).toBe("soon");
+    expect(sheet(notAccepted).stateMode).toBeNull();
+    expect(sheet(accepted).state).toBe("normal");
+  });
+
+  it("A: DRĪZUMĀ cenas vietā + plānotā cena; bez akta numura rindas", () => {
+    const v2 = emptyCarV2();
+    v2.purchase.vat.mode = "gross";
+    const s = sheet(notAccepted, v2);
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("DRĪZUMĀ");
+    expect(text).toContain("auto tiek sagatavots pārdošanai");
+    expect(text).toContain("Plānotā cena");
+    expect(text).toContain("13 990 €");
+    expect(text).toContain("cena ar PVN");
+    expect(s.rows.map((r) => r.label)).not.toContain("Akta numurs");
+  });
+
+  it("D: «Rādīt plānoto cenu» izslēgts - bez cenas", () => {
+    const v2 = emptyCarV2();
+    v2.priceSheet.showPlannedPrice = false;
+    const text = renderText(<A4Sheet s={sheet(notAccepted, v2)} />);
+    expect(text).toContain("DRĪZUMĀ");
+    expect(text).not.toContain("Plānotā cena");
+    expect(text).not.toContain("13 990");
+  });
+
+  it("manuāli: ieslēgt pieņemtam, izslēgt nepieņemtam", () => {
+    const on = emptyCarV2();
+    on.priceSheet.sheetState = "soon";
+    expect(sheet(accepted, on).state).toBe("soon");
+    const off = emptyCarV2();
+    off.priceSheet.sheetState = "normal";
+    const s = sheet(notAccepted, off);
+    expect(s.state).toBe("normal");
+    expect(renderText(<A4Sheet s={s} />)).toContain("13 990 €");
+  });
+
+  it("Drīzumā drošība rediģējama: pārbaudīts + apliecinājums paliek, ja Nils tā izvēlas", () => {
+    const v2 = emptyCarV2();
+    v2.priceSheet.safety = normalizeV2PriceSheetSafety({ items: { abs: { present: true, checked: false } }, roadworthy: true })!;
+    const s = sheet(notAccepted, v2);
+    expect(s.safetyRows[0]!.checked).toBe("Pārbaudīts");
+    expect(s.safetyRows[2]!.checked).toBe("Gaida pārbaudi");
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("tehniski atbilst");
+    expect(text).not.toContain("tiks veikta pirms pārdošanas");
+  });
+
+  it("normalizācija: sheetState tikai zināmās vērtības, showPlannedPrice tikai boolean", () => {
+    const n = normalizeCarV2({ priceSheet: { sheetState: "x", showPlannedPrice: false } });
+    expect(n.priceSheet.sheetState).toBeNull();
+    expect(n.priceSheet.showPlannedPrice).toBe(false);
+    expect(normalizeCarV2({ priceSheet: { sheetState: "reserved" } }).priceSheet.sheetState).toBe("reserved");
+  });
+
+  it("Rezervēts: statuss «Rezervēts» uzvar pār Drīzumā; REZERVĒTS + «Cena»; drošība pēc faktiskā stāvokļa", () => {
+    const resNot = normalizeAutoparksCar({ ...notAccepted, status: "reserved" })!;
+    const resAcc = normalizeAutoparksCar({ ...accepted, status: "reserved" })!;
+    const a = sheet(resNot);
+    expect(a.state).toBe("reserved");
+    const ta = renderText(<A4Sheet s={a} />);
+    expect(ta).toContain("REZERVĒTS");
+    expect(ta).toContain("auto ir rezervēts");
+    expect(ta).toContain("Cena");
+    expect(ta).not.toContain("Plānotā cena");
+    expect(ta).toContain("13 990 €");
+    expect(ta).toContain("Gaida pārbaudi");
+    expect(ta).toContain("tiks veikta pirms pārdošanas");
+    // Pieņemts tirdzniecībā: drošība kā parastā lapā.
+    const v2 = emptyCarV2();
+    v2.priceSheet.safety = normalizeV2PriceSheetSafety({ items: {} })!;
+    const tb = renderText(<A4Sheet s={sheet(resAcc, v2)} />);
+    expect(tb).toContain("REZERVĒTS");
+    expect(tb).toContain("Pārbaudīts");
+    expect(tb).toContain("tehniski atbilst");
+    expect(sheet(resAcc).safetyRows[0]!.checked).toBe("Nav pārbaudīts");
+    // Bez cenas.
+    const nop = emptyCarV2();
+    nop.priceSheet.showPlannedPrice = false;
+    expect(renderText(<A4Sheet s={sheet(resNot, nop)} />)).not.toContain("13 990");
+    // Manuāli parastā lapa arī rezervētam.
+    const man = emptyCarV2();
+    man.priceSheet.sheetState = "normal";
+    expect(sheet(resNot, man).state).toBe("normal");
   });
 });
 
@@ -146,12 +250,23 @@ describe("Cenu lapa", () => {
 describe("Cenu lapa - drošības tabula (Nils 28.10)", () => {
   const car = normalizeAutoparksCar({ id: "s80", make: "Volvo", model: "S80", vin: "YV1AS475BC1162162" })!;
 
-  it("bez CSDD datiem tabula un apliecinājums ir lapā pēc noklusējuma", () => {
+  it("bez CSDD akta un saglabātas izvēles: Drīzumā, «Gaida pārbaudi», bez apliecinājuma (Nils 20.11)", () => {
     const v2 = emptyCarV2();
     const text = renderText(<A4Sheet s={autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2))} />);
     expect(text).toContain("Drošības spilveni");
-    expect(text).toContain("Pārbaudīts");
-    expect(text).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
+    expect(text).toContain("Gaida pārbaudi");
+    expect(text).not.toContain("Pārbaudīts");
+    expect(text).not.toContain("tehniski atbilst");
+    expect(text).toContain("Drošības sistēmu pārbaude tiks veikta pirms pārdošanas.");
+  });
+
+  it("saglabātā vecā izvēle (viss pārbaudīts) paliek nemainīta", () => {
+    const v2 = emptyCarV2();
+    v2.priceSheet.safety = normalizeV2PriceSheetSafety({ items: {} })!;
+    v2.priceSheet.sheetState = "normal";
+    const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(s.safetyRows[0]!.checked).toBe("Pārbaudīts");
+    expect(renderText(<A4Sheet s={s} />)).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
   });
 
   it("saglabātā izvēle uzvar: Nav un bez apliecinājuma", () => {

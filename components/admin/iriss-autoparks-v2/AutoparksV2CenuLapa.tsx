@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   PRICE_SHEET_MAX_HIGHLIGHTS,
+  PRICE_SHEET_STATE_LV,
   PRICE_SHEET_SAFETY_LABELS,
   priceSheetHighlightsLine,
   type V2PriceSheet,
@@ -42,7 +43,7 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
     };
   }, [api]);
 
-  async function save(body: Record<string, string>) {
+  async function save(body: Record<string, string | boolean | null>) {
     setEdit(null);
     setError("");
     setRetry(null);
@@ -144,6 +145,36 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
               </button>
             </form>
           </div>
+        </div>
+        <div className="ap2-card ap2-cl-soon">
+          <h3>Lapas stāvoklis</h3>
+          <div className="ap2-chips ap2-cl-soonsel" role="radiogroup" aria-label="Lapas stāvoklis">
+            {(
+              [
+                [null, `Automātiski (${PRICE_SHEET_STATE_LV[s.stateAuto].toLowerCase()})`],
+                ["normal", PRICE_SHEET_STATE_LV.normal],
+                ["soon", PRICE_SHEET_STATE_LV.soon],
+                ["reserved", PRICE_SHEET_STATE_LV.reserved],
+              ] as const
+            ).map(([v, label]) => (
+              <button
+                key={String(v)}
+                type="button"
+                role="radio"
+                aria-checked={s.stateMode === v}
+                className={`ap2-chip ${s.stateMode === v ? "on" : ""}`}
+                onClick={() => void save({ sheetState: v })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {s.state !== "normal" ? (
+            <label className="ap2-cl-road">
+              <input type="checkbox" checked={s.showPlannedPrice} onChange={(e) => void save({ showPlannedPrice: e.target.checked })} />
+              <span>{s.state === "reserved" ? "Rādīt cenu" : "Rādīt plānoto cenu"}</span>
+            </label>
+          ) : null}
         </div>
         <div className="ap2-card">
           <h3>Dati lapai</h3>

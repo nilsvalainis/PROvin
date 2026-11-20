@@ -8,9 +8,11 @@ import {
   type AutoparksCarV2,
   type AutoparksV2Basics,
   type V2PriceSheetSafety,
+  type V2PriceSheetState,
   type V2SafetyKey,
 } from "@/lib/iriss-autoparks-v2";
 import { fmtKm, fmtDateLv } from "@/lib/iriss-autoparks-v2-format";
+import { hasTradeAct } from "@/lib/iriss-autoparks-registry";
 
 export type V2PriceSheet = {
   displayName: string;
@@ -39,7 +41,36 @@ export type V2PriceSheet = {
   safetyState: V2PriceSheetSafety;
   /** Apliecinājums lapā: "tehniski atbilst izmantošanai ceļu satiksmē". */
   roadworthy: boolean;
+  /** Lapas stāvoklis (Nils 20.11, variants A): parastā / «DRĪZUMĀ» / «REZERVĒTS» cenas vietā. */
+  state: V2PriceSheetState;
+  /** Manuālā izvēle: null = automātiski. */
+  stateMode: V2PriceSheetState | null;
+  /** Ko dotu «Automātiski» (redaktoram). */
+  stateAuto: V2PriceSheetState;
+  /** Drošība «Gaida pārbaudi» + teikums «pārbaude tiks veikta pirms pārdošanas» (ja nav apliecinājuma). */
+  pendingCheck: boolean;
+  /** Drīzumā/Rezervēts lapā rādīt cenas rindu zem līnijām (false = variants D). */
+  showPlannedPrice: boolean;
 };
+
+export const PRICE_SHEET_STATE_LV: Record<V2PriceSheetState, string> = {
+  normal: "Parastā",
+  soon: "Drīzumā",
+  reserved: "Rezervēts",
+};
+
+/**
+ * Automātiskais stāvoklis (Nils 20.11): Autoparka statuss «Rezervēts» -> Rezervēts (prioritāte);
+ * citādi, ja auto NAV pieņemts tirdzniecībā (CSDD akts nr. vai datums) -> Drīzumā; citādi parastā lapa.
+ */
+export function priceSheetStateAuto(car: Pick<AutoparksCar, "registry" | "status">): V2PriceSheetState {
+  if (car.status === "reserved") return "reserved";
+  return hasTradeAct(car.registry) ? "normal" : "soon";
+}
+
+export function priceSheetState(car: Pick<AutoparksCar, "registry" | "status">, v2: Pick<AutoparksCarV2, "priceSheet">): V2PriceSheetState {
+  return v2.priceSheet.sheetState ?? priceSheetStateAuto(car);
+}
 
 export const PRICE_SHEET_SAFETY_LABELS: ReadonlyArray<{ key: V2SafetyKey; label: string; short: string }> = [
   { key: "esp", label: "Elektroniskā stabilitātes sistēma (ESP)", short: "ESP" },
@@ -96,10 +127,12 @@ function priceSheetRows(car: AutoparksCar, basics: AutoparksV2Basics): Array<{ l
 }
 
 /** Drošības tabula (Nils 28.10): pēc noklusējuma viss "Ir" un "Pārbaudīts" kā CSDD paraugā; Nils maina pats. */
-export function priceSheetSafetyRows(state: V2PriceSheetSafety): Array<{ label: string; present: string; checked: string }> {
+export function priceSheetSafetyRows(state: V2PriceSheetSafety, soon = false): Array<{ label: string; present: string; checked: string }> {
+  // Drīzumā (Nils 20.11): nepārbaudītai sistēmai «Gaida pārbaudi», nevis «Nav pārbaudīts».
+  const notChecked = soon ? "Gaida pārbaudi" : "Nav pārbaudīts";
   return PRICE_SHEET_SAFETY_LABELS.map(({ key, label }) => {
     const it = state.items[key];
-    return { label, present: it.present ? "Ir" : "Nav", checked: it.present ? (it.checked ? "Pārbaudīts" : "Nav pārbaudīts") : "" };
+    return { label, present: it.present ? "Ir" : "Nav", checked: it.present ? (it.checked ? "Pārbaudīts" : notChecked) : "" };
   });
 }
 
@@ -126,6 +159,10 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
   const listPriceEur = ps.listPriceEur ?? car.listPriceEur ?? ps.salePriceEur ?? car.salePriceEur ?? null;
   const vatMode = v2.purchase.vat.mode;
   const safetyState = ps.safety ?? defaultV2PriceSheetSafety();
+  const stateAuto = priceSheetStateAuto(car);
+  const state = priceSheetState(car, v2);
+  // Drošība kā Drīzumā («Gaida pārbaudi», teikums par pārbaudi): Drīzumā vienmēr; Rezervēts - ja auto vēl nav pieņemts tirdzniecībā.
+  const waitSafety = state === "soon" || (state === "reserved" && !hasTradeAct(car.registry));
   return {
     displayName: ps.displayName || car.displayName || title,
     equipmentLine,
@@ -133,9 +170,14 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
     priceEur: listPriceEur,
     vatNote: vatMode === "gross" || vatMode === "net" ? "cena ar PVN" : "",
     rows: priceSheetRows(car, basics),
-    safetyRows: priceSheetSafetyRows(safetyState),
+    safetyRows: priceSheetSafetyRows(safetyState, waitSafety),
     safetyState,
     roadworthy: safetyState.roadworthy,
+    state,
+    stateMode: ps.sheetState ?? null,
+    stateAuto,
+    pendingCheck: waitSafety,
+    showPlannedPrice: ps.showPlannedPrice !== false,
     salePriceEur: ps.salePriceEur ?? car.salePriceEur ?? null,
     listPriceEur,
     year: car.year,
