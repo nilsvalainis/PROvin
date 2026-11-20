@@ -2,8 +2,9 @@ import { after, NextResponse } from "next/server";
 import { cabinetActorHidesSums, cabinetActorSeesTransportCost, maskOrderSums, stripAdminOnlyOrderFields } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { autoparksActor } from "@/lib/iriss-autoparks-access";
-import { upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
+import { getLogisticsOrder, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import { normalizeLogisticsVin, type LogisticsOrder } from "@/lib/iriss-logistics-types";
+import { overlayOrderForActor, routeSharedCarFields, sharedCarRouteErrorBody } from "@/lib/iriss-logistics-viens-avots-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,15 @@ export async function POST(req: Request) {
   const actorQuery = logisticsCabinetAccessQuery(gate.actor, "");
   const hideSums = cabinetActorHidesSums(actorQuery);
   const hideTransport = !cabinetActorSeesTransportCost(actorQuery);
-  const order = await upsertLogisticsOrder(hideTransport ? stripAdminOnlyOrderFields(input) : input);
+  let fields: Partial<LogisticsOrder> = hideTransport ? stripAdminOnlyOrderFields(input) : input;
+  // P3 (viens avots): esoša ieraksta (ar `id`) kopējie auto lauki saistītam auto tiek rakstīti Autoparkā.
+  const existing = typeof input.id === "string" && input.id.trim() ? await getLogisticsOrder(input.id.trim()) : null;
+  if (existing) {
+    const routed = await routeSharedCarFields(existing, fields as Record<string, unknown>, gate.actor);
+    if (!routed.ok) return NextResponse.json(sharedCarRouteErrorBody(routed), { status: routed.status, headers: irissLogisticsScopeHeader() });
+    fields = { ...(routed.rest as Partial<LogisticsOrder>), id: existing.id };
+  }
+  const order = await upsertLogisticsOrder(fields);
   // Nils 27.10: «+ Nopirkts» = auto uzreiz Autoparkā ar statusu «Ceļā» (Loģistika ir tā posms). Kļūda neaptur pirkumu.
   let autoparksCarId = "";
   if (toAutoparks === true && !raw.id) {
@@ -50,5 +59,8 @@ export async function POST(req: Request) {
       console.error("[iriss-logistics/orders] autoparks", e instanceof Error ? e.message : e);
     }
   }
-  return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums, hideTransport), autoparksCarId }, { headers: irissLogisticsScopeHeader() });
+  return NextResponse.json(
+    { ok: true, order: maskOrderSums(await overlayOrderForActor(order, gate.actor), hideSums, hideTransport), autoparksCarId },
+    { headers: irissLogisticsScopeHeader() },
+  );
 }

@@ -10,6 +10,7 @@ import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
 import { getLogisticsOrder, listLogisticsOrders, setLogisticsOrderArchiveState } from "@/lib/iriss-logistics-store";
 import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
 import { findActiveOrderForVin } from "@/lib/iriss-autoparks-transit";
+import { overlayOrderForActor } from "@/lib/iriss-logistics-viens-avots-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     // Jaunam auto /STOCK mape (atrod pēc VIN vai izveido) pēc atbildes - auto izveide no Dropbox neatkarīga.
     if (created) after(() => linkAutoparksCarToDropbox(car.id));
     return NextResponse.json(
-      { ok: true, car: hide ? stripCar(car) : car, created, order: maskOrderSums(archived ?? order, hide, !cabinetActorSeesTransportCost(logisticsCabinetAccessQuery(gate.actor, ""))) },
+      { ok: true, car: hide ? stripCar(car) : car, created, order: maskOrderSums(await overlayOrderForActor(archived ?? order, gate.actor), hide, !cabinetActorSeesTransportCost(logisticsCabinetAccessQuery(gate.actor, ""))) },
       { headers: irissLogisticsScopeHeader() },
     );
   }
