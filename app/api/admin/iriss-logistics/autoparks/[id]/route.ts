@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAutoparksStage } from "@/lib/iriss-autoparks";
-import { autoparksActor, autoparksHidesSums, autoparksRoomForActor } from "@/lib/iriss-autoparks-access";
+import { autoparksActor, autoparksHidesSumFiles, autoparksHidesSums, autoparksRoomForActor } from "@/lib/iriss-autoparks-access";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import {
   addAutoparksNote,
@@ -36,7 +36,7 @@ async function roomResponse(gate: { actor: Parameters<typeof logisticsCabinetAcc
   return NextResponse.json(
     {
       ok: true,
-      room: autoparksRoomForActor(room, hide),
+      room: autoparksRoomForActor(room, hide, autoparksHidesSumFiles(gate.actor)),
       logisticsDocs: await logisticsDocs(gate.actor, room.car.orderId),
       hideSums: hide,
       canWrite: logisticsCabinetWriteForbidden(gate.actor) === null,

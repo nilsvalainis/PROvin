@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { autoparksDownloadName, isAutoparksFileKind, isAutoparksStage, type AutoparksFile } from "@/lib/iriss-autoparks";
-import { autoparksActor, autoparksFileHiddenForActor, autoparksHidesSums } from "@/lib/iriss-autoparks-access";
+import { autoparksActor, autoparksFileHiddenForActor, autoparksHidesSumFiles } from "@/lib/iriss-autoparks-access";
 import { autoparksTemporaryLink, readAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { findAutoparksFile, patchAutoparksFile, readAutoparksFileBytes, softDeleteAutoparksFile } from "@/lib/iriss-autoparks-store";
 import { irissLogisticsScopeHeader, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
@@ -13,9 +13,9 @@ type Ctx = { params: Promise<{ fileId: string }> };
 /** Vercel atbildes ķermeņa limits ~4,5 MB: lielākus Dropbox failus atveram ar īslaicīgu (4 h) Dropbox saiti. */
 const PROXY_MAX_BYTES = 4 * 1024 * 1024;
 
-/** Loģistika/Serviss: rēķins/tāme (summas) - 403, arī labot un dzēst. */
-function sumFileForbidden(actor: Parameters<typeof autoparksHidesSums>[0], file: { kind: AutoparksFile["kind"] } | null | undefined) {
-  if (!file || !autoparksFileHiddenForActor(file, autoparksHidesSums(actor))) return null;
+/** Loģistika: rēķins/tāme (summas) - 403, arī labot un dzēst. Serviss - pieejams kā līdz šim. */
+function sumFileForbidden(actor: Parameters<typeof autoparksHidesSumFiles>[0], file: { kind: AutoparksFile["kind"] } | null | undefined) {
+  if (!file || !autoparksFileHiddenForActor(file, autoparksHidesSumFiles(actor))) return null;
   return NextResponse.json({ error: "forbidden" }, { status: 403, headers: irissLogisticsScopeHeader() });
 }
 

@@ -93,6 +93,7 @@ function staff(sections: string[]): AdminOrStaffActor {
 }
 const LOGISTIKA = staff(["logistika"]);
 const GRAMATVEDE = staff(["gramatvede"]);
+const SERVISS = staff(["serviss"]);
 
 const idCtx = { params: Promise.resolve({ id: "ap-1" }) };
 const fileCtx = (fileId: string) => ({ params: Promise.resolve({ fileId }) });
@@ -129,13 +130,18 @@ describe("GET /cargo-plan", () => {
 });
 
 describe("Autoparka istaba - faili", () => {
-  it("Loģistika neredz rēķinus/tāmes un cenas; admins un grāmatvede redz visu", async () => {
+  it("Loģistika neredz rēķinus/tāmes un cenas; Serviss redz failus bez cenām; admins un grāmatvede redz visu", async () => {
     const { GET } = await import("@/app/api/admin/iriss-logistics/autoparks/[id]/route");
     h.actor = LOGISTIKA;
     const lg = (await (await GET(new Request("http://x"), idCtx)).json()) as { room: { car: Record<string, unknown>; files: AutoparksFile[]; work: Array<{ priceEur: unknown }> } };
     expect(lg.room.files.map((f) => f.id).sort()).toEqual(["f-con", "f-oth"]);
     expect(lg.room.car.purchasePriceEur).toBeNull();
     expect(lg.room.work[0].priceEur).toBeNull();
+
+    h.actor = SERVISS;
+    const sv = (await (await GET(new Request("http://x"), idCtx)).json()) as { room: { car: Record<string, unknown>; files: AutoparksFile[] } };
+    expect(sv.room.files).toHaveLength(4);
+    expect(sv.room.car.purchasePriceEur).toBeNull();
 
     for (const actor of [ADMIN, GRAMATVEDE]) {
       h.actor = actor;
@@ -145,7 +151,7 @@ describe("Autoparka istaba - faili", () => {
     }
   });
 
-  it("lejupielāde/sīktēls/labošana/dzēšana: Loģistikai rēķins un tāme 403, citi faili OK", async () => {
+  it("lejupielāde/sīktēls/labošana/dzēšana: Loģistikai rēķins un tāme 403, Servisam un adminam OK", async () => {
     const route = await import("@/app/api/admin/iriss-logistics/autoparks/files/[fileId]/route");
     h.actor = LOGISTIKA;
     for (const id of ["f-inv", "f-est"]) {
@@ -155,16 +161,22 @@ describe("Autoparka istaba - faili", () => {
       expect((await route.DELETE(new Request("http://x", { method: "DELETE" }), fileCtx(id))).status).toBe(403);
     }
     expect((await route.GET(new Request("http://x"), fileCtx("f-con"))).status).toBe(200);
+    h.actor = SERVISS;
+    expect((await route.GET(new Request("http://x"), fileCtx("f-inv"))).status).toBe(200);
+    expect((await route.GET(new Request("http://x?dl=1"), fileCtx("f-est"))).status).toBe(200);
     h.actor = ADMIN;
     expect((await route.GET(new Request("http://x"), fileCtx("f-inv"))).status).toBe(200);
     expect((await route.PATCH(new Request("http://x", { method: "PATCH", body: JSON.stringify({}) }), fileCtx("f-inv"))).status).toBe(200);
   });
 
-  it("PDF kopfails: Loģistikai bez rēķiniem/tāmēm, adminam visi", async () => {
+  it("PDF kopfails: Loģistikai bez rēķiniem/tāmēm, Servisam un adminam visi", async () => {
     const { GET } = await import("@/app/api/admin/iriss-logistics/autoparks/[id]/bundle/route");
     h.actor = LOGISTIKA;
     expect((await GET(new Request("http://x"), idCtx)).status).toBe(200);
     expect(merged.at(-1)!.sort()).toEqual(["f-con", "f-oth"]);
+    h.actor = SERVISS;
+    expect((await GET(new Request("http://x"), idCtx)).status).toBe(200);
+    expect(merged.at(-1)).toHaveLength(4);
     h.actor = ADMIN;
     expect((await GET(new Request("http://x"), idCtx)).status).toBe(200);
     expect(merged.at(-1)).toHaveLength(4);
