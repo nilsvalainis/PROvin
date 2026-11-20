@@ -78,10 +78,10 @@ describe("Klienta skats (publiskā saite)", () => {
   it("PDF režīmā visi «Dati pēc VIN» bez «Rādīt vairāk»; saitē - pirmie 16 + poga", () => {
     const pdf = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "pdf", NOW)} mode="pdf" photoSrc={src} />);
     expect(pdf).toContain("VIN opcija 20");
-    expect(pdf).not.toContain("Rādīt vairāk");
+    expect(pdf).not.toContain("Rādīt visas");
     const link = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "link", NOW)} mode="link" photoSrc={src} />);
     expect(link).not.toContain("VIN opcija 20");
-    expect(link).toContain("Rādīt vairāk (+4)");
+    expect(link).toContain("Rādīt visas (20)");
   });
 
   it("admina priekšskatījums nosauc paslēptos blokus", () => {

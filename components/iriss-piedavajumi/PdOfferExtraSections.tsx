@@ -12,6 +12,7 @@ import {
   IRISS_PD_DAMAGE_AREA_LV,
   irissPdAuto1BlockCount,
   irissPdDamageTable,
+  irissPdEquipmentView,
   type IrissPdAuto1Blocks,
   type IrissPdDamageRow,
   type IrissPdKv,
@@ -90,7 +91,7 @@ function VinList({ items, expandAll }: { items: string[]; expandAll: boolean }) 
           className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#1d1d1f] text-[13px] font-semibold text-white"
           onClick={() => setOpen((v) => !v)}
         >
-          {all ? "Rādīt mazāk" : `Rādīt vairāk (+${items.length - VIN_LIMIT})`}
+          {all ? "Rādīt mazāk" : `Rādīt visas (${items.length})`}
         </button>
       ) : null}
     </>
@@ -206,18 +207,19 @@ export function PdOfferBottomSections({
         <Collapsible block="equipment" title={equipmentTitle} count={highlights.length + equipment.length || undefined} open={expandAll}>
           <PdHighlightChips items={highlights} />
           {equipment.length ? (
-            <div className={`space-y-1.5 ${highlights.length ? "mt-3" : ""}`}>
-              {equipment.map((e) => (
-                <div key={e.name} className="flex items-start gap-2 rounded-xl border border-[#e4e4e7] bg-[#fafafa] px-2.5 py-2">
-                  <span className="mt-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-[#3b82c4] text-[9px] font-bold text-[#3b82c4]" aria-hidden>
-                    ✓
-                  </span>
-                  <span>
-                    <b className="block text-[13px] font-semibold text-[#111827]">{e.name}</b>
-                    {e.detail ? <span className="mt-0.5 block text-[12px] text-[#52525b]">{e.detail}</span> : null}
-                  </span>
-                </div>
-              ))}
+            <div className={highlights.length ? "mt-3" : ""} data-equipment-table="">
+              {equipment.map((e, i) => {
+                const row = irissPdEquipmentView(e);
+                return (
+                  <div
+                    key={`${i}-${e.name}`}
+                    className="grid grid-cols-[minmax(7.5rem,38%)_1fr] items-baseline gap-3 border-b border-[#f3f4f6] py-2 text-[13px] leading-snug last:border-0"
+                  >
+                    <span className="font-semibold text-[#111827]">{row.label}</span>
+                    <span className="text-[#3f3f46]">{row.value}</span>
+                  </div>
+                );
+              })}
             </div>
           ) : null}
           {inspection.length ? (

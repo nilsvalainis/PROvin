@@ -4,7 +4,8 @@
  * mainījis; paša pievienotās rindas paliek. Viss pārējais - kā līdz šim (admins pārbauda un var labot).
  */
 
-import { IRISS_PD_REPAINT_UM, type IrissPdAuto1Blocks, type IrissPdKv } from "@/lib/iriss-piedavajumi-auto1";
+import { IRISS_PD_REPAINT_UM, IRISS_PD_TA_VALID_LABEL, type IrissPdAuto1Blocks, type IrissPdKv } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
 import { IRISS_PD_FACTS_TEMPLATE, type IrissPdCheckItem } from "@/lib/iriss-piedavajumi-types";
 
 const kv = (rows: readonly IrissPdKv[], label: string): string => rows.find((r) => r.label === label)?.value.trim() ?? "";
@@ -42,7 +43,7 @@ export function irissPdFactsFromAuto1(blocks: IrissPdAuto1Blocks | null, facts: 
   const untouched = (f: IrissPdCheckItem) => tpl.has(f.text) && tpl.get(f.text)!.on === f.on;
   const keys = Number.parseInt(kv(blocks.tech, "Atslēgas"), 10);
   const book = kv(blocks.service, "Servisa grāmata");
-  const ta = kv(blocks.tech, "TA līdz");
+  const ta = kv(blocks.tech, IRISS_PD_TA_VALID_LABEL) || kv(blocks.tech, "TA līdz");
   const accident = kv(blocks.tech, "Iepriekšējie bojājumi / avārija (pēc iepr. īpašnieka)");
   const paint = irissPdPaintFact(blocks.paint);
   return facts.map((f) => {
@@ -54,7 +55,7 @@ export function irissPdFactsFromAuto1(blocks: IrissPdAuto1Blocks | null, facts: 
         return book ? { text: isYes(book) ? "Servisa grāmatiņa" : `Servisa grāmatiņa: ${book}`, on: isYes(book) } : { ...f };
       case "TA derīga": {
         const valid = ta ? monthYearInFuture(ta, now) : null;
-        return valid == null ? { ...f } : { text: valid ? `TA derīga līdz ${ta}` : `TA beigusies (${ta})`, on: valid };
+        return valid == null ? { ...f } : { text: valid ? `TA derīga līdz ${irissPdDisplayValue(ta)}` : `TA beigusies (${irissPdDisplayValue(ta)})`, on: valid };
       }
       case "Nav avārijas vēstures":
         return accident ? { text: "Nav avārijas vēstures", on: isNo(accident) } : { ...f };

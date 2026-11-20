@@ -795,7 +795,7 @@ export function PiedavajumsDetail({
         </Card>
 
         {rec.auto1 ? (
-          <Card title="Auto1 dati" sub={`Ielasīts ${stamp(rec.auto1ImportedAt).slice(0, 5) || "-"} · īsi`}>
+          <Card title="Auto1 dati" sub={`Ielasīts ${stamp(rec.auto1ImportedAt).slice(0, 5) || "-"} · kopsavilkums`}>
             {brief.car.length || brief.damage.length ? (
               <div className="pde-2c pde-kvs">
                 <div>

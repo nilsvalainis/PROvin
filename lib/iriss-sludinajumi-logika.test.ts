@@ -8,7 +8,7 @@ import {
   parseIrissListingMarkPatch,
   parseIrissListingMarks,
 } from "@/lib/iriss-listing-marks";
-import { irissPdImportFromListing, irissPdListingRef } from "@/lib/iriss-piedavajumi-from-listing";
+import { irissPdImportFromListing, irissPdListingRef, irissPdMergeListingWithLink } from "@/lib/iriss-piedavajumi-from-listing";
 import { createIrissPdFromListing, irissPdClientFromOrderBrief, irissPdRowsForListing } from "@/lib/iriss-pd-from-listing-client";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
@@ -56,6 +56,30 @@ describe("Sludinājums -> Piedāvājums (vairs ne jauns pasūtījums)", () => {
       { kind: "url", url: "https://img.example.com/2.jpg" },
     ]);
     expect(imp.historyText).toContain("Sludinājumiem (eCarsTrade, Nr. 7767999)");
+  });
+
+  it("Nils 20.11: no kabineta/Sludinājumiem - tā pati saites ielase kā Piedāvājumu sadaļā, sludinājums tikai papildina", () => {
+    const listing = irissPdImportFromListing(golf);
+    const auto1 = { paint: null, tech: [{ label: "Jauda", value: "85 kW" }], equipment: [], service: [], inspection: [], damage: [], vinData: ["A", "B"] };
+    const link = {
+      ...listing,
+      source: "auto1" as const,
+      sourceRef: "",
+      vehicle: { ...listing.vehicle, title: "VW Golf (Auto1)", location: "", engine: "1.5 TSI" },
+      photos: [{ kind: "url" as const, url: "https://img.example.com/a1.jpg" }],
+      purchasePrice: "",
+      auto1,
+      fieldCount: 12,
+      historyText: "Izveidots no Auto1 saites · 12 lauki",
+      note: "",
+    };
+    const m = irissPdMergeListingWithLink(listing, link);
+    expect(m.auto1).toBe(auto1);
+    expect(m.sourceRef).toBe(irissPdListingRef("a1b2c3"));
+    expect(m.vehicle).toMatchObject({ title: "VW Golf (Auto1)", engine: "1.5 TSI", location: "Beļģija" });
+    expect(m.photos).toEqual(link.photos);
+    expect(m.purchasePrice).toBe("13100");
+    expect(m.historyText).toBe("Izveidots no Auto1 saites · 12 lauki (sākts no Sludinājumiem)");
   });
 
   it("Openlane platforma kļūst par Openlane avotu", () => {
