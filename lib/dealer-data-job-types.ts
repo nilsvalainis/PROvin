@@ -3,6 +3,8 @@
  * Tīri tipi un lēmumi (bez server-only), lai loģiku var pārbaudīt testos.
  */
 
+import { oneautoPayloadIsNoData } from "@/lib/oneauto-catalog";
+
 export type DealerDataJobStatus =
   /** Apmaksāts, ielase vēl nav sākta. */
   | "pending"
@@ -131,11 +133,21 @@ export const DEALER_DATA_RETRY_NO_RECHARGE_HINT =
   "Atkārtot ielasi? Jau saņemtie maksas avoti (OE Service History un OE VIN Lookup) netiks izsaukti vēlreiz.";
 
 export function dealerPaidOutcomeFromResult(
-  result: { ok?: boolean; error?: string } | null | undefined,
+  result: { ok?: boolean; error?: string; payload?: unknown; message?: string } | null | undefined,
 ): DealerPaidProductOutcome | null {
   if (!result) return null;
   if (result.error === "pending") return "pending";
   if (result.error === "no_data") return "no_data";
+  // OneAuto HTTP 206 ar tekstu „There is no data available ... You have not been charged.”
+  // ir galīgs „datu nav” (nav iekasēts), nevis tehniska kļūda: citādi darbs krīt uz
+  // „Kļūda: http_206”, cron to atkārto 3x un jau saņemtā vēsture netiek ierakstīta.
+  // 206 bez šī teksta paliek „failed” (tukša atbilde ≠ vēstures nav).
+  if (
+    result.error === "http_206" &&
+    oneautoPayloadIsNoData(result.payload, result.message ?? "")
+  ) {
+    return "no_data";
+  }
   if (result.ok === true) return "ok";
   return "failed";
 }

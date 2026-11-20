@@ -299,6 +299,23 @@ describe("dealer auto paid products", () => {
     expect(dealerPaidOutcomeFromResult({ ok: true })).toBe("ok");
     expect(dealerPaidOutcomeFromResult({ ok: false, error: "no_data" })).toBe("no_data");
     expect(dealerPaidOutcomeFromResult({ ok: false, error: "api_unavailable" })).toBe("failed");
+    const noData206 = {
+      success: false,
+      result: null,
+      error: "There is no data available for this vehicle identification number.  You have not been charged.",
+    };
+    expect(
+      dealerPaidOutcomeFromResult({ ok: false, error: "http_206", payload: noData206 }),
+    ).toBe("no_data");
+    expect(
+      dealerPaidOutcomeFromResult({
+        ok: false,
+        error: "http_206",
+        payload: null,
+        message: "There is no data available for this vehicle identification number. You have not been charged.",
+      }),
+    ).toBe("no_data");
+    expect(dealerPaidOutcomeFromResult({ ok: false, error: "http_206", payload: null })).toBe("failed");
     expect(dealerAutoFetchHasTechnicalFail({ oe_vin_lookup: "ok", oe_service_history: "pending" })).toBe(
       "oe_service_history",
     );
