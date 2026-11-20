@@ -23,10 +23,26 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
           ))}
         </div>
       ) : null}
-      <div className="ap2-cl-price">
-        <div className="v">{s.priceEur == null ? "" : fmtEurRound(s.priceEur)}</div>
-        {s.vatNote ? <div className="n">{s.vatNote}</div> : null}
-      </div>
+      {s.state !== "normal" ? (
+        <>
+          {/* «Drīzumā»/«Rezervēts» (Nils 20.11, variants A): uzraksts cenas vietā, cena mazāk zem līnijām (izslēgta = D). */}
+          <div className={s.state === "reserved" ? "ap2-cl-price soon res" : "ap2-cl-price soon"}>
+            <div className="v">{s.state === "reserved" ? "REZERVĒTS" : "DRĪZUMĀ"}</div>
+            <div className="n">{s.state === "reserved" ? "auto ir rezervēts" : "auto tiek sagatavots pārdošanai"}</div>
+          </div>
+          {s.showPlannedPrice && s.priceEur != null ? (
+            <div className="ap2-cl-plan">
+              {s.state === "reserved" ? "Cena" : "Plānotā cena"} <b>{fmtEurRound(s.priceEur)}</b>
+              {s.vatNote ? <span> {s.vatNote}</span> : null}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="ap2-cl-price">
+          <div className="v">{s.priceEur == null ? "" : fmtEurRound(s.priceEur)}</div>
+          {s.vatNote ? <div className="n">{s.vatNote}</div> : null}
+        </div>
+      )}
       {s.rows.length > 0 ? (
         <>
           <div className="ap2-cl-lab">Tehniskie dati</div>
@@ -59,12 +75,16 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
                 <i />
                 <span>
                   <span>{r.present}</span>
-                  <span>{r.checked}</span>
+                  <span className={r.checked === "Gaida pārbaudi" ? "wait" : undefined}>{r.checked}</span>
                 </span>
               </div>
             ))}
           </div>
-          {s.roadworthy ? <p className="ap2-cl-ok">Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!</p> : null}
+          {s.roadworthy ? (
+            <p className="ap2-cl-ok">Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!</p>
+          ) : s.pendingCheck ? (
+            <p className="ap2-cl-note">Drošības sistēmu pārbaude tiks veikta pirms pārdošanas.</p>
+          ) : null}
         </>
       ) : null}
       <div className="ap2-cl-foot">

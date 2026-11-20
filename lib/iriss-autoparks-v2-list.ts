@@ -7,6 +7,7 @@
 
 import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { isTransitWithoutLogistics } from "@/lib/iriss-autoparks-transit";
+import { priceSheetState } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, v2RegistryStatus, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 
 export type AutoparksV2ListRow = {
@@ -35,6 +36,8 @@ export type AutoparksV2ListRow = {
   inTrade: boolean;
   /** P2 (Nils 20.11): glabātais statuss «Ceļā», bet aktīva Loģistikas ieraksta nav - brīdinājums, neko nemaina. */
   transitNoLogistics?: boolean;
+  /** Nils 20.11: cenu lapas stāvoklis «Drīzumā»/«Rezervēts» (nav arhīvā, nav pārdots); "" - parastā. */
+  priceSheetState?: "" | "soon" | "reserved";
 };
 
 /** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
@@ -71,6 +74,12 @@ export function sortAutoparksV2Rows(rows: readonly AutoparksV2ListRow[], sort: A
   });
 }
 
+function listPriceSheetState(car: AutoparksCar, carV2: ReturnType<typeof carV2Of>): "" | "soon" | "reserved" {
+  if (car.archivedAt || car.status === "sold") return "";
+  const st = priceSheetState(car, carV2);
+  return st === "normal" ? "" : st;
+}
+
 export function autoparksV2ListRows(
   cars: readonly AutoparksCar[],
   v2: AutoparksV2State,
@@ -97,6 +106,7 @@ export function autoparksV2ListRows(
       clientOrder: carV2.fields.clientOrder ? carV2.fields.clientOrder === "1" : Boolean(car.clientOrder),
       inTrade: v2RegistryStatus(car) === "accepted",
       transitNoLogistics: opts.activeLogistics ? isTransitWithoutLogistics(car, opts.activeLogistics) : false,
+      priceSheetState: listPriceSheetState(car, carV2),
     };
   });
 }

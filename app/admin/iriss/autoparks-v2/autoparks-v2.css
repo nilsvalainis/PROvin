@@ -5203,3 +5203,82 @@
 .ap2.ap2.ap2 .ap2-mst.ap2-nolog-badge {
   margin-left: 0;
 }
+
+/* ===== Cenu lapa «Drīzumā» (Nils 20.11, variants A): DRĪZUMĀ cenas vietā, plānotā cena zem līnijām. ===== */
+.ap2.ap2.ap2 .ap2-cl-price.soon .v {
+  font-weight: 300;
+  letter-spacing: 10px;
+  margin-right: -10px;
+}
+.ap2.ap2.ap2 .ap2-cl-price.soon .n {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  color: #2e2e33;
+}
+.ap2.ap2.ap2 .ap2-cl-plan {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 400;
+  color: #2a2a2e;
+}
+.ap2.ap2.ap2 .ap2-cl-plan b {
+  font-weight: 600;
+  color: #0e0e10;
+  font-size: 20px;
+  margin: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.ap2.ap2.ap2 .ap2-cl-plan span {
+  font-size: 10.5px;
+  color: #2e2e33;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .wait {
+  font-weight: 500;
+  font-style: italic;
+  color: #3a3a3f;
+}
+.ap2.ap2.ap2 .ap2-cl-note {
+  margin: 24px 0 0;
+  font-size: 10.5px;
+  font-weight: 500;
+  text-align: center;
+  color: #2e2e33;
+}
+.ap2.ap2.ap2 .ap2-cl-soonsel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+.ap2.ap2.ap2 .ap2-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: middle;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 0 9px;
+  background: #f5861f;
+  color: #0e0e10;
+  font-size: 11px;
+  font-weight: 600;
+}
+/* «REZERVĒTS» (9 burti) - mazāks, lai ietilpst 650 px platumā kā DRĪZUMĀ. */
+.ap2.ap2.ap2 .ap2-cl-price.soon.res .v {
+  font-size: 74px;
+  letter-spacing: 8px;
+  margin-right: -8px;
+}
+/* «Dati lapai» (Nils 20.11): katrai rindai Rādīt/Slēpt; paslēptā - pelēka. */
+.ap2.ap2.ap2 .ap2-cl-rowv {
+  grid-template-columns: 8px 1fr auto auto;
+}
+.ap2.ap2.ap2 .ap2-cl-rowv.off .k,
+.ap2.ap2.ap2 .ap2-cl-rowv.off .v {
+  opacity: 0.45;
+  text-decoration: line-through;
+}

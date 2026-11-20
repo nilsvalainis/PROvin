@@ -48,6 +48,7 @@ describe("Autoparks v2 saraksts", () => {
       "inTrade",
       "make",
       "owner",
+      "priceSheetState",
       "purchaseDate",
       "purchasePriceEur",
       "status",
@@ -121,5 +122,19 @@ describe("Autoparks v2 saraksts", () => {
     const r = autoparksV2ListRows(cars, v2).find((x) => x.id === "c")!;
     expect(r.title).toBe("BMW 220d Gran Tourer");
     expect(r.vin).toBe("WBA2A1234A1234567");
+  });
+});
+
+describe("Cenu lapas stāvokļa čips (Nils 20.11)", () => {
+  it("Drīzumā - nav akta; Rezervēts - statuss; pārdots un arhīvs bez čipa; manuālā izvēle uzvar", () => {
+    const list = [
+      { id: "s1", make: "Opel", model: "Astra", vin: "W0L00000000000002", status: "prep_waiting" },
+      { id: "s2", make: "Audi", model: "SQ5", vin: "WAUZZZ8R7EA126875", status: "for_sale", registry: { tradeActNo: "GDZ00218" } },
+      { id: "s3", make: "BMW", model: "X5", vin: "WBA00000000000001", status: "reserved" },
+      { id: "s4", make: "Audi", model: "A6", vin: "WAUZZZ4G6JN445566", status: "sold" },
+    ].map((c) => normalizeAutoparksCar(c)!);
+    const st = normalizeAutoparksV2State({ cars: { s2: { priceSheet: { sheetState: "reserved" } } } });
+    const r = autoparksV2ListRows(list, st);
+    expect(r.map((x) => x.priceSheetState)).toEqual(["soon", "reserved", "reserved", ""]);
   });
 });

@@ -190,8 +190,20 @@ export type AutoparksCarV2 = {
     listPriceEur: number | null;
     /** Drošības tabula cenu lapā (Nils 28.10); null = noklusējums "viss ir un pārbaudīts". */
     safety?: V2PriceSheetSafety | null;
+    /** Lapas stāvoklis (Nils 20.11): null/undefined = automātiski; citādi manuāla izvēle. */
+    sheetState?: V2PriceSheetState | null;
+    /** «Drīzumā»/«Rezervēts» lapā rādīt cenu (noklusējums - jā; false = variants D bez cenas). */
+    showPlannedPrice?: boolean | null;
+    /** «Dati lapai» rindu redzamība (Nils 20.11): atslēga -> rādīt/slēpt; nav atslēgas = noklusējums. */
+    rowVisibility?: Record<string, boolean>;
   };
 };
+
+export const V2_PRICE_SHEET_STATES = ["normal", "soon", "reserved"] as const;
+export type V2PriceSheetState = (typeof V2_PRICE_SHEET_STATES)[number];
+export function isV2PriceSheetState(v: unknown): v is V2PriceSheetState {
+  return typeof v === "string" && (V2_PRICE_SHEET_STATES as readonly string[]).includes(v);
+}
 
 export const V2_SAFETY_KEYS = ["esp", "eps", "abs", "airbags"] as const;
 export type V2SafetyKey = (typeof V2_SAFETY_KEYS)[number];
@@ -201,15 +213,30 @@ export type V2PriceSheetSafety = {
   roadworthy: boolean;
 };
 
-/** Noklusējums kā CSDD paraugā: visas sistēmas ir, pārbaudītas, apliecinājums ieķeksēts. */
+/**
+ * Noklusējums auto bez saglabātas drošības izvēles (Nils 20.11): sistēmas ir, bet NAV pārbaudītas,
+ * apliecinājums «tehniski atbilst» izslēgts - lapā nekad nav nepatiesa apgalvojuma. Saglabātos ierakstus neaiztiek.
+ */
 export function defaultV2PriceSheetSafety(): V2PriceSheetSafety {
-  const all = { present: true, checked: true };
-  return { items: { esp: { ...all }, eps: { ...all }, abs: { ...all }, airbags: { ...all } }, roadworthy: true };
+  const it = { present: true, checked: false };
+  return { items: { esp: { ...it }, eps: { ...it }, abs: { ...it }, airbags: { ...it } }, roadworthy: false };
+}
+
+function normalizeRowVisibility(raw: unknown): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  if (!isObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw)) {
+    if (/^[a-zA-Z0-9]{1,40}$/.test(k) && typeof v === "boolean") out[k] = v;
+    if (Object.keys(out).length >= 60) break;
+  }
+  return out;
 }
 
 export function normalizeV2PriceSheetSafety(raw: unknown): V2PriceSheetSafety | null {
   if (!isObj(raw)) return null;
-  const base = defaultV2PriceSheetSafety();
+  // Saglabātajiem ierakstiem trūkstošie lauki kā agrāk (viss ir un pārbaudīts) - veci ieraksti nemainās.
+  const all = { present: true, checked: true };
+  const base: V2PriceSheetSafety = { items: { esp: { ...all }, eps: { ...all }, abs: { ...all }, airbags: { ...all } }, roadworthy: true };
   const items = isObj(raw.items) ? raw.items : {};
   for (const k of V2_SAFETY_KEYS) {
     const it = isObj(items[k]) ? items[k] : {};
@@ -442,6 +469,9 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       salePriceEur: v2Num(ps.salePriceEur),
       listPriceEur: v2Num(ps.listPriceEur),
       safety: normalizeV2PriceSheetSafety(ps.safety),
+      sheetState: isV2PriceSheetState(ps.sheetState) ? ps.sheetState : null,
+      showPlannedPrice: typeof ps.showPlannedPrice === "boolean" ? ps.showPlannedPrice : null,
+      rowVisibility: normalizeRowVisibility(ps.rowVisibility),
     },
   };
 }

@@ -236,6 +236,13 @@ function purchaseDateLv(iso: string): string {
  * Saraksts (Nils 27.10 makets): katrs auto - sava kartīte. Visa kartīte ir saite uz kabinetu (izstiepta saite),
  * statusa izvēle un VIN kopēšana - virs tās. Statuss neitrāls, krāsa tikai punktā.
  */
+/** Nils 20.11: čips «Drīzumā»/«Rezervēts» - kurām cenu lapām logā jāmaina; «Rezervēts» nedublē statusu. */
+function PriceSheetStateBadge({ r }: { r: AutoparksV2ListRow }) {
+  if (r.priceSheetState === "soon") return <span className="ap2-soon-badge">Drīzumā</span>;
+  if (r.priceSheetState === "reserved" && r.status !== "reserved") return <span className="ap2-soon-badge">Rezervēts</span>;
+  return null;
+}
+
 export function AutoparksV2ListBody({
   rows,
   shown = null,
@@ -257,6 +264,7 @@ export function AutoparksV2ListBody({
               <b>
                 {r.title}
                 {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
+                <PriceSheetStateBadge r={r} />
               </b>
               {/* Telefonā (Nils 28.10, makets B): gads · krāsa · iegāde vienā rindā, apakšā neitrāls statuss + VIN. */}
               <span className="meta">{[yearColor(r.year, r.color), shown ? sortValueLabel(r, shown) : ""].filter(Boolean).join(" · ")}</span>
@@ -272,6 +280,7 @@ export function AutoparksV2ListBody({
               <b>
                 {r.title}
                 {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
+                <PriceSheetStateBadge r={r} />
                 {r.transitNoLogistics ? <span className="ap2-nolog-badge">{NO_LOGISTICS_LV}</span> : null}
               </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
