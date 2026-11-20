@@ -86,6 +86,7 @@ import {
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
 import { createIrissPdFromListing, irissPdHref } from "@/lib/iriss-pd-from-listing-client";
 import type { IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
+import type { IrissCommunicationEvent } from "@/lib/iriss-communication-timeline";
 import {
   clearIrissOrderBackup,
   formatIrissBackupTime,
@@ -334,6 +335,7 @@ export function IrissPasutijumsEditor({
   googleContactsConfigured: googleContactsConfiguredInitial = false,
   pdEntry = true,
   pdRows,
+  pdCommEvents,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -358,6 +360,8 @@ export function IrissPasutijumsEditor({
   pdEntry?: boolean;
   /** P4: šī klienta jaunie PD Piedāvājumu cilnē. */
   pdRows?: IrissPdListRow[];
+  /** Nils 20.11 (audits 4): PD notikumi «Komunikācija» laika joslā. */
+  pdCommEvents?: IrissCommunicationEvent[];
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -2281,6 +2285,7 @@ export function IrissPasutijumsEditor({
           onEditOffer={openEditOffer}
           onPrepareOffer={pdNew ? (hit) => void prepareOfferFromHit(hit) : openCreateOfferFromHit}
           pdRows={pdRows}
+          pdCommEvents={pdCommEvents}
           onLegacyToPd={pdNew && persistedIdRef.current ? (offer) => void legacyToPd(offer) : undefined}
           legacyToPdBusyId={legacyToPdBusyId}
           googleContactsConfigured={googleContactsConfigured}

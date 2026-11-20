@@ -81,6 +81,7 @@ import {
   newIrissCommunicationEvent,
   timelineFromPasutijums,
   type IrissCommFilter,
+  type IrissCommunicationEvent,
 } from "@/lib/iriss-communication-timeline";
 import { type IrissCommTypeFilter } from "@/lib/iriss-order-comm-view";
 import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
@@ -568,6 +569,7 @@ function replyHistoryRows(offers: IrissOfferRecord[], links: IrissOfferClientLin
 /** Stabili noklusējumi (nevis `= []` katrā renderī). */
 const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
 const EMPTY_PD_ROWS: IrissPdListRow[] = [];
+const EMPTY_PD_COMM: IrissCommunicationEvent[] = [];
 const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
 const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
 
@@ -941,6 +943,7 @@ export function IrissOrderRoom({
   albumBusy = false,
   onMarketplaceLoaded,
   pdRows = EMPTY_PD_ROWS,
+  pdCommEvents = EMPTY_PD_COMM,
   onLegacyToPd,
   legacyToPdBusyId = "",
 }: {
@@ -998,6 +1001,8 @@ export function IrissOrderRoom({
   onMarketplaceLoaded?: () => void | Promise<void>;
   /** P4: šī klienta jaunie PD (sadaļa «Piedāvājumi») - sarakstā pirms vecajiem. */
   pdRows?: IrissPdListRow[];
+  /** Nils 20.11 (audits 4): jaunās PD sistēmas notikumi laika joslā. */
+  pdCommEvents?: IrissCommunicationEvent[];
   /** P4 (3A): «Jauns PD uz šī bāzes» no vecā /p/ piedāvājuma. */
   onLegacyToPd?: (offer: IrissOfferRecord) => void;
   legacyToPdBusyId?: string;
@@ -1190,7 +1195,7 @@ export function IrissOrderRoom({
     hasVin: Boolean(rec.vin.trim()),
     listStatus: rec.listStatus,
   });
-  const commTimeline = timelineFromPasutijums(rec, offerLinks);
+  const commTimeline = timelineFromPasutijums(rec, offerLinks, pdCommEvents);
   const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
   const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
   const latestContract = [...generatedDocs].filter((d) => d.kind === "contract").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;

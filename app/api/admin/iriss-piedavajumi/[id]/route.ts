@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import {
   appendIrissPdHistory,
   applyIrissPdAction,
+  applyIrissPdCancel,
   applyIrissPdPatch,
+  irissPdReservedCar,
   isIrissPdEditable,
   type IrissPdAction,
   type IrissPdPatch,
@@ -11,7 +13,7 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { irissPdFactsFromAutoparks } from "@/lib/iriss-piedavajumi-facts";
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
-import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
+import { runIrissPdApprovalEffects, runIrissPdCancelEffects } from "@/lib/iriss-piedavajumi-approve";
 import { applyIrissPdAdminNote, setIrissPdNoteVisibility, setIrissPdQuestionAnswered } from "@/lib/iriss-piedavajumi-messages";
 import {
   claimIrissPdDecision,
@@ -92,7 +94,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
  * | reopen (noraidīto atkal dara pieejamu klientam) | note { text } (iekšēja piezīme pie klienta ziņām)
  * | question-answered { messageId, answered } (klienta jautājums atbildēts / atkal neatbildēts)
  * | equipment-summary { force?, confirm? } (komplektācijas kopsavilkums ar AI)
- * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās).
+ * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās)
+ * | cancel { text? } (Nils 20.11: apstiprinātā darījuma atcelšana - tikai administrators; auto «Pārdošanā», pasūtījums «Aktīvs»).
  * P4: darbinieks - tikai savam PD un tikai IRISS_PD_STAFF_ACTIONS + piezīmes, jautājumi, kopsavilkums, imports.
  */
 const STAFF_EXTRA_ACTIONS = new Set(["import", "fill-from-stock", "note", "note-visibility", "question-answered", "equipment-summary"]);
@@ -220,6 +223,16 @@ export async function POST(req: Request, { params }: Ctx) {
       { ...fresh, equipmentSummaryLv: res.summary, updatedAt: at },
       { at, by, text: body.force === true ? "Komplektācijas kopsavilkums pārģenerēts" : "Komplektācijas kopsavilkums sagatavots" },
     );
+    if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
+  }
+
+  if (action === "cancel") {
+    if (viewer.kind !== "admin") return fail(403, "forbidden", "Darījumu atceļ administrators.");
+    const carWasReserved = irissPdReservedCar(rec);
+    const res = applyIrissPdCancel(rec, { by, at, reason: typeof body.text === "string" ? body.text : "" });
+    if (!res.ok) return fail(409, "rejected", res.error);
+    const next = await runIrissPdCancelEffects(res.record, { at, by, carWasReserved });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: out(next) }, { headers: noStore });
   }

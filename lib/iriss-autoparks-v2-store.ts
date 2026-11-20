@@ -161,6 +161,17 @@ async function pushStatusHistory(
   return row;
 }
 
+/** Nils 20.11 (audits 3): «Pārdots» <-> pasūtījums «Izpildīts» (automātiski, kļūda neaptur statusa maiņu). */
+async function syncSoldOrders(carId: string, from: string, to: string, actor: AutoparksV2Actor): Promise<void> {
+  if (from !== "sold" && to !== "sold") return;
+  try {
+    const { syncIrissOrdersAfterCarStatusById } = await import("@/lib/iriss-autoparks-sold-orders");
+    await syncIrissOrdersAfterCarStatusById(carId, from, to, actor);
+  } catch (e) {
+    console.error("[iriss-autoparks] sold sync", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function changeAutoparksStatusV2(
   carId: string,
   status: unknown,
@@ -172,6 +183,7 @@ export async function changeAutoparksStatusV2(
   const res = await setV1StatusIf(carId, status, null, actor);
   if (!res.ok) return res;
   const row = await pushStatusHistory(carId, actor, res.prev, status, res.archiveText);
+  await syncSoldOrders(carId, res.prev, status, actor);
   return { ok: true, historyId: row.id, status, archived: res.archived };
 }
 
@@ -191,6 +203,7 @@ export async function restoreAutoparksCarV2(
     state.history.push(v2HistoryRow(carId, actor, V2_ARCHIVE_HISTORY_FIELD, "", AUTOPARKS_ARCHIVE_RESTORED_TEXT));
     return { result: null };
   });
+  if (res.statusChanged) await syncSoldOrders(carId, res.prevStatus, res.car.status, actor);
   return { ok: true, status: res.car.status };
 }
 
@@ -212,6 +225,23 @@ export async function reserveAutoparksCarAfterOffer(
   return { ok: true, prev: res.prev };
 }
 
+/**
+ * Nils 20.11 (audits 1): apstiprinātā PD darījums atcelts -> auto atpakaļ «Pārdošanā», tikai ja tas joprojām «Rezervēts»
+ * (citādi kāds jau mainīja statusu ar roku - nepārrakstām). Nosacīta maiņa, vēsturē statusa rinda.
+ */
+export async function releaseAutoparksCarAfterOfferCancel(
+  carId: string,
+  actor: AutoparksV2Actor,
+): Promise<{ ok: true } | { ok: false; reason: "not_found" | "conflict" | "same" | "not_reserved"; status?: AutoparksStatus }> {
+  const car = (await readAutoparksState()).cars.find((c) => c.id === carId);
+  if (!car) return { ok: false, reason: "not_found" };
+  if (car.status !== "reserved") return { ok: false, reason: "not_reserved", status: car.status };
+  const res = await setV1StatusIf(carId, "for_sale", "reserved", actor);
+  if (!res.ok) return res;
+  await pushStatusHistory(carId, actor, res.prev, "for_sale", res.archiveText);
+  return { ok: true };
+}
+
 export async function undoAutoparksStatusV2(
   carId: string,
   historyId: string,
@@ -231,6 +261,7 @@ export async function undoAutoparksStatusV2(
   const res = await setV1StatusIf(carId, decision.revertTo, decision.row.to as AutoparksStatus, actor);
   if (!res.ok) return { ok: false, reason: res.reason === "same" ? "changed" : res.reason === "conflict" ? "changed" : res.reason };
   await pushStatusHistory(carId, actor, decision.row.to as AutoparksStatus, decision.revertTo, res.archiveText, { undoOf: decision.row.id });
+  await syncSoldOrders(carId, decision.row.to, decision.revertTo, actor);
   return { ok: true, status: decision.revertTo };
 }
 
