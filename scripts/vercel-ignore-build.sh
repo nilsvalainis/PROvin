@@ -6,9 +6,10 @@
 #   - būvē TIKAI zars "main" (production) un zari "pakete/*" (paketes preview);
 #   - visi citi zari (aģentu feat/fix/chore/docs, backup/* u.c.) - izlaists.
 #   PR pārbaudi (vitest + next build) dara GitHub Actions (.github/workflows/ci.yml).
-#   - main: ja mainīti tikai docs/ vai *.md faili - arī izlaists (taupība).
+#   - main: ja mainīti tikai faili, kas neietekmē vietni (docs, *.md, testi, relay/, servera skripti,
+#     CI/aģentu konfigurācija) - arī izlaists (taupība, 20.11).
 
-# Atgriež 0, ja VISI mainītie faili ir docs/ vai *.md; citādi 1 (arī kļūdas gadījumā).
+# Atgriež 0, ja VISI mainītie faili neietekmē Vercel būvi; citādi 1 (arī kļūdas gadījumā).
 only_docs_changed() {
   local prev="${VERCEL_GIT_PREVIOUS_SHA:-}"
   [ -n "$prev" ] || { echo "nav VERCEL_GIT_PREVIOUS_SHA"; return 1; }
@@ -21,7 +22,7 @@ only_docs_changed() {
   [ -n "$files" ] || return 1
   while IFS= read -r f; do
     case "$f" in
-      docs/*|*.md) ;;
+      docs/*|*.md|*.test.ts|*.test.tsx|*.test.mjs|vitest.config.ts|relay/*|scripts/iriss-ttr/*|.github/*|.claude/*|.cursor/*) ;;
       *) echo "koda fails mainīts: $f"; return 1 ;;
     esac
   done <<< "$files"
@@ -39,7 +40,7 @@ fi
 case "$REF" in
   main)
     if only_docs_changed; then
-      echo "main: mainīti tikai docs/*.md - build izlaists (taupība)"
+      echo "main: mainīti tikai ne-vietnes faili - build izlaists (taupība)"
       exit 0
     fi
     echo "main: build notiek"
