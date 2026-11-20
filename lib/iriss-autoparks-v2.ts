@@ -215,12 +215,13 @@ export type V2PriceSheetSafety = {
 };
 
 /**
- * Noklusējums auto bez saglabātas drošības izvēles (Nils 20.11): sistēmas ir, bet NAV pārbaudītas,
- * apliecinājums «tehniski atbilst» izslēgts - lapā nekad nav nepatiesa apgalvojuma. Saglabātos ierakstus neaiztiek.
+ * Noklusējums auto bez saglabātas drošības izvēles (Nils 20.11): sistēmas ir, bet NAV pārbaudītas.
+ * Apliecinājums «tehniski atbilst» ieslēgts tikai auto, kas pieņemts tirdzniecībā (`acceptedForTrade`, CSDD akts);
+ * nepieņemtam - izslēgts (lapā «Drīzumā», bez nepatiesa apgalvojuma). Saglabātā izvēle vienmēr uzvar.
  */
-export function defaultV2PriceSheetSafety(): V2PriceSheetSafety {
+export function defaultV2PriceSheetSafety(acceptedForTrade = false): V2PriceSheetSafety {
   const it = { present: true, checked: false };
-  return { items: { esp: { ...it }, eps: { ...it }, abs: { ...it }, airbags: { ...it } }, roadworthy: false };
+  return { items: { esp: { ...it }, eps: { ...it }, abs: { ...it }, airbags: { ...it } }, roadworthy: acceptedForTrade };
 }
 
 function normalizeRowVisibility(raw: unknown): Record<string, boolean> {

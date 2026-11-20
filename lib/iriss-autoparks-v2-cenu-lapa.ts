@@ -197,7 +197,8 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
   const equipmentLine = ps.equipmentLine || car.equipmentLine || "";
   const listPriceEur = ps.listPriceEur ?? car.listPriceEur ?? ps.salePriceEur ?? car.salePriceEur ?? null;
   const vatMode = v2.purchase.vat.mode;
-  const safetyState = ps.safety ?? defaultV2PriceSheetSafety();
+  // Bez saglabātas izvēles: pieņemtam tirdzniecībā «tehniski atbilst» ieslēgts (Nils 20.11); saglabātā izvēle uzvar.
+  const safetyState = ps.safety ?? defaultV2PriceSheetSafety(hasTradeAct(car.registry));
   const allRows = priceSheetAllRows(car, basics, ps.rowVisibility ?? {});
   const stateAuto = priceSheetStateAuto(car);
   const state = priceSheetState(car, v2);

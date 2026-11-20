@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
 import { autoparksV2Basics, emptyCarV2, normalizeCarV2, normalizeV2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2PriceSheet, engineLabel, priceSheetHighlights, priceSheetHighlightsLine, priceSheetTitlePx } from "@/lib/iriss-autoparks-v2-cenu-lapa";
-import { renderText } from "@/lib/test-render";
+import { renderHtml, renderText } from "@/lib/test-render";
 import { A4Sheet } from "@/components/admin/iriss-autoparks-v2/A4Sheet";
+import { SafetyTable } from "@/components/admin/iriss-autoparks-v2/AutoparksV2CenuLapa";
 
 describe("Cenu lapa L7 (Nils 27.10)", () => {
   const car = normalizeAutoparksCar({
@@ -36,7 +37,7 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     expect(labels).not.toContain("Izmešu daudzums (CO2)");
     expect(labels).not.toContain("Transportlīdzekļa veids");
     expect(s.rows.find((r) => r.label === "Pilna masa")?.value).toBe("2 530 kg");
-    // Nils 28.10: drošības tabula vienmēr; spilveni pēdējie. Nils 20.11: bez saglabātas izvēles - "Nav pārbaudīts", bez apliecinājuma.
+    // Nils 28.10: drošības tabula vienmēr; spilveni pēdējie. Nils 20.11: bez saglabātas izvēles - "Nav pārbaudīts"; pieņemtam tirdzniecībā apliecinājums ieslēgts.
     expect(s.safetyRows.map((r) => r.label)).toEqual([
       "Elektroniskā stabilitātes sistēma (ESP)",
       "Elektriskais stūres pastiprinātājs (EPS)",
@@ -44,7 +45,7 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
       "Drošības spilveni",
     ]);
     expect(s.safetyRows[2]).toEqual({ label: "Bremžu antibloķēšanas sistēma (ABS)", present: "Ir", checked: "Nav pārbaudīts" });
-    expect(s.roadworthy).toBe(false);
+    expect(s.roadworthy).toBe(true);
     expect(s.state).toBe("normal");
     expect(s.highlights).toEqual(["ACC DISTRONIC", "LANE ASSIST", "QUATTRO"]);
     expect(s.priceEur).toBe(17900);
@@ -79,7 +80,7 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     expect(text).toContain("GDZ00218");
     expect(text).toContain("+371 277 33 440");
     expect(text).not.toContain("DRĪZUMĀ");
-    expect(text).not.toContain("tehniski atbilst");
+    expect(text).toContain("tehniski atbilst");
     expect(text).not.toContain("cena ar PVN");
   });
 });
@@ -317,5 +318,42 @@ describe("Cenu lapa - tirdzniecībā pieņemts un «Dati lapai» (Nils 20.11)", 
     expect(s2.rows).toContainEqual({ label: "Reģistrācijas numurs", value: "AB1234" });
     expect(s2.rows.map((r) => r.label)).not.toContain("Tirdzniecībā pieņemts");
     expect(normalizeCarV2({ priceSheet: { rowVisibility: { plate: true, "x y": true, vin: "1" } } }).priceSheet.rowVisibility).toEqual({ plate: true });
+  });
+});
+
+describe("Cenu lapa - «tehniski atbilst» noklusējums pieņemtam tirdzniecībā (Nils 20.11)", () => {
+  const base = { make: "Skoda", model: "Superb", vin: "TMBJH7NP0J7001122", status: "for_sale", listPriceEur: 14990 } as const;
+  const accepted = normalizeAutoparksCar({ ...base, id: "ta", registry: { tradeActNo: "GDZ00301", importedAt: "x" } })!;
+  const notAccepted = normalizeAutoparksCar({ ...base, id: "tn" })!;
+  const sheet = (car: typeof accepted, v2 = emptyCarV2()) => autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+  const roadBox = (html: string) => /<input type="checkbox"[^>]*>\s*<span>Apliecinu, ka transportlīdzeklis/.exec(html)?.[0] ?? "";
+
+  it("pieņemts bez saglabātas izvēles -> ieķeksēts redaktorā un teikums lapā; sistēmas paliek «nav pārbaudītas»", () => {
+    const s = sheet(accepted);
+    expect(s.roadworthy).toBe(true);
+    expect(s.safetyState.roadworthy).toBe(true);
+    expect(Object.values(s.safetyState.items).every((it) => it.present && !it.checked)).toBe(true);
+    expect(roadBox(renderHtml(<SafetyTable state={s.safetyState} onChange={() => {}} />))).toContain("checked");
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
+    expect(text).not.toContain("DRĪZUMĀ");
+  });
+
+  it("nepieņemts -> neieķeksēts, lapā Drīzumā bez teikuma", () => {
+    const s = sheet(notAccepted);
+    expect(s.roadworthy).toBe(false);
+    expect(roadBox(renderHtml(<SafetyTable state={s.safetyState} onChange={() => {}} />))).not.toContain("checked");
+    const text = renderText(<A4Sheet s={s} />);
+    expect(text).toContain("DRĪZUMĀ");
+    expect(text).not.toContain("tehniski atbilst");
+  });
+
+  it("pieņemtam ar roku izslēgts -> paliek izslēgts", () => {
+    const v2 = emptyCarV2();
+    v2.priceSheet.safety = { ...sheet(accepted).safetyState, roadworthy: false };
+    const s = sheet(accepted, v2);
+    expect(s.roadworthy).toBe(false);
+    expect(roadBox(renderHtml(<SafetyTable state={s.safetyState} onChange={() => {}} />))).not.toContain("checked");
+    expect(renderText(<A4Sheet s={s} />)).not.toContain("tehniski atbilst");
   });
 });
