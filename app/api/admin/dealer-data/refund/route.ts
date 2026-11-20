@@ -118,6 +118,9 @@ export async function POST(req: Request) {
       kind: "credit",
     };
     const persisted = await writeDealerDataJob({
+      // Saglabā kļūdu, trigeri un maksas rezultātus (oneautoResults), lai atkārtota
+      // ielase neiekasētu vēlreiz un adminā redzams iemesls.
+      ...(job ?? {}),
       sessionId,
       vin: job?.vin ?? draft?.orderEdits?.vin ?? "",
       status: job?.status ?? "no_data",
@@ -202,6 +205,9 @@ export async function POST(req: Request) {
 
   const now = new Date().toISOString();
   const persisted = await writeDealerDataJob({
+    // Saglabā kļūdu, trigeri un maksas rezultātus (oneautoResults), lai atkārtota
+    // ielase neiekasētu vēlreiz un adminā redzams iemesls.
+    ...(job ?? {}),
     sessionId,
     vin: job?.vin ?? "",
     status: job?.status ?? "no_data",

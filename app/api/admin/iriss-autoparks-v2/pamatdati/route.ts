@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { isAutoparksOwner } from "@/lib/iriss-autoparks";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
-import { createAutoparksCar, readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { createAutoparksCarDedup, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2ListRows } from "@/lib/iriss-autoparks-v2-list";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -43,7 +43,8 @@ export async function POST(req: Request) {
     if (!order) return autoparksV2Json({ error: "no_logistics" }, 409);
     orderId = order.id;
   }
-  const car = await createAutoparksCar(
+  // Bugfix 20.11: auto jau Autoparkā (VIN, arī v2 / saīsināts) - atgriež esošā id, dublikātu neveido.
+  const { car, created, matchedBy } = await createAutoparksCarDedup(
     {
       orderId,
       make: t("make"),
@@ -56,6 +57,6 @@ export async function POST(req: Request) {
     },
     { id: gate.actorId, name: gate.actorName },
   );
-  after(() => linkAutoparksCarToDropbox(car.id));
-  return autoparksV2Json({ ok: true, id: car.id });
+  if (created) after(() => linkAutoparksCarToDropbox(car.id));
+  return autoparksV2Json({ ok: true, id: car.id, existing: !created, matchedBy });
 }

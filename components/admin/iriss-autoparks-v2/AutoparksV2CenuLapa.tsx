@@ -13,6 +13,7 @@ import { fmtEurRound } from "@/lib/iriss-autoparks-v2-format";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { A4Sheet } from "./A4Sheet";
 import { ap2PatchJson } from "./ap2-save";
+import { PrintA4Button } from "./PrintButton";
 
 type Key = "displayName" | "listPriceEur";
 
@@ -27,6 +28,7 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState<(() => void) | null>(null);
   const api = `/api/admin/iriss-autoparks-v2/cenu-lapa/${encodeURIComponent(carId)}`;
+  const sheetHref = `/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`;
 
   useEffect(() => {
     let live = true;
@@ -105,9 +107,9 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
             Pārdots - nedrukā
           </button>
         ) : (
-          <a className="ap2-btn dark ap2-a4btn ap2-cl-printm" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
-            Priekšskatīt un drukāt A4
-          </a>
+          <PrintA4Button className="ap2-btn dark ap2-a4btn ap2-cl-printm" href={sheetHref}>
+            Drukāt A4
+          </PrintA4Button>
         )}
         <div className="ap2-card">
           <h3>Cenu lapa</h3>
@@ -189,7 +191,14 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
             <div key={r.key} className={`ap2-f ap2-cl-rowv ${r.shown ? "" : "off"}`}>
               <i className={r.csdd ? "ap2-cd on" : "ap2-cd"} />
               <span className="k">{r.label}</span>
-              <span className="v mut">{r.value}</span>
+              {r.value.trim() ? (
+                <span className="v mut">{r.value}</span>
+              ) : (
+                // Obligāts, bet tukšs (Nils 20.11): sarkans «Trūkst» ar saiti uz Pamatdatiem; A4 lapā rindu nerāda.
+                <a className="v ap2-cl-miss" href="?t=pamatdati">
+                  Trūkst
+                </a>
+              )}
               <button
                 type="button"
                 className="iriss-btn iriss-btn--secondary iriss-btn--sm"
@@ -228,9 +237,9 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
             </button>
           </>
         ) : (
-          <a className="ap2-btn dark ap2-a4btn" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">
+          <PrintA4Button className="ap2-btn dark ap2-a4btn" href={sheetHref}>
             Drukāt A4
-          </a>
+          </PrintA4Button>
         )}
         <div className="ap2-cl-prev">
           <A4Sheet s={s} />

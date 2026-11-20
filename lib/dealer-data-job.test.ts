@@ -232,6 +232,62 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(generateSourceCommentWithAi.mock.calls[0]![0]).toMatchObject({ outputLang: "source" });
   });
 
+  it("OE vēsture HTTP 206 „no data available” = no_data, nevis kļūda", async () => {
+    fetchOneautoProducts.mockResolvedValue({
+      costEur: "0.00",
+      results: {
+        oe_service_history: {
+          ok: false,
+          error: "http_206",
+          httpStatus: 206,
+          payload: {
+            success: false,
+            result: null,
+            error: "There is no data available for this vehicle identification number.  You have not been charged.",
+          },
+        },
+      },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r).toMatchObject({ ok: true, status: "no_data" });
+    expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
+    expect(refundB2bWalletOrderIfNoData).toHaveBeenCalledWith(SESSION);
+  });
+
+  it("VIN Lookup HTTP 206 neaptur vēstures ierakstu - darbs pabeigts", async () => {
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: { oe_service_history: { ok: true, payload: historyPayload() } },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.00",
+        results: {
+          oe_vin_lookup: {
+            ok: false,
+            error: "http_206",
+            httpStatus: 206,
+            payload: {
+              success: false,
+              result: null,
+              error: "There is no data available for this vehicle identification number.  You have not been charged.",
+            },
+          },
+        },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r).toMatchObject({ ok: true, status: "done" });
+    expect(patchOrderDraft).toHaveBeenCalled();
+    const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+    expect(last).toMatchObject({
+      status: "done",
+      paidOutcomes: { oe_service_history: "ok", oe_vin_lookup: "no_data" },
+    });
+  });
+
   it("OE vēstures no_data neatver VIN Lookup un neatgriež Decoder", async () => {
     fetchOneautoProducts.mockResolvedValue({
       costEur: "0.00",
