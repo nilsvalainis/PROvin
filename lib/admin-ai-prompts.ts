@@ -125,6 +125,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow web search to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and already generated comments; state conflicts clearly for the client.
+- FIRST REGISTRATION: „Pirmā reģistrācija” = earliest in ANY country (date/country only from KANONISKIE FAKTI). Later national ones („Pirmā reģistrācija Latvijā/Somijā”) are not the car's first registration; never mix dates; never „pasaulē”.
 
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
 

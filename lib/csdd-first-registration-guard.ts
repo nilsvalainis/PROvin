@@ -8,7 +8,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
-import { ownerFirstRegistrationInLatvia } from "@/lib/csdd-extended-parse";
+import { isoDateToLvDisplay, ownerFirstRegistrationInLatvia } from "@/lib/csdd-extended-parse";
 
 export type CsddFirstRegWarning = {
   id: string;
@@ -80,16 +80,17 @@ export function collectWorkspaceRecordDates(blocks: WorkspaceSourceBlocks): stri
 }
 
 /**
- * Pēc parse / Copilot: rāda adminam, ja pirmā reģistrācija pasaulē ir pretrunā ar datiem.
+ * Pēc parse / Copilot: rāda adminam, ja pirmā reģistrācija (agrākā jebkurā valstī) ir pretrunā ar datiem.
  * Neslabo laukus.
  */
 export function collectCsddFirstRegistrationWarnings(args: {
   csdd: CsddFormFields;
   otherRecordDates?: string[];
 }): CsddFirstRegWarning[] {
-  const first = args.csdd.firstRegistration.trim();
-  if (!first) return [];
-  const firstMs = dateMs(first);
+  const firstRaw = args.csdd.firstRegistration.trim();
+  if (!firstRaw) return [];
+  const firstMs = dateMs(firstRaw);
+  const first = isoDateToLvDisplay(firstRaw);
   const firstLv = resolveCsddFirstRegistrationLatvia(args.csdd);
   const prevCountry = args.csdd.previousRegistrationCountry.trim();
   const out: CsddFirstRegWarning[] = [];
@@ -108,29 +109,29 @@ export function collectCsddFirstRegistrationWarnings(args: {
     if (ms <= 0) continue;
     if (earliestMs <= 0 || ms < earliestMs) {
       earliestMs = ms;
-      earliestRaw = raw.trim();
+      earliestRaw = isoDateToLvDisplay(raw.trim());
     }
   }
   if (firstMs > 0 && earliestMs > 0 && firstMs > earliestMs) {
     out.push({
       id: "FR1",
-      message: `Pirmā reģistrācija (pasaulē) ${first} ir vēlāka par agrāko ierakstu avotos (${earliestRaw}).`,
+      message: `Pirmā reģistrācija ${first} ir vēlāka par agrāko ierakstu avotos (${earliestRaw}).`,
     });
   }
 
   const modelYear = yearOf(args.csdd.modelYear);
-  const firstYear = yearOf(first);
+  const firstYear = yearOf(firstRaw);
   if (modelYear != null && firstYear != null && Math.abs(firstYear - modelYear) > 1) {
     out.push({
       id: "FR2",
-      message: `Pirmā reģistrācija (pasaulē) ${first} atšķiras no izlaiduma gada ${modelYear} vairāk nekā par 1 gadu.`,
+      message: `Pirmā reģistrācija ${first} atšķiras no izlaiduma gada ${modelYear} vairāk nekā par 1 gadu.`,
     });
   }
 
-  if (prevCountry && firstLv && sameDay(first, firstLv)) {
+  if (prevCountry && firstLv && sameDay(firstRaw, firstLv)) {
     out.push({
       id: "FR3",
-      message: `Ir iepriekšējās reģistrācijas valsts (${prevCountry}), tāpēc pirmā reģistrācija Latvijā (${firstLv}) nevar būt pirmā reģistrācija pasaulē.`,
+      message: `Ir iepriekšējās reģistrācijas valsts (${prevCountry}), tāpēc pirmā reģistrācija Latvijā (${isoDateToLvDisplay(firstLv)}) nevar būt auto pirmā reģistrācija.`,
     });
   }
 

@@ -54,6 +54,8 @@ function linesOf(text: string): string[] {
     .filter((line) => line.length > 0 && !/^Page \d+ of \d+$/i.test(line));
 }
 
+const NL_FIRST_REGISTRATION_EVENT = "Pirmā reģistrācija Nīderlandē";
+
 export function looksLikeFinnikReport(text: string): boolean {
   return /finnik\.nl|kilometerstand gerapporteerd|apk gekeurd/i.test(text);
 }
@@ -378,7 +380,8 @@ export function parseFinnikReport(text: string): FinnikParsedReport | null {
   for (const date of dates) {
     const item = days.get(date)!;
     const cards: { event: string; odometer: string }[] = [];
-    if (item.first) cards.push({ event: "Pirmā reģistrācija", odometer: "" });
+    // „Eerste toelating nationaal” ir pirmā reģistrācija Nīderlandē, ne auto pirmā reģistrācija vispār (21.11).
+    if (item.first) cards.push({ event: NL_FIRST_REGISTRATION_EVENT, odometer: "" });
     if (item.owner) cards.push({ event: `Īpašnieks: ${item.owner}`, odometer: "" });
     if (item.apk) cards.push({ event: "Tehniskā apskate", odometer: "" });
     if (item.exported) cards.push({ event: "Eksportēts", odometer: "" });
@@ -386,7 +389,7 @@ export function parseFinnikReport(text: string): FinnikParsedReport | null {
       cards.find((card) => card.event === "Tehniskā apskate") ??
       cards.find((card) => card.event.startsWith("Īpašnieks")) ??
       cards.find((card) => card.event === "Eksportēts") ??
-      cards.find((card) => card.event === "Pirmā reģistrācija");
+      cards.find((card) => card.event === NL_FIRST_REGISTRATION_EVENT);
     if (item.km && host) host.odometer = item.km;
     else if (item.km) cards.push({ event: "Nobraukums reģistrā", odometer: item.km });
     for (const card of cards) {

@@ -125,7 +125,12 @@ const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
 const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek(?!(?:u|a)\s+maiņ)/gi;
 const OWNER_CHANGE_RE = /(\d{1,2})\s+īpašnieku\s+maiņ/gi;
-const FIRST_REG_LV_RE = /pirmā\s+reģistrācija.{0,40}latvij/i;
+/**
+ * 21.11 (Nils): „Pirmā reģistrācija Latvijā” ir pareizs nosaukums arī importētam auto - tā nav pretruna.
+ * Pretruna ir apgalvojums, ka auto pirmā reģistrācija (izcelsme) vispār ir Latvijā.
+ */
+const FIRST_REG_LV_RE =
+  /pirmā\s+reģistrācija\s*(?:[:\-–]|\bir\b|\bbija\b)\s*[^.\n]{0,30}latvij|izcelsmes\s+valst.{0,20}latvij|pirmo\s+reizi\s+reģistrēt\w*\s+latvijā|(?:jauns|no\s+jauna)\s+(?:iegādāt\w*\s+)?latvijā/i;
 const FIRST_REG_DE_RE = /pirmā\s+reģistrācija.{0,40}vācij|izcelsmes\s+valst.{0,20}vācij/i;
 const ATSAVINASANAI_RE = /atsavināšanai/i;
 const LEAK_PHRASES: Array<{ re: RegExp; id: string; label: string }> = [
@@ -445,12 +450,13 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   const iso = (facts.firstReg.countryIso || "").toUpperCase();
   const originDe = countryLv.includes("vācij") || iso === "DE";
   const originLv = countryLv.includes("latvij") || iso === "LV";
-  if (originDe && FIRST_REG_LV_RE.test(text)) {
+  const originForeign = originDe || (Boolean(iso) && iso !== "LV");
+  if (originForeign && FIRST_REG_LV_RE.test(text)) {
     push({
       id: "first_reg_country",
       kind: "first_reg_country",
       level: "E",
-      message: `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || "DE"}, teksts saka Latviju.`,
+      message: `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || iso || "DE"}, teksts saka Latviju.`,
       sentence: firstMatchingSentence(sentences, FIRST_REG_LV_RE),
     });
   }

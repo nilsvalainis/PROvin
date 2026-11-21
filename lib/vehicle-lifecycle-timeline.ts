@@ -34,7 +34,13 @@ import {
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
-import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  countryIsoFromLvLocative,
+  countryLabelToIso2,
+  countryNameLvLocative,
+  iso2ToLvDisplayName,
+  normalizeCountryNameLv,
+} from "@/lib/country-names-lv";
 import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
 import { capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import {
@@ -63,6 +69,9 @@ import {
 } from "@/lib/csdd-extended-parse";
 
 export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
+
+/** Vienīgā kartīte ar šo nosaukumu: auto agrākā reģistrācija jebkurā valstī. */
+export const FIRST_REGISTRATION_TITLE = "Pirmā reģistrācija";
 
 export type LifecycleEventKind =
   | "first_registration"
@@ -116,6 +125,11 @@ export type LifecycleEvent = {
    * Reģistra hronoloģija (tjekbil / Finnik / Traficom u.c.) šo karogu nesaņem.
    */
   timelineInformational?: boolean;
+  /**
+   * Valsts nacionālā (pirmā) reģistrācija - „Reģistrācija Somijā”, „Reģistrācija Latvijā”.
+   * Nav auto pirmā reģistrācija; kļūst par to tikai, ja agrākas reģistrācijas nav (`resolveFirstRegistration`).
+   */
+  nationalRegistration?: boolean;
 };
 
 /** Valsts no sludinājuma vai laikposma tabulas - rāda, bet nešķērso robežu pret stipro ķēdi. */
@@ -262,6 +276,7 @@ function makeEvent(args: {
   tone?: LifecycleEventTone;
   countryUnverified?: boolean;
   timelineInformational?: boolean;
+  nationalRegistration?: boolean;
 }): LifecycleEvent {
   const ms = parseLifecycleTimeMs(args.rawDate);
   const ev: LifecycleEvent = {
@@ -278,6 +293,7 @@ function makeEvent(args: {
     tone: args.tone ?? "info",
     ...(args.countryUnverified ? { countryUnverified: true } : null),
     ...(args.timelineInformational ? { timelineInformational: true } : null),
+    ...(args.nationalRegistration ? { nationalRegistration: true } : null),
   };
   collapseCountryOnlyDetail(ev);
   return ev;
@@ -368,9 +384,27 @@ function pushCcVinStyleHistory(
   }
 }
 
+/**
+ * 21.11 (Nils): „Pirmā reģistrācija Somijā / Latvijā / Nīderlandē” ir valsts nacionālā reģistrācija,
+ * ne auto pirmā reģistrācija vispār. Atgriež lokatīvu („Somijā”), ja teksts ir tieši šāda frāze.
+ */
+export function nationalFirstRegistrationLocative(description: string): string {
+  const t = description.trim().replace(/[.:;]+$/, "");
+  const m = t.match(/^(?:pirm\S*\s+)?reģistrācij\S*\s+(ASV|Apvienotajā\s+Karalistē|\p{L}+[āē])$/iu);
+  if (!m) return "";
+  const word = m[1]!;
+  if (!countryIsoFromLvLocative(word)) return "";
+  return word.charAt(0).toLocaleUpperCase("lv") + word.slice(1);
+}
+
+/** Pirmā reģistrācija vispār (jebkurā valstī): „Pirmā reģistrācija”, Traficom „Nodošana ekspluatācijā”, mnt.ee „Esmane registreerimine”. */
+const WORLD_FIRST_REGISTRATION_RE =
+  /pirm\S*\s+reģistrācij|nodošana\s+ekspluatācijā|ekspluatācijā\s+nodošana|esmane\s+registreerimine|ziņots\s+par\s+pirmo\s+reģistrāciju/i;
+
 function classifyVendorTimelineKind(description: string): LifecycleEventKind {
   const t = description.toLowerCase();
-  if (/pirmā reģistrācija/.test(t)) return "first_registration";
+  if (nationalFirstRegistrationLocative(description)) return "registration";
+  if (WORLD_FIRST_REGISTRATION_RE.test(t)) return "first_registration";
   if (/\bimport/.test(t) && !/apskate/.test(t)) return "import";
   if (/apskate|toldsyn|periodisk syn|registreringssyn/.test(t)) return "inspection";
   if (/negadīj|bojāj/.test(t)) return "incident";
@@ -417,7 +451,9 @@ function vendorTimelineTitleAndDetail(
     if (split) return { title: "Tehniskā apskate", detail: split[2]!.trim() };
     if (/^(?:veikta\s+)?tehniskā apskate$/i.test(raw)) return { title: "Tehniskā apskate", detail: "" };
   }
-  if (kind === "first_registration") return { title: "Pirmā reģistrācija", detail: "" };
+  if (kind === "first_registration") return { title: FIRST_REGISTRATION_TITLE, detail: "" };
+  const nationalLoc = nationalFirstRegistrationLocative(raw);
+  if (nationalLoc) return { title: `Reģistrācija ${nationalLoc}`, detail: "" };
   if (kind === "listed") {
     if (!raw || /^sludinājums$/i.test(raw)) return { title: "Sludinājums", detail: "" };
     return { title: "Sludinājums", detail: raw };
@@ -554,32 +590,34 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   const firstRegDuplicatesFirstLv =
     firstRegMs > 0 && firstLvMs > 0 && eventDayKeyFromMs(firstRegMs) === eventDayKeyFromMs(firstLvMs);
 
-  // Pasaules pirmā reģistrācija nav Latvija, ja ir atsevišķa pirmā reģistrācija Latvijā.
+  // 21.11 (Nils): „Pirmā reģistrācija” ir tikai viena - agrākā jebkurā valstī. Pirmā reģistrācija Latvijā
+  // ir tāda tikai, ja tā sakrīt ar pirmo reģistrāciju vai auto nav bijis citur; citādi „Reģistrācija Latvijā”.
+  const prevIso = countryLabelToIso2(csdd?.previousRegistrationCountry ?? "");
+  const lvIsNational =
+    (firstRegMs > 0 && !firstRegDuplicatesFirstLv) || Boolean(prevIso && prevIso !== "LV");
+  const csddLvEvent = (rawDate: string): LifecycleEvent =>
+    makeEvent({
+      kind: lvIsNational ? "registration" : "first_registration",
+      rawDate,
+      title: lvIsNational ? "Reģistrācija Latvijā" : FIRST_REGISTRATION_TITLE,
+      country: "Latvija",
+      source: "CSDD",
+      ...(lvIsNational ? { nationalRegistration: true } : null),
+    });
+
   if (firstRegDate && !firstRegDuplicatesFirstLv) {
     out.push(
       makeEvent({
         kind: "first_registration",
         rawDate: firstRegDate,
-        title: "Pirmā reģistrācija",
-        detail: "1. reģistrācija pasaulē",
+        title: FIRST_REGISTRATION_TITLE,
         country: "",
         source: "CSDD",
       }),
     );
   }
 
-  if (firstLvDate && !firstLvOwner) {
-    out.push(
-      makeEvent({
-        kind: "first_registration",
-        rawDate: firstLvDate,
-        title: "Pirmā reģistrācija",
-        detail: "1. reģistrācija Latvijā",
-        country: "Latvija",
-        source: "CSDD",
-      }),
-    );
-  }
+  if (firstLvDate && !firstLvOwner) out.push(csddLvEvent(firstLvDate));
 
   let lvOwner = 0;
   for (const e of csdd?.ownerRegistrationEvents ?? []) {
@@ -587,12 +625,16 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     lvOwner += 1;
     const raw = e.label.trim();
     const firstLv = isCsddFirstRegistrationInLatviaLabel(raw) || /pirmā\s+reģistrācija/i.test(raw);
+    if (firstLv) {
+      out.push(csddLvEvent(e.date));
+      continue;
+    }
     out.push(
       makeEvent({
-        kind: firstLv ? "first_registration" : "registration",
+        kind: "registration",
         rawDate: e.date,
-        title: firstLv ? "Pirmā reģistrācija" : "Īpašnieka maiņa",
-        detail: firstLv ? "1. reģistrācija Latvijā" : `${lvOwner}. īpašnieks Latvijā`,
+        title: "Īpašnieka maiņa",
+        detail: `${lvOwner}. īpašnieks Latvijā`,
         country: "Latvija",
         source: "CSDD",
       }),
@@ -667,6 +709,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         ? classifyInformationalVendorTimelineKind(description)
         : classifyVendorTimelineKind(description);
       const { title, detail, body } = vendorTimelineTitleAndDetail(description, kind);
+      const nationalIso = countryIsoFromLvLocative(nationalFirstRegistrationLocative(description));
       const failedInspection =
         kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${body ?? ""} ${t.description}`);
       out.push(
@@ -676,7 +719,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
           title,
           detail,
           body,
-          country: t.country,
+          country: t.country.trim() || (nationalIso ? iso2ToLvDisplayName(nationalIso) : ""),
           odometer: t.odometer,
           source: b.title,
           tone: informational ? "info" : failedInspection ? "warn" : kind === "incident" ? "alert" : "info",
@@ -684,6 +727,9 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
           // Laikposma tabulas rindas ir tāds pats zemais svars, bet bez „nav apstiprināts”.
           countryUnverified: !informational && kind === "listed" && Boolean(t.country.trim()),
           timelineInformational: informational,
+          // Tikai „Pirmā reģistrācija <valstī>”: drīkst kļūt par pirmo reģistrāciju, ja agrākas nav.
+          nationalRegistration:
+            /^\s*pirm/i.test(description) && Boolean(nationalFirstRegistrationLocative(description)),
         }),
       );
     }
@@ -894,7 +940,15 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     }
     // CSDD TA jau ir piesaistīts tā paša datuma CSDD km - neaizstāt ar cita datuma mēneša rādījumu.
     if (!host.odometer && o.odometer) host.odometer = o.odometer;
-    if (!host.country && o.country) {
+    // Reģistrs pats nezina pirmās reģistrācijas valsti (tjekbil „ārzemēs”) - tā paša reģistra km rindas
+    // noklusētā valsts to nedrīkst izdomāt. Neatpazīta valsts („Nezināmā”) arī nav valsts.
+    const firstRegCountryBlocked =
+      host.kind === "first_registration" &&
+      !host.country &&
+      (!countryLabelToIso2(o.country) || o.sources.some((s) => host.sources.includes(s)));
+    if (firstRegCountryBlocked) {
+      // valsti neņem; avoti un km paliek
+    } else if (!host.country && o.country) {
       host.country = o.country;
       if (o.countryUnverified) host.countryUnverified = true;
       if (o.timelineInformational) host.timelineInformational = true;
@@ -945,7 +999,11 @@ function eventDayKey(e: LifecycleEvent): string {
 }
 
 function csddFirstRegistrationInLatvia(e: LifecycleEvent): boolean {
-  return e.kind === "first_registration" && e.sources.includes("CSDD") && e.country === "Latvija";
+  return (
+    (e.kind === "first_registration" || e.nationalRegistration === true) &&
+    e.sources.includes("CSDD") &&
+    e.country === "Latvija"
+  );
 }
 
 function preferMergedCountry(a: LifecycleEvent, b: LifecycleEvent): string {
@@ -1002,6 +1060,167 @@ function mergeSameDateTypeCountryDisagreement(events: LifecycleEvent[]): Lifecyc
     collapseCountryOnlyDetail(prev);
   }
   return out;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Vienas un tās pašas pirmās reģistrācijas datumi dažādos avotos (CarVertical mēnesis pret CSDD dienu). */
+const FIRST_REG_SAME_EVENT_MS = 45 * DAY_MS;
+/** Agrāks ieraksts citā valstī, kas pierāda, ka „pirmā” reģistrācija nav pirmā. */
+const FIRST_REG_EARLIER_FOREIGN_MS = 31 * DAY_MS;
+/** Valsts pēc tuvākā ieraksta: pirms (dīlera piegāde) un pēc pirmās reģistrācijas. */
+const FIRST_REG_COUNTRY_BEFORE_MS = 92 * DAY_MS;
+const FIRST_REG_COUNTRY_AFTER_MS = 365 * DAY_MS;
+
+function eventCountryIso(e: LifecycleEvent): string | null {
+  return countryLabelToIso2(e.country);
+}
+
+const PRODUCTION_EVENT_RE = /ražot|izgatavot|manufactur|produced|\bbuilt\b/i;
+
+function isFirstRegistrationEvidence(e: LifecycleEvent): boolean {
+  if (e.kind === "first_registration" || e.kind === "import" || e.kind === "gap") return false;
+  if (e.nationalRegistration) return false;
+  if (PRODUCTION_EVENT_RE.test(`${e.title} ${e.detail}`)) return false;
+  return lifecycleEventProvidesCountryResidence(e);
+}
+
+function nationalRegistrationTitle(country: string): string {
+  const loc = countryNameLvLocative(country);
+  return loc ? `Reģistrācija ${loc}` : "Ieraksts reģistrā";
+}
+
+function demoteToNationalRegistration(e: LifecycleEvent): void {
+  e.kind = "registration";
+  e.nationalRegistration = true;
+  if (!countryLabelToIso2(e.country)) e.country = "";
+  e.title = nationalRegistrationTitle(e.country);
+  if (/^1\.\s*reģistrācija/i.test(e.detail)) e.detail = "";
+}
+
+function hasEarlierForeignEvidence(events: LifecycleEvent[], card: LifecycleEvent, iso: string | null): boolean {
+  if (!iso) return false;
+  return events.some(
+    (e) =>
+      e !== card &&
+      e.time > 0 &&
+      e.time < card.time - FIRST_REG_EARLIER_FOREIGN_MS &&
+      isFirstRegistrationEvidence(e) &&
+      eventCountryIso(e) !== iso,
+  );
+}
+
+/**
+ * Pirmās reģistrācijas valsts, ja pats reģistrs to nezina: CSDD iepriekšējā valsts vai tuvākais
+ * stiprais ieraksts (dīlera piegāde, reģistrs, nobraukums) ap datumu - tikai pirms pirmās nacionālās
+ * reģistrācijas. Ja nav droši, valsts paliek tukša (karogu nerāda).
+ */
+function resolveFirstRegistrationCountry(
+  events: LifecycleEvent[],
+  card: LifecycleEvent,
+  previousRegistrationCountry: string,
+): string {
+  const firstNational = events
+    .filter((e) => e.nationalRegistration && e.time > card.time)
+    .reduce((min, e) => Math.min(min, e.time), Number.POSITIVE_INFINITY);
+  const evidence = events.filter(
+    (e) =>
+      e !== card &&
+      e.time > 0 &&
+      e.time < firstNational &&
+      isFirstRegistrationEvidence(e) &&
+      eventCountryIso(e) != null,
+  );
+  // 1) CSDD iepriekšējā valsts, ja neviens ārvalstu ieraksts tai nerunā pretī (visi ārvalstu ieraksti tajā pašā valstī).
+  const prevIso = countryLabelToIso2(previousRegistrationCountry);
+  const foreignIsos = new Set(
+    evidence
+      .filter((e) => e.time >= card.time - FIRST_REG_COUNTRY_BEFORE_MS)
+      .map((e) => eventCountryIso(e)!)
+      .filter((iso) => iso !== "LV"),
+  );
+  if (prevIso && prevIso !== "LV" && [...foreignIsos].every((iso) => iso === prevIso)) {
+    return iso2ToLvDisplayName(prevIso);
+  }
+  // 2) Tuvākais ieraksts ap datumu.
+  let best: LifecycleEvent | null = null;
+  let bestDt = Number.POSITIVE_INFINITY;
+  for (const e of evidence) {
+    const dt = e.time - card.time;
+    if (dt < -FIRST_REG_COUNTRY_BEFORE_MS || dt > FIRST_REG_COUNTRY_AFTER_MS) continue;
+    // Pirms reģistrācijas tikai dīlera piegāde vai reģistrs - ne rūpnīcas km / „Ražots”.
+    if (dt < 0 && !(e.kind === "service" || (e.kind === "registration" && !e.timelineInformational))) continue;
+    if (Math.abs(dt) < bestDt) {
+      best = e;
+      bestDt = Math.abs(dt);
+    }
+  }
+  return best ? normalizeCountryNameLv(best.country) || best.country : "";
+}
+
+/**
+ * 21.11 (Nils): vēsturē tikai VIENA „Pirmā reģistrācija” - agrākā jebkurā valstī. Vēlākas „pirmās
+ * reģistrācijas” (Somijā, Nīderlandē, Latvijā u.c.) ir „Reģistrācija <valstī>”. Viena notikuma ieraksti
+ * no vairākiem avotiem (CSDD diena, CarVertical mēnesis) apvienojas vienā kartītē.
+ */
+function resolveFirstRegistration(events: LifecycleEvent[], previousRegistrationCountry: string): LifecycleEvent[] {
+  const candidates = events
+    .filter((e) => e.kind === "first_registration" && e.time > 0)
+    .sort((a, b) => a.time - b.time);
+  const drop = new Set<LifecycleEvent>();
+  let world: LifecycleEvent | null = null;
+
+  if (candidates.length > 0) {
+    const earliest = candidates[0]!;
+    const group = candidates.filter((c) => c.time - earliest.time <= FIRST_REG_SAME_EVENT_MS);
+    // Precīzākais datums: CSDD, tad oficiāls reģistrs, tad agrākais.
+    world =
+      group.find((c) => c.sources.includes("CSDD")) ??
+      group.find((c) => !c.timelineInformational) ??
+      earliest;
+    for (const c of group) {
+      if (c === world) continue;
+      drop.add(c);
+      for (const s of c.sources) if (!world.sources.includes(s)) world.sources.push(s);
+      if (!world.odometer && c.odometer) world.odometer = c.odometer;
+      if (!countryLabelToIso2(world.country) && countryLabelToIso2(c.country)) {
+        world.country = normalizeCountryNameLv(c.country) || c.country;
+        if (c.timelineInformational && !world.sources.includes("CSDD")) world.timelineInformational = true;
+      }
+    }
+    for (const c of candidates) {
+      if (!group.includes(c)) demoteToNationalRegistration(c);
+    }
+    // Reģistra „pirmā reģistrācija” ar valsti, bet auto jau agrāk bijis citur → nacionālā.
+    if (!world.sources.includes("CSDD") && hasEarlierForeignEvidence(events, world, eventCountryIso(world))) {
+      demoteToNationalRegistration(world);
+      world = null;
+    }
+  }
+
+  if (!world) {
+    // Agrākas reģistrācijas nav: agrākā „Pirmā reģistrācija <valstī>” ir pirmā reģistrācija vispār.
+    const national = events
+      .filter((e) => e.nationalRegistration && e.time > 0)
+      .sort((a, b) => a.time - b.time)[0];
+    const prevIso = countryLabelToIso2(previousRegistrationCountry);
+    const csddLvBlocked = national?.sources.includes("CSDD") && Boolean(prevIso && prevIso !== "LV");
+    if (national && !csddLvBlocked && !hasEarlierForeignEvidence(events, national, eventCountryIso(national))) {
+      national.kind = "first_registration";
+      national.nationalRegistration = false;
+      national.title = FIRST_REGISTRATION_TITLE;
+      world = national;
+    }
+  }
+
+  if (world) {
+    world.title = FIRST_REGISTRATION_TITLE;
+    world.detail = /^1\.\s*reģistrācija/i.test(world.detail) ? "" : world.detail;
+    if (!countryLabelToIso2(world.country)) {
+      world.country = resolveFirstRegistrationCountry(events, world, previousRegistrationCountry);
+      world.countryUnverified = false;
+    }
+  }
+  return drop.size > 0 ? events.filter((e) => !drop.has(e)) : events;
 }
 
 function monthsBetween(a: number, b: number): number {
@@ -1130,9 +1349,19 @@ function parseLifecycleOdometerKm(raw: string): number | null {
  * ir pretrunā, un salīdzinātājs ar km pirmajā vietā kļūst netranzitīvs (secība neparedzama,
  * plus `addDerivedEvents` no kaimiņiem izlasa neesošas valstu maiņas un robus).
  */
+/** Tās pašas dienas reģistrācija rādās pirms apskates / km ieraksta. */
+function registrationSortRank(e: LifecycleEvent): number {
+  if (e.kind === "first_registration") return 0;
+  if (e.nationalRegistration) return 1;
+  return 2;
+}
+
 function sortAscending(events: LifecycleEvent[]): LifecycleEvent[] {
   return [...events].sort((a, b) => {
     if (a.time !== b.time) return a.time - b.time;
+    const rankA = registrationSortRank(a);
+    const rankB = registrationSortRank(b);
+    if (rankA !== rankB) return rankA - rankB;
     const kmA = parseLifecycleOdometerKm(a.odometer) ?? -1;
     const kmB = parseLifecycleOdometerKm(b.odometer) ?? -1;
     if (kmA !== kmB) return kmA - kmB;
@@ -1187,9 +1416,33 @@ export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEve
   const merged = mergeOdometerIntoFacts(facts, odo);
   const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);
   if (deduped.length === 0) return [];
-  softenUnregisteredCountryClaims(deduped, input);
-  for (const e of deduped) collapseCountryOnlyDetail(e);
-  return collapseSameDayCountryTransitions(
-    addDerivedEvents(sortAscending(deduped), input.csddForm?.previousRegistrationCountry ?? ""),
-  );
+  const previousRegistrationCountry = input.csddForm?.previousRegistrationCountry ?? "";
+  const resolved = resolveFirstRegistration(deduped, previousRegistrationCountry);
+  softenUnregisteredCountryClaims(resolved, input);
+  for (const e of resolved) collapseCountryOnlyDetail(e);
+  return collapseSameDayCountryTransitions(addDerivedEvents(sortAscending(resolved), previousRegistrationCountry));
+}
+
+export type VehicleFirstRegistrationSummary = {
+  /** Agrākā reģistrācija jebkurā valstī (DD.MM.YYYY); tukšs, ja nav zināma. */
+  date: string;
+  /** Valsts latviski; tukšs, ja nav droši zināma. */
+  country: string;
+  countryIso: string;
+  /** Valstu nacionālās reģistrācijas pēc pirmās („Reģistrācija Somijā”, „Reģistrācija Latvijā”). */
+  national: { date: string; country: string; title: string }[];
+};
+
+/** Tā pati pirmās reģistrācijas loģika, ko rāda „Vēstures kopsavilkums” (AI faktu lapai un pārbaudēm). */
+export function vehicleFirstRegistrationSummary(events: LifecycleEvent[]): VehicleFirstRegistrationSummary {
+  const world = events.find((e) => e.kind === "first_registration");
+  const country = world?.country.trim() ?? "";
+  return {
+    date: world?.date ?? "",
+    country,
+    countryIso: (country && countryLabelToIso2(country)) || "",
+    national: events
+      .filter((e) => e.nationalRegistration && e.kind === "registration")
+      .map((e) => ({ date: e.date, country: e.country, title: e.title })),
+  };
 }

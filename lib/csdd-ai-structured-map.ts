@@ -44,7 +44,7 @@ export const CSDD_AI_RESPONSE_SCHEMA: AiJsonSchema = {
         pirmasRegistracija: {
           type: JsonType.STRING,
           description:
-            "Pirmā reģistrācija pasaulē DD.MM.YYYY. Tikai ja CSDD lauks ir „Pirmā reģistrācija” bez „Latvijā”. Tukšs, ja zināma tikai pirmā reģistrācija Latvijā.",
+            "Pirmā reģistrācija (agrākā, jebkurā valstī) DD.MM.YYYY. Tikai ja CSDD lauks ir „Pirmā reģistrācija” bez „Latvijā”. Tukšs, ja zināma tikai pirmā reģistrācija Latvijā.",
         },
         pirmasRegistracijaLatvija: {
           type: JsonType.STRING,

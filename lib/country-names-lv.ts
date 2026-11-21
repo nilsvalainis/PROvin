@@ -671,3 +671,28 @@ export function matchLeadingCountryNameLv(
   }
   return null;
 }
+
+/**
+ * Valsts nosaukuma lokatīvs („kur?”): Latvija → Latvijā, Nīderlande → Nīderlandē, ASV → ASV.
+ * Neatpazīta valsts → tukšs (nekad neizdomā valsti).
+ */
+export function countryNameLvLocative(raw: string): string {
+  const iso = countryLabelToIso2(raw);
+  if (!iso) return "";
+  const name = iso2ToLvDisplayName(iso);
+  if (iso === "GB") return "Apvienotajā Karalistē";
+  if (/a$/.test(name)) return `${name.slice(0, -1)}ā`;
+  if (/e$/.test(name)) return `${name.slice(0, -1)}ē`;
+  return name;
+}
+
+/** Lokatīva vārds („Somijā”, „Nīderlandē”) → ISO2; citādi null. */
+export function countryIsoFromLvLocative(word: string): string | null {
+  const w = word.trim();
+  if (!w) return null;
+  if (/^asv$/i.test(w)) return "US";
+  if (/^apvienotajā\s+karalistē$/i.test(w)) return "GB";
+  const base = w.replace(/ā$/, "a").replace(/ē$/, "e");
+  if (base === w) return null;
+  return countryLabelToIso2(base);
+}
