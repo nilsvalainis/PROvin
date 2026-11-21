@@ -47,11 +47,24 @@ IRISS_VPN_IDLE_MIN=20
 
 Serverim ir savs ĪRISS VPN konts (vairs neizmet Nilu/Tomu un otrādi). Vērtības repo nav un netiek drukātas.
 - Piekļuve: `/root/iriss-vpn/creds-server` (root 600).
-- Drop-in `/etc/systemd/system/iriss-vpn.service.d/20-servera-konts.conf`: `StandardInput=file:/root/iriss-vpn/creds-server`
+- Drop-in `/etc/systemd/system/iriss-vpn.service.d/20-servera-konts.conf` (paraugs `iriss-vpn-servera-konts.conf`): `StandardInput=file:/root/iriss-vpn/creds-server`
   (openconnect parole no stdin) + `Restart=on-failure` (pārraksta `10-no-restart.conf`, jo savu kontu neviens neizmet).
 - `/etc/iriss-ttr/env`: `IRISS_VPN_HOLD_247=1` -> VPN tur arī naktī.
 - Pēc maiņas: `systemctl daemon-reload && systemctl restart iriss-vpn-ctl`; pārbaude `curl -s http://127.0.0.1:9334/status`.
 - Atcelšana: dzēš drop-in `20-servera-konts.conf`, noņem `IRISS_VPN_HOLD_247`, `systemctl daemon-reload`, restart `iriss-vpn-ctl`.
+
+### Lokālo portu aizsargs (`iriss-srv-guard`, 18.11)
+
+`srv.js` (127.0.0.1:9333) un `vpn-ctl` (127.0.0.1:9334) nav autentifikācijas, tāpēc iptables OUTPUT likums `-o lo` atļauj tos sasniegt
+tikai root (citiem lietotājiem REJECT). Vienība: `iriss-srv-guard.service` (oneshot, RemainAfterExit; idempotents - `iptables -C` pirms `-I`).
+
+```
+install -m 644 iriss-srv-guard.service /etc/systemd/system/iriss-srv-guard.service
+systemctl daemon-reload && systemctl enable --now iriss-srv-guard
+iptables -S OUTPUT | grep -E 'dport (9333|9334)'   # 2 REJECT likumi
+```
+
+Atcelšana: `systemctl disable --now iriss-srv-guard` (ExecStop noņem likumus).
 
 ### Anulēšana VIENMĒR izslēgta
 
