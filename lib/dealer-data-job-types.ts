@@ -387,19 +387,22 @@ export function decideDealerDataRun(args: {
  * Admina paziņojums (Nils 20.11: neviens klients nedrīkst palikt nepamanīts).
  * - no_vin: numurzīmei VIN neatrasts;
  * - draft_write_failed: samaksātais rezultāts nav ierakstīts melnrakstā (uzreiz);
- * - failed_final: ielase beidzās ar kļūdu pēc visiem automātiskajiem mēģinājumiem.
+ * - failed_final: ielase beidzās ar kļūdu pēc visiem automātiskajiem mēģinājumiem;
+ * - no_data: OneAuto atbildēja «datu nav» (206) un atmaksa vēl nav veikta - atmaksa ir manuāla
+ *   (Nila lēmums 21.11), tātad viņam jāzina uzreiz. Jau atmaksātam (Stripe / maks / kredīts) nesūta.
  * Viena atslēga = viens paziņojums. Operatora poga („manual”) paziņojumu nesūta - viņš to redz.
  */
-export type DealerDataAlertKey = "no_vin" | "draft_write_failed" | "failed_final";
+export type DealerDataAlertKey = "no_vin" | "draft_write_failed" | "failed_final" | "no_data";
 
 export function decideDealerDataAlert(args: {
-  job: Pick<DealerDataJob, "status" | "attempts" | "error" | "alert"> | null;
+  job: Pick<DealerDataJob, "status" | "attempts" | "error" | "alert" | "refund"> | null;
   trigger?: DealerDataJob["trigger"];
 }): DealerDataAlertKey | null {
   const job = args.job;
   if (!job || args.trigger === "manual") return null;
   let key: DealerDataAlertKey | null = null;
   if (job.status === "no_vin") key = "no_vin";
+  else if (job.status === "no_data") key = job.refund ? null : "no_data";
   else if (job.status === "failed" && job.error === "draft_write_failed") key = "draft_write_failed";
   else if (job.status === "failed" && job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS) key = "failed_final";
   if (!key) return null;
@@ -409,9 +412,13 @@ export function decideDealerDataAlert(args: {
   return key;
 }
 
+/** Noklusētā dīlera datu cena paziņojumā, ja pasūtījuma summa nav zināma. */
+export const DEALER_DATA_ALERT_DEFAULT_AMOUNT = "24,99 €";
+
 export function dealerDataAlertText(
   key: DealerDataAlertKey,
   job: Pick<DealerDataJob, "vin" | "plate" | "error" | "attempts">,
+  opts: { amountLabel?: string | null; wallet?: boolean } = {},
 ): { title: string; body: string } {
   const who = job.vin ? `VIN ${job.vin}` : job.plate ? `Numurs ${job.plate}` : "Pasūtījums";
   switch (key) {
@@ -430,6 +437,15 @@ export function dealerDataAlertText(
         title: "Dīlera dati: ielase neizdevās",
         body: `${who} - ${job.attempts} mēģinājumi beidzās ar kļūdu (${job.error ?? "nezināma"}). Vajag operatoru.`,
       };
+    case "no_data": {
+      const amount = (opts.amountLabel ?? "").trim() || DEALER_DATA_ALERT_DEFAULT_AMOUNT;
+      return {
+        title: `Dīlera dati: datu nav - ${who}, jāatmaksā ${amount}`,
+        body: opts.wallet
+          ? `${who} - OneAuto datu nav. B2B maka automātiskā atmaksa neizdevās - atmaksā ${amount} makā.`
+          : `${who} - OneAuto datu nav. Atmaksā ${amount} un informē klientu.`,
+      };
+    }
   }
 }
 

@@ -423,8 +423,31 @@ describe("dealer alerts (Nils 20.11)", () => {
     expect(decideDealerDataAlert({ job: { ...base, attempts: 3 }, trigger: "manual" })).toBeNull();
     expect(decideDealerDataAlert({ job: { status: "done", attempts: 3 } })).toBeNull();
   });
+  it("no_data: paziņo vienreiz, ja nav atmaksāts; operatora poga nepaziņo", () => {
+    const nd = { status: "no_data" as const, attempts: 1 };
+    expect(decideDealerDataAlert({ job: nd, trigger: "webhook" })).toBe("no_data");
+    expect(decideDealerDataAlert({ job: nd, trigger: "cron" })).toBe("no_data");
+    expect(decideDealerDataAlert({ job: { ...nd, alert: { key: "no_data", at: "x" } } })).toBeNull();
+    expect(decideDealerDataAlert({ job: nd, trigger: "manual" })).toBeNull();
+    // Jau atmaksāts (Stripe / maks / kredīts) - nesūta.
+    expect(
+      decideDealerDataAlert({
+        job: { ...nd, refund: { at: "x", amountCents: 2499, stripeRefundId: "wallet_wtx_1", by: "auto", reason: "r", kind: "wallet" } },
+      }),
+    ).toBeNull();
+    // Agrāka kļūdas atzīme netraucē «datu nav» paziņojumam.
+    expect(decideDealerDataAlert({ job: { ...nd, alert: { key: "failed_final", at: "x" } } })).toBe("no_data");
+  });
+  it("no_data teksts: VIN, summa, bez klienta datiem", () => {
+    const t = dealerDataAlertText("no_data", { vin: "WAUZZZ4M0JD000001", error: "", attempts: 1 });
+    expect(t.title).toBe("Dīlera dati: datu nav - VIN WAUZZZ4M0JD000001, jāatmaksā 24,99 €");
+    expect(t.body).not.toMatch(/@/);
+    const w = dealerDataAlertText("no_data", { vin: "WAUZZZ4M0JD000001", attempts: 1 }, { amountLabel: "19,99 €", wallet: true });
+    expect(w.title).toContain("jāatmaksā 19,99 €");
+    expect(w.body).toContain("makā");
+  });
   it("teksti latviski, bez garās defises un bez «eksperts»", () => {
-    for (const key of ["no_vin", "draft_write_failed", "failed_final"] as const) {
+    for (const key of ["no_vin", "draft_write_failed", "failed_final", "no_data"] as const) {
       const t = dealerDataAlertText(key, { vin: "", plate: "AB1234", error: "x", attempts: 3 });
       expect(`${t.title} ${t.body}`).not.toMatch(/\u2014|\u2013|ekspert/i);
     }
