@@ -32,7 +32,9 @@ export type DealerSendBridge = {
     lang: ClientReportLang;
     subject: string;
     text: string;
-  }) => Promise<{ sentTo: string }>;
+    /** Serveris ieraksta sūtījumu klienta saziņas žurnālā. */
+    dealerSend?: { situation: DealerSendSituation; offer: boolean; review: boolean };
+  }) => Promise<{ sentTo: string; dealerMarks?: OrderClientMarks }>;
 };
 
 type Props = {
@@ -184,14 +186,15 @@ export function AdminDealerSendDialog({
     [offer, sessionId],
   );
 
-  const finish = async (notice: string) => {
-    const marks = await recordSend({
-      sessionId,
-      channel,
-      situation,
-      offer: situation === "ready" && opts.offer,
-      review: situation === "ready" && opts.review,
-    });
+  const sendFlags = () => ({
+    situation,
+    offer: situation === "ready" && opts.offer,
+    review: situation === "ready" && opts.review && !opts.offer,
+  });
+
+  /** E-pastu ieraksta serveris (atgriež `serverMarks`); WhatsApp vai servera ieraksta kļūdas gadījumā - šeit. */
+  const finish = async (notice: string, serverMarks?: OrderClientMarks | null) => {
+    const marks = serverMarks ?? (await recordSend({ sessionId, channel, ...sendFlags() }));
     onSent(marks, notice);
     onClose();
   };
@@ -242,8 +245,14 @@ export function AdminDealerSendDialog({
       try {
         const prepared = await bridge.prepareDealerPdf(pdfLang);
         setBusy("send");
-        const r = await bridge.sendDealerReport({ prepared, lang: pdfLang, subject: subject.trim(), text: text.trim() });
-        await finish(`E-pasts ar PDF nosūtīts uz ${r.sentTo}.`);
+        const r = await bridge.sendDealerReport({
+          prepared,
+          lang: pdfLang,
+          subject: subject.trim(),
+          text: text.trim(),
+          dealerSend: sendFlags(),
+        });
+        await finish(`E-pasts ar PDF nosūtīts uz ${r.sentTo}.`, r.dealerMarks ?? null);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Neizdevās nosūtīt.");
       } finally {
@@ -257,14 +266,26 @@ export function AdminDealerSendDialog({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, customerEmail: customerEmail.trim(), subject: subject.trim(), text: text.trim() }),
+        body: JSON.stringify({
+          sessionId,
+          customerEmail: customerEmail.trim(),
+          subject: subject.trim(),
+          text: text.trim(),
+          ...sendFlags(),
+        }),
       });
-      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; to?: string; message?: string; error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        to?: string;
+        message?: string;
+        error?: string;
+        marks?: OrderClientMarks;
+      };
       if (!res.ok || !body.ok) {
         setErr(body.message || body.error || `Nosūtīšana neizdevās (${res.status}).`);
         return;
       }
-      await finish(`E-pasts nosūtīts uz ${body.to ?? customerEmail}.`);
+      await finish(`E-pasts nosūtīts uz ${body.to ?? customerEmail}.`, body.marks ?? null);
     } catch {
       setErr("Neizdevās sazināties ar serveri.");
     } finally {

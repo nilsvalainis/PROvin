@@ -458,6 +458,14 @@ export function dealerDataJobHistoryReady(
   return job.status === "done" || (job.status === "failed" && Boolean(job.error?.startsWith("vin_decode:")));
 }
 
+/** Kad dīlera dati kļuva gatavi klientam (null - vēl nav gatavi). Lieto «Nav nosūtīts» atzīmei. */
+export function dealerDataJobReadyAt(
+  job: Pick<DealerDataJob, "status" | "error" | "draftWrittenAt" | "finishedAt" | "updatedAt"> | null | undefined,
+): string | null {
+  if (!job || !dealerDataJobHistoryReady(job)) return null;
+  return job.draftWrittenAt || job.finishedAt || job.updatedAt || null;
+}
+
 /** Vai cron drīkst šo darbu atkārtot tagad (nextRetryAt pagājis vai nav iestatīts). */
 export function dealerDataJobRetryDue(
   job: Pick<DealerDataJob, "nextRetryAt">,

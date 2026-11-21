@@ -31,6 +31,8 @@ import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
+import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
+import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { getB2bPartnerByEmail } from "@/lib/b2b-partner-store";
 import {
   evaluateReportRecipient,
@@ -129,6 +131,8 @@ export async function POST(req: Request) {
   let confirmRecipientOverride = false;
   /** Dīlera «Sūtīt klientam» logs: admina rediģēts temats + teksts (PDF tas pats servera ceļš). */
   let customMail: { subject: string; text: string } | null = null;
+  /** Dīlera «Sūtīt klientam»: ierakstīt klienta saziņas žurnālā pēc veiksmīgas sūtīšanas. */
+  let dealerSendInput: Record<string, unknown> | null = null;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -163,6 +167,7 @@ export async function POST(req: Request) {
       const cs = typeof b.customSubject === "string" ? b.customSubject.trim().slice(0, 180) : "";
       const ct = typeof b.customText === "string" ? b.customText.trim().slice(0, 12_000) : "";
       if (cs && ct) customMail = { subject: cs, text: ct };
+      if (b.dealerSend && typeof b.dealerSend === "object") dealerSendInput = b.dealerSend as Record<string, unknown>;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -479,5 +484,18 @@ export async function POST(req: Request) {
     ...(recipient.recipientOverride ? { recipientOverride: true } : {}),
   });
 
-  return NextResponse.json({ ok: true, sentTo: to, sentToSource, ...(serverSend ? { serverSend } : {}) });
+  const dealerMarks = dealerSendInput
+    ? await recordDealerSendOnServer(
+        sessionId,
+        dealerSendRecordFromInput(dealerSendInput, "email", new Date().toISOString(), "ready"),
+      )
+    : null;
+
+  return NextResponse.json({
+    ok: true,
+    sentTo: to,
+    sentToSource,
+    ...(serverSend ? { serverSend } : {}),
+    ...(dealerMarks ? { dealerMarks } : {}),
+  });
 }

@@ -24,3 +24,5 @@ Formāts: `YYYY-MM-DD | jā/nē | kur | ko tieši | kāpēc (Nila vārdiem, ja i
 2026-11-20 | jā | IRISS P4 viena PD forma | admins/darbinieks blakus, darbiniekam bez iekšējām summām un avota | AAA
 2026-11-20 | jā | Cenu lapa «DRĪZUMĀ» | variants A - liels DRĪZUMĀ cenas vietā, «Plānotā cena» zemāk; viss rediģējams | no 5 variantiem
 2026-11-20 | nē→labot | PD aprīkojuma tabula | gari angļu teksti etiķešu kolonnā, krāsas tabula dublējas ar bildi | īsas LV etiķetes, tikai bilde
+2026-11-20 | nē | IRISS pasūtījuma formas makets (A/B/C) | krāsu gamma (zaļš/dzeltens/pelēks statusi, oranžs akcents) | «krāsu gamma galīgi nepatīk» - taisām 3 paletes
+2026-11-20 | nē | IRISS pasūtījums | «AI stila pogas ar krāsainajiem burtiem» | pogas plakanas: galvenā tumša ar baltu tekstu, sekundārā gaiša ar tumšu tekstu; nekāda krāsaina teksta pogām

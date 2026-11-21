@@ -1,6 +1,7 @@
 /**
  * Nosūta dīlera klienta e-pastu bez atmaksas.
  * Operators rediģē subject/text adminā; nauda netiek skarta.
+ * Pēc veiksmīgas sūtīšanas ieraksta klienta saziņas žurnālā (situation: no_data | cancelled | ready).
  */
 import { NextResponse } from "next/server";
 
@@ -9,6 +10,8 @@ import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-dra
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
+import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
+import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
@@ -64,5 +67,10 @@ export async function POST(req: Request) {
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed", to }, { status: 502 });
   }
-  return NextResponse.json({ ok: true, emailSent: true, to });
+  // Sūtīšanas vēsture pasūtījumā (bez e-pasta adreses): laiks, veids, kanāls.
+  const marks = await recordDealerSendOnServer(
+    sessionId,
+    dealerSendRecordFromInput(o, "email", new Date().toISOString(), "no_data"),
+  );
+  return NextResponse.json({ ok: true, emailSent: true, to, ...(marks ? { marks } : {}) });
 }

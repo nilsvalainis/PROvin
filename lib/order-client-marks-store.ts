@@ -8,7 +8,15 @@ import {
   getOrderDraftStorageDir,
   isSafeOrderDraftSessionId,
 } from "@/lib/admin-order-draft-store";
-import { parseOrderClientMarks, type OrderClientMarks } from "@/lib/order-client-marks";
+import { BLOB_CAS_ATTEMPTS, putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { readPrivateBlobText } from "@/lib/blob-read";
+import { compareAndSwap } from "@/lib/conditional-write";
+import {
+  parseOrderClientMarks,
+  withDealerSend,
+  type DealerSendRecord,
+  type OrderClientMarks,
+} from "@/lib/order-client-marks";
 
 /**
  * Klienta saziņas atzīmes - viens mazs fails uz pasūtījumu (jauns, veci pasūtījumi netiek aiztikti).
@@ -82,10 +90,65 @@ export async function writeOrderClientMarks(sessionId: string, marks: OrderClien
   return false;
 }
 
+/**
+ * Atjauno atzīmes ar CAS (Blob `ifMatch`; lokāli - procesa slēdzene), lai divi vienlaicīgi
+ * sūtījumi (piem. serveris + WhatsApp atzīme) nepazaudē viens otra ierakstu.
+ */
 export async function updateOrderClientMarks(
   sessionId: string,
   fn: (cur: OrderClientMarks) => OrderClientMarks,
 ): Promise<OrderClientMarks | null> {
-  const next = fn(await readOrderClientMarks(sessionId));
-  return (await writeOrderClientMarks(sessionId, next)) ? next : null;
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    const pathname = blobPath(blob.prefix, sessionId);
+    try {
+      return await compareAndSwap<OrderClientMarks, OrderClientMarks>({
+        read: async () => {
+          const snap = await readPrivateBlobText({ pathname, token: blob.token });
+          if (snap.state === "missing") return { value: null, etag: null };
+          return { value: parseOrderClientMarks(JSON.parse(snap.text)), etag: snap.etag };
+        },
+        write: async (next, etag) => {
+          await putBlobBodyIfMatch({ pathname, body: JSON.stringify(next), token: blob.token, etag, seen: etag != null });
+        },
+        update: (cur) => {
+          const next = fn(cur ?? {});
+          return { next, result: next };
+        },
+        maxAttempts: BLOB_CAS_ATTEMPTS,
+      });
+    } catch (err) {
+      console.error("[order-client-marks] update failed", { sessionId, error: err instanceof Error ? err.message.slice(0, 120) : "unknown" });
+      if (process.env.VERCEL === "1") return null;
+    }
+  }
+  return withLocalLock(sessionId, async () => {
+    const next = fn(await readOrderClientMarks(sessionId));
+    return (await writeOrderClientMarks(sessionId, next)) ? next : null;
+  });
+}
+
+const localLocks = new Map<string, Promise<unknown>>();
+async function withLocalLock<T>(key: string, run: () => Promise<T>): Promise<T> {
+  const prev = localLocks.get(key) ?? Promise.resolve();
+  const p = prev.catch(() => undefined).then(run);
+  localLocks.set(key, p);
+  try {
+    return await p;
+  } finally {
+    if (localLocks.get(key) === p) localLocks.delete(key);
+  }
+}
+
+/** Servera maršrutiem pēc veiksmīgas sūtīšanas. Kļūda sūtījumu neaptur (atgriež null). */
+export async function recordDealerSendOnServer(
+  sessionId: string,
+  rec: DealerSendRecord,
+): Promise<OrderClientMarks | null> {
+  try {
+    return await updateOrderClientMarks(sessionId, (cur) => withDealerSend(cur, rec));
+  } catch {
+    return null;
+  }
 }

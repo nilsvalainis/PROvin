@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-send-report-attachments";
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import { canSubmitSendReport, ReportRecipientMismatchError } from "@/lib/report-recipient-guard";
+import type { OrderClientMarks } from "@/lib/order-client-marks";
 
 export type SendReportKind = "audits" | "business" | "dealer" | "asv";
 
@@ -45,6 +46,8 @@ export type SendReportResult = {
   dropboxPath?: string;
   dropboxError?: string;
   completedAt?: string | null;
+  /** Dīlera «Sūtīt klientam»: servera ierakstītais klienta saziņas žurnāls. */
+  dealerMarks?: OrderClientMarks;
 };
 
 /**
