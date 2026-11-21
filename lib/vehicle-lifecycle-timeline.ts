@@ -62,6 +62,11 @@ import {
 import { resolveListingCountry } from "@/lib/listing-odometer";
 import { isVendorTimelineListingRecord } from "@/lib/vendor-timeline-listing";
 import { stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
+import {
+  isOwnerChangeDescription,
+  OWNER_LIST_ENTRY_RE,
+  VENDOR_REGISTERED_RE,
+} from "@/lib/lifecycle-owner-change-text";
 import { csddHasLatvianRegistryRecord } from "@/lib/owner-count-synthesis";
 import {
   isCsddFirstRegistrationInLatviaLabel,
@@ -76,6 +81,8 @@ export const FIRST_REGISTRATION_TITLE = "Pirmā reģistrācija";
 export type LifecycleEventKind =
   | "first_registration"
   | "registration"
+  /** Īpašnieka maiņa ārvalstīs (reģistrs vai AutoDNA/CarVertical). Latvijas maiņas paliek `registration` no CSDD. */
+  | "owner_change"
   | "import"
   | "inspection"
   | "odometer"
@@ -705,6 +712,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         : t.description;
       // Reģistra hronoloģijā personu vārdi pēc lomas („Pirmais īpašnieks: …”) PDF nenonāk.
       const description = informational ? translated : stripRegistryPersonNames(translated);
+      // Īpašnieku maiņas veido `collectForeignOwnerChangeEvents` (Latvija tikai CSDD, dedup starp avotiem).
+      if (isOwnerChangeDescription(description)) continue;
       const kind = informational
         ? classifyInformationalVendorTimelineKind(description)
         : classifyVendorTimelineKind(description);
@@ -838,6 +847,233 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   return out;
 }
 
+const REGISTRY_DEFAULT_COUNTRY: Record<string, string> = {
+  [SOURCE_BLOCK_LABELS.finnik]: "Nīderlande",
+  [SOURCE_BLOCK_LABELS.traficom_fi]: "Somija",
+  [SOURCE_BLOCK_LABELS.mnt_ee]: "Igaunija",
+  [SOURCE_BLOCK_LABELS.carinfo]: "Zviedrija",
+  [SOURCE_BLOCK_LABELS.tjekbil]: "Dānija",
+};
+
+const DMY_RE = /\b(\d{1,2}\.\d{1,2}\.\d{4})\b/g;
+const OWNER_PERIOD_LINE_RE = /^\s*(\d{1,2}\.\d{1,2}\.\d{4})\s*-\s*(?:\d{1,2}\.\d{1,2}\.\d{4}|šobrīd|tagad)/iu;
+
+type OwnerChangeCandidate = {
+  time: number;
+  rawDate: string;
+  iso: string;
+  country: string;
+  sources: string[];
+  registry: boolean;
+  /** CarVertical dod tikai mēnesi un gadu. */
+  monthPrecision: boolean;
+  odometer: string;
+  /** Īpašnieku numuri šajā dienā pilnajā reģistra sarakstā (divi īpašnieki vienā dienā → [2, 3]). */
+  ordinals?: number[];
+};
+
+function monthStartMs(ms: number): number {
+  const d = new Date(ms);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+}
+
+function monthYearLabel(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getUTCMonth() + 1).padStart(2, "0")}.${d.getUTCFullYear()}`;
+}
+
+function isCarVerticalSource(source: string): boolean {
+  return /carvertical/i.test(source);
+}
+
+/** „1. īpašnieks”, „2. un 3. īpašnieks” + lokatīvs. */
+function ownerOrdinalDetail(ordinals: number[] | undefined, country: string): string {
+  if (!ordinals || ordinals.length === 0) return "";
+  const loc = countryNameLvLocative(country);
+  if (!loc) return "";
+  const nums = [...new Set(ordinals)].sort((a, b) => a - b);
+  const head = nums.length === 1 ? `${nums[0]}.` : `${nums.slice(0, -1).map((n) => `${n}.`).join(", ")} un ${nums[nums.length - 1]}.`;
+  return `${head} īpašnieks ${loc}`;
+}
+
+/** „6 īpašnieku maiņas Somijā”; 21, 31 … → „īpašnieka maiņa”. */
+export function ownerChangeCountTitleLv(n: number, country: string): string {
+  const loc = countryNameLvLocative(country) || country;
+  const singular = n % 10 === 1 && n % 100 !== 11;
+  return `${n} ${singular ? "īpašnieka maiņa" : "īpašnieku maiņas"} ${loc}`;
+}
+
+/**
+ * Īpašnieku maiņas ārvalstīs kā patstāvīgas kartītes (tāds pats stils kā CSDD „Īpašnieka maiņa”). 21.11 (Nils):
+ * - Latvija: tikai CSDD. Citu avotu rindas ar Latviju vai Latvijas periodā neņem.
+ * - Reģistrs (finnik, Traficom, mnt.ee, car.info) dominē: ja valstij ir reģistra dati, AutoDNA/CarVertical tai neņem.
+ * - AutoDNA/CarVertical tikai rindas ar admin ķeksi „iekļaut PDF”.
+ * - Reģistrācijas mēnesī šajā valstī tas ir 1. īpašnieks (reģistrācijas kartīte), ne maiņa.
+ * - Viena mēneša dublikāti starp avotiem apvienoti; dienas datums (AutoDNA, reģistrs) uzvar CarVertical mēnesi.
+ * - Valstī tikai CarVertical (bez reģistra un AutoDNA) un vairāk nekā viena maiņa → viena kopkartīte.
+ * - „N. īpašnieks <valstī>” tikai no pilna reģistra īpašnieku saraksta (finnik periodi / „Īpašnieks” rindas).
+ * - AutoDNA „Transportlīdzekļa pārreģistrācija” nav īpašnieka maiņa (var būt numura / apliecības maiņa).
+ */
+function collectForeignOwnerChangeEvents(input: LifecycleInput, facts: LifecycleEvent[]): LifecycleEvent[] {
+  const csdd = input.csddForm;
+  const firstLvOwner =
+    ownerFirstRegistrationInLatvia(csdd?.ownerRegistrationEvents) ??
+    (csdd?.ownerRegistrationEvents ?? []).find((e) => e.date.trim() && /pirmā\s+reģistrācija/i.test(e.label));
+  const lvStartRaw = (csdd?.firstRegistrationLatvia?.trim() || firstLvOwner?.date || "").trim();
+  const lvStartMs = lvStartRaw ? parseLifecycleTimeMs(lvStartRaw) : 0;
+
+  const registeredMonths = new Set<string>();
+  const markRegistered = (country: string, ms: number) => {
+    if (ms <= 0) return;
+    registeredMonths.add(`${countryLabelToIso2(country) ?? "*"}|${monthKey(ms)}`);
+  };
+  for (const f of facts) {
+    if (f.kind === "first_registration" || f.nationalRegistration) markRegistered(f.country, f.time);
+  }
+  if (csdd?.firstRegistration?.trim()) markRegistered("", parseLifecycleTimeMs(csdd.firstRegistration));
+
+  const registry: OwnerChangeCandidate[] = [];
+  const vendor: OwnerChangeCandidate[] = [];
+  for (const b of input.manualVendorBlocks ?? []) {
+    const informational = vendorTimelineIsInformational(b.title);
+    const isVendor = /autodna|carvertical/i.test(b.title);
+    if (informational && !isVendor) continue;
+    const defaultCountry = REGISTRY_DEFAULT_COUNTRY[b.title] ?? "";
+    const estonian = b.title === SOURCE_BLOCK_LABELS.mnt_ee || b.title === SOURCE_BLOCK_LABELS.lkf_ee;
+    const ownerList: number[] = [];
+    const push = (rawDate: string, country: string, odometer: string, listEntry: boolean) => {
+      const ms = parseLifecycleTimeMs(rawDate);
+      if (ms <= 0) return;
+      const label = normalizeCountryNameLv(country) || country.trim();
+      const iso = countryLabelToIso2(label);
+      if (!iso) return;
+      (informational ? vendor : registry).push({
+        time: ms,
+        rawDate,
+        iso,
+        country: iso2ToLvDisplayName(iso) || label,
+        sources: [b.title],
+        registry: !informational,
+        monthPrecision: isCarVerticalSource(b.title),
+        odometer,
+      });
+      if (listEntry) ownerList.push(ms);
+    };
+    // „Reģistrēts” rindas arī ar izslēgtu ķeksi - tikai reģistrācijas mēneša noteikšanai (nerāda).
+    for (const h of b.ownerChangeHints ?? []) {
+      if (VENDOR_REGISTERED_RE.test(h.description.trim())) markRegistered(h.country, parseLifecycleTimeMs(h.date));
+    }
+    for (const t of b.vehicleHistoryTimeline ?? []) {
+      const raw = estonian ? capitalizeRegistryEvent(translateTextLv(t.description, "et")) || t.description : t.description;
+      const description = stripRegistryPersonNames(raw).trim();
+      if (VENDOR_REGISTERED_RE.test(description)) {
+        markRegistered(t.country || defaultCountry, parseLifecycleTimeMs(t.date));
+        continue;
+      }
+      // Admin ķeksis „iekļaut PDF” izslēgts → īpašnieka maiņu nerāda (Nils 21.11, A).
+      if (t.includeInPdf === false || !isOwnerChangeDescription(description)) continue;
+      push(
+        t.date,
+        t.country || defaultCountry,
+        informational ? "" : (t.odometer ?? ""),
+        !informational && OWNER_LIST_ENTRY_RE.test(description),
+      );
+    }
+    if (informational) continue;
+    // Reģistra īsie fakti: finnik periodi „11.05.2016-18.05.2016 …”, car.info / mnt.ee „… maiņa … 11.12.2024 un 04.08.2025”.
+    const periods: number[] = [];
+    for (const line of (b.ownersSummary ?? "").split("\n")) {
+      const period = OWNER_PERIOD_LINE_RE.exec(line);
+      if (period) {
+        const ms = parseLifecycleTimeMs(period[1]!);
+        if (ms > 0) periods.push(ms);
+        continue;
+      }
+      if (!/maiņ|ägarbyte/iu.test(line)) continue;
+      for (const m of line.matchAll(DMY_RE)) push(m[1]!, defaultCountry, "", false);
+    }
+    for (const ms of periods) {
+      const day = eventDayKeyFromMs(ms);
+      if (!registry.some((c) => c.sources.includes(b.title) && eventDayKeyFromMs(c.time) === day)) {
+        push(displayDate("", ms), defaultCountry, "", true);
+      }
+    }
+    // Periodu sākumi = pilns īpašnieku saraksts (ar vienas dienas īpašniekiem), citādi „Īpašnieks” rindas.
+    const list = (periods.length > 0 ? periods : ownerList).slice().sort((x, y) => x - y);
+    if (list.length === 0) continue;
+    for (const c of registry) {
+      if (!c.sources.includes(b.title)) continue;
+      const day = eventDayKeyFromMs(c.time);
+      const ordinals = list.flatMap((ms, i) => (eventDayKeyFromMs(ms) === day ? [i + 1] : []));
+      if (ordinals.length > 0) c.ordinals = ordinals;
+    }
+  }
+
+  const registryIsos = new Set(registry.map((c) => c.iso));
+  const kept: OwnerChangeCandidate[] = [];
+  const all = [...registry, ...vendor].sort(
+    (a, b) => a.time - b.time || Number(a.monthPrecision) - Number(b.monthPrecision),
+  );
+  for (const c of all) {
+    if (c.iso === "LV") continue;
+    if (!c.registry && registryIsos.has(c.iso)) continue;
+    if (!c.registry && lvStartMs > 0 && monthStartMs(c.time) >= monthStartMs(lvStartMs)) continue;
+    const mk = monthKey(c.time);
+    if (registeredMonths.has(`${c.iso}|${mk}`) || registeredMonths.has(`*|${mk}`)) continue;
+    const host =
+      kept.find((k) => k.iso === c.iso && eventDayKeyFromMs(k.time) === eventDayKeyFromMs(c.time)) ??
+      kept.find((k) => k.iso === c.iso && monthKey(k.time) === mk && (k.monthPrecision || c.monthPrecision));
+    if (host) {
+      for (const s of c.sources) if (!host.sources.includes(s)) host.sources.push(s);
+      if (host.monthPrecision && !c.monthPrecision) {
+        host.time = c.time;
+        host.rawDate = c.rawDate;
+        host.monthPrecision = false;
+      }
+      if (c.ordinals) host.ordinals = [...new Set([...(host.ordinals ?? []), ...c.ordinals])];
+      if (!host.odometer && c.odometer) host.odometer = c.odometer;
+      continue;
+    }
+    kept.push({ ...c, sources: [...c.sources] });
+  }
+
+  const out: LifecycleEvent[] = [];
+  const byIso = new Map<string, OwnerChangeCandidate[]>();
+  for (const c of kept) byIso.set(c.iso, [...(byIso.get(c.iso) ?? []), c]);
+  for (const list of byIso.values()) {
+    const cvOnly = list.every((c) => c.sources.every(isCarVerticalSource));
+    if (cvOnly && list.length > 1) {
+      const first = list[0]!;
+      const last = list[list.length - 1]!;
+      const ev = makeEvent({
+        kind: "owner_change",
+        rawDate: monthYearLabel(first.time),
+        title: ownerChangeCountTitleLv(list.length, first.country),
+        detail: `${monthYearLabel(first.time)}-${monthYearLabel(last.time)} (carVertical)`,
+        country: first.country,
+        timelineInformational: true,
+      });
+      ev.sources = [...first.sources];
+      out.push(ev);
+      continue;
+    }
+    for (const c of list) {
+      const ev = makeEvent({
+        kind: "owner_change",
+        rawDate: c.monthPrecision ? monthYearLabel(c.time) : c.rawDate,
+        title: "Īpašnieka maiņa",
+        detail: ownerOrdinalDetail(c.ordinals, c.country),
+        country: c.country,
+        odometer: c.odometer,
+        timelineInformational: !c.registry,
+      });
+      ev.sources = c.sources;
+      out.push(ev);
+    }
+  }
+  return out;
+}
+
 function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
   const rows = prepareUnifiedMileageDisplayRows(
     collectUnifiedMileageRows({
@@ -907,6 +1143,8 @@ function odometerHostOwnsReading(host: LifecycleEvent, odo: LifecycleEvent): boo
     return host.kind === "listed" && sameLifecycleDay(host, odo) && listingSourcesCompatible(host, odo);
   }
   if (host.kind === "listed" || host.timelineInformational) return false;
+  // Īpašnieka maiņai km tikai no tās pašas dienas - mēneša tuvākais rādījums nav maiņas brīža km.
+  if (host.kind === "owner_change") return sameLifecycleDay(host, odo);
   if (sameLifecycleDay(host, odo)) return true;
   return sameLifecycleMonth(host, odo);
 }
@@ -967,6 +1205,11 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
   const byKey = new Map<string, LifecycleEvent>();
   const out: LifecycleEvent[] = [];
   for (const e of events) {
+    // Īpašnieku maiņas jau apvienotas; divas maiņas vienā mēnesī (07.07 un 27.07) ir divi notikumi.
+    if (e.kind === "owner_change") {
+      out.push(e);
+      continue;
+    }
     const key = `${monthKey(e.time) || e.date}|${e.kind}|${e.title.toLowerCase()}|${e.country.toLowerCase()}`;
     const prev = byKey.get(key);
     if (!prev) {
@@ -1026,7 +1269,7 @@ function mergeSameDateTypeCountryDisagreement(events: LifecycleEvent[]): Lifecyc
   const out: LifecycleEvent[] = [];
   const byKey = new Map<string, LifecycleEvent>();
   for (const e of events) {
-    if (e.kind === "import" || e.kind === "gap") {
+    if (e.kind === "import" || e.kind === "gap" || e.kind === "owner_change") {
       out.push(e);
       continue;
     }
@@ -1412,6 +1655,7 @@ function softenUnregisteredCountryClaims(events: LifecycleEvent[], input: Lifecy
 /** Pilns dzīves cikls, vecākais notikums pirmais. */
 export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEvent[] {
   const facts = collectFactEvents(input);
+  facts.push(...collectForeignOwnerChangeEvents(input, facts));
   const odo = mergeSameDateTypeCountryDisagreement(collectOdometerEvents(input));
   const merged = mergeOdometerIntoFacts(facts, odo);
   const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);

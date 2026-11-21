@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { VENDOR_REGISTERED_RE } from "@/lib/lifecycle-owner-change-text";
 import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
 import { formatAdifyDeltaLabel, formatAdifyPriceLabel } from "@/lib/adify-listing-history";
 import {
@@ -1848,6 +1849,11 @@ export type ClientManualVendorBlockPdf = {
    * Tikai valstu maiņas loģikai: odometra valsts no sludinājuma nav fiziska pārvietošanās.
    */
   listingCountryHints?: Array<{ date: string; country: string; odometer?: string }>;
+  /**
+   * AutoDNA / CarVertical „Reģistrēts” / „Pirmā reģistrācija” rindas arī ar izslēgtu PDF ķeksi - tikai lai
+   * ārvalstu īpašnieka maiņa reģistrācijas mēnesī netiktu rādīta kā maiņa (tas ir 1. īpašnieks). Netiek drukātas.
+   */
+  ownerChangeHints?: Array<{ date: string; country: string; description: string }>;
   damageDetails?: CarVerticalDamageDetailRow[];
   /** AutoDNA / CarVertical iekopētais RAW — zonu hidratācijai, netiek drukāts. */
   sourceRaw?: string;
@@ -1898,9 +1904,13 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(() => {
         const timeline = (b.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf);
         const listingCountryHints = listingCountryHintsFromTimeline(b.vehicleHistoryTimeline);
+        const ownerChangeHints = (b.vehicleHistoryTimeline ?? [])
+          .filter((r) => r.date.trim() && VENDOR_REGISTERED_RE.test(r.description.trim()))
+          .map((r) => ({ date: r.date, country: r.country, description: r.description }));
         return {
           ...(timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {}),
           ...(listingCountryHints.length > 0 ? { listingCountryHints } : {}),
+          ...(ownerChangeHints.length > 0 ? { ownerChangeHints } : {}),
         };
       })(),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),

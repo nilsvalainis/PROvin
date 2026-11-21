@@ -688,6 +688,7 @@ function buildProvinPdfSourcesUsedStripHtml(p: ClientReportPayload, vis: PdfVisi
 const LIFECYCLE_ICON_BY_KIND: Record<LifecycleEvent["kind"], SectionIconId> = {
   first_registration: "carFront",
   registration: "user",
+  owner_change: "user",
   import: "route",
   inspection: "listChecks",
   odometer: "route",
@@ -711,7 +712,8 @@ function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
   const unverifiedNote = e.countryUnverified
     ? `<span class="pdf-life-country-note">(pēc sludinājuma, nav apstiprināts)</span>`
     : "";
-  const mutedCountry = lifecycleCountryIsSoft(e);
+  // Ārvalstu īpašnieka maiņa: valsts no paša avota ieraksta - kā CSDD kartītē, bez pelēkā karoga.
+  const mutedCountry = e.kind !== "owner_change" && lifecycleCountryIsSoft(e);
   const flag = e.country
     ? `<span class="pdf-life-country${mutedCountry ? " pdf-life-country--unverified" : ""}"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>${unverifiedNote}</span>`
     : "";
@@ -814,7 +816,7 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
 }
 
 /** Vēstures kopsavilkums - gada joslas un kartītes pie hronoloģiskās sliedes. */
-function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
+export function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
   const events = buildVehicleLifecycleEvents({
     csddForm: p.csddForm ?? null,
     autoRecordsBlock: p.autoRecordsBlock ?? null,
