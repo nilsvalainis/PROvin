@@ -1795,11 +1795,25 @@ button.pd-lv {
   background: #e5e5ea;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
-.pd-ps-it[draggable="true"] {
+/* Nils 21.11: @dnd-kit vilkšana - paceltā bilde (DragOverlay), vietā bāls «rēgs», pārējās plūstoši pabīdās. */
+.pd-ps-it.drag {
   cursor: grab;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.pd-ps-it.over {
-  box-shadow: -4px 0 0 0 #1c1c1e;
+.pd-ps-it.ghost {
+  opacity: 0.3;
+}
+.pd-ps-lift {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+.pd-ps-it:focus-visible {
+  outline: 2px solid #1c1c1e;
+  outline-offset: 2px;
 }
 .pd-ps-it.sel {
   box-shadow: 0 0 0 2.5px #1c1c1e;
@@ -1860,6 +1874,7 @@ button.pd-lv {
 .pd-ps-acts button {
   width: 26px;
   height: 26px;
+  padding: 0;
   border: 0;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.95);
@@ -1870,6 +1885,22 @@ button.pd-lv {
 }
 .pd-ps-acts button.x {
   color: #b42318;
+}
+.pd-ps-ask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  font: 600 13px Inter, system-ui, sans-serif;
+  color: #1c1c1e;
+}
+.pd-ps-ask span {
+  display: flex;
+  gap: 6px;
 }
 .pd-ps-ck {
   position: absolute;

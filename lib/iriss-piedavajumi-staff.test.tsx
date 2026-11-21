@@ -130,6 +130,19 @@ describe("PATCH sanitizācija", () => {
     expect(res.ok && res.record.photos.map(photoKey)).toEqual([photoKey(r.photos[2]!), photoKey(r.photos[0]!)]);
   });
 
+  it("Nils 21.11: maskētā bilde pēc žetona - pēc noņemšanas serverī netiek skarta «kaimiņa» bilde", () => {
+    const v1 = rec();
+    // Pārlūkā maskētais saraksts no v1; tikmēr serverī jau noņemta 1. bilde (cita cilne / iepriekšējā saglabāšana).
+    const masked = maskIrissPdForStaff(v1).photos;
+    const v2 = { ...v1, photos: [v1.photos[1]!, v1.photos[2]!] };
+    // Darbinieks noņem dropbox bildi; paliek tikai 3. (url) bilde.
+    const patch = sanitizeIrissPdPatchForStaff({ photos: [masked[2]] }, v2);
+    // Pēc vecā numura (`/p/2`) v2 ierakstā tādas nav - bilde pazustu; pēc žetona - tieši tā pati.
+    expect(patch.photos).toEqual([v1.photos[2]]);
+    // Maskētā adrese nemainās, bildi pārvietojot (React atslēga un kešs stabili).
+    expect(maskIrissPdForStaff(v2).photos[1]).toEqual(masked[2]);
+  });
+
   it("ne-objekts -> tukšs", () => {
     expect(sanitizeIrissPdPatchForStaff(null, rec())).toEqual({});
     expect(sanitizeIrissPdPatchForStaff([1], rec())).toEqual({});

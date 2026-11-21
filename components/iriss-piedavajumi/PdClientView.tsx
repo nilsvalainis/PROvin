@@ -15,16 +15,21 @@ import { PdOfferBottomSections, PdOfferExtraSections } from "@/components/iriss-
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPdViewMode } from "@/lib/iriss-piedavajumi";
 
+/** Bildes adrese: numurs + stabils žetons (Nils 21.11 - secība kā adminā, kešs nerāda veco bildi). */
+export type PdPhotoSrc = (index: number, size: "thumb" | "full", token: string) => string;
+
 /** Galerijas URL kā vienkāršas virknes (galerija ir klienta komponente - funkcijas tai nodot nedrīkst). */
 export function pdGalleryUrlMap(
   photoCount: number,
-  photoSrc: (index: number, size: "thumb" | "full") => string,
+  photoSrc: PdPhotoSrc,
+  photoTokens: readonly string[] = [],
 ): IrissOfferPublicGalleryUrlMap {
   const thumb: Record<string, string> = {};
   const full: Record<string, string> = {};
   for (let i = 0; i < photoCount; i += 1) {
-    thumb[String(i)] = photoSrc(i, "thumb");
-    full[String(i)] = photoSrc(i, "full");
+    const k = photoTokens[i] ?? "";
+    thumb[String(i)] = photoSrc(i, "thumb", k);
+    full[String(i)] = photoSrc(i, "full", k);
   }
   return { thumb, full };
 }
@@ -47,7 +52,7 @@ export function PdClientView({
 }: {
   view: IrissPdPublicView;
   mode: IrissPdViewMode;
-  photoSrc: (index: number, size: "thumb" | "full") => string;
+  photoSrc: PdPhotoSrc;
   token?: string;
   embedded?: boolean;
   hiddenLabels?: string[];
@@ -85,7 +90,7 @@ export function PdClientView({
           token={token || "preview"}
           title={title}
           photos={photos}
-          urlMap={pdGalleryUrlMap(view.photoCount, photoSrc)}
+          urlMap={pdGalleryUrlMap(view.photoCount, photoSrc, view.photoTokens)}
         />
       ) : null}
 

@@ -6,6 +6,7 @@ import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
 import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
+import { irissPdPhotoQuery } from "@/lib/iriss-piedavajumi-photo-key";
 
 export const metadata = { title: "Piedāvājums PDF | IRISS" };
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function IrissPiedavajumsPdfPage({ params }: { params: Prom
           view={{ ...view, state: "open" }}
           mode="pdf"
           embedded
-          photoSrc={(n, s) => `/api/admin/iriss-piedavajumi/${id}/foto/${n}${s === "full" ? "?s=full" : ""}`}
+          photoSrc={(n, s, k) => `/api/admin/iriss-piedavajumi/${id}/foto/${n}${irissPdPhotoQuery(k, s)}`}
         />
       </div>
     </div>
