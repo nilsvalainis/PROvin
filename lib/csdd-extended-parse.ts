@@ -99,7 +99,7 @@ export type CsddOwnerChangeRow = {
   label: string;
 };
 
-/** CSDD īpašnieku vēstures rinda „Pirmā reģistrācija Latvijā”, ne pirmā pasaulē. */
+/** CSDD īpašnieku vēstures rinda „Pirmā reģistrācija Latvijā”, ne auto pirmā reģistrācija (agrākā jebkurā valstī). */
 export function isCsddFirstRegistrationInLatviaLabel(label: string): boolean {
   return /pirm[āa]\s+reģistr[āa]cija\s+latvij/i.test(label);
 }

@@ -793,7 +793,10 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
       ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
       : dealerLogo
         ? `<span class="pdf-life-ico pdf-life-ico--brand" aria-hidden="true">${pdfBrandLogoImgHtml(dealerLogo, "life")}</span>`
-        : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
+        : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(
+            // Valsts reģistrācija („Reģistrācija Latvijā”) - tā pati ikona, kas pirmajai reģistrācijai.
+            e.nationalRegistration ? LIFECYCLE_ICON_BY_KIND.first_registration : LIFECYCLE_ICON_BY_KIND[e.kind],
+          )}</span>`;
   const itemTone = isIncident ? "incident" : e.tone;
   return `<li class="pdf-life-item pdf-life-item--${itemTone}"${isAnomaly ? ' role="alert"' : ""}>
     ${buildPdfLifeDateHtml(e)}
@@ -1049,7 +1052,8 @@ function pdfListingAnalysisFieldIconHtml(title: string): string {
 }
 
 function formatCsddNextInspectionCell(v: string): string {
-  return escapeHtml(v);
+  // 21.11: PDF datumi vienmēr DD.MM.YYYY (CSDD API dod ISO „2019-03-26”).
+  return escapeHtml(isoDateToLvDisplay(v));
 }
 
 function escapeCsddPdfFieldValue(key: keyof CsddFormFields, v: string): string {

@@ -52,12 +52,20 @@ describe("comment contradiction check", () => {
     expect(facts.owners.totalCount).toBe(4);
     expect(facts.owners.changeCount).toBe(3);
     const owners = checkCommentContradictions({
-      text: "Latvijā fiksēti 4 īpašnieki un 4 īpašnieku maiņas. Pirmā reģistrācija Latvijā.",
+      text: "Latvijā fiksēti 4 īpašnieki un 4 īpašnieku maiņas. Pirmā reģistrācija: Latvija.",
       field: "source",
       facts,
     });
     expect(owners.some((f) => f.kind === "owner_changes")).toBe(true);
     expect(owners.some((f) => f.kind === "first_reg_country")).toBe(true);
+
+    // 21.11: „Pirmā reģistrācija Latvijā” importētam auto ir patiess fakts, ne pretruna.
+    const lvLabel = checkCommentContradictions({
+      text: "Pirmā reģistrācija Latvijā 2021. gadā, pirms tam auto bija Vācijā.",
+      field: "csdd",
+      facts,
+    });
+    expect(lvLabel.some((f) => f.kind === "first_reg_country")).toBe(false);
 
     const lvOrigin = buildCanonicalFacts({
       sourceBlocks: {

@@ -15,7 +15,7 @@ import {
 import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
 import { collectListingPriceLifecyclePoints } from "@/lib/listing-price-lifecycle";
 
-describe("CSDD pirmā reģistrācija pasaulē vs Latvijā", () => {
+describe("CSDD pirmā reģistrācija vs pirmā reģistrācija Latvijā", () => {
   it("BMW 640i: paste neieliek Pirmā reģistrācija Latvijā pasaules laukā", () => {
     const form = applyCsddPasteToForm(emptyCsddFields(), BMW_640I_CSDD_RAW, parseCsddPaste(BMW_640I_CSDD_RAW));
     expect(form.vin).toBe(BMW_640I_VIN);
@@ -115,7 +115,7 @@ describe("collectCsddFirstRegistrationWarnings", () => {
 });
 
 describe("BMW 640i vēstures lente", () => {
-  it("Pirmā reģistrācija Latvijā ir Latvija, viena Lietuva→Latvija, bez tādas pašas dienas lēciena", () => {
+  it("Pirmā reģistrācija Latvijā ir „Reģistrācija Latvijā”, viena Lietuva→Latvija, bez tādas pašas dienas lēciena", () => {
     const events = buildVehicleLifecycleEvents({
       csddForm: {
         ...emptyCsddFields(),
@@ -127,10 +127,12 @@ describe("BMW 640i vēstures lente", () => {
         ownerRegistrationEvents: [{ date: "02.10.2026", label: "Pirmā reģistrācija Latvijā" }],
       },
     });
-    const firstLv = events.filter((e) => e.kind === "first_registration");
+    // 21.11: iepriekšējā valsts Lietuva - LV datums nav auto pirmā reģistrācija.
+    expect(events.filter((e) => e.kind === "first_registration")).toHaveLength(0);
+    const firstLv = events.filter((e) => e.title === "Reģistrācija Latvijā");
     expect(firstLv).toHaveLength(1);
+    expect(firstLv[0]!.kind).toBe("registration");
     expect(firstLv[0]!.country).toBe("Latvija");
-    expect(firstLv[0]!.detail).toMatch(/Latvijā/);
     expect(firstLv[0]!.detail).not.toMatch(/Avoti atšķiras valstī/);
     const imports = events.filter((e) => e.kind === "import");
     expect(imports).toHaveLength(1);

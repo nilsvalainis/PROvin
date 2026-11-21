@@ -13,7 +13,7 @@ export type LvRegistryBasics = {
   markModel: string | null;
   regNr: string | null;
   firstReg: string | null;
-  /** Tikai „Pirmā reģistrācija Latvijā” - nav pirmā reģistrācija pasaulē. */
+  /** Tikai „Pirmā reģistrācija Latvijā” - nav auto pirmā reģistrācija (agrākā jebkurā valstī). */
   firstRegLatvia: string | null;
   euro: string | null;
   powerKw: string | null;

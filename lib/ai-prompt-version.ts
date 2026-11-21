@@ -228,5 +228,8 @@
  *   dispatch ceļā slīpē tikai vienu reizi.
  * - 2026-11-03.1 - Automātiskais pēdējais pārskats ir Claude Opus
  *   (`claude-opus-5-5`). Manuālā ✨ gramatika paliek Sonnet.
+ * - 2026-11-21.1 - Pirmā reģistrācija: viena (agrākā jebkurā valstī), valsts no
+ *   tās pašas loģikas kā „Vēstures kopsavilkums”; nacionālās reģistrācijas
+ *   („Somijā”, „Latvijā”) faktu lapā atsevišķi; nekad „pasaulē”.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-03.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-21.1";

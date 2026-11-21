@@ -393,7 +393,7 @@ export type CsddFormFields = {
   rawUnprocessedData: string;
   makeModel: string;
   registrationNumber: string;
-  /** HTML date (YYYY-MM-DD) vai teksts no CSDD. Pirmā reģistrācija pasaulē, ne Latvijā. */
+  /** HTML date (YYYY-MM-DD) vai teksts no CSDD. Pirmā reģistrācija (agrākā jebkurā valstī), ne Latvijā. */
   firstRegistration: string;
   /** Pirmā reģistrācija Latvijā (īpašnieku vēstures rinda). Nekad neaizpilda `firstRegistration`. */
   firstRegistrationLatvia: string;
@@ -517,7 +517,7 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   { key: "registrationNumber", label: "Reģistrācijas numurs:" },
   { key: "vin", label: "VIN:" },
   { key: "modelYear", label: "Izlaiduma gads:" },
-  { key: "firstRegistration", label: "Pirmā reģistrācija (pasaulē):" },
+  { key: "firstRegistration", label: "Pirmā reģistrācija:" },
   { key: "firstRegistrationLatvia", label: "Pirmā reģistrācija Latvijā:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
