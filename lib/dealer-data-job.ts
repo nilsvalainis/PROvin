@@ -311,8 +311,9 @@ export const DEALER_FAILED_RETRY_MS = 30 * 60 * 1000;
 
 export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResult> {
   const result = await runDealerDataJobInner(args);
-  if (!result.ok || result.status === "failed") {
+  if (!result.ok || result.status === "failed" || (result.status === "no_data" && result.reason === "no_data")) {
     // Neviens klients nedrīkst palikt nepamanīts: push + e-pasts, ja problēma prasa operatoru.
+    // «Datu nav»: paziņojums tikai, ja atmaksa vēl nav veikta (B2B maka atmaksa notiek pirms tam).
     await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: args.trigger });
   }
   return result;

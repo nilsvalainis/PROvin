@@ -309,6 +309,8 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(r).toMatchObject({ ok: true, status: "no_data" });
     expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
     expect(refundB2bWalletOrderIfNoData).toHaveBeenCalledWith(SESSION);
+    // «Datu nav»: admina paziņojums (atmaksa manuāla) - sūtītājs pats pārbauda, vai jau atmaksāts.
+    expect(sendDealerDataAlertIfNeeded).toHaveBeenCalledWith(SESSION, { trigger: "webhook" });
   });
 
   it("VIN Lookup HTTP 206 neaptur vēstures ierakstu - darbs pabeigts", async () => {

@@ -6,6 +6,8 @@
 import "server-only";
 
 import { sendAdminPush } from "@/lib/admin-push";
+import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { resolveDealerNoDataAlertContext } from "@/lib/dealer-data-alert-no-data";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   dealerDataAlertText,
@@ -15,6 +17,7 @@ import {
 import { getSiteOrigin } from "@/lib/email/mail-config";
 import { isSmtpConfigured, sendAdminDealerDataAlertEmail } from "@/lib/email/send-transactional";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
+import { readStripePaymentAdjustments } from "@/lib/stripe-payment-adjustments-store";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -42,7 +45,20 @@ export async function sendDealerDataAlertIfNeeded(
     const job = opts.job ?? (await readDealerDataJob(sessionId));
     const key = decideDealerDataAlert({ job, trigger: opts.trigger });
     if (!job || !key) return null;
-    const { title, body } = dealerDataAlertText(key, job);
+    let textOpts: { amountLabel?: string; wallet?: boolean } = {};
+    if (key === "no_data") {
+      const [draft, adjustments] = await Promise.all([
+        readOrderDraft(sessionId).catch(() => null),
+        readStripePaymentAdjustments().catch(() => null),
+      ]);
+      const ctx = resolveDealerNoDataAlertContext({
+        notes: draft?.orderEdits?.notes ?? "",
+        stripeRefundedCents: adjustments?.bySession[sessionId]?.refundedCents ?? null,
+      });
+      if (!ctx.send) return null;
+      textOpts = { amountLabel: ctx.amountLabel, wallet: ctx.wallet };
+    }
+    const { title, body } = dealerDataAlertText(key, job, textOpts);
     const adminPath = `/admin/orders/${encodeURIComponent(sessionId)}`;
     const adminUrl = `${getSiteOrigin()}${adminPath}`;
     const results = await Promise.allSettled([
