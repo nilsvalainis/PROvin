@@ -83,7 +83,7 @@ describe("vienas dienas valstu ķēde", () => {
           vehicleHistoryTimeline: [
             { date: "02.10.2026", country: "ASV", description: "Reģistrēts", odometer: "1", includeInPdf: true },
             { date: "02.10.2026", country: "Lietuva", description: "Tehniskā apskate", odometer: "2", includeInPdf: true },
-            { date: "02.10.2026", country: "Latvija", description: "Īpašnieka maiņa", odometer: "3", includeInPdf: true },
+            { date: "02.10.2026", country: "Latvija", description: "Ieraksts reģistrā", odometer: "3", includeInPdf: true },
           ],
         },
       ],
@@ -102,7 +102,7 @@ describe("vienas dienas valstu ķēde", () => {
           vehicleHistoryTimeline: [
             { date: "02.10.2026", country: "Lietuva", description: "Reģistrēts", odometer: "1", includeInPdf: true },
             { date: "02.10.2026", country: "Latvija", description: "Tehniskā apskate", odometer: "2", includeInPdf: true },
-            { date: "02.10.2026", country: "Lietuva", description: "Īpašnieka maiņa", odometer: "3", includeInPdf: true },
+            { date: "02.10.2026", country: "Lietuva", description: "Ieraksts reģistrā", odometer: "3", includeInPdf: true },
           ],
         },
       ],

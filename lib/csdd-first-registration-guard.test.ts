@@ -189,7 +189,7 @@ describe("BMW 640i vēstures lente", () => {
           vehicleHistoryTimeline: [
             { date: "02.10.2026", country: "Lietuva", description: "Reģistrēts", odometer: "1", includeInPdf: true },
             { date: "02.10.2026", country: "Latvija", description: "Tehniskā apskate", odometer: "2", includeInPdf: true },
-            { date: "02.10.2026", country: "Lietuva", description: "Īpašnieka maiņa", odometer: "3", includeInPdf: true },
+            { date: "02.10.2026", country: "Lietuva", description: "Ieraksts reģistrā", odometer: "3", includeInPdf: true },
           ],
         },
       ],
