@@ -17,7 +17,7 @@ describe("vinSourceResultToBlock", () => {
       found: true,
       message: "Atrasts Dānijas reģistrā",
       mileage: [{ date: "2024-09-19", odometer: "106869", country: "Dānija", origin: "apskate" }],
-      incidents: [{ date: "2020-08-12", amount: "", country: "Dānija", note: "Apskate nav izturēta" }],
+      incidents: [{ date: "2021-03-01", amount: "1200", country: "Dānija", note: "Ķīla / parāds (Bilbogen)" }],
       timeline: [
         { date: "2024-09-19", odometer: "106869", country: "Dānija", event: "Tehniskā apskate: izieta" },
       ],
@@ -30,7 +30,7 @@ describe("vinSourceResultToBlock", () => {
     const block = vinSourceResultToBlock(result);
     expect(vinRegistryBlockHasContent(block)).toBe(true);
     expect(block.mileage[0]?.odometer).toBe("106869");
-    expect(block.incidents[0]?.note).toContain("Apskate");
+    expect(block.incidents[0]?.note).toContain("Ķīla");
     expect(block.timeline[0]?.event).toBe("Tehniskā apskate: Izieta");
     expect(block.ownersSummary).toContain("īpašnieku");
     expect(block.statusRecords).toContain("TAKSOMETRS");
