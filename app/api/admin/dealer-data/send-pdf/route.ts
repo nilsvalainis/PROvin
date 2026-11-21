@@ -13,6 +13,8 @@ import { parsePartnerCompanyFromNotes, parsePartnerIdFromNotes } from "@/lib/b2b
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import { isB2bDealerReadyEmailOrder } from "@/lib/dealer-data-client-email";
 import { trySendDealerDataOperatorEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
+import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
+import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
@@ -109,5 +111,14 @@ export async function POST(req: Request) {
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed", to }, { status: 502 });
   }
-  return NextResponse.json({ ok: true, emailSent: true, to, filename });
+  const marks = await recordDealerSendOnServer(
+    sessionId,
+    dealerSendRecordFromInput(
+      { situation: form.get("situation"), offer: form.get("offer"), review: form.get("review") },
+      "email",
+      new Date().toISOString(),
+      "ready",
+    ),
+  );
+  return NextResponse.json({ ok: true, emailSent: true, to, filename, ...(marks ? { marks } : {}) });
 }

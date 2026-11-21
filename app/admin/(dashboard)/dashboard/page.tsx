@@ -24,7 +24,14 @@ import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 import { headers } from "next/headers";
 import { readDealerDataJobs } from "@/lib/dealer-data-job-store";
-import { dealerDataListAlertLabel, isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import {
+  dealerDataJobReadyAt,
+  dealerDataListAlertLabel,
+  isDealerDataAutoFetchOrder,
+  type DealerDataJob,
+} from "@/lib/dealer-data-job-types";
+import { DEALER_NOT_SENT_ALERT_MS, dealerNotSentAlert } from "@/lib/order-client-marks";
+import { readOrderClientMarks } from "@/lib/order-client-marks-store";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -157,12 +164,28 @@ export default async function AdminOrdersPage({
         isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal }),
     )
     .map((o) => o.id);
-  const dealerJobs =
+  const dealerJobs: Map<string, DealerDataJob> =
     dealerIdsForAlerts.length > 0
       ? await readDealerDataJobs(dealerIdsForAlerts).catch(() => new Map<string, never>())
       : new Map<string, never>();
+  // «Nav nosūtīts»: dati gatavi > 2 h, klientam nekas nav sūtīts (atzīmes lasa tikai šiem pasūtījumiem).
+  const notSentNowMs = Date.now();
+  const notSentCandidates = [...dealerJobs.entries()].filter(([, job]) => {
+    if (dealerDataListAlertLabel(job)) return false;
+    const t = Date.parse(dealerDataJobReadyAt(job) ?? "");
+    return Number.isFinite(t) && notSentNowMs - t >= DEALER_NOT_SENT_ALERT_MS;
+  });
+  const dealerNotSent = new Set<string>();
+  await Promise.all(
+    notSentCandidates.map(async ([id, job]) => {
+      const marks = await readOrderClientMarks(id).catch(() => null);
+      if (marks && dealerNotSentAlert({ readyAt: dealerDataJobReadyAt(job), marks, nowMs: notSentNowMs })) {
+        dealerNotSent.add(id);
+      }
+    }),
+  );
   const ordersWithDealerAlert = ordersWithInvoice.map((o) => {
-    const label = dealerDataListAlertLabel(dealerJobs.get(o.id) ?? null);
+    const label = dealerDataListAlertLabel(dealerJobs.get(o.id) ?? null) ?? (dealerNotSent.has(o.id) ? "Nav nosūtīts" : null);
     return label ? { ...o, dealerJobAlert: label } : o;
   });
   const ordersWithUpsell = ordersWithDealerAlert.map((o) => {

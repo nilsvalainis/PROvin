@@ -285,6 +285,7 @@ import {
   type SendReportResult,
 } from "@/components/admin/AdminSendReportDialog";
 import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
+import { parseOrderClientMarks } from "@/lib/order-client-marks";
 import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -4946,6 +4947,7 @@ export function OrderDetailWorkspace({
     /** Dīlera «Sūtīt klientam» logs: admina rediģēts temats + teksts. */
     customSubject?: string;
     customText?: string;
+    dealerSend?: { situation: string; offer: boolean; review: boolean };
   }): Promise<SendReportResult> => {
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
@@ -4970,6 +4972,7 @@ export function OrderDetailWorkspace({
       ...(input.customSubject && input.customText
         ? { customSubject: input.customSubject, customText: input.customText }
         : {}),
+      ...(input.dealerSend ? { dealerSend: input.dealerSend } : {}),
     });
     if (!res.ok) {
       if (res.status === 409 && data.error === "recipient_mismatch") {
@@ -4989,6 +4992,9 @@ export function OrderDetailWorkspace({
       ...(typeof ss.dropboxPath === "string" ? { dropboxPath: ss.dropboxPath } : {}),
       ...(typeof ss.dropboxError === "string" ? { dropboxError: ss.dropboxError } : {}),
       completedAt: typeof ss.completedAt === "string" ? ss.completedAt : null,
+      ...(data.dealerMarks && typeof data.dealerMarks === "object"
+        ? { dealerMarks: parseOrderClientMarks(data.dealerMarks) }
+        : {}),
     };
   };
 
@@ -4997,7 +5003,7 @@ export function OrderDetailWorkspace({
     customerPhoneDigits: whatsappPhoneDigits ?? null,
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
-    sendDealerReport: async ({ prepared, lang, subject, text }) => {
+    sendDealerReport: async ({ prepared, lang, subject, text, dealerSend }) => {
       const run = (confirmRecipientOverride: boolean) =>
         sendPreparedReport({
           prepared,
@@ -5008,6 +5014,7 @@ export function OrderDetailWorkspace({
           saveDropbox: true,
           customSubject: subject,
           customText: text,
+          dealerSend,
           ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
         });
       try {

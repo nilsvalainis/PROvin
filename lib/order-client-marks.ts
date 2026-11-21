@@ -94,15 +94,72 @@ export function formatRigaDayTime(iso: string): string {
   return `${parts.day}.${parts.month} ${parts.hour}:${parts.minute}`;
 }
 
-/** Rinda zem «Sūtīt klientam»: «E-pasts · 19.11 14:32 · ar piedāvājumu» vai «Nav sūtīts». */
+const RIGA_FULL = new Intl.DateTimeFormat("lv-LV", {
+  timeZone: "Europe/Riga",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** «21.11.2026 14:32» Rīgas laikā. */
+export function formatRigaDateTime(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const parts = Object.fromEntries(RIGA_FULL.formatToParts(new Date(t)).map((p) => [p.type, p.value]));
+  return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`;
+}
+
+/** Sūtījuma veids klienta žurnālā. */
+export const DEALER_SEND_KIND_LV: Record<DealerSendSituation, string> = {
+  ready: "Atskaite gatava",
+  no_data: "Datu nav - atmaksa",
+  cancelled: "Atcelts",
+};
+
+/** Rinda zem «Sūtīt klientam»: «Nosūtīts klientam: 19.11.2026 14:32 (Atskaite gatava, e-pasts)» vai «Nav nosūtīts». */
 export function dealerSendStatusLine(rec: DealerSendRecord | null): string {
-  if (!rec) return "Nav sūtīts";
+  if (!rec) return "Nav nosūtīts";
   const extra = [
-    rec.situation === "no_data" ? "datu nav" : rec.situation === "cancelled" ? "atcelts" : "",
+    DEALER_SEND_KIND_LV[rec.situation],
+    DEALER_SEND_CHANNEL_LV[rec.channel].toLowerCase(),
     rec.offer ? "ar piedāvājumu" : "",
     rec.review ? "ar atsauksmi" : "",
   ].filter(Boolean);
-  return [DEALER_SEND_CHANNEL_LV[rec.channel], formatRigaDayTime(rec.at), ...extra].join(" · ");
+  return `Nosūtīts klientam: ${formatRigaDateTime(rec.at)} (${extra.join(", ")})`;
+}
+
+/** Servera maršrutiem: sūtījuma ieraksts no pieprasījuma laukiem (tie paši noteikumi kā `dealer_send`). */
+export function dealerSendRecordFromInput(
+  raw: { situation?: unknown; offer?: unknown; review?: unknown },
+  channel: DealerSendChannel,
+  atIso: string,
+  fallbackSituation: DealerSendSituation,
+): DealerSendRecord {
+  const situation = isDealerSendSituation(raw.situation) ? raw.situation : fallbackSituation;
+  const offer = situation === "ready" && (raw.offer === true || raw.offer === "true");
+  const review = situation === "ready" && !offer && (raw.review === true || raw.review === "true");
+  return { at: atIso, channel, situation, offer, review };
+}
+
+/** Pēc cik ilga laika gatavi dīlera dati bez sūtījuma sarakstā kļūst sarkani. */
+export const DEALER_NOT_SENT_ALERT_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * «Nav nosūtīts» atzīme pasūtījumu sarakstā: dati gatavi (`readyAt`) vairāk nekā pirms 2 h,
+ * bet klientam pēc tam nekas nav sūtīts.
+ */
+export function dealerNotSentAlert(args: {
+  readyAt: string | null | undefined;
+  marks: OrderClientMarks | null | undefined;
+  nowMs: number;
+}): boolean {
+  const t = Date.parse(args.readyAt ?? "");
+  if (!Number.isFinite(t)) return false;
+  if (args.nowMs - t < DEALER_NOT_SENT_ALERT_MS) return false;
+  return (args.marks?.dealerSends ?? []).length === 0;
 }
 
 /**
