@@ -1,0 +1,12 @@
+[Unit]
+Description=Aizsargs: 127.0.0.1:9333 (iriss-ttr srv.js) un 9334 (vpn-ctl) pieejami tikai root
+After=network-pre.target ufw.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for p in 9333 9334; do iptables -C OUTPUT -o lo -p tcp --dport $p -m owner ! --uid-owner 0 -j REJECT 2>/dev/null || iptables -I OUTPUT 1 -o lo -p tcp --dport $p -m owner ! --uid-owner 0 -j REJECT; done'
+ExecStop=/bin/sh -c 'for p in 9333 9334; do iptables -D OUTPUT -o lo -p tcp --dport $p -m owner ! --uid-owner 0 -j REJECT 2>/dev/null; done; true'
+
+[Install]
+WantedBy=multi-user.target
