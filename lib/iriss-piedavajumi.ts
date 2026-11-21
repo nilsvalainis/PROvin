@@ -54,6 +54,7 @@ import { formatIrissEurWhole, parsePriceLike } from "@/lib/iriss-price-format";
 import { irissPdListPrice } from "@/lib/iriss-piedavajumi-list-display";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil, rigaLocalToUtcIso } from "@/lib/iriss-offer-valid-until";
 import { irissPdCarConflictText } from "@/lib/iriss-offer-car-conflict";
+import { irissPdPhotoToken, photoKey } from "@/lib/iriss-piedavajumi-photo-key";
 import {
   buildIrissOfferClientLinkMailto,
   buildIrissOfferClientLinkWhatsAppUrl,
@@ -390,8 +391,15 @@ export function applyIrissPdPatch(
   if (Array.isArray(patch.photos)) {
     const photos = patch.photos.map(normalizePhoto).filter((p): p is IrissPdPhoto => Boolean(p)).slice(0, IRISS_PD_MAX_PHOTOS);
     // Drīkst tikai pārkārtot vai noņemt esošās bildes (jaunas pievieno imports).
+    // Nils 21.11: identitāte pēc atslēgas (nevis pozīcijas); dublikāti izmesti, lai viena bilde nav divās vietās.
     const known = new Set(rec.photos.map(photoKey));
-    const kept = photos.filter((p) => known.has(photoKey(p)));
+    const seen = new Set<string>();
+    const kept = photos.filter((p) => {
+      const k = photoKey(p);
+      if (!known.has(k) || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     if (JSON.stringify(kept) !== JSON.stringify(rec.photos)) {
       next.photos = kept;
       log.push(`Foto: ${kept.length}`);
@@ -417,11 +425,7 @@ export function applyIrissPdPatch(
   return { ok: true, record: next };
 }
 
-export function photoKey(p: IrissPdPhoto): string {
-  if (p.kind === "dropbox") return `d:${p.ref}:${p.id}`;
-  if (p.kind === "order") return `o:${p.orderId}:${p.offerId}:${p.attId}`;
-  return `u:${p.url}`;
-}
+export { photoKey };
 
 /* ---------------- Darbības ---------------- */
 
@@ -839,8 +843,10 @@ export type IrissPdPublicView = {
   vatLabel: string;
   validUntilLabel: string;
   facts: IrissPdPublicFact[];
-  /** Bilžu skaits (bildes tikai caur `/p/d/<token>/foto/<n>`). */
+  /** Bilžu skaits (bildes tikai caur `/p/d/<token>/foto/<n>?k=<žetons>`). */
   photoCount: number;
+  /** Nils 21.11: katras bildes stabils žetons (tā pati secība kā adminā; pārlūka kešs nerāda veco bildi). */
+  photoTokens?: string[];
   blocks: Partial<{ [K in IrissPdBlockId]: true }>;
   auto1: IrissPdAuto1Blocks | null;
   /** Bez klienta - apstiprinot jāieraksta vārds un tālrunis. */
@@ -974,6 +980,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
       return value ? [{ label, value }] : [];
     }),
     photoCount: rec.photos.length,
+    photoTokens: rec.photos.map(irissPdPhotoToken),
     blocks,
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,

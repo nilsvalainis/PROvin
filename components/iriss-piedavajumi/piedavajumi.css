@@ -1795,11 +1795,25 @@ button.pd-lv {
   background: #e5e5ea;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
-.pd-ps-it[draggable="true"] {
+/* Nils 21.11: @dnd-kit vilkšana - paceltā bilde (DragOverlay), vietā bāls «rēgs», pārējās plūstoši pabīdās. */
+.pd-ps-it.drag {
   cursor: grab;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.pd-ps-it.over {
-  box-shadow: -4px 0 0 0 #1c1c1e;
+.pd-ps-it.ghost {
+  opacity: 0.3;
+}
+.pd-ps-lift {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+.pd-ps-it:focus-visible {
+  outline: 2px solid #1c1c1e;
+  outline-offset: 2px;
 }
 .pd-ps-it.sel {
   box-shadow: 0 0 0 2.5px #1c1c1e;
@@ -1839,37 +1853,48 @@ button.pd-lv {
   color: #1c1c1e;
   letter-spacing: 0.4px;
 }
-.pd-ps-acts {
+.pd-ps-x {
   position: absolute;
   right: 6px;
   top: 6px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.12s;
-}
-.pd-ps-it:hover .pd-ps-acts,
-.pd-ps-it:focus-within .pd-ps-acts {
-  opacity: 1;
-}
-@media (hover: none) {
-  .pd-ps-acts {
-    opacity: 1;
-  }
-}
-.pd-ps-acts button {
   width: 26px;
   height: 26px;
   border: 0;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.95);
-  color: #1c1c1e;
-  font: 700 13px Inter, system-ui, sans-serif;
+  color: #b42318;
+  font: 700 15px/26px Inter, system-ui, sans-serif;
+  text-align: center;
+  padding: 0;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity 0.12s;
 }
-.pd-ps-acts button.x {
-  color: #b42318;
+.pd-ps-it:hover .pd-ps-x,
+.pd-ps-it:focus-within .pd-ps-x {
+  opacity: 1;
+}
+@media (hover: none) {
+  .pd-ps-x {
+    opacity: 1;
+  }
+}
+.pd-ps-ask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  font: 600 13px Inter, system-ui, sans-serif;
+  color: #1c1c1e;
+}
+.pd-ps-ask span {
+  display: flex;
+  gap: 6px;
 }
 .pd-ps-ck {
   position: absolute;
@@ -1961,26 +1986,18 @@ button.pd-lv {
   margin-top: 10px;
 }
 /*
- * Nils 04.11 (telefons, iOS 18): 3 kolonnās pogas ★ ‹ › × pārklājās ar numuru un bija par mazām pirkstam.
- * Telefonā 2 kolonnas, pogas bildes apakšā pa visu platumu, 32 px.
+ * Nils 04.11 (telefons, iOS 18): telefonā 2 kolonnas; 21.11 - «×» 32 px pirkstam.
  */
 @media (max-width: 600px) {
   .pd-ps-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .pd-ps-acts {
-    top: auto;
-    right: 6px;
-    bottom: 6px;
-    left: 6px;
-    justify-content: flex-end;
-    gap: 6px;
-  }
-  .pd-ps-acts button {
+  .pd-ps-x {
     width: 32px;
     height: 32px;
-    font-size: 15px;
+    font-size: 17px;
+    line-height: 32px;
   }
   .pd-ps-ck {
     width: 28px;

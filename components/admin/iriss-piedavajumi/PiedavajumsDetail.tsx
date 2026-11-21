@@ -53,6 +53,7 @@ import {
   type IrissPdClientOption,
 } from "@/lib/iriss-piedavajumi";
 import { irissPdAuto1Brief } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdAdminPhotoSrc } from "@/lib/iriss-piedavajumi-photo-key";
 import { IRISS_PD_ADAPTERS } from "@/lib/iriss-piedavajumi-sources";
 import { irissPdSourceRefHref } from "@/lib/iriss-pd-entry";
 import {
@@ -367,6 +368,10 @@ export function PiedavajumsDetail({
     if (ok) {
       retryAttempt.current = 0;
       setAutoErr(null);
+    } else if (!irissAutosaveShouldRetry(failure) && JSON.stringify(cur.photos) !== JSON.stringify(base.photos)) {
+      // Nils 21.11: serveris foto izmaiņu noraidīja - bildes atpakaļ kā serverī (citas izmaiņas paliek).
+      setD((p) => (JSON.stringify(p.photos) === JSON.stringify(cur.photos) ? { ...p, photos: draftOf(recRef.current).photos } : p));
+      if (silent) setErr(failure);
     } else if (irissAutosaveShouldRetry(failure)) {
       setAutoErr(failure);
       if (retryAttempt.current < 8) {
@@ -582,7 +587,8 @@ export function PiedavajumsDetail({
     });
   }
 
-  const photoUrl = (p: IrissPdPhoto) => `/api/admin/iriss-piedavajumi/${rec.id}/foto/${rec.photos.findIndex((x) => photoKey(x) === photoKey(p))}`;
+  // Nils 21.11: adrese pēc stabila bildes žetona - pēc noņemšanas/pārkārtošanas kešs nerāda citu bildi.
+  const photoUrl = (p: IrissPdPhoto, size: "thumb" | "full" = "thumb") => irissPdAdminPhotoSrc(rec.id, p, size);
 
   const showImport = editable && (rec.status === "requested" || (!rec.vehicle.title && rec.source === "manual"));
   const adapter = rec.source !== "autoparks" && rec.source !== "logistics" && rec.source !== "manual" ? IRISS_PD_ADAPTERS[rec.source] : null;
@@ -735,7 +741,11 @@ export function PiedavajumsDetail({
         {showImport ? <PdImportPanel id={rec.id} onDone={applyRecord} /> : null}
 
         <Card title="Foto" sub={d.photos.length ? `${d.photos.length} foto · velc, lai mainītu secību · pirmā ir vāks · klikšķis atver lielā izmērā` : "Foto nav (nav obligāti)"}>
-          <PdPhotoSorter photos={d.photos} editable={editable} urlOf={photoUrl} keyOf={photoKey} onChange={(next) => set("photos", next)} />
+          <PdPhotoSorter photos={d.photos} editable={editable} urlOf={photoUrl} keyOf={photoKey} onChange={(next) => {
+              // Secība/noņemšana uzreiz serverī (viens PATCH), nevis pēc 1,2 s.
+              set("photos", next);
+              window.setTimeout(() => void saveRef.current({ silent: true }), 0);
+            }} />
         </Card>
 
         <Card title="Pamatdati" sub={rec.auto1 ? "Ielasīts no Auto1 · labojams" : "Labojams"}>

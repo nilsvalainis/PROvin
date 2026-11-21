@@ -9,6 +9,7 @@
 
 import type { IrissPdAction, IrissPdPatch } from "@/lib/iriss-piedavajumi";
 import type { IrissPdListRow, IrissPdPhoto, IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
+import { irissPdPhotoToken, maskedIrissPdPhotoToken, maskedIrissPdPhotoTokenUrl } from "@/lib/iriss-piedavajumi-photo-key";
 import { ENV_ADMIN_USER_ID, type IrissSection } from "@/lib/staff-roles";
 
 export type IrissPdViewer =
@@ -53,8 +54,9 @@ export function maskedIrissPdPhotoUrl(index: number): string {
   return `https://pd.invalid/p/${index}`;
 }
 
-function maskPhoto(p: IrissPdPhoto, index: number): IrissPdPhoto {
-  return p.kind === "url" ? { kind: "url", url: maskedIrissPdPhotoUrl(index) } : p;
+/** Nils 21.11: maskē ar stabilu žetonu (ne kārtas numuru - tas pēc noņemšanas norāda uz citu bildi). */
+function maskPhoto(p: IrissPdPhoto): IrissPdPhoto {
+  return p.kind === "url" ? { kind: "url", url: maskedIrissPdPhotoTokenUrl(irissPdPhotoToken(p)) } : p;
 }
 
 /** Vēstures tekstos izsoles numurs («Nr. 12345») - darbiniekam bez tā. */
@@ -85,13 +87,13 @@ export function maskIrissPdForStaff(rec: IrissPiedavajums): IrissPiedavajums {
     internalNotes: "",
     sourceUrl: "",
     sourceKey: "",
-    photos: rec.photos.map(maskPhoto),
+    photos: rec.photos.map((p) => maskPhoto(p)),
     history: rec.history.map((h) => ({ ...h, text: maskHistoryText(h.text) })),
   };
 }
 
 export function maskIrissPdRowForStaff(row: IrissPdListRow): IrissPdListRow {
-  const rest: IrissPdListRow = { ...row, sourceKey: "", cover: row.cover ? maskPhoto(row.cover, 0) : null };
+  const rest: IrissPdListRow = { ...row, sourceKey: "", cover: row.cover ? maskPhoto(row.cover) : null };
   delete rest.sourceUrl;
   return rest;
 }
@@ -112,8 +114,11 @@ function unmaskStaffPhotos(photos: unknown, rec: IrissPiedavajums): IrissPdPhoto
     if (!raw || typeof raw !== "object") continue;
     const p = raw as Record<string, unknown>;
     if (p.kind === "url") {
-      const m = typeof p.url === "string" ? MASKED_PHOTO_RE.exec(p.url) : null;
-      const real = m ? rec.photos[Number(m[1])] : undefined;
+      const url = typeof p.url === "string" ? p.url : "";
+      const token = maskedIrissPdPhotoToken(url);
+      // Vecais formāts (pēc numura) tikai atvērtām lapām no iepriekšējās versijas.
+      const m = token ? null : MASKED_PHOTO_RE.exec(url);
+      const real = token ? rec.photos.find((x) => x.kind === "url" && irissPdPhotoToken(x) === token) : m ? rec.photos[Number(m[1])] : undefined;
       if (real && real.kind === "url") out.push(real);
       continue;
     }

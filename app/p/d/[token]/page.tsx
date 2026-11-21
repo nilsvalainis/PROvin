@@ -11,6 +11,7 @@ import { IRISS_PUBLIC_DZA_CONTACT_LINES, IRISS_PUBLIC_PD_NOT_CURRENT_TITLE, IRIS
 import { irissPdPublicNotCurrentFor } from "@/lib/iriss-public-availability";
 import { readIrissPdByToken, readIrissPdFresh, recordIrissPdFirstView } from "@/lib/iriss-piedavajumi-store";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { irissPdPhotoQuery } from "@/lib/iriss-piedavajumi-photo-key";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -59,7 +60,7 @@ export default async function IrissPiedavajumsPublicPage({
   if (!adminPreview && (view.state === "open" || view.state === "approved")) await recordIrissPdFirstView(rec.id, new Date(nowMs).toISOString()).catch(() => undefined);
   const base = `/p/d/${token}/foto`;
   return (
-    <PdClientView view={view} mode="link" token={token} photoSrc={(n, s) => `${base}/${n}${s === "full" ? "?s=full" : ""}`}>
+    <PdClientView view={view} mode="link" token={token} photoSrc={(n, s, k) => `${base}/${n}${irissPdPhotoQuery(k, s)}`}>
       <PdClientActions
         token={token}
         needsContact={view.needsContact}
