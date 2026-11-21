@@ -720,7 +720,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       const { title, detail, body } = vendorTimelineTitleAndDetail(description, kind);
       const nationalIso = countryIsoFromLvLocative(nationalFirstRegistrationLocative(description));
       const failedInspection =
-        kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${body ?? ""} ${t.description}`);
+        kind === "inspection" && /neizturēt|nav\s+izturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${body ?? ""} ${t.description}`);
       out.push(
         makeEvent({
           kind,

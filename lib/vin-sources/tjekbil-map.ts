@@ -72,6 +72,30 @@ export function isCustomsInspection(r: TjekbilInspection): boolean {
   return /toldsyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`);
 }
 
+/**
+ * „Toldsyn export” - muitas apskate pirms izvešanas no Dānijas (pēc „Afmeldt”). Tas ir eksports:
+ * nedrīkst kļūt par importu, jaunu Dānijas īpašnieku vai „pirmā reģistrācija ārzemēs” pierādījumu.
+ */
+export function isExportCustomsInspection(r: TjekbilInspection): boolean {
+  return isCustomsInspection(r) && /eksport|export/i.test(`${str(r.kategori)} ${str(r.synstype)}`);
+}
+
+/** Muitas apskate ievedot Dānijā (Toldsyn import vai vecais „Toldsyn” bez virziena). */
+export function isImportCustomsInspection(r: TjekbilInspection): boolean {
+  return isCustomsInspection(r) && !isExportCustomsInspection(r);
+}
+
+/** Dienas, kurās ir eksporta muitas apskate (tās pašas dienas reģistrācijas apskate ir eksporta daļa). */
+function exportInspectionDays(inspections: TjekbilInspection[]): Set<string> {
+  return new Set(inspections.filter(isExportCustomsInspection).map((r) => isoDay(r.synsdato)).filter(Boolean));
+}
+
+function isExportRegistrationInspection(r: TjekbilInspection, exportDays: Set<string>): boolean {
+  if (isCustomsInspection(r)) return false;
+  if (!/registreringssyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`)) return false;
+  return exportDays.has(isoDay(r.synsdato));
+}
+
 /** Periodiskā / reģistrācijas apskate nav izturēta. Toldsyn „Middel” ir muitas vērtējums, ne MOT. */
 export function isFailedMot(r: TjekbilInspection): boolean {
   if (isCustomsInspection(r)) return false;
@@ -120,8 +144,11 @@ function statusHistorySignals(
 
 function dkRegistreringssynDates(inspections: TjekbilInspection[]): string[] {
   const dates: string[] = [];
+  const exportDays = exportInspectionDays(inspections);
   for (const r of inspections) {
     if (isCustomsInspection(r)) continue;
+    // Reģistrācijas apskate eksporta dienā (pagaidu eksporta numuri) nav jauns Dānijas īpašnieks.
+    if (isExportRegistrationInspection(r, exportDays)) continue;
     if (!/registreringssyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`)) continue;
     const date = isoDay(r.synsdato);
     if (date) dates.push(date);
@@ -133,7 +160,7 @@ function dkRegistreringssynDates(inspections: TjekbilInspection[]): string[] {
 export function firstRegistrationIsDanish(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): boolean {
   const firstReg = isoDay(dmr.basic?.foersteRegistreringDato);
   if (!firstReg) return false;
-  if (inspections.some(isCustomsInspection)) return false;
+  if (inspections.some(isImportCustomsInspection)) return false;
   return !dkRegistreringssynDates(inspections).some((date) => date !== firstReg);
 }
 
@@ -226,7 +253,9 @@ export function extractDkRegistrationSignals(
     rows.push({ date: dkFirstReg, event: "Pirmā reģistrācija Dānijā" });
   }
   for (const date of synDates) {
-    if (rows.some((s) => s.date === date)) continue;
+    // Reģistrācijas apskate dažas dienas pēc līzinga beigām / īpašnieka maiņas ir tā pati fāze (21.11: Passat
+    // 23.02 līzings beidzas, 25.02 reģistrācijas apskate = viens privātais īpašnieks, ne divi).
+    if (rows.some((s) => s.date === date || (s.date <= date && date <= addIsoDays(s.date, 7)))) continue;
     rows.push({ date, event: "Reģistrācija Dānijā" });
   }
 
@@ -263,7 +292,7 @@ function leasingPeriods(basic: Record<string, unknown>): { from: string; to: str
 }
 
 function hasLaterDkImport(inspections: TjekbilInspection[]): boolean {
-  return inspections.some(isCustomsInspection);
+  return inspections.some(isImportCustomsInspection);
 }
 
 function inspectionKm(r: TjekbilInspection): string {
@@ -271,18 +300,44 @@ function inspectionKm(r: TjekbilInspection): string {
   return km != null && km >= 0 ? String(km) : "";
 }
 
-function inspectionEvent(r: TjekbilInspection): string {
+function inspectionFaultsLv(r: TjekbilInspection): string {
+  return asArray(r.fejl)
+    .map((f) => tjekbilFaultLv(asRecord(f)))
+    .filter(Boolean)
+    .join(" | ");
+}
+
+/**
+ * Neizturēta apskate laika joslā: „Tehniskā apskate: neizturēta (periodiskā apskate), jāveic atkārtota
+ * apskate · <vieta> · Trūkumi: …”. Tas ir TA notikums (kā CSDD TA ar trūkumiem), ne negadījums.
+ */
+function failedInspectionEvent(r: TjekbilInspection, kindLv: string, place: string): string {
+  const rawResult = str(r.synsresultat).trim();
+  const resultLv = translateTermLv(rawResult, "da");
+  const tail = /^nav izturēta/i.test(resultLv)
+    ? resultLv.replace(/^nav izturēta[,\s]*/i, "").trim()
+    : resultLv || rawResult;
+  const kind = kindLv && !/^tehniskā apskate$/i.test(kindLv) ? ` (${kindLv.toLocaleLowerCase("lv")})` : "";
+  const head = `Tehniskā apskate: neizturēta${kind}${tail ? `, ${tail}` : ""}`;
+  const faults = inspectionFaultsLv(r);
+  return [head, place, faults ? `Trūkumi: ${faults}` : ""].filter(Boolean).join(" · ");
+}
+
+function inspectionEvent(r: TjekbilInspection, exportDays: Set<string> = new Set()): string {
   const kategori = translateTermLv(str(r.kategori), "da") || str(r.kategori);
   const result = translateTermLv(str(r.synsresultat), "da") || str(r.synsresultat);
   const place = str(r.firma).trim();
   if (isCustomsInspection(r)) {
     const grade = result || "nav norādīts";
     const detail = [`stāvoklis ${grade}`, place].filter(Boolean).join(" · ");
-    return detail ? `Muitas apskate (imports): ${detail}` : "Muitas apskate (imports)";
+    const label = isExportCustomsInspection(r) ? "Eksporta apskate (muita, izvešana no Dānijas)" : "Muitas apskate (imports)";
+    return detail ? `${label}: ${detail}` : label;
   }
   const kind = kategori || translateTermLv(str(r.synstype), "da") || "Tehniskā apskate";
+  if (isFailedMot(r)) return failedInspectionEvent(r, kind, place);
+  const exportKind = isExportRegistrationInspection(r, exportDays) ? `${kind} eksportam` : kind;
   const detail = [result, place].filter(Boolean).join(" · ");
-  return detail ? `${kind}: ${detail}` : kind;
+  return detail ? `${exportKind}: ${detail}` : exportKind;
 }
 
 export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: TjekbilInspection[]): VinSourceMileageRow[] {
@@ -305,7 +360,9 @@ export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: Tjek
     const date = isoDay(r.synsdato);
     if (!km || !date) continue;
     const origin = isCustomsInspection(r)
-      ? "Færdselsstyrelsen (muitas apskate)"
+      ? isExportCustomsInspection(r)
+        ? "Færdselsstyrelsen (eksporta muitas apskate)"
+        : "Færdselsstyrelsen (muitas apskate)"
       : `Færdselsstyrelsen (synsrapport) - ${translateTermLv(str(r.synsresultat), "da") || str(r.synsresultat)}`;
     rows.push({ date, odometer: km, country: DK_COUNTRY_LV, origin });
   }
@@ -367,29 +424,12 @@ export function tjekbilFaultLv(fault: { title?: unknown; description?: unknown }
   return body.complete ? `${headingLv}: ${tidyFaultText(body.text, true)}` : `${headingLv} (da: "${rest}")`;
 }
 
-/** „Apskate nav izturēta[, jāveic atkārtota apskate]” - tāds pats formulējums kā esyn kodam OOM. */
-function failedInspectionLabel(r: TjekbilInspection): string {
-  const result = translateTermLv(str(r.synsresultat), "da");
-  if (/^nav izturēta/i.test(result)) return `Apskate ${result}`;
-  return result ? `Apskate nav izturēta (${result})` : "Apskate nav izturēta";
-}
-
-export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): VinSourceIncidentRow[] {
+/**
+ * Negadījumu / zaudējumu rindas. 21.11: neizturēta tehniskā apskate NAV negadījums - tā ir laika joslā
+ * kā TA notikums ar trūkumiem (`inspectionEvent`), citādi PDF to rāda kā avāriju.
+ */
+export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, _inspections: TjekbilInspection[]): VinSourceIncidentRow[] {
   const rows: VinSourceIncidentRow[] = [];
-  for (const r of inspections) {
-    if (!isFailedMot(r)) continue;
-    const faultText = asArray(r.fejl)
-      .map((f) => tjekbilFaultLv(asRecord(f)))
-      .filter(Boolean)
-      .join(" | ");
-    rows.push({
-      date: isoDay(r.synsdato),
-      amount: "",
-      country: DK_COUNTRY_LV,
-      note: `${failedInspectionLabel(r)}${faultText ? ` - ${faultText}` : ""}`,
-    });
-  }
-
   const debts = asArray(dmr.debtData?.laaneDokumenter).map(asRecord);
   for (const d of debts) {
     rows.push({
@@ -416,8 +456,9 @@ export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: Tjekb
     push(firstReg, "Pirmā reģistrācija", "", abroad ? "" : DK_COUNTRY_LV);
   }
 
+  const exportDays = exportInspectionDays(inspections);
   for (const r of inspections) {
-    push(isoDay(r.synsdato), inspectionEvent(r), inspectionKm(r));
+    push(isoDay(r.synsdato), inspectionEvent(r, exportDays), inspectionKm(r));
   }
 
   for (const period of leasingPeriods(basic)) {
@@ -459,6 +500,23 @@ export function buildTjekbilOwnersSummary(dmr: TjekbilDmrResponse, inspections: 
   return `Īpašnieku skaits Dānijā: ${n}.`;
 }
 
+/** Statusa rinda, ko lasa arī `lib/registry-drivetrain.ts` (oficiālā piedziņa pret sludinājumu / car.info). */
+export const TJEKBIL_DRIVEN_AXLES_LABEL = "Dzenošās asis (DMR)";
+
+/** DMR `traekkendeAksler`: dzenošo asu skaits. 1 = nav pilnpiedziņa (4Motion / AWD nav). */
+export function tjekbilDrivenAxles(dmr: TjekbilDmrResponse): number | null {
+  const tech = asRecord((dmr.extended as Record<string, unknown> | undefined)?.techical);
+  const raw = str(dmr.basic?.traekkendeAksler) || str(tech.traekkendeAksler);
+  const n = Number(raw.trim());
+  return Number.isInteger(n) && n >= 1 && n <= 6 ? n : null;
+}
+
+export function drivenAxlesLv(n: number): string {
+  if (n === 1) return "1 (viena ass, nav pilnpiedziņa)";
+  if (n === 2) return "2 (pilnpiedziņa)";
+  return String(n);
+}
+
 export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: string; specialUse: string[] } {
   const basic = dmr.basic ?? {};
   const general = dmr.extended?.general ?? {};
@@ -487,6 +545,9 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
     .filter((part, i, all) => i === 0 || !all[0]!.toLocaleLowerCase("lv").includes(part.toLocaleLowerCase("lv")))
     .join(" · ");
   if (power) lines.push(`Jauda / piedziņa: ${capitalizeFactValue(power)}`);
+
+  const driven = tjekbilDrivenAxles(dmr);
+  if (driven != null) lines.push(`${TJEKBIL_DRIVEN_AXLES_LABEL}: ${drivenAxlesLv(driven)}`);
 
   const periods = leasingPeriods(basic);
   if (basic.bilLeaset === true) {

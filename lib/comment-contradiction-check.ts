@@ -19,6 +19,11 @@ import {
   findPowertrainContradictions,
   powertrainContradictionsToFlags,
 } from "@/lib/comment-powertrain-guard";
+import {
+  drivetrainContradictionsToFlags,
+  extractRegistryDrivetrain,
+  findDrivetrainContradictions,
+} from "@/lib/registry-drivetrain";
 
 export type ContradictionCheckInput = {
   text: string;
@@ -287,6 +292,10 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
       push(flag);
     }
   }
+
+  // 0b) 21.11: piedziņa - oficiālais reģistrs (DMR 1 dzenošā ass) pret „4Motion / AWD” tekstā.
+  const drivetrain = facts.drivetrain ?? (input.sourceBlocks ? extractRegistryDrivetrain(input.sourceBlocks) : null);
+  for (const flag of drivetrainContradictionsToFlags(findDrivetrainContradictions(text, drivetrain))) push(flag);
 
   // 1) Odometra kritums / CarVertical brīdinājums jāpiemin (tikai laukos, kur tas ir vietā).
   if (rollbackMentionRequired(field, facts, input.focusSourceLabel)) {
@@ -825,6 +834,12 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     ),
     countryPeriods: parseCountryPeriodsFromSheet(sheet),
     registryStatusLines: [],
+    drivetrain: (() => {
+      const dm = sheet.match(/Piedziņa \(oficiālais reģistrs ([^,)]+)[^)]*\):\s*(\d)\s+dzenoš/);
+      if (dm) return { drivenAxles: Number(dm[2]), awd: false, sourceLabel: dm[1]!.trim() };
+      const am = sheet.match(/Piedziņa \(oficiālais reģistrs ([^,)]+)[^)]*\):\s*pilnpiedziņa\s*\((\d)/);
+      return am ? { drivenAxles: Number(am[2]), awd: true, sourceLabel: am[1]!.trim() } : null;
+    })(),
     ta: EMPTY_TA,
     dealerRowsLv: "",
     dealerCampaigns: [],

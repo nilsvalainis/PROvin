@@ -197,19 +197,23 @@ describe("tjekbilFaultLv - apskates trūkums klienta atskaitei", () => {
   });
 });
 
-describe("neizturētas apskates piezīme", () => {
+describe("neizturēta apskate - TA notikums laika joslā, ne negadījums (21.11)", () => {
   const withInspection = (synsresultat: string, fejl: unknown[] = []): TjekbilDmrResponse => ({
     inspectionData: {
       rapporter: [{ synsdato: "10-10-2023", kategori: "Periodisk syn", synstype: "Første syn", synsresultat, fejl }],
     },
   });
+  const eventOn = (dmr: TjekbilDmrResponse, date: string) =>
+    mapTjekbilPayload({ dmr }).timeline.find((r) => r.date === date)?.event;
 
-  it("„Kan godkendes efter omsyn” un „Kan ikke godkendes” - bez dubulta „nav izturēta”", () => {
-    expect(mapTjekbilPayload({ dmr: withInspection("Kan godkendes efter omsyn hos (om)synsvirksomhed") }).incidents).toEqual([
-      { date: "2023-10-10", amount: "", country: "Dānija", note: "Apskate nav izturēta, jāveic atkārtota apskate" },
-    ]);
-    expect(mapTjekbilPayload({ dmr: withInspection("Kan ikke godkendes") }).incidents[0]?.note).toBe(
-      "Apskate nav izturēta",
+  it("„Kan godkendes efter omsyn” un „Kan ikke godkendes” - bez dubulta „nav izturēta”, negadījumos nav", () => {
+    const omsyn = withInspection("Kan godkendes efter omsyn hos (om)synsvirksomhed");
+    expect(mapTjekbilPayload({ dmr: omsyn }).incidents).toEqual([]);
+    expect(eventOn(omsyn, "2023-10-10")).toBe(
+      "Tehniskā apskate: Neizturēta (periodiskā apskate), jāveic atkārtota apskate",
+    );
+    expect(eventOn(withInspection("Kan ikke godkendes"), "2023-10-10")).toBe(
+      "Tehniskā apskate: Neizturēta (periodiskā apskate)",
     );
   });
 
@@ -218,8 +222,9 @@ describe("neizturētas apskates piezīme", () => {
       { title: "Bremser", description: "bremseslange, defekt, for, højre" },
       { title: "Karrosseri", description: "Karrosseri, dørtrin gennemtæret i højre side" },
     ]);
-    expect(mapTjekbilPayload({ dmr }).incidents[0]?.note).toBe(
-      'Apskate nav izturēta, jāveic atkārtota apskate - Bremzes: bremžu šļūtene, defekts, priekšā, labā puse | Virsbūve (da: "dørtrin gennemtæret i højre side")',
+    expect(mapTjekbilPayload({ dmr }).incidents).toEqual([]);
+    expect(eventOn(dmr, "2023-10-10")).toBe(
+      'Tehniskā apskate: Neizturēta (periodiskā apskate), jāveic atkārtota apskate · Trūkumi: Bremzes: bremžu šļūtene, defekts, priekšā, labā puse | Virsbūve (da: "dørtrin gennemtæret i højre side")',
     );
   });
 });

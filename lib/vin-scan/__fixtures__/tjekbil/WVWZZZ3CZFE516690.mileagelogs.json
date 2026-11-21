@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "url": "https://www.tjekbil.dk/api/v3/vehicles/mileagelogs?dmrId=9000000003669862",
+    "status": 200,
+    "fetchedAt": "2026-11-21",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": [
+    {
+      "mileage": 300428,
+      "mileageAt": "2026-09-15T12:45:00",
+      "origin": 10,
+      "logId": 38285505,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 300000,
+      "mileageAt": "2026-09-15T00:00:00",
+      "origin": 20,
+      "logId": 38285498,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 245253,
+      "mileageAt": "2025-02-03T13:20:00",
+      "origin": 10,
+      "logId": 26506545,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 245000,
+      "mileageAt": "2025-02-03T00:00:00",
+      "origin": 20,
+      "logId": 26506544,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 244501,
+      "mileageAt": "2025-01-22T13:55:00",
+      "origin": 10,
+      "logId": 26506546,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 244000,
+      "mileageAt": "2025-01-22T00:00:00",
+      "origin": 20,
+      "logId": 18418328,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 196000,
+      "mileageAt": "2023-02-03T10:35:00",
+      "origin": 10,
+      "logId": 7535062,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 196000,
+      "mileageAt": "2023-02-03T00:00:00",
+      "origin": 20,
+      "logId": 7535060,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 132000,
+      "mileageAt": "2021-02-25T12:31:00",
+      "origin": 10,
+      "logId": 7535063,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 119000,
+      "mileageAt": "2020-07-16T10:22:00",
+      "origin": 10,
+      "logId": 7535065,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 119000,
+      "mileageAt": "2020-07-16T10:19:00",
+      "origin": 10,
+      "logId": 7535066,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    },
+    {
+      "mileage": 0,
+      "mileageAt": "2015-07-03T00:00:00",
+      "origin": 30,
+      "logId": 7535061,
+      "reportId": null,
+      "dmrId": 9000000003669862,
+      "isHidden": false
+    }
+  ]
+}

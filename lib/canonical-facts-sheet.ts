@@ -71,6 +71,12 @@ import {
 } from "@/lib/admin-workspace-field-labels";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
+  extractRegistryDrivetrain,
+  formatRegistryDrivetrainFactLine,
+  otherSourcesClaimAwd,
+  type RegistryDrivetrain,
+} from "@/lib/registry-drivetrain";
+import {
   formatOwnerCountAiContext,
   ownerCountTotal,
   synthesizeOwnerCountsFromBlocks,
@@ -212,6 +218,10 @@ export type CanonicalFacts = {
   dealerComponentCounts: DealerComponentCount[];
   /** j26: reģistru statusi (FIN ierobežojumi, izņemšana no uzskaites u.c.). */
   registryStatusLines: string[];
+  /** 21.11: oficiālā reģistra piedziņa (DMR) - prioritāte pār sludinājumu / car.info. */
+  drivetrain?: RegistryDrivetrain | null;
+  /** Sludinājums / citi avoti min pilnpiedziņu, kamēr reģistrs saka 1 dzenošā ass. */
+  drivetrainOtherSourcesAwd?: boolean;
   dealerCampaigns: DealerFact[];
   recallCodes: string[];
   listingSummary: string;
@@ -511,6 +521,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerRowsLv,
     dealerComponentCounts,
     registryStatusLines,
+    drivetrain: extractRegistryDrivetrain(blocks),
+    drivetrainOtherSourcesAwd: otherSourcesClaimAwd(haystack),
     dealerCampaigns,
     recallCodes,
     listingSummary,
@@ -585,6 +597,10 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
         .map((r) => `${r.country} ${r.date}`)
         .join("; ")}`,
     );
+  }
+
+  if (facts.drivetrain) {
+    lines.push(formatRegistryDrivetrainFactLine(facts.drivetrain, facts.drivetrainOtherSourcesAwd === true));
   }
 
   lines.push("Nobraukums:");
