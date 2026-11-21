@@ -1853,32 +1853,38 @@ button.pd-lv {
   color: #1c1c1e;
   letter-spacing: 0.4px;
 }
-.pd-ps-x {
+.pd-ps-acts {
   position: absolute;
   right: 6px;
   top: 6px;
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #b42318;
-  font: 700 15px/26px Inter, system-ui, sans-serif;
-  text-align: center;
-  padding: 0;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  display: flex;
+  gap: 4px;
   opacity: 0;
   transition: opacity 0.12s;
 }
-.pd-ps-it:hover .pd-ps-x,
-.pd-ps-it:focus-within .pd-ps-x {
+.pd-ps-it:hover .pd-ps-acts,
+.pd-ps-it:focus-within .pd-ps-acts {
   opacity: 1;
 }
 @media (hover: none) {
-  .pd-ps-x {
+  .pd-ps-acts {
     opacity: 1;
   }
+}
+.pd-ps-acts button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1c1c1e;
+  font: 700 13px Inter, system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.pd-ps-acts button.x {
+  color: #b42318;
 }
 .pd-ps-ask {
   position: absolute;
@@ -1986,18 +1992,26 @@ button.pd-lv {
   margin-top: 10px;
 }
 /*
- * Nils 04.11 (telefons, iOS 18): telefonā 2 kolonnas; 21.11 - «×» 32 px pirkstam.
+ * Nils 04.11 (telefons, iOS 18): 3 kolonnās pogas ★ ‹ › × pārklājās ar numuru un bija par mazām pirkstam.
+ * Telefonā 2 kolonnas, pogas bildes apakšā pa visu platumu, 32 px.
  */
 @media (max-width: 600px) {
   .pd-ps-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .pd-ps-x {
+  .pd-ps-acts {
+    top: auto;
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .pd-ps-acts button {
     width: 32px;
     height: 32px;
-    font-size: 17px;
-    line-height: 32px;
+    font-size: 15px;
   }
   .pd-ps-ck {
     width: 28px;

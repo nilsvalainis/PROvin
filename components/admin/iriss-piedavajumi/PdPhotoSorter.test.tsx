@@ -6,6 +6,7 @@ import {
   photoIds,
   photosToFront,
   removePhotosById,
+  stepPhotoById,
 } from "@/components/admin/iriss-piedavajumi/PdPhotoSorter";
 import { renderHtml, renderText } from "@/lib/test-render";
 
@@ -39,7 +40,7 @@ describe("Nils 21.11: noņemšana pēc id, nevis pozīcijas", () => {
   it("vāka bildes noņemšana - vāks kļūst nākamā", () => {
     const left = removePhotosById(["a", "b", "c"], new Set(["a"]), key);
     expect(left[0]).toBe("b");
-    expect(renderText(<PdPhotoSorter photos={left} editable urlOf={(p) => `/x/${p}`} keyOf={key} onChange={() => undefined} />)).toMatch(/VĀKS × 2 ×/);
+    expect(renderText(<PdPhotoSorter photos={left} editable urlOf={(p) => `/x/${p}`} keyOf={key} onChange={() => undefined} />)).toMatch(/^Atzīmēt vairākas VĀKS › × 2 ★ ‹ ×$/);
   });
 
   it("«Atzīmēt vairākas»: atzīmētās paliek tās pašas arī pēc pārkārtošanas", () => {
@@ -52,6 +53,18 @@ describe("Nils 21.11: noņemšana pēc id, nevis pozīcijas", () => {
     const list = ["a", "b", "a"];
     expect(photoIds(list, key)).toEqual(["a", "b", "a#2"]);
     expect(removePhotosById(list, new Set(["a#2"]), key)).toEqual(["a", "b"]);
+  });
+
+  it("pogas ★ ‹ › pēc id (arī pēc pārkārtošanas un ar dublikātu)", () => {
+    const moved = movePhotoById(["a", "b", "c", "d"], "d", "a", key);
+    expect(stepPhotoById(moved, "b", -1, key)).toEqual(["d", "b", "a", "c"]);
+    expect(stepPhotoById(moved, "c", 1, key)).toEqual(moved);
+    expect(stepPhotoById(["a", "b", "a"], "a#2", -1, key)).toEqual(["a", "a", "b"]);
+    expect(movePhotoById(moved, "c", photoIds(moved, key)[0]!, key)).toEqual(["c", "d", "a", "b"]);
+    const html = renderHtml(<PdPhotoSorter photos={["a", "b", "c"]} editable urlOf={(p) => `/x/${p}`} keyOf={key} onChange={() => undefined} />);
+    expect(html.match(/: vāks"/g)).toHaveLength(2);
+    expect(html.match(/: pa kreisi"/g)).toHaveLength(2);
+    expect(html.match(/: pa labi"/g)).toHaveLength(2);
   });
 
   it("katrai bildei «×» un vilkšanas atribūti; skatam bez rediģēšanas - nav", () => {

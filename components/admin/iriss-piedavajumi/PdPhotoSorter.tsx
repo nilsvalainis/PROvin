@@ -51,6 +51,12 @@ export function movePhotoById<T>(list: readonly T[], activeId: string, overId: s
   return movePhotoList(list, all.indexOf(activeId), all.indexOf(overId));
 }
 
+/** Pārvieto bildi par vienu vietu pa kreisi (-1) vai pa labi (+1) - pogas ‹ ›. */
+export function stepPhotoById<T>(list: readonly T[], id: string, dir: -1 | 1, keyOf: (p: T) => string): T[] {
+  const from = photoIds(list, keyOf).indexOf(id);
+  return from < 0 ? [...list] : movePhotoList(list, from, from + dir);
+}
+
 /** Atzīmētās uz sākumu (to savstarpējā secība saglabājas). */
 export function photosToFront<T>(list: readonly T[], picked: ReadonlySet<string>, keyOf: (p: T) => string): T[] {
   const all = photoIds(list, keyOf);
@@ -76,10 +82,16 @@ function Tile<T>({
   onConfirmRemove,
   onCancelRemove,
   onBroken,
+  count,
+  onCover,
+  onStep,
 }: {
   id: string;
   photo: T;
   index: number;
+  count: number;
+  onCover: (id: string) => void;
+  onStep: (id: string, dir: -1 | 1) => void;
   editable: boolean;
   selectMode: boolean;
   picked: boolean;
@@ -126,17 +138,27 @@ function Tile<T>({
       {index === 0 ? <span className="pd-ps-cover">VĀKS</span> : <span className="pd-ps-n">{index + 1}</span>}
       {selectMode ? <span className={`pd-ps-ck${picked ? " on" : ""}`} aria-hidden /> : null}
       {editable && !selectMode && !confirming ? (
-        <button
-          type="button"
-          className="pd-ps-x"
-          aria-label={`Foto ${index + 1}: noņemt`}
-          onMouseDown={stop}
-          onTouchStart={stop}
-          onKeyDown={stop}
-          onClick={() => onAskRemove(id)}
-        >
-          ×
-        </button>
+        // Pogas nesāk vilkšanu (peles/pirksta/tastatūras notikumi neaiziet līdz bildes vilkšanai).
+        <span className="pd-ps-acts" onMouseDown={stop} onTouchStart={stop} onKeyDown={stop}>
+          {index > 0 ? (
+            <button type="button" title="Padarīt par vāku" aria-label={`Foto ${index + 1}: vāks`} onClick={() => onCover(id)}>
+              ★
+            </button>
+          ) : null}
+          {index > 0 ? (
+            <button type="button" aria-label={`Foto ${index + 1}: pa kreisi`} onClick={() => onStep(id, -1)}>
+              ‹
+            </button>
+          ) : null}
+          {index < count - 1 ? (
+            <button type="button" aria-label={`Foto ${index + 1}: pa labi`} onClick={() => onStep(id, 1)}>
+              ›
+            </button>
+          ) : null}
+          <button type="button" className="x" aria-label={`Foto ${index + 1}: noņemt`} onClick={() => onAskRemove(id)}>
+            ×
+          </button>
+        </span>
       ) : null}
       {confirming ? (
         <div className="pd-ps-ask" role="alertdialog" aria-label={`Noņemt foto ${index + 1}?`} onMouseDown={stop} onTouchStart={stop} onKeyDown={stop}>
@@ -305,6 +327,9 @@ export function PdPhotoSorter<T>({
                 onConfirmRemove={(x) => remove(new Set([x]))}
                 onCancelRemove={() => setAskId(null)}
                 onBroken={() => markBroken(keyOf(photos[i]!))}
+                count={n}
+                onCover={(x) => onChange(movePhotoById(photos, x, ids[0]!, keyOf))}
+                onStep={(x, dir) => onChange(stepPhotoById(photos, x, dir, keyOf))}
               />
             ))}
           </div>
