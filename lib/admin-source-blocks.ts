@@ -1374,6 +1374,51 @@ export function vinRegistryBlockToPlainText(
   return lines.join("\n");
 }
 
+/** Vecā tjekbil.dk formāta negadījuma rinda: „Apskate nav izturēta[, …] - <trūkumi>”. */
+const LEGACY_FAILED_INSPECTION_INCIDENT_RE = /^\s*apskate\s+nav\s+izturēta/i;
+const FAILED_INSPECTION_EVENT_RE = /apskate/i;
+const FAILED_INSPECTION_RESULT_RE = /nav\s+izturēt|neizturēt/i;
+
+/**
+ * 21.11: neizturēta tehniskā apskate nav negadījums. Saglabātajos pasūtījumos (pirms labojuma) tjekbil.dk
+ * to ielika negadījumu tabulā - pārnesam uz laika joslu kā TA notikumu ar trūkumiem, negadījumos neatstājam.
+ */
+export function moveFailedInspectionIncidentsToTimeline<
+  I extends VinRegistryIncidentRow,
+  T extends VinRegistryTimelineRow,
+>(incidents: readonly I[], timeline: readonly T[]): { incidents: I[]; timeline: VinRegistryTimelineRow[] } {
+  const legacy = incidents.filter((r) => LEGACY_FAILED_INSPECTION_INCIDENT_RE.test(wsStr(r.note)));
+  if (legacy.length === 0) return { incidents: [...incidents], timeline: [...timeline] };
+  const nextTimeline: VinRegistryTimelineRow[] = timeline.map((r) => ({ ...r }));
+  for (const inc of legacy) {
+    const note = wsStr(inc.note).trim();
+    const sep = note.indexOf(" - ");
+    const result = (sep >= 0 ? note.slice(0, sep) : note).replace(/^\s*apskate\s+/i, "").trim();
+    const faults = sep >= 0 ? note.slice(sep + 3).trim() : "";
+    const date = wsStr(inc.date).trim();
+    const same = nextTimeline.find(
+      (t) =>
+        wsStr(t.date).trim() === date &&
+        FAILED_INSPECTION_EVENT_RE.test(wsStr(t.event)) &&
+        FAILED_INSPECTION_RESULT_RE.test(wsStr(t.event)),
+    );
+    if (same) {
+      if (faults && !/trūkumi:/i.test(same.event)) same.event = `${same.event} · Trūkumi: ${faults}`;
+      continue;
+    }
+    nextTimeline.push({
+      date,
+      odometer: "",
+      country: wsStr(inc.country),
+      event: `Tehniskā apskate: ${result || "nav izturēta"}${faults ? ` · Trūkumi: ${faults}` : ""}`,
+    });
+  }
+  return {
+    incidents: incidents.filter((r) => !LEGACY_FAILED_INSPECTION_INCIDENT_RE.test(wsStr(r.note))),
+    timeline: nextTimeline,
+  };
+}
+
 export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): VinRegistryBlockState {
   const e = emptyVinRegistryBlock();
   if (!b || typeof b !== "object") return e;
@@ -1383,17 +1428,24 @@ export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): Vi
     country: wsStr(r?.country).slice(0, 120),
     origin: wsStr(r?.origin).slice(0, 200),
   }));
-  const incidents = (Array.isArray(b.incidents) ? b.incidents : []).map((r) => ({
-    date: wsStr(r?.date).slice(0, 40),
-    amount: wsStr(r?.amount).slice(0, 120),
-    country: wsStr(r?.country).slice(0, 120),
-    note: wsStr(r?.note).slice(0, 600),
-  }));
-  const timeline = (Array.isArray(b.timeline) ? b.timeline : []).map((r) => ({
-    date: wsStr(r?.date).slice(0, 40),
-    odometer: wsStr(r?.odometer).slice(0, 40),
-    country: wsStr(r?.country).slice(0, 120),
-    event: sanitizeVinRegistryClientText(wsStr(r?.event)).slice(0, 600),
+  const moved = moveFailedInspectionIncidentsToTimeline(
+    (Array.isArray(b.incidents) ? b.incidents : []).map((r) => ({
+      date: wsStr(r?.date).slice(0, 40),
+      amount: wsStr(r?.amount).slice(0, 120),
+      country: wsStr(r?.country).slice(0, 120),
+      note: wsStr(r?.note).slice(0, 600),
+    })),
+    (Array.isArray(b.timeline) ? b.timeline : []).map((r) => ({
+      date: wsStr(r?.date).slice(0, 40),
+      odometer: wsStr(r?.odometer).slice(0, 40),
+      country: wsStr(r?.country).slice(0, 120),
+      event: wsStr(r?.event),
+    })),
+  );
+  const incidents = moved.incidents;
+  const timeline = moved.timeline.map((r) => ({
+    ...r,
+    event: sanitizeVinRegistryClientText(r.event).slice(0, 1500),
   }));
   return {
     mileage: mileage.length > 0 ? mileage : e.mileage,
@@ -1930,7 +1982,8 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     const ownersSummary = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.ownersSummary ?? ""));
     const statusRecords = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.statusRecords ?? ""));
     const autoNotes = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.autoNotes ?? ""));
-    const timeline = (b.timeline ?? []).filter(vinRegistryTimelineRowHasData);
+    const moved = moveFailedInspectionIncidentsToTimeline(b.incidents ?? [], b.timeline ?? []);
+    const timeline = moved.timeline.filter(vinRegistryTimelineRowHasData);
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
       mileageRows: (b.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
@@ -1938,7 +1991,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         odometer: r.odometer,
         country: r.country,
       })),
-      incidentRows: (b.incidents ?? []).filter(vinRegistryIncidentRowHasData).map((r) => ({
+      incidentRows: moved.incidents.filter(vinRegistryIncidentRowHasData).map((r) => ({
         csngDate: r.date,
         lossAmount: r.amount,
         incidentNo: r.country,
