@@ -4,7 +4,7 @@
  * "3 ieraksti bez pretrunām", "Aptuveni 29 mēneši bez ierakstiem", "2. īpašnieks Latvijā", "Vācija/Dānija".
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
-import { ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
+import { countryIsoFromLvLocative, ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
 
 type Target = Exclude<ClientReportLang, "lv">;
 type Rule = { re: RegExp; to: Record<Target, (m: RegExpExecArray) => string> };
@@ -35,6 +35,24 @@ const RULES: Rule[] = [
     },
   },
   {
+    // Ārvalstu īpašnieka maiņa: „3. īpašnieks Nīderlandē”, „2. un 3. īpašnieks Nīderlandē”.
+    re: /((?:\d+\., )*\d+\.(?: un \d+\.)?) īpašnieks (ASV|Apvienotajā Karalistē|\p{L}+[āē])(?![\p{L}\p{N}])/gu,
+    to: {
+      en: (m) => `Owner no. ${ordinalList(m[1]!, "en")} (${regionName(m[2]!, "en")})`,
+      ru: (m) => `Владелец № ${ordinalList(m[1]!, "ru")} (${regionName(m[2]!, "ru")})`,
+      de: (m) => `${ordinalList(m[1]!, "de")} Halter (${regionName(m[2]!, "de")})`,
+    },
+  },
+  {
+    // carVertical kopkartīte: „6 īpašnieku maiņas Somijā”.
+    re: /(\d+) īpašniek(?:a maiņa|u maiņas) (ASV|Apvienotajā Karalistē|\p{L}+[āē])(?![\p{L}\p{N}])/gu,
+    to: {
+      en: (m) => `${m[1]} ${m[1] === "1" ? "change" : "changes"} of ownership (${regionName(m[2]!, "en")})`,
+      ru: (m) => `Смен владельца: ${m[1]} (${regionName(m[2]!, "ru")})`,
+      de: (m) => `${m[1]} Halterwechsel (${regionName(m[2]!, "de")})`,
+    },
+  },
+  {
     re: /1\. reģistrācija Latvijā/g,
     to: {
       en: () => "First registration in Latvia",
@@ -55,6 +73,21 @@ const RULES: Rule[] = [
     to: { en: () => "Latest:", ru: () => "Последний:", de: () => "Neuester:" },
   },
 ];
+
+/** „2. un 3.” → EN/RU „2 and 3” / „2 и 3”, DE „2. und 3.”. */
+function ordinalList(raw: string, lang: Target): string {
+  const nums = raw.match(/\d+/g) ?? [];
+  if (lang === "de") return nums.length > 1 ? `${nums.slice(0, -1).map((n) => `${n}.`).join(", ")} und ${nums[nums.length - 1]}.` : `${nums[0]}.`;
+  const and = lang === "ru" ? " и " : " and ";
+  return nums.length > 1 ? `${nums.slice(0, -1).join(", ")}${and}${nums[nums.length - 1]}` : (nums[0] ?? "");
+}
+
+/** Lokatīvs („Nīderlandē”) → valsts nosaukums mērķa valodā; ja neatpazīst, paliek kā ir. */
+function regionName(locative: string, lang: Target): string {
+  const iso = countryIsoFromLvLocative(locative);
+  if (!iso) return locative;
+  return new Intl.DisplayNames([lang], { type: "region" }).of(iso) ?? locative;
+}
 
 const COUNTRY_CACHE = new Map<Target, Array<{ re: RegExp; name: string }>>();
 
