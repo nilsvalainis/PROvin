@@ -9,6 +9,7 @@ import {
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 import type { OrderVinScanDashboardHint } from "@/lib/order-vin-scan";
+import { failedDealerGateChecks, type DealerShadowGate } from "@/lib/dealer-shadow-types";
 
 /** done - zaļš ķeksis; no_data / error - sarkans krusts; running - pelēks griežas; idle - pelēki punkti. */
 export type AdminIngestState = "done" | "no_data" | "error" | "running" | "idle";
@@ -22,6 +23,9 @@ export type AdminOrderIngest = {
   source: "dealer" | "vin_scan";
   /** Tikai dīlera datiem: vai klientam kaut kas nosūtīts. Nav zināms - lauka nav. */
   sent?: boolean;
+  /** Ēnu režīms (Nils 22.11): «sistēma sūtītu» / «aizturētu» + bloķējošo iemeslu skaits. */
+  shadow?: "send" | "hold";
+  shadowReasons?: number;
 };
 
 export type AdminIngestFilter = "all" | "not_sent" | "errors" | "running";
@@ -32,12 +36,32 @@ function withSent(base: AdminOrderIngest, sent: boolean | null | undefined): Adm
   return typeof sent === "boolean" ? { ...base, sent } : base;
 }
 
+function withShadow(base: AdminOrderIngest, gate: DealerShadowGate | null | undefined): AdminOrderIngest {
+  if (!gate) return base;
+  if (gate.verdict === "would_send") return { ...base, shadow: "send" };
+  const n = failedDealerGateChecks(gate).filter((c) => c.severity === "block").length;
+  return { ...base, shadow: "hold", shadowReasons: n };
+}
+
+/** Saraksta indikatora teksts: «Sistēma sūtītu» / «Sistēma aizturētu · 2». */
+export function adminIngestShadowLabel(ingest: AdminOrderIngest | null | undefined): string | null {
+  if (!ingest?.shadow) return null;
+  return ingest.shadow === "send" ? "Sistēma sūtītu" : `Sistēma aizturētu · ${ingest.shadowReasons ?? 0}`;
+}
+
 /** Dīlera datu darbs -> rindas indikācija. `job === null` - darbs vēl nav izveidots. */
 export function adminIngestFromDealerJob(
-  job: Pick<DealerDataJob, "status" | "error" | "serviceEventCount"> | null,
+  job: (Pick<DealerDataJob, "status" | "error" | "serviceEventCount"> & Partial<Pick<DealerDataJob, "shadowGate">>) | null,
   sent?: boolean | null,
 ): AdminOrderIngest {
   if (!job) return { state: "idle", label: "Nav palaists", source: "dealer" };
+  return withShadow(adminIngestFromDealerJobBase(job, sent), job.shadowGate);
+}
+
+function adminIngestFromDealerJobBase(
+  job: Pick<DealerDataJob, "status" | "error" | "serviceEventCount">,
+  sent?: boolean | null,
+): AdminOrderIngest {
   if (dealerDataJobHistoryReady(job)) {
     const count = Math.max(0, Math.round(job.serviceEventCount ?? 0));
     return withSent({ state: "done", label: `Ielasīts · ${count}`, count, source: "dealer" }, sent);
@@ -122,5 +146,9 @@ export function parseAdminOrderIngest(raw: unknown): AdminOrderIngest | undefine
   const out: AdminOrderIngest = { state, label, source };
   if (typeof o.count === "number" && Number.isFinite(o.count) && o.count >= 0) out.count = Math.round(o.count);
   if (typeof o.sent === "boolean") out.sent = o.sent;
+  if (o.shadow === "send" || o.shadow === "hold") out.shadow = o.shadow;
+  if (out.shadow === "hold" && typeof o.shadowReasons === "number" && Number.isFinite(o.shadowReasons)) {
+    out.shadowReasons = Math.max(0, Math.round(o.shadowReasons));
+  }
   return out;
 }

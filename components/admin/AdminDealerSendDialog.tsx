@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
@@ -23,6 +23,18 @@ import type { OrderClientMarks } from "@/lib/order-client-marks";
 import { dealerToAuditTargetCents, formatEurFromCents } from "@/lib/order-upsell";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
+import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow-types";
+import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
+
+/** Ēnu režīms (Nils 22.11): spriedums + atsauksme sūtīšanas formā. Sūtīšanu NEbloķē. */
+export type DealerSendShadow = {
+  gate: DealerShadowGate | null | undefined;
+  feedback: DealerShadowFeedback | null | undefined;
+  busy: boolean;
+  /** Pārbaude vēlreiz: atverot formu un pēc servera PDF (ar tā ceļu). */
+  recheck: (trigger: "send_dialog" | "pdf", pdf?: { pathname: string } | null) => void;
+  submitFeedback: (correct: boolean, note: string) => void;
+};
 
 /** Pasūtījuma darba zonas funkcijas, ko dīlera bloks saņem caur props (servera PDF + sūtīšana). */
 export type DealerSendBridge = {
@@ -53,6 +65,7 @@ type Props = {
   pdfLang: ClientReportLang;
   bridge?: DealerSendBridge | null;
   onSent: (marks: OrderClientMarks | null, notice: string) => void;
+  shadow?: DealerSendShadow | null;
 };
 
 const seg = (on: boolean) =>
@@ -110,6 +123,7 @@ export function AdminDealerSendDialog({
   pdfLang,
   bridge,
   onSent,
+  shadow = null,
 }: Props) {
   const [channel, setChannel] = useState<DealerSendChannel>("email");
   const [situation, setSituation] = useState<DealerSendSituation>(defaultSituation);
@@ -131,6 +145,16 @@ export function AdminDealerSendDialog({
     setPdfLink(null);
     void loadAdminMessageTemplatesDoc().then((d) => d && setDoc(d));
   }, [open, defaultSituation]);
+
+  // Ēnu režīms: atverot formu - pārbaude vēlreiz ar jaunāko melnrakstu (tikai spriedums).
+  const shadowRef = useRef(shadow);
+  useEffect(() => {
+    shadowRef.current = shadow;
+  }, [shadow]);
+  useEffect(() => {
+    if (open) shadowRef.current?.recheck("send_dialog");
+  }, [open]);
+  const recheckWithPdf = (prepared: SendReportPrepared) => shadowRef.current?.recheck("pdf", { pathname: prepared.pdfPathname });
 
   const paidCents = bridge?.paidCents ?? null;
   const offerPreview = useMemo(() => {
@@ -216,6 +240,7 @@ export function AdminDealerSendDialog({
     try {
       const prepared = await bridge.prepareDealerPdf(pdfLang);
       setPdfLink(prepared);
+      recheckWithPdf(prepared);
       if (phonePre) phonePre.navigate(prepared.downloadUrl);
       else window.open(prepared.downloadUrl, "_blank", "noopener,noreferrer");
     } catch (e) {
@@ -256,6 +281,7 @@ export function AdminDealerSendDialog({
       setBusy("pdf");
       try {
         const prepared = await bridge.prepareDealerPdf(pdfLang);
+        recheckWithPdf(prepared);
         setBusy("send");
         const r = await bridge.sendDealerReport({
           prepared,
@@ -518,6 +544,15 @@ export function AdminDealerSendDialog({
                 </button>
               )}
             </div>
+          ) : null}
+
+          {shadow?.gate ? (
+            <AdminDealerShadowFeedback
+              gate={shadow.gate}
+              feedback={shadow.feedback}
+              busy={shadow.busy}
+              onSubmit={shadow.submitFeedback}
+            />
           ) : null}
 
           {err ? <p className="amx-tx--red text-[11.5px] text-rose-700 max-md:text-[14px]">{err}</p> : null}
