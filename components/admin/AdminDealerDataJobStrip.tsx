@@ -346,7 +346,7 @@ export function AdminDealerDataJobStrip({
         ) : null}
       </div>
 
-      <p className="mt-1.5 text-[10.5px] text-[var(--color-provin-muted)]">
+      <p className="mt-1.5 text-[10.5px] text-[var(--color-provin-muted)] [overflow-wrap:anywhere]">
         {dealerSendStatusLine(lastDealerSend(marks))}
       </p>
 
