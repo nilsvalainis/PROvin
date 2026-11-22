@@ -520,6 +520,15 @@ function isPaintWork(folded: string): boolean {
   return PAINT_WORK_RE.test(folded) && !PAINT_NOT_WORK_RE.test(folded);
 }
 
+/** Krāsošanas / gruntēšanas pazīme virsbūvei (ne salona apdarei, ne krāsas kopšanai) - kādā darbu rindā. */
+export function isDealerPaintWork(works: string): boolean {
+  for (const line of (works ?? "").split(/\r?\n+/)) {
+    const folded = foldDealerWorkText(line);
+    if (folded && isPaintWork(folded) && !isInteriorTrim(folded)) return true;
+  }
+  return false;
+}
+
 function hasConsumableSignal(folded: string): boolean {
   CONSUMABLE_RE.lastIndex = 0;
   CONSUMABLE_COMPOUND_RE.lastIndex = 0;
