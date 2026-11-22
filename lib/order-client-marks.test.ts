@@ -81,7 +81,8 @@ describe("server-side dealer send record", () => {
     // multipart formā vērtības ir teksts
     expect(dealerSendRecordFromInput({ situation: "ready", offer: "true", review: "true" }, "email", at, "no_data")).toMatchObject({
       offer: true,
-      review: false,
+      // 22.11: atsauksmes lūgums drīkst būt kopā ar piedāvājumu
+      review: true,
     });
     expect(dealerSendRecordFromInput({ situation: "ready", review: true }, "email", at, "no_data").review).toBe(true);
     const rec = dealerSendRecordFromInput({ situation: "ready", to: "a@b.lv" } as never, "email", at, "ready");
