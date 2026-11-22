@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 
 import { AdminAiGenerateButton } from "@/components/admin/AdminAiGenerateButton";
+import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { aiAdminButtonOrder } from "@/lib/ai-admin-field-defaults";
 import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -20,6 +21,8 @@ type Props = {
   recommendedTier?: AiAdminModelTier;
   /** Ja norādīts — rāda tikai šīs pogas (piem. ātrajiem vērtējumiem tikai Gemini + Flash). */
   tiers?: readonly AiAdminModelTier[];
+  /** Testiem: piespiedu telefona skats (citādi pēc ekrāna platuma). */
+  phone?: boolean;
   onGenerate: (operatorNotes: string, modelTier: AiAdminModelTier) => void | Promise<void>;
 };
 
@@ -53,8 +56,11 @@ export function AdminAiGenerateWithPrefill({
   dialogHint = "Ievadi norādes vai pilnu eksperta tekstu. AI apstrādā VISAS tēmas, ko tu ieliec - nedrīkst izlaist un nedrīkst izvēlēties, ko rakstīt. Ja liec rakstīt tikai par konkrētu, liekas rindas netiek pievienotas. Garu ielīmējumu nedrīkst būtiski saīsināt: garuma limiti tad neattiecas. Drīkst pārkārtot PROVIN stilā; faktus, datumus un secinājumus nedrīkst apgraizīt.",
   recommendedTier = "gemini-flash",
   tiers: tiersProp,
+  phone: phoneProp,
   onGenerate,
 }: Props) {
+  const phoneMq = useAdminIsPhone();
+  const phone = phoneProp ?? phoneMq;
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [pendingTier, setPendingTier] = useState<AiAdminModelTier>(recommendedTier);
@@ -89,6 +95,23 @@ export function AdminAiGenerateWithPrefill({
 
   return (
     <>
+      {/* 22.11 makets v2: telefonā viena stikla poga «Ģenerēt»; modeli (Smart / PRO) izvēlas logā. */}
+      {phone ? (
+        <span className="amx inline-flex" data-ai-phone-generate>
+          <button
+            type="button"
+            className="amx-pill"
+            disabled={disabled || busy}
+            aria-busy={busy}
+            title={title ?? (demoOnly ? "AI pieejams tikai DEMO pasūtījumiem (drošības iemesli)" : label)}
+            aria-label={`Ģenerēt: ${label}`}
+            onClick={() => openDialog(recommendedTier)}
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+            Ģenerēt
+          </button>
+        </span>
+      ) : (
       <div className="inline-flex flex-wrap items-center gap-1">
         {tiers.map((tier) => (
           <AdminAiGenerateButton
@@ -109,6 +132,7 @@ export function AdminAiGenerateWithPrefill({
           />
         ))}
       </div>
+      )}
       {open ? (
         <div
           className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-3 sm:items-center"
@@ -136,9 +160,28 @@ export function AdminAiGenerateWithPrefill({
                 </p>
               </div>
             </div>
+            {phone && tiers.length > 1 ? (
+              <div className="amx mb-3">
+                <div className="amx-seg" role="tablist" aria-label="Modelis">
+                  {tiers.map((tier) => (
+                    <button
+                      key={tier}
+                      type="button"
+                      role="tab"
+                      aria-selected={pendingTier === tier}
+                      className="flex-1"
+                      disabled={busy}
+                      onClick={() => setPendingTier(tier)}
+                    >
+                      {SHORT_LABEL[tier]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <textarea
               ref={textareaRef}
-              className="mb-3 min-h-[120px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              className="mb-3 min-h-[120px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] leading-snug max-md:text-[16px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
               placeholder="Piem., ņem vērā LTAB negadījumu 2022; paskaidro odometra kritumu; pievieno manu secinājumu par pārdevēju…"
               value={notes}
               onChange={(e) => setNotes(e.target.value.slice(0, 8000))}
@@ -148,7 +191,7 @@ export function AdminAiGenerateWithPrefill({
             <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 max-md:min-h-11 max-md:px-4 max-md:text-[15px]"
                 disabled={busy}
                 onClick={close}
               >
@@ -156,7 +199,9 @@ export function AdminAiGenerateWithPrefill({
               </button>
               <button
                 type="button"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50 ${CONFIRM_CLASS[pendingTier]}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50 ${
+                  phone ? "bg-[#0b3fa8] max-md:min-h-11 max-md:px-4 max-md:text-[15px]" : CONFIRM_CLASS[pendingTier]
+                }`}
                 disabled={busy}
                 onClick={confirm}
               >

@@ -1,0 +1,78 @@
+/*
+ * PRO admin telefonā - 2. posms, b2 (22.11 makets v2): pasūtījuma avoti kā viens stikla saraksts,
+ * Pielikumi / Klients / Maksājums / Auto - kompaktas rindas, AI komentāru kartītes stiklā.
+ * Tikai telefonā (<768 px). Datorā šīs klases neko nemaina. Mainīgie - `app/admin/mobile/glass.css` (`.amx`).
+ * Konteineriem apzināti NAV backdrop-filter: tas pārvērstu pilnekrāna blokus (position: fixed) par
+ * konteinera iekšieni.
+ */
+
+@media (max-width: 767px) {
+  /* ---- Saraksta konteiners: avoti un meta rindas ---- */
+  .amx-src,
+  .amx-meta {
+    overflow: hidden;
+    border-radius: var(--amx-r);
+    background: var(--amx-glass);
+    border: 1px solid var(--amx-edge);
+    box-shadow: var(--amx-sh);
+  }
+  .amx-src {
+    gap: 0 !important;
+  }
+  .amx-meta > .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+  }
+  .amx-meta > .grid > .flex-col,
+  .amx-meta > .grid > .flex-col > .space-y-2 {
+    gap: 0 !important;
+  }
+  .amx-meta > .grid > .flex-col > .space-y-2 > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* ---- Katrs bloks - saraksta rinda (atverot - esošais bloka saturs) ---- */
+  :is(.amx-src, .amx-meta) [data-admin-block]:not([class*="max-md:fixed"]) {
+    margin-top: -1px;
+    border-radius: 0 !important;
+    border-top: 1px solid var(--amx-hair) !important;
+    border-left: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  :is(.amx-src, .amx-meta) [data-admin-block] > .provin-card-head {
+    min-height: 54px;
+    align-items: center;
+  }
+  /* Nosaukums parastiem burtiem, bez ikonas (makets: nosaukums + statuss labajā pusē). */
+  :is(.amx-src, .amx-meta) [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) {
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: var(--amx-tx) !important;
+  }
+  :is(.amx-src, .amx-meta) [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) > svg:first-child {
+    display: none;
+  }
+  /* Krāsainās «luksofora» malas telefonā nerāda - statuss ir punkts + teksts. */
+  :is(.amx-src, .amx-meta) [class*="border-l-[5px]"] {
+    border-left: 0 !important;
+    background: transparent !important;
+  }
+
+  /* ---- AI komentāru kartītes ---- */
+  .amx-ai {
+    border-radius: var(--amx-r) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .amx-ai > .space-y-2 > .grid > div {
+    padding: 14px;
+    border-radius: var(--amx-r);
+    background: var(--amx-glass);
+    border: 1px solid var(--amx-edge);
+    box-shadow: var(--amx-sh);
+  }
+}

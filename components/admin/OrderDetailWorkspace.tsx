@@ -5929,7 +5929,8 @@ export function OrderDetailWorkspace({
                 }}
               />
             )}
-            {dashboardSlot}
+            {/* Telefonā Pielikumi / Klients / Maksājums / Auto - kompaktas rindas vienā stikla sarakstā. */}
+            {dashboardSlot ? <div className="amx amx-meta">{dashboardSlot}</div> : null}
           </div>
         ) : dashboardSlot ? (
           <div className="hidden" aria-hidden>
@@ -5938,7 +5939,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 1) ? (
-          <div id="admin-m-sec-avoti" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+          <div id="admin-m-sec-avoti" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2 amx amx-src">
             <div id="admin-order-block-csdd" className="flex min-h-0 min-w-0 flex-col">
               <div id="admin-m-sec-nobraukums" className="contents">
               <AdminCsddSourceBlock
@@ -5986,7 +5987,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 2) ? (
-          <div id="admin-m-sec-negadijumi" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+          <div id="admin-m-sec-negadijumi" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2 amx amx-src">
             <div id="admin-order-block-autodna" className="flex min-h-0 min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
@@ -6363,7 +6364,7 @@ export function OrderDetailWorkspace({
                 </div>
               }
             >
-            <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
+            <div className="amx amx-ai mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
                 icon={IRISS_CHROME_LUCIDE.mainSection}
                 title="APPROVED BY IRISS"
