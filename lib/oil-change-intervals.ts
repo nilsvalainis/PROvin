@@ -93,7 +93,7 @@ const ENGINE_VISCOSITY_RE = /\b(?:0|5|10|15|20)w(?:16|20|30|40|50|60)\b/;
  * Pēc fold: bez garumzīmēm, ö->o, „oel”->„ol”.
  */
 const NON_ENGINE_OIL_CHUNK_RE =
-  /(?:automatiskas?|parnesum(?:u|karbas?)?|karbas?|dsg|dct|cvt|haldex|aizmugurej\w*\s+tilt\w*|diferencial\w*|transfer(?:\s+case)?|getriebe|transmission|axle|atf|dexron|mercon|hidraulisk\w*|stures|power\s+steering)(?:\s+(?:ellas?|oil|ol))*(?:\s+(?:maina|change|wechsel|filtr\w*))?|getriebeol\w*|haldexol\w*|achsol\w*|hinterachs\w*\s+ol\w*/g;
+  /(?:automatiskas?|parnesum(?:u|karbas?)?|karbas?|dsg|dct|cvt|haldex|aizmugurej\w*\s+tilt\w*|diferencial\w*|transfer(?:\s+case)?|getriebe|transmission|axle|atf|dexron|mercon|hidraulisk\w*|stures|power\s+steering)(?::?\s+(?:ellas?|oil|ol)(?:\s+(?:and|un|und)\s+filt\w*)?)*(?:\s+(?:maina|change|wechsel|filtr\w*))?|getriebeol\w*|haldexol\w*|achsol\w*|hinterachs\w*\s+ol\w*/g;
 
 const ENGINE_OIL_NAME_RE =
   /(?:motor)?ellas?\s+maina|motorell|motorol|motoroil|motor\s+(?:oil|ol)|dzineja\s+ellas?|engine\s+oil|oil\s+change|olwechsel|oilwechsel|ol\s+service|oil\s+service|lube\s+(?:service|oil)|oil\s+and\s+filter/;

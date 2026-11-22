@@ -90,6 +90,8 @@ describe("dealer major works vs routine maintenance", () => {
     ["RU ATF exact", BMW_RU_ATF],
     ["RU масло АКПП", "Замена масла в АКПП и фильтра"],
   ])("gearbox maintenance is not major: %s", (_label, works) => {
+    // Ātrumkārbas NOMAIŅA te nav. Kārbas eļļas maiņa kopš 22.11.2026 ir atsevišķs Lielo darbu punkts
+    // `gearbox_oil` (sk. dilera-atskaite-audits-2026-11-22.test.ts), bet `hasAnyMajorAssemblyRepair` to neskaita.
     expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(false);
     expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
   });

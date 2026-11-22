@@ -125,6 +125,13 @@ const ASSEMBLIES: Record<ClientReportLang, string> = {
   de: "Große Baugruppen",
 };
 
+const GEARBOX_OIL: Record<ClientReportLang, string> = {
+  lv: "Ātrumkārbas eļļas maiņa",
+  en: "Transmission oil change",
+  ru: "Замена масла в КПП",
+  de: "Getriebeölwechsel",
+};
+
 const LEAKED_LV = ["Lielie darbi", "Lielie mezgli", "Nav fiksēts", "Ātrumkārba", "Sadales ķēde"];
 
 const bmwAtfRows: AutoRecordsServiceWorkRow[] = [
@@ -222,22 +229,32 @@ function render(vin: string, model: string, rows: AutoRecordsServiceWorkRow[], l
 }
 
 describe("Lielie darbi labels in every PDF language", () => {
-  it.each(CLIENT_REPORT_LANGS)("BMW RU ATF is not major work in %s", (lang) => {
+  // Līdz 22.11.2026 šis tests gaidīja tukšu „Lielie darbi” sarakstu. Nila lēmums 22.11.2026:
+  // kārbas eļļas maiņa ir atsevišķs Lielo darbu punkts „Ātrumkārbas eļļas maiņa” (apkope, ne
+  // ātrumkārbas nomaiņa) - tāpēc tagad gaida tieši šo vienu punktu un joprojām nekādu „Ātrumkārba”.
+  it.each(CLIENT_REPORT_LANGS)("BMW RU ATF is gearbox oil change (not gearbox swap) in %s", (lang) => {
     const facts = extractDealerFactsFromServiceWorks(bmwAtfRows);
     const summary = buildDealerVisitSummary(bmwAtfRows, facts);
-    expect(summary?.majorWorks).toEqual([]);
+    expect(summary?.majorWorks.map((w) => [w.id, w.date, w.count])).toEqual([
+      ["gearbox_oil", "05.08.2022", undefined],
+    ]);
     const summaryHtml = buildDealerVisitSummaryHtml(bmwAtfRows, facts, lang);
     const majorHtml = buildDealerMajorWorksHtml(facts, lang);
-    expect(majorHtml).toBe("");
+    expect(majorHtml).toContain(MAJOR_HEAD[lang]);
+    expect(majorHtml).toContain(GEARBOX_OIL[lang]);
+    expect(majorHtml).toContain("05.08.2022 · 122 576 km");
     expect(summaryHtml).toContain(ASSEMBLIES[lang]);
-    expect(summaryHtml).toContain(NONE[lang]);
+    expect(summaryHtml).toContain(GEARBOX_OIL[lang]);
+    expect(summaryHtml).not.toContain(NONE[lang]);
     if (lang !== "lv") {
-      for (const lv of LEAKED_LV) expect(summaryHtml).not.toContain(lv);
+      for (const lv of [...LEAKED_LV, "Ātrumkārbas eļļas maiņa"]) {
+        expect(summaryHtml).not.toContain(lv);
+        expect(majorHtml).not.toContain(lv);
+      }
     }
     const doc = render("WBA6X310305V99966", "BMW 2er", bmwAtfRows, lang);
-    expect(section(doc, "pdf-svc-major")).toBe("");
+    expect(section(doc, "pdf-svc-major")).toContain(GEARBOX_OIL[lang]);
     expect(doc).toContain(ASSEMBLIES[lang]);
-    expect(doc).toContain(NONE[lang]);
     expect(doc).not.toMatch(/Ātrumkārba D6|Коробка передач D6|Transmission D6|Getriebe D6/);
   });
 
