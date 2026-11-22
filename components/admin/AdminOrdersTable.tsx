@@ -29,6 +29,13 @@ import {
 } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { AmxStatusIcon } from "@/components/admin/mobile/AdminMobileGlass";
+import {
+  adminIngestMatchesFilter,
+  adminIngestSentLabel,
+  countAdminIngestFilters,
+  type AdminIngestFilter,
+} from "@/lib/admin-mobile-ingest";
 import {
   AdminMobileChips,
   AdminMobileRoundBtn,
@@ -464,6 +471,9 @@ type ClientOverride = {
 function AdminOrdersMobileChrome({
   colorFilter,
   onColorFilter,
+  ingestFilter = "all",
+  onIngestFilter,
+  ingestCounts,
   filterCounts,
   belowTitle,
   showUnpaidViewSwitch,
@@ -472,6 +482,9 @@ function AdminOrdersMobileChrome({
   title?: string;
   colorFilter: AuditResultColor | "all" | "none";
   onColorFilter: (c: AuditResultColor | "all" | "none") => void;
+  ingestFilter?: AdminIngestFilter;
+  onIngestFilter?: (f: AdminIngestFilter) => void;
+  ingestCounts?: Record<Exclude<AdminIngestFilter, "all">, number>;
   filterCounts: { all: number; green: number; orange: number; red: number; none: number };
   belowTitle?: ReactNode;
   showUnpaidViewSwitch?: boolean;
@@ -535,16 +548,26 @@ function AdminOrdersMobileChrome({
       {/* Viena čipu josla: rezultāta filtri + "Neapmaksāti" (atsevišķs skats). */}
       <div className="mt-3">
         <AdminMobileChips
-          value={colorFilter}
+          value={ingestFilter !== "all" ? `ing:${ingestFilter}` : colorFilter}
           onChange={(id) => {
             if (id === "unpaid") {
               router.push(`${pathname}?view=unpaid`);
+              return;
+            }
+            if (id.startsWith("ing:")) {
+              onIngestFilter?.(id.slice(4) as AdminIngestFilter);
               return;
             }
             onColorFilter(id as AuditResultColor | "all" | "none");
           }}
           items={[
             { id: "all", label: adminMobileAuditFilterLabel("all"), count: filterCounts.all },
+            // Ielases filtri - tikai, ja sarakstā tādi ir (vai filtrs jau ieslēgts).
+            ...ADMIN_INGEST_CHIPS.filter((c) => (ingestCounts?.[c.id] ?? 0) > 0 || ingestFilter === c.id).map((c) => ({
+              id: `ing:${c.id}`,
+              label: c.label,
+              count: ingestCounts?.[c.id] ?? 0,
+            })),
             { id: "orange", label: adminMobileAuditFilterLabel("orange"), count: filterCounts.orange },
             { id: "green", label: adminMobileAuditFilterLabel("green"), count: filterCounts.green },
             { id: "red", label: adminMobileAuditFilterLabel("red"), count: filterCounts.red },
@@ -588,6 +611,12 @@ function AdminOrdersMobileChrome({
     </>
   );
 }
+
+const ADMIN_INGEST_CHIPS: { id: Exclude<AdminIngestFilter, "all">; label: string }[] = [
+  { id: "not_sent", label: "Nav nosūtīti" },
+  { id: "errors", label: "Kļūdas" },
+  { id: "running", label: "Ielasa" },
+];
 
 /** Telefona kartītes virsraksts: auto, citādi klients vai VIN; nekad tikai "-". Bez lielajiem burtiem. */
 export function adminOrderCardTitle(
@@ -728,6 +757,8 @@ export function AdminOrdersTable({
   const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
   const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
   const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");
+  /** Telefons: ielases filtri «Nav nosūtīti / Kļūdas / Ielasa» (22.11 makets v3). */
+  const [ingestFilter, setIngestFilter] = useState<AdminIngestFilter>("all");
   const [cardMenuId, setCardMenuId] = useState<string | null>(null);
   const swipeRef = useRef<{ id: string; x: number; dx: number } | null>(null);
   const lastSwipeDx = useRef(0);
@@ -799,8 +830,10 @@ export function AdminOrdersTable({
       deadlineFilter && deadlineNow != null
         ? filtered.filter((o) => matchesAdminOrdersDeadlineFilter(o, deadlineFilter, deadlineNow))
         : filtered;
-    return sortAdminOrdersIncompleteFirst(byDeadline);
-  }, [orders, completeOverride, colorOverride, colorFilter, deadlineFilter, deadlineNow]);
+    const byIngest =
+      ingestFilter === "all" ? byDeadline : byDeadline.filter((o) => adminIngestMatchesFilter(o.ingest, ingestFilter));
+    return sortAdminOrdersIncompleteFirst(byIngest);
+  }, [orders, completeOverride, colorOverride, colorFilter, deadlineFilter, deadlineNow, ingestFilter]);
 
   /**
    * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (jaunākie ienākušie pirmie,
@@ -895,6 +928,7 @@ export function AdminOrdersTable({
       none: withColor.filter((o) => !o.color).length,
     };
   }, [orders, colorOverride]);
+  const ingestCounts = useMemo(() => countAdminIngestFilters(orders.map((o) => o.ingest)), [orders]);
 
   return (
     <>
@@ -941,7 +975,16 @@ export function AdminOrdersTable({
       <div className="md:hidden">
         <AdminOrdersMobileChrome
           colorFilter={colorFilter}
-          onColorFilter={setColorFilter}
+          onColorFilter={(c) => {
+            setIngestFilter("all");
+            setColorFilter(c);
+          }}
+          ingestFilter={ingestFilter}
+          onIngestFilter={(f) => {
+            setColorFilter("all");
+            setIngestFilter(f);
+          }}
+          ingestCounts={ingestCounts}
           filterCounts={filterCounts}
           belowTitle={belowTopBar}
           showUnpaidViewSwitch={showUnpaidViewSwitch}
@@ -990,6 +1033,7 @@ export function AdminOrdersTable({
             miniHighlight: v.miniHighlight,
           });
           const accent = tone ? `am-tone am-tone-${tone}` : "";
+          const ingest = v.isPack ? null : o.ingest ?? null;
           const openOrderFromCard = (e: MouseEvent) => {
             if (v.isPack) return;
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
@@ -1082,49 +1126,66 @@ export function AdminOrdersTable({
                   />
                 </div>
               )}
-              <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 break-words text-[16px] font-semibold tracking-tight text-[var(--label)] max-md:line-clamp-2">
-                  {v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v)}
-                </p>
-                {v.isPack ? null : (
-                  <AdminOrderDeadlineTag
-                    tag={
-                      o.fullyReversed
-                        ? { label: o.paymentAdjustmentLabel || "Atmaksāts", tone: "done" }
-                        : formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
-                            complete: Boolean(o.auditComplete),
-                            nowMs: nowMs ?? undefined,
-                          })
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCardMenuId(o.id);
-                    }}
-                  />
-                )}
-              </div>
-              <p
-                className={`mt-0.5 truncate text-[13px] text-[var(--label-secondary)] ${
-                  !v.isPack && v.hasVin ? "font-mono tracking-[0.01em]" : ""
-                }`}
-              >
-                {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
-                {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
-              </p>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
-                  {v.primaryClient && v.primaryClient !== "-" && v.primaryClient !== adminOrderCardTitle(o.makeModel, v) ? (
-                    <>
-                      <span>{v.primaryClient}</span>
-                      {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
-                      {" · "}
-                    </>
+              <div className={ingest ? "amx flex items-start gap-3" : undefined}>
+                {ingest ? (
+                  <span className="mt-0.5 shrink-0">
+                    <AmxStatusIcon state={ingest.state} label={ingest.label} />
+                  </span>
+                ) : null}
+                <div className={ingest ? "min-w-0 flex-1" : undefined}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 break-words text-[16px] font-semibold tracking-tight text-[var(--label)] max-md:line-clamp-2">
+                      {v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v)}
+                    </p>
+                    {v.isPack ? null : (
+                      <AdminOrderDeadlineTag
+                        tag={
+                          o.fullyReversed
+                            ? { label: o.paymentAdjustmentLabel || "Atmaksāts", tone: "done" }
+                            : formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
+                                complete: Boolean(o.auditComplete),
+                                nowMs: nowMs ?? undefined,
+                              })
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCardMenuId(o.id);
+                        }}
+                      />
+                    )}
+                  </div>
+                  <p
+                    className={`mt-0.5 truncate text-[13px] text-[var(--label-secondary)] ${
+                      !v.isPack && v.hasVin ? "font-mono tracking-[0.01em]" : ""
+                    }`}
+                  >
+                    {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
+                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
+                  </p>
+                  {ingest ? (
+                    <div className="mt-0.5 flex items-center justify-between gap-2 text-[13px]" data-admin-ingest={ingest.state}>
+                      <span className={`amx-tx--${ingest.state} min-w-0 truncate font-medium`}>{ingest.label}</span>
+                      {adminIngestSentLabel(ingest) ? (
+                        <span className="amx-tx--mut shrink-0">{adminIngestSentLabel(ingest)}</span>
+                      ) : null}
+                    </div>
                   ) : null}
-                  {dateFmt.format(new Date(o.created * 1000))}
-                  {" · "}
-                  {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
-                </p>
-                {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 shrink-0 text-[var(--label-secondary)]" />}
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
+                      {v.primaryClient && v.primaryClient !== "-" && v.primaryClient !== adminOrderCardTitle(o.makeModel, v) ? (
+                        <>
+                          <span>{v.primaryClient}</span>
+                          {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
+                          {" · "}
+                        </>
+                      ) : null}
+                      {dateFmt.format(new Date(o.created * 1000))}
+                      {" · "}
+                      {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
+                    </p>
+                    {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 shrink-0 text-[var(--label-secondary)]" />}
+                  </div>
+                </div>
               </div>
               <button
                 type="button"

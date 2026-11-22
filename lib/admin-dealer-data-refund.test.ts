@@ -196,10 +196,10 @@ describe("dealer refund operator copy", () => {
   });
 
   it("admin strip un refund API vairs nepadara paziņojumu par atsevišķu soli", () => {
-    const strip = readFileSync(
-      join(process.cwd(), "components/admin/AdminDealerDataJobStrip.tsx"),
-      "utf8",
-    );
+    // Atmaksas loģika kopīga dīlera blokam un telefona B1 blokam (22.11): `useDealerDataJobControls`.
+    const strip = ["components/admin/AdminDealerDataJobStrip.tsx", "components/admin/useDealerDataJobControls.ts"]
+      .map((f) => readFileSync(join(process.cwd(), f), "utf8"))
+      .join("\n");
     const route = readFileSync(
       join(process.cwd(), "app/api/admin/dealer-data/refund/route.ts"),
       "utf8",
@@ -217,7 +217,8 @@ describe("dealer refund operator copy", () => {
       join(process.cwd(), "components/admin/OrderDetailWorkspace.tsx"),
       "utf8",
     );
-    expect(workspace).toMatch(/canDealerRefund=\{\s*payload\.sessionId\.startsWith\("cs_"\)/);
+    expect(workspace).toMatch(/const dealerCanRefund =\s*payload\.sessionId\.startsWith\("cs_"\)/);
+    expect(workspace).toContain("canDealerRefund={dealerCanRefund}");
     expect(workspace).toContain('(payload.notes ?? "").includes("partner_id=")');
   });
 
