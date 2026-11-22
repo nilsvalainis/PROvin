@@ -25,6 +25,8 @@ import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow-types";
 import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
+import type { DealerReviewScore } from "@/lib/dealer-review-score";
+import { AdminDealerReviewIndicator } from "@/components/admin/AdminDealerReviewCard";
 
 /** Ēnu režīms (Nils 22.11): spriedums + atsauksme sūtīšanas formā. Sūtīšanu NEbloķē. */
 export type DealerSendShadow = {
@@ -66,6 +68,8 @@ type Props = {
   bridge?: DealerSendBridge | null;
   onSent: (marks: OrderClientMarks | null, notice: string) => void;
   shadow?: DealerSendShadow | null;
+  /** «Atsauksmes iespēja»: tikai indikators pie ķekša (ķeksis pats neieslēdzas). */
+  review?: DealerReviewScore | null;
 };
 
 const seg = (on: boolean) =>
@@ -124,6 +128,7 @@ export function AdminDealerSendDialog({
   bridge,
   onSent,
   shadow = null,
+  review = null,
 }: Props) {
   const [channel, setChannel] = useState<DealerSendChannel>("email");
   const [situation, setSituation] = useState<DealerSendSituation>(defaultSituation);
@@ -465,6 +470,7 @@ export function AdminDealerSendDialog({
                 />
                 <div>
                   <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Google atsauksmes lūgums</div>
+                  {review ? <AdminDealerReviewIndicator review={review} /> : null}
                   {opts.offer ? <div className="text-[11px] text-slate-500">Nevar kopā ar piedāvājumu</div> : null}
                 </div>
               </label>

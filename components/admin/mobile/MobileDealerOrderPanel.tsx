@@ -21,6 +21,9 @@ import { requestOpenAdminBlock } from "@/lib/admin-mobile-ds";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerShadowGate } from "@/lib/dealer-shadow-types";
+import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { collectSourceBlockTexts, type DealerReviewScore } from "@/lib/dealer-review-score";
+import { AdminDealerReviewGlassCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
 import {
   dealerRefundCentsOf,
   resolveDealerPdfLang,
@@ -97,6 +100,8 @@ export type MobileDealerOrderPanelViewProps = {
   shadowGate?: DealerShadowGate | null;
   shadowBusy?: boolean;
   onShadowRecheck?: () => void;
+  /** «Atsauksmes iespēja» (tikai ieteikums). */
+  review?: DealerReviewScore | null;
 };
 
 /** Prezentācija (bez stāvokļa) - testējama ar SSR. */
@@ -132,6 +137,8 @@ export function MobileDealerOrderPanelView(p: MobileDealerOrderPanelViewProps) {
       </div>
 
       {p.notice ? <p className="amx-mut mt-2 px-1 text-[13px] [overflow-wrap:anywhere]">{p.notice}</p> : null}
+
+      {p.review ? <AdminDealerReviewGlassCard review={p.review} /> : null}
 
       <AmxLabel>Pārbaude</AmxLabel>
       {noRecords ? (
@@ -223,6 +230,9 @@ type ContainerProps = {
   serviceWorks: readonly AutoRecordsServiceWorkRow[] | null | undefined;
   serviceHistoryNotes: string;
   comments: string;
+  /** «Atsauksmes iespēja»: dīlera bloks + visu avotu teksti (taxi pazīmes reģistros). */
+  autoRecords?: AutoRecordsBlockState | null;
+  sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
 export function MobileDealerOrderPanel({
@@ -237,10 +247,14 @@ export function MobileDealerOrderPanel({
   serviceWorks,
   serviceHistoryNotes,
   comments,
+  autoRecords = null,
+  sourceBlocks = null,
 }: ContainerProps) {
   const c = useDealerDataJobControls({ sessionId, orderVin, editable: true, canRefund, walletRefund });
   const [pdfBusy, setPdfBusy] = useState(false);
   const records = useMemo(() => mobileDealerRecordsFromWorks(serviceWorks), [serviceWorks]);
+  const reviewTexts = useMemo(() => (sourceBlocks ? collectSourceBlockTexts(sourceBlocks) : []), [sourceBlocks]);
+  const review = useDealerReviewScore({ sessionId, job: c.job, autoRecords, vin: c.vin, extraTexts: reviewTexts });
   const pdfLang = resolveDealerPdfLang(reportLang);
   const sent = c.marks ? (c.marks.dealerSends ?? []).length > 0 : null;
   const ingest = adminIngestFromDealerJob(c.job, sent);
@@ -300,6 +314,7 @@ export function MobileDealerOrderPanel({
         shadowGate={job?.shadowGate ?? null}
         shadowBusy={c.shadowBusy}
         onShadowRecheck={job ? () => void c.recheckShadow("manual") : undefined}
+        review={review}
       />
       <AdminDealerSendDialog
         open={c.dialog !== null}
@@ -312,6 +327,7 @@ export function MobileDealerOrderPanel({
         refundCents={dealerRefundCentsOf(job)}
         pdfLang={pdfLang}
         bridge={dealerSend}
+        review={review}
         onSent={(next, msg) => {
           if (next) c.setMarks(next);
           c.setNotice(msg);
