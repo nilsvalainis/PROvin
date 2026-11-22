@@ -12,6 +12,7 @@ import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDa
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -108,6 +109,9 @@ export function AdminDealerDataJobStrip({
     defaultSituation,
     b2bRefund,
     vin,
+    shadowBusy,
+    recheckShadow,
+    submitShadowFeedback,
   } = useDealerDataJobControls({ sessionId, orderVin, editable, canRefund, walletRefund });
 
   const resolvedInitialLang = resolveDealerPdfLang(reportLang);
@@ -143,6 +147,9 @@ export function AdminDealerDataJobStrip({
       ) : (
         <p className="text-[10px] text-[var(--color-provin-muted)]">Automātiskā ielase nav palaista.</p>
       )}
+      {job ? (
+        <AdminDealerShadowGateRow gate={job.shadowGate} busy={shadowBusy} onRecheck={() => void recheckShadow("manual")} />
+      ) : null}
 
       <div className="mt-2">
         <button
@@ -231,6 +238,17 @@ export function AdminDealerDataJobStrip({
           if (next) setMarks(next);
           setNotice(msg);
         }}
+        shadow={
+          job
+            ? {
+                gate: job.shadowGate,
+                feedback: job.shadowFeedback,
+                busy: shadowBusy,
+                recheck: (trigger, pdf) => void recheckShadow(trigger, pdf),
+                submitFeedback: (correct, note) => void submitShadowFeedback(correct, note),
+              }
+            : null
+        }
       />
 
       {notice ? (

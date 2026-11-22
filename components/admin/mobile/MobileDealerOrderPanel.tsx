@@ -19,6 +19,8 @@ import { formatRigaDayTime } from "@/lib/order-client-marks";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import { requestOpenAdminBlock } from "@/lib/admin-mobile-ds";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
+import type { DealerShadowGate } from "@/lib/dealer-shadow-types";
 import {
   dealerRefundCentsOf,
   resolveDealerPdfLang,
@@ -91,6 +93,10 @@ export type MobileDealerOrderPanelViewProps = {
   onRerun: () => void;
   onShowAllRecords: () => void;
   onEditAi: (key: MobileDealerAiField["key"]) => void;
+  /** Ēnu režīma spriedums (nav - rinda netiek rādīta, ja nav darba). */
+  shadowGate?: DealerShadowGate | null;
+  shadowBusy?: boolean;
+  onShadowRecheck?: () => void;
 };
 
 /** Prezentācija (bez stāvokļa) - testējama ar SSR. */
@@ -106,6 +112,9 @@ export function MobileDealerOrderPanelView(p: MobileDealerOrderPanelViewProps) {
         </div>
         <AmxStatusDot tone={p.sentLabel === "Nosūtīts" ? "outline" : "neutral"}>{p.sentLabel}</AmxStatusDot>
       </AmxCard>
+      {p.onShadowRecheck ? (
+        <AdminDealerShadowGateRow glass gate={p.shadowGate} busy={p.shadowBusy} onRecheck={p.onShadowRecheck} />
+      ) : null}
 
       <div className="amx-grid2 mt-2.5">
         <AmxButton icon="doc" disabled={p.pdfDisabled || p.busy !== null} onClick={p.onPdf}>
@@ -247,6 +256,7 @@ export function MobileDealerOrderPanel({
     try {
       const prepared = await dealerSend.prepareDealerPdf(pdfLang);
       pre.navigate(prepared.downloadUrl);
+      void c.recheckShadow("pdf", { pathname: prepared.pdfPathname });
     } catch (e) {
       pre.close();
       c.setNotice(e instanceof Error ? e.message : "PDF netika izveidots.");
@@ -287,6 +297,9 @@ export function MobileDealerOrderPanel({
         }}
         onShowAllRecords={() => focusInAutoRecords(null)}
         onEditAi={(key) => focusInAutoRecords(`[aria-label="${AI_ARIA[key]}"]`)}
+        shadowGate={job?.shadowGate ?? null}
+        shadowBusy={c.shadowBusy}
+        onShadowRecheck={job ? () => void c.recheckShadow("manual") : undefined}
       />
       <AdminDealerSendDialog
         open={c.dialog !== null}
@@ -303,6 +316,17 @@ export function MobileDealerOrderPanel({
           if (next) c.setMarks(next);
           c.setNotice(msg);
         }}
+        shadow={
+          job
+            ? {
+                gate: job.shadowGate,
+                feedback: job.shadowFeedback,
+                busy: c.shadowBusy,
+                recheck: (trigger, pdf) => void c.recheckShadow(trigger, pdf),
+                submitFeedback: (correct, note) => void c.submitShadowFeedback(correct, note),
+              }
+            : null
+        }
       />
     </>
   );
