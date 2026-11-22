@@ -62,4 +62,35 @@ describe("storeThecarapiGallery", () => {
     expect(result.groups[0]?.title).toBe("TheCarApi · AUTO1 · 2024-03-12");
     expect(result.groups[0]?.photos[0]?.contentHash).toBe("hash-front");
   });
+
+  it("termiņš: neielādētās bildes atzīmē daļēji, ieraksti paralēli un neveiksmīgais ieraksts izkrīt", async () => {
+    const a = "https://img-pa.auto1.com/img/a.jpg";
+    const b = "https://img-pa.auto1.com/img/b.jpg";
+    let active = 0;
+    let peak = 0;
+    const result = await storeThecarapiGallery({
+      vin: VIN,
+      sessionId: "orderSession2",
+      records: [record("A1-300", [a, b])],
+      deadline: Date.now() + 1_000,
+      fetchJpegs: async (urls, _max, deadline) => {
+        expect(deadline).toBeTypeOf("number");
+        return {
+          ok: [{ ok: true as const, url: urls[0]!, jpeg: Buffer.from("a"), contentHash: "ha" }],
+          failed: [{ url: urls[1]!, reason: "deadline" }],
+        };
+      },
+      writeJpeg: async (sessionId) => {
+        active += 1;
+        peak = Math.max(peak, active);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        active -= 1;
+        if (sessionId === "orderSession2") throw new Error("blob_down");
+      },
+    });
+    expect(result.partial).toBe(true);
+    expect(peak).toBe(2);
+    expect(result.records[0]?.photos.map((photo) => photo.sourceUrl)).toEqual([a]);
+    expect(result.groups).toEqual([]);
+  });
 });

@@ -14,7 +14,13 @@ import { thecarapiJsonHasDetail } from "@/lib/vin-scan/thecarapi-fields";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
+
+/**
+ * Kopējais laika budžets TheCarApi + bildēm. Krietni zem maxDuration, lai paspētu saglabāt kešu
+ * un atbildēt ar daļējiem datiem, nevis Vercel 504.
+ */
+export const THECARAPI_ROUTE_BUDGET_MS = 240_000;
 
 export async function GET(req: Request) {
   if (!(await getAdminSession())) {
@@ -26,6 +32,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -48,9 +55,25 @@ export async function POST(req: Request) {
   const sessionId = sessionRaw || undefined;
   const skipCache = o.skipCache === true;
   const prev = o.block ? normalizeCcVinBlock(o.block) : undefined;
+  const cacheOnly = o.cacheOnly === true;
+  const cacheSince = typeof o.cacheSince === "string" ? o.cacheSince : undefined;
 
   try {
-    const result = await fetchThecarapiCcVinMerge({ vin, prev, sessionId, skipCache });
+    const result = await fetchThecarapiCcVinMerge({
+      vin,
+      prev,
+      sessionId,
+      skipCache,
+      cacheOnly,
+      cacheSince,
+      deadline: startedAt + THECARAPI_ROUTE_BUDGET_MS,
+    });
+    if (result.error === "no_cache") {
+      return NextResponse.json(
+        { error: "no_cache", summary: result.parse.summary, cachedAt: result.cachedAt, used: result.used, cap: result.cap },
+        { status: 404 },
+      );
+    }
     if (result.error === "missing_thecarapi_credentials") {
       return NextResponse.json(
         { error: "missing_thecarapi_credentials", summary: result.parse.summary, used: result.used, cap: result.cap },
@@ -107,6 +130,7 @@ export async function POST(req: Request) {
       auctions,
       records: result.records,
       detailDiag: result.detailDiag ?? [],
+      partial: result.partial === true,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
