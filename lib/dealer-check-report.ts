@@ -65,8 +65,9 @@ export function applyDealerCheckBrandHeader(
   dzaLogoDataUrl: string,
 ): string {
   if (template !== "dzintarzeme") return html;
+  const logoOk = dzaLogoDataUrl.startsWith("data:image/") && !/["<>\s]/.test(dzaLogoDataUrl);
   const img = (cls: string) =>
-    dzaLogoDataUrl
+    logoOk
       ? `<img class="${cls}" src="${dzaLogoDataUrl}" alt="Dzintarzeme Auto" style="width:170px;height:auto">`
       : `<p class="${cls}" style="font:800 18px Inter,sans-serif;margin:0">Dzintarzeme Auto</p>`;
   return html

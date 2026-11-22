@@ -266,25 +266,38 @@ export function AdminDealerSendDialog({
     }
     setBusy("send");
     try {
-      const res = await fetch("/api/admin/dealer-data/notify-email", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          customerEmail: customerEmail.trim(),
-          subject: subject.trim(),
-          text: text.trim(),
-          ...sendFlags(),
-        }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
+      type NotifyBody = {
         ok?: boolean;
         to?: string;
         message?: string;
         error?: string;
+        requested?: string;
         marks?: OrderClientMarks;
       };
+      const post = async (confirmRecipientOverride: boolean) => {
+        const res = await fetch("/api/admin/dealer-data/notify-email", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            customerEmail: customerEmail.trim(),
+            subject: subject.trim(),
+            text: text.trim(),
+            ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+            ...sendFlags(),
+          }),
+        });
+        return { res, body: (await res.json().catch(() => ({}))) as NotifyBody };
+      };
+      let { res, body } = await post(false);
+      if (
+        res.status === 409 &&
+        body.error === "recipient_mismatch" &&
+        window.confirm(`${body.message ?? "Saņēmējs atšķiras no pasūtījumā saglabātā."}\n\nSūtīt uz ${body.requested ?? customerEmail.trim()}?`)
+      ) {
+        ({ res, body } = await post(true));
+      }
       if (!res.ok || !body.ok) {
         setErr(body.message || body.error || `Nosūtīšana neizdevās (${res.status}).`);
         return;

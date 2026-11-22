@@ -6,6 +6,7 @@ import {
   DEALER_CHECK_LIST_DEFAULT_FILTER,
   DEALER_CHECK_OWNER_ID,
   dealerCheckCreatorId,
+  csvCell,
   dealerCheckListToCsv,
   dealerCheckLoadShouldPersist,
   filterDealerCheckList,
@@ -186,5 +187,23 @@ describe("CSDD snapshots", () => {
   it("tukšs objekts nav snapshots", () => {
     expect(parseDealerCheckCsddSnapshot(emptyCsddTechData())).toBeNull();
     expect(parseDealerCheckCsddSnapshot({ ...emptyCsddTechData(), vin: VIN })?.vin).toBe(VIN);
+  });
+});
+
+describe("csvCell", () => {
+  it("teksts, ko izklājlapa uztvertu kā formulu, saņem apostrofu", () => {
+    expect(csvCell("=1+1")).toBe("'=1+1");
+    expect(csvCell("+371 29502039")).toBe("'+371 29502039");
+    expect(csvCell("@cmd")).toBe("'@cmd");
+    expect(csvCell("-1+2")).toBe("'-1+2");
+    expect(csvCell('=A1;"x"')).toBe(`"'=A1;""x"""`);
+  });
+
+  it("parastas vērtības nemainās", () => {
+    expect(csvCell("BMW 320d")).toBe("BMW 320d");
+    expect(csvCell("-")).toBe("-");
+    expect(csvCell("-12.5")).toBe("-12.5");
+    expect(csvCell(-5)).toBe("-5");
+    expect(csvCell("a,b")).toBe('"a,b"');
   });
 });

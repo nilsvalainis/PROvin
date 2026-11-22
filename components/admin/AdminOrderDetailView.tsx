@@ -35,6 +35,7 @@ import { formatOrderTimestampSec } from "@/lib/format-order-datetime";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
+import { externalPlainTextToRichSeed } from "@/lib/admin-rich-comment-html";
 import type { CustomerHistory } from "@/lib/admin-customer-history";
 import {
   orderEditsNeedServerPatch,
@@ -476,7 +477,7 @@ export function AdminOrderDetailView({
               <div className="mt-0">
                 <AdminSavableTextField
                   id="edit-notes"
-                  value={mergedNotes}
+                  value={edits.notes !== undefined ? mergedNotes : externalPlainTextToRichSeed(mergedNotes)}
                   onChange={(v) => persistEdits({ notes: v })}
                   placeholder="Klienta ziņojums…"
                   multiline

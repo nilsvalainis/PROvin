@@ -201,8 +201,10 @@ export function filterDealerCheckList(
   return out.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : a.id < b.id ? 1 : -1));
 }
 
-function csvCell(value: string | number): string {
-  const s = String(value);
+/** Teksta šūna, ko izklājlapa uztvertu kā formulu (`=`, `+`, `-`, `@`), saņem priekšā apostrofu. */
+export function csvCell(value: string | number): string {
+  let s = String(value);
+  if (typeof value === "string" && (/^[=+@\t\r]/.test(s) || /^-(?!\d*(?:[.,]\d+)?$)/.test(s))) s = `'${s}`;
   if (/[",\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

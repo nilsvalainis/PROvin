@@ -148,7 +148,8 @@ export function AdminInternalRichCommentEditor({
       syncingFromParent.current = false;
       return;
     }
-    const next = value || "";
+    /** Vērtība var nākt no ārēja avota - DOM saņem tikai attīrītu HTML. */
+    const next = coerceAdminRichHtmlForDisplay(value || "");
     if (
       !shouldSyncRichCommentEditorFromParent({
         editorHtml: el.innerHTML,

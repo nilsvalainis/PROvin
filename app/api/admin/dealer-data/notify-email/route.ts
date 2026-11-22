@@ -12,7 +12,7 @@ import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
-import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,9 +52,19 @@ export async function POST(req: Request) {
   const draft = await readOrderDraft(sessionId);
   const draftEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
   const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
-  const bodyEmail = String(o.customerEmail ?? "").trim();
-  const to =
-    [bodyEmail, draftEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+  const recipient = await resolveDealerSendRecipient({
+    logTag: "api/admin/dealer-data/notify-email",
+    sessionId,
+    requested: String(o.customerEmail ?? ""),
+    confirmOverride: o.confirmRecipientOverride === true,
+    draftEmail,
+    orderEmail: fromOrder,
+    order: { partnerId: order.partnerId, notes: order.notes },
+  });
+  if (!recipient.ok) {
+    return NextResponse.json(dealerSendRecipientErrorBody(recipient), { status: recipient.status });
+  }
+  const to = recipient.to;
 
   if (!canNotifyClientOrder(order, to)) {
     return NextResponse.json(
@@ -65,7 +75,7 @@ export async function POST(req: Request) {
 
   const emailSent = await trySendDealerDataOperatorEmail({ to, subject, text });
   if (!emailSent) {
-    return NextResponse.json({ error: "email_failed", to }, { status: 502 });
+    return NextResponse.json({ error: "email_failed" }, { status: 502 });
   }
   // Sūtīšanas vēsture pasūtījumā (bez e-pasta adreses): laiks, veids, kanāls.
   const marks = await recordDealerSendOnServer(

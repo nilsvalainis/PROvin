@@ -48,7 +48,9 @@ export default async function OrderUpsellPage({
   const parent = await getCheckoutSessionDetail(found.parentSessionId);
   const vin = parent?.vin?.trim() || "";
   const email = maskEmail((parent?.customerEmail ?? parent?.customerDetailsEmail ?? "").trim());
-  const paid = found.offer.status === "paid" || found.offer.status === "manual" || sp.paid === "1";
+  /** Apmaksu apstiprina tikai serveris; `?paid=1` nozīmē vien to, ka klients atgriezies no maksājuma lapas. */
+  const paid = found.offer.status === "paid" || found.offer.status === "manual";
+  const returnedFromCheckout = !paid && sp.paid === "1";
   const expired = found.offer.status === "open" && isOfferExpired(found.offer.expiresAt);
 
   if (paid) {
@@ -57,6 +59,18 @@ export default async function OrderUpsellPage({
         <h1 className="text-2xl font-semibold">Papildu apmaksa saņemta</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
           Pasūtījums tiek papildināts. Sagatavošana aizņem līdz 48 stundām. Jau nosūtītie materiāli paliek spēkā.
+          {vin ? ` VIN ${vin}.` : ""}
+        </p>
+      </main>
+    );
+  }
+
+  if (returnedFromCheckout) {
+    return (
+      <main className={shell}>
+        <h1 className="text-2xl font-semibold">Maksājums tiek apstrādāts</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
+          Tiklīdz maksājums būs apstiprināts, pasūtījums tiks papildināts. Ja maksājumu neveicāt, atveriet saiti vēlreiz.
           {vin ? ` VIN ${vin}.` : ""}
         </p>
       </main>

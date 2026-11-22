@@ -43,12 +43,34 @@ function loadInterFontFaceCss(): Promise<string> {
 
 export type ReportPdfRenderResult = { pdf: Uint8Array; ms: number; fontsReady: boolean };
 
+/**
+ * Renderēšanas laikā lapa drīkst ielādēt tikai iegultus resursus (data:/blob:/about:).
+ * Atskaites HTML viss vajadzīgais (fonti, attēli, stili) jau ir iekšā - tīkls nav nepieciešams.
+ */
+export function isAllowedReportPdfRequestUrl(url: string): boolean {
+  return /^(?:data|blob|about):/i.test(url.trim());
+}
+
+/** Satura politika servera renderim: bez ārējiem resursiem, ietvariem un formām. */
+export const REPORT_PDF_RENDER_CSP =
+  "default-src 'none'; img-src data: blob:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; " +
+  "connect-src 'none'; frame-src 'none'; child-src 'none'; object-src 'none'; media-src 'none'; form-action 'none'; base-uri 'none'";
+
+export function withReportPdfRenderCsp(html: string): string {
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${REPORT_PDF_RENDER_CSP}"/>`;
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => `${m}${meta}`) : `${meta}${html}`;
+}
+
 export async function renderReportHtmlToPdf(html: string): Promise<ReportPdfRenderResult> {
   const started = Date.now();
-  html = embedReportInterFonts(html, await loadInterFontFaceCss());
+  html = withReportPdfRenderCsp(embedReportInterFonts(html, await loadInterFontFaceCss()));
   const browser = await launchBrowser();
   try {
-    const page = await browser.newPage();
+    const context = await browser.newContext({ offline: true, serviceWorkers: "block" });
+    await context.route("**/*", (route) =>
+      isAllowedReportPdfRequestUrl(route.request().url()) ? route.continue() : route.abort("blockedbyclient"),
+    );
+    const page = await context.newPage();
     await page.setContent(html, { waitUntil: "load", timeout: REPORT_PDF_RENDER_TIMEOUT_MS });
     // Atskaites HTML pats gaida Inter fontus un tad uzliek `data-provin-fonts="ready"` (sk. reportFontGuardScript).
     const fontsReady = await page

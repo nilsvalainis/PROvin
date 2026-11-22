@@ -20,6 +20,7 @@ import {
   type AdminOrderDetailClientModel,
 } from "@/components/admin/AdminOrderDetailView";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
+import { externalPlainTextToRichSeed } from "@/lib/admin-rich-comment-html";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
 type ConsultationEdits = {
@@ -398,7 +399,7 @@ export function AdminConsultationDetailView({
           <div className="space-y-1 px-2 pb-2">
             <AdminSavableTextField
               id="consultation-edit-notes"
-              value={mergedNotes}
+              value={edits.notes !== undefined ? mergedNotes : externalPlainTextToRichSeed(mergedNotes)}
               onChange={(v) => persistEdits({ notes: v })}
               placeholder="Sākotnējais ziņojums no formas…"
               multiline
@@ -543,7 +544,11 @@ export function AdminConsultationDetailView({
             <AdminSavableTextField
               id="consultation-select-required-equipment"
               label="Obligātais aprīkojums:"
-              value={mergedSelectRequiredEquipment}
+              value={
+                edits.selectRequiredEquipment !== undefined || oe?.selectRequiredEquipment !== undefined
+                  ? mergedSelectRequiredEquipment
+                  : externalPlainTextToRichSeed(mergedSelectRequiredEquipment)
+              }
               onChange={(v) => persistEdits({ selectRequiredEquipment: v })}
               placeholder=""
               multiline
@@ -556,7 +561,11 @@ export function AdminConsultationDetailView({
             <AdminSavableTextField
               id="consultation-select-desired-equipment"
               label="Vēlamais aprīkojums:"
-              value={mergedSelectDesiredEquipment}
+              value={
+                edits.selectDesiredEquipment !== undefined || oe?.selectDesiredEquipment !== undefined
+                  ? mergedSelectDesiredEquipment
+                  : externalPlainTextToRichSeed(mergedSelectDesiredEquipment)
+              }
               onChange={(v) => persistEdits({ selectDesiredEquipment: v })}
               placeholder=""
               multiline

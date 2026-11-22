@@ -5,6 +5,11 @@
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 
+/** Saitei atskaitē der tikai http(s) adrese; cits teksts paliek kā vienkāršs teksts. */
+function isHttpUrl(value: string): boolean {
+  return /^https?:\/\/[^\s/]/i.test(value.trim());
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -190,7 +195,7 @@ export function buildPdfAdminMirrorVehicleBlock(
       if (r.k === "VIN") {
         return `<tr><td>${esc(r.k)}</td><td><span class="pdf-vin">${esc(r.v)}</span></td></tr>`;
       }
-      if (r.isLink) {
+      if (r.isLink && isHttpUrl(r.v)) {
         const u = esc(r.v);
         return `<tr><td>${esc(r.k)}</td><td><a href="${u}" class="pdf-v1-listing-link">${u}</a></td></tr>`;
       }
@@ -291,7 +296,7 @@ export function buildPdfAboutReportBlock(args: {
         .map((r) => {
           const value =
             r.kind === "vin" ? `<span class="pdf-vin">${esc(r.v)}</span>`
-            : r.kind === "link" ? `<a href="${esc(r.v)}" class="pdf-v1-listing-link">${esc(r.v)}</a>`
+            : r.kind === "link" && isHttpUrl(r.v) ? `<a href="${esc(r.v)}" class="pdf-v1-listing-link">${esc(r.v)}</a>`
             : esc(r.v);
           return `<tr><td>${esc(r.k)}</td><td>${value}</td></tr>`;
         })
