@@ -22,6 +22,8 @@ import {
   partnerVerifyEmailHtml,
   staffInviteEmailHtml,
   paymentConfirmationHtml,
+  type OperatorEmailContext,
+  type ReportEmailExtras,
 } from "@/lib/email/html-templates";
 import { unpaidReminderEmailHtml } from "@/lib/admin-unpaid-reminder-copy";
 import type { OrderEmailPayload } from "@/lib/email/types";
@@ -467,6 +469,7 @@ export async function sendPaymentConfirmationEmail(opts: {
       invoiceUrl,
       amountLine,
       vin: opts.vin?.trim() || "-",
+      lang: emailLang,
       ...(foreign
         ? {
             copy: {
@@ -585,6 +588,8 @@ export async function sendReportReadyEmail(opts: {
   corrected?: boolean;
   /** Admina rediģēts temats + teksts (dīlera «Sūtīt klientam» logs). PDF pielikumi paliek tie paši. */
   custom?: { subject: string; text: string } | null;
+  /** HTML kartītei: kopsavilkuma fakti, auto, piemaksas saites termiņš (ja sūtīšanas brīdī zināms). */
+  emailContext?: ReportEmailExtras | null;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -600,6 +605,8 @@ export async function sendReportReadyEmail(opts: {
     );
   }
 
+  const sizedAttachments = deduped.map((a) => ({ filename: a.filename, bytes: a.content.length }));
+  const extras = opts.emailContext ?? null;
   const custom = opts.custom?.subject.trim() && opts.custom.text.trim() ? opts.custom : null;
   if (custom) {
     const b2b = opts.b2bClient === true;
@@ -607,7 +614,20 @@ export async function sendReportReadyEmail(opts: {
       to: opts.to,
       subject: custom.subject.trim(),
       text: custom.text.trim(),
-      html: dealerDataOperatorMessageEmailHtml({ text: custom.text.trim(), b2bClient: b2b, lang: opts.lang ?? "lv" }),
+      html: dealerDataOperatorMessageEmailHtml({
+        text: custom.text.trim(),
+        b2bClient: b2b,
+        lang: opts.lang ?? "lv",
+        context: {
+          situation: "ready",
+          productKind: opts.productKind ?? "audits",
+          vin: opts.carVin,
+          attachments: sizedAttachments,
+          facts: extras?.facts ?? [],
+          car: extras?.car ?? null,
+          offerExpiresAt: extras?.offerExpiresAt ?? null,
+        },
+      }),
       from: b2b ? getB2bMailFromAddress() : undefined,
       attachments: deduped.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })),
     });
@@ -636,7 +656,7 @@ export async function sendReportReadyEmail(opts: {
   const rendered = useEditableTemplates
     ? resolveMessageSync(templateId, vars, {
         doc,
-        htmlContext: { attachmentLines },
+        htmlContext: { attachmentLines, attachments: sizedAttachments },
       })
     : null;
   const html =
@@ -644,6 +664,9 @@ export async function sendReportReadyEmail(opts: {
     auditCompletedEmailHtml({
       carVin: hasRealVin ? carVin : "-",
       attachmentLines,
+      attachments: sizedAttachments,
+      facts: extras?.facts ?? [],
+      car: extras?.car ?? null,
       productKind,
       includeGoogleReview,
       b2bClient,
@@ -1011,11 +1034,28 @@ export async function sendDealerDataRefundEmail(opts: {
     ({ subject, text } = dealerRefundEmailCopy(lang, { cancelled: opts.cancelled === true, amount, vin: opts.vin }));
   }
   // HTML no tā paša teksta (agrāk HTML bija atsevišķs, un rediģētā veidne tajā neparādījās).
+  const facts =
+    lang === "lv"
+      ? [
+          { value: amount, label: "atmaksāts uz karti" },
+          { value: "5-10", label: "darba dienas bankā" },
+        ]
+      : [];
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataOperatorMessageEmailHtml({ title: subject, text, lang }),
+    html: dealerDataOperatorMessageEmailHtml({
+      title: subject,
+      text,
+      lang,
+      context: {
+        situation: opts.cancelled ? "cancelled" : "no_data",
+        productKind: "dealer",
+        vin: opts.vin ?? null,
+        facts,
+      },
+    }),
   });
 }
 
@@ -1083,6 +1123,8 @@ export async function sendDealerDataOperatorEmail(opts: {
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
   lang?: ClientReportLang;
+  /** Dīlera «Sūtīt klientam»: statusa karte / fakti. Pielikumu izmērus pieliek šeit. */
+  context?: OperatorEmailContext | null;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const text = opts.text.trim();
@@ -1096,7 +1138,17 @@ export async function sendDealerDataOperatorEmail(opts: {
     to: opts.to,
     subject,
     text,
-    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient, lang }),
+    html: dealerDataOperatorMessageEmailHtml({
+      text,
+      b2bClient,
+      lang,
+      context: opts.context
+        ? {
+            ...opts.context,
+            attachments: opts.context.attachments ?? attachments.map((a) => ({ filename: a.filename, bytes: a.content.length })),
+          }
+        : null,
+    }),
     ...(b2bClient ? { from: getB2bMailFromAddress() } : {}),
     ...(attachments.length > 0
       ? {
@@ -1117,6 +1169,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
   lang?: ClientReportLang;
+  context?: OperatorEmailContext | null;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");

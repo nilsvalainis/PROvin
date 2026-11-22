@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   whatsappPrefillDealerNoDataRefunded,
   whatsappPrefillReportReady,
@@ -160,6 +160,14 @@ describe("template parity without overrides", () => {
 });
 
 describe("template snapshots (default text)", () => {
+  // HTML statusa kartē ir sūtīšanas datums - snapshotiem fiksēts laiks.
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T10:00:00.000Z"));
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
   for (const id of MESSAGE_TEMPLATE_IDS) {
     it(`snapshot ${id}`, () => {
       const msg = previewMessage(id);
