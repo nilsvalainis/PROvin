@@ -7,6 +7,8 @@ import {
 import {
   auditCompletedEmailHtml,
   dealerDataOperatorMessageEmailHtml,
+  type OperatorEmailContext,
+  type OperatorEmailSituation,
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
@@ -14,6 +16,14 @@ import {
 } from "@/lib/email/html-templates";
 import type { MessageTemplateDef } from "@/lib/messages/types";
 import type { ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+
+/** Dīlera veidnēm - statusa karte (gatavs / datu nav / atcelts); piedāvājumu e-pastiem - nav. */
+export function operatorSituationForTemplate(id: string): OperatorEmailSituation | null {
+  if (id === "email.dealer.ready_pdf" || id === "email.dealer_send.ready") return "ready";
+  if (id === "email.dealer.no_data" || id === "email.dealer_send.no_data") return "no_data";
+  if (id === "email.dealer.cancelled" || id === "email.dealer_send.cancelled") return "cancelled";
+  return null;
+}
 
 /**
  * HTML no viena plain teksta, saglabājot esošās specializētās veidnes, kur vajag byte-paritāti.
@@ -48,6 +58,7 @@ export function messageHtmlFromTemplate(
     return auditCompletedEmailHtml({
       carVin,
       attachmentLines,
+      attachments: htmlContext?.attachments as { filename: string; bytes?: number | null }[] | undefined,
       productKind,
       includeGoogleReview,
     });
@@ -76,7 +87,12 @@ export function messageHtmlFromTemplate(
   if (kind === "dealer_operator") {
     // Virsrakstā bez „PROVIN · ” (zīmols jau ir galvenē) un bez VIN astes.
     const title = (subject ?? "").replace(/^PROVIN\s·\s/u, "").replace(/\s·\s[A-HJ-NPR-Z0-9]{17}$/u, "").trim();
-    return dealerDataOperatorMessageEmailHtml({ title: title || null, text: plainText });
+    const situation = operatorSituationForTemplate(def.id);
+    const ctxIn = htmlContext?.operatorContext as Partial<OperatorEmailContext> | undefined;
+    const context: OperatorEmailContext | null = situation
+      ? { vin: vars.vin?.trim() || null, ...ctxIn, situation }
+      : null;
+    return dealerDataOperatorMessageEmailHtml({ title: title || null, text: plainText, context });
   }
   if (shouldUseRichEmailHtml(plainText)) {
     const inner = adminRichHtmlToEmailBodyInner(plainText);

@@ -10,7 +10,7 @@ import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-dra
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
-import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
+import { dealerSendRecordFromInput, isDealerSendSituation } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 
@@ -73,7 +73,15 @@ export async function POST(req: Request) {
     );
   }
 
-  const emailSent = await trySendDealerDataOperatorEmail({ to, subject, text });
+  // Statusa karte pēc situācijas (datu nav / atcelts / gatavs); bez situācijas - tikai teksts rāmī.
+  const situation = isDealerSendSituation(o.situation) ? o.situation : null;
+  const vinRaw = (order.vin ?? "").trim() || (draft?.orderEdits?.vin ?? "").trim();
+  const emailSent = await trySendDealerDataOperatorEmail({
+    to,
+    subject,
+    text,
+    context: situation ? { situation, productKind: "dealer", vin: vinRaw || null } : null,
+  });
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed" }, { status: 502 });
   }

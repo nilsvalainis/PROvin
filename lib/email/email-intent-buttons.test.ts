@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dealerDataOperatorMessageEmailHtml } from "@/lib/email/html-templates";
 
 const buttons = (html: string) =>
-  [...html.matchAll(/border-radius:9999px[^>]*>([^<]+)<\/a>/g)].map((m) => m[1]);
+  [...html.matchAll(/border-radius:999px[^>]*>([^<]+)<\/a>/g)].map((m) => m[1]);
 
 /** C1 (Nils 06.11): pogas pēc nolūka, ne pēc saites pēdējā rindā. */
 describe("e-pasta pogas pēc nolūka", () => {

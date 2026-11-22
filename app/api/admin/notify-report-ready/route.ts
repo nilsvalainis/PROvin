@@ -10,6 +10,7 @@ import {
 } from "@/lib/email/notify-attachments-parse";
 import { deleteNotifyBlobUrls, fetchNotifyBlobAttachmentsForEmail } from "@/lib/email/notify-blob-attachments-fetch";
 import { isSmtpConfigured, sendReportReadyEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
+import { loadReportEmailExtras } from "@/lib/email/dealer-email-context-server";
 import { persistClientReportFromNotify } from "@/lib/partner-client-report-storage";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
@@ -373,15 +374,26 @@ export async function POST(req: Request) {
 
   const previousSends = serverPdf ? await readClientReportSends(sessionId) : [];
 
+  const reportProductKind = resolveReportReadyProductKind({
+    checkoutLine: order.checkoutLine,
+    amountTotalCents: order.amountTotal,
+  });
+  // Kartītes fakti / piemaksas termiņš - tikai, ja sūtīšanas brīdī ir dati (kļūda sūtīšanu neaptur).
+  const emailContext = await loadReportEmailExtras({
+    sessionId,
+    productKind: reportProductKind,
+    lang: reportLang,
+    text: customMail?.text ?? null,
+    draft,
+  }).catch(() => null);
+
   try {
     await sendReportReadyEmail({
       to,
       carVin: notifyVin || "-",
       attachments: manualAttachments,
-      productKind: resolveReportReadyProductKind({
-        checkoutLine: order.checkoutLine,
-        amountTotalCents: order.amountTotal,
-      }),
+      productKind: reportProductKind,
+      emailContext,
       includeGoogleReview,
       b2bClient: isB2bInternationalClientReport({
         notes: order.notes,

@@ -1,86 +1,141 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 import { GOOGLE_REVIEW_URL, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+import {
+  emailAttachmentsRow,
+  emailBorderedBox,
+  emailButton,
+  emailDocument,
+  emailFactsRow,
+  emailLink,
+  emailOfferRow,
+  emailParagraph,
+  emailReviewStars,
+  emailRow,
+  emailSmall,
+  emailSpacer,
+  emailStatusCardRow,
+  escHtml,
+  formatEmailDate,
+  formatEmailDateIso,
+  formatEmailFileSize,
+  type EmailAttachmentCard,
+  type EmailFact,
+} from "@/lib/email/email-layout";
 
-/** "Šis e-pasts nosūtīts automātiski." tulkojumi (šabloņa pēdenē). */
-const AUTO_SENT_FOOTER: Record<ClientReportLang, string> = {
-  lv: "Šis e-pasts nosūtīts automātiski.",
-  en: "This email was sent automatically.",
-  ru: "Это письмо отправлено автоматически.",
-  de: "Diese E-Mail wurde automatisch gesendet.",
-};
+export type { EmailFact } from "@/lib/email/email-layout";
 
-/** Minimālistisks HTML: balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
+/**
+ * Klientu e-pastu HTML. Rāmis - `email-layout.ts` (Nila apstiprinātais makets, variants A, 22.11.2026).
+ * Teksti (LV/EN/DE/RU) - esošie; temati šeit netiek veidoti.
+ */
 const BRAND = "#0061D2";
-const INK = "#1d1d1f";
-const MUTED = "#6b7280";
-const BG = "#f4f4f5";
+const INK = "#16181d";
+const MUTED = "#646b76";
 
 function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return escHtml(s);
 }
 
+/**
+ * Vienkāršs satura rāmis vecajām veidnēm (admin paziņojumi u.c.).
+ * `client: true` - klientam (tumšais režīms + kontakti kājenē); citādi iekšējs (tikai gaišs, bez kontaktiem).
+ */
 function shell(
   inner: string,
-  opts?: { omitBrandRibbon?: boolean; b2bClient?: boolean; lang?: ClientReportLang },
+  opts?: { client?: boolean; b2bClient?: boolean; lang?: ClientReportLang },
 ): string {
-  const lang = opts?.lang ?? "lv";
-  const brandRibbon = opts?.b2bClient
-    ? `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND};font-weight:700;">PROVIN</p>`
-    : opts?.omitBrandRibbon
-      ? ""
-      : `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>`;
-  return `<!DOCTYPE html>
-<html lang="${lang}">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:${BG};font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:${INK};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-${brandRibbon}${inner}
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">${AUTO_SENT_FOOTER[lang]}</p>
-</td></tr></table>
-</body>
-</html>`;
+  const client = opts?.client === true || opts?.b2bClient === true;
+  return emailDocument({
+    rows: `<tr><td class="m-pad c-gen" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:1.55;color:${INK};">${inner}</td></tr>`,
+    lang: opts?.lang ?? "lv",
+    b2b: opts?.b2bClient === true,
+    omitContacts: !client,
+    darkMode: client,
+  });
 }
 
 function ctaButton(href: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="${esc(href)}" style="display:inline-block;padding:14px 28px;background:${BRAND};color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">${esc(label)}</a>
-</td></tr></table>`;
+  return `${emailSpacer(20)}${emailButton(href, esc(label))}${emailSpacer(8)}`;
 }
 
-function clientReportLegalFooterEmailHtml(origin: string): string {
-  const b = getClientReportLegalFooterBlocks();
-  const base = origin.replace(/\/$/, "");
-  const termsUrl = `${base}/lietosanas-noteikumi`;
-  const privacyUrl = `${base}/privatuma-politika`;
-  const year = new Date().getFullYear();
-  const border = "#e5e7eb";
-
-  return `<div style="margin:28px 0 0;padding:20px 0 0;border-top:1px solid ${border};">
-<p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">${esc(b.importantTitle)}</p>
-<p style="margin:0 0 12px;font-size:11px;line-height:1.55;color:${MUTED};">${esc(b.disclaimer)}</p>
-<p style="margin:0 0 16px;font-size:11px;line-height:1.55;color:${MUTED};"><strong>${esc(b.confidentiality)}</strong></p>
-<p style="margin:0 0 8px;font-size:11px;font-weight:600;color:${MUTED};">PROVIN.LV</p>
-<p style="margin:0 0 14px;font-size:11px;line-height:1.55;color:${MUTED};">${esc(b.valueBody)}</p>
-<p style="margin:0 0 4px;font-size:10px;color:${MUTED};">© ${year} PROVIN.LV</p>
-<p style="margin:0 0 4px;font-size:10px;color:${MUTED};"><a href="${esc(termsUrl)}" style="color:${BRAND};text-decoration:none;">Lietošanas noteikumi</a> · <a href="${esc(privacyUrl)}" style="color:${BRAND};text-decoration:none;">Privātuma politika</a></p>
-<p style="margin:0;font-size:10px;line-height:1.45;color:${MUTED};">${esc(b.gdprLine)}</p>
-</div>`;
+/** Virsraksta rinda kartītē (bez statusa kartes). */
+function titleRow(title: string): string {
+  return emailRow(
+    `<p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:${INK};">${esc(title)}</p>`,
+    "22px 36px 0",
+  );
 }
+
+
+/* ---------- statusa kartes teksti ---------- */
+
+const STATUS_REPORT_READY: Record<ClientReportLang, string> = {
+  lv: "Atskaite gatava",
+  en: "Report ready",
+  ru: "Отчёт готов",
+  de: "Bericht fertig",
+};
+
+const STATUS_PRODUCT_EYEBROW: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
+  dealer: {
+    lv: "Oficiālā dīlera dati",
+    en: "Official dealer data",
+    ru: "Официальные данные дилера",
+    de: "Offizielle Händlerdaten",
+  },
+  mini: { lv: "PROVIN MINI", en: "PROVIN MINI", ru: "PROVIN MINI", de: "PROVIN MINI" },
+  audits: { lv: "PROVIN AUDITS", en: "PROVIN AUDITS", ru: "PROVIN AUDITS", de: "PROVIN AUDITS" },
+};
+
+const STATUS_NO_DATA: Record<ClientReportLang, string> = {
+  lv: "Dati nav pieejami",
+  en: "Data not available",
+  ru: "Данные недоступны",
+  de: "Daten nicht verfügbar",
+};
+
+const STATUS_CANCELLED: Record<ClientReportLang, string> = {
+  lv: "Pasūtījums atcelts",
+  en: "Order cancelled",
+  ru: "Заказ отменён",
+  de: "Bestellung storniert",
+};
+
+const STATUS_PAYMENT_EYEBROW: Record<ClientReportLang, string> = {
+  lv: "Maksājums saņemts",
+  en: "Payment received",
+  ru: "Платёж получен",
+  de: "Zahlung erhalten",
+};
+
+function vinForCard(vinRaw: string | null | undefined): string {
+  const v = String(vinRaw ?? "").trim();
+  return isValidVin(v) ? normalizeVin(v) : "";
+}
+
+const MORE_ATTACHMENTS: Record<ClientReportLang, (n: number) => string> = {
+  lv: (n) => `Vēl ${n} ${n % 10 === 1 && n % 100 !== 11 ? "pielikums" : "pielikumi"}`,
+  en: (n) => `${n} more ${n === 1 ? "attachment" : "attachments"}`,
+  ru: (n) => `Ещё вложений: ${n}`,
+  de: (n) => `${n} weitere ${n === 1 ? "Anlage" : "Anlagen"}`,
+};
+
+function attachmentCards(
+  files: readonly { filename: string; bytes?: number | null }[],
+  lang: ClientReportLang = "lv",
+): EmailAttachmentCard[] {
+  const list = files.map((f) => ({ name: f.filename.trim(), bytes: f.bytes })).filter((f) => f.name);
+  const card = (f: { name: string; bytes?: number | null }): EmailAttachmentCard => {
+    const size = formatEmailFileSize(f.bytes);
+    const isPdf = /\.pdf$/i.test(f.name);
+    return { name: f.name, meta: [isPdf ? "PDF" : "", size].filter(Boolean).join(" · ") || null };
+  };
+  if (list.length <= 4) return list.map(card);
+  return [...list.slice(0, 3).map(card), { name: MORE_ATTACHMENTS[lang](list.length - 3), meta: null }];
+}
+
+/* ---------- maksājuma apstiprinājums ---------- */
 
 export function paymentConfirmationHtml(opts: {
   invoiceUrl: string;
@@ -88,7 +143,11 @@ export function paymentConfirmationHtml(opts: {
   vin: string;
   /** C4: EN/RU/DE teksti; bez - latviski. */
   copy?: { title: string; lead: string; amountLabel: string; invoiceLine: string; cta: string };
+  lang?: ClientReportLang;
+  /** Datums statusa kartē (testiem); noklusējums - šodien (Rīga). */
+  date?: string | null;
 }): string {
+  const lang = opts.lang ?? "lv";
   const c = opts.copy ?? {
     title: "Paldies par pasūtījumu",
     lead: "Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.",
@@ -96,15 +155,19 @@ export function paymentConfirmationHtml(opts: {
     invoiceLine: "Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit.",
     cta: "Lejupielādēt rēķinu (PDF)",
   };
-  const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(c.title)}</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(c.lead)}</p>
-<p style="margin:0 0 6px;font-size:14px;"><strong>${esc(c.amountLabel)}:</strong> ${esc(opts.amountLine)}</p>
-<p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> ${esc(opts.vin)}</p>
-<p style="margin:0 0 24px;font-size:14px;">${esc(c.invoiceLine)}</p>
-${ctaButton(opts.invoiceUrl, c.cta)}
-`;
-  return shell(inner);
+  const vin = vinForCard(opts.vin);
+  const rows = [
+    emailStatusCardRow({
+      icon: "check",
+      eyebrow: STATUS_PAYMENT_EYEBROW[lang],
+      title: c.title,
+      vin: vin || null,
+      date: opts.date ?? formatEmailDate(),
+    }),
+    emailFactsRow([{ value: opts.amountLine, label: c.amountLabel }]),
+    emailRow(emailParagraph(esc(c.lead)) + emailParagraph(esc(c.invoiceLine), "margin:0 0 18px;") + emailButton(opts.invoiceUrl, esc(c.cta)), "20px 36px 0"),
+  ].join("\n");
+  return emailDocument({ rows, lang, preheader: `${c.title} · ${opts.amountLine}` });
 }
 
 export function adminNewOrderHtml(lines: { label: string; value: string }[]): string {
@@ -300,21 +363,10 @@ ${photoBlock}
 ${cta}
 <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:${INK};">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
 `;
-  return shell(inner, { omitBrandRibbon: true });
+  return shell(inner, { client: true });
 }
 
-const REPORT_READY_VIN_CLAUSE: Record<ClientReportLang, (vin: string) => string> = {
-  lv: (vin) => ` transportlīdzeklim ar VIN <strong>${vin}</strong>`,
-  en: (vin) => ` for the vehicle with VIN <strong>${vin}</strong>`,
-  ru: (vin) => ` для автомобиля с VIN <strong>${vin}</strong>`,
-  de: (vin) => ` für das Fahrzeug mit der VIN <strong>${vin}</strong>`,
-};
-
-function reportReadyVinHtml(vinRaw: string, lang: ClientReportLang = "lv"): string {
-  const hasVin = isValidVin(vinRaw);
-  if (!hasVin) return "";
-  return REPORT_READY_VIN_CLAUSE[lang](esc(normalizeVin(vinRaw)));
-}
+/* ---------- «Atskaite gatava» (dīleris / MINI / AUDITS) ---------- */
 
 const REPORT_READY_HTML_GREETING: Record<ClientReportLang, string> = {
   lv: "Labdien!",
@@ -379,13 +431,26 @@ const REPORT_READY_HTML_AUDITS_BULLETS: Record<ClientReportLang, readonly [strin
   de: ["Zusammenfassenden PDF-Bericht", "Zusätzliche Materialien und Anhänge"],
 };
 
-function clientSignOffHtml(b2bClient?: boolean, lang: ClientReportLang = "lv"): string {
-  const greeting = esc(SIGN_OFF_GREETING_HTML[lang]);
-  if (b2bClient) {
-    return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${greeting}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
-  }
-  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${greeting}<br/>Nils<br/>PROVIN.LV</p>`;
-}
+const CONSULT_TITLE: Record<ClientReportLang, string> = {
+  lv: "Vajag konsultāciju par šo auto?",
+  en: "Need advice on this car?",
+  ru: "Нужна консультация по этому автомобилю?",
+  de: "Beratung zu diesem Fahrzeug?",
+};
+
+const CONSULT_BUTTON: Record<ClientReportLang, string> = {
+  lv: "Uzdot jautājumu",
+  en: "Ask a question",
+  ru: "Задать вопрос",
+  de: "Frage stellen",
+};
+
+const CONSULT_MAIL_SUBJECT: Record<ClientReportLang, string> = {
+  lv: "Jautājums par atskaiti",
+  en: "Question about the report",
+  ru: "Вопрос по отчёту",
+  de: "Frage zum Bericht",
+};
 
 const SIGN_OFF_GREETING_HTML: Record<ClientReportLang, string> = {
   lv: "Ar cieņu,",
@@ -401,77 +466,107 @@ const GOOGLE_REVIEW_INTRO_HTML: Record<ClientReportLang, string> = {
   de: "Wenn Ihnen unsere Arbeit geholfen hat, würde ich mich über eine kurze Google-Bewertung freuen:",
 };
 
-function googleReviewHtml(lang: ClientReportLang = "lv"): string {
-  const href = esc(GOOGLE_REVIEW_URL);
-  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">${esc(GOOGLE_REVIEW_INTRO_HTML[lang])} <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
+function clientSignOffHtml(b2bClient?: boolean, lang: ClientReportLang = "lv"): string {
+  const greeting = esc(SIGN_OFF_GREETING_HTML[lang]);
+  if (b2bClient) {
+    return emailParagraph(`${greeting}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span>`, "margin:0;");
+  }
+  return emailParagraph(`${greeting}<br/>Nils<br/>PROVIN.LV`, "margin:0;");
 }
 
-function reportReadyCloseHtml(
-  questionsInner: string,
-  includeGoogleReview?: boolean,
-  b2bClient?: boolean,
-  lang: ClientReportLang = "lv",
-): string {
-  const showReview = includeGoogleReview && !b2bClient;
-  const qMargin = showReview ? "12px" : "20px";
-  return `<p style="margin:0 0 ${qMargin};font-size:15px;color:${MUTED};line-height:1.55;">${questionsInner}</p>
-${showReview ? googleReviewHtml(lang) : ""}
-${clientSignOffHtml(b2bClient, lang)}`;
+/** Google atsauksmes bloks: teksts + 5 zvaigznes + saite (tikai, ja operators to ieslēdza). */
+function googleReviewBlockHtml(introText: string, href: string = GOOGLE_REVIEW_URL): string {
+  return `${emailSmall(esc(introText), "margin:0 0 8px;")}${emailReviewStars(href)}${emailSmall(
+    emailLink(href, esc(href), "font-weight:400;font-size:12px;word-break:break-all;"),
+    "margin:6px 0 0;font-size:12px;",
+  )}`;
 }
+
+const MAIL_LINK_HTML = emailLink("mailto:info@provin.lv", "info@provin.lv");
 
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
   attachmentLines: string[];
+  /** Pielikumu izmēri (ja zināmi) - kartītēs «PDF · 1,4 MB». */
+  attachments?: readonly { filename: string; bytes?: number | null }[];
   siteOrigin?: string;
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
   b2bClient?: boolean;
   lang?: ClientReportLang;
+  /** Kopsavilkuma fakti (2-3) - tikai, ja sūtīšanas brīdī ir dati. */
+  facts?: readonly EmailFact[];
+  car?: string | null;
+  /** Datums statusa kartē; noklusējums - šodien (Rīga). */
+  date?: string | null;
 }): string {
   const kind = opts.productKind ?? "audits";
   const b2bClient = opts.b2bClient === true;
   const lang = opts.lang ?? "lv";
-  const vinHtml = reportReadyVinHtml(opts.carVin, lang);
-  const files = opts.attachmentLines.map((l) => l.trim()).filter(Boolean);
-  const fileList =
-    files.length > 0
-      ? `<ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">${files
-          .map((l) => `<li style="margin:4px 0;">${esc(l)}</li>`)
-          .join("")}</ul>`
-      : "";
-  const mailLink = `<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>`;
+  const vin = vinForCard(opts.carVin);
   const greeting = esc(REPORT_READY_HTML_GREETING[lang]);
-  const questionHtml = REPORT_READY_HTML_QUESTION[kind][lang].replace("{mailLink}", mailLink);
-  const mainLineHtml = REPORT_READY_HTML_MAIN_LINE[kind][lang].replace("{vin}", vinHtml);
+  // VIN jau ir statusa kartē - teikumā to neatkārto.
+  const mainLineHtml = esc(REPORT_READY_HTML_MAIN_LINE[kind][lang].replace("{vin}", ""));
+  const questionHtml = esc(REPORT_READY_HTML_QUESTION[kind][lang]).replace("{mailLink}", MAIL_LINK_HTML);
 
-  let body = "";
-  if (kind === "dealer") {
-    body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">${esc(REPORT_READY_HTML_ATTACHMENTS_INTRO[lang])}</p>
-${fileList}
-${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
-  } else if (kind === "mini") {
-    body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
-${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
-  } else {
+  const sized = opts.attachments?.length
+    ? opts.attachments
+    : opts.attachmentLines.map((l) => ({ filename: l.trim(), bytes: null }));
+  let cards = attachmentCards(sized, lang);
+  if (cards.length === 0 && kind === "audits") {
     const bullets = REPORT_READY_HTML_AUDITS_BULLETS[lang];
-    body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">${esc(REPORT_READY_HTML_ATTACHMENTS_INTRO[lang])}</p>
-<ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">
-<li style="margin:4px 0;">${esc(bullets[0])}</li>
-<li style="margin:4px 0;">${esc(bullets[1])}</li>
-</ul>
-${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
+    cards = [{ name: bullets[0] }, { name: bullets[1] }];
   }
 
-  return shell(body, { omitBrandRibbon: !b2bClient, b2bClient, lang });
+  const rows: string[] = [
+    emailStatusCardRow({
+      icon: "check",
+      eyebrow: STATUS_PRODUCT_EYEBROW[kind][lang],
+      title: STATUS_REPORT_READY[lang],
+      car: opts.car,
+      vin: vin || null,
+      date: opts.date ?? formatEmailDate(),
+    }),
+    emailFactsRow(opts.facts ?? []),
+    emailRow(
+      emailParagraph(greeting, "margin:0 0 6px;") +
+        emailParagraph(mainLineHtml, "margin:0;") +
+        (cards.length && kind !== "mini"
+          ? emailParagraph(esc(REPORT_READY_HTML_ATTACHMENTS_INTRO[lang]), "margin:6px 0 0;")
+          : ""),
+      "20px 36px 0",
+    ),
+    emailAttachmentsRow(cards),
+  ];
+
+  if (kind === "audits") {
+    const subject = `${CONSULT_MAIL_SUBJECT[lang]}${vin ? ` ${vin}` : ""}`;
+    rows.push(
+      emailRow(
+        emailBorderedBox(
+          emailParagraph(esc(CONSULT_TITLE[lang]), "margin:0 0 4px;font-weight:600;") +
+            emailSmall(questionHtml, "margin:0 0 14px;") +
+            emailButton(`mailto:info@provin.lv?subject=${encodeURIComponent(subject)}`, esc(CONSULT_BUTTON[lang]), "ghost"),
+        ),
+        "22px 36px 0",
+      ),
+    );
+  } else {
+    rows.push(emailRow(emailSmall(questionHtml), "18px 36px 0"));
+  }
+
+  if (opts.includeGoogleReview && !b2bClient) {
+    rows.push(emailRow(googleReviewBlockHtml(GOOGLE_REVIEW_INTRO_HTML[lang]), "22px 36px 0"));
+  }
+  rows.push(emailRow(clientSignOffHtml(b2bClient, lang), "22px 36px 0"));
+
+  return emailDocument({
+    rows: rows.filter(Boolean).join("\n"),
+    lang,
+    b2b: b2bClient,
+    preheader: `${STATUS_REPORT_READY[lang]} · ${STATUS_PRODUCT_EYEBROW[kind][lang]}`,
+  });
 }
 
 type PartnerMailLocale = "lv" | "en" | "de" | "ru";
@@ -519,26 +614,6 @@ const PARTNER_VERIFY_COPY: Record<
   },
 };
 
-export function partnerVerifyEmailHtml(opts: {
-  verifyUrl: string;
-  locale?: string;
-  purpose?: "signup" | "email_change";
-}): string {
-  const copy = PARTNER_VERIFY_COPY[partnerMailLocale(opts.locale)];
-  const change = opts.purpose === "email_change";
-  const title = change ? copy.titleChange : copy.title;
-  const lead = change ? copy.leadChange : copy.lead;
-  const cta = copy.cta;
-  const hint = copy.hint;
-  const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>
-${ctaButton(opts.verifyUrl, cta)}
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">${esc(hint)}</p>
-`;
-  return shell(inner);
-}
-
 const PARTNER_RESET_COPY: Record<
   PartnerMailLocale,
   { title: string; lead: string; cta: string; hint: string }
@@ -569,22 +644,60 @@ const PARTNER_RESET_COPY: Record<
   },
 };
 
+/** Vienkāršs klienta e-pasts: virsraksts + teksts + poga + piezīme. */
+function simpleClientEmail(opts: {
+  title: string;
+  lead: string;
+  ctaHref: string;
+  ctaLabel: string;
+  hint?: string;
+  lang?: ClientReportLang;
+  b2b?: boolean;
+}): string {
+  const rows = [
+    titleRow(opts.title),
+    emailRow(
+      emailParagraph(esc(opts.lead), `margin:0 0 18px;color:${MUTED};`) +
+        emailButton(opts.ctaHref, esc(opts.ctaLabel)) +
+        (opts.hint ? emailSmall(esc(opts.hint), "margin:18px 0 0;") : ""),
+      "12px 36px 0",
+    ),
+  ].join("\n");
+  return emailDocument({ rows, lang: opts.lang ?? "lv", b2b: opts.b2b });
+}
+
+export function partnerVerifyEmailHtml(opts: {
+  verifyUrl: string;
+  locale?: string;
+  purpose?: "signup" | "email_change";
+}): string {
+  const locale = partnerMailLocale(opts.locale);
+  const copy = PARTNER_VERIFY_COPY[locale];
+  const change = opts.purpose === "email_change";
+  return simpleClientEmail({
+    title: change ? copy.titleChange : copy.title,
+    lead: change ? copy.leadChange : copy.lead,
+    ctaHref: opts.verifyUrl,
+    ctaLabel: copy.cta,
+    hint: copy.hint,
+    lang: locale,
+  });
+}
+
 export function partnerPasswordResetEmailHtml(opts: {
   resetUrl: string;
   locale?: string;
 }): string {
-  const copy = PARTNER_RESET_COPY[partnerMailLocale(opts.locale)];
-  const title = copy.title;
-  const lead = copy.lead;
-  const cta = copy.cta;
-  const hint = copy.hint;
-  const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(lead)}</p>
-${ctaButton(opts.resetUrl, cta)}
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">${esc(hint)}</p>
-`;
-  return shell(inner);
+  const locale = partnerMailLocale(opts.locale);
+  const copy = PARTNER_RESET_COPY[locale];
+  return simpleClientEmail({
+    title: copy.title,
+    lead: copy.lead,
+    ctaHref: opts.resetUrl,
+    ctaLabel: copy.cta,
+    hint: copy.hint,
+    lang: locale,
+  });
 }
 
 /** Pogas pēc nolūka (Nils 06.11 C1): tikai skaidri nosauktas rindas „<Nolūks>: https://…”. */
@@ -604,59 +717,279 @@ function emailIntentButton(line: string): string | null {
 
 function linkifyEscaped(text: string): string {
   return esc(text)
-    .replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:${BRAND};">${u}</a>`)
+    .replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" target="_blank" class="c-lnk" style="color:${BRAND};word-break:break-all;">${u}</a>`)
     .replace(/\n/g, "<br/>");
 }
 
+/* ---------- operatora teksts (dīlera «Sūtīt klientam» u.c.) ---------- */
+
+export type OperatorEmailSituation = "ready" | "no_data" | "cancelled";
+
+/** Servera puses papildinājumi «Atskaite gatava» kartītei (ja sūtīšanas brīdī zināmi). */
+export type ReportEmailExtras = {
+  facts?: EmailFact[];
+  car?: string | null;
+  offerExpiresAt?: string | null;
+};
+
+/** Sūtīšanas brīža konteksts statusa kartei, faktiem un pielikumiem. Bez tā - tikai teksts rāmī. */
+export type OperatorEmailContext = {
+  situation: OperatorEmailSituation;
+  productKind?: ReportReadyProductKind;
+  vin?: string | null;
+  car?: string | null;
+  /** DD.MM.YYYY; noklusējums - šodien (Rīga). */
+  date?: string | null;
+  facts?: readonly EmailFact[];
+  attachments?: readonly { filename: string; bytes?: number | null }[];
+  /** AUDITS piemaksas saites termiņš (ISO) - «Saite derīga līdz DD.MM.YYYY». */
+  offerExpiresAt?: string | null;
+};
+
+const OFFER_PAY_LINE_RE = /^(apmaksāt|pasūtīt)\s*:\s*(https?:\/\/\S*\/papildinajums\/[^\s)]+)\s*(.*)$/i;
+const OFFER_PRICE_LINE_RE = /^(jau samaksāts|piemaksa|kopā)\s*:\s*(.+)$/i;
+const GOOGLE_REVIEW_LINE_RE = /^(.*?)\s*:?\s*(https:\/\/(?:g\.page|www\.google\.[a-z.]+|search\.google\.com)\/\S+)\s*$/i;
+
+const OFFER_DEFAULT_LEAD = "Dīlera dati parāda tikai oficiālajos servisos reģistrēto. Tajā pašā pasūtījumā pievienosim:";
+
+const OFFER_BENEFITS = [
+  { icon: "shield", title: "Negadījumi un nobraukums", sub: "No vairākām Eiropas datubāzēm" },
+  { icon: "gavel", title: "Izsoļu arhīvi", sub: "Bildes, bojājumi, cenas" },
+  { icon: "search", title: "Sludinājuma un risku analīze", sub: "Fakti un ieteikumi klātienes apskatei" },
+] as const;
+
+type ParsedOffer = {
+  url: string;
+  lead: string;
+  prices: { label: string; value: string }[];
+  charge: string;
+  ttlText: string;
+  /** Teksta rindkopu indeksi, ko aizvieto strukturētais bloks. */
+  consumed: Set<number>;
+  /** Pirmā aizvietotā rindkopa - bloka vieta. */
+  at: number;
+};
+
+/** Atrod AUDITS piemaksas piedāvājumu operatora tekstā (saite /papildinajums/ + cenu rindas). */
+function parseOfferFromParagraphs(paragraphs: string[]): ParsedOffer | null {
+  const payIdx = paragraphs.findIndex((p) => p.split("\n").some((l) => OFFER_PAY_LINE_RE.test(l.trim())));
+  if (payIdx < 0) return null;
+  const consumed = new Set<number>([payIdx]);
+  const payLines = paragraphs[payIdx]!.split("\n");
+  const payLine = payLines.find((l) => OFFER_PAY_LINE_RE.test(l.trim()))!.trim();
+  const m = OFFER_PAY_LINE_RE.exec(payLine)!;
+  const url = m[2]!;
+  const ttlText = (m[3] ?? "").replace(/^\(|\)$/g, "").trim();
+  if (!isValidHttpUrl(url)) return null;
+  // Citas rindas maksājuma rindkopā (ja operators tās pievienoja) paliek kā teksts priekšā blokam.
+  const extraPayLines = payLines.filter((l) => l.trim() !== payLine && l.trim());
+
+  const prices: { label: string; value: string }[] = [];
+  let at = payIdx;
+  let priceIdx = -1;
+  for (let i = payIdx; i >= Math.max(0, payIdx - 2); i--) {
+    const lines = paragraphs[i]!.split("\n").map((l) => l.trim());
+    const hits = lines.filter((l) => OFFER_PRICE_LINE_RE.test(l));
+    if (hits.length >= 2) {
+      priceIdx = i;
+      break;
+    }
+  }
+  if (priceIdx >= 0) {
+    const lines = paragraphs[priceIdx]!.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.every((l) => OFFER_PRICE_LINE_RE.test(l) || OFFER_PAY_LINE_RE.test(l))) {
+      for (const l of lines) {
+        const pm = OFFER_PRICE_LINE_RE.exec(l);
+        if (pm) prices.push({ label: pm[1]!, value: pm[2]!.trim() });
+      }
+      consumed.add(priceIdx);
+      at = priceIdx;
+    }
+  }
+  let lead = OFFER_DEFAULT_LEAD;
+  const introIdx = at - 1;
+  if (introIdx >= 0 && consumed.has(at) && at !== payIdx) {
+    const intro = paragraphs[introIdx]!;
+    const lines = intro.split("\n").map((l) => l.trim()).filter(Boolean);
+    const bullets = lines.filter((l) => /^[-•✓]\s/.test(l));
+    if (bullets.length > 0 || /audit/i.test(intro)) {
+      const head = lines.filter((l) => !/^[-•✓]\s/.test(l)).join(" ").trim();
+      if (head) lead = head;
+      consumed.add(introIdx);
+      at = introIdx;
+    }
+  }
+  if (extraPayLines.length > 0) {
+    // Nezaudē operatora papildu tekstu: maksājuma rindkopu atstāj bez saites rindas.
+    paragraphs[payIdx] = extraPayLines.join("\n");
+    consumed.delete(payIdx);
+  }
+  const charge = prices.find((p) => /^piemaksa$/i.test(p.label))?.value ?? "";
+  return { url, lead, prices, charge, ttlText, consumed, at };
+}
+
+function offerBlockFromParsed(o: ParsedOffer, expiresAt?: string | null): string {
+  const until = formatEmailDateIso(expiresAt);
+  const ttl = until ? `Saite derīga līdz ${until}` : o.ttlText ? o.ttlText.charAt(0).toUpperCase() + o.ttlText.slice(1) : "";
+  const labelMap = (label: string): string => {
+    if (/^jau samaksāts$/i.test(label)) return "Jau samaksāts (dīlera dati)";
+    if (/^kopā$/i.test(label)) return "Kopā PROVIN AUDITS";
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+  return emailOfferRow({
+    eyebrow: "Piedāvājums šim auto",
+    title: "Papildiniet līdz pilnam PROVIN AUDITAM",
+    lead: o.lead,
+    benefits: OFFER_BENEFITS,
+    prices: o.prices.map((p) => ({ label: labelMap(p.label), value: p.value })),
+    ctaHref: o.url,
+    ctaLabel: o.charge ? `Pasūtīt pilno auditu par ${o.charge}` : "Pasūtīt pilno auditu",
+    note: [ttl, "dati paliek tajā pašā pasūtījumā"].filter(Boolean).join(" · "),
+  });
+}
+
+function operatorStatusRow(ctx: OperatorEmailContext, lang: ClientReportLang): string {
+  const kind = ctx.productKind ?? "dealer";
+  const vin = vinForCard(ctx.vin);
+  const date = ctx.date ?? formatEmailDate();
+  if (ctx.situation === "ready") {
+    return emailStatusCardRow({
+      icon: "check",
+      eyebrow: STATUS_PRODUCT_EYEBROW[kind][lang],
+      title: STATUS_REPORT_READY[lang],
+      car: ctx.car,
+      vin: vin || null,
+      date,
+    });
+  }
+  return emailStatusCardRow({
+    icon: "refund",
+    tone: "neutral",
+    eyebrow: STATUS_PRODUCT_EYEBROW[kind][lang],
+    title: ctx.situation === "cancelled" ? STATUS_CANCELLED[lang] : STATUS_NO_DATA[lang],
+    car: ctx.car,
+    vin: vin || null,
+    date,
+  });
+}
+
 /**
- * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
- * Poga tikai rindai „Apmaksāt: / Pasūtīt: / Atvērt atskaiti: / Lejupielādēt rēķinu: https://…”;
- * cita saite paliek par parastu saiti (agrāk jebkura saite pēdējā rindā kļuva par „Apmaksāt”).
+ * Operatora rediģēts e-pasts (plain text → rindkopas) variantā A.
+ * - teksts vienmēr escapots, rindu pārtraukumi saglabāti;
+ * - poga tikai rindai „Apmaksāt: / Pasūtīt: / Atvērt atskaiti: / Lejupielādēt rēķinu: https://…”;
+ * - AUDITS piemaksas piedāvājums (/papildinajums/ saite + cenas) → strukturēts bloks;
+ * - Google atsauksmes rinda → zvaigznes (tikai, ja tā ir tekstā - operators to ieslēdza);
+ * - `context` - statusa karte, fakti un pielikumu kartītes.
  */
 export function dealerDataOperatorMessageEmailHtml(opts: {
   title?: string | null;
   text: string;
   b2bClient?: boolean;
   lang?: ClientReportLang;
+  context?: OperatorEmailContext | null;
 }): string {
   const title = (opts.title ?? "").trim();
   const b2bClient = opts.b2bClient === true;
   const lang = opts.lang ?? "lv";
+  const ctx = opts.context ?? null;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
     .map((b) => b.trim())
     .filter(Boolean);
-  const body = paragraphs
-    .map((block) => {
-      const button = emailIntentButton(block);
-      if (button) return button;
-      const lines = block.split("\n");
-      const last = (lines[lines.length - 1] ?? "").trim();
-      if (b2bClient && last === "PROVIN" && lines.length >= 2) {
-        const head = lines.slice(0, -1).join("\n").trim();
-        return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${esc(head).replace(/\n/g, "<br/>")}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
+
+  // Strukturētais AUDITS piedāvājums - tikai dīlera «Dati gatavi» e-pastā (LV teksti).
+  const offer =
+    lang === "lv" && ctx?.situation === "ready" && (ctx.productKind ?? "dealer") === "dealer"
+      ? parseOfferFromParagraphs(paragraphs)
+      : null;
+
+  const renderBlock = (block: string): string => {
+    const button = emailIntentButton(block);
+    if (button) return button;
+    const lines = block.split("\n");
+    const last = (lines[lines.length - 1] ?? "").trim();
+    if (b2bClient && last === "PROVIN" && lines.length >= 2) {
+      const head = lines.slice(0, -1).join("\n").trim();
+      return emailParagraph(`${esc(head).replace(/\n/g, "<br/>")}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span>`, "margin:0;");
+    }
+    const review = lines.length === 1 ? GOOGLE_REVIEW_LINE_RE.exec(last) : null;
+    if (review?.[2] && isValidHttpUrl(review[2]) && /g\.page|google\./i.test(review[2])) {
+      const intro = (review[1] ?? "").trim().replace(/:$/, "");
+      return googleReviewBlockHtml(intro ? `${intro}:` : GOOGLE_REVIEW_INTRO_HTML[lang], review[2]);
+    }
+    // Saite atsevišķā rindā pēc „… apmaksāt šeit:” - tas pats nolūks „Apmaksāt”.
+    const prev = (lines[lines.length - 2] ?? "").trim();
+    const payAfterColon =
+      lines.length > 1 && isValidHttpUrl(last) && /apmaks\p{L}*[^:\n]*:$/iu.test(prev) ? ctaButton(last, "Apmaksāt") : null;
+    const lastButton = lines.length > 1 ? (emailIntentButton(last) ?? payAfterColon) : null;
+    if (lastButton) {
+      const head = lines.slice(0, -1).join("\n").trim();
+      return `${emailParagraph(linkifyEscaped(head), "margin:0;")}\n${lastButton}`;
+    }
+    return emailParagraph(linkifyEscaped(block), "margin:0;");
+  };
+
+  const cards = ctx?.attachments?.length ? attachmentCards(ctx.attachments, lang) : [];
+  // Pielikumu kartītes - aiz rindkopas, kas min pielikumu / PDF; citādi aiz otrās rindkopas.
+  let attachAfter = -1;
+  if (cards.length) {
+    const hit = paragraphs.findIndex(
+      (p, i) => !offer?.consumed.has(i) && /pielikum|attach|anhang|вложени|\bPDF\b/i.test(p),
+    );
+    attachAfter = hit >= 0 ? hit : Math.min(1, paragraphs.length - 1);
+  }
+
+  const rows: string[] = [];
+  if (ctx) {
+    rows.push(operatorStatusRow(ctx, lang));
+    rows.push(emailFactsRow(ctx.facts ?? []));
+  } else if (title) {
+    rows.push(titleRow(title));
+  }
+
+  let first = true;
+  const pad = () => {
+    const p = first ? (ctx || title ? "20px 36px 0" : "22px 36px 0") : "14px 36px 0";
+    first = false;
+    return p;
+  };
+  // «Pasūtīt PROVIN AUDITS: https://…» rindkopa kopā ar iepriekšējo tekstu - ietvarā (kā maketā).
+  const isOrderButton = (p: string | undefined): boolean =>
+    Boolean(p && /^pasūtīt(?:\s+provin\s+audits)?\s*:\s*https?:\/\/\S+$/i.test(p.trim()) && emailIntentButton(p));
+  const boxedWithPrev = new Set<number>();
+  paragraphs.forEach((p, i) => {
+    if (i > 0 && isOrderButton(p) && !offer?.consumed.has(i - 1) && !isOrderButton(paragraphs[i - 1]) && !emailIntentButton(paragraphs[i - 1]!)) {
+      boxedWithPrev.add(i);
+    }
+  });
+
+  paragraphs.forEach((block, i) => {
+    if (offer && i === offer.at) {
+      rows.push(offerBlockFromParsed(offer, ctx?.offerExpiresAt));
+      first = false;
+    }
+    if (!offer?.consumed.has(i) && !boxedWithPrev.has(i)) {
+      if (boxedWithPrev.has(i + 1)) {
+        const boxed = `${renderBlock(block)}${emailIntentButton(paragraphs[i + 1]!)}`;
+        const p = pad();
+        rows.push(emailRow(emailBorderedBox(boxed), p === "14px 36px 0" ? "22px 36px 0" : p));
+      } else {
+        rows.push(emailRow(renderBlock(block), pad()));
       }
-      // Saite atsevišķā rindā pēc „… apmaksāt šeit:” - tas pats nolūks „Apmaksāt”.
-      const prev = (lines[lines.length - 2] ?? "").trim();
-      const payAfterColon =
-        lines.length > 1 && isValidHttpUrl(last) && /apmaks\p{L}*[^:\n]*:$/iu.test(prev) ? ctaButton(last, "Apmaksāt") : null;
-      const lastButton = lines.length > 1 ? (emailIntentButton(last) ?? payAfterColon) : null;
-      if (lastButton) {
-        const head = lines.slice(0, -1).join("\n").trim();
-        return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${linkifyEscaped(head)}</p>
-${lastButton}`;
-      }
-      return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${linkifyEscaped(block)}</p>`;
-    })
-    .join("\n");
-  const titleBlock = title
-    ? `<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>`
-    : "";
-  return shell(
-    `${titleBlock}${body}`,
-    b2bClient ? { b2bClient: true, lang } : { omitBrandRibbon: true, lang },
-  );
+    }
+    if (i === attachAfter) {
+      rows.push(emailAttachmentsRow(cards));
+      first = false;
+    }
+  });
+
+  return emailDocument({
+    rows: rows.filter(Boolean).join("\n"),
+    lang,
+    b2b: b2bClient,
+    preheader: ctx ? (ctx.situation === "ready" ? STATUS_REPORT_READY[lang] : ctx.situation === "cancelled" ? STATUS_CANCELLED[lang] : STATUS_NO_DATA[lang]) : title || null,
+  });
 }
 
 /**
@@ -668,40 +1001,74 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
   amountEur?: string | null;
   /** Atcelts pēc klienta lūguma, nevis datu trūkuma dēļ. */
   cancelled?: boolean;
+  date?: string | null;
 }): string {
   const vinRaw = (opts.vin ?? "").trim();
-  const vinEsc = isValidVin(vinRaw) ? esc(normalizeVin(vinRaw)) : "";
+  const vin = vinForCard(vinRaw);
   const amount = (opts.amountEur ?? "").trim() || "24,99 €";
-  const title = opts.cancelled ? "Pasūtījums atcelts un maksājums atgriezts" : "Dīlera dati nav pieejami";
+  const status = emailStatusCardRow({
+    icon: "refund",
+    tone: "neutral",
+    eyebrow: STATUS_PRODUCT_EYEBROW.dealer.lv,
+    title: opts.cancelled ? STATUS_CANCELLED.lv : STATUS_NO_DATA.lv,
+    vin: vin || null,
+    date: opts.date ?? formatEmailDate(),
+  });
+  const facts = emailFactsRow([
+    { value: amount, label: "atmaksāts uz karti" },
+    { value: "5-10", label: "darba dienas bankā" },
+  ]);
+  const question = emailSmall(
+    `Ja rodas jautājumi, ${opts.cancelled ? "atbildiet uz šo e-pastu" : "rakstiet uz"} ${MAIL_LINK_HTML}.`,
+  );
 
   if (opts.cancelled) {
-    const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu${
-      vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : ""
-    } un atmaksājām ${esc(amount)} pilnā apmērā uz karti, ar kuru maksājāt.</p>
-<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.</p>
-<p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
-${clientSignOffHtml()}
-`;
-    return shell(inner, { omitBrandRibbon: true });
+    const rows = [
+      status,
+      facts,
+      emailRow(
+        emailParagraph(
+          `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${esc(amount)} pilnā apmērā uz karti, ar kuru maksājāt.`,
+          "margin:0 0 10px;",
+        ) + emailParagraph("Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.", "margin:0;"),
+        "20px 36px 0",
+      ),
+      emailRow(question, "18px 36px 0"),
+      emailRow(clientSignOffHtml(), "22px 36px 0"),
+    ].join("\n");
+    return emailDocument({ rows, preheader: `${STATUS_CANCELLED.lv} - ${amount}` });
   }
 
-  const vinPart = vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : "";
-  const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Pārbaudījām Jūsu auto${vinPart}. Diemžēl oficiālā dīlera dati par to nav pieejami.</p>
-<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.6;">Atmaksājām ${esc(
-    amount,
-  )} pilnā apmērā uz karti, ar kuru maksājāt.</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.</p>
-${ctaButton("https://provin.lv", "Pasūtīt PROVIN AUDITS")}
-<p style="margin:16px 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
-${clientSignOffHtml()}
-`;
-  return shell(inner, { omitBrandRibbon: true });
+  const rows = [
+    status,
+    emailRow(
+      emailParagraph("Labdien!", "margin:0 0 6px;") +
+        emailParagraph(
+          "Pārbaudījām Jūsu auto. Diemžēl oficiālā dīlera dati par to nav pieejami, tāpēc maksājumu atgriezām pilnā apmērā.",
+          "margin:0;",
+        ),
+      "20px 36px 0",
+    ),
+    facts,
+    emailRow(
+      emailSmall("Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa."),
+      "14px 36px 0",
+    ),
+    emailRow(
+      emailBorderedBox(
+        emailParagraph("Auto vēl tikai plānojat pirkt?", "margin:0 0 4px;font-weight:600;") +
+          emailSmall(
+            "Iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
+            "margin:0 0 16px;",
+          ) +
+          emailButton("https://provin.lv", "Pasūtīt PROVIN AUDITS"),
+      ),
+      "22px 36px 0",
+    ),
+    emailRow(question, "18px 36px 0"),
+    emailRow(clientSignOffHtml(), "22px 36px 0"),
+  ].join("\n");
+  return emailDocument({ rows, preheader: `${STATUS_NO_DATA.lv} - ${amount}` });
 }
 
 export type MorningSummaryEmailLine = {
@@ -778,31 +1145,12 @@ ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
   return shell(inner);
 }
 
-/** B2B klienta e-pasts: zīmols PROVIN, zils #0061D2, bez .LV. */
+/** B2B klienta e-pasts: zīmols PROVIN (bez .LV), zils #0061D2. */
 export function b2bProvinEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
   const paras = opts.paragraphs
-    .map((p) => `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${esc(p).replace(/\n/g, "<br/>")}</p>`)
-    .join("");
-  return `<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:${BG};font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:${INK};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND};font-weight:700;">PROVIN</p>
-<p style="margin:0 0 16px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(opts.title)}</p>
-${paras}
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>`;
+    .map((p, i) => emailRow(emailParagraph(esc(p).replace(/\n/g, "<br/>"), "margin:0;"), i === 0 ? "14px 36px 0" : "12px 36px 0"))
+    .join("\n");
+  return emailDocument({ rows: `${titleRow(opts.title)}\n${paras}`, b2b: true });
 }
 
 export function staffInviteEmailHtml(opts: {
@@ -813,15 +1161,15 @@ export function staffInviteEmailHtml(opts: {
   const name = opts.name.trim() || "kolēģi";
   const reset = opts.kind === "reset";
   const intro = reset
-    ? `Sveiki, ${esc(name)}. Nils atiestatīja tavu IRISS paroli. Saite derīga 24 stundas un darbojas vienu reizi.`
-    : `Sveiki, ${esc(name)}. Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.`;
-  const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${reset ? "IRISS parole" : "IRISS pieeja"}</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${intro}</p>
-${ctaButton(opts.inviteUrl, "Iestatīt paroli")}
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">Ja tu to neprasīji, ignorē šo vēstuli.</p>
-`;
-  return shell(inner);
+    ? `Sveiki, ${name}. Nils atiestatīja tavu IRISS paroli. Saite derīga 24 stundas un darbojas vienu reizi.`
+    : `Sveiki, ${name}. Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.`;
+  return simpleClientEmail({
+    title: reset ? "IRISS parole" : "IRISS pieeja",
+    lead: intro,
+    ctaHref: opts.inviteUrl,
+    ctaLabel: "Iestatīt paroli",
+    hint: "Ja tu to neprasīji, ignorē šo vēstuli.",
+  });
 }
 
 /** @deprecated B2B klients redz PROVIN. */
