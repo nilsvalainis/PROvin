@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import {
@@ -13,6 +14,9 @@ import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bA
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
+import { AdminDealerReviewCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
+import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { collectSourceBlockTexts } from "@/lib/dealer-review-score";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -45,6 +49,9 @@ type Props = {
   walletProduct?: string | null;
   /** Servera PDF + sūtīšana no pasūtījuma darba zonas (tas pats ceļš kā «Sūtīt atskaiti»). */
   dealerSend?: DealerSendBridge | null;
+  /** «Atsauksmes iespēja»: dīlera bloks (servisa ieraksti, aprīkojums) un visu avotu teksti (taxi pazīmes). */
+  autoRecords?: AutoRecordsBlockState | null;
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
 };
 
 const STATUS_TONE: Record<DealerDataJob["status"], string> = {
@@ -91,6 +98,8 @@ export function AdminDealerDataJobStrip({
   b2bClient = false,
   reportLang = null,
   dealerSend = null,
+  autoRecords = null,
+  getSourceBlocks,
 }: Props) {
   const {
     job,
@@ -115,6 +124,13 @@ export function AdminDealerDataJobStrip({
   } = useDealerDataJobControls({ sessionId, orderVin, editable, canRefund, walletRefund });
 
   const resolvedInitialLang = resolveDealerPdfLang(reportLang);
+  // Citu avotu teksti (NL «Taxi: Ja», DK «Taxikørsel»); pārrēķina, kad mainās dīlera bloks.
+  const reviewTexts = useMemo(
+    () => (getSourceBlocks ? collectSourceBlockTexts(getSourceBlocks()) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [autoRecords],
+  );
+  const review = useDealerReviewScore({ sessionId, job, autoRecords, vin, extraTexts: reviewTexts });
 
   if (!loaded) return null;
 
@@ -223,6 +239,10 @@ export function AdminDealerDataJobStrip({
         {dealerSendStatusLine(lastDealerSend(marks))}
       </p>
 
+      {review ? (
+        <AdminDealerReviewCard review={review} orderDate={job?.createdAt ? formatRigaIsoShort(job.createdAt).split(" ")[0] : undefined} />
+      ) : null}
+
       <AdminDealerSendDialog
         open={dialog !== null}
         onClose={() => setDialog(null)}
@@ -234,6 +254,7 @@ export function AdminDealerDataJobStrip({
         refundCents={refundCentsOf(job)}
         pdfLang={resolvedInitialLang}
         bridge={dealerSend}
+        review={review}
         onSent={(next, msg) => {
           if (next) setMarks(next);
           setNotice(msg);

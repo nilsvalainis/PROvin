@@ -502,6 +502,8 @@ export function AdminAutoRecordsSourceBlock({
               pdfProgressKey={dealerPdfProgressKey}
               pdfProgressPct={dealerPdfProgressPct}
               dealerSend={dealerSend}
+              autoRecords={value}
+              getSourceBlocks={getSourceBlocks}
             />
           ) : null}
           {onPdfIncludeOneautoChange && pdfIncludeOneauto !== undefined ? (

@@ -5844,6 +5844,8 @@ export function OrderDetailWorkspace({
             serviceWorks={blocksDisplaySafe.auto_records.serviceWorks}
             serviceHistoryNotes={blocksDisplaySafe.auto_records.serviceHistoryNotes ?? ""}
             comments={blocksDisplaySafe.auto_records.comments ?? ""}
+            autoRecords={blocksDisplaySafe.auto_records}
+            sourceBlocks={ws.sourceBlocks}
           />
         ) : null}
         <AdminOrderCountryTimelineStrip sourceBlocks={ws.sourceBlocks} />
