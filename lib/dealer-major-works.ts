@@ -4,6 +4,8 @@
  * Apkope pie mezgla (eļļa, filtrs, ATF, šķidrumi, sveces, pārbaude, skalošana)
  * NAV agregāta maiņa. Tikai reāla nomaiņa, kapitālais remonts, REMAN/Austausch
  * vai lielā mezgla rinda detaļu sarakstā (CAPS + part number).
+ * Izņēmums sarakstā (ne vizītes veidā): ātrumkārbas / sadales kārbas / diferenciāļa eļļas
+ * maiņa ir atsevišķs „Lielie darbi” punkts (Nila lēmums 22.11.2026).
  * Vējstikla / loga stikla nomaiņa paliek Lielie darbi; mazgājamais, apdare,
  * čipa pārbaude/remonts un slotiņas neskaitās.
  * Avoti bieži EN/DE/RU/LV, ar saplēstiem umlautiem un TJ/Symptom/Diagnose/Aktion
@@ -18,9 +20,12 @@ export type DealerMajorAssemblyId =
   | "timing_belt"
   | "crankshaft_seal"
   | "gearbox"
+  | "gearbox_oil"
   | "clutch"
   | "transfer_case"
+  | "transfer_case_oil"
   | "differential"
+  | "differential_oil"
   | "propshaft"
   | "dual_mass_flywheel"
   | "turbo"
@@ -32,9 +37,21 @@ export type DealerMajorAssemblyId =
   | "ac_compressor"
   | "body_glass";
 
-/** Kārbas eļļas maiņa: fakts (apkope), ne „Lielais darbs” - tā ATF/kārbas eļļu jau klasificē esošie testi. */
-type DealerServiceFactId = "gearbox_oil";
-type AssemblyPatternId = DealerMajorAssemblyId | DealerServiceFactId;
+/**
+ * Mezgla eļļas maiņa (Nila lēmums 22.11.2026): rāda „Lielie darbi” sarakstā kā citus mezglus
+ * (pēdējā reize + skaits), bet tā joprojām ir APKOPE - vizītes veids, rutīnas apkope un
+ * dzinēja eļļas intervāli nemainās (`hasAnyMajorAssemblyRepair` šos neskaita).
+ */
+type DealerMajorServiceId = "gearbox_oil" | "transfer_case_oil" | "differential_oil";
+const DEALER_MAJOR_SERVICE_IDS: ReadonlySet<string> = new Set<DealerMajorServiceId>([
+  "gearbox_oil",
+  "transfer_case_oil",
+  "differential_oil",
+]);
+export function isDealerMajorServiceId(id: string): id is DealerMajorServiceId {
+  return DEALER_MAJOR_SERVICE_IDS.has(id);
+}
+type AssemblyPatternId = Exclude<DealerMajorAssemblyId, DealerMajorServiceId>;
 
 export type DealerMajorWorkCategory = "mechanical" | "accident";
 
@@ -63,9 +80,12 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "timing_belt", label: "Zobsiksna" },
   { id: "crankshaft_seal", label: "Kloķvārpstas blīvslēgs" },
   { id: "gearbox", label: "Ātrumkārba" },
+  { id: "gearbox_oil", label: "Ātrumkārbas eļļas maiņa" },
   { id: "clutch", label: "Sajūgs" },
   { id: "transfer_case", label: "Sadales kārba" },
+  { id: "transfer_case_oil", label: "Sadales kārbas eļļas maiņa" },
   { id: "differential", label: "Diferenciālis / reduktors" },
+  { id: "differential_oil", label: "Diferenciāļa eļļas maiņa" },
   { id: "propshaft", label: "Kardāns" },
   { id: "dual_mass_flywheel", label: "Divmasu spararats" },
   { id: "turbo", label: "Turbokompresors" },
@@ -141,11 +161,29 @@ const ASSEMBLY_RE: Record<AssemblyPatternId, RegExp> = {
     /pneumatic\s+spring|air\s+spring|air\s+suspension\s+(?:strut|spring|bellows?|bag)|luftfeder\p{L}*|luftbalg|luchtveer|luchtbalg|luftfjed\p{L}*|luftb(?:ae|æ|a)lg|pneimobalon\p{L}*|pneimatisk\p{L}*\s+(?:atsper\p{L}*|balon\p{L}*|amortizator\p{L}*|spilven\p{L}*)|gaisa\s+(?:balon|spilven)\p{L}*/u,
   ac_compressor:
     /klima\p{L}*kompressor|kompressor\s+klima\p{L}*|klimaverdichter|kaltemittelverdichter|\bac[-\s]?compressor|air[-\s]?con(?:ditioning|ditioner)?\s+compressor|refrigera\p{L}*\s+compressor|kondicionier\p{L}*\s+kompresor\p{L}*|kompresor\p{L}*\s+kondicionier\p{L}*|aircocompressor|airco[-\s]compressor|aircondition\p{L}*[-\s]?kompressor|\bac[-\s]?kompressor/u,
-  gearbox_oil:
-    /getriebeol\p{L}*|\batf\b|(?:automati\p{L}*\s+)?(?:getriebe|karbas?|atrumkarb\p{L}*|parnesumkarb\p{L}*|transmisij\p{L}*|transmission|gearbox|versnellingsbak|gearkasse|коробк\p{L}*(?:\s+передач)?|акпп|\bdsg|\bdct|\bcvt|s[\s-]?tronic)\p{L}*[\s:.-]*(?:\p{L}+\s+){0,2}(?:ol\b|oil|ell\p{L}*|olie|olja|масл\p{L}*|fluid|skidrum\p{L}*)|(?:ol|oil|ell\p{L}*|olie|масл\p{L}*)[\s-]*(?:wechsel|change|main\p{L}*|замена)\s+(?:\p{L}+\s+){0,2}(?:getriebe|transmission|gearbox|karb\p{L}*|atrumkarb\p{L}*|коробк\p{L}*)/u,
   body_glass:
     /vejstikl|stikla\s+main|loga\s+stikl|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|window\s+glass|side\s+window|door\s+(?:window|glass)|bumper|fender|lackier|karosser|(?:windschutz|seiten|heck|front)?scheibe(?!n(?:klar|wasch|wisch))|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|(?:лобов|боков)\p{L}*\s+стекл|\bhood\b|\bbonnet\b|motorhaube|\bkapote\b|(?:dzineja|motora)\s+parsegs|\bcapot(?:\s+moteur)?\b|\bcofano\b|капот|engine\s+hood/u,
 };
+
+/** Ātrumkārbas eļļa (ATF, Getriebeöl, DSG/S tronic/ZF). Diferenciāļa / sadales kārbas eļļu pirms tam izņem. */
+const GEARBOX_OIL_RE =
+  /getriebeol\p{L}*|\batf\b|(?:automati\p{L}*\s+)?(?:getriebe|karbas?|atrumkarb\p{L}*|parnesumkarb\p{L}*|transmisij\p{L}*|transmission|gearbox|versnellingsbak|gearkasse|коробк\p{L}*(?:\s+передач)?|акпп|\bdsg|\bdct|\bcvt|s[\s-]?tronic)\p{L}*[\s:.-]*(?:\p{L}+\s+){0,2}(?:ol\b|oil|ell\p{L}*|olie|olja|масл\p{L}*|fluid|skidrum\p{L}*)|(?:ol|oil|ell\p{L}*|olie|масл\p{L}*)[\s-]*(?:wechsel|change|main\p{L}*|замена)\s+(?:\p{L}+\s+){0,2}(?:getriebe|transmission|gearbox|karb\p{L}*|atrumkarb\p{L}*|коробк\p{L}*)/u;
+
+const OIL_WORD = String.raw`(?:ol\p{L}*|oil|ell\p{L}*|olie|olja|масл\p{L}*|fluid|skidrum\p{L}*)`;
+
+/** Diferenciāļa / tilta reduktora eļļa (Achsgetriebeöl, Hinterachsöl, rear axle oil, diferenciāļa eļļa). */
+const DIFF_OIL_RE = new RegExp(
+  String.raw`(?<!\p{L})(?:hypoid\p{L}*|hipoid\p{L}*|(?:hinter|vorder)?achs(?:getriebe)?|hinterachs\p{L}*|vorderachs\p{L}*|differential\p{L}*|differenzial\p{L}*|diferencia\p{L}*|diferenci\p{L}*|дифференциал\p{L}*|(?:rear|front)\s+axle|axle|(?:aizmugurej|prieksej)\p{L}*\s+tilt\p{L}*|tilt\p{L}*\s+reduktor\p{L}*|reduktor\p{L}*|редуктор\p{L}*|мост\p{L}*)[\s:.-]*(?:\p{L}+\s+){0,2}${OIL_WORD}` +
+    String.raw`|(?<!\p{L})(?:ol|oil|ell\p{L}*|масл\p{L}*)[\s-]*(?:wechsel|change|main\p{L}*|замена)?\s+(?:\p{L}+\s+){0,2}(?:differential|differenzial|diferenci|дифференциал|редуктор|reduktor|(?:hinter|vorder)?achsgetriebe|hinterachs|rear\s+axle)\p{L}*`,
+  "u",
+);
+
+/** Sadales kārbas eļļa (Verteilergetriebeöl, transfer case oil, раздаточная коробка). */
+const TRANSFER_OIL_RE = new RegExp(
+  String.raw`(?<!\p{L})(?:verteilergetriebe|transfer(?:\s+case|\s+box)?|razdat\p{L}*|раздаточн\p{L}*(?:\s+коробк\p{L}*)?|sadales\s+karb\p{L}*|tussenbak|fordelningslad\p{L}*)[\s:.-]*(?:\p{L}+\s+){0,2}${OIL_WORD}` +
+    String.raw`|(?<!\p{L})(?:ol|oil|ell\p{L}*|масл\p{L}*)[\s-]*(?:wechsel|change|main\p{L}*|замена)?\s+(?:\p{L}+\s+){0,2}(?:verteilergetriebe|transfer\s+(?:case|box)|раздаточн|sadales\s+karb)\p{L}*`,
+  "u",
+);
 
 const AXLE_DIFF_CONTEXT_RE =
   /diferencial|differenzial|differential|aizmugurej\p{L}*\s+(?:tilt|ass)|prieksej\p{L}*\s+(?:tilt|ass)|\btilt[au]?\b|achsgetriebe|hinterachs/u;
@@ -263,7 +301,7 @@ const DPF_CLEAN_RE = /reinig\p{L}*|gereinigt|clean\p{L}*|tiris\p{L}*|iztir\p{L}*
 
 /** Kārbas eļļas līmeņa pārbaude / noplūde nav maiņa. */
 const GEARBOX_OIL_NOT_CHANGE_RE =
-  /olstand|\bstand\b|\blevel\b|limen\p{L}*|pruf\p{L}*|\bcheck\p{L}*|parbaud\p{L}*|leck\p{L}*|\bleak\p{L}*|undicht\p{L}*|noplud\p{L}*|suc\p{L}*|kuhler|cooler|dzesetaj\p{L}*|wanne|\bpan\b|vacel\p{L}*|leitung|\bline\b|schlauch|\bhose\b|dicht\p{L}*|\bseal\p{L}*|bliv\p{L}*/u;
+  /nachfull\p{L}*|nachgefullt|verlust\p{L}*|diagnos\p{L}*|top[-\s]?up|papildin\p{L}*|долив\p{L}*|olstand|\bstand\b|\blevel\b|limen\p{L}*|pruf\p{L}*|\bcheck\p{L}*|parbaud\p{L}*|leck\p{L}*|\bleak\p{L}*|undicht\p{L}*|noplud\p{L}*|suc\p{L}*|kuhler|cooler|dzesetaj\p{L}*|wanne|\bpan\b|vacel\p{L}*|leitung|\bline\b|schlauch|\bhose\b|dicht\p{L}*|\bseal\p{L}*|bliv\p{L}*/u;
 
 const MINOR_SKIP_EXCEPT: ReadonlySet<DealerMajorAssemblyId> = new Set([
   "timing_chain",
@@ -421,6 +459,7 @@ export function dealerMajorWorkCategory(id: string): DealerMajorWorkCategory {
 }
 
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  if (isDealerMajorServiceId(assembly)) return false;
   if (assembly === "accident_repair") return isAccidentRepairClause(folded);
   if (assembly === "turbo" && isTurboOilProduct(folded)) return false;
   if (assembly === "body_glass" && isAccidentRepairClause(folded)) {
@@ -590,20 +629,94 @@ export function hasNonCampaignRepairAction(works: string): boolean {
   return false;
 }
 
+/** Mezgla nomaiņa / remonts (bez eļļas maiņām, kas ir apkope - sk. `DEALER_MAJOR_SERVICE_IDS`). */
 export function hasAnyMajorAssemblyRepair(works: string): boolean {
-  return MAJOR_ASSEMBLY_SPECS.some((spec) => isMajorAssemblyRepairWork(works, spec.id));
+  return MAJOR_ASSEMBLY_SPECS.some(
+    (spec) => !isDealerMajorServiceId(spec.id) && isMajorAssemblyRepairWork(works, spec.id),
+  );
 }
 
+const DIFF_OIL_STRIP_RE = new RegExp(DIFF_OIL_RE.source, "gu");
+const TRANSFER_OIL_STRIP_RE = new RegExp(TRANSFER_OIL_RE.source, "gu");
+
+/** Vispārīgs „transmisija / transmission” (bez „automatic”) var nozīmēt arī tilta eļļu (LV tulkojums „Hypoid axle oil”). */
+const GENERIC_TRANSMISSION_RE = /(?<!automat\p{L}*\s+)(?:transmisij\p{L}*|transmission)/gu;
+
+/** Diferenciāļa / sadales kārbas eļļai vajag maiņas vārdu (detaļu rinda „Hypoid axle oil G2 (…)” vien nav maiņa). */
+const OIL_CHANGE_SIGNAL_RE =
+  /wechsel|gewechselt|erneuer\p{L}*|ersetz\p{L}*|change\p{L}*|replac\p{L}*|renew\p{L}*|flush\p{L}*|spulung|\bservice\b|main\p{L}*|nomain\p{L}*|замен\p{L}*|vervang\p{L}*|verversen|udskift\p{L}*|\bbyte\b|\bbytt\p{L}*|vidange/u;
+
+type OilSentenceHits = {
+  transfer: boolean;
+  diff: boolean;
+  gearboxSpecific: boolean;
+  gearboxGeneric: boolean;
+  /** Pieminēts tilts / sadales kārba (arī bez maiņas vārda) - vispārīgais „transmisija” attiecas uz to. */
+  axleMention: boolean;
+};
+
 /**
- * Automātiskās / manuālās kārbas eļļas maiņa (DE/EN/DA/NL/LV/RU). Pozitīvs fakts AI faktu sarakstam;
- * līmeņa pārbaude, noplūde, dzesētājs u.tml. neskaitās.
+ * Teikumi bez dalīšanas pie kola: „Automatic transmission: oil and filter change.” ir viens darbs
+ * (`splitClauses` to sadalītu „automatic transmission” + „oil and filter change”).
+ */
+function splitOilSentences(folded: string): string[] {
+  return uniqueNonEmpty(folded.replace(/\bacc\./g, "acc").split(/[\n;/|]+|(?<=[\p{L}\d])\.\s+/u));
+}
+
+function oilSentenceHits(sentence: string): OilSentenceHits | null {
+  if (GEARBOX_OIL_NOT_CHANGE_RE.test(sentence)) return null;
+  const change = OIL_CHANGE_SIGNAL_RE.test(sentence);
+  const transferMention = TRANSFER_OIL_RE.test(sentence);
+  const diffMention = DIFF_OIL_RE.test(sentence);
+  const rest = sentence.replace(TRANSFER_OIL_STRIP_RE, " ").replace(DIFF_OIL_STRIP_RE, " ");
+  const gearboxAny = GEARBOX_OIL_RE.test(rest);
+  const gearboxSpecific = gearboxAny && GEARBOX_OIL_RE.test(rest.replace(GENERIC_TRANSMISSION_RE, " "));
+  return {
+    transfer: transferMention && change,
+    diff: diffMention && change,
+    gearboxSpecific,
+    gearboxGeneric: gearboxAny && !gearboxSpecific,
+    axleMention: transferMention || diffMention,
+  };
+}
+
+/** Diferenciāļa / sadales kārbas eļļa NAV ātrumkārbas eļļa. Teksts var saturēt RAW + LV tulkojumu. */
+function hasOilServiceOf(works: string, id: DealerMajorServiceId): boolean {
+  let transfer = false;
+  let diff = false;
+  let gearboxSpecific = false;
+  let gearboxGeneric = false;
+  let axleMention = false;
+  for (const line of (works ?? "").split(/\r?\n+/)) {
+    const folded = foldDealerWorkText(line);
+    if (!folded) continue;
+    for (const sentence of splitOilSentences(folded)) {
+      const h = oilSentenceHits(sentence);
+      if (!h) continue;
+      transfer ||= h.transfer;
+      diff ||= h.diff;
+      gearboxSpecific ||= h.gearboxSpecific;
+      gearboxGeneric ||= h.gearboxGeneric;
+      axleMention ||= h.axleMention;
+    }
+  }
+  if (id === "transfer_case_oil") return transfer;
+  if (id === "differential_oil") return diff;
+  return gearboxSpecific || (gearboxGeneric && !axleMention);
+}
+
+const OIL_SERVICE_UNIT: Record<DealerMajorServiceId, AssemblyPatternId> = {
+  gearbox_oil: "gearbox",
+  transfer_case_oil: "transfer_case",
+  differential_oil: "differential",
+};
+
+/**
+ * Automātiskās / manuālās ātrumkārbas eļļas maiņa (DE/EN/DA/NL/LV/RU). Diferenciāļa / sadales kārbas
+ * eļļa, līmeņa pārbaude, noplūde, dzesētājs u.tml. neskaitās.
  */
 export function isGearboxOilChangeWork(works: string): boolean {
-  const folded = foldDealerWorkText(works);
-  if (!folded) return false;
-  return splitClauses(folded).some(
-    (clause) => ASSEMBLY_RE.gearbox_oil.test(clause) && !GEARBOX_OIL_NOT_CHANGE_RE.test(clause),
-  );
+  return hasOilServiceOf(works, "gearbox_oil");
 }
 
 const PHRASE_BOUNDARY = "|";
@@ -708,6 +821,10 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
 
 /** Vai teksts fiksē šī mezgla nomaiņu / kapitālo remontu, ne eļļas-filtra apkopi. */
 export function isMajorAssemblyRepairWork(works: string, assembly: DealerMajorAssemblyId): boolean {
+  if (isDealerMajorServiceId(assembly)) {
+    // Eļļas uzpilde pēc paša mezgla nomaiņas ir daļa no nomaiņas, ne atsevišķs darbs.
+    return hasOilServiceOf(works, assembly) && !isMajorAssemblyRepairWork(works, OIL_SERVICE_UNIT[assembly]);
+  }
   // Katra rinda atsevišķi: `foldDealerWorkText` saplūdina rindas, un citas rindas eļļa / šķidrums
   // (piem. „Anti-freeze” blakus „EGR dzesētājs (11717822350)”) nedrīkst paslēpt mezgla pozīciju.
   for (const line of (works ?? "").split(/\r?\n+/)) {
@@ -720,8 +837,11 @@ export function isMajorAssemblyRepairWork(works: string, assembly: DealerMajorAs
   return false;
 }
 
+/** Mezglu nomaiņas / remonti ierakstā (eļļas maiņas - apkope - šeit neietilpst). */
 export function dealerMajorAssembliesInWork(works: string): DealerMajorAssemblyId[] {
-  return MAJOR_ASSEMBLY_SPECS.filter((spec) => isMajorAssemblyRepairWork(works, spec.id)).map(
+  return MAJOR_ASSEMBLY_SPECS.filter(
+    (spec) => !isDealerMajorServiceId(spec.id) && isMajorAssemblyRepairWork(works, spec.id),
+  ).map(
     (spec) => spec.id,
   );
 }

@@ -11,7 +11,12 @@ import {
 } from "@/lib/auto-records-service-works";
 import { looksLikeNonWorkshopServiceProvider } from "@/lib/dealer-code-facts-prompt";
 import { dropDealerRecommendationSentences } from "@/lib/dealer-comments-review-core";
-import { isGearboxOilChangeWork, isMajorAssemblyRepairWork } from "@/lib/dealer-major-works";
+import {
+  hasAnyMajorAssemblyRepair,
+  isGearboxOilChangeWork,
+  isMajorAssemblyRepairWork,
+  isRoutineMaintenanceWork,
+} from "@/lib/dealer-major-works";
 import { findDealerOdometerDrops, findDealerOdometerOutliers } from "@/lib/dealer-odometer-checks";
 import { oilRatioTone, oilIntervalKmTolerance } from "@/lib/oem-oil-interval";
 import {
@@ -343,5 +348,122 @@ describe("9. servisa vieta un AI noteikumi", () => {
     expect(out).toContain("Ražotāja intervāls: 30 000 km / 24 mēn.");
     expect(out).toContain("EGR dzesētājs mainīts 09.06.2020");
     expect(out).not.toMatch(/Ieteicams|jālūdz/);
+  });
+});
+
+describe("6b. kārbas eļļas maiņa = Lielie darbi (Nila lēmums 22.11.2026), bet joprojām apkope", () => {
+  // WDD2122231A338701 RAW (OneAuto), vizītes ap 14.03.2014.
+  const mbRows = [
+    r("06.08.2013", "103058", "Service B.\nEngine: oil and filter change."),
+    r("14.03.2014", "127829", "Service A.\nEngine: oil and filter change.\nAutomatic transmission: oil and filter change."),
+    r(
+      "10.10.2014",
+      "150538",
+      "Service B.\nEngine: oil and filter change.\nAir filter element replaced.\nBreakpads front axle replaced.\nFuel filter replaced.",
+    ),
+  ];
+
+  it("WDD2122231A338701 14.03.2014: «Ātrumkārbas eļļas maiņa» Lielajos darbos ar datumu un km", () => {
+    const facts = extractDealerFactsFromServiceWorks(mbRows);
+    const summary = buildDealerVisitSummary(mbRows, facts, null, NOW)!;
+    expect(summary.majorWorks.map((w) => [w.id, w.date, w.km, w.count])).toEqual([
+      ["gearbox_oil", "14.03.2014", "127 829 km", undefined],
+    ]);
+    const html = buildDealerMajorWorksHtml(facts);
+    expect(html).toContain("<b>Ātrumkārbas eļļas maiņa</b>");
+    expect(html).toContain("pdf-svc-major__item--mechanical");
+    expect(html).toContain("14.03.2014 · 127 829 km");
+    expect(buildDealerVisitSummaryHtml(mbRows, facts, "lv", null, NOW)).toContain("Ātrumkārbas eļļas maiņa");
+  });
+
+  it("WDD2122231A338701: vizīte paliek «Apkope», dzinēja eļļas skaits nemainās", () => {
+    const works = mbRows[1]!.works;
+    expect(classifyDealerVisitKind(works)).toBe("maintenance");
+    expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+    expect(isRoutineMaintenanceWork(works)).toBe(true);
+    expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(false);
+    expect(isEngineOilChangeWork("Automatic transmission: oil and filter change.")).toBe(false);
+    expect(isEngineOilChangeWork("Automātiskā pārnesumkārba: eļļas un filtra maiņa.")).toBe(false);
+    expect(buildOilChangeIntervalSeries(mbRows).changeCount).toBe(3);
+  });
+
+  it("WDD2042031G061877 23.11.2017 (80 927 km): kola teikums «Automatic transmission: oil and filter change.» tiek atpazīts", () => {
+    const works =
+      "Engine: oil and filter change.\nAir filter element replaced.\nAutomatic transmission: oil and filter change.\nBrake fluid replaced.";
+    expect(isGearboxOilChangeWork(works)).toBe(true);
+    expect(isGearboxOilChangeWork("Automātiskā pārnesumkārba: eļļas un filtra maiņa.")).toBe(true);
+    expect(isGearboxOilChangeWork("Engine: oil and filter change.")).toBe(false);
+  });
+
+  it("vairākas reizes: pēdējā reize + «N×», kā citiem mezgliem", () => {
+    const rows = [
+      r("14.03.2014", "127829", "Automatic transmission: oil and filter change."),
+      r("02.05.2019", "201300", "Getriebeöl und Filter wechseln (ATF)"),
+    ];
+    const facts = extractDealerFactsFromServiceWorks(rows);
+    const hit = buildDealerVisitSummary(rows, facts, null, NOW)!.majorWorks.find((w) => w.id === "gearbox_oil")!;
+    expect(hit.date).toBe("02.05.2019");
+    expect(hit.count).toBe(2);
+    expect(buildDealerMajorWorksHtml(facts)).toContain("02.05.2019 · 201 300 km · 2×");
+  });
+
+  it("W0LJ7BJBSBV658020 (manuāla M73, kārbas eļļas maiņas nav): nav viltus kārbas / diferenciāļa eļļas", () => {
+    for (const works of ["Ölfiltergehäuse  ersetzen.", "Hinterachsbuchse rechts ersetzen.", "Motoröl und Filter wechseln."]) {
+      expect(isMajorAssemblyRepairWork(works, "gearbox_oil"), works).toBe(false);
+      expect(isMajorAssemblyRepairWork(works, "differential_oil"), works).toBe(false);
+    }
+  });
+
+  it("WBAMW91010DV11581 23.04.2018 «Hypoid axle oil G2» (LV «transmisijas eļļa») nav ātrumkārbas eļļa", () => {
+    const works =
+      "Hypoid axle oil G2 (83222413511).\nHipoīdais transmisijas eļļa G2 (83222413511)\nRepair kit bellows, exterior (31607606091).";
+    expect(isGearboxOilChangeWork(works)).toBe(false);
+    expect(isMajorAssemblyRepairWork(works, "gearbox_oil")).toBe(false);
+    // Detaļu rinda bez maiņas vārda nav arī diferenciāļa eļļas maiņa.
+    expect(isMajorAssemblyRepairWork(works, "differential_oil")).toBe(false);
+  });
+
+  it("diferenciāļa / sadales kārbas eļļa ir atsevišķi punkti, ne ātrumkārbas eļļa", () => {
+    const cases: [string, "gearbox_oil" | "differential_oil" | "transfer_case_oil"][] = [
+      ["Hinterachsgetriebeöl wechseln", "differential_oil"],
+      ["Ölwechsel Hinterachsgetriebe", "differential_oil"],
+      ["Rear axle oil change", "differential_oil"],
+      ["Diferenciāļa eļļas maiņa", "differential_oil"],
+      ["Verteilergetriebeöl erneuert", "transfer_case_oil"],
+      ["Transfer case fluid change", "transfer_case_oil"],
+      ["Sadales kārbas eļļas maiņa", "transfer_case_oil"],
+    ];
+    for (const [works, id] of cases) {
+      for (const other of ["gearbox_oil", "differential_oil", "transfer_case_oil"] as const) {
+        expect(isMajorAssemblyRepairWork(works, other), `${works} -> ${other}`).toBe(other === id);
+      }
+      expect(isGearboxOilChangeWork(works), works).toBe(false);
+      expect(classifyDealerVisitKind(works), works).toBe("maintenance");
+    }
+    const rows = [r("01.06.2020", "90000", "Hinterachsgetriebeöl wechseln"), r("01.06.2021", "110000", "Getriebeölwechsel")];
+    const ids = buildDealerVisitSummary(rows, extractDealerFactsFromServiceWorks(rows), null, NOW)!.majorWorks.map((w) => w.id);
+    expect(ids).toEqual(["gearbox_oil", "differential_oil"]);
+  });
+
+  it("DSG / S tronic / ZF / ATF / RU: maiņa jā; uzpilde, līmenis, noplūde nē", () => {
+    for (const works of [
+      "DSG Öl- und Filterwechsel",
+      "S tronic Getriebeöl wechseln",
+      "ZF Getriebeölservice",
+      "ATF flush",
+      "Kārbas eļļas maiņa",
+      "Автоматическая коробка передач: замена масла и фильтра",
+    ]) {
+      expect(isMajorAssemblyRepairWork(works, "gearbox_oil"), works).toBe(true);
+    }
+    for (const works of ["Getriebeöl nachfüllen", "Gearbox oil top-up", "Getriebeölstand prüfen", "Getriebeölverlust diagnostiziert"]) {
+      expect(isMajorAssemblyRepairWork(works, "gearbox_oil"), works).toBe(false);
+    }
+  });
+
+  it("ātrumkārbas nomaiņa ar eļļas uzpildi: tikai «Ātrumkārba», bez atsevišķas eļļas maiņas", () => {
+    const works = "Getriebe getauscht\nGetriebeöl erneuert";
+    expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(true);
+    expect(isMajorAssemblyRepairWork(works, "gearbox_oil")).toBe(false);
   });
 });
