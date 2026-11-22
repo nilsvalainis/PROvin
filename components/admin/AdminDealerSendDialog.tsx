@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import type { SendReportPrepared } from "@/components/admin/AdminSendReportDialog";
 import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
@@ -155,6 +157,8 @@ export function AdminDealerSendDialog({
   }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc]);
 
   const busyClose = useModalBackdropClose(onClose, busy === null);
+  // 22.11 (Nils, iPhone): telefona doks (Kopēt VIN · VIN SCAN · PDF …) nedrīkst aizsegt «Sūtīt e-pastu».
+  useHoldAdminOverlayCover(open);
 
   const toggle = useCallback(
     async (which: keyof DealerSendOptions, checked: boolean) => {
@@ -302,8 +306,10 @@ export function AdminDealerSendDialog({
       ? `${b2b ? "Atgriezts atlikumā" : "Atmaksāts"} ${formatEurFromCents(refundCents)}`
       : null;
 
-  return (
+  // Portālā uz body: dīlera bloka vecāku stacking konteksts citādi ielika logu zem telefona doka.
+  const dialog = (
     <div
+      data-dealer-send-dialog
       className="fixed inset-0 z-[80] flex bg-black/40 sm:items-center sm:justify-center sm:p-3"
       role="dialog"
       aria-modal="true"
@@ -311,7 +317,7 @@ export function AdminDealerSendDialog({
       {...busyClose}
     >
       <div
-        className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
+        className="flex h-full max-h-[100dvh] w-full flex-col bg-white sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -471,7 +477,10 @@ export function AdminDealerSendDialog({
           {err ? <p className="text-[11.5px] text-rose-700">{err}</p> : null}
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div
+          data-dealer-send-footer
+          className="sticky bottom-0 flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        >
           <button type="button" className={btn} disabled={busy !== null} onClick={onClose}>
             ← Atpakaļ
           </button>
@@ -493,4 +502,7 @@ export function AdminDealerSendDialog({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return dialog;
+  return createPortal(dialog, document.body);
 }

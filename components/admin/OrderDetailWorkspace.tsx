@@ -276,6 +276,7 @@ import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReviewPanel";
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
+import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
 import {
@@ -987,6 +988,10 @@ export function OrderDetailWorkspace({
   const [factCheckPublishItems, setFactCheckPublishItems] = useState<
     { label: string; sentence: string; message: string }[] | null
   >(null);
+  // 22.11 (Nils, iPhone): kamēr atvērts kāds šīs lapas logs, telefona doks paslēpjas un nenosedz loga pogas.
+  useHoldAdminOverlayCover(
+    previewOpen || portfolioAllFilesModalOpen || notifyDialogOpen || factCheckPublishItems != null,
+  );
   const factCheckPdfSkipRef = useRef(false);
   const pendingPrintOptsRef = useRef<
     | {
@@ -4557,7 +4562,8 @@ export function OrderDetailWorkspace({
               </span>
             ) : null}
           </h2>
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          {/* 22.11: telefonā pogas pārnesas jaunā rindā, nevis iziet ārpus ekrāna. */}
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 max-sm:min-w-0 max-sm:max-w-full max-sm:shrink">
             {payload.aiAllowed ? (
               <button
                 type="button"
@@ -5041,7 +5047,7 @@ export function OrderDetailWorkspace({
 
   return (
     <AdminAutoIngestChipProvider chips={autoIngestChips}>
-    <div className="relative min-w-0 pb-24 max-md:pb-36">
+    <div className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]">
       {previewBody}
 
       {portfolioAllFilesModal != null && typeof document !== "undefined"

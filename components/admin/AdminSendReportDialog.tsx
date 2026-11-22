@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import {
   sendReportAttachmentDisplay,
   sendReportAttachmentSizeLabel,
@@ -134,6 +135,9 @@ export function AdminSendReportDialog({
     };
   }, [undoLeft]);
 
+  // 22.11: telefona doks paslēpjas, kamēr logs atvērts (sūtīšanas poga nav zem tā).
+  useHoldAdminOverlayCover(open);
+
   if (!open) return null;
 
   const langOptions = sendReportLangOptions(kind, b2b);
@@ -216,7 +220,7 @@ export function AdminSendReportDialog({
       }}
     >
       <div
-        className="flex max-h-[min(92vh,760px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] shadow-xl"
+        className="flex max-h-[min(92vh,760px)] w-full max-w-lg max-md:max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom,0px))] flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="shrink-0 border-b border-[var(--admin-border-subtle)] px-4 pb-3 pt-4">
@@ -403,7 +407,7 @@ export function AdminSendReportDialog({
               {err ? <p className="text-[12px] font-medium text-red-600">{err}</p> : null}
             </div>
 
-            <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--admin-border-subtle)] px-4 py-3">
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[var(--admin-border-subtle)] px-4 py-3">
               <button type="button" disabled={busy} className={SECONDARY_BTN} onClick={onClose}>
                 Atcelt
               </button>
