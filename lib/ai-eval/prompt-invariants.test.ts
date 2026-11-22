@@ -338,6 +338,28 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
   });
 
+  it("dealer comments and oil field split roles and never repeat PDF tables (Nils 22.11)", () => {
+    // „Komentāri”: bez identifikācijas, vizīšu saraksta un eļļas tēmas; tikai secinājumi.
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/TABLES ALREADY IN THE PDF/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/no identification paragraph/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/no visit-by-visit list/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Lielie mezgli un remonti/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Atsaukumi, kampaņas un garantijas darbi/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Ko pārbaudīt apskatē/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).not.toMatch(/Agregātu \/ aprīkojuma identifikācija/);
+    const prompts = readRepo("lib/admin-ai-prompts.ts");
+    expect(prompts).toMatch(/does NOT write about engine oil changes or service intervals at all/);
+    expect(prompts).toMatch(/DO NOT re-list the individual steps or dates from that table/);
+    expect(prompts).toMatch(/no „Lielo mezglu apkopes” paragraph/);
+    const src = readRepo("lib/admin-ai-source-comment.ts");
+    expect(src).toMatch(/DEALER_COMMENTS_NO_TABLE_REPEAT_DIRECTIVE/);
+    expect(src).toMatch(/Tabulas rindas NEPĀRRAKSTI/);
+    expect(src).toMatch(/Lielos mezglus, kārbas eļļu, remontus, kampaņas un citus darbus šeit NERAKSTI/);
+    // Opus pārbaude + deterministisks tīkls izmet atkārtojumus.
+    expect(readRepo("lib/dealer-comments-review.ts")).toMatch(/extraSystemRules: DEALER_REVIEW_DEDUP_RULES/);
+    expect(readRepo("lib/dealer-data-job.ts")).toMatch(/dropDealerCommentsDuplicatingOil\(/);
+  });
+
   it("dealer comments require a heading per role with a blank line", () => {
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/HARD LINE BREAKS/);
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/blank line/);

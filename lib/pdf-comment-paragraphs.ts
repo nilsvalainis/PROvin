@@ -15,8 +15,16 @@ function plainLength(html: string): number {
   return html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().length;
 }
 
+/**
+ * Rindkopa līdz ~2 rindām (≤ 30 vārdi) paliek vesela; garāka drīkst pārlūzt (orphans/widows 3 -
+ * virsraksts paliek kopā ar vismaz 3 teksta rindām).
+ * Agrāk slieksnis bija 170 vārdi - ~10 rindu rindkopa, kas neietilpa, pārlēca uz nākamo lapu un
+ * komentāra rāmī atstāja lielu tukšu vietu (Nils 22.11, dīlera PDF 3./4. lapa).
+ */
+export const PDF_COMMENT_UNBREAKABLE_MAX_WORDS = 30;
+
 function cmtParagraphClass(html: string): string {
-  return wordCount(html) > 170 ? "pdf-cmt-p pdf-cmt-p--long" : "pdf-cmt-p";
+  return wordCount(html) > PDF_COMMENT_UNBREAKABLE_MAX_WORDS ? "pdf-cmt-p pdf-cmt-p--long" : "pdf-cmt-p";
 }
 
 /** Sadalā komentāra HTML rindkopās pie admin `<strong>` virsrakstiem. */

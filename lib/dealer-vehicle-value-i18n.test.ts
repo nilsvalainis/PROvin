@@ -72,3 +72,22 @@ describe("translateDealerVehicleValue", () => {
     expect(translateDealerVehicleValue("transmission", "automatic transmission", "lv")).toBe("automātiskā ātrumkārba");
   });
 });
+
+describe("dīlera vērtību valoda (Nils 22.11: Saloon, Āda combination, PALLADIUMSILBER)", () => {
+  it("virsbūve, salons, krāsa un kārba bez jaukta EN/LV", () => {
+    expect(translateDealerVehicleValue("body", "Saloon", "lv")).toBe("sedans");
+    expect(translateDealerVehicleValue("body", "SUV", "lv")).toBe("apvidus auto (SUV)");
+    expect(translateDealerVehicleValue("interior", "Leather combination - black/anthracite (701A)", "lv")).toBe(
+      "ādas kombinācija - melns/antracīts (701A)",
+    );
+    expect(translateDealerVehicleValue("color", "PALLADIUMSILBER - METALLICLACK", "lv")).toBe(
+      "Palladiumsilber - metāliskā",
+    );
+    expect(translateDealerVehicleValue("color", "VERMILIONROT METALLIC", "lv")).toBe("Vermilionrot metāliskā");
+    expect(translateDealerVehicleValue("color", "WHITE PEARL", "lv")).toBe("perlamutra balts");
+    expect(translateDealerVehicleValue("interior", "LEDER NEVADA/SCHWARZ (LUSW)", "lv")).toBe("āda Nevada/melns (LUSW)");
+    expect(translateDealerVehicleValue("transmission", "automatic (7-SPEED AUTOMATIC TRANSMISSION)", "lv")).toBe(
+      "automātiskā (7 pakāpju)",
+    );
+  });
+});

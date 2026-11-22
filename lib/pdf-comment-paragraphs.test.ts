@@ -36,4 +36,12 @@ describe("buildPdfCommentBoxes", () => {
     expect(boxes.rest).toContain("pdf-cmt-split-b");
     expect(boxes.rest).toContain("Virsraksts divi");
   });
+
+  it("paragraph over ~2 lines may break across pages (no big blank inside the comment box)", () => {
+    const shortP = Array.from({ length: 20 }, () => "vārds").join(" ");
+    const longP = Array.from({ length: 90 }, () => "vārds").join(" ");
+    const html = splitPdfCommentParagraphs(`<strong>A</strong><br />${shortP}<br /><strong>B</strong><br />${longP}`).join("");
+    expect(html).toMatch(/class="pdf-cmt-p">[\s\S]*A/);
+    expect(html.match(/pdf-cmt-p--long/g)?.length).toBe(1);
+  });
 });

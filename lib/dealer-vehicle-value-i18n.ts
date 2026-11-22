@@ -99,7 +99,7 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
     out: { lv: "kupeja", en: "coupe", ru: "купе", de: "Coupé" },
   },
   {
-    keys: ["sedan", "limousine", "lim", "sedans", "седан"],
+    keys: ["sedan", "saloon", "limousine", "lim", "sedans", "stufenheck", "седан"],
     out: { lv: "sedans", en: "sedan", ru: "седан", de: "Limousine" },
   },
   {
@@ -108,7 +108,8 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
   },
   {
     keys: ["suv", "sav", "apvidus", "внедорожник", "geländewagen"],
-    out: { lv: "apvidus", en: "SUV", ru: "внедорожник", de: "SUV" },
+    // „Apvidus” viens pats ir īpašības vārds bez lietvārda (Nils 22.11) - „apvidus auto (SUV)”.
+    out: { lv: "apvidus auto (SUV)", en: "SUV", ru: "внедорожник", de: "SUV" },
   },
   {
     keys: ["off-road vehicle", "off road vehicle", "offroad vehicle", "apvidus auto"],
@@ -145,12 +146,27 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
 ];
 
 const TOKEN: { re: RegExp; out: LangMap }[] = [
+  // Salikumi vispirms (citādi „Āda combination”, „Balts PEARL” - jaukts EN/LV, Nils 22.11).
+  {
+    re: /\b(?:leather|leder) combination\b|\blederkombination\b/gi,
+    out: { lv: "ādas kombinācija", en: "leather combination", ru: "комбинированная кожа", de: "Lederkombination" },
+  },
+  { re: /\bcombination\b/gi, out: { lv: "kombinācija", en: "combination", ru: "комбинация", de: "Kombination" } },
+  {
+    re: /\bwhite pearl\b|\bpearl white\b/gi,
+    out: { lv: "perlamutra balts", en: "pearl white", ru: "белый перламутр", de: "Perlweiß" },
+  },
+  { re: /\bpearl(?:escent)?\b/gi, out: { lv: "perlamutra", en: "pearl", ru: "перламутр", de: "Perleffekt" } },
+  { re: /\bmetallic(?:lack)?\b/gi, out: { lv: "metāliskā", en: "metallic", ru: "металлик", de: "Metallic" } },
+  { re: /\bleder\b/gi, out: { lv: "āda", en: "leather", ru: "кожа", de: "Leder" } },
+  { re: /\bzimt-?braun\b/gi, out: { lv: "kanēļbrūns", en: "cinnamon brown", ru: "коричный", de: "zimtbraun" } },
+  { re: /\bschwarz\b/gi, out: { lv: "melns", en: "black", ru: "чёрный", de: "schwarz" } },
+  { re: /\banthrazit\b/gi, out: { lv: "antracīts", en: "anthracite", ru: "антрацит", de: "Anthrazit" } },
   { re: /\bfabric\b/gi, out: { lv: "audums", en: "fabric", ru: "ткань", de: "Stoff" } },
   { re: /\bimitation leather\b/gi, out: { lv: "mākslīgā āda", en: "imitation leather", ru: "искусственная кожа", de: "Kunstleder" } },
   { re: /\bmicrofiber\b/gi, out: { lv: "mikrošķiedra", en: "microfiber", ru: "микрофибра", de: "Mikrofaser" } },
   { re: /\bleather\b/gi, out: { lv: "āda", en: "leather", ru: "кожа", de: "Leder" } },
   { re: /\bstandard finish\b/gi, out: { lv: "standarta apdare", en: "standard finish", ru: "стандартное покрытие", de: "Standardlackierung" } },
-  { re: /\bmetallic\b/gi, out: { lv: "metāliskā", en: "metallic", ru: "металлик", de: "Metallic" } },
   { re: /\banthracite\b/gi, out: { lv: "antracīts", en: "anthracite", ru: "антрацит", de: "Anthrazit" } },
   { re: /\bnight black\b/gi, out: { lv: "nakts melns", en: "night black", ru: "ночной чёрный", de: "Nachtschwarz" } },
   { re: /\bblack\b/gi, out: { lv: "melns", en: "black", ru: "чёрный", de: "schwarz" } },
@@ -256,6 +272,42 @@ function applyTokens(raw: string, lang: ClientReportLang): string {
   return collapse(t);
 }
 
+/**
+ * „Automātiskā (7 pakāpju automātiskā ātrumkārba)” -> „Automātiskā (7 pakāpju)”: iekavās neatkārto
+ * ārējo vārdu un „ātrumkārba” (Nils 22.11). Ja pēc tīrīšanas nekas nepaliek - iekavas saturs nemainās.
+ */
+function dedupeInnerAgainstOuter(outer: string, inner: string, lang: ClientReportLang): string {
+  const o = collapse(outer).toLocaleLowerCase();
+  if (!o || !collapse(inner).toLocaleLowerCase().includes(o)) return inner;
+  const gearbox = { lv: "ātrumkārba", en: "transmission", ru: "коробка передач", de: "Getriebe" }[lang];
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const cleaned = collapse(
+    inner.replace(new RegExp(esc(collapse(outer)), "iu"), "").replace(new RegExp(esc(gearbox), "iu"), ""),
+  );
+  return cleaned || inner;
+}
+
+/**
+ * Krāsa / salons: „PALLADIUMSILBER - METALLICLACK” -> „Palladiumsilber - metāliskā”. Ražotāja krāsas
+ * nosaukums paliek oriģinālā (to neatskārš), bet vairs nekliedz lielajiem burtiem; apdares vārdi tulkoti.
+ * Kodi iekavās („(LUSW)”, „(701A)”) netiek skarti.
+ */
+function translateColorLikeValue(raw: string, lang: ClientReportLang): string {
+  const parts = raw.split(/(\([^)]*\))/g);
+  return collapse(
+    parts
+      .map((part) => {
+        if (part.startsWith("(")) return part;
+        const tokened = applyTokens(part, lang);
+        return tokened.replace(
+          /(?<!\p{L})(\p{Lu})(\p{Lu}{3,})(?!\p{L})/gu,
+          (_m, first: string, rest: string) => first + rest.toLocaleLowerCase(),
+        );
+      })
+      .join(" "),
+  ).replace(/\s+\)/g, ")").replace(/\(\s+/g, "(");
+}
+
 /** Vispārīga dīlera vērtība atskaites valodā. Kodiem / VIN / datumiem nemaina. */
 export function translateDealerVehicleValue(
   field: keyof OutvinVehicleInfo | string,
@@ -277,6 +329,7 @@ export function translateDealerVehicleValue(
 
   const exact = exactHit(t, lang);
   if (exact) return exact;
+  if (field === "color" || field === "interior") return translateColorLikeValue(t, lang);
 
   const guardPartial = lang !== "en" && PARTIAL_TRANSLATION_GUARD_FIELDS.has(String(field));
 
@@ -286,7 +339,7 @@ export function translateDealerVehicleValue(
     const outerT = exactHit(outer, lang) ?? applyTokens(outer, lang);
     const innerT = exactHit(inner, lang) ?? applyTokens(inner, lang);
     if (outerT && innerT) {
-      const out = `${outerT} (${innerT})`;
+      const out = `${outerT} (${dedupeInnerAgainstOuter(outerT, innerT, lang)})`;
       // Pustulkojuma vietā labāk oriģināls nekā „Continuously Variable ātrumkārba”.
       return guardPartial && isHalfTranslated(t, out) ? t : out;
     }

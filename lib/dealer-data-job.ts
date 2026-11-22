@@ -48,6 +48,7 @@ import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
 import {
   dealerCommentPlainCleanup,
+  dropDealerCommentsDuplicatingOil,
   highlightMajorAssembliesInRichHtml,
   type DealerReviewField,
 } from "@/lib/dealer-comments-review-core";
@@ -213,6 +214,13 @@ async function generateDealerNotes(
         error: e instanceof Error ? e.message : "unknown",
       });
     }
+  }
+  // Deterministisks drošības tīkls (Nils 22.11): „Komentāri” nedrīkst atkārtot eļļas lauku vai runāt
+  // par eļļas maiņām - arī ja Opus nav izsaukts (PRO EN/DE/RU) vai to palaida garām.
+  if (texts.comments) {
+    const oilForDedup = texts.oilChangeIntervalNotes ?? adminRichHtmlToPlainText(blocks.auto_records.oilChangeIntervalNotes ?? "");
+    const deduped = dropDealerCommentsDuplicatingOil(texts.comments, oilForDedup);
+    if (deduped.trim()) texts = { ...texts, comments: deduped };
   }
   const toHtml = (text: string | undefined): string =>
     text?.trim() ? highlightMajorAssembliesInRichHtml(aiExpertSourceCommentToRichHtml(dealerCommentPlainCleanup(text))) : "";

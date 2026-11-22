@@ -20,10 +20,11 @@ describe("admin system prompt sizes", () => {
  * 26.10.2026: technical_risks/inspection/summary/mileage/incidents/seller + vismaz 10-50,
  * jo etiķete „Izsoļu portālu arhīvs” ir garāka par iepriekšējo īso zīmolu.
  * 21.11.2026: +~235 zīmes (~60 tokeni) - pirmās reģistrācijas nosaukuma noteikums (viena „Pirmā reģistrācija”).
+ * 22.11.2026: source_dealer +~1 250, oil_intervals +~600 zīmes - dīlera „Komentāri” un eļļas lauka lomu dalījums, PDF tabulas nedublēt.
  */
 const PROMPT_CHAR_CEILINGS: Record<string, number> = {
   source_csdd: 31_950,
-  source_dealer: 36_650,
+  source_dealer: 38_000,
   technical_risks_v1: 89_650,
   inspection: 82_150,
   summary: 81_290,
@@ -31,7 +32,7 @@ const PROMPT_CHAR_CEILINGS: Record<string, number> = {
   incidents: 82_920,
   price: 29_450,
   seller: 77_740,
-  oil_intervals: 34_850,
+  oil_intervals: 35_600,
 };
 
 describe("admin system prompt size ceilings", () => {

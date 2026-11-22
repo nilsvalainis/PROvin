@@ -25,7 +25,7 @@ export type FlashMaxReviewField = {
   text: string;
 };
 
-export type FlashMaxReviewKind = "pretruna" | "fakts" | "nepamatots" | "risks" | "valoda";
+export type FlashMaxReviewKind = "pretruna" | "fakts" | "nepamatots" | "risks" | "valoda" | "atkartojums";
 
 export const FLASH_MAX_REVIEW_KIND_LABEL: Record<FlashMaxReviewKind, string> = {
   pretruna: "Pretruna starp sadaļām",
@@ -33,6 +33,7 @@ export const FLASH_MAX_REVIEW_KIND_LABEL: Record<FlashMaxReviewKind, string> = {
   nepamatots: "Nepamatots apgalvojums",
   risks: "Trūkst tehniskā riska",
   valoda: "Valoda",
+  atkartojums: "Atkārtojums starp laukiem",
 };
 
 export type FlashMaxReviewFinding = {
@@ -53,7 +54,7 @@ export type FlashMaxReviewState =
   | { status: "done"; findings: FlashMaxReviewFinding[]; fieldLabels: Record<string, string> }
   | { status: "error"; error: string };
 
-const KINDS = new Set<FlashMaxReviewKind>(["pretruna", "fakts", "nepamatots", "risks", "valoda"]);
+const KINDS = new Set<FlashMaxReviewKind>(["pretruna", "fakts", "nepamatots", "risks", "valoda", "atkartojums"]);
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -148,7 +149,9 @@ export function parseFlashMaxReviewResponse(raw: string, fields: FlashMaxReviewF
     const find = str(r.find);
     const replace = normalizeFlashMaxReviewDashes(str(r.replace).trim());
     const reason = normalizeFlashMaxReviewDashes(str(r.reason).trim()).slice(0, 400);
-    if (!replace || !reason) continue;
+    // „atkartojums” drīkst izdzēst fragmentu (tukšs replace), citiem veidiem vajag aizvietojumu.
+    if (!reason || (!replace && kind !== "atkartojums")) continue;
+    if (kind === "atkartojums" && !find) continue;
     if (/ekspert/i.test(replace) || /ekspert/i.test(reason)) continue;
     if (find && !field.text.includes(find)) continue;
     if (!find && kind !== "risks") continue;

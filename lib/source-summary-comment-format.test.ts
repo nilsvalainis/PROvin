@@ -356,3 +356,11 @@ describe("tūkstošu grupēšana klienta tekstā", () => {
     for (const t of keep) expect(groupClientNumberThousands(t), t).toBe(t);
   });
 });
+
+describe("eļļas lauka pirmā rinda (Nils 22.11)", () => {
+  it("„Ražotāja intervāls: … mēn. (kods).” netiek sadalīta virsrakstā", async () => {
+    const { toExpertHeadingBodyPlain } = await import("@/lib/source-summary-comment-format");
+    const out = toExpertHeadingBodyPlain("Ražotāja intervāls: 25 000 km / 12 mēn. (OM642).\n\nVirsraksts\nTeksts.");
+    expect(out.split("\n")[0]).toBe("Ražotāja intervāls: 25 000 km / 12 mēn. (OM642).");
+  });
+});

@@ -31,6 +31,8 @@ export async function runFlashMaxFinalReview(
     budget?: AiRequestBudget;
     /** Papildu avota dati faktu lapas beigās (piem. oficiālā dīlera tabula automātiskajai ielasei). */
     extraFactsText?: string;
+    /** Papildu pārbaudes likumi sistēmas promptā (piem. dīlera lauku atkārtojumu izmešana). */
+    extraSystemRules?: string;
   },
   generate: typeof aiGenerateText = aiGenerateText,
 ): Promise<FlashMaxFinalReviewResult> {
@@ -40,7 +42,9 @@ export async function runFlashMaxFinalReview(
     const factsSheet = [buildCanonicalFactsSheet(input.facts), extra].filter((t) => t.trim()).join("\n\n");
     const raw = await generate({
       model: CLAUDE_MODEL_OPUS,
-      systemInstruction: FLASH_MAX_FINAL_REVIEW_SYSTEM,
+      systemInstruction: input.extraSystemRules?.trim()
+        ? `${FLASH_MAX_FINAL_REVIEW_SYSTEM}\n\n${input.extraSystemRules.trim()}`
+        : FLASH_MAX_FINAL_REVIEW_SYSTEM,
       userPrompt: buildFlashMaxReviewUserPrompt(input.fields, factsSheet),
       maxTokens: FLASH_MAX_REVIEW_MAX_TOKENS,
       budget: input.budget,

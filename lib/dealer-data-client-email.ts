@@ -112,7 +112,7 @@ export function buildDealerCancelledEmailDraft(
 
 /** Tēmas notikums + produkts katrā valodā; pilno tēmu veido provinEmailSubject (PROVIN · … · VIN). */
 const DEALER_READY_SUBJECT_PARTS: Record<B2bWalletReportLang, { event: string; product: string }> = {
-  lv: { event: "Atskaite gatava", product: "Oficiālie dīlera dati" },
+  lv: { event: "Atskaite gatava", product: "Oficiālā dīlera dati" },
   en: { event: "Report ready", product: "Official dealer data" },
   de: { event: "Bericht fertig", product: "Offizielle Händlerdaten" },
   ru: { event: "Отчёт готов", product: "Официальные данные дилера" },
