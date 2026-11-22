@@ -27,6 +27,14 @@ STYLE
 - Keep brand names and oil/fluid specifications as printed (Castrol, BMW Group LL-04, 5W-30, DOT4, AGM, Service Inclusive).
 - Internal workshop notes still get a clear Latvian meaning: „Kundenloyalisierung siehe Mail” → „Klienta lojalitātes akcija (sk. e-pastu)”; „Nachrüstung Service-Inclusive” → „Service Inclusive pievienošana”; „Ölzuschlag für Service Inclusive” → „Eļļas piemaksa (Service Inclusive)”.
 - Do not leave English or German words except brands/specs.
+- TERM GLOSSARY (use exactly; meaning and direction, not word-for-word):
+  „Sommerreifenrückrüstung” = „Vasaras riepu uzlikšana (maiņa uz vasaras riepām)”; „Winterreifen…rüstung” = „Ziemas riepu uzlikšana (maiņa uz ziemas riepām)” (never reverse the direction);
+  „Präventivmaßnahme / PRAEVENTIVMASSNAHME / Vorsorgemaßnahme” = „Profilaktisks pasākums (ražotāja kampaņa)”;
+  „Pneumatic spring / Air spring / Luftfeder” = „Pneimobalons” (it is NOT a shock absorber / amortizators);
+  „Roadside Recovery” = „Palīdzība uz ceļa (evakuācija)”; „Customer Maintenance Plan” = „Plānotā apkope (ražotāja apkopes plāns)”;
+  „Keilrippenriemen” = „Ķīļrievu siksna”; „Exhaust gas radiator / exhaust cooler / AGR-Kühler” = „EGR dzesētājs”; „Grundierfüller / primer / primed” = „Grunts pildviela / gruntēts” (paint material).
+- Keep one item per line exactly as in the source: never split one item at a comma inside parentheses or inside the item name (e.g. „Brake fluid DOT4, low viscosity” is ONE item: „Bremžu šķidrums DOT4, zemas viskozitātes”).
+- A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
 - Never use *, ** or em/en dashes (— –). ASCII hyphen only if a hyphen is needed.
 
 Return JSON only.`;

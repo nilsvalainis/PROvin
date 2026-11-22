@@ -24,7 +24,17 @@ export type DealerMajorAssemblyId =
   | "propshaft"
   | "dual_mass_flywheel"
   | "turbo"
+  | "egr"
+  | "dpf"
+  | "adblue"
+  | "water_pump"
+  | "air_suspension"
+  | "ac_compressor"
   | "body_glass";
+
+/** Kārbas eļļas maiņa: fakts (apkope), ne „Lielais darbs” - tā ATF/kārbas eļļu jau klasificē esošie testi. */
+type DealerServiceFactId = "gearbox_oil";
+type AssemblyPatternId = DealerMajorAssemblyId | DealerServiceFactId;
 
 export type DealerMajorWorkCategory = "mechanical" | "accident";
 
@@ -39,6 +49,10 @@ export type DealerMajorWorkHit = {
   factId: string;
   date: string;
   km: string;
+  /** Cik reižu mezgls fiksēts dīlera datos (tikai, ja vairāk par vienu); datums / km ir pēdējā reize. */
+  count?: number;
+  /** Agrāko reižu D-ID (operatora labojumu savietojamībai). */
+  earlierFactIds?: string[];
 };
 
 /** Kārtība PDF kopsavilkumā. Etiķetes ir LV atslēgas `client-report-i18n`. */
@@ -55,6 +69,12 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "propshaft", label: "Kardāns" },
   { id: "dual_mass_flywheel", label: "Divmasu spararats" },
   { id: "turbo", label: "Turbokompresors" },
+  { id: "egr", label: "EGR dzesētājs / vārsts" },
+  { id: "dpf", label: "Kvēpu filtrs (DPF)" },
+  { id: "adblue", label: "AdBlue / SCR sistēma" },
+  { id: "water_pump", label: "Ūdens sūknis" },
+  { id: "air_suspension", label: "Piekares pneimobalons" },
+  { id: "ac_compressor", label: "Kondicioniera kompresors" },
   { id: "body_glass", label: "Virsbūve / stikls" },
 ];
 
@@ -88,28 +108,41 @@ const BODY_ROUTINE_RE =
 const BODY_REPAIR_ACTION_RE =
   /instandsetz\p{L}*|instandgesetz\p{L}*|reparatur|repar\p{L}*|repair\p{L}*|lackier\p{L}*|lackiert|kraso\p{L}*|parkras\p{L}*|krasoj\p{L}*|покраск\p{L}*|ремонт\p{L}*|remont\p{L}*|respray|paint\p{L}*|richt\p{L}*|ausbeul\p{L}*|beseitig\p{L}*|behob\p{L}*|novers\p{L}*|устранени\p{L}*/u;
 
-const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
+const ASSEMBLY_RE: Record<AssemblyPatternId, RegExp> = {
   accident_repair: ACCIDENT_EVENT_RE,
   engine:
     /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmoteur\b|\bmotore\b|\bmotor\b/u,
   timing_chain:
-    /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|chaine\s+de\s+distribution|catena\s+di\s+distribuzione|cadena\s+de\s+distribucion|цеп\p{L}*\s+(?:грм|газораспред)/u,
+    /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|kamk(?:ae|æ)de|tandk(?:ae|æ)de|chaine\s+de\s+distribution|catena\s+di\s+distribuzione|cadena\s+de\s+distribucion|цеп\p{L}*\s+(?:грм|газораспред)/u,
   timing_belt:
-    /zobsiksn|timing\s+belt|zahnriemen|distributieriem|kamrem|courroie\s+de\s+distribution|cinghia\s+di\s+distribuzione|correa\s+de\s+distribucion|ремень\s+грм/u,
+    /zobsiksn|sadales\s+siksn|timing\s+belt|zahnriemen|distributieriem|kamrem|tandrem|courroie\s+de\s+distribution|cinghia\s+di\s+distribuzione|correa\s+de\s+distribucion|ремень\s+грм/u,
   crankshaft_seal:
     /kurbelwell(?:en)?(?:simmerring|dicht)|crankshaft\s+seal|klokvarpstas\s+bliv|сальник\s+колен|joint\s+(?:spi|de\s+)?vilebrequin|paraolio\s+albero/u,
   gearbox:
     /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|boite(?:\s+de)?\s+vitesses|\bcambio\b|caja(?:\s+de)?\s+cambios|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
-  clutch: /\bclutch(?:\s+kit)?\b|\bsajug|kupplungssatz|\bkupplung\b/u,
+  clutch: /\bclutch(?:\s+kit)?\b|\bsajug|kupplungssatz|\bkupplung\b|\bkobling\b|\bkoppeling\b/u,
   transfer_case:
     /transfer(?:\s+case|\s+box)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb|boite\s+de\s+transfert|caja\s+de\s+transferencia|tussenbak|fordelningslad/u,
+  // Tilta vārds vien („Hinterachsbuchse”, „aizmugurējā tilta bukse”) NAV diferenciālis.
   differential:
-    /differential|differenzial|diferencial|дифференциал|achsgetriebe(?!ol)|hinterachs(?!ol)|aizmugurej\p{L}*\s+tilt|differentiel|differenziale/u,
+    /differential|differenzial|diferencial|дифференциал|achsgetriebe(?!ol)|differentiel|differenziale|differentieel/u,
   propshaft:
     /kardan|prop[\s-]?shaft|kardanwelle|\bcardan\b|gelenkwelle|transmisij\p{L}*\s+uz\s+(?:aizmugurej|prieksej)\p{L}*\s+asi/u,
   dual_mass_flywheel:
-    /divmasu|spararat|dual[\s-]?mass|twin\s+mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
+    /divmasu|spararat|dual[\s-]?mass|twin\s+mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|svinghjul|volant\s+bimasse|volano\s+bimassa/u,
   turbo: /\bturbo(?:charger|lader|compresseur)?\b|турбокомпрессор|turbokompresor/u,
+  egr: /\begr\b|\begr[-\s]?(?:ventil|klep|kuhler|koeler|koler)|\bagr\b|\bagr[-\s]?(?:ventil|kuhler|modul|rohr)|abgasruckfuhr\p{L}*|abgaskuhler|exhaust[-\s]?gas\s+recirc\p{L}*|exhaust[-\s]?gas\s+(?:radiator|cooler)|\bexhaust\s+cooler\b|izpludes\s+gazu\s+(?:recirk\p{L}*|dzesetaj\p{L}*)|uitlaatgasrecirculatie|udstodnings?gas\s*recirk\p{L}*/u,
+  dpf: /\bdpf\b|\bfap\b|(?:russ)?partikelfilter|russfilter|particulate\s+filter|diesel\s+particulate|sodreju\s+filtr\p{L}*|kvepu\s+filtr\p{L}*|(?:cieto\s+)?dalinu\s+filtr\p{L}*|roetfilter|partikkelfilter/u,
+  adblue:
+    /nox[-\s]?(?:sensor|sonde|devej\p{L}*)|(?:adblue|ad\s*blue|\bscr\b|harnstoff\p{L}*|\burea\b|reduktionsmittel\p{L}*)/u,
+  water_pump:
+    /wasserpumpe|kuhlmittelpumpe|water\s*pump|coolant\s+pump|udens\s*sukn\p{L}*|dzesesanas\s+(?:skidruma\s+)?sukn\p{L}*|waterpomp|koelvloeistofpomp|vandpumpe|k(?:o|ø)lev(?:ae|æ)skepumpe|vattenpump/u,
+  air_suspension:
+    /pneumatic\s+spring|air\s+spring|air\s+suspension\s+(?:strut|spring|bellows?|bag)|luftfeder\p{L}*|luftbalg|luchtveer|luchtbalg|luftfjed\p{L}*|luftb(?:ae|æ|a)lg|pneimobalon\p{L}*|pneimatisk\p{L}*\s+(?:atsper\p{L}*|balon\p{L}*|amortizator\p{L}*|spilven\p{L}*)|gaisa\s+(?:balon|spilven)\p{L}*/u,
+  ac_compressor:
+    /klima\p{L}*kompressor|kompressor\s+klima\p{L}*|klimaverdichter|kaltemittelverdichter|\bac[-\s]?compressor|air[-\s]?con(?:ditioning|ditioner)?\s+compressor|refrigera\p{L}*\s+compressor|kondicionier\p{L}*\s+kompresor\p{L}*|kompresor\p{L}*\s+kondicionier\p{L}*|aircocompressor|airco[-\s]compressor|aircondition\p{L}*[-\s]?kompressor|\bac[-\s]?kompressor/u,
+  gearbox_oil:
+    /getriebeol\p{L}*|\batf\b|(?:automati\p{L}*\s+)?(?:getriebe|karbas?|atrumkarb\p{L}*|parnesumkarb\p{L}*|transmisij\p{L}*|transmission|gearbox|versnellingsbak|gearkasse|коробк\p{L}*(?:\s+передач)?|акпп|\bdsg|\bdct|\bcvt|s[\s-]?tronic)\p{L}*[\s:.-]*(?:\p{L}+\s+){0,2}(?:ol\b|oil|ell\p{L}*|olie|olja|масл\p{L}*|fluid|skidrum\p{L}*)|(?:ol|oil|ell\p{L}*|olie|масл\p{L}*)[\s-]*(?:wechsel|change|main\p{L}*|замена)\s+(?:\p{L}+\s+){0,2}(?:getriebe|transmission|gearbox|karb\p{L}*|atrumkarb\p{L}*|коробк\p{L}*)/u,
   body_glass:
     /vejstikl|stikla\s+main|loga\s+stikl|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|window\s+glass|side\s+window|door\s+(?:window|glass)|bumper|fender|lackier|karosser|(?:windschutz|seiten|heck|front)?scheibe(?!n(?:klar|wasch|wisch))|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|(?:лобов|боков)\p{L}*\s+стекл|\bhood\b|\bbonnet\b|motorhaube|\bkapote\b|(?:dzineja|motora)\s+parsegs|\bcapot(?:\s+moteur)?\b|\bcofano\b|капот|engine\s+hood/u,
 };
@@ -129,7 +162,7 @@ const PROPSHAFT_NOT_GEARBOX_RE =
 const SHAFT_SEAL_RE = /dicht|seal|simmerring|sealing\s+ring/u;
 
 const INTERIOR_TRIM_RE =
-  /door\s+trim|trim\s+panel|interior\s+trim|durvju\s+apdar|apdares\s+panel|sitzkissen|upholstery/u;
+  /door\s+trim|trim\s+panel|interior\s+trim|durvju\s+apdar|apdares\s+panel|sitzkissen|upholstery|roktur\p{L}*|\bhandle\b|turgriff\p{L}*|innengriff\p{L}*|turoffner\p{L}*/u;
 
 const WASHER_FLUID_RE =
   /scheibenklar|scheibenwasch|washer\s+fluid|windscreen\s+washer|windshield\s+washer|stiklu\s+mazg/u;
@@ -167,7 +200,7 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|заменен\p{L}*|\bchange\b|maina|\bremont|ремонт|repaired|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|ersetzen|nomain|wechsel|zamena|замена|заменен\p{L}*|\bchange\b|maina|\bremont|ремонт|repaired|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|udskift\p{L}*|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
 
 const CAMPAIGN_CLAUSE_RE =
   /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
@@ -204,10 +237,44 @@ const ENGINE_UNIT_REPLACE_RE =
 
 const CHECK_NO_FAULT_RE = /ohne\s+befund|no\s+fault|bez\s+defekta|nav\s+konstatet/u;
 
+/** Sajūga cilindrs / pedālis / šķidrums nav sajūga (komplekta) maiņa. */
+const CLUTCH_ANCILLARY_RE =
+  /geberzylinder|nehmerzylinder|kupplungs(?:geber|nehmer|pedal|schalter|leitung|flussigkeit)|clutch\s+(?:master\s+|slave\s+)?cylinder|clutch\s+(?:fluid|pedal|switch|line|hose)|sajuga\s+(?:galven\p{L}*\s+|darba\s+)?cilindr\p{L}*|sajuga\s+(?:pedal\p{L}*|skidrum\p{L}*|sledz\p{L}*|devej\p{L}*|trose\p{L}*)/u;
+
+/** Krāsošanas / gruntēšanas pozīcijas: virsbūves darbs arī bez darbības vārda (grunts pildviela, gruntēts panelis). */
+const PAINT_WORK_RE =
+  /lackier\p{L}*|lackiert|grundier\p{L}*|\bprimer\b|\bprimed\b|\bprimend\b|\bpaint(?:ed|ing|work)?\b|\brespray\p{L}*|grunt(?:s|ets|eta|eti|esan\p{L}*|et)\b|grunts[-\s]?pildviel\p{L}*|krasosan\p{L}*|parkraso\p{L}*|kraso(?:ts|ta|ti|t)\b|spuitwerk|gespoten|lakering|lakeret/u;
+
+/** Krāsas kopšana, aizsardzība, korekcijas zīmulis, krāsas kods - nav krāsošana. */
+const PAINT_NOT_WORK_RE =
+  /lackpflege|lackschutz|lackversiegel\p{L}*|lackstift|paint\s+(?:protection|sealant|care|inspection|check|code|stick|pen)|touch[-\s]?up|krasas\s+(?:kod\p{L}*|biezum\p{L}*|aizsardzib\p{L}*|zimul\p{L}*)|paintwork\s+(?:check|inspection)/u;
+
+/** AdBlue / SCR sistēmas detaļa (šķidruma uzpilde vien nav remonts). */
+const ADBLUE_COMPONENT_RE =
+  /tank|behalter|tvertn\p{L}*|pumpe?\b|pump\b|sukn\p{L}*|modul\p{L}*|dosier\p{L}*|dosing|doser|metering|injector|injektor|einspritz\p{L}*|sprausl\p{L}*|iesmidzin\p{L}*|sensor\p{L}*|sonde|devej\p{L}*|leitung|\bline\b|heater|heiz\p{L}*|sildit\p{L}*|katalysator|catalyst|catalytic|katalizator\p{L}*|steuergerat|control\s+unit|vadibas\s+blok\p{L}*|system\p{L}*|sistem\p{L}*/u;
+
+const ADBLUE_REFILL_RE = /nachfull\p{L}*|auffull\p{L}*|befull\p{L}*|top[-\s]?up|refill\p{L}*|uzpild\p{L}*|papildin\p{L}*|bijvullen|p(?:a|å)fyld\p{L}*/u;
+
+/** Kondicioniera kompresora šļūtene / siksna / sajūgs / smērviela nav kompresora maiņa. */
+const AC_COMPRESSOR_ANCILLARY_RE =
+  /schlauch|\bhose\b|leitung|\bline\b|riemen|\bbelt\b|siksn\p{L}*|caurul\p{L}*|slauten\p{L}*|magnetkupplung|\bclutch\b|lubricant|smerviel\p{L}*|kompressorol|compressor\s+oil/u;
+
+const DPF_CLEAN_RE = /reinig\p{L}*|gereinigt|clean\p{L}*|tiris\p{L}*|iztir\p{L}*|skalos\p{L}*/u;
+
+/** Kārbas eļļas līmeņa pārbaude / noplūde nav maiņa. */
+const GEARBOX_OIL_NOT_CHANGE_RE =
+  /olstand|\bstand\b|\blevel\b|limen\p{L}*|pruf\p{L}*|\bcheck\p{L}*|parbaud\p{L}*|leck\p{L}*|\bleak\p{L}*|undicht\p{L}*|noplud\p{L}*|suc\p{L}*|kuhler|cooler|dzesetaj\p{L}*|wanne|\bpan\b|vacel\p{L}*|leitung|\bline\b|schlauch|\bhose\b|dicht\p{L}*|\bseal\p{L}*|bliv\p{L}*/u;
+
 const MINOR_SKIP_EXCEPT: ReadonlySet<DealerMajorAssemblyId> = new Set([
   "timing_chain",
   "timing_belt",
   "crankshaft_seal",
+  "egr",
+  "dpf",
+  "adblue",
+  "water_pump",
+  "air_suspension",
+  "ac_compressor",
 ]);
 
 function uniqueNonEmpty(parts: readonly string[]): string[] {
@@ -377,10 +444,21 @@ function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): bool
   }
   if (assembly === "gearbox" && PROPSHAFT_NOT_GEARBOX_RE.test(folded)) return false;
   if (assembly === "clutch") {
+    if (CLUTCH_ANCILLARY_RE.test(folded)) return false;
+    if (AC_COMPRESSOR_ANCILLARY_RE.test(folded) && ASSEMBLY_RE.ac_compressor.test(folded)) return false;
     const withoutDual = folded.replace(DUAL_CLUTCH_RE, " ");
     ASSEMBLY_RE.clutch.lastIndex = 0;
     return ASSEMBLY_RE.clutch.test(withoutDual);
   }
+  if (assembly === "adblue") {
+    if (!ASSEMBLY_RE.adblue.test(folded)) return false;
+    if (/nox[-\s]?(?:sensor|sonde|devej)/u.test(folded)) return true;
+    return ADBLUE_COMPONENT_RE.test(folded) && !ADBLUE_REFILL_RE.test(folded);
+  }
+  if (assembly === "ac_compressor") {
+    return ASSEMBLY_RE.ac_compressor.test(folded) && !AC_COMPRESSOR_ANCILLARY_RE.test(folded);
+  }
+  if (assembly === "body_glass" && isPaintWork(folded)) return true;
   if (assembly === "differential") {
     if (isAdBlueReducer(folded)) return false;
     ASSEMBLY_RE.differential.lastIndex = 0;
@@ -397,6 +475,10 @@ function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): bool
   }
   ASSEMBLY_RE[assembly].lastIndex = 0;
   return ASSEMBLY_RE[assembly].test(folded);
+}
+
+function isPaintWork(folded: string): boolean {
+  return PAINT_WORK_RE.test(folded) && !PAINT_NOT_WORK_RE.test(folded);
 }
 
 function hasConsumableSignal(folded: string): boolean {
@@ -512,6 +594,18 @@ export function hasAnyMajorAssemblyRepair(works: string): boolean {
   return MAJOR_ASSEMBLY_SPECS.some((spec) => isMajorAssemblyRepairWork(works, spec.id));
 }
 
+/**
+ * Automātiskās / manuālās kārbas eļļas maiņa (DE/EN/DA/NL/LV/RU). Pozitīvs fakts AI faktu sarakstam;
+ * līmeņa pārbaude, noplūde, dzesētājs u.tml. neskaitās.
+ */
+export function isGearboxOilChangeWork(works: string): boolean {
+  const folded = foldDealerWorkText(works);
+  if (!folded) return false;
+  return splitClauses(folded).some(
+    (clause) => ASSEMBLY_RE.gearbox_oil.test(clause) && !GEARBOX_OIL_NOT_CHANGE_RE.test(clause),
+  );
+}
+
 const PHRASE_BOUNDARY = "|";
 
 function isConsumableToken(token: string): boolean {
@@ -587,6 +681,19 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   if (assembly === "accident_repair") return isAccidentRepairClause(foldedClause);
   if (assembly === "turbo" && isChargeAirMinor(foldedClause)) return false;
   if (assembly === "engine") return isEngineUnitReplacement(foldedClause);
+  // Krāsošanas / gruntēšanas materiāls vai gruntēts panelis: virsbūves darbs arī bez darbības vārda.
+  if (assembly === "body_glass" && isPaintWork(foldedClause) && !isInteriorTrim(foldedClause)) {
+    return !isAccidentRepairClause(foldedClause);
+  }
+  // Filtra / dzesēšanas vārds šiem mezgliem ir paša mezgla nosaukumā, tāpēc „palīgmateriāla” filtrs neder.
+  if (assembly === "dpf" || assembly === "water_pump") {
+    if (!mentionsAssembly(foldedClause, assembly)) return false;
+    if (isOverhaul(foldedClause) || isRemanOrExchange(foldedClause) || hasDealerPartNumber(foldedClause)) {
+      return true;
+    }
+    if (assembly === "dpf" && DPF_CLEAN_RE.test(foldedClause)) return true;
+    return hasUnitRepairVerb(foldedClause);
+  }
   if (isMinorPartClause(foldedClause) && !MINOR_SKIP_EXCEPT.has(assembly)) {
     if (!isRemanOrExchange(foldedClause) && !isMajorPartListLine(foldedClause, assembly)) {
       return false;
@@ -601,10 +708,14 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
 
 /** Vai teksts fiksē šī mezgla nomaiņu / kapitālo remontu, ne eļļas-filtra apkopi. */
 export function isMajorAssemblyRepairWork(works: string, assembly: DealerMajorAssemblyId): boolean {
-  const folded = foldDealerWorkText(works);
-  if (!folded) return false;
-  for (const clause of splitClauses(folded)) {
-    if (clauseIsUnitRepairOf(clause, assembly)) return true;
+  // Katra rinda atsevišķi: `foldDealerWorkText` saplūdina rindas, un citas rindas eļļa / šķidrums
+  // (piem. „Anti-freeze” blakus „EGR dzesētājs (11717822350)”) nedrīkst paslēpt mezgla pozīciju.
+  for (const line of (works ?? "").split(/\r?\n+/)) {
+    const folded = foldDealerWorkText(line);
+    if (!folded) continue;
+    for (const clause of splitClauses(folded)) {
+      if (clauseIsUnitRepairOf(clause, assembly)) return true;
+    }
   }
   return false;
 }
@@ -642,6 +753,10 @@ const REPLACED_DETAIL_LV: Partial<Record<DealerMajorAssemblyId, string>> = {
   propshaft: "nomainīts",
   dual_mass_flywheel: "nomainīts",
   turbo: "nomainīts",
+  egr: "nomainīts",
+  water_pump: "nomainīts",
+  air_suspension: "nomainīts",
+  ac_compressor: "nomainīts",
 };
 
 /**

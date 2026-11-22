@@ -1874,6 +1874,19 @@ function dealerPdfProductScope(p: ClientReportPayload): DealerProductScopeArgs {
   };
 }
 
+/** Jaunākais nobraukuma rādījums no visiem avotiem (sludinājums, CSDD, VIN SCAN, dīleris). */
+function latestMileageReading(
+  rows: readonly { odometer: string; sortableTime: number }[],
+): import("@/lib/oil-change-intervals").OilCurrentReading | null {
+  let best: import("@/lib/oil-change-intervals").OilCurrentReading | null = null;
+  for (const r of rows) {
+    const km = Number((r.odometer ?? "").replace(/\D/g, ""));
+    if (!Number.isFinite(km) || km <= 0 || !r.sortableTime) continue;
+    if (!best || r.sortableTime > best.dateMs) best = { km, dateMs: r.sortableTime };
+  }
+  return best;
+}
+
 function dealerExtraMileageRows(b: AutoRecordsBlockState): AutoRecordsServiceWorkRow[] {
   return (b.serviceHistory ?? []).map((r) => ({
     date: r.date,
@@ -1894,6 +1907,7 @@ function buildAutoRecordsAvotuSubsection(
   lang: ClientReportLang = "lv",
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null,
   countryEvidence?: import("@/lib/vehicle-country-timeline").CountryTimelineEntry[],
+  currentMileage?: import("@/lib/oil-change-intervals").OilCurrentReading | null,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1953,7 +1967,7 @@ function buildAutoRecordsAvotuSubsection(
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
   const showOilInterval = vis.autoRecordsOilInterval !== false;
   const oilTableHtml = showOilInterval
-    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b))
+    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }))
     : "";
   const oilIntervalBox =
     showOilInterval && oilChangeIntervalNotes
@@ -2363,6 +2377,7 @@ function buildAvotuDatiSectionHtml(
     lang,
     p.dealerMajorWorkOverrides,
     countryEvidenceFromRows(sparkCtx.rows),
+    latestMileageReading(sparkCtx.rows),
   );
   const ccVin = buildCcVinAvotuSubsection(
     p.ccVinBlock ?? null,
@@ -3260,6 +3275,9 @@ ${sourceDotColorCss()}
       .pdf-svc-tag--campaign{background:#E8EEEC;color:#0E4F42;}
       .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-tag--record{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-tag--accessories{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
+      .pdf-svc-km--nodata{color:#b91c1c;}
       .pdf-svc-box--hl{
         margin:6px 0;padding:0;border-radius:10px;overflow:hidden;border:1px solid #CBD5E1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -3295,6 +3313,7 @@ ${sourceDotColorCss()}
       }
       .pdf-svc-work:before{content:"·";position:absolute;left:0;color:#94a3b8;}
       .pdf-svc-empty{margin:8px 0 0;font-size:var(--pdf-fs-table);color:#64748b;font-style:italic;line-height:1.4;}
+      .pdf-svc-empty--nodata{color:#b91c1c;font-style:normal;}
       @media screen and (max-width: 520px){
         .pdf-svc-summary{grid-template-columns:1fr 1fr;}
         .pdf-svc-visit{display:flex;flex-direction:column;gap:4px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--pdf-line);border-radius:10px;background:#fff;}

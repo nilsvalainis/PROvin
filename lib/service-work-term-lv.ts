@@ -41,6 +41,7 @@ const QUALIFIER_LV: TermRule[] = [
   { re: /^(high\s+temperature|hochtemperatur)$/i, lv: "augsta temperatūra" },
   { re: /^(driver'?s?\s+side|fahrerseite)$/i, lv: "vadītāja pusē" },
   { re: /^(low\s+viscosity)$/i, lv: "zema viskozitāte" },
+  { re: /^(primed|grundiert)$/i, lv: "gruntēts" },
   { re: /^(with\s+antifreeze|mit\s+frostschutz)$/i, lv: "ar pretfrostu" },
 ];
 
@@ -49,6 +50,25 @@ const QUALIFIER_LV: TermRule[] = [
  * tāpēc raksti ir noenkuroti (`^…$`).
  */
 const TERM_LV: TermRule[] = [
+  // Terminu vārdnīca (audits 22.11): virziens un nozīme, ne vārds vārdā.
+  {
+    re: /^sommerreifen[\s-]*(?:r[üu]ck)?r[üu]st\w*.*$/i,
+    lv: "Vasaras riepu uzlikšana (maiņa uz vasaras riepām)",
+  },
+  {
+    re: /^winterreifen[\s-]*(?:r[üu]ck)?r[üu]st\w*.*$/i,
+    lv: "Ziemas riepu uzlikšana (maiņa uz ziemas riepām)",
+  },
+  {
+    re: /^(?:gepr(?:ü|ue|u)ft\s+|eingriff\s+)?(?:pr(?:ä|ae|a)ventivma(?:ß|ss)nahme|vorsorgema(?:ß|ss)nahme)\b.*$/i,
+    lv: "Profilaktisks pasākums (ražotāja kampaņa)",
+  },
+  { re: /^(pneumatic\s+spring|air\s+spring|luftfeder)$/i, lv: "Pneimobalons" },
+  { re: /^roadside\s+(recovery|assistance)$/i, lv: "Palīdzība uz ceļa (evakuācija)" },
+  { re: /^(\w+\s+)?customer\s+maintenance\s+plan$/i, lv: "Plānotā apkope (ražotāja apkopes plāns)" },
+  { re: /^(ignition\s+coil|z[üu]ndspule)$/i, lv: "Aizdedzes spole" },
+  { re: /^(set,?\s+)?inserts?$/i, lv: "Ieliktnis" },
+  { re: /^(exhaust\s+cooler|exhaust\s+gas\s+radiator(\s+high\s+temperature)?|agr[- ]?k[üu]hler)$/i, lv: "EGR dzesētājs" },
   // Apkopes darbi un pakalpojumi
   { re: /^(oil\s+service|[öo]lservice|[öo]lwechsel|oil\s+change)$/i, lv: "Eļļas maiņa" },
   { re: /^(vehicle\s+check|fahrzeug[- ]?check)$/i, lv: "Tehniskā pārbaude servisā" },

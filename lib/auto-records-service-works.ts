@@ -251,10 +251,6 @@ function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsS
   };
 }
 
-/**
- * Visi ieraksti ar vienādu nobraukumu → viena rinda.
- * Tukšs odometrs nesaista (neapvieno visus bez km).
- */
 /** Dīlera vizītes tajā pašā dienā ar odometru ±150 km ir viens apmeklējums. */
 export const DEALER_VISIT_SAME_DATE_MAX_KM_DIFF = 150;
 
@@ -302,6 +298,80 @@ function mergeDealerVisitsSameDateNearOdometer(
   return sortAutoRecordsServiceWorkRows(out);
 }
 
+/** Vienāds km + datumi līdz šim dienu skaitam (un tas pats serviss) = viena vizīte. */
+export const SERVICE_VISIT_SAME_KM_MAX_DAYS = 7;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function foldServiceLocation(raw: string): string {
+  return raw
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Tukša vieta der jebkurai; citādi nosaukumiem jāsakrīt (vai vienam jāietver otrs). */
+function serviceLocationsCompatible(a: string, b: string): boolean {
+  const fa = foldServiceLocation(a);
+  const fb = foldServiceLocation(b);
+  if (!fa || !fb || fa === fb) return true;
+  if (fa.includes(fb) || fb.includes(fa)) return true;
+  const head = (v: string) => v.split(" ").slice(0, 2).join(" ");
+  return head(fa).length >= 5 && head(fa) === head(fb);
+}
+
+/**
+ * Vai divi ieraksti ar vienādu nobraukumu ir viena un tā pati vizīte.
+ * Tā pati diena, mēneša precizitātes datums („01.MM.YYYY” pret reālu dienu tajā pašā mēnesī)
+ * vai līdz 7 dienām tajā pašā servisā. Citādi tās ir atsevišķas vizītes ar saviem datumiem
+ * (piem. WBAUY11040F054037: 23.05.2013 un 01.10.2015 ar 8 514 km).
+ * Ja kādam ierakstam datuma nav, atšķirt nevar - paliek viena vizīte.
+ */
+export function serviceVisitDatesAreClose(
+  a: Pick<AutoRecordsServiceWorkRow, "date" | "location">,
+  b: Pick<AutoRecordsServiceWorkRow, "date" | "location">,
+): boolean {
+  const pa = parseServiceWorkDateParts(a.date);
+  const pb = parseServiceWorkDateParts(b.date);
+  if (!pa || !pb) return true;
+  if (pa.y === pb.y && pa.m === pb.m) {
+    if (pa.d === pb.d) return true;
+    if (pa.d === 1 || pb.d === 1) return true;
+  }
+  const days = Math.abs(dateSortKey(a.date) - dateSortKey(b.date)) / DAY_MS;
+  if (days > SERVICE_VISIT_SAME_KM_MAX_DAYS) return false;
+  return serviceLocationsCompatible(a.location, b.location);
+}
+
+/** Vienāds nobraukums UN tuvi datumi (sk. `serviceVisitDatesAreClose`). */
+export function serviceWorkRowsAreSameVisit(
+  a: AutoRecordsServiceWorkRow,
+  b: AutoRecordsServiceWorkRow,
+): boolean {
+  const km = serviceWorkOdometerDigits(a);
+  if (!km || km !== serviceWorkOdometerDigits(b)) return false;
+  return serviceVisitDatesAreClose(a, b);
+}
+
+/** Viena nobraukuma rindas sadala vizītēs pēc datumu tuvuma. */
+function clusterSameKmRowsByDate(group: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[][] {
+  const clusters: AutoRecordsServiceWorkRow[][] = [];
+  const ordered = [...group].sort((x, y) => dateSortKey(x.date) - dateSortKey(y.date));
+  for (const row of ordered) {
+    const hit = clusters.find((c) => c.some((other) => serviceVisitDatesAreClose(other, row)));
+    if (hit) hit.push(row);
+    else clusters.push([row]);
+  }
+  return clusters;
+}
+
+/**
+ * Ieraksti ar vienādu nobraukumu → viena rinda TIKAI, ja datumi ir tuvu (tā pati vizīte).
+ * Vienāds km ar lielu datumu starpību paliek atsevišķās vizītēs ar saviem datumiem.
+ * Tukšs odometrs nesaista (neapvieno visus bez km).
+ */
 export function mergeAutoRecordsServiceWorksByOdometer(
   rows: AutoRecordsServiceWorkRow[],
 ): AutoRecordsServiceWorkRow[] {
@@ -317,8 +387,10 @@ export function mergeAutoRecordsServiceWorksByOdometer(
     group.push(r);
     byKm.set(km, group);
   }
-  const merged = [...byKm.values()].map((group) =>
-    group.length === 1 ? group[0]! : mergeServiceWorkGroup(group),
+  const merged = [...byKm.values()].flatMap((group) =>
+    group.length === 1
+      ? [group[0]!]
+      : clusterSameKmRowsByDate(group).map((c) => (c.length === 1 ? c[0]! : mergeServiceWorkGroup(c))),
   );
   return mergeDealerVisitsSameDateNearOdometer(sortAutoRecordsServiceWorkRows([...merged, ...emptyKm]));
 }
@@ -352,7 +424,7 @@ export function mergeAutoRecordsServiceWorkRow(
   if (!oneautoWorksNeedLvTranslation(row.works)) {
     // Svaigs LV tulkojums aizstāj tās pašas vizītes svešvalodas tekstu, citādi atkārtota ielāde paliek vāciski.
     const isStaleForeign = (r: AutoRecordsServiceWorkRow) =>
-      (rowKey(r) === key || (km !== "" && serviceWorkOdometerDigits(r) === km)) &&
+      (rowKey(r) === key || serviceWorkRowsAreSameVisit(r, row)) &&
       oneautoWorksNeedLvTranslation(r.works);
     const stale = withData.filter(isStaleForeign);
     if (stale.length > 0) {
@@ -363,7 +435,7 @@ export function mergeAutoRecordsServiceWorkRow(
   } else {
     // Netulkota rinda (piem. vecā oneauto bloka fold) nedrīkst atgriezt vācisko tekstu jau pārtulkotā vizītē.
     const isSameVisitLv = (r: AutoRecordsServiceWorkRow) =>
-      (rowKey(r) === key || (km !== "" && serviceWorkOdometerDigits(r) === km)) &&
+      (rowKey(r) === key || serviceWorkRowsAreSameVisit(r, row)) &&
       !oneautoWorksNeedLvTranslation(r.works);
     if (withData.some(isSameVisitLv)) {
       if (!row.location.trim()) return existing;
@@ -387,9 +459,10 @@ export function mergeAutoRecordsServiceWorkRow(
     return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);
   }
   if (km) {
-    const sameKm = withData.filter((r) => serviceWorkOdometerDigits(r) === km);
+    // Tikai tā pati vizīte (vienāds km + tuvi datumi); vecāka vizīte ar to pašu km paliek savā rindā.
+    const sameKm = withData.filter((r) => serviceWorkRowsAreSameVisit(r, row));
     if (sameKm.length > 0) {
-      const others = withData.filter((r) => serviceWorkOdometerDigits(r) !== km);
+      const others = withData.filter((r) => !sameKm.includes(r));
       return sortAutoRecordsServiceWorkRows([...others, mergeServiceWorkGroup([...sameKm, row])]);
     }
   }

@@ -15,15 +15,16 @@ import {
   normalizeAutoRecordsServiceWorkRow,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import { findDealerOdometerDrops, type DealerOdometerDrop } from "@/lib/dealer-odometer-checks";
 import { countryFromDealerName } from "@/lib/dealer-report-extract";
 import {
   buildDealerGapMarkerHtml,
   classifyDealerVisitKind,
   dealerPdfWorkLines,
+  dealerVisitGapResolver,
   dealerVisitKindLabel,
   filterDealerPdfVisitRows,
   isDealerServiceGap,
-  visitGapBetween,
   type DealerVisitMajorMark,
 } from "@/lib/pdf-dealer-timeline";
 import { inferServiceWorkCountries } from "@/lib/service-works-country";
@@ -47,9 +48,12 @@ export function serviceWorkYear(date: string): string {
   return m?.[1] ?? "";
 }
 
+/** „Nezināmā” / „Nezināma valsts” nav vieta - tukšu vietu nerāda vispār. */
+const UNKNOWN_PLACE_RE = /^nezin[āa]m/i;
+
 function knownCountry(raw: string, lang: ClientReportLang): string {
   const t = raw.trim();
-  if (!t || !countryLabelToIso2(t)) return "";
+  if (!t || UNKNOWN_PLACE_RE.test(t) || !countryLabelToIso2(t)) return "";
   return normalizeCountryName(t, lang);
 }
 
@@ -58,7 +62,7 @@ export function formatDealerServicePlace(
   lang: ClientReportLang = "lv",
 ): { place: string; country: string } {
   const raw = location.replace(/\s+/g, " ").trim();
-  if (!raw) return { place: "", country: "" };
+  if (!raw || UNKNOWN_PLACE_RE.test(raw)) return { place: "", country: "" };
   const lastComma = raw.lastIndexOf(",");
   const lastSeg = lastComma >= 0 ? raw.slice(lastComma + 1).trim() : "";
   const fromName = countryFromDealerName(raw);
@@ -92,7 +96,8 @@ function visitWorksHtml(raw: string, hideKeyReadLines: boolean, lang: ClientRepo
 function visitPlaceHtml(location: string, lang: ClientReportLang, inferredCountry = ""): string {
   const own = formatDealerServicePlace(location, lang);
   const place = own.place;
-  const inferred = !own.country && inferredCountry.trim() ? normalizeCountryName(inferredCountry.trim(), lang) : "";
+  const inferredRaw = UNKNOWN_PLACE_RE.test(inferredCountry.trim()) ? "" : inferredCountry.trim();
+  const inferred = !own.country && inferredRaw ? normalizeCountryName(inferredRaw, lang) : "";
   const country = own.country || inferred;
   if (!place && !country) return "";
   const mark = inferred ? ` data-country-inferred="1"` : "";
@@ -127,24 +132,47 @@ function highlightHeadHtml(marks: readonly DealerVisitMajorMark[], lang: ClientR
   return `<div class="pdf-svc-hl">${items}</div>`;
 }
 
+/**
+ * Odometra nesakritība pret iepriekšējo ierakstu. Vairumā gadījumu tā ir ievades kļūda - neitrāla piezīme;
+ * sarkanā (datu problēma) tikai būtisks kritums, kas secībā neatgūstas.
+ */
+function odometerDropNoteHtml(drop: DealerOdometerDrop, lang: ClientReportLang): string {
+  const prev = [formatServiceWorkOdometer(drop.previous.odometer), drop.previous.date.trim()]
+    .filter(Boolean)
+    .join(", ");
+  const significant = drop.severity === "significant";
+  const label = translateClientReportStatic(
+    significant
+      ? "Nobraukums mazāks nekā iepriekšējā ierakstā"
+      : "Iespējama nobraukuma ievades kļūda: iepriekšējā ierakstā",
+    lang,
+  );
+  const text = significant ? `${label} (${prev})` : `${label} ${prev}`;
+  return `<p class="pdf-svc-empty${significant ? " pdf-svc-empty--nodata" : ""}">${escapeHtml(text)}</p>`;
+}
+
 function visitHtml(
   row: AutoRecordsServiceWorkRow,
   hideKeyReadLines: boolean,
   lang: ClientReportLang,
   inferredCountry = "",
   marks: readonly DealerVisitMajorMark[] = [],
+  odometerDrop: DealerOdometerDrop | null = null,
 ): string {
   const date = row.date.trim();
   const odo = formatServiceWorkOdometer(row.odometer);
   const dateHtml = date
     ? `<time class="pdf-svc-date">${escapeHtml(date)}</time>`
     : `<span class="pdf-svc-date pdf-svc-date--empty"></span>`;
-  const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
+  const km = odo
+    ? `<span class="pdf-svc-km${odometerDrop?.severity === "significant" ? " pdf-svc-km--nodata" : ""}">${escapeHtml(odo)}</span>`
+    : "";
   const place = visitPlaceHtml(row.location, lang, inferredCountry);
   const tag = visitKindTagHtml(row.works, lang);
   const chips = `<div class="pdf-svc-chips">${tag}${km}</div>`;
   const head = `<div class="pdf-svc-box-top">${place}${chips}</div>`;
-  const content = `${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}`;
+  const dropNote = odometerDrop ? odometerDropNoteHtml(odometerDrop, lang) : "";
+  const content = `${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}${dropNote}`;
   const box =
     marks.length === 0
       ? `<article class="pdf-svc-box">${content}</article>`
@@ -260,6 +288,8 @@ export function buildDealerServiceVisitsHtml(
   const evidence = opts?.countryEvidence ?? [];
   const countries = evidence.length > 0 ? inferServiceWorkCountries(printable, evidence) : [];
   const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable, { lang })];
+  const gapBetween = dealerVisitGapResolver(printable);
+  const drops = new Map(findDealerOdometerDrops(printable).map((d) => [d.row, d]));
   let lastYear = "";
   let yearOpen = false;
 
@@ -275,15 +305,16 @@ export function buildDealerServiceVisitsHtml(
     const year = serviceWorkYear(row.date);
     const info = countries[i];
     const marks = opts?.majorMarksForRow ? opts.majorMarksForRow(row) : [];
-    const visit = visitHtml(row, hideKeyReadLines, lang, info?.countryInferred ? info.country : "", marks);
+    const visit = visitHtml(
+      row,
+      hideKeyReadLines,
+      lang,
+      info?.countryInferred ? info.country : "",
+      marks,
+      drops.get(row) ?? null,
+    );
     const older = printable[i + 1];
-    const gap =
-      older != null
-        ? visitGapBetween(
-            { ...older },
-            { ...row },
-          )
-        : null;
+    const gap = older != null ? gapBetween(older, row) : null;
     const gapHtml = isDealerServiceGap(gap) && gap ? buildDealerGapMarkerHtml(gap, lang) : "";
 
     if (year && year !== lastYear) {
