@@ -51,7 +51,7 @@ export function countryEvidenceFromRows(rows: readonly CountryEvidenceRow[]): Co
   for (const r of rows) {
     if (r.countryUnverified || r.countryInferred) continue;
     const country = r.country.trim();
-    if (!country || /nezināma/i.test(country)) continue;
+    if (!country || /nezin[āa]m/i.test(country)) continue;
     const date = formatAutoRecordsDateForOutput(r.date) || r.date.trim();
     if (!date) continue;
     out.push({ date, country });

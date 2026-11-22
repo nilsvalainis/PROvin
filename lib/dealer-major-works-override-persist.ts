@@ -16,6 +16,12 @@ type DealerMajorAssemblyId =
   | "propshaft"
   | "dual_mass_flywheel"
   | "turbo"
+  | "egr"
+  | "dpf"
+  | "adblue"
+  | "water_pump"
+  | "air_suspension"
+  | "ac_compressor"
   | "body_glass";
 
 export type DealerMajorWorkOverrideAction = "hide" | "set";
@@ -45,6 +51,12 @@ const ASSEMBLY_IDS = new Set<string>([
   "propshaft",
   "dual_mass_flywheel",
   "turbo",
+  "egr",
+  "dpf",
+  "adblue",
+  "water_pump",
+  "air_suspension",
+  "ac_compressor",
   "body_glass",
 ]);
 

@@ -54,10 +54,24 @@ export function parseOemOilIntervalFromText(raw: string): OemOilInterval | null 
   return { km, kmMin, months };
 }
 
-export function oilRatioTone(value: number | null, oem: number | null | undefined): OilRatioTone {
+/** Km pielaide pret ražotāja intervālu: 3 %, bet ne mazāk par 750 km (25 005 pret 25 000 nav „virs”). */
+export const OIL_INTERVAL_KM_TOLERANCE_RATIO = 0.03;
+export const OIL_INTERVAL_KM_TOLERANCE_MIN = 750;
+
+export function oilIntervalKmTolerance(oemKm: number | null | undefined): number {
+  if (oemKm == null || oemKm <= 0) return 0;
+  return Math.max(OIL_INTERVAL_KM_TOLERANCE_MIN, Math.round(oemKm * OIL_INTERVAL_KM_TOLERANCE_RATIO));
+}
+
+/** `tolerance` - cik drīkst pārsniegt OEM, lai solis vēl skaitītos intervālā (mērvienība kā `value`). */
+export function oilRatioTone(
+  value: number | null,
+  oem: number | null | undefined,
+  tolerance = 0,
+): OilRatioTone {
   if (value == null || value <= 0) return "neutral";
   if (oem == null || oem <= 0) return "neutral";
-  return value <= oem ? "ok" : "stretch";
+  return value <= oem + Math.max(0, tolerance) ? "ok" : "stretch";
 }
 
 function groupDigits(n: number): string {

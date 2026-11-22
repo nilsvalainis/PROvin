@@ -81,7 +81,9 @@ describe("oil-change-interval-chart", () => {
     expect(html).toContain("34 260 km");
     expect(html).toContain("13 mēn.");
     expect(html).toContain("dīlera datos virs intervāla");
-    expect(html).toContain("Dīlera dati apliecina 100%");
+    // 22.11: segums līdz šodienai - posms pēc pēdējās maiņas ir „nav dīlera datu”, nevis „100%”.
+    expect(html).not.toContain("Dīlera dati apliecina");
+    expect(html).toMatch(/Dīlera datos eļļas maiņas ierakstu nav pēc \d{2}\.\d{2}\.\d{4} \(\d+ mēn\.\)/);
     expect(html).toContain("pdf-oil-int__seg--over");
     expect(html).not.toContain("pdf-oil-int__seg--hatch");
   });

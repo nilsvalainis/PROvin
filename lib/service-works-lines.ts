@@ -85,25 +85,59 @@ function looksLikeStandaloneWork(part: string): boolean {
   return STANDALONE_WORK_RE.test(part) || hasPartNumber(part);
 }
 
+/**
+ * Sadala tikai ārpus iekavām: „Riepu montāža (4 gab., no 18 collām)” ir viena pozīcija (audits K10).
+ * Nesabalansētas iekavas (trūkst „)”) - iekavās līdz rindas beigām arī nedala.
+ */
+function splitOutsideParens(text: string, sep: RegExp): string[] {
+  const PH = "\u0000";
+  const stash: string[] = [];
+  const masked = text.replace(/\([^()]*\)?/g, (m) => {
+    stash.push(m);
+    return `${PH}${stash.length - 1}${PH}`;
+  });
+  const restore = (part: string) =>
+    part.replace(new RegExp(`${PH}(\\d+)${PH}`, "g"), (_m, i: string) => stash[Number(i)] ?? "");
+  return masked.split(sep).map(restore);
+}
+
 /** „ITEM (CODE).,” / „ITEM.;” starp OEM pozīcijām. */
 function splitOemTerminated(text: string): string[] {
-  const chunks = text
-    .split(/\s*[.]\s*,\s*|\s*;\s*/)
+  const chunks = splitOutsideParens(text, /\s*[.]\s*,\s*|\s*;\s*/)
     .map(cleanItem)
     .filter(Boolean);
   return chunks.length > 0 ? chunks : [text];
 }
 
+/** Daļa sākas ar mazo burtu (LV īpašības vārds / precizējums: „zemas viskozitātes”, „kreisā”). */
+function startsLowercase(part: string): boolean {
+  const ch = part.match(/\p{L}/u)?.[0] ?? "";
+  return Boolean(ch) && ch === ch.toLocaleLowerCase("lv") && ch !== ch.toLocaleUpperCase("lv");
+}
+
+/** Iepriekšējā pozīcija jau noslēgta ar detaļas numuru iekavās („… (83192180509)”). */
+function endsWithPartNumber(text: string): boolean {
+  return /\(\s*[A-Z]{0,6}\d{5,}[^)]*\)\s*$/.test(text);
+}
+
 function splitCommaAware(text: string): string[] {
-  const parts = text.split(/\s*,\s*/).map((p) => p.trim()).filter(Boolean);
+  const parts = splitOutsideParens(text, /\s*,\s*/).map((p) => p.trim()).filter(Boolean);
   if (parts.length <= 1) return parts.length === 1 ? [parts[0]!] : [];
 
   const out: string[] = [];
   let cur = parts[0]!;
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i]!;
-    const partIsWork = looksLikeStandaloneWork(part);
-    const partIsQual = looksLikeOemQualifier(part) && !partIsWork;
+    // Pēc detaļas numura sākas nākamā pozīcija; mazais burts citādi ir tās pašas pozīcijas precizējums.
+    if (endsWithPartNumber(cur)) {
+      out.push(cur);
+      cur = part;
+      continue;
+    }
+    // Mazais burts + tikai detaļas numurs (bez darba vārda) = tās pašas pozīcijas precizējums.
+    const lowerContinuation = startsLowercase(part) && !STANDALONE_WORK_RE.test(part);
+    const partIsWork = !lowerContinuation && looksLikeStandaloneWork(part);
+    const partIsQual = (looksLikeOemQualifier(part) || lowerContinuation) && !partIsWork;
     if (partIsQual) {
       cur = `${cur}, ${part}`;
       continue;

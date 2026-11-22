@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin-source-comment-blocks";
 import { aiSourceBlockLabel, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildEngineOilChangeListForPrompt } from "@/lib/engine-oil-prompt-list";
+import { buildDealerCodeFactsForPrompt } from "@/lib/dealer-code-facts-prompt";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import {
@@ -83,12 +84,21 @@ export const DEALER_MAJOR_ASSEMBLIES_DIRECTIVE =
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
 /**
+ * Abiem dīlera laukiem (Nils 22.11.2026): tikai fakti. Ieteikumi pieder pilnajai audita atskaitei.
+ */
+export const DEALER_FACTS_ONLY_DIRECTIVE = `TIKAI FAKTI, NEKĀDU IETEIKUMU (Nils 22.11.2026): ieteikumi un „ko pārbaudīt” ir pilnajā audita atskaitē, ne šeit. AIZLIEGTS: „jāpārbauda”, „ieteicams”, „iesakām”, „pārdevējam jālūdz”, „jāprasa dokumenti / rēķini”, „pārbaudīt apskatē”, padomi pircējam, vērtējoši stāsti un minējumi par iemesliem („raksturīga prakse”, „visticamāk apkopts citur”). Īsi, strukturēti, tikai tas, kas ir datos.
+POZĪCIJA NAV DARBĪBA: dīlera rindas bieži ir detaļu / pozīciju saraksts. Rinda tikai ar nosaukumu bez darbības vārda (piem. „Particulate filter.”) = „ierakstā ir pozīcija: kvēpu filtrs (darbība nav norādīta)”. NERAKSTI „pārbaudīts”, „nomainīts”, „uzstādīts”, ja rindā tā nav.
+SERVISA VIETA: vietu sauc par oficiālo dīleri / servisu tikai, ja nosaukumā ir ražotāja zīmols vai dīlera / servisa pazīme. Ja koda faktu sarakstā vieta atzīmēta „nav autoserviss”, to NESAUC par servisu - raksti tikai „ieraksts (vieta: <nosaukums>)” vai vietu neraksti.
+SKAITĻI: ierakstu skaitu, eļļas maiņu skaitu, mēnešus kopš pēdējā ieraksta, odometra nesakritības un lielo mezglu reizes ņem TIKAI no „Koda faktu saraksta” - cits skaits aizliegts.`;
+
+/**
  * Dīlera „Komentāri” (Nils 22.11.2026): PDF jau drukā transportlīdzekļa informāciju, katru servisa
  * vizīti un eļļas intervālu tabulu + atsevišķu eļļas komentāru. Šis lauks raksta tikai secinājumus.
  */
 export const DEALER_COMMENTS_NO_TABLE_REPEAT_DIRECTIVE = `DĪLERA „KOMENTĀRI” - NEDUBLĒT TABULAS UN EĻĻAS LAUKU:
 PDF jau drukā „Transportlīdzekļa informācija” (modelis, gads, VIN, dzinējs, kārba, krāsa, salons), „Servisa un remontu vēsture” (katra vizīte ar datumu, km un darbiem) un „Eļļas maiņas intervāli” (tabula + atsevišķs komentārs). Tos NEPĀRRAKSTI: nekādas identifikācijas rindkopas, nekāda vizīšu saraksta, nekādu kārtējo apkopju (eļļa, filtri, bremžu šķidrums, apkope A/B) uzskaitījuma, NEKO par eļļas maiņām un intervāliem.
-Raksti tikai secinājumus, ko tabulas pašas nepasaka: lielie mezgli un ne-kārtējie remonti (datums, km, ko tas nozīmē), atsaukumi / kampaņas / garantijas darbi, nobraukuma nekonsekvence (ja ir), un 1-2 teikumi, ko pārbaudīt apskatē, balstoties uz šiem faktiem. Ja ir tikai kārtējās apkopes - 1-2 īsi teikumi (pēdējais dīlera ieraksts, pēc tam jāprasa dokumenti).`;
+Raksti tikai faktus, ko tabulas pašas nepasaka: lielie mezgli un ne-kārtējie remonti (datums, km), atsaukumi / kampaņas / garantijas darbi, nobraukuma ierakstu nesakritības (kā fakts, no koda faktu saraksta). Ja ir tikai kārtējās apkopes - 1-2 īsi teikumi (pēdējais dīlera ieraksts ar datumu un km).
+${DEALER_FACTS_ONLY_DIRECTIVE}`;
 
 function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
   return blockKey === "auto_records" || blockKey === "oneauto";
@@ -196,6 +206,8 @@ ${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
 
 ${buildEngineOilChangeListForPrompt(input.sourceBlocks)}
 
+${buildDealerCodeFactsForPrompt(input.sourceBlocks)}
+
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
 Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus ${
           isolateDealer
@@ -209,11 +221,11 @@ PDF virs šī teksta jau drukā tabulu ar KATRU eļļas maiņu (datums, km, soli
 Jāatbild tālāk (tikai secinājumi):
 - kopējā aina: soļu diapazons (piem. „soļi 12 300-19 700 km, parasti reizi gadā”) un vai tas atbilst ražotāja intervālam;
 - kuri soļi ir garāki par ražotāja intervālu un par cik (nosauc ne vairāk kā 1-2 lielākos ar datumiem);
-- pēdējā eļļas maiņa dīlera datos un ko tas nozīmē šodien;
-- ja pilsētas profils - praktiskie griesti ~10 000 km paliek KOMENTĀRĀ, ne OEM rindā; ja blīvi šosejas dati - 15 000-20 000 km var būt pieņemami.
+- pēdējā eļļas maiņa dīlera datos (datums, km) un cik mēneši pagājuši līdz šodienai (no koda faktu saraksta) - kā fakts, bez vērtējuma.
 PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera datos garāks, svītrojums = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Garāks solis NAV apgalvojums, ka eļļa nav mainīta.
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
-Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera - jālūdz pārdevēja rēķins/apliecinājums. To pašu NESAUC par pirkuma risku un NEAPGALVO, ka intervāls ir pārkāpts.
+Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. To NESAUC par pirkuma risku, NEAPGALVO, ka intervāls ir pārkāpts, un NEDOD ieteikumus (rēķinu prasīšana, pilsētas intervāli u.tml.).
+${DEALER_FACTS_ONLY_DIRECTIVE}
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
 Lielos mezglus, kārbas eļļu, remontus, kampaņas un citus darbus šeit NERAKSTI (nekādas rindkopas „Lielo mezglu apkopes”) - tie pieder atsevišķajam laukam „Komentāri”.
 Garums: 2–3 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sākas tieši ar „Ražotāja intervāls:”. Pārējām rindkopām virsraksts savā rindā, tad rindkopa. Bez *, **.${
@@ -262,7 +274,9 @@ ${portfolioContext}
 `
         }=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
 ${focusDataText}
-
+${isDealerComments ? `
+${buildDealerCodeFactsForPrompt(input.sourceBlocks)}
+` : ""}
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
 Galvenais jautājums, uz ko atbildi: ko tieši šis avots fiksē? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.

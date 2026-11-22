@@ -49,6 +49,7 @@ import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
 import {
   dealerCommentPlainCleanup,
   dropDealerCommentsDuplicatingOil,
+  dropDealerRecommendationSentences,
   highlightMajorAssembliesInRichHtml,
   type DealerReviewField,
 } from "@/lib/dealer-comments-review-core";
@@ -221,6 +222,13 @@ async function generateDealerNotes(
     const oilForDedup = texts.oilChangeIntervalNotes ?? adminRichHtmlToPlainText(blocks.auto_records.oilChangeIntervalNotes ?? "");
     const deduped = dropDealerCommentsDuplicatingOil(texts.comments, oilForDedup);
     if (deduped.trim()) texts = { ...texts, comments: deduped };
+  }
+  // Nils 22.11: dīlera produktā tikai fakti - ieteikumu teikumus izmet abos laukos (arī bez Opus).
+  for (const field of ["comments", "oilChangeIntervalNotes"] as const) {
+    const cur = texts[field];
+    if (!cur) continue;
+    const cleaned = dropDealerRecommendationSentences(cur);
+    if (cleaned.trim()) texts = { ...texts, [field]: cleaned };
   }
   const toHtml = (text: string | undefined): string =>
     text?.trim() ? highlightMajorAssembliesInRichHtml(aiExpertSourceCommentToRichHtml(dealerCommentPlainCleanup(text))) : "";

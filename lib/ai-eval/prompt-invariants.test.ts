@@ -345,7 +345,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/no visit-by-visit list/);
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Lielie mezgli un remonti/);
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Atsaukumi, kampaņas un garantijas darbi/);
-    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/Ko pārbaudīt apskatē/);
+    // Nils 22.11 (2): dīlera komentāros tikai fakti - nekādas „Ko pārbaudīt apskatē” lomas.
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).not.toMatch(/4\) Ko pārbaudīt apskatē/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/NO RECOMMENDATIONS/);
+    expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).toMatch(/POSITION IS NOT AN ACTION/);
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).not.toMatch(/Agregātu \/ aprīkojuma identifikācija/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/does NOT write about engine oil changes or service intervals at all/);

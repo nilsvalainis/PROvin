@@ -24,6 +24,7 @@ import {
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   formatOemOilCaption,
+  oilIntervalKmTolerance,
   oilRatioTone,
   type OemOilInterval,
 } from "@/lib/oem-oil-interval";
@@ -100,6 +101,26 @@ const ENGINE_OIL_NAME_RE =
 const ENGINE_OIL_FILTER_RE =
   /(?:motor)?ellas?\s+filtr|oil\s+filter|olfilter|motorolfilter/;
 
+/**
+ * Tikai NEPĀRPROTAMI ne-maiņas darbi ar vārdu „eļļa”: līmeņa pārbaude, noplūdes diagnostika,
+ * spiediena devējs. Viss pārējais (arī eļļas filtra korpusa maiņa, ko dīleris parasti veic kopā
+ * ar eļļas maiņu) paliek skaitā - esošo atpazīšanu nesašaurinām (Nils 22.11).
+ * Pēc fold: bez garumzīmēm, ö->o, „oel”->„ol”.
+ */
+const NOT_OIL_CHANGE_CLAUSE_RE =
+  /(?:motorol|motoroil|\bol|\boil|ellas?|motorellas?)[\s-]*(?:stand|level|limen\p{L}*|niveau)(?:\s+\p{L}+){0,2}\s+(?:pruf\p{L}*|kontroll\p{L}*|check\p{L}*|parbaud\p{L}*|gepruft)|olstand\p{L}*\s+(?:pruf\p{L}*|kontroll\p{L}*|gepruft)|(?:pruf\p{L}*|check\p{L}*|parbaud\p{L}*)\s+(?:\p{L}+\s+){0,2}(?:olstand|oil\s+level|ellas\s+limen\p{L}*)|(?:motorol|motoroil|\bol|\boil|ellas?|motorellas?)[\s-]*(?:verlust|leck\p{L}*|leak\p{L}*|undicht\p{L}*|noplud\p{L}*|suc(?:e|es|i)\b)|olverlust|olleck\p{L}*|olundicht\p{L}*|(?:\bol|\boil|ellas?)[\s-]*(?:druck|pressure|spiedien\p{L}*)[\s-]*(?:sensor\p{L}*|schalter|geber|switch|sender|devej\p{L}*)|oldruck(?:sensor|schalter|geber)\p{L}*/u;
+
+/** Pati klauzula tomēr fiksē maiņu („Ölwechsel, Ölstand geprüft”) - tad to neizmet. */
+const EXPLICIT_OIL_CHANGE_RE =
+  /olwechsel|oilwechsel|oil\s+change|ol\s+service|oil\s+service|wechsel\p{L}*|ellas?\s+(?:un\s+filtra\s+)?maina|\d{1,2}w\d{2}/u;
+
+function dropNotOilChangeClauses(folded: string): string {
+  return folded
+    .split(/[\n;,|]+|(?<=\p{L})\.\s+/u)
+    .filter((clause) => !NOT_OIL_CHANGE_CLAUSE_RE.test(clause) || EXPLICIT_OIL_CHANGE_RE.test(clause))
+    .join(" ; ");
+}
+
 /** Noklusētais OEM, ja ražotāja intervāls nav zināms. */
 export const OIL_DEALER_GAP_KM = 30_000;
 /** Noklusētais OEM laiks, ja ražotāja intervāls nav zināms. */
@@ -152,7 +173,35 @@ export type OilChangeIntervalSeries = {
   coverGapKm: number;
   coverStartKm: number | null;
   coverEndKm: number | null;
+  /**
+   * Segums līdz šodienai: posms pēc pēdējās fiksētās eļļas maiņas ir „nav dīlera datu”.
+   * Tikai, ja izsaucējs iedod atskaites laiku (`nowMs`); citādi paliek posms starp pirmo un pēdējo maiņu.
+   */
+  coverage?: OilCoverage | null;
 };
+
+/** Aktuāls nobraukuma rādījums no jebkura avota (sludinājums, CSDD, VIN SCAN, dīleris). */
+export type OilCurrentReading = { km: number; dateMs: number };
+
+export type OilCoverage = {
+  /** `km`, ja zināms aktuāls nobraukums; citādi `time` (mēneši) - km pēc pēdējā ieraksta nav zināmi. */
+  basis: "km" | "time";
+  ok: number;
+  over: number;
+  /** Datu iztrūkums starp fiksētajām maiņām. */
+  gap: number;
+  /** Posms no pēdējās fiksētās maiņas līdz šodienai / aktuālajam nobraukumam. */
+  tail: number;
+  total: number;
+  firstDate: string;
+  lastDate: string;
+  /** Mēneši no pēdējās fiksētās maiņas līdz šodienai. */
+  tailMonths: number | null;
+  currentKm: number | null;
+};
+
+/** Cik svaigam jābūt cita avota rādījumam, lai to uzskatītu par aktuālo nobraukumu. */
+export const OIL_CURRENT_READING_MAX_AGE_DAYS = 92;
 
 function escapeHtml(s: string): string {
   return s
@@ -217,7 +266,9 @@ export function isEngineOilChangeWork(works: string): boolean {
   const folded = foldOilWorkText(works);
   if (!folded) return false;
   NON_ENGINE_OIL_CHUNK_RE.lastIndex = 0;
-  const withoutGear = folded.replace(NON_ENGINE_OIL_CHUNK_RE, " ").replace(/\s+/g, " ").trim();
+  const withoutGear = dropNotOilChangeClauses(folded.replace(NON_ENGINE_OIL_CHUNK_RE, " "))
+    .replace(/\s+/g, " ")
+    .trim();
   return engineOilSignalInFolded(withoutGear);
 }
 
@@ -252,6 +303,9 @@ export function collectEngineOilChangeRows(
     const key = `${day}|${km}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    // Vienāds nobraukums = tā pati eļļas maiņa (0 km starpā), arī ja ieraksti ir ar dažādiem datumiem
+    // (piem. rēķins vēlāk). Paliek agrākais datums; citādi viena maiņa tiktu skaitīta divreiz.
+    if (km && out.some((r) => r.odometer.replace(/\D/g, "") === km)) continue;
     if (day) {
       const sameDay = out.findIndex((r) => r.date.trim() === day);
       if (sameDay >= 0) {
@@ -289,6 +343,11 @@ export function isHardDataGap(
 
 function ratioTone(value: number | null, oem: number | null | undefined): OilIntervalTone {
   return oilRatioTone(value, oem);
+}
+
+/** Km solis pret OEM ar pielaidi (3 % vai 750 km). */
+function kmRatioTone(value: number | null, oemKm: number | null | undefined): OilIntervalTone {
+  return oilRatioTone(value, oemKm, oilIntervalKmTolerance(oemKm));
 }
 
 export function classifyOilIntervalKind(
@@ -331,6 +390,7 @@ function buildAvgNote(ringSteps: number, gapSteps: number, changeCount: number):
 export function buildOilChangeIntervalSeries(
   rows: readonly AutoRecordsServiceWorkRow[],
   oem: OemOilInterval | null = null,
+  opts?: { nowMs?: number | null; current?: OilCurrentReading | null },
 ): OilChangeIntervalSeries {
   const oilRows = collectEngineOilChangeRows(rows);
   const raw: Omit<OilChangeIntervalPoint, "kind" | "tone" | "periodTone">[] = [];
@@ -373,7 +433,7 @@ export function buildOilChangeIntervalSeries(
     return {
       ...p,
       kind,
-      tone: ratioTone(p.intervalKm, oem?.km),
+      tone: kmRatioTone(p.intervalKm, oem?.km),
       periodTone: ratioTone(p.intervalMonths, oem?.months),
     };
   });
@@ -416,7 +476,7 @@ export function buildOilChangeIntervalSeries(
     minIntervalKm: ringKm.length ? Math.min(...ringKm) : allKm.length ? Math.min(...allKm) : null,
     maxIntervalKm: ringKm.length ? Math.max(...ringKm) : allKm.length ? Math.max(...allKm) : null,
     oem,
-    ringTone: ratioTone(ringIntervalKm, oem?.km),
+    ringTone: kmRatioTone(ringIntervalKm, oem?.km),
     periodChipTone: ratioTone(ringIntervalMonths, oem?.months),
     coverSpanKm,
     coverOkKm,
@@ -424,6 +484,72 @@ export function buildOilChangeIntervalSeries(
     coverGapKm,
     coverStartKm,
     coverEndKm,
+    coverage: buildOilCoverage(
+      { points, coverSpanKm, coverOkKm, coverOverKm, coverGapKm, coverEndKm },
+      opts?.nowMs ?? null,
+      opts?.current ?? null,
+    ),
+  };
+}
+
+function wholeMonthsBetween(fromMs: number, toMs: number): number {
+  if (!fromMs || !toMs || toMs <= fromMs) return 0;
+  return Math.round((toMs - fromMs) / (24 * 60 * 60 * 1000) / 30.437);
+}
+
+function buildOilCoverage(
+  s: Pick<
+    OilChangeIntervalSeries,
+    "points" | "coverSpanKm" | "coverOkKm" | "coverOverKm" | "coverGapKm" | "coverEndKm"
+  >,
+  nowMs: number | null,
+  current: OilCurrentReading | null,
+): OilCoverage | null {
+  if (!nowMs || s.points.length < 2) return null;
+  const dated = s.points.filter((p) => parseDotOrIsoDateToMs(p.date));
+  const first = dated[0];
+  const last = dated[dated.length - 1];
+  if (!first || !last) return null;
+  const firstMs = parseDotOrIsoDateToMs(first.date);
+  const lastMs = parseDotOrIsoDateToMs(last.date);
+  if (!firstMs || !lastMs || lastMs <= firstMs || nowMs < lastMs) return null;
+  const tailMonths = wholeMonthsBetween(lastMs, nowMs);
+  const base = { firstDate: first.date, lastDate: last.date, tailMonths };
+
+  const fresh =
+    current != null &&
+    current.km > 0 &&
+    current.dateMs >= nowMs - OIL_CURRENT_READING_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  if (fresh && s.coverSpanKm != null && s.coverEndKm != null && current!.km >= s.coverEndKm) {
+    const tail = current!.km - s.coverEndKm;
+    return {
+      basis: "km",
+      ok: s.coverOkKm,
+      over: s.coverOverKm,
+      gap: s.coverGapKm,
+      tail,
+      total: s.coverSpanKm + tail,
+      currentKm: current!.km,
+      ...base,
+    };
+  }
+
+  // Km pēc pēdējā ieraksta nav zināmi: rēķinām pēc laika no pirmās fiksētās maiņas līdz šodienai.
+  const spanMonths = wholeMonthsBetween(firstMs, lastMs);
+  if (spanMonths <= 0) return null;
+  const sumMonths = (pick: (p: OilChangeIntervalPoint) => boolean) =>
+    s.points.filter(pick).reduce((a, p) => a + (p.intervalMonths ?? 0), 0);
+  const over = Math.min(spanMonths, sumMonths((p) => stepIsOverOem(p)));
+  const ok = Math.min(spanMonths - over, sumMonths((p) => p.kind === "observed" && !stepIsOverOem(p)));
+  return {
+    basis: "time",
+    ok,
+    over,
+    gap: Math.max(0, spanMonths - ok - over),
+    tail: tailMonths,
+    total: spanMonths + tailMonths,
+    currentKm: null,
+    ...base,
   };
 }
 
@@ -487,16 +613,32 @@ function stepBarHtml(p: OilChangeIntervalPoint, oem: OemOilInterval | null): str
   return `<div class="pdf-oil-int__bw">${band}${tick}<span class="pdf-oil-int__seg pdf-oil-int__seg--${cls}" style="width:${w}%"></span></div>`;
 }
 
+type CoverParts = { ok: number; over: number; gap: number; total: number };
+
+/** Daļas joslai: ar `coverage` - līdz šodienai (iztrūkums + posms pēc pēdējās maiņas), citādi tikai fiksētais posms. */
+function coverParts(series: OilChangeIntervalSeries): CoverParts {
+  const c = series.coverage;
+  if (c && c.total > 0) return { ok: c.ok, over: c.over, gap: c.gap + c.tail, total: c.total };
+  return {
+    ok: series.coverOkKm,
+    over: series.coverOverKm,
+    gap: series.coverGapKm,
+    total: series.coverSpanKm ?? 0,
+  };
+}
+
 function coverPercents(series: OilChangeIntervalSeries): {
   pOk: number;
   pOver: number;
   pGap: number;
   pCover: number;
 } {
-  const total = series.coverSpanKm ?? 0;
+  const { ok, gap, total } = coverParts(series);
   if (total <= 0) return { pOk: 0, pOver: 0, pGap: 0, pCover: 0 };
-  const pGap = Math.round((series.coverGapKm / total) * 100);
-  const pOk = Math.round((series.coverOkKm / total) * 100);
+  let pGap = Math.round((gap / total) * 100);
+  // 100 % tikai tad, ja iztrūkuma tiešām nav: noapaļošana nedrīkst paslēpt posmu bez datiem.
+  if (gap > 0 && pGap === 0) pGap = 1;
+  const pOk = Math.min(100 - pGap, Math.round((ok / total) * 100));
   const pOver = series.oem ? Math.max(0, 100 - pGap - pOk) : 0;
   return { pOk, pOver, pGap, pCover: 100 - pGap };
 }
@@ -514,24 +656,50 @@ function oemRefHtml(oem: OemOilInterval | null): string {
 }
 
 function coverageHtml(series: OilChangeIntervalSeries): string {
-  const total = series.coverSpanKm;
-  if (total == null || total <= 0 || series.coverStartKm == null || series.coverEndKm == null) {
+  if (
+    series.coverSpanKm == null ||
+    series.coverSpanKm <= 0 ||
+    series.coverStartKm == null ||
+    series.coverEndKm == null
+  ) {
     return "";
   }
+  const parts = coverParts(series);
+  if (parts.total <= 0) return "";
   const { pOk, pOver, pGap, pCover } = coverPercents(series);
   const oem = series.oem;
-  const okW = (series.coverOkKm / total) * 100;
-  const overW = (series.coverOverKm / total) * 100;
-  const gapW = (series.coverGapKm / total) * 100;
+  const okW = (parts.ok / parts.total) * 100;
+  const overW = (parts.over / parts.total) * 100;
+  const gapW = (parts.gap / parts.total) * 100;
   const seg = oem
     ? `<i class="pdf-oil-int__cov-ok" style="width:${okW}%"></i><i class="pdf-oil-int__cov-over" style="width:${overW}%"></i>`
     : `<i class="pdf-oil-int__cov-neutral" style="width:${okW}%"></i>`;
   const key = oem
     ? `<span><i class="pdf-oil-int__sw pdf-oil-int__sw--ok"></i><b>${pOk}%</b> dīlera datos atbilst intervālam</span><span><i class="pdf-oil-int__sw pdf-oil-int__sw--over"></i><b>${pOver}%</b> dīlera datos virs intervāla</span><span><i class="pdf-oil-int__sw pdf-oil-int__sw--hatch"></i><b>${pGap}%</b> nav dīlera datu</span>`
-    : `<span><i class="pdf-oil-int__sw pdf-oil-int__sw--neutral"></i><b>${pCover}%</b> nobraukuma ar dīlera datiem</span><span><i class="pdf-oil-int__sw pdf-oil-int__sw--hatch"></i><b>${pGap}%</b> nav dīlera datu</span>`;
+    : `<span><i class="pdf-oil-int__sw pdf-oil-int__sw--neutral"></i><b>${pCover}%</b> ${series.coverage?.basis === "time" ? "laika ar dīlera datiem" : "nobraukuma ar dīlera datiem"}</span><span><i class="pdf-oil-int__sw pdf-oil-int__sw--hatch"></i><b>${pGap}%</b> nav dīlera datu</span>`;
+  // Fakts bez vērtējuma: kuru posmu ieraksti aptver un no kura datuma ierakstu vairs nav.
+  // Tas nav apgalvojums, ka apkopes nav veiktas (auto varēja stāvēt vai apkopts citur).
+  const c = series.coverage;
+  const kmSpan = `${groupDigits(series.coverStartKm)}-${groupDigits(series.coverEndKm)} km`;
+  const head = c
+    ? `Dīlera eļļas maiņu ieraksti aptver ${kmSpan} · ${c.firstDate}-${c.lastDate}`
+    : `Dīlera eļļas maiņu ieraksti aptver ${kmSpan}`;
+  const notes: string[] = [];
+  if (c) {
+    if (c.tailMonths != null && c.tailMonths >= 1) {
+      notes.push(`Dīlera datos eļļas maiņas ierakstu nav pēc ${c.lastDate} (${c.tailMonths} mēn.).`);
+    }
+    notes.push(
+      c.basis === "km" && c.currentKm != null
+        ? `Procenti rēķināti pēc nobraukuma līdz ${groupDigits(c.currentKm)} km.`
+        : "Procenti rēķināti pēc laika līdz šodienai.",
+    );
+  } else {
+    notes.push("Procenti attiecas tikai uz šo posmu.");
+  }
   return `<div class="pdf-oil-int__cov">${seg}<i class="pdf-oil-int__cov-hatch" style="width:${gapW}%"></i></div>
     <div class="pdf-oil-int__covkey">${key}</div>
-    <p class="pdf-oil-int__summary">Dīlera dati apliecina ${pCover}% nobraukuma<span>${groupDigits(series.coverStartKm)} km līdz ${groupDigits(series.coverEndKm)} km.</span></p>`;
+    <p class="pdf-oil-int__summary">${escapeHtml(head)}<span>${escapeHtml(notes.join(" "))}</span></p>`;
 }
 
 function kpiValue(raw: string): string {

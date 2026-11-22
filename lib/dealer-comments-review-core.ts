@@ -41,6 +41,7 @@ export const DEALER_REVIEW_DEDUP_RULES = `DEALER PRODUCT - DUPLICATION CHECK (ex
 - Field "oilChangeIntervalNotes" owns engine-oil / service-interval analysis. Field "comments" owns everything else (non-routine repairs and major assemblies, recalls / campaigns / warranty, km inconsistencies, what to check).
 - The client PDF already prints a vehicle-info table (model, year, VIN, engine, gearbox, colour, interior), a list of EVERY service visit (date, km, works) and a table of EVERY oil change with steps vs OEM.
 - Report kind "atkartojums" for: (a) any sentence in "comments" about oil changes or service intervals; (b) an identification sentence/paragraph in "comments" that only repeats the vehicle-info table; (c) a visit-by-visit or routine-maintenance enumeration in either field; (d) the same fact stated in both fields (keep it in its owner field); (e) a paragraph in "oilChangeIntervalNotes" about major assemblies, gearbox oil or repairs.
+- NO RECOMMENDATIONS (Nils 22.11.2026): both dealer fields state facts only; advice belongs to the full audit report. Report kind "atkartojums" with "replace": "" for every recommendation / advice sentence („jāpārbauda”, „ieteicams”, „iesakām”, „pārdevējam jālūdz”, „jāprasa dokumenti / rēķini”, „pārbaudīt apskatē”, city-driving oil advice) and for evaluative stories or guesses about reasons. Also report kind "fakts" when a position-only row is described as an action („pārbaudīts / nomainīts”), replacing it with „ierakstā ir pozīcija: … (darbība nav norādīta)”.
 - For "atkartojums": "find" is the exact duplicated sentence or paragraph (including its heading line if the whole role goes), "replace" is "" to delete it, or a much shorter conclusion sentence if a conclusion would otherwise be lost. Never delete the first line „Ražotāja intervāls: …”.`;
 
 /**
@@ -103,6 +104,41 @@ export function dropDealerCommentsDuplicatingOil(comments: string, oil: string):
         .filter((l) => l.trim());
       // Ja palikusi tikai virsraksta rinda - izmet visu lomu.
       const hasBody = outLines.some((l) => /[.!?]$/.test(l.trim()) || l.trim().split(/\s+/).length > 7);
+      return hasBody ? outLines.join("\n") : "";
+    })
+    .filter((p) => p.trim());
+  return kept.join("\n\n");
+}
+
+/** Ieteikuma / padoma teikums (Nils 22.11: dīlera produktā tikai fakti). */
+const DEALER_RECOMMENDATION_RE =
+  /jāpārbauda|jāpārbauda\p{L}*|ieteicam\p{L}*|iesakām|ieteikum\p{L}*|pārdevējam\s+jā\p{L}*|jālūdz\p{L}*|jāprasa\p{L}*|lūdziet|pārbaudīt\s+apskat\p{L}*|apskatē\s+(?:jā)?pārbaud\p{L}*|vajadzētu|nepieciešams\s+(?:pārbaudīt|pieprasīt|lūgt)|pieprasīt\p{L}*\s+(?:dokument|rēķin|servisa\s+grāmatiņ)\p{L}*/iu;
+
+/**
+ * Deterministisks drošības tīkls abiem dīlera laukiem: izmet ieteikumu teikumus.
+ * Virsraksta rindas paliek; loma, kurā palikis tikai virsraksts, tiek izmesta.
+ * Eļļas lauka pirmā rinda „Ražotāja intervāls: …” nekad netiek aiztikta.
+ */
+export function dropDealerRecommendationSentences(text: string): string {
+  if (!text.trim()) return text;
+  const paragraphs = text.split(/\n{2,}/);
+  const kept = paragraphs
+    .map((para) => {
+      const lines = para.split("\n");
+      const outLines = lines
+        .map((line) => {
+          if (/^\s*Ražotāja intervāls:/i.test(line)) return line;
+          if (!/[.!?]$/.test(line.trim()) && line.trim().split(/\s+/).length <= 7) return line;
+          // Teikumu robeža: pieturzīme + atstarpe + lielais burts (datumi „09.06.2020” nedala).
+          return line
+            .split(/(?<=[.!?])\s+(?=\p{Lu})/u)
+            .filter((sent) => !DEALER_RECOMMENDATION_RE.test(sent))
+            .join(" ");
+        })
+        .filter((l) => l.trim());
+      const hasBody = outLines.some(
+        (l) => /^\s*Ražotāja intervāls:/i.test(l) || /[.!?]$/.test(l.trim()) || l.trim().split(/\s+/).length > 7,
+      );
       return hasBody ? outLines.join("\n") : "";
     })
     .filter((p) => p.trim());

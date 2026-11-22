@@ -107,7 +107,7 @@ export const DEALER_COMPONENTS: readonly ComponentDef[] = [
  * JS `\b` nestrādā un `kampaņa` / `atsaukums` / `akcija` neiekrīt.
  */
 const CAMPAIGN_WORD_RE =
-  /(?:^|[^\p{L}\p{N}_])(?:recalls?|campaigns?|kampaņ\p{L}*|atsauk\p{L}*|r(?:ü|u)ckruf|technische\s+aktion|service\s+actions?|field\s+fix|tsb|sib|servisa\s+akcij\p{L}*|safety\s+recall|recall\s+uitgevoerd(?:\s+volgens\s+qb)?|actie\s+uitgevoerd|type:\s*(?:campaign|recall)|qb\b)/iu;
+  /(?:^|[^\p{L}\p{N}_])(?:recalls?|campaigns?|kampaņ\p{L}*|atsauk\p{L}*|r(?:ü|u)ckruf|technische\s+aktion|service\s+actions?|field\s+fix|tsb|sib|servisa\s+akcij\p{L}*|safety\s+recall|recall\s+uitgevoerd(?:\s+volgens\s+qb)?|actie\s+uitgevoerd|type:\s*(?:campaign|recall)|qb\b|pr(?:ä|ae|a)ventivma(?:ß|ss)nahme\p{L}*|vorsorgema(?:ß|ss)nahme\p{L}*|profilaktisk\p{L}*\s+pasākum\p{L}*)/iu;
 
 const CAMPAIGN_CODE_PATTERNS: readonly RegExp[] = [
   /\bQB[\s.:-]*((?:[RS]\s*)?\d{4,6})\b/i,
@@ -249,7 +249,10 @@ function factFromServiceWork(
 ): DealerFact | null {
   const worksLvRaw = (w.works ?? "").replace(/\s+/g, " ").trim();
   const worksOriginal = originalDealerWorksForRow(w, originalTimeline).replace(/\s+/g, " ").trim();
-  const detection = worksOriginal || worksLvRaw;
+  // Atpazīšanai rindas paliek atsevišķi: citas rindas eļļa / šķidrums nedrīkst paslēpt mezgla pozīciju.
+  const keepLines = (t: string) =>
+    t.split(/\r?\n+/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+  const detection = keepLines(originalDealerWorksForRow(w, originalTimeline)) || keepLines(w.works ?? "");
   if (!detection && !(w.odometer ?? "").trim()) return null;
   const campaignCode =
     extractDealerCampaignCode(worksOriginal) ?? extractDealerCampaignCode(worksLvRaw);

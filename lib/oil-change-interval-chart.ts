@@ -6,6 +6,7 @@ import {
   collectEngineOilChangeRows,
   buildOilChangeIntervalSeries,
   type OilChangeIntervalSeries,
+  type OilCurrentReading,
 } from "@/lib/oil-change-intervals";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { parseOemOilIntervalFromText, type OemOilInterval } from "@/lib/oem-oil-interval";
@@ -171,12 +172,20 @@ export function withOilIntervalHighlight(
   };
 }
 
+/**
+ * `current` - aktuāls nobraukums no cita avota (sludinājums, CSDD, VIN SCAN), ja pasūtījumā ir;
+ * bez tā segumu līdz šodienai rēķina pēc laika.
+ */
 export function buildOilIntervalSeriesForBlock(
   block: AutoRecordsBlockState,
+  opts?: { nowMs?: number; current?: OilCurrentReading | null },
 ): OilChangeIntervalSeries {
   const chart = block.oilIntervalChart;
   const rows = chartRowsToServiceWorks(resolveOilIntervalChartRows(block));
   const oem = resolveOilIntervalOem(block);
-  const series = buildOilChangeIntervalSeries(rows, oem);
+  const series = buildOilChangeIntervalSeries(rows, oem, {
+    nowMs: opts?.nowMs ?? Date.now(),
+    current: opts?.current ?? null,
+  });
   return withOilIntervalHighlight(series, chart?.highlightOverOem !== false);
 }

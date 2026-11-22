@@ -210,7 +210,9 @@ describe("buildOilChangeIntervalSeries", () => {
     expect(html).toContain("34 260 km");
     expect(html).toContain("13 mēn.");
     expect(html).toContain("dīlera datos virs intervāla");
-    expect(html).toContain("Dīlera dati apliecina 100%");
+    // 22.11: nekāda „apliecina 100% nobraukuma” - tikai posms, ko ieraksti aptver.
+    expect(html).not.toContain("Dīlera dati apliecina");
+    expect(html).toContain("Dīlera eļļas maiņu ieraksti aptver 28 449-96 968 km");
   });
 
   it("omits the ring when every step is a data gap", () => {
