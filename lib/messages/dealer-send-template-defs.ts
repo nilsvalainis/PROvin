@@ -42,7 +42,7 @@ export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: GROUP,
     title: "E-pasts: dati gatavi (piedāvājums / atsauksme)",
-    subject: "PROVIN · Atskaite gatava · Oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
+    subject: "PROVIN · Atskaite gatava · Oficiālā dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",

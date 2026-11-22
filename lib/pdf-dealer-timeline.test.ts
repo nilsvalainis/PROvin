@@ -234,4 +234,13 @@ describe("BMW D17 Hood is not an engine swap in Lielie darbi", () => {
     expect(summaryHidden).toContain("Nav fiksēts");
     expect(summaryHidden).not.toContain("Virsbūve / stikls");
   });
+
+  it("Kampaņas veiktas: bez kampaņas ierakstiem „Nav datu” (sarkanā), nevis „Nē”", () => {
+    const rows = [{ date: "07.07.2010", odometer: "20809", location: "", works: "Apkope A, dzinēja eļļas maiņa" }];
+    const html = buildDealerVisitSummaryHtml(rows, extractDealerFactsFromServiceWorks(rows));
+    expect(html).toContain("Kampaņas veiktas");
+    expect(html).toMatch(/pdf-svc-summary__cell--nodata"><span>Kampaņas veiktas<\/span><b>Nav datu<\/b>/);
+    expect(html).not.toMatch(/<b>Nē<\/b>/);
+  });
 });
+

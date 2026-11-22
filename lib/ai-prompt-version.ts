@@ -231,5 +231,9 @@
  * - 2026-11-21.1 - Pirmā reģistrācija: viena (agrākā jebkurā valstī), valsts no
  *   tās pašas loģikas kā „Vēstures kopsavilkums”; nacionālās reģistrācijas
  *   („Somijā”, „Latvijā”) faktu lapā atsevišķi; nekad „pasaulē”.
+ * - 2026-11-22.0 - Dīlera dati: „Eļļas maiņas intervāli” tikai secinājumi (tabulas soļus
+ *   nepārraksta, bez lielajiem mezgliem); „Komentāri” bez identifikācijas, vizīšu saraksta
+ *   un eļļas tēmas - tikai remonti, kampaņas, km nekonsekvence, ko pārbaudīt. Opus pārbaudē
+ *   „atkartojums” starp laukiem.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-21.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-22.0";

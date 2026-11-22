@@ -11,7 +11,11 @@ import "server-only";
 
 import { createDefaultSourceBlocks, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { sourceBlockPlainTextForAi } from "@/lib/admin-source-comment-blocks";
-import { applyDealerCommentReviewFindings, type DealerReviewField } from "@/lib/dealer-comments-review-core";
+import {
+  applyDealerCommentReviewFindings,
+  DEALER_REVIEW_DEDUP_RULES,
+  type DealerReviewField,
+} from "@/lib/dealer-comments-review-core";
 import { runFlashMaxFinalReview } from "@/lib/flash-max-final-review-server";
 
 export type DealerCommentsReviewResult = {
@@ -36,6 +40,7 @@ export async function reviewDealerCommentsWithOpus(args: {
     fields: args.fields,
     facts: { vin: args.vin, sourceBlocks: isolated },
     extraFactsText: dealerText ? `OFICIĀLĀ DĪLERA DATI (vienīgais avots šim produktam):\n${dealerText}` : "",
+    extraSystemRules: DEALER_REVIEW_DEDUP_RULES,
   });
   if (!review.ok) {
     console.warn("[dealer-comments-review] skipped", { error: review.error });

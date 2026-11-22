@@ -287,25 +287,29 @@ export function buildDealerVisitSummaryHtml(
   const none = translateClientReportNone(lang);
   const gap = summary.longestGap;
   const gapText = gap ? gapLabel(gap, lang) : none;
-  const campaigns = translateClientReportYesNo(summary.campaignsDone, lang);
+  // Kampaņas: „Jā” tikai, ja dīlera ierakstos ir kampaņa. Ja nav - tas ir datu trūkums, nevis
+  // apliecinājums, ka kampaņu nav bijis (Nils 22.11: nemelot „Nē”), tāpēc „Nav datu” sarkanā.
+  const campaigns = summary.campaignsDone
+    ? translateClientReportYesNo(true, lang)
+    : translateClientReportStatic("Nav datu", lang);
   const major =
     summary.majorWorks.length > 0
       ? [...new Set(summary.majorWorks.map((w) => t(w.label)))].join(", ")
       : t("Nav fiksēts");
-  const cells: { k: string; v: string }[] = [
+  const cells: { k: string; v: string; missing?: boolean }[] = [
     { k: t("Vizītes"), v: String(summary.visitCount) },
     { k: t("Pirmā vizīte"), v: summary.firstDate || none },
     { k: t("Pēdējā vizīte"), v: summary.lastDate || none },
     { k: t("Pēdējais dīlera km"), v: summary.lastKm || none },
     { k: t("Garākais robs"), v: gapText },
-    { k: t("Kampaņas veiktas"), v: campaigns },
+    { k: t("Kampaņas veiktas"), v: campaigns, missing: !summary.campaignsDone },
     { k: t("Lielie mezgli"), v: major },
   ];
   return `<div class="pdf-svc-summary" role="region" aria-label="${escapeHtml(t("Dīlera kopsavilkums"))}">
     ${cells
       .map(
         (c) =>
-          `<div class="pdf-svc-summary__cell"><span>${escapeHtml(c.k)}</span><b>${escapeHtml(c.v)}</b></div>`,
+          `<div class="pdf-svc-summary__cell${c.missing ? " pdf-svc-summary__cell--nodata" : ""}"><span>${escapeHtml(c.k)}</span><b>${escapeHtml(c.v)}</b></div>`,
       )
       .join("")}
   </div>`;

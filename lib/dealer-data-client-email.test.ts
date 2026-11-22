@@ -50,7 +50,7 @@ describe("dealer-data-client-email drafts", () => {
 
   it("keeps the retail dealer-ready template unchanged", () => {
     const d = buildDealerReadyEmailDraft({ vin: "WVWZZZ3CZME138258" });
-    expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
+    expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
     expect(d.text).toContain("Nils");
     expect(d.text).toContain("PROVIN.LV");
     expect(d.text).toContain("info@provin.lv");
@@ -128,9 +128,9 @@ describe("B2B dealer-ready email", () => {
       expect(d.text).toContain("Nils");
       expect(d.text).toContain("PROVIN.LV");
       if (lang === "lv") {
-        expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
+        expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
       } else {
-        expect(d.subject).not.toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
+        expect(d.subject).not.toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
         expect(d.subject).toMatch(/^PROVIN · .+ · WVWZZZ3CZME138258$/);
       }
     }

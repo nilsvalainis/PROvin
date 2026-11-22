@@ -258,7 +258,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     group: "Atskaite gatava",
     title: "Dīlera servisa vēsture",
     description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
-    subject: "PROVIN · Atskaite gatava · Oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
+    subject: "PROVIN · Atskaite gatava · Oficiālā dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -289,7 +289,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atskaite gatava",
     title: "Dīlera PDF pielikumā",
-    subject: "PROVIN · Atskaite gatava · Oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
+    subject: "PROVIN · Atskaite gatava · Oficiālā dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",

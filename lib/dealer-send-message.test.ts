@@ -27,7 +27,7 @@ describe("dealer send dialog options", () => {
 describe("dealer send texts", () => {
   it("ready e-mail with offer lists the paid amount, top-up and total and the link", () => {
     const m = buildDealerSendMessage({ channel: "email", situation: "ready", b2b: false, vin: VIN, offer });
-    expect(m.subject).toBe(`PROVIN · Atskaite gatava · Oficiālie dīlera dati · ${VIN}`);
+    expect(m.subject).toBe(`PROVIN · Atskaite gatava · Oficiālā dīlera dati · ${VIN}`);
     expect(m.text).toContain(`dīlera dati auto VIN ${VIN} ir gatavi - PDF pielikumā.`);
     expect(m.text).toContain("Jau samaksāts: 24,99 €");
     expect(m.text).toContain("Piemaksa: 75,00 €");

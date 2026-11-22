@@ -3209,6 +3209,7 @@ ${sourceDotColorCss()}
         display:block;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
       }
       .pdf-svc-summary__cell b{display:block;margin-top:2px;font-size:12px;font-weight:750;color:#0f172a;line-height:1.3;}
+      .pdf-svc-summary__cell--nodata b{color:#b91c1c;}
       .pdf-svc-major{margin:0 0 12px;padding:10px 12px;border:1px solid var(--pdf-line);border-radius:8px;background:#fff;}
       .pdf-svc-major__list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
       .pdf-svc-major__item{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
@@ -3304,6 +3305,12 @@ ${sourceDotColorCss()}
         .pdf-svc-box--hl .pdf-svc-box-in{padding:6px 10px 8px;}
         .pdf-svc-hl{padding:4px 10px;}
         .pdf-svc-gap{margin-left:0;}
+        /* Telefona priekšskatījums (Nils 22.11): divu kolonnu tabula un leģenda negriežas ārpus ekrāna. PDF (print) nemainās. */
+        .provin-report-doc .pdf-v1-kv-pair{grid-template-columns:minmax(0,1fr);column-gap:0;}
+        .provin-report-doc .pdf-v1-kv{table-layout:fixed;width:100%;}
+        .provin-report-doc .pdf-v1-kv td{overflow-wrap:anywhere;word-break:break-word;}
+        .pdf-dealer-cover-leg span{white-space:normal;}
+        .pdf-svc-span__pt b{white-space:nowrap;}
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{

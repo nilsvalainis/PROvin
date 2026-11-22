@@ -173,7 +173,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Atskaite gatava · Oficiālie dīlera dati</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Atskaite gatava · Oficiālā dīlera dati</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā PDF formātā nosūtām Jūsu pasūtītos oficiālā dīlera datus (VIN WVWZZZ1KZAW000123).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
@@ -182,7 +182,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ1KZAW000123",
+  "subject": "PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ1KZAW000123",
   "text": "Labdien!
 
 Pielikumā PDF formātā nosūtām Jūsu pasūtītos oficiālā dīlera datus (VIN WVWZZZ1KZAW000123).
@@ -303,7 +303,7 @@ exports[`template snapshots (default text) > snapshot email.dealer_send.ready 1`
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Atskaite gatava · Oficiālie dīlera dati</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Atskaite gatava · Oficiālā dīlera dati</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati auto VIN WVWZZZ1KZAW000123 ir gatavi - PDF pielikumā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dīlera dati parāda tikai to, kas reģistrēts oficiālajos servisos. Ja apsverat šī auto pirkšanu, iesakām pilno PROVIN AUDITU. Tajā pašā pasūtījumā papildināsim:<br/>- negadījumu un nobraukuma vēsturi no vairākām Eiropas datubāzēm;<br/>- pārbaudi izsoļu arhīvos (bildes, bojājumi, cenas);<br/>- sludinājuma un risku analīzi - konstatētos faktus un ieteikumus, arī klātienes apskatei, lai lēmumu par pirkumu varat pieņemt droši.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau samaksāts: 24,99 €<br/>Piemaksa: 75,00 €<br/>Kopā: 99,99 €</p>
@@ -316,7 +316,7 @@ exports[`template snapshots (default text) > snapshot email.dealer_send.ready 1`
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ1KZAW000123",
+  "subject": "PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ1KZAW000123",
   "text": "Labdien!
 
 Jūsu pasūtītie oficiālā dīlera dati auto VIN WVWZZZ1KZAW000123 ir gatavi - PDF pielikumā.
@@ -633,7 +633,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ1KZAW000123",
+  "subject": "PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ1KZAW000123",
   "text": "Labdien!
 
 Jūsu pasūtītie oficiālā dīlera dati (VIN WVWZZZ1KZAW000123) ir gatavi.

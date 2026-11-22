@@ -33,6 +33,82 @@ export function applyDealerCommentReviewFindings(
   return { texts, applied };
 }
 
+/**
+ * Opus pārbaudes papildu likumi dīlera produktam (Nils 22.11.2026: „komentāru ģenerēšana dubulto
+ * tekstu par apkopēm”). Abi lauki nedrīkst atkārtot viens otru vai PDF tabulas.
+ */
+export const DEALER_REVIEW_DEDUP_RULES = `DEALER PRODUCT - DUPLICATION CHECK (extra finding kind "atkartojums"):
+- Field "oilChangeIntervalNotes" owns engine-oil / service-interval analysis. Field "comments" owns everything else (non-routine repairs and major assemblies, recalls / campaigns / warranty, km inconsistencies, what to check).
+- The client PDF already prints a vehicle-info table (model, year, VIN, engine, gearbox, colour, interior), a list of EVERY service visit (date, km, works) and a table of EVERY oil change with steps vs OEM.
+- Report kind "atkartojums" for: (a) any sentence in "comments" about oil changes or service intervals; (b) an identification sentence/paragraph in "comments" that only repeats the vehicle-info table; (c) a visit-by-visit or routine-maintenance enumeration in either field; (d) the same fact stated in both fields (keep it in its owner field); (e) a paragraph in "oilChangeIntervalNotes" about major assemblies, gearbox oil or repairs.
+- For "atkartojums": "find" is the exact duplicated sentence or paragraph (including its heading line if the whole role goes), "replace" is "" to delete it, or a much shorter conclusion sentence if a conclusion would otherwise be lost. Never delete the first line „Ražotāja intervāls: …”.`;
+
+/**
+ * Deterministisks drošības tīkls pēc Opus: izmet no „Komentāri” teikumus, kas runā par eļļas maiņu /
+ * intervāliem vai gandrīz vārds vārdā atkārto eļļas lauka teikumu. Virsraksta rindas un pārējais paliek.
+ */
+const DEALER_OIL_TOPIC_RE =
+  /(?:motor|dzinēja\s+)?eļļ\p{L}*\s+(?:un\s+\p{L}+\s+)?(?:maiņ|nomaiņ)\p{L}*|eļļas\s+maiņas\s+intervāl\p{L}*|apkopju\s+intervāl\p{L}*|servisa\s+intervāl\p{L}*/iu;
+
+/** Kārbas / diferenciāļa / stūres eļļa ir lielā mezgla darbs - tas pieder „Komentāriem”, ne eļļas laukam. */
+const DEALER_NON_ENGINE_OIL_RE =
+  /kārb\p{L}*|transmisij\p{L}*|\bATF\b|diferenciāl\p{L}*|reduktor\p{L}*|sadales\s+kārb\p{L}*|stūres|hidraulik\p{L}*|haldex/iu;
+
+function sentenceTokens(s: string): Set<string> {
+  return new Set(
+    s
+      .toLocaleLowerCase("lv")
+      .replace(/(\d)\s+(\d{3})/g, "$1$2")
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((w) => w.length >= 3 || /\d/.test(w)),
+  );
+}
+
+function overlapRatio(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0) return 0;
+  let hit = 0;
+  for (const w of a) if (b.has(w)) hit++;
+  return hit / a.size;
+}
+
+function splitSentencesKeep(line: string): string[] {
+  return line.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)?.map((x) => x.trim()).filter(Boolean) ?? [line];
+}
+
+/** Atgriež „Komentāri” tekstu bez eļļas tēmas teikumiem un bez atkārtojumiem no eļļas lauka. */
+export function dropDealerCommentsDuplicatingOil(comments: string, oil: string): string {
+  if (!comments.trim()) return comments;
+  const oilSentences = oil
+    .split(/\n+/)
+    .flatMap(splitSentencesKeep)
+    .map(sentenceTokens)
+    .filter((t) => t.size >= 5);
+  const paragraphs = comments.split(/\n{2,}/);
+  const kept = paragraphs
+    .map((para) => {
+      const lines = para.split("\n");
+      const outLines = lines
+        .map((line) => {
+          const sentences = splitSentencesKeep(line);
+          // Virsraksta rinda (bez teikuma beigu pieturzīmes, īsa) paliek - tukšu lomu izmet zemāk.
+          if (sentences.length === 1 && !/[.!?]$/.test(line.trim()) && line.trim().split(/\s+/).length <= 7) return line;
+          const keep = sentences.filter((sent) => {
+            if (DEALER_OIL_TOPIC_RE.test(sent) && !DEALER_NON_ENGINE_OIL_RE.test(sent)) return false;
+            const tok = sentenceTokens(sent);
+            if (tok.size >= 5 && oilSentences.some((o) => overlapRatio(tok, o) >= 0.7)) return false;
+            return true;
+          });
+          return keep.join(" ");
+        })
+        .filter((l) => l.trim());
+      // Ja palikusi tikai virsraksta rinda - izmet visu lomu.
+      const hasBody = outLines.some((l) => /[.!?]$/.test(l.trim()) || l.trim().split(/\s+/).length > 7);
+      return hasBody ? outLines.join("\n") : "";
+    })
+    .filter((p) => p.trim());
+  return kept.join("\n\n");
+}
+
 /** Īsā defise visur (Nila likums): garās defises -> " - ". */
 export function dealerCommentPlainCleanup(text: string): string {
   return normalizeFlashMaxReviewDashes(text).replace(/[ \t]{2,}/g, " ").trim();

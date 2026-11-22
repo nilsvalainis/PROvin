@@ -15,7 +15,7 @@ describe("report-ready product emails", () => {
 
   it("builds dealer subject without a consumer discount", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962")).toBe(
-      "PROVIN · Atskaite gatava · Oficiālie dīlera dati · WAUZZZF44LA062962",
+      "PROVIN · Atskaite gatava · Oficiālā dīlera dati · WAUZZZF44LA062962",
     );
     const text = buildReportReadyPlainText({
       kind: "dealer",
@@ -135,9 +135,9 @@ describe("report-ready product emails", () => {
   });
 
   it("omits VIN parentheses when the VIN is missing or invalid", () => {
-    expect(buildReportReadySubject("dealer")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
-    expect(buildReportReadySubject("dealer", "")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
-    expect(buildReportReadySubject("dealer", "ABC")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
+    expect(buildReportReadySubject("dealer")).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati");
+    expect(buildReportReadySubject("dealer", "")).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati");
+    expect(buildReportReadySubject("dealer", "ABC")).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati");
     expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN · Atskaite gatava · PROVIN MINI");
     expect(buildReportReadySubject("audits", "  ")).toBe("PROVIN · Atskaite gatava · PROVIN AUDITS");
   });

@@ -72,7 +72,7 @@ const REPORT_READY_EVENT: Record<ClientReportLang, string> = {
 };
 
 const REPORT_READY_PRODUCT: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
-  dealer: { lv: "Oficiālie dīlera dati", en: "Official dealer data", ru: "Официальные данные дилера", de: "Offizielle Händlerdaten" },
+  dealer: { lv: "Oficiālā dīlera dati", en: "Official dealer data", ru: "Официальные данные дилера", de: "Offizielle Händlerdaten" },
   mini: { lv: "PROVIN MINI", en: "PROVIN MINI", ru: "PROVIN MINI", de: "PROVIN MINI" },
   audits: { lv: "PROVIN AUDITS", en: "PROVIN AUDITS", ru: "PROVIN AUDITS", de: "PROVIN AUDITS" },
 };
