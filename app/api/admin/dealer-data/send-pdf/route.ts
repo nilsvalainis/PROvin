@@ -13,6 +13,7 @@ import { parsePartnerCompanyFromNotes, parsePartnerIdFromNotes } from "@/lib/b2b
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import { isB2bDealerReadyEmailOrder } from "@/lib/dealer-data-client-email";
 import { trySendDealerDataOperatorEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
+import { loadReportEmailExtras } from "@/lib/email/dealer-email-context-server";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
     partnerCompanyName: parsePartnerCompanyFromNotes(mergedNotes) || order.companyName,
   });
 
+  const extras = await loadReportEmailExtras({ sessionId, productKind: "dealer", lang, text, draft }).catch(() => null);
   const emailSent = await trySendDealerDataOperatorEmail({
     to,
     subject,
@@ -118,6 +120,13 @@ export async function POST(req: Request) {
     attachments,
     b2bClient,
     lang,
+    context: {
+      situation: "ready",
+      productKind: "dealer",
+      vin: vin || null,
+      facts: extras?.facts ?? [],
+      offerExpiresAt: extras?.offerExpiresAt ?? null,
+    },
   });
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed" }, { status: 502 });
