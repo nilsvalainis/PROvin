@@ -78,7 +78,7 @@ describe("e-pasti variants A", () => {
 
   it("statusa karte, fakti un pielikuma kartīte", () => {
     const html = readyWithOffer();
-    expect(html).toContain("Oficiālie dīlera dati");
+    expect(html).toContain("Oficiālā dīlera dati");
     expect(html).toContain("Atskaite gatava");
     expect(html).toContain(VIN);
     expect(html).toContain("22.11.2026");

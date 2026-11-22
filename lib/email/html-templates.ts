@@ -79,7 +79,7 @@ const STATUS_REPORT_READY: Record<ClientReportLang, string> = {
 
 const STATUS_PRODUCT_EYEBROW: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
   dealer: {
-    lv: "Oficiālie dīlera dati",
+    lv: "Oficiālā dīlera dati",
     en: "Official dealer data",
     ru: "Официальные данные дилера",
     de: "Offizielle Händlerdaten",
