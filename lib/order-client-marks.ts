@@ -140,7 +140,7 @@ export function dealerSendRecordFromInput(
 ): DealerSendRecord {
   const situation = isDealerSendSituation(raw.situation) ? raw.situation : fallbackSituation;
   const offer = situation === "ready" && (raw.offer === true || raw.offer === "true");
-  const review = situation === "ready" && !offer && (raw.review === true || raw.review === "true");
+  const review = situation === "ready" && (raw.review === true || raw.review === "true");
   return { at: atIso, channel, situation, offer, review };
 }
 

@@ -17,6 +17,8 @@ import { resolveCostMonth } from "@/lib/admin-costs";
 import { loadCostAlerts } from "@/lib/admin-costs-load";
 import { sourcesFailingInARow } from "@/lib/source-health";
 import { readSourceHealth } from "@/lib/source-health-store";
+import { listDealerShadowJobs } from "@/lib/dealer-data-job-store";
+import { buildDealerShadowStats, dealerShadowStatsLine } from "@/lib/dealer-shadow-stats";
 
 export type MorningSummaryLoad = {
   summary: MorningSummary;
@@ -31,6 +33,9 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
       .then((doc) => sourcesFailingInARow(doc, 3))
       .catch(() => []),
     loadCostAlerts(resolveCostMonth(null, nowMs), nowMs).catch(() => []),
+    listDealerShadowJobs()
+      .then((jobs) => dealerShadowStatsLine(buildDealerShadowStats(jobs)))
+      .catch(() => null),
   ]);
   const [{ rows, stripeError }, peeks] = await Promise.all([
     listAdminOrders(),
@@ -63,10 +68,10 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
     };
   });
 
-  const [failingSources, costAlerts] = await sideLoads;
+  const [failingSources, costAlerts, dealerShadowLine] = await sideLoads;
 
   return {
-    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts },
+    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts, dealerShadowLine },
     stripeError: stripeError ?? null,
   };
 }

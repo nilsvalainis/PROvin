@@ -210,6 +210,54 @@ export function useDealerDataJobControls({
     }
   };
 
+  /**
+   * Ēnu režīms: kvalitātes pārbaude vēlreiz (tikai spriedums, neko nesūta).
+   * `pdf` - servera PDF ceļš no sūtīšanas formas (pārbaude (f) salīdzina VIN).
+   */
+  const [shadowBusy, setShadowBusy] = useState(false);
+  const recheckShadow = useCallback(
+    async (trigger: "manual" | "send_dialog" | "pdf" = "manual", pdf?: { pathname: string } | null) => {
+      if (!sessionId) return;
+      setShadowBusy(true);
+      try {
+        const res = await fetch("/api/admin/dealer-data/shadow-gate", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, trigger, ...(pdf ? { pdf } : {}) }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { job?: DealerDataJob | null };
+        if (body.job) setJob(body.job);
+      } catch {
+        /* pārbaude nav kritiska sūtīšanai */
+      } finally {
+        setShadowBusy(false);
+      }
+    },
+    [sessionId, setJob],
+  );
+  const submitShadowFeedback = useCallback(
+    async (correct: boolean, note: string) => {
+      if (!sessionId) return;
+      setShadowBusy(true);
+      try {
+        const res = await fetch("/api/admin/dealer-data/shadow-feedback", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, correct, note }),
+        });
+        const body = (await res.json().catch(() => ({}))) as { job?: DealerDataJob | null };
+        if (body.job) setJob(body.job);
+      } catch {
+        /* atsauksme nav kritiska */
+      } finally {
+        setShadowBusy(false);
+      }
+    },
+    [sessionId, setJob],
+  );
+
   const refunded = Boolean(job?.refund);
   const showRefund = shouldShowDealerRefundButton({ canRefund, job });
   const defaultSituation: DealerSendSituation =
@@ -233,5 +281,8 @@ export function useDealerDataJobControls({
     defaultSituation,
     b2bRefund,
     vin: job?.vin || orderVin,
+    shadowBusy,
+    recheckShadow,
+    submitShadowFeedback,
   };
 }

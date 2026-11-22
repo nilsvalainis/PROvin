@@ -45,6 +45,7 @@ import {
   upsertDealerDataJob,
 } from "@/lib/dealer-data-job-store";
 import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import { runDealerShadowGate } from "@/lib/dealer-shadow-gate-run";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
 import {
   dealerCommentPlainCleanup,
@@ -331,6 +332,11 @@ export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResu
     // Neviens klients nedrīkst palikt nepamanīts: push + e-pasts, ja problēma prasa operatoru.
     // «Datu nav»: paziņojums tikai, ja atmaksa vēl nav veikta (B2B maka atmaksa notiek pirms tam).
     await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: args.trigger });
+  }
+  // Ēnu režīms (Nils 22.11): pēc ielases + AI kvalitātes pārbaude tikai spriedumam; nekas netiek sūtīts.
+  // PDF ielase automātiski neveido - pārbaude (f) paliek «PDF vēl nav» līdz sūtīšanas formai.
+  if (result.status !== "running" && result.status !== "pending" && result.reason !== "lease_lost") {
+    await runDealerShadowGate(args.sessionId, { trigger: "job" });
   }
   return result;
 }

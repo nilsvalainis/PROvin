@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
@@ -23,6 +23,18 @@ import type { OrderClientMarks } from "@/lib/order-client-marks";
 import { dealerToAuditTargetCents, formatEurFromCents } from "@/lib/order-upsell";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
+import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow-types";
+import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
+
+/** Ēnu režīms (Nils 22.11): spriedums + atsauksme sūtīšanas formā. Sūtīšanu NEbloķē. */
+export type DealerSendShadow = {
+  gate: DealerShadowGate | null | undefined;
+  feedback: DealerShadowFeedback | null | undefined;
+  busy: boolean;
+  /** Pārbaude vēlreiz: atverot formu un pēc servera PDF (ar tā ceļu). */
+  recheck: (trigger: "send_dialog" | "pdf", pdf?: { pathname: string } | null) => void;
+  submitFeedback: (correct: boolean, note: string) => void;
+};
 
 /** Pasūtījuma darba zonas funkcijas, ko dīlera bloks saņem caur props (servera PDF + sūtīšana). */
 export type DealerSendBridge = {
@@ -53,6 +65,7 @@ type Props = {
   pdfLang: ClientReportLang;
   bridge?: DealerSendBridge | null;
   onSent: (marks: OrderClientMarks | null, notice: string) => void;
+  shadow?: DealerSendShadow | null;
 };
 
 const seg = (on: boolean) =>
@@ -110,17 +123,28 @@ export function AdminDealerSendDialog({
   pdfLang,
   bridge,
   onSent,
+  shadow = null,
 }: Props) {
   const [channel, setChannel] = useState<DealerSendChannel>("email");
   const [situation, setSituation] = useState<DealerSendSituation>(defaultSituation);
   const [opts, setOpts] = useState<DealerSendOptions>({ offer: false, review: false });
   const [offer, setOffer] = useState<DealerSendOffer | null>(null);
   const [doc, setDoc] = useState<MessageTemplatesDoc | null>(templatesDocCache);
-  const [subject, setSubject] = useState("");
-  const [text, setText] = useState("");
+  // Sākuma temats un teksts jau pirmajā renderēšanā (no veidnes), nevis tukši līdz efektam.
+  const [initialMsg] = useState(() =>
+    buildDealerSendMessage({ channel: "email", situation: defaultSituation, b2b, vin, refundCents, doc: templatesDocCache }),
+  );
+  const [subject, setSubject] = useState(initialMsg.subject ?? "");
+  const [text, setText] = useState(initialMsg.text);
   const [busy, setBusy] = useState<null | "offer" | "pdf" | "send">(null);
   const [err, setErr] = useState<string | null>(null);
   const [pdfLink, setPdfLink] = useState<SendReportPrepared | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Logs vienmēr atveras augšā (kanāls, situācija, piedāvājums redzami).
+  useLayoutEffect(() => {
+    if (open && scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +155,16 @@ export function AdminDealerSendDialog({
     setPdfLink(null);
     void loadAdminMessageTemplatesDoc().then((d) => d && setDoc(d));
   }, [open, defaultSituation]);
+
+  // Ēnu režīms: atverot formu - pārbaude vēlreiz ar jaunāko melnrakstu (tikai spriedums).
+  const shadowRef = useRef(shadow);
+  useEffect(() => {
+    shadowRef.current = shadow;
+  }, [shadow]);
+  useEffect(() => {
+    if (open) shadowRef.current?.recheck("send_dialog");
+  }, [open]);
+  const recheckWithPdf = (prepared: SendReportPrepared) => shadowRef.current?.recheck("pdf", { pathname: prepared.pdfPathname });
 
   const paidCents = bridge?.paidCents ?? null;
   const offerPreview = useMemo(() => {
@@ -195,7 +229,7 @@ export function AdminDealerSendDialog({
   const sendFlags = () => ({
     situation,
     offer: situation === "ready" && opts.offer,
-    review: situation === "ready" && opts.review && !opts.offer,
+    review: situation === "ready" && opts.review,
   });
 
   /** E-pastu ieraksta serveris (atgriež `serverMarks`); WhatsApp vai servera ieraksta kļūdas gadījumā - šeit. */
@@ -216,6 +250,7 @@ export function AdminDealerSendDialog({
     try {
       const prepared = await bridge.prepareDealerPdf(pdfLang);
       setPdfLink(prepared);
+      recheckWithPdf(prepared);
       if (phonePre) phonePre.navigate(prepared.downloadUrl);
       else window.open(prepared.downloadUrl, "_blank", "noopener,noreferrer");
     } catch (e) {
@@ -256,6 +291,7 @@ export function AdminDealerSendDialog({
       setBusy("pdf");
       try {
         const prepared = await bridge.prepareDealerPdf(pdfLang);
+        recheckWithPdf(prepared);
         setBusy("send");
         const r = await bridge.sendDealerReport({
           prepared,
@@ -328,6 +364,8 @@ export function AdminDealerSendDialog({
       : null;
 
   // Portālā uz body: dīlera bloka vecāku stacking konteksts citādi ielika logu zem telefona doka.
+  // 22.11 (Nils, dators): uz body logs manto vietnes tumšās tēmas baltu teksta krāsu (--site-body-fg),
+  // tāpēc temats un teksts bija balti uz balta («tukši»). Krāsas te jānorāda tieši.
   const dialog = (
     <div
       data-dealer-send-dialog
@@ -338,7 +376,7 @@ export function AdminDealerSendDialog({
       {...busyClose}
     >
       <div
-        className="amx amx-surface flex h-full max-h-[100dvh] w-full flex-col bg-white sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
+        className="amx amx-surface flex h-full max-h-[100dvh] w-full flex-col bg-white md:text-slate-900 sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3 max-md:items-center max-md:border-b-0 max-md:pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -359,7 +397,7 @@ export function AdminDealerSendDialog({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
           <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Kanāls">
             {(["email", "whatsapp"] as const).map((c) => (
               <button key={c} type="button" role="tab" aria-selected={channel === c} className={seg(channel === c)} onClick={() => setChannel(c)}>
@@ -399,18 +437,17 @@ export function AdminDealerSendDialog({
                 <label
                   className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
                     opts.offer ? "border-slate-900" : "border-slate-200"
-                  } ${opts.review ? "opacity-50" : ""}`}
+                  }`}
                 >
                   <input
                     type="checkbox"
                     className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
                     checked={opts.offer}
-                    disabled={opts.review || busy !== null}
+                    disabled={busy !== null}
                     onChange={(e) => void toggle("offer", e.target.checked)}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Piedāvājums PROVIN AUDITS</div>
-                    {opts.review ? <div className="text-[11px] text-slate-500">Nevar kopā ar atsauksmes lūgumu</div> : null}
                     {opts.offer ? (
                       <div className="mt-1 grid grid-cols-[auto_auto] justify-start gap-x-4 text-[12px] text-slate-700">
                         <span>Jau samaksāts</span>
@@ -428,18 +465,17 @@ export function AdminDealerSendDialog({
               <label
                 className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
                   opts.review ? "border-slate-900" : "border-slate-200"
-                } ${opts.offer ? "opacity-50" : ""}`}
+                }`}
               >
                 <input
                   type="checkbox"
                   className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
                   checked={opts.review}
-                  disabled={opts.offer || busy !== null}
+                  disabled={busy !== null}
                   onChange={(e) => void toggle("review", e.target.checked)}
                 />
                 <div>
                   <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Google atsauksmes lūgums</div>
-                  {opts.offer ? <div className="text-[11px] text-slate-500">Nevar kopā ar piedāvājumu</div> : null}
                 </div>
               </label>
             </div>
@@ -464,7 +500,7 @@ export function AdminDealerSendDialog({
               </label>
               <input
                 id="dealer-send-subj"
-                className="amx-fld w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px]"
+                className="amx-fld w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] text-slate-900"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 disabled={busy !== null}
@@ -482,7 +518,7 @@ export function AdminDealerSendDialog({
             <textarea
               id="dealer-send-msg"
               spellCheck={false}
-              className="amx-fld amx-fld--ta min-h-[220px] w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] leading-relaxed"
+              className="amx-fld amx-fld--ta min-h-[220px] w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] leading-relaxed text-slate-900"
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={busy !== null}
@@ -518,6 +554,15 @@ export function AdminDealerSendDialog({
                 </button>
               )}
             </div>
+          ) : null}
+
+          {shadow?.gate ? (
+            <AdminDealerShadowFeedback
+              gate={shadow.gate}
+              feedback={shadow.feedback}
+              busy={shadow.busy}
+              onSubmit={shadow.submitFeedback}
+            />
           ) : null}
 
           {err ? <p className="amx-tx--red text-[11.5px] text-rose-700 max-md:text-[14px]">{err}</p> : null}

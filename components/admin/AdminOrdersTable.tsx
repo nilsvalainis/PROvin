@@ -33,8 +33,10 @@ import { AmxStatusIcon } from "@/components/admin/mobile/AdminMobileGlass";
 import {
   adminIngestMatchesFilter,
   adminIngestSentLabel,
+  adminIngestShadowLabel,
   countAdminIngestFilters,
   type AdminIngestFilter,
+  type AdminOrderIngest,
 } from "@/lib/admin-mobile-ingest";
 import {
   AdminMobileChips,
@@ -136,6 +138,26 @@ export function adminOrderDayLabel(dayKey: string, nowMs: number): string {
 
 /** Stripe atmaksa / strīds: sarkans teksts tajā pašā čipa formā. */
 /** Dīlera datu ielases problēma - sarkana atzīme, lai neviens klients nepaliek nepamanīts. */
+/** Ēnu režīms: mazs punkts (zaļš - sistēma sūtītu, dzeltens - aizturētu). Tikai indikators, neko nesūta. */
+function DealerShadowDot({ ingest, overlay = false }: { ingest?: AdminOrderIngest | null; overlay?: boolean }) {
+  const label = adminIngestShadowLabel(ingest);
+  if (!label || !ingest?.shadow) return null;
+  const color = ingest.shadow === "send" ? "bg-emerald-500" : "bg-amber-500";
+  return (
+    <span
+      className={
+        overlay
+          ? `absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--surface)] ${color}`
+          : `inline-block h-2 w-2 shrink-0 self-center rounded-full ${color}`
+      }
+      title={label}
+      aria-label={label}
+      role="img"
+      data-dealer-shadow={ingest.shadow}
+    />
+  );
+}
+
 function DealerJobAlertTag({ label }: { label?: string }) {
   if (!label) return null;
   return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{label}</span>;
@@ -1128,8 +1150,9 @@ export function AdminOrdersTable({
               )}
               <div className={ingest ? "amx flex items-start gap-3" : undefined}>
                 {ingest ? (
-                  <span className="mt-0.5 shrink-0">
+                  <span className="relative mt-0.5 shrink-0">
                     <AmxStatusIcon state={ingest.state} label={ingest.label} />
+                    <DealerShadowDot ingest={ingest} overlay />
                   </span>
                 ) : null}
                 <div className={ingest ? "min-w-0 flex-1" : undefined}>
@@ -1431,6 +1454,7 @@ export function AdminOrdersTable({
                         </span>
                       ) : null}
                       <DealerJobAlertTag label={o.dealerJobAlert} />
+                      <DealerShadowDot ingest={o.ingest} />
                       {o.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                       {isPack ? (
                         <span className={CALM_TAG}>Paka</span>
