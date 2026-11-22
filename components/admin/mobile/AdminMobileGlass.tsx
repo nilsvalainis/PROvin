@@ -127,3 +127,31 @@ export function AmxCard({ className = "", children }: { className?: string; chil
 export function AmxLabel({ children }: { children: ReactNode }) {
   return <div className="amx-lbl">{children}</div>;
 }
+
+/** Galvenes saglabāšanas statuss (pelēks teksts; sarkans - neizdevās). Nesaglabātu var saglabāt pieskaroties. */
+export function AdminMobileGlassSaveStatus({
+  saved,
+  busy = false,
+  failed = false,
+  onSave,
+}: {
+  saved: boolean;
+  busy?: boolean;
+  failed?: boolean;
+  onSave?: () => void;
+}) {
+  const label = busy ? "Saglabā…" : failed ? "Nav saglabāts" : saved ? "Saglabāts" : "Saglabāt";
+  return (
+    <button
+      type="button"
+      className={`amx-save${failed && !busy ? " amx-save--err" : ""}`}
+      onClick={saved || busy ? undefined : onSave}
+      disabled={busy || saved}
+      data-amx-save={busy ? "busy" : failed ? "error" : saved ? "saved" : "dirty"}
+    >
+      {saved && !busy ? <AmxIcon name="ok" className="h-3.5 w-3.5" strokeWidth={2} /> : null}
+      {busy ? <AmxIcon name="re" className="h-3.5 w-3.5 animate-spin" strokeWidth={2} /> : null}
+      {label}
+    </button>
+  );
+}

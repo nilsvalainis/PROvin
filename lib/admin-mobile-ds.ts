@@ -80,6 +80,7 @@ export const ADMIN_MOBILE_ICON_URL = {
   iestatijumi: "/admin-mobile/icons/iestatijumi.svg",
   labot: "/admin-mobile/icons/labot.svg",
   komentars: "/admin-mobile/icons/komentars.svg",
+  sutit: "/admin-mobile/icons/sutit.svg",
 } as const;
 
 export type AdminMobileIconName = keyof typeof ADMIN_MOBILE_ICON_URL;
@@ -219,3 +220,9 @@ export const ADMIN_MOBILE_PAID_SOURCE_BLOCK: Record<"oneauto" | "asv" | "joj" | 
   asv: "asv",
   joj: "asv",
 };
+
+/** Telefona īsais produkta nosaukums (22.11 makets v2): «AUDITS», «MINI», «Dīlera dati» - bez «PROVIN » priekšā. */
+export function adminPhoneProductLabel(label: string): string {
+  const t = (label ?? "").trim();
+  return t.replace(/^PROVIN\s+/i, "") || t;
+}

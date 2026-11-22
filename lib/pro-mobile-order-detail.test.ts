@@ -31,11 +31,15 @@ describe("PRO order detail on phones", () => {
     expect(view).toContain('<span className="max-md:sr-only">Pasūtījums</span>');
   });
 
-  it("uses a normal-case title, names the menu Darbības and drops the stray hint line", () => {
+  it("uses the car as a normal-case title (client in its own row), «Vairāk» in the dock and drops the stray hint line", () => {
     const ws = read("components/admin/OrderDetailWorkspace.tsx");
-    expect(ws).toContain('title={payload.customerName?.trim() || "Pasūtījums"}');
+    // 22.11 makets v2: galvenē auto nosaukums, klients - rindā «Klients»; ja auto nav zināms - klients.
+    expect(ws).toContain('(blocksDisplaySafe.csdd.makeModel ?? "").trim() || payload.customerName?.trim() || "Pasūtījums"');
+    expect(ws).toContain("title={mobileOrderTitle}");
     expect(ws).not.toContain('(payload.customerName || "Pasūtījums").toUpperCase()');
-    expect(ws).toContain('<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />');
+    // Viena «Vairāk» vieta - apakšējā joslā (nevis ⋯ galvenē un melns aplis).
+    expect(ws).not.toContain('<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />');
+    expect(ws).toContain("onMore={() => setMobileMore(true)}");
     expect(ws).not.toContain('<p className="px-4 pb-2 text-[13px] text-[var(--am-ink2)]">3 maksas avoti ir izvēlnē ⋯</p>');
     expect(ws).toContain('${alertsEmpty ? "max-md:hidden" : ""}');
   });

@@ -6,11 +6,11 @@ import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip"
 import { AdminBusinessLinkButton } from "@/components/admin/AdminBusinessLinkButton";
 import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
-import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-customer-identity";
 import { adminOrderCardTone } from "@/lib/admin-order-card-tone";
 import {
   b2bPackInfoLabelLv,
@@ -29,7 +29,7 @@ import {
 } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AmxStatusIcon } from "@/components/admin/mobile/AdminMobileGlass";
+import { AmxStatusDot, AmxStatusIcon, type AmxDotTone } from "@/components/admin/mobile/AdminMobileGlass";
 import {
   adminIngestMatchesFilter,
   adminIngestSentLabel,
@@ -47,6 +47,7 @@ import {
 } from "@/components/admin/mobile/AdminMobileChrome";
 import {
   adminMobileAuditFilterLabel,
+  adminPhoneProductLabel,
   formatAdminMobileDeadlineTag,
   type AdminMobileDeadlineTag,
 } from "@/lib/admin-mobile-ds";
@@ -652,30 +653,17 @@ export function adminOrderCardTitle(
   return "Pasūtījums bez datiem";
 }
 
-const DEADLINE_TAG_TONE: Record<AdminMobileDeadlineTag["tone"], string> = {
-  overdue: "bg-[var(--am-warn-bg)] font-semibold text-[var(--am-warn-fg)]",
-  urgent: "bg-[var(--fill-secondary)] font-semibold text-[var(--label)]",
-  ok: "bg-[var(--fill-secondary)] font-medium text-[var(--label-secondary)]",
-  done: "bg-[var(--fill-secondary)] font-medium text-[var(--label-secondary)]",
+/** Termiņš telefona rindā: sarkans tikai kavējot (22.11 makets v2), gatavs - zaļš, pārējais neitrāls. */
+const AMX_DEADLINE_TONE: Record<AdminMobileDeadlineTag["tone"], AmxDotTone> = {
+  overdue: "err",
+  urgent: "neutral",
+  ok: "outline",
+  done: "ok",
 };
 
-function AdminOrderDeadlineTag({
-  tag,
-  onClick,
-}: {
-  tag: AdminMobileDeadlineTag;
-  onClick: (e: { stopPropagation: () => void }) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${tag.label}. Darbības`}
-      className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[10px] px-2.5 text-[12px] ${DEADLINE_TAG_TONE[tag.tone]}`}
-    >
-      {tag.label}
-    </button>
-  );
+/** «Atlikušas 45 h» -> «45 h» (rindā vieta ir maza); «Kavē 6 h», «Gatavs» paliek. */
+export function phoneDeadlineText(tag: AdminMobileDeadlineTag): string {
+  return tag.label.replace(/^Atlikušas\s+/, "");
 }
 
 /** Viena rinda gan tabulai, gan telefona kartēm, lai abi skati nekad neatšķiras. */
@@ -994,7 +982,7 @@ export function AdminOrdersTable({
       )}
 
       {/* Telefonā: stikla josla + kartītes. Desktop tabula zemāk paliek neskarta. */}
-      <div className="md:hidden">
+      <div className="amx amx-orders md:hidden">
         <AdminOrdersMobileChrome
           colorFilter={colorFilter}
           onColorFilter={(c) => {
@@ -1034,15 +1022,18 @@ export function AdminOrdersTable({
           <AdminReviewRequestQueue orders={orders} orderDetailHrefBase={orderDetailHrefBase} variant="mobile" />
         </div>
       )}
-      <ul className="mt-2 space-y-2 px-4">
+      {/* 22.11 makets v2/v3: dienas grupa - viens stikla saraksts; rindā auto, VIN, produkts · laiks · cena,
+          termiņš labajā pusē (punkts + teksts, sarkans tikai kavējot), ielases ikona kreisajā pusē. */}
+      <div className="mt-2 px-4" data-amx-order-list>
         {dayGroups.map((g) => (
-        <Fragment key={g.key}>
-          <li className="flex items-baseline justify-between px-1 pt-1 text-[13px] font-medium text-[var(--label-secondary)]">
+        <section key={g.key} className="mb-4">
+          <div className="flex items-baseline justify-between px-1 pb-2 pt-1 text-[13px] font-medium text-[var(--label-secondary)] amx-mut">
             <span>{g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}</span>
             <span className="tabular-nums">
               {g.list.length} · {formatMoneyEur(g.sum, "eur")}
             </span>
-          </li>
+          </div>
+          <ul className="amx-card amx-list">
           {g.list.map((o) => {
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
           const tone = adminOrderCardTone({
@@ -1054,8 +1045,27 @@ export function AdminOrdersTable({
             dealerHighlight: v.dealerHighlight,
             miniHighlight: v.miniHighlight,
           });
-          const accent = tone ? `am-tone am-tone-${tone}` : "";
           const ingest = v.isPack ? null : o.ingest ?? null;
+          const title = v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v);
+          const deadline: AdminMobileDeadlineTag | null = v.isPack
+            ? null
+            : o.fullyReversed
+              ? { label: o.paymentAdjustmentLabel || "Atmaksāts", tone: "done" }
+              : formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
+                  complete: Boolean(o.auditComplete),
+                  nowMs: nowMs ?? undefined,
+                });
+          // Klients sarakstā tikai konsultācijām, partneriem un pakām (citiem - auto; klients ir pasūtījumā).
+          const subClient =
+            (consultationList || v.partnerHighlight || v.isPack) &&
+            v.primaryClient &&
+            v.primaryClient !== "-" &&
+            v.primaryClient !== adminOrderCardTitle(o.makeModel, v)
+              ? v.primaryClient
+              : "";
+          const product = v.isPack
+            ? ""
+            : adminPhoneProductLabel(paidProductLabel({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal }));
           const openOrderFromCard = (e: MouseEvent) => {
             if (v.isPack) return;
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
@@ -1070,9 +1080,8 @@ export function AdminOrdersTable({
               key={o.id}
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
-              className={`am-row am-press relative min-h-[96px] rounded-[18px] bg-[var(--surface)] p-3 shadow-[var(--am-card-shadow)] ${accent} ${
-                v.isPack ? "cursor-default" : "cursor-pointer"
-              }`}
+              data-amx-tone={tone ?? undefined}
+              className={`am-press ${v.isPack ? "cursor-default" : "cursor-pointer"}`}
               onPointerDown={(e) => {
                 if (!v.pdfHref && v.isPack) return;
                 swipeRef.current = { id: o.id, x: e.clientX, dx: 0 };
@@ -1085,7 +1094,7 @@ export function AdminOrdersTable({
                 s.dx = raw < 0 ? (v.pdfHref ? raw : 0) : v.isPack ? 0 : Math.min(120, raw);
                 e.currentTarget.style.transform = `translateX(${s.dx}px)`;
                 e.currentTarget.style.transition = "none";
-                e.currentTarget.style.boxShadow = s.dx > 24 ? "inset 4px 0 0 #34c759, var(--am-card-shadow)" : "";
+                e.currentTarget.style.boxShadow = s.dx > 24 ? "inset 4px 0 0 var(--amx-green)" : "";
               }}
               onPointerUp={(e) => {
                 const s = swipeRef.current;
@@ -1148,68 +1157,57 @@ export function AdminOrdersTable({
                   />
                 </div>
               )}
-              <div className={ingest ? "amx flex items-start gap-3" : undefined}>
+              {ingest ? (
+                <span className="relative mt-0.5 shrink-0">
+                  <AmxStatusIcon state={ingest.state} label={ingest.label} />
+                  <DealerShadowDot ingest={ingest} overlay />
+                </span>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className="amx-row-title min-w-0 break-words max-md:line-clamp-2">{title}</p>
+                <p className={`mt-0.5 truncate ${!v.isPack && v.hasVin ? "amx-row-vin" : "amx-row-sub"}`}>
+                  {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
+                  {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
+                </p>
                 {ingest ? (
-                  <span className="relative mt-0.5 shrink-0">
-                    <AmxStatusIcon state={ingest.state} label={ingest.label} />
-                    <DealerShadowDot ingest={ingest} overlay />
-                  </span>
-                ) : null}
-                <div className={ingest ? "min-w-0 flex-1" : undefined}>
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 break-words text-[16px] font-semibold tracking-tight text-[var(--label)] max-md:line-clamp-2">
-                      {v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v)}
-                    </p>
-                    {v.isPack ? null : (
-                      <AdminOrderDeadlineTag
-                        tag={
-                          o.fullyReversed
-                            ? { label: o.paymentAdjustmentLabel || "Atmaksāts", tone: "done" }
-                            : formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
-                                complete: Boolean(o.auditComplete),
-                                nowMs: nowMs ?? undefined,
-                              })
-                        }
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCardMenuId(o.id);
-                        }}
-                      />
-                    )}
-                  </div>
-                  <p
-                    className={`mt-0.5 truncate text-[13px] text-[var(--label-secondary)] ${
-                      !v.isPack && v.hasVin ? "font-mono tracking-[0.01em]" : ""
-                    }`}
-                  >
-                    {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
-                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
+                  <p className={`amx-tx--${ingest.state} mt-0.5 truncate text-[13px] font-medium`} data-admin-ingest={ingest.state}>
+                    {ingest.label}
                   </p>
-                  {ingest ? (
-                    <div className="mt-0.5 flex items-center justify-between gap-2 text-[13px]" data-admin-ingest={ingest.state}>
-                      <span className={`amx-tx--${ingest.state} min-w-0 truncate font-medium`}>{ingest.label}</span>
-                      {adminIngestSentLabel(ingest) ? (
-                        <span className="amx-tx--mut shrink-0">{adminIngestSentLabel(ingest)}</span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
-                      {v.primaryClient && v.primaryClient !== "-" && v.primaryClient !== adminOrderCardTitle(o.makeModel, v) ? (
-                        <>
-                          <span>{v.primaryClient}</span>
-                          {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
-                          {" · "}
-                        </>
-                      ) : null}
-                      {dateFmt.format(new Date(o.created * 1000))}
+                ) : null}
+                <p className="amx-row-sub mt-0.5 truncate tabular-nums">
+                  {subClient ? (
+                    <>
+                      <span>{subClient}</span>
+                      {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
                       {" · "}
-                      {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
-                    </p>
-                    {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 shrink-0 text-[var(--label-secondary)]" />}
-                  </div>
-                </div>
+                    </>
+                  ) : null}
+                  {product ? `${product} · ` : null}
+                  {dateFmt.format(new Date(o.created * 1000))}
+                  {" · "}
+                  {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
+                </p>
               </div>
+              {deadline || adminIngestSentLabel(ingest) ? (
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
+                  {deadline ? (
+                    <button
+                      type="button"
+                      className="amx-row-end"
+                      aria-label={`${deadline.label}. Darbības`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCardMenuId(o.id);
+                      }}
+                    >
+                      <AmxStatusDot tone={AMX_DEADLINE_TONE[deadline.tone]}>{phoneDeadlineText(deadline)}</AmxStatusDot>
+                    </button>
+                  ) : null}
+                  {adminIngestSentLabel(ingest) ? (
+                    <span className="amx-tx--mut text-[13px]">{adminIngestSentLabel(ingest)}</span>
+                  ) : null}
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="sr-only"
@@ -1222,9 +1220,10 @@ export function AdminOrdersTable({
             </li>
           );
         })}
-        </Fragment>
+          </ul>
+        </section>
         ))}
-      </ul>
+      </div>
       <AdminMobileSheet
         open={Boolean(cardMenuId)}
         title="Darbības"

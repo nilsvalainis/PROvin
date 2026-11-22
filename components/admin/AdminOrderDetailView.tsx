@@ -1,5 +1,6 @@
 "use client";
 
+import { adminPhoneProductLabel } from "@/lib/admin-mobile-ds";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -863,14 +864,17 @@ export function AdminOrderDetailView({
         mobileHeaderExtra={
           <>
             <AdminAuditResultColorControl sessionId={order.id} initialColor={auditResultColor} />
-            <span className="min-w-0 text-[12px] font-semibold uppercase tracking-wide text-[var(--label)]">
+            {/* 22.11 makets v2: «AUDITS · 49,99 €» pelēkā, bez lielajiem burtiem. */}
+            <span className="amx-mut min-w-0 text-[13px] text-[var(--label-secondary)]" data-amx-product>
               {partnerPaidLabel ??
-                paidProductLabel({
-                  checkoutLine: order.checkoutLine,
-                  amountTotalCents: order.amountTotal,
-                })}
+                adminPhoneProductLabel(
+                  paidProductLabel({
+                    checkoutLine: order.checkoutLine,
+                    amountTotalCents: order.amountTotal,
+                  }),
+                )}
               {isPartnerVin ? null : order.amountTotal != null && order.amountTotal > 0 ? (
-                <span className="ml-1.5 normal-case tabular-nums">· {formatMoneyEur(order.amountTotal, order.currency)}</span>
+                <span className="tabular-nums"> · {formatMoneyEur(order.amountTotal, order.currency)}</span>
               ) : null}
             </span>
           </>

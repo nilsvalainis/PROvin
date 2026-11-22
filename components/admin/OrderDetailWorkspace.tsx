@@ -26,6 +26,8 @@ import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { MobileDealerOrderPanel } from "@/components/admin/mobile/MobileDealerOrderPanel";
+import { MobileOrderMoreSheet, type MobileOrderMoreGroup } from "@/components/admin/mobile/MobileOrderMoreSheet";
+import { AdminMobileGlassSaveStatus } from "@/components/admin/mobile/AdminMobileGlass";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
@@ -50,13 +52,7 @@ import {
 } from "@/lib/admin-mobile-ds";
 import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
 import type { AdminMobileDockStatus } from "@/components/admin/mobile/AdminMobileChrome";
-import {
-  AdminMobileRoundBtn,
-  AdminMobileSaveStatus,
-  AdminMobileSectionNav,
-  AdminMobileSheet,
-  AdminMobileTopBar,
-} from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileSectionNav, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminOrderAiKnowledgeUsed } from "@/components/admin/AdminOrderAiKnowledgeUsed";
 import { applyVinScanAuctionsToCcVin, type OrderVinScanRecord } from "@/lib/order-vin-scan";
 import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
@@ -899,6 +895,7 @@ export function OrderDetailWorkspace({
   const [mobileMore, setMobileMore] = useState(false);
   /** Telefons: FLASH MAX izvēles atvēršana no „Darbības” un īss paziņojums virs doka. */
   const [mobileFlashRequest, setMobileFlashRequest] = useState(0);
+  const [mobilePdfRequest, setMobilePdfRequest] = useState(0);
   const [mobileNotice, setMobileNotice] = useState<AdminMobileDockStatus | null>(null);
   const mobileNoticeTimer = useRef<number | null>(null);
   const showMobileNotice = useCallback((next: AdminMobileDockStatus | null, ms = 0) => {
@@ -5054,6 +5051,99 @@ export function OrderDetailWorkspace({
       )}`
     : null;
 
+  /* ---- Telefons (22.11 makets v2): galvenes virsraksts, «Saglabāt», «Sūtīt» un «Vairāk» lapa ---- */
+  const mobileOrderTitle =
+    (blocksDisplaySafe.csdd.makeModel ?? "").trim() || payload.customerName?.trim() || "Pasūtījums";
+  const saveWorkspaceNow = () => {
+    setWorkspaceSaveBusy(true);
+    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+  };
+  const copyPlateMobile = () => {
+    const plate = plateBar.trim();
+    if (!plate) {
+      showMobileNotice({ text: "Reģ. numurs nav zināms.", tone: "error" }, 4000);
+      return;
+    }
+    void copyTextToClipboard(plate).then((ok) =>
+      showMobileNotice(
+        ok ? { text: `Reģ. numurs nokopēts: ${plate}`, tone: "ok" } : { text: "Neizdevās nokopēt.", tone: "error" },
+        3000,
+      ),
+    );
+  };
+  /** Dīlera pasūtījumam «Sūtīt» ved uz B1 bloku (tur ir «Sūtīt klientam»), citiem - «Sūtīt atskaiti» logs. */
+  const mobileSend = () => {
+    if (phoneStack && isDealerOrderForMobilePanel) {
+      document.querySelector("[data-mobile-dealer-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    setSendReportOpen(true);
+  };
+  const mobileMoreGroups: MobileOrderMoreGroup[] = [
+    {
+      id: "report",
+      label: "Atskaite",
+      items: [
+        { id: "pdf", label: "Ģenerēt PDF", sub: "LV · EN · RU · DE", onClick: () => setMobilePdfRequest((n) => n + 1) },
+        { id: "send-report", label: "Sūtīt atskaiti", onClick: () => setSendReportOpen(true) },
+        {
+          id: "notify",
+          label: "Nosūtīt klientam",
+          sub: "E-pasts ar portfeļa failiem",
+          onClick: openNotifyClientDialog,
+          disabled: notifyPhase === "loading",
+        },
+        { id: "print-ink", label: "Drukājamā versija", onClick: () => void openPrintReport({ printInk: true }) },
+      ],
+    },
+    {
+      id: "tools",
+      label: "Rīki",
+      items: [
+        { id: "flash", label: "FLASH MAX", onClick: () => setMobileFlashRequest((n) => n + 1), disabled: !payload.aiAllowed },
+        {
+          id: "copilot",
+          label: "Copilot",
+          onClick: () => {
+            setPhrasesOpen(false);
+            setCopilotOpen(true);
+          },
+        },
+        {
+          id: "phrases",
+          label: "Biežās frāzes",
+          onClick: () => {
+            setCopilotOpen(false);
+            setPhrasesOpen(true);
+          },
+        },
+        { id: "whatsapp", label: "WhatsApp klientam", onClick: handleWhatsAppOpen },
+        { id: "listing", label: "Sludinājums", href: listingBarHref ?? undefined, disabled: !listingBarHref },
+        { id: "plate", label: "Kopēt reģ. numuru", onClick: copyPlateMobile },
+        { id: "summary", label: "Pāriet uz kopsavilkumu", onClick: () => goWizardStep(WIZARD_SUMMARY_STEP) },
+        { id: "save", label: "Saglabāt tagad", onClick: saveWorkspaceNow, disabled: !workspaceHydrated || workspaceSaveBusy },
+      ],
+    },
+    {
+      id: "paid",
+      label: "Maksas avoti",
+      items: [
+        { key: "oneauto", label: "OneAuto / dīlera dati" },
+        { key: "asv", label: "ASV vēsture" },
+        { key: "joj", label: "JoJ" },
+        { key: "speckr", label: "Speckr" },
+      ].map((src) => ({
+        id: `paid-${src.key}`,
+        label: src.label,
+        sub: "Maksas - prasa apstiprinājumu",
+        onClick: () => {
+          if (!window.confirm(`Ielādēt ${src.label}? Tas ir maksas avots.`)) return;
+          void runMobilePaidLoad(src.key as keyof typeof ADMIN_MOBILE_PAID_SOURCE_BLOCK, src.label);
+        },
+      })),
+    },
+  ];
+
   const autoIngestChips = useMemo(
     () => autoIngestChipsByBlock(payload.autoIngest),
     [payload.autoIngest],
@@ -5369,9 +5459,10 @@ export function OrderDetailWorkspace({
           {WORKSPACE_SAVE_FAILED_LABEL} Teksts paliek pārlūkā. Mēģini saglabāt vēlreiz.
         </p>
       ) : null}
-      <div className="md:hidden">
+      {/* 22.11 makets v2: galvene - atpakaļ, auto, VIN, rezultāts + produkts·cena, «Saglabāts» (nav sticky). */}
+      <div className="amx amx-ws md:hidden" data-amx-order-head>
         <AdminMobileTopBar
-          title={payload.customerName?.trim() || "Pasūtījums"}
+          title={mobileOrderTitle}
           subtitle={vinBar || undefined}
           backHref="/admin/dashboard"
           wrapTitle
@@ -5380,24 +5471,20 @@ export function OrderDetailWorkspace({
           headerExtra={
             <>
               {mobileHeaderExtra}
-              {/* Makets 06.11: „Saglabāts” otrajā rindā, lai VIN ietilpst vienā rindā. */}
               <span className="ml-auto">
-                <AdminMobileSaveStatus
+                <AdminMobileGlassSaveStatus
                   saved={
                     (workspaceAutosaveStatus === "idle" || workspaceAutosaveStatus === "saved" || workspaceSaveFlash) &&
                     workspaceAutosaveStatus !== "error" &&
                     !workspaceSaveBusy
                   }
+                  failed={workspaceAutosaveStatus === "error"}
                   busy={workspaceSaveBusy || workspaceAutosaveStatus === "saving"}
-                  onSave={() => {
-                    setWorkspaceSaveBusy(true);
-                    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-                  }}
+                  onSave={saveWorkspaceNow}
                 />
               </span>
             </>
           }
-          trailing={<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />}
         >
           <AdminMobileSectionNav
             items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
@@ -5417,58 +5504,7 @@ export function OrderDetailWorkspace({
           />
         </AdminMobileTopBar>
         {alertsPortalDomId ? <div id={`${alertsPortalDomId}-m`} className="min-w-0 px-4 pt-1" /> : null}
-        <AdminMobileSheet open={mobileMore} title="Darbības" onClose={() => setMobileMore(false)}>
-          <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
-            <button type="button" className="flex h-[50px] w-full items-center px-4 text-[15px]" onClick={() => { setMobileMore(false); handleWhatsAppOpen(); }}>WhatsApp</button>
-            <button
-              type="button"
-              className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]"
-              onClick={() => {
-                setMobileMore(false);
-                const plate = plateBar.trim();
-                if (!plate) {
-                  showMobileNotice({ text: "Reģ. numurs nav zināms.", tone: "error" }, 4000);
-                  return;
-                }
-                void copyTextToClipboard(plate).then((ok) =>
-                  showMobileNotice(
-                    ok ? { text: `Reģ. numurs nokopēts: ${plate}`, tone: "ok" } : { text: "Neizdevās nokopēt.", tone: "error" },
-                    3000,
-                  ),
-                );
-              }}
-            >
-              Kopēt reģ. numuru
-            </button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setPhrasesOpen(false); setCopilotOpen(true); }}>Copilot</button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setCopilotOpen(false); setPhrasesOpen(true); }}>Biežās frāzes</button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" disabled={!payload.aiAllowed} onClick={() => { setMobileMore(false); setMobileFlashRequest((n) => n + 1); }}>FLASH MAX</button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); goWizardStep(WIZARD_SUMMARY_STEP); }}>Pāriet uz kopsavilkumu</button>
-          </div>
-          <p className="mt-4 px-1 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Maksas avoti</p>
-          <p className="mt-1 mb-2 text-[13px] text-[var(--am-ink2)]">Ielāde maksā un prasa apstiprinājumu. Pati nekad nesākas.</p>
-          <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
-            {[
-              { key: "oneauto", label: "OneAuto / dīlera dati" },
-              { key: "asv", label: "ASV vēsture" },
-              { key: "joj", label: "JoJ" },
-              { key: "speckr", label: "Speckr" },
-            ].map((src) => (
-              <button
-                key={src.key}
-                type="button"
-                className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-left text-[15px] first:border-t-0"
-                onClick={() => {
-                  if (!window.confirm(`Ielādēt ${src.label}? Tas ir maksas avots.`)) return;
-                  setMobileMore(false);
-                  void runMobilePaidLoad(src.key as keyof typeof ADMIN_MOBILE_PAID_SOURCE_BLOCK, src.label);
-                }}
-              >
-                {src.label}
-              </button>
-            ))}
-          </div>
-        </AdminMobileSheet>
+        <MobileOrderMoreSheet open={mobileMore} onClose={() => setMobileMore(false)} groups={mobileMoreGroups} />
       </div>
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm max-md:hidden"
@@ -5791,6 +5827,8 @@ export function OrderDetailWorkspace({
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
         }}
         onMore={() => setMobileMore(true)}
+        onSend={mobileSend}
+        pdfRequest={mobilePdfRequest}
         flashRequest={mobileFlashRequest}
         flashMaxPhase={flashMaxPhase}
         flashMaxNotice={flashMaxNotice}
