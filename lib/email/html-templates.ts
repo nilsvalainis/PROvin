@@ -736,7 +736,12 @@ export function morningSummaryEmailHtml(opts: {
   newPeeks: MorningSummaryEmailLine[];
   failingSources?: MorningSummaryEmailLine[];
   costAlerts?: MorningSummaryEmailLine[];
+  /** Dīlera datu ēnu režīma statistika (viena rinda). */
+  dealerShadowLine?: string | null;
 }): string {
+  const shadow = opts.dealerShadowLine
+    ? `<p style="margin:20px 0 0;font-size:14px;color:${INK};">${esc(opts.dealerShadowLine)}</p>`
+    : "";
   const empty =
     opts.overdueAudits.length + opts.dueTodayAudits.length + opts.newPeeks.length === 0
       ? `<p style="margin:20px 0 0;font-size:15px;color:${MUTED};">Kavētu auditu nav, un pēdējās 24 h nav jaunu vērtējumu.</p>`
@@ -766,6 +771,7 @@ ${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
 ${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
 ${morningSummaryEmailSection("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)", opts.failingSources ?? [])}
 ${morningSummaryEmailSection("Izmaksas", opts.costAlerts ?? [])}
+${shadow}
 ${empty}
 ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 `;

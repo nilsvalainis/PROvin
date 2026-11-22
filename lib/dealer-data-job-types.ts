@@ -3,6 +3,12 @@
  * Tīri tipi un lēmumi (bez server-only), lai loģiku var pārbaudīt testos.
  */
 
+import {
+  normalizeDealerShadowFeedback,
+  normalizeDealerShadowGate,
+  type DealerShadowFeedback,
+  type DealerShadowGate,
+} from "@/lib/dealer-shadow-types";
 import { oneautoPayloadIsNoData, oneautoResultTone } from "@/lib/oneauto-catalog";
 
 export type DealerDataJobStatus =
@@ -66,6 +72,10 @@ export type DealerDataJob = {
   plate?: string;
   /** Pēdējais admina paziņojums par šo darbu (push + e-pasts) - viens paziņojums uz problēmu. */
   alert?: DealerDataAlertRecord;
+  /** Ēnu režīms (Nils 22.11): kvalitātes pārbaudes spriedums - klientam nekas netiek sūtīts. */
+  shadowGate?: DealerShadowGate;
+  /** Admina atsauksme par spriedumu (sūtīšanas formā). */
+  shadowFeedback?: DealerShadowFeedback;
 };
 
 export type DealerDataJobArchive = {
@@ -625,6 +635,8 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
   const oneautoResults = asOneautoResults(o.oneautoResults);
   const alert = asAlert(o.alert);
   const plate = asStr(o.plate, 16).toUpperCase();
+  const shadowGate = normalizeDealerShadowGate(o.shadowGate);
+  const shadowFeedback = normalizeDealerShadowFeedback(o.shadowFeedback);
   return {
     sessionId: asStr(o.sessionId, 200) || sessionId,
     vin: asStr(o.vin, 24).toUpperCase(),
@@ -647,6 +659,8 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(oneautoResults ? { oneautoResults } : {}),
     ...(plate ? { plate } : {}),
     ...(alert ? { alert } : {}),
+    ...(shadowGate ? { shadowGate } : {}),
+    ...(shadowFeedback ? { shadowFeedback } : {}),
     ...(asStr(o.nextRetryAt, 40) ? { nextRetryAt: asStr(o.nextRetryAt, 40) } : {}),
     ...(asStr(o.runId, 80) ? { runId: asStr(o.runId, 80) } : {}),
     ...(asStr(o.draftWrittenAt, 40) ? { draftWrittenAt: asStr(o.draftWrittenAt, 40) } : {}),

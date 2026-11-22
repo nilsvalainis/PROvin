@@ -14,6 +14,7 @@ import {
   mergeDealerDataJobPatch,
   type DealerDataJobPatch,
 } from "@/lib/dealer-data-job-merge";
+import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow-types";
 import {
   dealerDataJobRetryDue,
   decideDealerDataRun,
@@ -32,6 +33,9 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/dealer-data-jobs";
 const DEFAULT_BLOB_SUBPREFIX = "dealer-data-jobs/";
 const INDEX_KEY = "_pending-index";
+/** Ēnu režīma statistikai: darbi, kuriem ir kvalitātes pārbaudes spriedums. */
+const SHADOW_INDEX_KEY = "_shadow-index";
+const SHADOW_INDEX_MAX = 500;
 
 /** Cik nepabeigtus darbus indekss tur; vecākos izmet, tos pārņem operators. */
 const PENDING_INDEX_MAX = 200;
@@ -338,4 +342,70 @@ export async function dealerDataRunLeaseHeld(sessionId: string, runId: string): 
   } catch {
     return false;
   }
+}
+
+async function addToShadowIndex(sessionId: string): Promise<void> {
+  await compareAndSwap<unknown, void>({
+    read: () => snapshot(SHADOW_INDEX_KEY),
+    write: (next, etag) => writeConditional(SHADOW_INDEX_KEY, next, etag),
+    update: (raw) => {
+      const current = Array.isArray(raw)
+        ? raw.filter((x): x is string => typeof x === "string" && isSafeDealerJobSessionId(x))
+        : [];
+      if (current.includes(sessionId)) return { result: undefined };
+      return { next: [...current, sessionId].slice(-SHADOW_INDEX_MAX), result: undefined };
+    },
+    maxAttempts: 8,
+  }).catch((err) => {
+    console.error("[dealer-data-job-store] shadow index update failed", { sessionId, err });
+  });
+}
+
+/**
+ * Ēnu režīma ieraksts (CAS): tikai lauks `shadowGate` / `shadowFeedback`, pārējais darbs netiek aiztikts.
+ * Raksta tikai, ja darbs joprojām ir tam pašam VIN (VIN maiņas laikā vecs spriedums netiek pielikts jaunam).
+ */
+async function patchShadow(
+  sessionId: string,
+  vin: string,
+  patch: { shadowGate?: DealerShadowGate; shadowFeedback?: DealerShadowFeedback },
+): Promise<DealerDataJob | null> {
+  if (!isSafeDealerJobSessionId(sessionId)) return null;
+  const expectVin = vin.trim().toUpperCase();
+  try {
+    const next = await casJob<DealerDataJob | null>(sessionId, (current) => {
+      if (!current || current.vin.trim().toUpperCase() !== expectVin) return { value: null };
+      const merged = normalizeDealerDataJob({ ...current, ...patch, updatedAt: current.updatedAt }, sessionId);
+      return merged ? { value: merged, next: merged } : { value: null };
+    });
+    if (next) await addToShadowIndex(sessionId);
+    return next;
+  } catch (err) {
+    console.error("[dealer-data-job-store] shadow write failed", { sessionId, err });
+    return null;
+  }
+}
+
+export function writeDealerShadowGate(sessionId: string, vin: string, gate: DealerShadowGate): Promise<DealerDataJob | null> {
+  return patchShadow(sessionId, vin, { shadowGate: gate });
+}
+
+export function writeDealerShadowFeedback(
+  sessionId: string,
+  vin: string,
+  feedback: DealerShadowFeedback,
+): Promise<DealerDataJob | null> {
+  return patchShadow(sessionId, vin, { shadowFeedback: feedback });
+}
+
+/** Visi darbi ar ēnu režīma spriedumu (statistikai). */
+export async function listDealerShadowJobs(): Promise<DealerDataJob[]> {
+  const raw = await readJson(SHADOW_INDEX_KEY);
+  const ids = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string" && isSafeDealerJobSessionId(x)) : [];
+  const jobs = new Map<string, DealerDataJob>();
+  // Pa 25, lai Blob nesaņem simtiem paralēlu pieprasījumu.
+  for (let i = 0; i < ids.length; i += 25) {
+    for (const [id, job] of await readDealerDataJobs(ids.slice(i, i + 25))) jobs.set(id, job);
+  }
+  return ids.map((id) => jobs.get(id)).filter((j): j is DealerDataJob => Boolean(j?.shadowGate));
 }

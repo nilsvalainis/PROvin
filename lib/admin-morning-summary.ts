@@ -85,6 +85,8 @@ export type MorningSummary = {
   failingSources: MorningFailingSource[];
   /** Izmaksu 80 % / 100 % sliekšņi. */
   costAlerts: CostAlert[];
+  /** Dīlera datu ēnu režīma rinda (Nils 22.11); nav, ja vēl nav neviena sprieduma. */
+  dealerShadowLine?: string | null;
 };
 
 function peekHost(url: string | undefined): string {
