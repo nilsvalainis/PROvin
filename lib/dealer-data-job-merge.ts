@@ -52,6 +52,8 @@ export function mergeDealerDataJobPatch(
           draftWrittenAt: undefined,
           pendingRequestId: undefined,
           pendingRetries: undefined,
+          shadowGate: undefined,
+          shadowFeedback: undefined,
           attempts: 0,
         }
       : currentIn;
@@ -122,6 +124,11 @@ export function mergeDealerDataJobPatch(
         : {}),
     ...(archived?.length ? { archived } : {}),
     ...(patch.alert ?? current?.alert ? { alert: patch.alert ?? current?.alert } : {}),
+    // Ēnu režīms: jaunākais spriedums / atsauksme; VIN maiņā abi nomesti (sk. augstāk).
+    ...(patch.shadowGate ?? current?.shadowGate ? { shadowGate: patch.shadowGate ?? current?.shadowGate } : {}),
+    ...(patch.shadowFeedback ?? current?.shadowFeedback
+      ? { shadowFeedback: patch.shadowFeedback ?? current?.shadowFeedback }
+      : {}),
     // Atmaksa ir neatgriezeniska: reizi ierakstītu ierakstu patch nedrīkst nomest.
     // emailSentAt drīkst pievienot vēlāk (viens e-pasts uz atmaksu).
     ...(current?.refund || patch.refund

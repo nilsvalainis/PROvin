@@ -74,6 +74,10 @@ const reviewDealerCommentsWithOpus = vi.fn(async (args: { fields: { id: string; 
 vi.mock("@/lib/dealer-data-alert", () => ({
   sendDealerDataAlertIfNeeded: (id: string, opts?: unknown) => sendDealerDataAlertIfNeeded(id, opts),
 }));
+const runDealerShadowGate = vi.fn(async (_id: string, _opts?: unknown) => null);
+vi.mock("@/lib/dealer-shadow-gate-run", () => ({
+  runDealerShadowGate: (id: string, opts?: unknown) => runDealerShadowGate(id, opts),
+}));
 vi.mock("@/lib/dealer-comments-review", () => ({
   reviewDealerCommentsWithOpus: (args: { fields: { id: string; text: string }[] }) =>
     reviewDealerCommentsWithOpus(args),
@@ -215,6 +219,8 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(r.status).toBe("done");
     expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
     expect(fetchOneautoProducts.mock.calls[0]![0].products).toEqual(["oe_service_history"]);
+    // Ēnu režīms: pēc pabeigtas ielases palaiž kvalitātes pārbaudi (neko nesūta).
+    expect(runDealerShadowGate).toHaveBeenCalledWith(SESSION, { trigger: "job" });
   });
 
   it("pabeigtam darbam retry nemaksā nevienu produktu", async () => {
@@ -581,6 +587,7 @@ describe("runDealerDataJob paid idempotency", () => {
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron" });
     expect(r.reason).toBe("lease_lost");
     expect(fetchOneautoProducts).not.toHaveBeenCalled();
+    expect(runDealerShadowGate).not.toHaveBeenCalled();
   });
 
   it("laika budžets beidzies -> darbs atpakaļ rindā, nekas netiek pirkts", async () => {

@@ -121,6 +121,8 @@ export function buildMorningSummaryEmailText(
     }
   }
 
+  if (summary.dealerShadowLine) lines.push("", summary.dealerShadowLine);
+
   lines.push("", "Atvērt kopsavilkumu:", opts.pageUrl);
   return lines.join("\n");
 }
@@ -150,6 +152,7 @@ export function buildMorningSummaryEmail(
       title: shortCostLabel(row.source),
       detail: costAlertDetail(row),
     })),
+    dealerShadowLine: summary.dealerShadowLine ?? null,
   });
   return {
     subject: buildMorningSummaryEmailSubject(summary, opts.nowMs),
