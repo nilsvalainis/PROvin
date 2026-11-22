@@ -205,7 +205,7 @@ export function AdminDealerSendDialog({
   const sendFlags = () => ({
     situation,
     offer: situation === "ready" && opts.offer,
-    review: situation === "ready" && opts.review && !opts.offer,
+    review: situation === "ready" && opts.review,
   });
 
   /** E-pastu ieraksta serveris (atgriež `serverMarks`); WhatsApp vai servera ieraksta kļūdas gadījumā - šeit. */
@@ -411,18 +411,17 @@ export function AdminDealerSendDialog({
                 <label
                   className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
                     opts.offer ? "border-slate-900" : "border-slate-200"
-                  } ${opts.review ? "opacity-50" : ""}`}
+                  }`}
                 >
                   <input
                     type="checkbox"
                     className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
                     checked={opts.offer}
-                    disabled={opts.review || busy !== null}
+                    disabled={busy !== null}
                     onChange={(e) => void toggle("offer", e.target.checked)}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Piedāvājums PROVIN AUDITS</div>
-                    {opts.review ? <div className="text-[11px] text-slate-500">Nevar kopā ar atsauksmes lūgumu</div> : null}
                     {opts.offer ? (
                       <div className="mt-1 grid grid-cols-[auto_auto] justify-start gap-x-4 text-[12px] text-slate-700">
                         <span>Jau samaksāts</span>
@@ -440,18 +439,17 @@ export function AdminDealerSendDialog({
               <label
                 className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
                   opts.review ? "border-slate-900" : "border-slate-200"
-                } ${opts.offer ? "opacity-50" : ""}`}
+                }`}
               >
                 <input
                   type="checkbox"
                   className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
                   checked={opts.review}
-                  disabled={opts.offer || busy !== null}
+                  disabled={busy !== null}
                   onChange={(e) => void toggle("review", e.target.checked)}
                 />
                 <div>
                   <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Google atsauksmes lūgums</div>
-                  {opts.offer ? <div className="text-[11px] text-slate-500">Nevar kopā ar piedāvājumu</div> : null}
                 </div>
               </label>
             </div>

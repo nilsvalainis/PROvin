@@ -14,10 +14,12 @@ const CHANNELS: DealerSendChannel[] = ["email", "whatsapp"];
 const SITUATIONS: DealerSendSituation[] = ["ready", "no_data", "cancelled"];
 
 describe("dealer send dialog options", () => {
-  it("offer and review request are mutually exclusive", () => {
+  it("offer and review request are independent (Nils 22.11)", () => {
     let o = toggleDealerSendOption({ offer: false, review: false }, "offer", true);
     expect(o).toEqual({ offer: true, review: false });
     o = toggleDealerSendOption(o, "review", true);
+    expect(o).toEqual({ offer: true, review: true });
+    o = toggleDealerSendOption(o, "offer", false);
     expect(o).toEqual({ offer: false, review: true });
     o = toggleDealerSendOption(o, "review", false);
     expect(o).toEqual({ offer: false, review: false });
@@ -46,10 +48,13 @@ describe("dealer send texts", () => {
     expect(m.text.endsWith("Nils, PROVIN.LV")).toBe(true);
   });
 
-  it("never puts the offer and the review request in one message", () => {
-    const m = buildDealerSendMessage({ channel: "email", situation: "ready", b2b: false, vin: VIN, offer, review: true });
-    const both = m.text.includes("Piemaksa") && m.text.includes(GOOGLE_REVIEW_URL);
-    expect(both).toBe(false);
+  it("offer and review together: offer block first, then the review request (Nils 22.11)", () => {
+    for (const channel of ["email", "whatsapp"] as const) {
+      const m = buildDealerSendMessage({ channel, situation: "ready", b2b: false, vin: VIN, offer, review: true });
+      expect(m.text).toContain(offer.url);
+      expect(m.text).toContain(GOOGLE_REVIEW_URL);
+      expect(m.text.indexOf(offer.url)).toBeLessThan(m.text.indexOf(GOOGLE_REVIEW_URL));
+    }
   });
 
   it("plain ready message has no offer, no review and no empty gaps", () => {

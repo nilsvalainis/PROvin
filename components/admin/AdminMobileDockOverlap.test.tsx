@@ -84,10 +84,12 @@ describe("«Sūtīt klientam» logs datorā (22.11 Nils: tukšs temats, iezīmē
     expect(s).not.toMatch(/\.select\(\)|setSelectionRange|autoFocus/);
   });
 
-  it("loga fons (z-80) ir virs datora pogu joslas (z-40) un Copilot čipa (z-45)", () => {
+  it("loga fons (z-80) ir virs Copilot čipa (z-45); datora pogu josla (z-40) atvērta loga laikā paslēpta", () => {
     expect(renderHtml(dealerDialog())).toMatch(/data-dealer-send-dialog="true" class="fixed inset-0 z-\[80\]/);
     const w = src("components/admin/OrderDetailWorkspace.tsx");
-    expect(w).toContain('<div className="fixed bottom-0 left-0 right-0 z-40 hidden');
+    expect(w).toMatch(/data-order-pdf-bar\s+className=\{`fixed bottom-0 left-0 right-0 z-40 hidden /);
+    // kamēr logs atvērts, datora PDF pogu josla nav redzama
+    expect(w).toContain('adminOverlayCovered ? "" : "md:block"');
     const c = src("components/admin/AdminOrderCopilotPanel.tsx");
     expect(c).toMatch(/className=\{`fixed z-\[45\] flex max-w-\[16rem\]/);
   });

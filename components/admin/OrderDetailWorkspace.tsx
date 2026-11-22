@@ -278,7 +278,7 @@ import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReviewPanel";
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
-import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
+import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
 import {
@@ -991,6 +991,8 @@ export function OrderDetailWorkspace({
     { label: string; sentence: string; message: string }[] | null
   >(null);
   // 22.11 (Nils, iPhone): kamēr atvērts kāds šīs lapas logs, telefona doks paslēpjas un nenosedz loga pogas.
+  // 22.11 (Nils, dators): kamēr atvērts logs (piem. «Sūtīt klientam»), apakšējā PDF pogu josla paslēpta.
+  const adminOverlayCovered = useAdminOverlayCover();
   useHoldAdminOverlayCover(
     previewOpen || portfolioAllFilesModalOpen || notifyDialogOpen || factCheckPublishItems != null,
   );
@@ -6691,7 +6693,12 @@ export function OrderDetailWorkspace({
       </div>
 
       {/* Telefonā PDF ir apakšējā doka sheet; fiksētā kājene paliek tikai md+. */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 hidden border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm md:block dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]">
+      <div
+        data-order-pdf-bar
+        className={`fixed bottom-0 left-0 right-0 z-40 hidden border-t border-[var(--admin-border-subtle)] bg-[var(--admin-footer-bg)] px-3 py-2.5 shadow-[0_-4px_24px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ${
+          adminOverlayCovered ? "" : "md:block"
+        }`}
+      >
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
           <AdminPdfLangSplitButton
             label="Ģenerēt PDF"

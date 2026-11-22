@@ -33,14 +33,13 @@ export type DealerSendOffer = {
 
 export type DealerSendOptions = { offer: boolean; review: boolean };
 
-/** Piedāvājums un atsauksmes lūgums nekad nav vienā ziņā (Nila lēmums 19.11). */
+/** Piedāvājums un atsauksmes lūgums ir neatkarīgi ķekši (Nila lēmums 22.11; 19.11 aizliegums atcelts). */
 export function toggleDealerSendOption(
   current: DealerSendOptions,
   which: keyof DealerSendOptions,
   checked: boolean,
 ): DealerSendOptions {
-  if (!checked) return { ...current, [which]: false };
-  return which === "offer" ? { offer: true, review: false } : { offer: false, review: true };
+  return { ...current, [which]: checked };
 }
 
 export function dealerSendTemplateId(channel: DealerSendChannel, situation: DealerSendSituation): string {
@@ -57,7 +56,7 @@ export type DealerSendMessageInput = {
   refundCents?: number | null;
   /** Tikai «Dati gatavi»: piedāvājuma saite un cenas. */
   offer?: DealerSendOffer | null;
-  /** Tikai «Dati gatavi»: Google atsauksmes lūgums (nekad kopā ar piedāvājumu). */
+  /** Tikai «Dati gatavi»: Google atsauksmes lūgums (var kopā ar piedāvājumu - tad pēc piedāvājuma bloka). */
   review?: boolean;
   doc?: MessageTemplatesDoc | null;
 };
@@ -72,7 +71,7 @@ function tidy(text: string): string {
 
 export function buildDealerSendVars(input: DealerSendMessageInput): Record<string, string> {
   const ready = input.situation === "ready";
-  const offer = ready && input.offer && !input.review ? input.offer : null;
+  const offer = ready && input.offer ? input.offer : null;
   const refund = input.refundCents != null && input.refundCents > 0 ? formatEurFromCents(input.refundCents) : "";
   return {
     vin: reportReadyVinVar(input.vin),
@@ -85,7 +84,7 @@ export function buildDealerSendVars(input: DealerSendMessageInput): Record<strin
     piemaksa: offer ? formatEurFromCents(offer.chargeCents) : "",
     kopa: offer ? formatEurFromCents(offer.targetCents) : "",
     maksajuma_saite: offer?.url ?? "",
-    atsauksmes_saite: ready && input.review && !input.offer ? GOOGLE_REVIEW_URL : "",
+    atsauksmes_saite: ready && input.review ? GOOGLE_REVIEW_URL : "",
   };
 }
 

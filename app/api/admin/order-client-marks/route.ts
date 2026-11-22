@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     }
     const situation = body.situation;
     const offer = situation === "ready" && body.offer === true;
-    const review = situation === "ready" && body.review === true && !offer;
+    const review = situation === "ready" && body.review === true;
     const marks = await updateOrderClientMarks(sessionId, (cur) =>
       withDealerSend(cur, { at: nowIso, channel, situation, offer, review }),
     );
