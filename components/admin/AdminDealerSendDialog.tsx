@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
@@ -116,11 +116,21 @@ export function AdminDealerSendDialog({
   const [opts, setOpts] = useState<DealerSendOptions>({ offer: false, review: false });
   const [offer, setOffer] = useState<DealerSendOffer | null>(null);
   const [doc, setDoc] = useState<MessageTemplatesDoc | null>(templatesDocCache);
-  const [subject, setSubject] = useState("");
-  const [text, setText] = useState("");
+  // Sākuma temats un teksts jau pirmajā renderēšanā (no veidnes), nevis tukši līdz efektam.
+  const [initialMsg] = useState(() =>
+    buildDealerSendMessage({ channel: "email", situation: defaultSituation, b2b, vin, refundCents, doc: templatesDocCache }),
+  );
+  const [subject, setSubject] = useState(initialMsg.subject ?? "");
+  const [text, setText] = useState(initialMsg.text);
   const [busy, setBusy] = useState<null | "offer" | "pdf" | "send">(null);
   const [err, setErr] = useState<string | null>(null);
   const [pdfLink, setPdfLink] = useState<SendReportPrepared | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Logs vienmēr atveras augšā (kanāls, situācija, piedāvājums redzami).
+  useLayoutEffect(() => {
+    if (open && scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -328,6 +338,8 @@ export function AdminDealerSendDialog({
       : null;
 
   // Portālā uz body: dīlera bloka vecāku stacking konteksts citādi ielika logu zem telefona doka.
+  // 22.11 (Nils, dators): uz body logs manto vietnes tumšās tēmas baltu teksta krāsu (--site-body-fg),
+  // tāpēc temats un teksts bija balti uz balta («tukši»). Krāsas te jānorāda tieši.
   const dialog = (
     <div
       data-dealer-send-dialog
@@ -338,7 +350,7 @@ export function AdminDealerSendDialog({
       {...busyClose}
     >
       <div
-        className="amx amx-surface flex h-full max-h-[100dvh] w-full flex-col bg-white sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
+        className="amx amx-surface flex h-full max-h-[100dvh] w-full flex-col bg-white md:text-slate-900 sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3 max-md:items-center max-md:border-b-0 max-md:pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -359,7 +371,7 @@ export function AdminDealerSendDialog({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
+        <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
           <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Kanāls">
             {(["email", "whatsapp"] as const).map((c) => (
               <button key={c} type="button" role="tab" aria-selected={channel === c} className={seg(channel === c)} onClick={() => setChannel(c)}>
@@ -464,7 +476,7 @@ export function AdminDealerSendDialog({
               </label>
               <input
                 id="dealer-send-subj"
-                className="amx-fld w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px]"
+                className="amx-fld w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] text-slate-900"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 disabled={busy !== null}
@@ -482,7 +494,7 @@ export function AdminDealerSendDialog({
             <textarea
               id="dealer-send-msg"
               spellCheck={false}
-              className="amx-fld amx-fld--ta min-h-[220px] w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12.5px] leading-relaxed"
+              className="amx-fld amx-fld--ta min-h-[220px] w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] leading-relaxed text-slate-900"
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={busy !== null}

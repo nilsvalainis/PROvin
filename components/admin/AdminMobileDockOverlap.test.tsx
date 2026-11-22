@@ -63,3 +63,32 @@ describe("Telefona doks nenosedz logu pogas", () => {
     expect(src("components/admin/mobile/AdminMobileChrome.tsx")).toMatch(/fixed inset-x-0 bottom-0 z-\[30\][^"]*md:hidden/);
   });
 });
+
+describe("«Sūtīt klientam» logs datorā (22.11 Nils: tukšs temats, iezīmēts teksts, ritinājums)", () => {
+  it("temats un teksts aizpildīti no veidnes jau pirmajā renderēšanā", () => {
+    const html = renderHtml(dealerDialog());
+    expect(html).toContain('value="PROVIN · Atskaite gatava · Oficiālā dīlera dati · WBA5R1C0XLFH42873"');
+    expect(html).toMatch(/<textarea[^>]*id="dealer-send-msg"[^>]*>[^<]*Labdien!/);
+  });
+
+  it("portālā uz body laukiem ir tieša teksta un fona krāsa (nemanto vietnes balto tekstu)", () => {
+    const html = renderHtml(dealerDialog());
+    expect(html).toMatch(/id="dealer-send-subj" class="[^"]*\bbg-white\b[^"]*\btext-slate-900\b/);
+    expect(html).toMatch(/id="dealer-send-msg"[^>]*class="[^"]*\bbg-white\b[^"]*\btext-slate-900\b/);
+    expect(html).toMatch(/class="amx amx-surface [^"]*md:text-slate-900/);
+  });
+
+  it("logs atveras augšā un nekas neiezīmē tekstu", () => {
+    const s = src("components/admin/AdminDealerSendDialog.tsx");
+    expect(s).toContain("scrollRef.current.scrollTop = 0");
+    expect(s).not.toMatch(/\.select\(\)|setSelectionRange|autoFocus/);
+  });
+
+  it("loga fons (z-80) ir virs datora pogu joslas (z-40) un Copilot čipa (z-45)", () => {
+    expect(renderHtml(dealerDialog())).toMatch(/data-dealer-send-dialog="true" class="fixed inset-0 z-\[80\]/);
+    const w = src("components/admin/OrderDetailWorkspace.tsx");
+    expect(w).toContain('<div className="fixed bottom-0 left-0 right-0 z-40 hidden');
+    const c = src("components/admin/AdminOrderCopilotPanel.tsx");
+    expect(c).toMatch(/className=\{`fixed z-\[45\] flex max-w-\[16rem\]/);
+  });
+});
