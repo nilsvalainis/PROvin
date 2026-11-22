@@ -1820,7 +1820,7 @@ function buildSourcePhotoGroupsPdfHtml(
     const cells: { src: string; cap: string }[] = [];
     for (const ph of group.photos) {
       const src = dataUrls.get(ph.id);
-      if (!src) continue;
+      if (!src || !src.startsWith("data:image/") || /["<>\s]/.test(src)) continue;
       photoIndex += 1;
       const cap =
         layout === "appendix"

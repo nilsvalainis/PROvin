@@ -5,8 +5,20 @@
 
 export type PdfRunningLang = "lv" | "en" | "ru" | "de";
 
-function cssContentString(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+/**
+ * Teksts CSS `content:"..."` virknei. Burti, cipari un vienkāršas pieturzīmes paliek,
+ * viss pārējais (pēdiņas, slīpsvītras, `<`, `>`, `&`, `;`, iekavas u.c.) tiek pierakstīts kā `\HEX `,
+ * rindu pārtraukumi un kontroles zīmes - aizstāti ar atstarpi. Rezultāts nevar izbeigt
+ * ne virkni, ne deklarāciju, ne apkārtējo `<style>` bloku.
+ */
+export function cssContentString(value: string): string {
+  let out = "";
+  const cleaned = String(value ?? "").replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ");
+  for (const ch of Array.from(cleaned)) {
+    if (/[\p{L}\p{N} .,\-·:()+_#!?%]/u.test(ch)) out += ch;
+    else out += `\\${ch.codePointAt(0)!.toString(16)} `;
+  }
+  return out;
 }
 
 export function pdfRunningPageCounterLabel(lang: PdfRunningLang = "lv"): string {

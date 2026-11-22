@@ -1,5 +1,6 @@
 import { sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { ADMIN_RICH_PDF_FONT_WHITELIST } from "@/lib/admin-rich-comment-fonts";
+import { sanitizeAdminRichHtml } from "@/lib/admin-rich-html-sanitize";
 import {
   applyProvinHumanDashes,
   toExpertHeadingBodyPlain,
@@ -370,13 +371,23 @@ export function stripIrissBrandStamp(text: string): string {
     .trim();
 }
 
-/** Tikai tik daudz, lai uz admin lasīšanu ar dangerouslySetInnerHTML neielīstu skriptu. */
+/**
+ * Admin bagātinātais HTML rādīšanai (`innerHTML` / `dangerouslySetInnerHTML`) un glabāšanai:
+ * paliek tikai atļautie tagi un atribūti (sk. `sanitizeAdminRichHtml`).
+ */
 export function coerceAdminRichHtmlForDisplay(html: string | null | undefined): string {
   let s = sanitizeDraftTextForStorage(typeof html === "string" ? html : "");
   s = stripPastedStylesheetText(s);
-  s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)+/gi, "");
-  return s;
+  return sanitizeAdminRichHtml(s);
+}
+
+/**
+ * Klienta vai ārēja avota vienkāršs teksts -> sākuma vērtība bagātinātā teksta laukam.
+ * Teksts vienmēr tiek escapots - HTML zīmes paliek redzamas kā teksts.
+ */
+export function externalPlainTextToRichSeed(text: string | null | undefined): string {
+  const t = typeof text === "string" ? text : "";
+  return t.trim() ? plainTextToMinimalRichHtml(t) : "";
 }
 
 function isSafePdfColor(value: string): boolean {
