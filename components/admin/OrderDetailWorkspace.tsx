@@ -25,6 +25,8 @@ import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { MobileDealerOrderPanel } from "@/components/admin/mobile/MobileDealerOrderPanel";
+import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
 import { makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
@@ -3775,7 +3777,8 @@ export function OrderDetailWorkspace({
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
     let phonePre: SyncOpenedWindow | null = null;
-    if (phoneStack) {
+    // Servera PDF (`serverPdf`) logu neizmanto - rezultātu atver izsaucējs (citādi telefonā lieks tukšs logs).
+    if (phoneStack && !opts?.serverPdf) {
       phonePre = openWindowSyncThen();
       if (!phonePre.writeHtml(PDF_PREPARING_HTML)) phonePre = null;
     }
@@ -5004,6 +5007,15 @@ export function OrderDetailWorkspace({
     };
   };
 
+  /** Dīlera atmaksa: Stripe cs_* vai B2B manuālais VIN (kredīts / maks). */
+  const dealerCanRefund =
+    payload.sessionId.startsWith("cs_") ||
+    (payload.sessionId.startsWith("manual_order_") && (payload.notes ?? "").includes("partner_id="));
+  const dealerWalletRefund = (payload.notes ?? "").includes("wallet_txn=");
+  const isDealerOrderForMobilePanel =
+    isDealerHighlightAdminOrder({ checkoutLine: payload.checkoutLine, amountTotalCents: payload.amountTotal }) ||
+    isDealerDataAutoFetchOrder({ checkoutLine: payload.checkoutLine, amountTotalCents: payload.amountTotal });
+
   /** Dīlera bloks «Sūtīt klientam»: tas pats servera PDF un sūtīšanas ceļš kā «Sūtīt atskaiti». */
   const dealerSendBridge: DealerSendBridge = {
     customerPhoneDigits: whatsappPhoneDigits ?? null,
@@ -5816,6 +5828,22 @@ export function OrderDetailWorkspace({
 
       {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
       <div className={`provin-pro-content mx-auto w-full min-w-0 space-y-6 px-1 pt-4 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
+        {/* Telefons, dīlera pasūtījums: B1 «Darbību režģis» lapas augšā (22.11). Datorā nerāda. */}
+        {phoneStack && isDealerOrderForMobilePanel ? (
+          <MobileDealerOrderPanel
+            sessionId={payload.sessionId}
+            orderVin={vinBar}
+            customerEmail={payload.customerEmail}
+            canRefund={dealerCanRefund}
+            walletRefund={dealerWalletRefund}
+            b2bClient={b2bClientOrder}
+            reportLang={partnerReportLang}
+            dealerSend={dealerSendBridge}
+            serviceWorks={blocksDisplaySafe.auto_records.serviceWorks}
+            serviceHistoryNotes={blocksDisplaySafe.auto_records.serviceHistoryNotes ?? ""}
+            comments={blocksDisplaySafe.auto_records.comments ?? ""}
+          />
+        ) : null}
         <AdminOrderCountryTimelineStrip sourceBlocks={ws.sourceBlocks} />
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
@@ -6022,12 +6050,8 @@ export function OrderDetailWorkspace({
               applyPatchedBlocks={applyCopilotPatchedBlocks}
               orderVin={vinBar}
               customerEmail={payload.customerEmail}
-              canDealerRefund={
-                payload.sessionId.startsWith("cs_") ||
-                (payload.sessionId.startsWith("manual_order_") &&
-                  (payload.notes ?? "").includes("partner_id="))
-              }
-              walletRefund={(payload.notes ?? "").includes("wallet_txn=")}
+              canDealerRefund={dealerCanRefund}
+              walletRefund={dealerWalletRefund}
               onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
               onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
               onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}

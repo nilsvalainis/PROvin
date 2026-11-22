@@ -1,5 +1,6 @@
 import type { CheckoutLineKind } from "@/lib/stripe-session";
 import { parseAuditResultColor } from "@/lib/admin-audit-result-color";
+import { parseAdminOrderIngest, type AdminOrderIngest } from "@/lib/admin-mobile-ingest";
 
 /**
  * RSC → client `AdminOrdersTable`: tikai string | number | null | boolean (bez Date, Decimal, Stripe instancēm).
@@ -56,6 +57,8 @@ export type SerializedAdminOrderTableRow = {
   fullyReversed?: boolean;
   /** Dīlera datu ielases problēma («Nav VIN», «Dīlera ielase: kļūda» u.c.) - sarkana atzīme. */
   dealerJobAlert?: string;
+  /** Telefona saraksts: ielases indikācija (dīlera darbs vai VIN SCAN). */
+  ingest?: AdminOrderIngest;
 };
 
 type RowInput = {
@@ -91,6 +94,7 @@ type RowInput = {
   clientOrders?: unknown;
   paymentAdjustment?: unknown;
   dealerJobAlert?: unknown;
+  ingest?: unknown;
 };
 
 function paymentAdjustmentFields(
@@ -203,6 +207,10 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(typeof o.dealerJobAlert === "string" && o.dealerJobAlert.trim()
         ? { dealerJobAlert: o.dealerJobAlert.trim().slice(0, 60) }
         : {}),
+      ...(() => {
+        const ingest = parseAdminOrderIngest(o.ingest);
+        return ingest ? { ingest } : {};
+      })(),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),
     };

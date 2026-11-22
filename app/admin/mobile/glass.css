@@ -1,0 +1,360 @@
+/*
+ * PRO admin telefonā - stikla stila pamats (22.11 makets v3, palete 2 «Grafīts + PROVIN zils").
+ * Tikai telefonā (<768 px). Datorā šīs klases neko nemaina.
+ * Tēma seko prefers-color-scheme (tāpat kā `.admin-m[data-theme]`), tāpēc der arī portālos uz body.
+ * Zils (#0b3fa8) - tikai galvenajai darbībai. Sarkans - Atmaksa, «Datu nav», «Kļūda».
+ */
+
+@media (max-width: 767px) {
+  .amx {
+    --amx-base: #eef0f3;
+    --amx-w1: #ffffff;
+    --amx-w2: #cfd3db;
+    --amx-w3: #f6f7f9;
+    --amx-tx: #16171a;
+    --amx-mut: #6b6f77;
+    --amx-soft: #a2a6ad;
+    --amx-glass: rgba(255, 255, 255, 0.52);
+    --amx-glass2: rgba(255, 255, 255, 0.34);
+    --amx-edge: rgba(255, 255, 255, 0.85);
+    --amx-hair: rgba(20, 22, 28, 0.08);
+    --amx-sh: 0 10px 30px rgba(20, 22, 30, 0.07);
+    --amx-acc: #0b3fa8;
+    --amx-acctx: #ffffff;
+    --amx-dot: #1b1c1f;
+    --amx-green: #1c8a4d;
+    --amx-red: #c0392f;
+    --amx-r: 14px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+}
+
+@media (max-width: 767px) and (prefers-color-scheme: dark) {
+  .amx {
+    --amx-base: #0c0c0e;
+    --amx-w1: #2a2b30;
+    --amx-w2: #17181b;
+    --amx-w3: #101012;
+    --amx-tx: #f3f3f5;
+    --amx-mut: #9b9da4;
+    --amx-soft: #62646b;
+    --amx-glass: rgba(255, 255, 255, 0.07);
+    --amx-glass2: rgba(255, 255, 255, 0.04);
+    --amx-edge: rgba(255, 255, 255, 0.12);
+    --amx-hair: rgba(255, 255, 255, 0.08);
+    --amx-sh: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --amx-acc: #2f62d8;
+    --amx-acctx: #ffffff;
+    --amx-dot: #f3f3f5;
+    --amx-green: #4cc38a;
+    --amx-red: #ff6b61;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Pilnekrāna virsma ar maigu fona gradientu (stiklam ir ko «aizmiglot»). */
+  .amx-surface {
+    color: var(--amx-tx);
+    background:
+      radial-gradient(120% 60% at 0% 0%, var(--amx-w1) 0%, transparent 60%),
+      radial-gradient(90% 55% at 100% 38%, var(--amx-w2) 0%, transparent 62%),
+      radial-gradient(100% 50% at 20% 100%, var(--amx-w3) 0%, transparent 60%),
+      var(--amx-base) !important;
+  }
+
+  /* Stikla kartīte. */
+  .amx-card {
+    color: var(--amx-tx);
+    background: var(--amx-glass);
+    border: 1px solid var(--amx-edge);
+    border-radius: var(--amx-r);
+    box-shadow: var(--amx-sh);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.3);
+  }
+
+  label.amx-card:has(input:checked) {
+    border-color: var(--amx-acc);
+  }
+
+  .amx-lbl {
+    margin: 20px 2px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--amx-mut);
+  }
+
+  /* Pogas: ≥44 px; galvenā - zila, sekundārā - neitrāls stikls, destruktīvā - sarkans teksts uz stikla. */
+  .amx-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 50px;
+    padding: 0 12px;
+    border-radius: var(--amx-r);
+    border: 1px solid var(--amx-edge);
+    background: var(--amx-glass);
+    color: var(--amx-tx);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    box-shadow: var(--amx-sh);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 120ms ease, opacity 120ms ease;
+  }
+  .amx-btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .amx-btn:disabled,
+  .amx-btn[aria-disabled="true"] {
+    opacity: 0.45;
+  }
+  .amx-btn--sm {
+    min-height: 44px;
+    font-size: 14px;
+    box-shadow: none;
+  }
+  .amx-btn--primary {
+    background: var(--amx-acc) !important;
+    color: var(--amx-acctx) !important;
+    border-color: transparent !important;
+  }
+  .amx-btn--danger {
+    color: var(--amx-red) !important;
+  }
+  .amx-btn svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+
+  .amx-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Statuss: punkts + teksts. */
+  .amx-st {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--amx-tx);
+  }
+  .amx-st::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amx-dot);
+    flex: none;
+  }
+  .amx-st--ok {
+    color: var(--amx-green);
+  }
+  .amx-st--ok::before {
+    background: var(--amx-green);
+  }
+  .amx-st--err {
+    color: var(--amx-red);
+  }
+  .amx-st--err::before {
+    background: var(--amx-red);
+  }
+  .amx-st--muted {
+    color: var(--amx-mut);
+  }
+  .amx-st--muted::before {
+    background: var(--amx-soft);
+  }
+  .amx-st--outline {
+    color: var(--amx-mut);
+  }
+  .amx-st--outline::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--amx-soft);
+  }
+
+  /* Statusa ikona aplī (saraksta rindas kreisajā pusē). */
+  .amx-sti {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .amx-sti svg {
+    width: 17px;
+    height: 17px;
+  }
+  .amx-sti--done {
+    color: var(--amx-green);
+  }
+  .amx-sti--no_data,
+  .amx-sti--error {
+    color: var(--amx-red);
+  }
+  .amx-sti--running {
+    color: var(--amx-mut);
+  }
+  .amx-sti--running svg {
+    animation: amx-spin 1.1s linear infinite;
+  }
+  .amx-sti--idle {
+    color: var(--amx-soft);
+  }
+  .amx-tx--done {
+    color: var(--amx-green);
+  }
+  .amx-tx--no_data,
+  .amx-tx--error {
+    color: var(--amx-red);
+  }
+  .amx-tx--running,
+  .amx-tx--idle,
+  .amx-tx--mut {
+    color: var(--amx-mut);
+  }
+  .amx-tx--red {
+    color: var(--amx-red);
+  }
+
+  /* Saraksta rinda (stikla sarakstā rindas atdala mats). */
+  .amx-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--amx-hair);
+  }
+  .amx-row:first-child {
+    border-top: none;
+  }
+
+  /* Servisa ieraksta rinda: datums · darbi · km. */
+  .amx-sv {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-top: 1px solid var(--amx-hair);
+    font-size: 14px;
+  }
+  .amx-sv:first-child {
+    border-top: none;
+  }
+  .amx-sv > :nth-child(2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Maza poga-tablete («Labot»), pieskāriena laukums ≥44 px. */
+  .amx-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    margin: -6px 0;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--amx-tx);
+    background: var(--amx-glass2);
+    border: 1px solid var(--amx-edge);
+  }
+  .amx-pill svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* Apakšējā stikla josla (piestiprināta). */
+  .amx-dock {
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom));
+    background: var(--amx-glass) !important;
+    border-top: 1px solid var(--amx-edge) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.4);
+    backdrop-filter: blur(28px) saturate(1.4);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Segmentu slēdzis. */
+  .amx-seg {
+    display: flex;
+    gap: 3px;
+    padding: 3px !important;
+    border-radius: var(--amx-r) !important;
+    background: var(--amx-glass2) !important;
+    border: 1px solid var(--amx-edge);
+  }
+  .amx-seg > button {
+    min-height: 40px;
+    border-radius: 11px;
+    font-size: 14px;
+    color: var(--amx-mut);
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+  }
+  .amx-seg > button[aria-selected="true"] {
+    background: var(--amx-glass) !important;
+    color: var(--amx-tx) !important;
+    font-weight: 600;
+    border-color: var(--amx-edge);
+    box-shadow: var(--amx-sh);
+  }
+
+  /* Lauki: 16 px (iOS nepietuvina), ≥50 px. */
+  .amx-fld {
+    min-height: 50px;
+    padding: 0 14px !important;
+    font-size: 16px !important;
+    color: var(--amx-tx) !important;
+    border-radius: var(--amx-r) !important;
+    background: var(--amx-glass) !important;
+    border: 1px solid var(--amx-edge) !important;
+  }
+  .amx-fld--ta {
+    padding: 13px 14px !important;
+    min-height: 180px;
+    line-height: 1.5;
+  }
+  .amx-fld:focus {
+    outline: 2px solid var(--amx-acc);
+    outline-offset: 1px;
+  }
+
+  .amx-mut {
+    color: var(--amx-mut) !important;
+  }
+  .amx-tx {
+    color: var(--amx-tx) !important;
+  }
+}
+
+@keyframes amx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amx-sti--running svg {
+    animation: none;
+  }
+}

@@ -25,12 +25,14 @@ import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@
 import { headers } from "next/headers";
 import { readDealerDataJobs } from "@/lib/dealer-data-job-store";
 import {
+  dealerDataJobHistoryReady,
   dealerDataJobReadyAt,
   dealerDataListAlertLabel,
   isDealerDataAutoFetchOrder,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
-import { DEALER_NOT_SENT_ALERT_MS, dealerNotSentAlert } from "@/lib/order-client-marks";
+import { dealerNotSentAlert, type OrderClientMarks } from "@/lib/order-client-marks";
+import { adminIngestFromDealerJob, adminIngestFromVinScan } from "@/lib/admin-mobile-ingest";
 import { readOrderClientMarks } from "@/lib/order-client-marks-store";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
@@ -168,25 +170,46 @@ export default async function AdminOrdersPage({
     dealerIdsForAlerts.length > 0
       ? await readDealerDataJobs(dealerIdsForAlerts).catch(() => new Map<string, never>())
       : new Map<string, never>();
-  // «Nav nosūtīts»: dati gatavi > 2 h, klientam nekas nav sūtīts (atzīmes lasa tikai šiem pasūtījumiem).
-  const notSentNowMs = Date.now();
-  const notSentCandidates = [...dealerJobs.entries()].filter(([, job]) => {
-    if (dealerDataListAlertLabel(job)) return false;
-    const t = Date.parse(dealerDataJobReadyAt(job) ?? "");
-    return Number.isFinite(t) && notSentNowMs - t >= DEALER_NOT_SENT_ALERT_MS;
-  });
-  const dealerNotSent = new Set<string>();
+  // Klienta saziņas atzīmes: visiem darbiem, kur dati gatavi vai «datu nav» (telefonā «Nosūtīts / Nav nosūtīts»).
+  const dealerMarks = new Map<string, OrderClientMarks>();
   await Promise.all(
-    notSentCandidates.map(async ([id, job]) => {
-      const marks = await readOrderClientMarks(id).catch(() => null);
-      if (marks && dealerNotSentAlert({ readyAt: dealerDataJobReadyAt(job), marks, nowMs: notSentNowMs })) {
-        dealerNotSent.add(id);
-      }
-    }),
+    [...dealerJobs.entries()]
+      .filter(([, job]) => dealerDataJobHistoryReady(job) || job.status === "no_data")
+      .map(async ([id]) => {
+        const marks = await readOrderClientMarks(id).catch(() => null);
+        if (marks) dealerMarks.set(id, marks);
+      }),
   );
+  // «Nav nosūtīts»: dati gatavi > 2 h, klientam nekas nav sūtīts.
+  const notSentNowMs = Date.now();
+  const dealerNotSent = new Set<string>();
+  for (const [id, job] of dealerJobs) {
+    if (dealerDataListAlertLabel(job)) continue;
+    const marks = dealerMarks.get(id);
+    if (marks && dealerNotSentAlert({ readyAt: dealerDataJobReadyAt(job), marks, nowMs: notSentNowMs })) {
+      dealerNotSent.add(id);
+    }
+  }
+  const dealerIdSet = new Set(dealerIdsForAlerts);
   const ordersWithDealerAlert = ordersWithInvoice.map((o) => {
     const label = dealerDataListAlertLabel(dealerJobs.get(o.id) ?? null) ?? (dealerNotSent.has(o.id) ? "Nav nosūtīts" : null);
-    return label ? { ...o, dealerJobAlert: label } : o;
+    // Telefona saraksts: ielases indikācija (22.11 makets v3, variants 3).
+    const marks = dealerMarks.get(o.id);
+    const ingest = dealerIdSet.has(o.id)
+      ? adminIngestFromDealerJob(dealerJobs.get(o.id) ?? null, marks ? (marks.dealerSends ?? []).length > 0 : null)
+      : o.isB2bPack ||
+          o.checkoutLine === "provin_select" ||
+          o.checkoutLine === "consultation" ||
+          isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal })
+        ? null
+        : adminIngestFromVinScan(draftSummaries.get(o.id)?.vinScan ?? null, {
+            complete: Boolean(o.auditComplete) || adminOrderFullyReversed(o),
+          });
+    return {
+      ...o,
+      ...(label ? { dealerJobAlert: label } : {}),
+      ...(ingest ? { ingest } : {}),
+    };
   });
   const ordersWithUpsell = ordersWithDealerAlert.map((o) => {
     const overlay = upsellListOverlay(upsellOffers.get(o.id) ?? []);

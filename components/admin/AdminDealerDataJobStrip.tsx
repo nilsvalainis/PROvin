@@ -2,23 +2,13 @@
 
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
-import { useCallback, useEffect, useState } from "react";
-import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import {
-  DEALER_REFUND_EMAIL_CHOICE_PROMPT,
-  dealerRefundResultNotice,
-  planDealerRefund,
-  shouldOpenDealerRefundEmailSheet,
-  shouldShowDealerRefundButton,
-} from "@/lib/admin-dealer-data-refund";
-import {
-  DEALER_DATA_RETRY_NO_RECHARGE_HINT,
   dealerDataRetryButtonLabel,
   describeDealerDataJob,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
-import type { DealerSendSituation } from "@/lib/dealer-send-message";
-import { dealerSendStatusLine, lastDealerSend, type OrderClientMarks } from "@/lib/order-client-marks";
+import { dealerSendStatusLine, lastDealerSend } from "@/lib/order-client-marks";
+import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDataJobControls } from "@/components/admin/useDealerDataJobControls";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
@@ -81,11 +71,6 @@ function formatRefund(job: DealerDataJob): string {
   return `Atmaksāts ${eur} € · ${formatRigaIsoShort(job.refund.at)}`;
 }
 
-function refundCentsOf(job: DealerDataJob | null): number | null {
-  if (!job?.refund) return null;
-  if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) return null;
-  return job.refund.amountCents;
-}
 
 export function AdminDealerDataJobStrip({
   sessionId,
@@ -106,147 +91,28 @@ export function AdminDealerDataJobStrip({
   reportLang = null,
   dealerSend = null,
 }: Props) {
-  const [job, setJob] = useState<DealerDataJob | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState<null | "run" | "refund">(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<DealerSendSituation | null>(null);
-  const [marks, setMarks] = useState<OrderClientMarks | null>(null);
+  const {
+    job,
+    loaded,
+    busy,
+    notice,
+    setNotice,
+    dialog,
+    setDialog,
+    marks,
+    setMarks,
+    rerun,
+    refund,
+    refunded,
+    showRefund,
+    defaultSituation,
+    b2bRefund,
+    vin,
+  } = useDealerDataJobControls({ sessionId, orderVin, editable, canRefund, walletRefund });
 
-  const load = useCallback(async () => {
-    if (!sessionId) return;
-    try {
-      const res = await fetch(`/api/admin/dealer-data?sessionId=${encodeURIComponent(sessionId)}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-      const body = (await res.json().catch(() => ({}))) as { job?: DealerDataJob | null };
-      setJob(body.job ?? null);
-    } catch {
-      /* statusa josla nav kritiska operatora darbam */
-    } finally {
-      setLoaded(true);
-    }
-  }, [sessionId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    void fetch(`/api/admin/order-client-marks?sessionId=${encodeURIComponent(sessionId)}`, {
-      credentials: "include",
-      cache: "no-store",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { marks?: OrderClientMarks } | null) => setMarks(d?.marks ?? null))
-      .catch(() => undefined);
-  }, [sessionId]);
-
-  useEffect(() => {
-    if (job?.status !== "pending" && job?.status !== "running") return;
-    // Tikai redzamā cilnē (telefonā fonā netērē tīklu).
-    const t = setInterval(() => {
-      if (document.visibilityState === "visible") void load();
-    }, 10_000);
-    return () => clearInterval(t);
-  }, [job?.status, load]);
-
-  const vin = job?.vin || orderVin;
-
-  const resolvedInitialLang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(
-    (reportLang ?? "").trim().toLowerCase(),
-  )
-    ? ((reportLang ?? "").trim().toLowerCase() as ClientReportLang)
-    : "lv";
-
-  const rerun = async (force: boolean) => {
-    if (!editable || busy) return;
-    if (force && !window.confirm(DEALER_DATA_RETRY_NO_RECHARGE_HINT)) {
-      return;
-    }
-    setBusy("run");
-    setNotice(null);
-    try {
-      const res = await fetch("/api/admin/dealer-data", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, vin: orderVin, force }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        job?: DealerDataJob | null;
-        reason?: string;
-      };
-      setJob(body.job ?? null);
-      setNotice(body.reason ?? null);
-    } catch {
-      setNotice("Neizdevās sazināties ar serveri.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const refund = async () => {
-    if (!editable || busy || !canRefund) return;
-    const plan = planDealerRefund({ sessionId, walletRefund, job });
-    if (!window.confirm(plan.confirmMessage)) {
-      return;
-    }
-    // C2: viens e-pasts - operators izvēlas, vai atmaksa iet ar e-pastu.
-    const requestBody =
-      plan.kind === "stripe"
-        ? { ...plan.requestBody, notifyEmail: window.confirm(DEALER_REFUND_EMAIL_CHOICE_PROMPT) }
-        : plan.requestBody;
-    setBusy("refund");
-    setNotice(null);
-    try {
-      const res = await fetch("/api/admin/dealer-data/refund", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
-        emailSent?: boolean;
-        emailError?: string;
-        job?: DealerDataJob | null;
-      };
-      if (body.job) setJob(body.job);
-      const ok = Boolean(body.ok);
-      setNotice(
-        dealerRefundResultNotice({
-          kind: plan.kind,
-          ok,
-          emailSent: body.emailSent,
-          emailError: body.emailError,
-          error: body.error,
-          emailSkipped: requestBody.notifyEmail === false && plan.kind === "stripe",
-        }),
-      );
-      if (
-        requestBody.notifyEmail !== false &&
-        shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })
-      ) {
-        setDialog("no_data");
-      }
-    } catch {
-      setNotice("Neizdevās sazināties ar serveri.");
-    } finally {
-      setBusy(null);
-    }
-  };
+  const resolvedInitialLang = resolveDealerPdfLang(reportLang);
 
   if (!loaded) return null;
-
-  const refunded = Boolean(job?.refund);
-  const showRefund = shouldShowDealerRefundButton({ canRefund, job });
-  const defaultSituation: DealerSendSituation =
-    job?.status === "no_data" ? "no_data" : refunded ? "cancelled" : "ready";
-  const b2bRefund = walletRefund || sessionId.startsWith("manual_order_");
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
