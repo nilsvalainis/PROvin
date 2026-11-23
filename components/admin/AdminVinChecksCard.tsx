@@ -86,7 +86,7 @@ export function AdminVinChecksCard({ last30, today, month }: Props) {
         {n(last30.cta.cta_audit)} klikšķi uz &quot;Pasūtīt auditu&quot; no {n(okAll)} sekmīgām pārbaudēm. Šodien {n(today.checks)} pārbaudes.
       </p>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" data-amx-kpis>
         <Kpi label="VIN sekmīgi" value={n(vin.ok)} hint={`no ${n(vinAll)}`} />
         <Kpi label="VIN kļūdaini" value={n(vin.invalid_length + vin.invalid_chars)} hint={`${n(vin.invalid_length)} garums, ${n(vin.invalid_chars)} burti`} />
         <Kpi label="Numurzīmes sekmīgi" value={n(plate.ok)} hint={`no ${n(plateAll)}`} />

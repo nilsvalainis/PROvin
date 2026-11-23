@@ -84,7 +84,7 @@ export function AdminB2bPartnerCreateForm() {
           Aizvērt
         </button>
       </div>
-      <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]">
+      <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]" data-amx-hint>
         Paroli paziņo dīlerim pats. Ielūguma e-pasts šajā versijā netiek sūtīts.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

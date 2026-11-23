@@ -291,7 +291,9 @@ export function AdminCostsView({
           <p className="admin-costs-ink mt-1 text-[2.1rem] font-semibold leading-none tracking-tight tabular-nums">
             {formatAdminCostUsd(dashboard.totalUsd)}
           </p>
-          <p className="admin-costs-muted mt-2 text-[11px] leading-4">{dashboard.footnote}</p>
+          <p className="admin-costs-muted mt-2 text-[11px] leading-4" data-amx-hint>
+            {dashboard.footnote}
+          </p>
         </div>
 
         <div className="admin-costs-track mt-4 flex h-2 overflow-hidden rounded-full" aria-hidden>
@@ -301,7 +303,8 @@ export function AdminCostsView({
               <div key={g.id} className="h-full" style={{ width: `${Math.max(g.percent, 0)}%`, background: costGroupDotVar(g.id) }} />
             ))}
         </div>
-        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+        {/* Telefonā (PRO) leģendu nerāda - to pašu rāda kategoriju saraksts zemāk. */}
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1" data-amx-hint>
           {dashboard.groups.map((g) => (
             <li key={g.id} className="admin-costs-soft flex items-center gap-1.5 text-[12px]">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: costGroupDotVar(g.id) }} />
@@ -318,7 +321,7 @@ export function AdminCostsView({
         </p>
       ) : null}
 
-      <div className="mt-3 flex flex-col gap-3">
+      <div className="mt-3 flex flex-col gap-3" data-amx-groups>
         {dashboard.groups.map((group) => (
           <GroupCard
             key={group.id}

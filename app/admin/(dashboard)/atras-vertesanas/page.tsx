@@ -98,7 +98,7 @@ export default async function AdminListingPeeksPage({
     : undefined;
 
   return (
-    <div className="w-full max-w-none pb-[var(--admin-tabbar-h,5.5rem)] md:pb-0">
+    <div className="amx amx-pg amx-pg--atrie w-full max-w-none pb-[var(--admin-tabbar-h,5.5rem)] md:pb-0">
       <AdminDashboardHeaderWithMenu mobileTitle="Ātrie vērtējumi" mobileSubtitle={convLine}>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">Lead</p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
@@ -145,7 +145,7 @@ export default async function AdminListingPeeksPage({
           {q ? "Nekas netika atrasts." : "Šeit nav ierakstu. Jauni ātrie vērtējumi parādīsies šeit."}
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white max-md:mx-4 max-md:space-y-2.5 max-md:divide-y-0 max-md:border-0 max-md:bg-transparent max-md:shadow-none">
+        <ul data-amx-list className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white max-md:mx-4 max-md:space-y-2.5 max-md:divide-y-0 max-md:border-0 max-md:bg-transparent max-md:shadow-none">
           {shown.map((e) => {
             const doc = docs.get(e.id) ?? null;
             const listingUrl = canonicalizeListingUrl(e.listingUrl);

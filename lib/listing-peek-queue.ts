@@ -24,6 +24,20 @@ export function countOpenListingPeeks(
   return n;
 }
 
+/** Vecākā neatbildētā pieteikuma laiks (ISO) vai null. */
+export function oldestOpenListingPeekAt(
+  entries: ReadonlyArray<{ status: ListingPeekQueueStatus | string; createdAt?: string }>,
+): string | null {
+  let best: { ms: number; iso: string } | null = null;
+  for (const entry of entries) {
+    if (!isOpenListingPeekWork(entry) || !entry.createdAt) continue;
+    const ms = Date.parse(entry.createdAt);
+    if (!Number.isFinite(ms)) continue;
+    if (!best || ms < best.ms) best = { ms, iso: entry.createdAt };
+  }
+  return best?.iso ?? null;
+}
+
 /** `LISTING_PEEK_QUEUE_LIMIT` env; default 10. Invalid / missing → default. */
 export function getListingPeekQueueLimit(
   envValue: string | undefined = process.env.LISTING_PEEK_QUEUE_LIMIT,

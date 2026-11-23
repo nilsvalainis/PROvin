@@ -1,0 +1,144 @@
+/*
+ * PRO admin telefonā - 3. posms, pārējās lapas 2. grupa (22.11 makets v2 sadaļa 5, palete 2).
+ * Kopīgais `.amx-pg` pamats - `pages-glass.css`. Tikai <768 px - datorā nekas nemainās.
+ */
+
+@media (max-width: 767px) {
+  /* Saraksta rindas «Atvērt» / «Rediģēt» -> bulta (tā pati saite, rinda paliek pieskarama). */
+  .amx-pg [data-amx-open] {
+    font-size: 0 !important;
+    color: var(--amx-soft) !important;
+  }
+  .amx-pg [data-amx-open]::after {
+    content: "›";
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  /* Statistika: skaitļi vienā rindā (4), bez pelēkām kastītēm. */
+  .amx-pg--statistika [data-amx-kpis] {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    overflow: hidden;
+    border-radius: var(--amx-r);
+    border: 1px solid var(--amx-edge);
+    background: var(--amx-glass2);
+  }
+  .amx-pg--statistika [data-amx-kpis] > div {
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 10px 6px !important;
+    text-align: center;
+  }
+  .amx-pg--statistika [data-amx-kpis] > div p:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10.5px !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+
+  /* Partneri: saites - cilnes. */
+  .amx-pg--partneri [data-amx-tabs] {
+    gap: 3px;
+    padding: 3px;
+  }
+  .amx-pg--partneri [data-amx-tabs] > * {
+    display: flex;
+    min-height: 38px;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 11px;
+    color: var(--amx-mut) !important;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none !important;
+    white-space: nowrap;
+  }
+  .amx-pg--partneri [data-amx-tabs] > [aria-current="page"] {
+    border: 1px solid var(--amx-edge);
+    background: var(--amx-glass);
+    color: var(--amx-tx) !important;
+    font-weight: 600;
+    box-shadow: var(--amx-sh);
+  }
+  .amx-pg--partneri [data-amx-tabs] em {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--amx-red);
+    color: #fff;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+  /* Cenas: nosaukums + lauks vienā rindā. */
+  .amx-pg--partneri [data-amx-price-row] {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+  }
+  .amx-pg--partneri [data-amx-price-row] > span:first-child {
+    min-width: 0;
+    flex: 1;
+    margin: 0 !important;
+    color: var(--amx-tx) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+  .amx-pg--partneri [data-amx-price-row] > input {
+    width: 132px !important;
+    flex: none;
+    margin-top: 0 !important;
+    text-align: right;
+  }
+
+  /* Tekstu šabloni: cilnes vienā rindā (ritināmas); «mainīts» - pelēks teksts. */
+  .amx-pg--teksti [data-amx-chips] {
+    flex-wrap: nowrap !important;
+    margin-left: -16px;
+    margin-right: -16px;
+    overflow-x: auto;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+  .amx-pg--teksti [data-amx-chips]::-webkit-scrollbar {
+    display: none;
+  }
+  .amx-pg--teksti [data-amx-chips] > button {
+    min-height: 40px;
+    flex: none;
+    border: 1px solid var(--amx-edge) !important;
+    background: var(--amx-glass2) !important;
+    color: var(--amx-mut) !important;
+    font-size: 14px !important;
+    white-space: nowrap;
+  }
+  .amx-pg--teksti [data-amx-chips] > button[aria-pressed="true"] {
+    background: var(--amx-glass) !important;
+    color: var(--amx-tx) !important;
+    font-weight: 600 !important;
+    box-shadow: var(--amx-sh);
+  }
+  .amx-pg--teksti [data-amx-chips] > button span {
+    color: var(--amx-mut) !important;
+  }
+  .amx-pg--teksti [data-amx-tag] {
+    padding: 0 !important;
+    background: transparent !important;
+    color: var(--amx-mut) !important;
+    font-weight: 400 !important;
+  }
+  .amx-pg--teksti button[data-amx-keep][class~="bg-[#f2f2f7]"] {
+    background: var(--amx-glass2) !important;
+  }
+}

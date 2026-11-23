@@ -85,12 +85,31 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
   const others = counts ? otherObservations(counts) : { vins: 0, observations: 0 };
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4">
-      <p className="text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+      <p className="text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
         Izsoļu portālu arhīvs ir mūsu VIN atmiņa: datums, nobraukums, avots, modelis un pirmā reģistrācija. Autobid un Openlane nāk masveidā.
         TheCarApi ieraksti ar laukiem un bildēm nāk no admin pogas un VIN SCAN. Personas datus šeit neliek.
       </p>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Kopsavilkums">
+      {/* Telefonā 4 skaitļi vienā rindā (22.11 makets v2), nevis 4 pilna platuma kartītes. */}
+      <div className="amx-card amx-pg-stats hidden max-md:grid" data-amx-stats aria-label="Kopsavilkums">
+        <div>
+          <b>{counts ? counts.vins.toLocaleString("lv-LV") : "-"}</b>
+          <span>VIN</span>
+        </div>
+        <div>
+          <b>{counts ? counts.observations.toLocaleString("lv-LV") : "-"}</b>
+          <span>Novērojumi</span>
+        </div>
+        <div>
+          <b>{counts ? counts.bySource.autobid.observations.toLocaleString("lv-LV") : "-"}</b>
+          <span>Autobid</span>
+        </div>
+        <div>
+          <b>{counts ? counts.bySource.openline.observations.toLocaleString("lv-LV") : "-"}</b>
+          <span>Openlane</span>
+        </div>
+      </div>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 max-md:hidden" aria-label="Kopsavilkums">
         <Stat label="VIN" value={counts ? counts.vins.toLocaleString("lv-LV") : "-"} hint={counts ? `${counts.shards} šķembas` : "Skaitītāji vēl nav"} />
         <Stat label="Novērojumi" value={counts ? counts.observations.toLocaleString("lv-LV") : "-"} hint={counts ? `Skaitīts ${lvDate(counts.countedAt)}` : "Gaida pirmo nolasīšanu"} />
         <Stat
@@ -104,7 +123,7 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
           hint={counts ? `${counts.bySource.openline.vins.toLocaleString("lv-LV")} VIN` : "Avots openline"}
         />
       </section>
-      <p className="text-[12px] text-[var(--color-provin-muted)]">
+      <p className="text-[12px] text-[var(--color-provin-muted)]" data-amx-hint>
         Citi avoti (pasūtījumi, eCarsTrade, loģistika, ātrais vērtējums): {others.observations.toLocaleString("lv-LV")} novērojumi, {others.vins.toLocaleString("lv-LV")} VIN.
         Nakts ielase no jau ielādētajiem IRISS sludinājumiem paliek atsevišķi.
       </p>
@@ -112,10 +131,25 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
       <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Jaunākie VIN</h2>
-          <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">Līdz 40 pēdējiem ierakstiem no šķembām. Atver rindu, lai redzētu visu vēsturi.</p>
+          <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]" data-amx-hint>Līdz 40 pēdējiem ierakstiem no šķembām. Atver rindu, lai redzētu visu vēsturi.</p>
         </div>
         {recent.length ? (
-          <div className="overflow-x-auto">
+          <>
+          {/* Telefonā - saraksta rindas: modelis, avots · datums · nobraukums; pieskāriens atver VIN vēsturi. */}
+          <ul className="hidden max-md:block" data-amx-recent>
+            {recent.map((row) => (
+              <li key={row.vin} className="border-t border-slate-100 first:border-t-0">
+                <a className="flex min-h-[54px] flex-col justify-center px-4 py-2.5" href={`/admin/izsolu-arhivs?vin=${encodeURIComponent(row.vin)}`}>
+                  <b className="truncate text-[15px] font-semibold">{row.model || row.vin}</b>
+                  <span className="truncate text-[13px] text-[var(--color-provin-muted)] tabular-nums">
+                    {[row.sources.map(sourceLabel).join(", "), lvDate(row.date), km(row.km)].filter((x) => x && x !== "-").join(" · ")}
+                  </span>
+                  {row.model ? <span className="truncate font-mono text-[12px] text-[var(--color-provin-muted)]">{row.vin}</span> : null}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="overflow-x-auto max-md:hidden">
             <table className="w-full min-w-[640px] text-left text-[13px]">
               <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-[var(--color-provin-muted)]">
                 <tr>
@@ -143,12 +177,13 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
               </tbody>
             </table>
           </div>
+          </>
         ) : (
           <p className="px-4 py-6 text-[13px] text-[var(--color-provin-muted)]">Arhīvā vēl nav VIN, ko pārlūkot. Meklēšana zemāk strādā arī tad.</p>
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
+      <section id="izsolu-meklesana" className="scroll-mt-4 rounded-xl border border-slate-200/80 bg-white px-4 py-3">
         <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Meklēt VIN</h2>
         <form className="mt-3 flex flex-wrap gap-2" action="/admin/izsolu-arhivs" method="get">
           <input

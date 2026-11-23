@@ -9,5 +9,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminTekstiPage() {
   await requireAdminPage();
-  return <AdminMessageTemplatesPage />;
+  // Telefonā stikla stils (22.11 makets v2); datorā nekas nemainās.
+  return (
+    <div className="amx amx-pg amx-pg--teksti">
+      <AdminMessageTemplatesPage />
+    </div>
+  );
 }
