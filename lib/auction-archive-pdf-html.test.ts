@@ -3,6 +3,7 @@ import {
   auctionArchiveBasicRows,
   auctionArchiveDamageSchemeHtml,
   auctionArchiveDescriptions,
+  auctionArchivePdfFilename,
   buildAuctionArchivePdfHtml,
   damageSlotLv,
   stripThecarapiPdfPrices,
@@ -64,6 +65,13 @@ describe("izsoļu arhīva PDF HTML", () => {
     expect(html).not.toContain("https://checkcar.vin/x");
     expect(html).not.toMatch(/TheCarApi/);
     expect(html).toContain('data-provin-fonts","ready"');
+    // PROVIN produktu ģimene kā «OFICIĀLĀ DĪLERA DATI» (Nils 23.11): vāks, sadaļas karte, kolofons, galvene.
+    expect(html).toContain('<h1 class="pdf-v1-doc-title">IZSOĻU ARHĪVS</h1>');
+    expect(html).toContain("pdf-dealer-cover__kicker");
+    expect(html).toContain("pdf-svc-summary__cell");
+    expect(html).toContain('class="pdf-doc-footer"');
+    expect(html).toContain("PROVIN.LV · IZSOĻU ARHĪVS · Audi A4 Avant 40 TDI · VIN WAUZZZF43PA018831");
+    expect(auctionArchivePdfFilename("wauzzzf43pa018831")).toBe("IZSOLU_ARHIVS_WAUZZZF43PA018831.pdf");
   });
 
   it("cenas pēc noklusējuma NErāda (Nils 23.11, lēmums 4): ne hronoloģijā, ne pie izsolēm", () => {

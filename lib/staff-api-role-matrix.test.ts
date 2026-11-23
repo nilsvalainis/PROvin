@@ -45,6 +45,7 @@ const ADMIN_ONLY_PREFIXES = [
   "/api/admin/client-links",
   "/api/admin/client-report-link",
   "/api/admin/auction-archive-offer",
+  "/api/admin/auction-archive-report",
   "/api/admin/vin-history",
 ];
 

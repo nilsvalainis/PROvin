@@ -23,6 +23,7 @@ import {
   type AuctionArchiveSummary,
 } from "@/lib/auction-archive-offer";
 import type { AppLocale } from "@/i18n/locales";
+import { parseAuctionArchiveReportDoc, type AuctionArchiveReportDoc } from "@/lib/auction-archive-report";
 
 /**
  * Izsoļu arhīva piedāvājumu krātuve (privāts Blob / lokāli disks):
@@ -61,6 +62,8 @@ const indexRel = (hash: string) => `${INDEX_DIR}/${hash}.json`;
 const photoRel = (sessionId: string, id: string) => `${DOC_DIR}/${sessionId}/photos/${id}.jpg`;
 const previewRel = (sessionId: string, n: number) => `${DOC_DIR}/${sessionId}/preview-${n}.jpg`;
 const pdfRel = (sessionId: string) => `${DOC_DIR}/${sessionId}/izsolu-arhivs.pdf`;
+/** Atsevišķā pakalpojuma stāvoklis (ģenerēšana, sūtījumi) - neatkarīgs no piedāvājuma dokumenta. */
+const reportRel = (sessionId: string) => `${DOC_DIR}/${sessionId}/report.json`;
 
 function localDir(): string | null {
   const dir = getOrderDraftStorageDir();
@@ -449,4 +452,31 @@ export async function deleteAuctionArchiveOffer(sessionId: string): Promise<bool
   }
   await removeRel(rels);
   return true;
+}
+
+/* ---------- Atsevišķais pakalpojums «Izsoļu arhīvs» ---------- */
+
+export async function readAuctionArchiveReport(sessionId: string): Promise<AuctionArchiveReportDoc> {
+  const empty: AuctionArchiveReportDoc = { sessionId, sends: [] };
+  if (!isSafeOrderDraftSessionId(sessionId)) return empty;
+  const text = await readText(reportRel(sessionId));
+  if (!text) return empty;
+  try {
+    return parseAuctionArchiveReportDoc(JSON.parse(text), sessionId);
+  } catch {
+    return empty;
+  }
+}
+
+/** Tikai admins raksta (ģenerē / sūta) - pietiek ar procesa slēdzeni. */
+export async function updateAuctionArchiveReport(
+  sessionId: string,
+  fn: (cur: AuctionArchiveReportDoc) => AuctionArchiveReportDoc,
+): Promise<AuctionArchiveReportDoc> {
+  if (!isSafeOrderDraftSessionId(sessionId)) throw new Error("invalid_session");
+  return withLock(`report:${sessionId}`, async () => {
+    const next = fn(await readAuctionArchiveReport(sessionId));
+    if (!(await writeBody(reportRel(sessionId), JSON.stringify(next), "application/json"))) throw new Error("store_failed");
+    return next;
+  });
 }

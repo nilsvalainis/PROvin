@@ -68,6 +68,7 @@ const nextConfig: NextConfig = {
     "/api/admin/dealer-check/deliver": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     // Izsoļu arhīvs dīlera datu vietā: «Izsoļu arhīvs» PDF (tas pats Chromium renderis).
     "/api/admin/auction-archive-offer": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
+    "/api/admin/auction-archive-report": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",

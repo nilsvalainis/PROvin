@@ -1,5 +1,6 @@
 import { MINI_TO_AUDITS_APPROVED_TEXT } from "@/lib/email/mini-to-audits-approved-text";
 import { DEALER_SEND_TEMPLATE_DEFS } from "@/lib/messages/dealer-send-template-defs";
+import { AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS } from "@/lib/messages/auction-archive-send-template-defs";
 import { IRISS_PDF_TEMPLATE_DEFS } from "@/lib/messages/iriss-pdf-template-defs";
 import type { MessageTemplateDef } from "@/lib/messages/types";
 import {
@@ -487,6 +488,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     ],
   },
   ...DEALER_SEND_TEMPLATE_DEFS,
+  ...AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS,
   ...partnerVerifyDefs(),
   ...partnerResetDefs(),
   {

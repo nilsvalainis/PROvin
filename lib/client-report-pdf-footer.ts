@@ -31,9 +31,11 @@ export function buildPdfDocFooterHtml(args: {
   productBrand?: ProvinAuditPdfProductBrand | null;
   /** false = B2B: PROVIN bez .LV. Noklusējums saglabā mazumtirdzniecības PROVIN.LV. */
   includeLvSuffix?: boolean;
+  /** Produkts, kam nav atskaites zīmola (piem. «IZSOĻU ARHĪVS»). */
+  productLabel?: string;
 }): string {
   const b = getClientReportLegalFooterBlocks();
-  const productLabel = formatPdfDocFooterProductLabel(
+  const productLabel = args.productLabel?.trim() || formatPdfDocFooterProductLabel(
     args.productBrand ?? resolveProvinAuditPdfProductBrand({ amountTotalCents: args.amountTotalCents }),
   );
   const meta = buildPdfDocFooterMetaLine({
