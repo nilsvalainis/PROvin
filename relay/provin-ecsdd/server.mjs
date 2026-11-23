@@ -22,6 +22,8 @@
  *   ECSDD_SMARTID_TIMEOUT_SEC    noklusējums 120
  *   ECSDD_CHROME_CHANNEL         noklusējums chrome (ja nav, Playwright Chromium)
  *   ECSDD_ACCOUNT                konts lapā "Izvēlies kontu": person (noklusējums) vai nosaukuma fragments
+ *   ECSDD_APP_UID                maksas izziņai: lietotnes UA `uid=` (noklusējums - stabils pseido android_id)
+ *   ECSDD_PAID_APP_REGISTER      0 = maksas izziņai neveikt lietotnes starta GET ?AppVers=..&AppOS=Android (noklusējums 1)
  *   DISPLAY                      Xvfb (systemd): :96
  *
  * API (zem /ecsdd, prefiksu Caddy nenoņem):
@@ -61,6 +63,8 @@ const SMARTID_TIMEOUT_MS = Math.max(30, Number(process.env.ECSDD_SMARTID_TIMEOUT
 const CHROME_CHANNEL = (process.env.ECSDD_CHROME_CHANNEL ?? "chrome").trim();
 // Konts lapā "Izvēlies kontu": "person" (privātpersona, noklusējums) vai nosaukuma fragments (piem. "ĪRISS").
 const ACCOUNT = (process.env.ECSDD_ACCOUNT ?? "").trim() || "person";
+const APP_UID = (process.env.ECSDD_APP_UID ?? "").trim().replace(/[^\w-]/g, "").slice(0, 64);
+const APP_REGISTER = (process.env.ECSDD_PAID_APP_REGISTER ?? "1").trim() !== "0";
 const CFG = defaultSessionConfig(process.env);
 const SECRETS = [PERSONAL_CODE, TOKEN];
 const isWorkHours = (d) => isWorkHoursRiga(d, CFG.workFrom, CFG.workTo);
@@ -211,6 +215,8 @@ const browser = createEcsddBrowser({
   log,
   debugDir: DEBUG_DIR,
   smartIdTimeoutMs: SMARTID_TIMEOUT_MS,
+  appUid: APP_UID,
+  appRegister: APP_REGISTER,
 });
 const core = createRelayCore({
   queue: createJobQueue({ maxPerHour: MAX_PER_HOUR, stateFile: path.join(DATA_DIR, "jobs.json"), log }),
