@@ -27,6 +27,7 @@ import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isBusinessLinkPath } from "./lib/business-link";
 import { isClientLinkPath } from "./lib/client-link";
+import { AUCTION_ARCHIVE_HEADERS, auctionArchiveRewritePath } from "./lib/auction-archive-offer";
 import { CLIENT_REPORT_LINK_HEADERS, clientReportLinkRewritePath } from "./lib/client-report-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissCarSharePath } from "./lib/iriss-car-share";
@@ -287,6 +288,22 @@ export default async function middleware(request: NextRequest) {
     dest.search = "";
     const res = NextResponse.rewrite(dest);
     for (const [k, v] of Object.entries(CLIENT_REPORT_LINK_HEADERS)) res.headers.set(k, v);
+    return res;
+  }
+
+  // Izsoļu arhīva izvēle `/{locale}/izvele/<token>` → savs apvalks. `?mainit=1&r=` paliek (lapas stāvoklis).
+  const archiveChoicePath = auctionArchiveRewritePath(pathname);
+  if (archiveChoicePath) {
+    const dest = request.nextUrl.clone();
+    dest.pathname = archiveChoicePath;
+    const keep = new URLSearchParams();
+    for (const k of ["mainit", "r"]) {
+      const v = request.nextUrl.searchParams.get(k);
+      if (v && /^[a-z0-9]{1,8}$/.test(v)) keep.set(k, v);
+    }
+    dest.search = keep.toString() ? `?${keep.toString()}` : "";
+    const res = NextResponse.rewrite(dest);
+    for (const [k, v] of Object.entries(AUCTION_ARCHIVE_HEADERS)) res.headers.set(k, v);
     return res;
   }
 

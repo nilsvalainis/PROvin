@@ -197,6 +197,10 @@
       "schedule": "15 5 * * *"
     },
     {
+      "path": "/api/cron/auction-archive-remind",
+      "schedule": "20 6 * * *"
+    },
+    {
       "path": "/api/cron/vin-model-learn",
       "schedule": "10 4 * * 0"
     }
