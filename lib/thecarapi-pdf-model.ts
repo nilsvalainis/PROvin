@@ -1142,7 +1142,10 @@ const BASIC_MEANINGS: Meaning[] = [
 const PRICE_MEANINGS: Meaning[] = [
   { label: "Sākuma cena", keys: ["start_price", "start", "startPrice", "starting_price"] },
   { label: "Pēdējā cena", keys: ["current_price", "current_bid", "highest_bid", "currentPrice", "currentBid"] },
-  { label: "Noslēguma cena", keys: ["final_price", "current_final", "public_price_eur", "sold_price", "sale_price", "finalPrice"] },
+  // `final_price` = uzvarējušais solījums; `current_final`/`public_price_eur` - portāla publiskā cena ar papildu
+  // izmaksām (Openlane: mainās neatkarīgi no solījumiem), sk. `thecarapi-sale-price.ts`.
+  { label: "Noslēguma cena", keys: ["final_price", "sold_price", "sale_price", "finalPrice"] },
+  { label: "Publiskā cena", keys: ["current_final", "public_price_eur"] },
   { label: "Pirkt tūlīt cena", keys: ["buy_now_price", "buyNowPrice"] },
   { label: "Mazumtirdzniecības cena", keys: ["consumer_price", "consumerPrice", "retail_price"] },
   { label: "Īpašā cena", keys: ["special_price", "specialPrice"] },
@@ -1289,9 +1292,12 @@ function extractPrices(ctx: Ctx, root: Record<string, unknown>): ThecarapiPdfKv[
   };
   const v1 = v1PriceRows(ctx, root);
   const rows = [...v1, ...meaningRows(ctx, PRICE_MEANINGS, fmt).filter((r) => !v1.some((v) => v.label === r.label && v.value === r.value))];
-  // Pēdējā cena = noslēguma cena -> viena rinda.
-  const finals = new Set(rows.filter((r) => r.label.startsWith("Noslēguma")).map((r) => r.value));
-  const out = rows.filter((r) => !(r.label.startsWith("Pēdējā cena") && finals.has(r.value)));
+  // Bez `final_price` publiskā cena ir vienīgā noslēguma cena (kā līdz šim); ar to - atsevišķa «Publiskā cena».
+  const hasFinal = rows.some((r) => r.label.startsWith("Noslēguma"));
+  const relabeled = hasFinal ? rows : rows.map((r) => (r.label.startsWith("Publiskā cena") ? { ...r, label: r.label.replace("Publiskā cena", "Noslēguma cena") } : r));
+  // Pēdējā cena / publiskā cena = noslēguma cena -> viena rinda.
+  const finals = new Set(relabeled.filter((r) => r.label.startsWith("Noslēguma")).map((r) => r.value));
+  const out = relabeled.filter((r) => !((r.label.startsWith("Pēdējā cena") || r.label.startsWith("Publiskā cena")) && finals.has(r.value)));
   for (const node of findNodes(root, (key, value) => /^(marketpricesbycountry|marketprices)$/.test(normKey(key)) && asRecord(value) != null)) {
     for (const [code, v] of Object.entries(node.value as Record<string, unknown>)) {
       const text = priceText(asRecord(v)?.value ?? v, ctx.currency);

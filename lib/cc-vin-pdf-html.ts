@@ -6,7 +6,9 @@
  * netiek drukātas - tās jau ir citās sadaļās vai nesniedz informāciju.
  */
 
-import { buildThecarapiRecordsPdfHtml } from "@/lib/thecarapi-pdf";
+import { buildAuctionArchiveSummary, type AuctionArchivePhoto } from "@/lib/auction-archive-offer";
+import { AUCTION_LOT_CARDS_CSS, auctionLotRecordKey, buildAuctionLotsHtml } from "@/lib/auction-lot-cards-html";
+import type { ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 import {
   CC_VIN_SUBTITLES,
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
@@ -96,7 +98,44 @@ function factLine(b: CcVinBlockState): string {
  * Sadaļas iekšpuse (bez virsraksta joslas un komentāra salas - tos pievieno izsaucējs,
  * lai noformējums sakristu ar pārējiem avotiem).
  */
-export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): string {
+export type CcVinPdfAuctionOpts = {
+  /** Izsoļu bildes (jau atlasītas bez dublikātiem) - galerija tajā pašā kartīšu dizainā kā «Izsoļu arhīvs». */
+  photos?: readonly ThecarapiStoredPhoto[];
+  dataUrls?: ReadonlyMap<string, string>;
+  vin?: string;
+};
+
+/**
+ * Izsoļu ieraksti klienta PDF - tas pats kopīgais kartīšu renderētājs kā atsevišķajam «Izsoļu arhīva» PDF
+ * (Nils 23.11). Cenas AUDITS PDF rāda (kā līdz šim); aprīkojumu nerāda (Nils 19.11). Bez tehnisko lauku izmetiena.
+ */
+export function buildCcVinAuctionCardsHtml(b: CcVinBlockState, opts: CcVinPdfAuctionOpts = {}): string {
+  const records = (b.thecarapiRecords ?? []).filter((r) => r.fields.length > 0 || r.photos.length > 0);
+  if (records.length === 0) return "";
+  const summary = buildAuctionArchiveSummary({ vin: opts.vin ?? "", title: "", block: { thecarapiRecords: records, photoGroups: [] } });
+  // Bilde → izsole pēc id, saites vai satura (bilžu grupā tā pati bilde var būt ar citu id).
+  const lotByKey = new Map<string, { key: string; date: string }>();
+  const keysOf = (p: { id?: string; sourceUrl?: string; contentHash?: string }): string[] =>
+    [p.id ? `id:${p.id}` : "", p.sourceUrl?.trim() ? `url:${p.sourceUrl.trim()}` : "", p.contentHash?.trim() ? `hash:${p.contentHash.trim().toLowerCase()}` : ""].filter(Boolean);
+  for (const r of records) {
+    for (const p of r.photos) for (const k of keysOf(p)) if (!lotByKey.has(k)) lotByKey.set(k, { key: auctionLotRecordKey(r), date: p.date || r.photoDate || r.date });
+  }
+  const photos: AuctionArchivePhoto[] = [];
+  for (const p of opts.photos ?? []) {
+    const lot = keysOf(p).map((k) => lotByKey.get(k)).find(Boolean);
+    if (lot) photos.push({ id: p.id, auctionKey: lot.key, date: p.date || lot.date, caption: "" });
+  }
+  const parts = buildAuctionLotsHtml({
+    summary,
+    records,
+    photos,
+    dataUrls: opts.dataUrls ?? new Map(),
+    showPrices: true,
+  });
+  return `<div class="aa-embed">${parts.timeline}${parts.findings}${parts.vehicle}${parts.lots.join("\n")}${parts.galleries}</div>`;
+}
+
+export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, auction: CcVinPdfAuctionOpts = {}): string {
   if (!b) return "";
   const parts: string[] = [];
 
@@ -155,14 +194,17 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
     );
   }
 
-  const thecarapiHtml = buildThecarapiRecordsPdfHtml(b.thecarapiRecords);
+  const thecarapiHtml = buildCcVinAuctionCardsHtml(b, auction);
   if (thecarapiHtml) parts.push(thecarapiHtml);
 
   return parts.join("\n");
 }
 
 /** Sadaļas CSS - mērogs un krāsas seko PDF dizaina marķieriem. */
-export const CC_VIN_PDF_CSS = `
+export const CC_VIN_PDF_CSS = AUCTION_LOT_CARDS_CSS + `
+      /* Izsoļu kartītes AUDITS sadaļā: tās pašas kā «Izsoļu arhīvs» PDF; atkāpe no iepriekšējā bloka. */
+      .aa-embed{margin:14px 0 0}
+      .aa-embed .aa-card:last-child{margin-bottom:0}
       .pdf-ccvin-flags{list-style:none;margin:0 0 1em;padding:0;display:block}
       .pdf-ccvin-flag{
         display:flex;align-items:baseline;gap:8px;padding:6px 0;

@@ -3,6 +3,7 @@
  * Tīra funkcija: bez tīkla, bez keša.
  */
 
+import { thecarapiSalePrice } from "@/lib/thecarapi-sale-price";
 import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 import {
   mergeThecarapiRaw,
@@ -164,14 +165,10 @@ export function thecarapiSiteLabel(site: string): string {
   return SITE_LABELS[slug] || text(site) || slug;
 }
 
+/** Noslēguma cena: `final_price` pirms publiskās cenas (sk. `thecarapi-sale-price.ts`). */
 function eurPrice(row: Record<string, unknown>): string {
-  const pub = asNumber(row.public_price_eur);
-  if (pub != null && pub > 0) return `${groupInt(pub)} EUR`;
-  for (const key of ["final_price", "current_price", "start_price"] as const) {
-    const n = asNumber(row[key]);
-    if (n != null && n > 0) return `${groupInt(n)} EUR`;
-  }
-  return "";
+  const n = thecarapiSalePrice((key) => row[key]).eur;
+  return n != null ? `${groupInt(n)} EUR` : "";
 }
 
 function mileageLabel(raw: unknown): string {

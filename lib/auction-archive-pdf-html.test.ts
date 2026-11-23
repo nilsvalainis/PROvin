@@ -311,7 +311,7 @@ describe("izsoļu arhīva PDF HTML (katalogs, PROVIN PDF valoda)", () => {
       [{ zone: "Aizmugure", part: "Buferis", type: "Skrāpējums", size: "20-50 mm", quantity: "1", repair: "", notes: "" }],
       [{ auctionKey: "openlane:1", zone: "right", note: "pēdas durvīs" }],
     );
-    expect(html).toContain('<p class="pdf-subhead">Bojājumi · 1 bojājums</p>');
+    expect(html).toContain('<p class="pdf-subhead">Bojājumi un defekti · 1 bojājums</p>');
     expect(html).toContain("Skrāpējums · 20-50 mm");
     expect(html).toContain("Redzams bildē (PROVIN atzīme) · pēdas durvīs");
     expect(html).toContain("<svg");
