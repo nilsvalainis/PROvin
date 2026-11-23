@@ -1,0 +1,571 @@
+<!DOCTYPE html><html><head>
+<title>E-CSDD pakalpojumi</title>
+<style>.profile-select nav,.mod-languages,.message-error,.mobile-search{display:none} .accordion section>input[name=panels]:not(:checked)~div{display:none} .tabs-group>section~section{display:none}</style></head>
+<body>
+	<header id="header" class="header-e-csdd">
+		<div class="header-container">
+			<div class="header-split-left">
+								<a href="https://e.csdd.lv/" tabindex="-1"></a>
+				<p>e-CSDD  </p>
+			</div>
+			<div class="header-split-right">
+            <div class="languageswitcherload js-language-switcher">
+                <a href="javascript:void(0);">LV</a>
+                <div class="mod-languages">
+                    <ul class="lang-block">
+                    <li dir="ltr">
+                        <form method="post" action="" style="display:inline;">
+                            <input type="hidden" name="set_lang" value="en">
+                            <button type="submit" style="background:none;border:none;padding:0;margin:0;color:inherit;cursor:pointer;">
+                                EN
+                            </button>
+                        </form>
+                    </li>
+                    <li dir="ltr">
+                        <form method="post" action="" style="display:inline;">
+                            <input type="hidden" name="set_lang" value="lv">
+                            <button type="submit" style="background:none;border:none;padding:0;margin:0;color:inherit;cursor:pointer;">
+                                LV
+                            </button>
+                        </form>
+                    </li>
+                    </ul>
+                </div>
+            </div><div class="profile-select js-profile-select">
+    <a href="javascript:;">
+        <p class="capitalize">JĀNIS</p>
+        <div class="profile-mark _mark-important">
+            <p>N</p>
+        </div>
+    </a>
+    <nav>
+        <header>
+            <h4 class="capitalize">JĀNIS BĒRZIŅŠ</h4>
+            <small>Privātpersona</small>
+        </header>
+        <ul>
+            <li><a href="/payment/">Maksājumi apstiprināšanai <span class="_indicator"></span></a></li>
+            <li><a href="/payhistory/">Maksājumu vēsture</a></li>
+                            <li><a href="/profile/">Profila labošana</a></li>
+                <li><a href="/?devices=1">Autorizētās ierīces</a></li>
+                        <li><a href="/atgd/">Atgādinājumi</a></li>
+            <li><a href="/pakpiet/">e-Iesniegums</a></li>
+            <li><a href="/pin/">Klientu atbalsts</a></li>
+        </ul>
+        <footer>
+            <a href="/./?userlist=true">
+            <span class="icon-accounts">
+            </span> Mainīt kontu</a>
+            <a href="/login/" id="logout"><span class="icon-exit">
+            </span> Iziet</a>
+        </footer>
+    </nav>
+</div>			</div>
+		</div>
+		<div class="mobile-search">
+			<div class="header-search">
+				<form class="form-input-group" id="mobile-search" action="/tadati/" method="post">
+					<label for="search-input">Reģistrācijas vai VIN numurs:</label>
+					<input id="search-input" name="rn" type="search" class="js-form-input-focus" maxlength="20">
+					<input class="button-header-search" type="submit">
+					<a class="header-search-icon js_mobile-search" href="javascript:;" tabindex="-1">
+					</a>
+				</form>
+			</div>
+		</div>
+	</header>
+	<div class="linePreloader" style="display: none;"></div>
+<div class="message-error" style="display: none;">
+    <div class="container">
+        <p id="syserror"></p>
+        <a href="javascript:;" class="message-close">
+            <span>Aizvērt</span>
+            <div>
+</div>
+            </a></div><a href="javascript:;" class="message-close">
+        </a>
+</div>
+<div id="darkbox"><div id="darkbox_prev"></div><div id="darkbox_next"></div><div id="darkbox-description"></div></div>
+<main id="tadati" class="site-container">
+<section id="top-bar">
+<div id="global-breadcrumb">
+	    <ol>
+        <li><a href="/" class="pathway">Sākums</a></li>
+        <li><a href="/?menu=2" class="pathway">Tehniskā apskate</a></li>        <li><a href="/tadati/" class="pathway">Tehniskās apskates dati</a></li>
+    </ol>
+</div>
+</section>
+<div class="tabs-wrapper">
+    <div class="tabs-group">
+        <input id="tab1" type="radio" name="tabs-1" checked="">
+        <label for="tab1"><i class="fa fa-info-circle"></i> <span>Informācija</span></label>
+        <input id="tab2" type="radio" name="tabs-1">
+        <label for="tab2" class=""><i class="fa fa-exclamation-triangle"></i> <span>Noteikumi</span></label>
+        <input id="tab3" type="radio" name="tabs-1" _disabled="">
+        <label for="tab3" class="_disabled"><i class="fa fa-file-text"></i> <span>Pakalpojuma apraksts</span></label>
+        <input id="tab4" type="radio" name="tabs-1">
+        <label for="tab4"><i class="fa fa-bullhorn"></i> <span>Jautājumiem/Atsauksmēm</span></label>
+        <section>
+            <h3>Latvijā reģistrēto transportlīdzekļu pēdējās tehniskās apskates rezultāti</h3>
+					<p class="graytxt">
+					</p>
+				<div class="accordion">
+					<section>
+						<input id="panel-1" type="radio" name="panels" checked="">
+						<label for="panel-1">Tehniskie dati
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div class="table-wrapper">
+							<table class="table-list" id="refer-table">
+		   <tbody><tr>
+			 <td>
+			 Pārbaudes veids:
+			 </td>
+			 <td class="translate">
+				Pamatpārbaude
+			 </td>
+			</tr>
+		<tr>
+			<td>
+			Reģistrācijas statuss:
+			</td>
+			<td class="translate">
+				Uzskaitē
+			</td>
+		</tr>
+		<tr>
+			<td>
+			Marka, modelis:
+			</td>
+			<td>
+				BMW X5
+			</td>
+		</tr>
+			<tr>
+				<td>
+				Reģistrācijas numurs:
+				</td>
+				<td>
+					AB1234
+				</td>
+			</tr>
+			<tr>
+				<td>
+				Pirmās reģistrācijas datums:
+				</td>
+				<td>
+					20.08.2004
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Emisiju standarts:
+				</td>
+				<td>
+					Euro 3
+				</td>
+			</tr>
+		   <tr>
+			 <td>
+			 Nākamās apskates datums:
+			 </td>
+			 <td>
+				12.02.2027
+			 </td>
+			</tr>
+			<tr>
+				<td>
+				Odometra rādījums:
+				</td>
+				<td>
+							317679
+						</td>
+			</tr>
+		   <tr>
+			 <td>
+			 Novērtējums:
+			 </td>
+			 <td class="translate">
+				1 - Ar pieļaujamiem defektiem
+			 </td>
+			</tr>
+		   <tr>
+			 <td>
+			 CO2:
+			 </td>
+			 <td>
+				250
+			 </td>
+			</tr>
+				   <tr>
+					 <td>
+					 Dūmainības koeficients (m<sup>-1</sup>):
+					 </td>
+					 <td>
+						0.35
+					 </td>
+					</tr>
+		<tr>
+			<td>
+			Degvielas veids:
+			</td>
+			<td class="translate">
+				Dīzeļdegviela
+			 </td>
+		</tr>
+		   <tr>
+			 <td>
+			 Motora maksimālā jauda (kW):
+			 </td>
+			 <td>
+				160
+			 </td>
+			</tr>
+		   <tr>
+			 <td>
+			 Motora tilpums (cm3):
+			 </td>
+			 <td>
+				2993
+			 </td>
+			</tr>
+		   <tr>
+			 <td>
+			 Pilna masa (kg):
+			 </td>
+			 <td>
+				2695
+			 </td>
+			</tr>
+		   <tr>
+			 <td>
+			 Pašmasa (kg):
+			 </td>
+			 <td>
+				2180
+			 </td>
+			</tr></tbody></table>
+						<div class="fade"></div></div>
+					</section>
+					<section>
+						<input id="panel-det" type="radio" name="panels">
+						<label for="panel-det">Detalizētais vērtējums
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div class="table-wrapper">
+							<table class="table-list" id="refer-table">
+					  <tbody><tr>
+						 <th>
+						 Kods
+						 </th>
+						 <th>
+						 Novērtējums:
+						 </th>
+						 <th>
+						 Trūkumi vai bojājumi
+						 </th>
+					  </tr>
+			 <tr>
+				 <td>
+				4.4.3.
+				 </td>
+				 <td align="center">
+				 1
+				 </td>
+				 <td class="translate">
+				 Virzienrādītāja luktura vai gaismas avota nolietojums nebūtiski ietekmē izstarotās gaismas krāsu.
+				 </td>
+			  </tr></tbody></table>
+						<div class="fade"></div></div>
+					</section>
+					<section>
+						<input id="panel-brake" type="radio" name="panels">
+						<label for="panel-brake">Bremžu vērtējums
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div class="table-wrapper">
+							<table class="table-list" id="refer-table">
+					  <tbody><tr>
+						 <th>
+						 Ass
+						 </th>
+						 <th>
+						 Kreisais
+						 </th>
+						 <th>
+						 Labais
+						 </th>
+						 <th>
+						 Bremžu tips
+						 </th>
+					  </tr>
+			  <tr>
+				 <td class="">
+					1
+				 </td>
+				 <td class="" align="center">
+					2.88
+				 </td>
+				 <td class="">
+					2.77
+				 </td>
+				 <td class="">
+					D
+				 </td>
+			  </tr>
+			  <tr>
+				 <td class="">
+					2
+				 </td>
+				 <td class="" align="center">
+					2.99
+				 </td>
+				 <td class="">
+					2.86
+				 </td>
+				 <td class="">
+					D
+				 </td>
+			  </tr>
+			  <tr>
+				 <td class="">
+					2
+				 </td>
+				 <td class="" align="center">
+					2.94
+				 </td>
+				 <td class="">
+					2.32
+				 </td>
+				 <td class="">
+					S
+				 </td>
+			  </tr><tr><td colspan="8">D - Darba bremzes; S - Stāvbremzes</td><td></td></tr><tr></tr></tbody></table>
+						<div class="fade"></div></div>
+					</section>
+					<section>
+						<input id="panel-revta" type="radio" name="panels">
+						<label for="panel-revta">Būtiski bojājumi CSNg
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div class="table-wrapper">
+							<table class="table-list" id="refer-table"><tbody><tr><td><b>Informācija no policijas:</b></td></tr>
+					<tr>
+									 <td>
+									 Nav
+									 </td>
+								  </tr> </tbody></table>
+							<table class="table-list" id="refer-table"><tbody><tr><td><b>Informācija no apdrošinātājiem:</b></td></tr><tr>
+									 <td>
+									 Nav
+									 </td>
+								  </tr> </tbody></table>
+						<div class="fade"></div></div>
+					</section>
+					<section>
+						<input id="panel-milage" type="radio" name="panels">
+						<label for="panel-milage">Nobraukuma vēsture LV
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div style="padding:10px;!important" id="milage-table">
+							<div class="table-wrapper">
+								<table width="100%"><tbody><tr align="right"><td style="text-align: right !important;" align="right"><i class="fa fa-list-ol" aria-hidden="true" value="WBAFB71080LV00001"></i>&nbsp;<i class="fa fa-bar-chart" aria-hidden="true" value="WBAFB71080LV00001"></i></td></tr></tbody></table>
+								<table class="table-list" id="refer-table">
+					  <tbody><tr>
+						 <th>
+						 Datums:
+						 </th>
+						 <th style="text-align:right !important;">Odometrs</th>
+						 <th style="text-align:right !important;">
+						 Nobraukums
+						 </th>
+					  </tr>
+			 <tr>
+				 <td>
+				12.02.2026
+				 </td>
+				<td style="text-align:right !important;">317679</td>
+				 <td style="text-align:right !important;">
+				 6705
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				20.02.2025
+				 </td>
+				<td style="text-align:right !important;">310974</td>
+				 <td style="text-align:right !important;">
+				 186
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				11.02.2025
+				 </td>
+				<td style="text-align:right !important;">310788</td>
+				 <td style="text-align:right !important;">
+				 6311
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				02.02.2024
+				 </td>
+				<td style="text-align:right !important;">304477</td>
+				 <td style="text-align:right !important;">
+				 5004
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				24.01.2023
+				 </td>
+				<td style="text-align:right !important;">299473</td>
+				 <td style="text-align:right !important;">
+				 69
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				03.01.2023
+				 </td>
+				<td style="text-align:right !important;">299404</td>
+				 <td style="text-align:right !important;">
+				 8224
+				 </td>
+			  </tr>
+			 <tr>
+				 <td>
+				17.12.2021
+				 </td>
+				<td style="text-align:right !important;">291180</td>
+				 <td style="text-align:right !important;">
+				 291180
+				 </td>
+			  </tr></tbody></table>
+							<div class="fade"></div></div>
+						</div>
+						<div style="padding:10px;!important" id="milage">
+						</div>
+					</section>
+					<section>
+						<input id="panel-nod" type="radio" name="panels">
+						<label for="panel-nod">Transportlīdzekļa ekspluatācijas nodoklis
+							<span class="icon-accordion-arrow">
+							</span>
+						</label>
+						<div class="table-wrapper">
+							<table class="table-list" id="refer-table"><tbody><tr><td class="variable" align="right">231,00 EUR</td><td class="value"> - uz gadu (pilnā apmērā)</td></tr><tr><td class="variable" align="right">211,75 EUR</td><td class="value"> - noņemšanai no uzskaites</td></tr><tr><td class="variable" align="right">38,50 EUR</td><td class="value"> - līdz gada beigām, ja nodoklis par esošo mēnesi nav samaksāts</td></tr><tr><td class="variable" align="right">19,25 EUR</td><td class="value"> - līdz gada beigām, ja nodoklis par esošo mēnesi ir samaksāts</td></tr><tr><td class="value" colspan="2">&nbsp;</td></tr><tr><td class="value" colspan="2">Uzņēmuma vieglo transportlīdzekļu nodokļa likme &nbsp;(īpašniekam nav jāmaksā):</td></tr><tr><td class="variable" align="right">60 EUR</td><td class="value">- mēnesī</td></tr></tbody></table>
+						<div class="fade"></div></div>
+					</section></div><div class="table-wrapper"><table class="table-list" id="refer-table">
+					<tbody>
+						<tr class="tr-basedata">
+							<td></td>
+							<td>Informācija sagatavota elektroniski 23.11.2026 14:04:25 no CSDD transportlīdzekļu un to vadītāju valsts nozīmes reģistra. </td>
+						</tr>
+					</tbody>
+				</table><div class="fade"></div></div><div class="form-group">
+					<br>
+					<p align="center" id="cmdBtn"><a class="link" href="javascript:;" id="exit">Atgriezties</a></p>
+				</div>
+        </section>
+        </div>
+</div>
+</main>
+<footer id="footer" class="footer-e-csdd">
+	<div class="footer-container">
+	<div class="footer-top-row grid-row">
+	<div class="column-quarter">
+		<h4>Tehniskais atbalsts</h4>
+		<div class="contact-info">
+		<div class="grid-row">
+		<div class="column-half">
+		<small>Darbadienās</small><h5>8.30 – 17.00</h5></div></div>
+		<hr>
+		<div class="grid-row">
+		<div class="column-full">
+		<div class="info-link">
+		<span class="icon-mail">
+		</span>
+		<a href="mailto:palidziba@csdd.gov.lv" class="link-plain">palidziba@csdd.gov.lv</a>
+		</div>
+		</div></div></div>
+	</div>
+	<div class="column-quarter"><h4>Par e-CSDD maksājumiem</h4>
+    	<div class="contact-info">
+    	<div class="grid-row">
+    	<div class="column-half">
+    	<small>Darbadienās</small><h5>8.30 – 17.00</h5></div>
+    	</div>
+    	<hr><div class="grid-row">
+    	<div class="column-full">
+    	<div class="info-link">
+    	<span class="icon-mail">
+    	</span>
+    		<a href="mailto:emaksajumi@csdd.gov.lv" class="link-plain">emaksajumi@csdd.gov.lv</a>
+    	</div>
+    		</div>
+    		</div></div>
+    </div>
+	<div class="column-quarter"><h4>Kontakti un darba laiki</h4>
+    	<div class="contact-info">
+        	<div class="grid-row">
+            	<div class="grid-priority-container" style="padding: 0 12px;">
+            	<small><a href="https://www.csdd.lv/par-csdd/kontakti-un-darba-laiki/" target="_blank" class="link">CSDD KAC darba laiki</a></small><h5>Kontakti saziņai</h5>
+                </div>
+        	</div>
+        	<hr>
+            <div class="grid-row">
+        	<div class="column-full">
+		<div class="info-link">
+            <span class="spotlight-cotacts-icon" style="display: inline-block;height: 18px;margin-right: 8px;position: relative;top: 2px;width: 12px;font-size: 1.125rem;">
+            </span>
+            <a href="tel:+010101-12345" class="">+ 371 <span>670 257 77</span></a>
+        </div>
+		   		    </div>
+    		</div>
+        </div>
+    </div>
+		<div class="column-quarter"><h4>e-CSDD pieejami arī</h4>
+			<div class="apps-info">
+				<div>
+					<a href="https://itunes.apple.com/lv/app/csdd/id661663816"></a>
+					<a href="https://play.google.com/store/apps/details?id=lv.csdd.ecsdd"></a>
+				</div>
+			</div>
+		</div>
+		</div><hr><div class="footer-bottom-row grid-row"><div class="grid-desktop-priority-container">
+		<div class="footer-copyright column-desktop-third column-footer-group">
+			<small>© CSDD 2026</small>
+			<br>
+		</div>
+		<div class="footer-page-links column-desktop-third">
+			<ul>
+			<li><a class="link-alt about-ecsdd-pak" href="javascript:;">Lietošanas noteikumi</a></li>
+			<li><a class="link-alt private-ecsdd-pak" href="javascript:;">Privātuma politika</a></li>
+			<li><a class="link-alt cookies-ecsdd-pak" href="javascript:;">Sīkdatņu paziņojums</a></li>
+			<li>
+			<small class="xsmall">
+			e-pakalpojumu darbība tiek atbalstīta, izmantojot šādas interneta pārlūkprogrammas
+			Microsoft Edge,
+			Google Chrome,
+			Mozilla Firefox,
+			Apple Safari MAC OSS
+			</small>
+			</li>
+		</ul>
+		</div>
+	<div class="footer-payments column-desktop-third"><ul>
+	<li><a class="link-payment-visa" href="javascript:;">
+	</a>
+	</li>
+		<li><a class="link-payment-master_card" href="javascript:;">
+		</a></li>
+		</ul></div></div></div></div>
+	</footer>
+<div role="log" aria-live="assertive" aria-relevant="additions" class="ui-helper-hidden-accessible"></div></body></html>

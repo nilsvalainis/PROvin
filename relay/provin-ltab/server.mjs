@@ -103,9 +103,35 @@ async function notify(body) {
 
 let context = null;
 
+/**
+ * Pieteikšanās sīkdatnes (LTAB/e.csdd/VISS) ir sesijas sīkdatnes: Chrome tās izdzēš nākamajā startā, tāpēc katrs
+ * releja restarts (deploy) prasītu jaunu Smart-ID. Ar "turpināt, kur beidzu" (session.restore_on_startup=1) Chrome
+ * tās patur; atvērtās cilnes neatjaunojam (Sessions mape tiek izdzēsta).
+ */
+async function keepSessionCookies(profileDir) {
+  const def = path.join(profileDir, "Default");
+  const prefsFile = path.join(def, "Preferences");
+  try {
+    await fs.mkdir(def, { recursive: true, mode: 0o700 });
+    let prefs = {};
+    try {
+      prefs = JSON.parse(await fs.readFile(prefsFile, "utf8"));
+    } catch {
+      /* jauns profils */
+    }
+    prefs.session = { ...(prefs.session ?? {}), restore_on_startup: 1 };
+    prefs.profile = { ...(prefs.profile ?? {}), exit_type: "Normal", exited_cleanly: true };
+    await fs.writeFile(prefsFile, JSON.stringify(prefs), { mode: 0o600 });
+    await fs.rm(path.join(def, "Sessions"), { recursive: true, force: true });
+  } catch (e) {
+    log(`profila iestatījumi: ${e instanceof Error ? e.message : e}`);
+  }
+}
+
 async function openContext() {
   if (context) return context;
   await fs.mkdir(PROFILE_DIR, { recursive: true, mode: 0o700 });
+  await keepSessionCookies(PROFILE_DIR);
   const opts = {
     headless: false,
     acceptDownloads: true,
@@ -142,6 +168,8 @@ async function openContext() {
     }
     return route.continue();
   });
+  // Ja Chrome tomēr atjaunoja vecas cilnes - aizveram (paliek viena tukša).
+  for (const p of context.pages().slice(1)) await p.close().catch(() => undefined);
   context.on("close", () => {
     context = null;
   });

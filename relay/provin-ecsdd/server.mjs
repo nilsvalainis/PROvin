@@ -21,6 +21,7 @@
  *   ECSDD_AUTO_LOGIN             noklusējums 1 (0 = Smart-ID tikai ar Nila pogu)
  *   ECSDD_SMARTID_TIMEOUT_SEC    noklusējums 120
  *   ECSDD_CHROME_CHANNEL         noklusējums chrome (ja nav, Playwright Chromium)
+ *   ECSDD_ACCOUNT                konts lapā "Izvēlies kontu": person (noklusējums) vai nosaukuma fragments
  *   DISPLAY                      Xvfb (systemd): :96
  *
  * API (zem /ecsdd, prefiksu Caddy nenoņem):
@@ -54,6 +55,8 @@ const DEBUG_DIR = path.join(DATA_DIR, "debug");
 const MAX_PER_HOUR = Math.max(1, Number(process.env.ECSDD_MAX_PER_HOUR || 20));
 const SMARTID_TIMEOUT_MS = Math.max(30, Number(process.env.ECSDD_SMARTID_TIMEOUT_SEC || 120)) * 1000;
 const CHROME_CHANNEL = (process.env.ECSDD_CHROME_CHANNEL ?? "chrome").trim();
+// Konts lapā "Izvēlies kontu": "person" (privātpersona, noklusējums) vai nosaukuma fragments (piem. "ĪRISS").
+const ACCOUNT = (process.env.ECSDD_ACCOUNT ?? "").trim() || "person";
 const CFG = defaultSessionConfig(process.env);
 const SECRETS = [PERSONAL_CODE, TOKEN];
 const isWorkHours = (d) => isWorkHoursRiga(d, CFG.workFrom, CFG.workTo);
@@ -112,6 +115,31 @@ async function notify(body) {
 
 let context = null;
 
+/**
+ * Pieteikšanās sīkdatnes (LTAB/e.csdd/VISS) ir sesijas sīkdatnes: Chrome tās izdzēš nākamajā startā, tāpēc katrs
+ * releja restarts (deploy) prasītu jaunu Smart-ID. Ar "turpināt, kur beidzu" (session.restore_on_startup=1) Chrome
+ * tās patur; atvērtās cilnes neatjaunojam (Sessions mape tiek izdzēsta).
+ */
+async function keepSessionCookies(profileDir) {
+  const def = path.join(profileDir, "Default");
+  const prefsFile = path.join(def, "Preferences");
+  try {
+    await fs.mkdir(def, { recursive: true, mode: 0o700 });
+    let prefs = {};
+    try {
+      prefs = JSON.parse(await fs.readFile(prefsFile, "utf8"));
+    } catch {
+      /* jauns profils */
+    }
+    prefs.session = { ...(prefs.session ?? {}), restore_on_startup: 1 };
+    prefs.profile = { ...(prefs.profile ?? {}), exit_type: "Normal", exited_cleanly: true };
+    await fs.writeFile(prefsFile, JSON.stringify(prefs), { mode: 0o600 });
+    await fs.rm(path.join(def, "Sessions"), { recursive: true, force: true });
+  } catch (e) {
+    log(`profila iestatījumi: ${e instanceof Error ? e.message : e}`);
+  }
+}
+
 async function getContext() {
   if (context) return context;
   if (!isValidPersonalCode(PERSONAL_CODE)) {
@@ -120,6 +148,7 @@ async function getContext() {
     throw err;
   }
   await fs.mkdir(PROFILE_DIR, { recursive: true, mode: 0o700 });
+  await keepSessionCookies(PROFILE_DIR);
   const opts = {
     headless: false,
     locale: "lv-LV",
@@ -155,6 +184,8 @@ async function getContext() {
     }
     return route.continue();
   });
+  // Ja Chrome tomēr atjaunoja vecas cilnes - aizveram (paliek viena tukša).
+  for (const p of context.pages().slice(1)) await p.close().catch(() => undefined);
   context.on("close", () => {
     context = null;
   });
@@ -172,6 +203,7 @@ await fs.mkdir(DATA_DIR, { recursive: true, mode: 0o750 }).catch(() => undefined
 const browser = createEcsddBrowser({
   getContext,
   personalCode: PERSONAL_CODE,
+  account: ACCOUNT,
   log,
   debugDir: DEBUG_DIR,
   smartIdTimeoutMs: SMARTID_TIMEOUT_MS,

@@ -1,0 +1,211 @@
+<!DOCTYPE html><html><head>
+    <title>Transportlīdzekļa zaudējumu dati</title>
+<style>.modal{display:none}</style></head>
+<body>
+    <div class="header fixed vissible">
+        <div class="navigation">
+            <a href="https://www.ltab.lv/lv/" target="_blank" class="logo"></a>
+            <div class="dropdown lang">
+                <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    LV
+                    <span class="glyphicon glyphicon-chevron-down"></span>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                            <li><a href="/en/VehicleInsAndAcc">EN</a></li>
+                                            <li><a href="/ru/VehicleInsAndAcc">RU</a></li>
+                </ul>
+            </div>
+            <a href="https://www.ltab.lv/lv/mobila-lietotne/" target="_blank" class="app" title=""><span class="glyphicon glyphicon-phone app-icon"></span><span class="app-text" title="">LTAB Mobilā Lietotne</span></a>
+            <div class="dropdown pull-right acc-dd" style="line-height: 32px; margin-right: 10px;">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="accessibility-toggle">
+                    <i class="fa fa-universal-access" aria-hidden="true"></i> Piekļūstamība <span class="caret"></span>
+                </a>
+                <div class="dropdown-menu accessibility-options" style="padding: 15px; width: 350px;">
+                    <div class="col-md-12">
+                        <h4>Fonta izmērs</h4>
+                        <div class="font-size">
+                            <div class="acc-btns row">
+                                <div class="col-md-4">
+                                    <button id="font-100" class="acc-btn" aria-label="Fonta izmērs 100%">100%</button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button id="font-150" class="acc-btn" aria-label="Fonta izmērs 150%">150%</button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button id="font-200" class="acc-btn" aria-label="Fonta izmērs 200%">200%</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <h4>Kontrasts</h4>
+                        <div class="contrast">
+                            <div class="acc-btns row">
+                                <div class="col-md-3">
+                                    <button id="contrast-normal" class="acc-btn" aria-label="Noklusējuma lapas kontrasts"><span class="glyphicon glyphicon-eye-open"></span></button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="contrast-high" class="acc-btn" aria-label="Lapas kontrasts ir balts uz melna"><span class="glyphicon glyphicon-eye-open"></span></button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="contrast-yellow" class="acc-btn" aria-label="Lapas kontrasts ir melns uz dzeltena"><span class="glyphicon glyphicon-eye-open"></span></button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="contrast-black-yellow" class="acc-btn" aria-label="Lapas kontrasts ir dzeltens uz melna"><span class="glyphicon glyphicon-eye-open"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="content">
+        <section class="content-wrapper wrapper-fluid">
+<div class="wrapper page-head" style="margin-bottom: 5px;">
+    <div class="title">
+        <h1>Transportlīdzekļa zaudējumu dati</h1>
+    </div>
+</div>
+<div class="tools">
+    <div class="wrapper">
+            <div class="container-fluid panel-container no-padding" style="margin-bottom: 40px;">
+                <div class="col-md-8 col-sm-8 col-xs-12 no-padding">
+                    <h4 class="user-info text-left auth-signed-as">
+                        JĀNIS BĒRZIŅŠ, 010101-12345
+                    </h4>
+                </div>
+                <div class="col-md-4 col-sm-4 col-xs-12 no-padding">
+                    <a class="text-right log-off-lnk flex-container" href="/VehicleInsAndAcc/VpSignout"><span class="glyphicon glyphicon-log-out" title="Beigt darbu"></span>&nbsp;<span style="word-break: keep-all;">Beigt darbu</span></a>
+                </div>
+            </div>
+                    <div class="modal fade" id="sessionCountdownModal" role="dialog" data-keyboard="false" data-backdrop="static">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Paziņojums</h4>
+                        </div>
+                        <div class="modal-body no-bottom-padding">
+                            <div class="alert alert-info" id="sessionCountdown">
+                                <span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span id="sessMessage"></span>
+                            </div>
+                        </div>
+                        <div class="modal-footer no-top-padding">
+                            <button class="btn-main btn-srch btn-right" id="sessContinueNo">Nē</button>
+                            <button class="btn-main btn-srch btn-right" style="width:15%; margin-right: 10px;" id="sessContinueYes">Jā</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="clearfix"></div>
+<form action="/VehicleInsAndAcc" class="form-ins" method="post">                <div class="wrapper well">
+                    <div class="col-xs-12 col-sm-12 col-md-12 no-padding">
+                        <div class="col-xs-12 col-sm-3 col-md-3">
+                            <div class="form-group">
+                                <div class="fld-lbl text-left reg">
+                                    <input name="field-type" id="regRadio" type="radio" class="fld-txt-radio"> <span class="fld-txt-lbl" id="regRadioLabel">Reģistrācijas numurs</span>
+                                    <span class="lb-info-sign" id="docpreview" href="../Images/rn_small.jpg"></span>
+                                </div>
+                                <div>
+                                    <input autofocus="" class="form-control text-uppercase fld-txt" id="regNumber" maxlength="12" name="regNumber" onkeyup="this.value=this.value.toUpperCase();" type="text" value="" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="col-xs-12 col-sm-1 col-md-1">
+                            <div class="form-group">
+                                <div class="fld-lbl text-left desktop-container">&nbsp;</div>
+                                <div class="other-lbl">vai</div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="col-xs-12 col-sm-3 col-md-3">
+                            <div class="form-group">
+                                <div class="fld-lbl text-left vin">
+                                    <input name="field-type" id="vinRadio" type="radio" class="fld-txt-radio"> <span class="fld-txt-lbl disabled" id="vinRadioLabel">Šasijas numurs</span>
+                                    <span class="lb-info-sign" id="docpreview2" href="../Images/vin_small.jpg"></span>
+                                </div>
+                                <div>
+                                    <input class="form-control fld-txt" id="chassisNumber" maxlength="20" name="chassisNumber" type="text" value="" disabled="" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="col-xs-12 col-sm-1 col-md-1" style="margin-bottom: 10px; text-align: center;">
+                            <div class="form-group">
+                                <div class="fld-lbl text-left">&nbsp;</div>
+                                <div>
+                                    <button class="btn-basic btn-srch" type="submit">
+                                        Meklēt
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                        <div class="col-xs-12 col-sm-12 col-md-12 no-padding table-ins">
+                        </div>
+                </div>
+</form>    </div>
+</div>
+        </section>
+        <div class="footer">
+            <div class="row">
+                <div class="col-sm-12 col-md-3 col-xs-12 text-center" style="margin-bottom: 5px;">
+                </div>
+                <div class="col-sm-12 col-md-6 col-xs-12" style="margin-bottom: 5px;">
+                    <div class="links">
+                        <div class="col-sm-12 col-md-4 col-xs-12"><a href="https://www.ltab.lv/lv/kontakti/" target="_blank">Kontakti</a></div>
+                        <div class="col-sm-12 col-md-4 col-xs-12"><a href="https://www.ltab.lv/lv/sikdatnu-izmantosanas-politika/" target="_blank">Sīkdatņu izmantošanas politika</a></div>
+                        <div class="col-sm-12 col-md-4 col-xs-12"><a href="https://www.ltab.lv/lv/datu-apstrades-politika/" target="_blank">Datu apstrādes politika</a></div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-3 col-xs-12 text-center" style="margin-bottom: 5px;">
+                    <div class="social">
+                        <a href="https://twitter.com/LTAB_OCTA" target="_blank" class="tw"></a>
+                        <a href="https://www.facebook.com/LTABOCTA" target="_blank" class="fb"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <p>© Latvijas Transportlīdzekļu apdrošinātāju birojs.</p>
+            </div>
+        </div>
+        <div class="modal fade" id="warningModal" role="dialog" data-keyboard="false" data-backdrop="static" style="z-index:9999;">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title">Uzmanību</h4>
+                    </div>
+                    <div class="modal-body warning-body">
+                    </div>
+                    <div class="modal-footer">
+                        <div class="col-sm-offset-6">
+                            <button type="button" class="btn-main btn-srch warning-yes-btn" style="width: 50px;">Jā</button>
+                            <button type="button" class="btn-main btn-srch" style="width: 50px;" data-dismiss="modal">Nē</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="errorModal" role="dialog" data-keyboard="false" data-backdrop="static" style="z-index:9999;">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title">Kļūda</h4>
+                    </div>
+                    <div class="modal-body error-body">
+                    </div>
+                    <div class="modal-footer">
+                        <div class="col-sm-offset-9">
+                            <button type="button" class="btn-main btn-srch" data-dismiss="modal">Aizvērt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<div id="img-container" style="display: none; position: absolute;"></div><div id="img-container" style="display: none; position: absolute;"></div><div id="ltab-chat"></div></body></html>
