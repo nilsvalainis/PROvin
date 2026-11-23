@@ -41,13 +41,13 @@ function isFormOnly(text: string): boolean {
 }
 
 function isClearNone(text: string): boolean {
-  return /duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(
+  return /nėra ieškoma|not wanted|duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(
     text,
   );
 }
 
 function isWantedHit(text: string): boolean {
-  return /paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt[ae]|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(
+  return /yra ieškoma|is wanted|paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt[ae]|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(
     text,
   );
 }
@@ -72,7 +72,7 @@ export function classifyPoliceWanted(id: VinScanBrowserId, text: string, vin: st
     return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
   }
   if (isClearNone(flat)) return { status: "none", summary: "Nav meklēšanā" };
-  if (isWantedHit(flat) && (hasVin(flat, vin) || /paieškos priežast|meklēšanā izsludin/i.test(flat))) {
+  if (isWantedHit(flat) && (hasVin(flat, vin) || /yra ieškoma|paieškos priežast|meklēšanā izsludin/i.test(flat))) {
     const extra = extraBits(flat);
     return { status: "found", summary: extra ? `Meklēšanā. ${extra}` : "Meklēšanā" };
   }

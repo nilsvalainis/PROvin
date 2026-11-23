@@ -14,6 +14,7 @@ vi.mock("@/lib/staff-auth", () => ({ requireIrissSectionApi: async () => ({ ok: 
 vi.mock("@/lib/source-health-store", () => ({ recordSourceOutcomes: async () => undefined }));
 vi.mock("@/lib/csdd-tech-data-counted", () => ({ fetchCsddTechDataCounted: async () => null }));
 vi.mock("@/lib/vin-scan/browser-import-log", () => ({ logVinScanBrowserImport: () => undefined }));
+vi.mock("@/lib/vin-scan/monitor-store", () => ({ trackVinScanBrowserImport: () => undefined }));
 
 const scan = vi.hoisted(() => ({
   impl: (async () => []) as (input: { sourceIds?: VinScanIndicator["id"][] }) => Promise<unknown[]>,

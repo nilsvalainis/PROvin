@@ -22,6 +22,14 @@ import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-s
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { currentVinScanDeadlineMs, scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
+import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
+import {
+  LT_POLICE_API_URL,
+  LT_POLICE_PAGE_URL,
+  LT_POLICE_RECAPTCHA_SITE_KEY,
+  ltPoliceRequestBody,
+  parseLtPoliceResponse,
+} from "@/lib/vin-scan/lt-police";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
   oemBrandForVin,
@@ -351,8 +359,38 @@ export async function probeTraficom(ctx: VinScanContext): Promise<VinScanIndicat
   });
 }
 
+/**
+ * epolicija.lt meklēto TL reģistrs: parakstīts JSON POST + reCAPTCHA v2 (CapSolver).
+ * Bez CapSolver atslēgas paliek pārlūka josla; CapSolver vai API kļūda ir `unknown` ar iemeslu.
+ */
 export async function probeLtPolice(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return fromBrowser("lt_itpr", ctx);
+  if (!hasCaptchaSolverKey()) return fromBrowser("lt_itpr", ctx);
+  try {
+    const solved = await solveScanRecaptcha(LT_POLICE_PAGE_URL, LT_POLICE_RECAPTCHA_SITE_KEY, "epolicija.lt");
+    if (!solved.ok) {
+      return done("lt_itpr", ctx, {
+        status: "unknown",
+        summary: `epolicija.lt: reCAPTCHA neizdevās atrisināt (${solved.reason.slice(0, 120)})`,
+        openUrl: LT_POLICE_PAGE_URL,
+      });
+    }
+    const res = await scanFetch(LT_POLICE_API_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json, text/plain, */*",
+        "content-type": "application/json",
+        origin: "https://www.epolicija.lt",
+        referer: LT_POLICE_PAGE_URL,
+        "user-agent": solved.ua,
+      },
+      body: ltPoliceRequestBody(ctx.vin, solved.token),
+      cookie: solved.cookie || undefined,
+      timeoutMs: 20_000,
+    });
+    return done("lt_itpr", ctx, parseLtPoliceResponse(res.status, res.text, ctx.vin));
+  } catch (e) {
+    return failed("lt_itpr", ctx, e);
+  }
 }
 
 export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIndicator> {

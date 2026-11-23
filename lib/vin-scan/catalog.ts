@@ -352,7 +352,8 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "LT",
     hint: "Lietuvas policija, ieškomos transporto priemonės",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vinQuery(vin)}`,
+    // Kopš 2026 Angular lapa; VIN aizpilda userscript, meklēšanai vajag reCAPTCHA (serverī - CapSolver).
+    openUrl: (vin) => `https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=${vinQuery(vin)}`,
   },
   {
     id: "stat_vin",

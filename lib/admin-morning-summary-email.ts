@@ -121,6 +121,9 @@ export function buildMorningSummaryEmailText(
     }
   }
 
+  const vinScan = summary.vinScanLines ?? [];
+  if (vinScan.length > 0) lines.push("", ...vinScan);
+
   if (summary.dealerShadowLine) lines.push("", summary.dealerShadowLine);
 
   lines.push("", "Atvērt kopsavilkumu:", opts.pageUrl);
@@ -153,6 +156,7 @@ export function buildMorningSummaryEmail(
       detail: costAlertDetail(row),
     })),
     dealerShadowLine: summary.dealerShadowLine ?? null,
+    vinScanLines: summary.vinScanLines ?? [],
   });
   return {
     subject: buildMorningSummaryEmailSubject(summary, opts.nowMs),

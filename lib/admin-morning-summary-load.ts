@@ -19,6 +19,21 @@ import { sourcesFailingInARow } from "@/lib/source-health";
 import { readSourceHealth } from "@/lib/source-health-store";
 import { listDealerShadowJobs } from "@/lib/dealer-data-job-store";
 import { buildDealerShadowStats, dealerShadowStatsLine } from "@/lib/dealer-shadow-stats";
+import { vinScanBrowserProblems, vinScanBrowserProblemsLine } from "@/lib/vin-scan/browser-usage";
+import { vinScanCanarySummaryLine, vinScanSourceLabel } from "@/lib/vin-scan/canary-alert";
+import { readVinScanBrowserUsage, readVinScanCanaryDoc } from "@/lib/vin-scan/monitor-store";
+
+async function loadVinScanLines(nowMs: number): Promise<string[]> {
+  const [canary, usage] = await Promise.all([
+    readVinScanCanaryDoc().catch(() => null),
+    readVinScanBrowserUsage().catch(() => null),
+  ]);
+  const lines = [
+    canary ? vinScanCanarySummaryLine(canary, nowMs) : null,
+    usage ? vinScanBrowserProblemsLine(vinScanBrowserProblems(usage, nowMs), vinScanSourceLabel) : null,
+  ];
+  return lines.filter((l): l is string => Boolean(l));
+}
 
 export type MorningSummaryLoad = {
   summary: MorningSummary;
@@ -36,6 +51,7 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
     listDealerShadowJobs()
       .then((jobs) => dealerShadowStatsLine(buildDealerShadowStats(jobs)))
       .catch(() => null),
+    loadVinScanLines(nowMs).catch(() => []),
   ]);
   const [{ rows, stripeError }, peeks] = await Promise.all([
     listAdminOrders(),
@@ -68,10 +84,10 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
     };
   });
 
-  const [failingSources, costAlerts, dealerShadowLine] = await sideLoads;
+  const [failingSources, costAlerts, dealerShadowLine, vinScanLines] = await sideLoads;
 
   return {
-    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts, dealerShadowLine },
+    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts, dealerShadowLine, vinScanLines },
     stripeError: stripeError ?? null,
   };
 }
