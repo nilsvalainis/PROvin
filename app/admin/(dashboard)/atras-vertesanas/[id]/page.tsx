@@ -20,10 +20,13 @@ import { ADMIN_RAIL_ASIDE, ADMIN_RAIL_BOX, ADMIN_RAIL_BTN } from "@/lib/admin-ra
 import { isSmtpConfigured } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { getListingPeekById, listListingPeeks, updateListingPeekStatus } from "@/lib/listing-peek-store";
-import { canonicalizeListingUrl } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { buildLetterFacts, buildSourceCards, csddCardFacts, fmtLv, type QuickEvalCardInput } from "@/lib/quick-eval-cards";
 import { listQuickEvalExportCandidates } from "@/lib/quick-eval-service";
 import { readQuickEval } from "@/lib/quick-eval-store";
+import { mergeQuickEvalVinScan } from "@/lib/quick-eval-vin-scan";
+import { readVinScanSnapshot } from "@/lib/vin-scan/store";
+import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
 import { heardAboutDisplayLabel } from "@/lib/stripe-session";
 import { findVinHistory } from "@/lib/vin-history";
 import { saveQuickEvalContact, setQuickEvalStatus } from "../actions";
@@ -114,6 +117,10 @@ export default async function QuickEvalDetailPage({
   const railPlate = (plateVinRaw ?? "").split(" · ")[0]?.trim() || "";
   const year = csdd.find((f) => f.label === "Izlaiduma gads")?.value;
   const vin = doc?.vin || peek.vin || "";
+  // Kopīgais VIN SCAN kešs pēc VIN: userscript importi un «Ātrajā pārbaudē» palaistie avoti redzami arī šeit.
+  const scanVin = normalizeVin(vin);
+  const sharedScan = isValidVin(scanVin) ? await readVinScanSnapshot(scanVin).catch(() => null) : null;
+  const vinScanView = mergeQuickEvalVinScan(doc?.vinScan ?? null, sharedScan);
 
   const queue = all.filter((e) => e.status === "new" || e.status === "in_progress" || e.id === peek!.id);
   const idx = queue.findIndex((e) => e.id === peek!.id);
@@ -241,14 +248,26 @@ export default async function QuickEvalDetailPage({
         <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
           Avoti {doc?.seed?.at ? <span className="font-normal normal-case tracking-normal">· ielasīts {fmtLv(doc.seed.at)}</span> : null}
         </h2>
-        <AdminQuickEvalRefreshAll peekId={peek.id} />
+        <div className="flex flex-wrap items-center gap-2">
+          {isValidVin(scanVin) ? (
+            <Link href={`/admin/vin-scan?vin=${encodeURIComponent(scanVin)}`} className={hdrBtn} title="Maksas avoti (JoJ, OneAuto, Speckr) un pārlūka avoti - rezultāts parādās arī šeit">
+              Ātrā pārbaude ↗
+            </Link>
+          ) : null}
+          <AdminQuickEvalRefreshAll peekId={peek.id} />
+        </div>
       </div>
+      {isValidVin(scanVin) ? (
+        <div className="mt-2">
+          <AdminVinMemoryPanel vin={scanVin} />
+        </div>
+      ) : null}
       {input ? (
         <AdminQuickEvalSourceGrid
           peekId={peek.id}
           vin={vin}
           cards={cards}
-          vinScan={doc?.vinScan ?? null}
+          vinScan={vinScanView}
           ccVin={doc?.ccVin ?? null}
         />
       ) : (
