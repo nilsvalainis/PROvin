@@ -99,6 +99,12 @@ import {
 } from "@/lib/pdf-dealer-timeline";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
+import {
+  buildCsddBlokiPdfParts,
+  buildCsddWarningSummaryTiles,
+  CSDD_BLOKI_PDF_CSS,
+  type CsddBlokiPdfParts,
+} from "@/lib/csdd-bloki-pdf-html";
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
@@ -875,9 +881,14 @@ function buildPdfSummaryIdentityHtml(makeModel: string, vin: string): string {
 }
 
 /** Atskaites kopsavilkums - bāzes plāksnītes un brīdinājumu / manuālās kartītes vienā režģī. */
-function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummaryTile[] = []): string {
+function buildPdfReportSummaryHtml(
+  p: ClientReportPayload,
+  extraTiles: PdfSummaryTile[] = [],
+  leadTiles: PdfSummaryTile[] = [],
+): string {
   const identityHtml = buildPdfSummaryIdentityHtml(resolvePdfReportMakeModelFromPayload(p), p.vin ?? "");
   const tiles = [
+    ...leadTiles,
     ...buildPdfReportSummaryTiles(
       {
         csddForm: p.csddForm ?? null,
@@ -1514,9 +1525,11 @@ export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
   sparkHtml = "",
   photoDataUrls?: Map<string, string>,
-  opts: { orderVin?: string | null } = {},
+  opts: { orderVin?: string | null; bloki?: CsddBlokiPdfParts } = {},
 ): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
+  const blokiAfterTable = opts.bloki?.afterTable ?? "";
+  const blokiBeforeInspections = opts.bloki?.beforeInspections ?? "";
 
   const csddRecords = csddPdfRecordCount(form);
   const head = sectionHeadBrand(
@@ -1631,6 +1644,8 @@ export function buildCsddAvotuZoneHtml(
   );
   if (
     !tableHtml &&
+    !blokiAfterTable &&
+    !blokiBeforeInspections &&
     !ownerTimelineHtml &&
     !prevInspectionHtml &&
     !taTableHtml &&
@@ -1640,7 +1655,7 @@ export function buildCsddAvotuZoneHtml(
   ) {
     return "";
   }
-  const bodyInner = `${sparkHtml}${tableHtml}${ownerTimelineHtml}${prevInspectionHtml}${taTableHtml}${photosHtml}${commentHtml}`;
+  const bodyInner = `${sparkHtml}${tableHtml}${blokiAfterTable}${ownerTimelineHtml}${blokiBeforeInspections}${prevInspectionHtml}${taTableHtml}${photosHtml}${commentHtml}`;
   return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(PDF_SUB_CSDD)}" role="region">${head}<div class="pdf-source-section-body">${bodyInner}</div></div>`;
 }
 
@@ -1655,18 +1670,20 @@ function buildCsddAvotuSubsection(
   vis: PdfVisibilitySettings,
   sparkHtml = "",
   photoDataUrls?: Map<string, string>,
+  lang: ClientReportLang = "lv",
 ): string {
   if (!vis.csdd) return "";
   const form = p.csddForm;
+  const bloki = buildCsddBlokiPdfParts(form, vis, lang);
   const hasStruct = Boolean(form && csddFormHasContent(form));
   const hasRaw = p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
-    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin });
+    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin, bloki });
     if (zone) return zone;
     if (hasRaw) return csddAvotuRawZoneHtml(p.csdd, sparkHtml);
-    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin });
+    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin, bloki });
     return "";
   }
 
@@ -2369,7 +2386,7 @@ function buildAvotuDatiSectionHtml(
   const sparkCtx = collectPdfMileageSparkContext(p, vis);
   const spark = (key: MileagePdfSourceKey) => sourceMileageSparkHtml(sparkCtx, key);
 
-  const csdd = buildCsddAvotuSubsection(p, vis, spark("csdd"), sourceBlockPhotoDataUrls);
+  const csdd = buildCsddAvotuSubsection(p, vis, spark("csdd"), sourceBlockPhotoDataUrls, lang);
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis, spark("ltab"), sourceBlockPhotoDataUrls);
   const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis, spark("cits"), sourceBlockPhotoDataUrls);
 
@@ -2998,6 +3015,7 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-vehicle-kv .pdf-v1-kv td{padding:5px 0;}
       .pdf-dealer-vehicle-kv .pdf-v1-kv td:first-child{width:34%;padding-right:18px;}
       ${oilChangeIntervalPdfBlockCss()}
+      ${CSDD_BLOKI_PDF_CSS}
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);
         border-radius:var(--pdf-radius-inner);
@@ -3864,7 +3882,10 @@ export function buildClientReportDocumentHtml(args: {
         ),
       })
     : [];
-  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(pVis, summaryBannerTiles));
+  // e.csdd brīdinājumi (23.11) - tikai ar admin ķeksi, pirms esošajām kartītēm.
+  const csddWarningTiles =
+    !dealerOnly && vis.csddPdfWarnings ? buildCsddWarningSummaryTiles(pVis.csddForm, lang) : [];
+  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(pVis, summaryBannerTiles, csddWarningTiles));
   const coverPhotoHtml = buildPdfCoverPhotoHtml(p, listingAnalysisPhotoDataUrls);
   if (coverPhotoHtml) lines.push(coverPhotoHtml);
 
