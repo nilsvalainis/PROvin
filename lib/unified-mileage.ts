@@ -178,6 +178,46 @@ export function isListingMileageSource(r: Pick<UnifiedMileageRow, "sourceLabel" 
   );
 }
 
+/** A18: mēneša precizitātes rinda drukājas «04.2026», nevis «01.04.2026» (avotā nav dienas). */
+export function formatMileageRowDateLabel(r: Pick<UnifiedMileageRow, "date" | "datePrecision">): string {
+  const d = r.date.trim();
+  if (r.datePrecision !== "month") return d;
+  const m = /^0?1\.(\d{1,2})\.(\d{4})$/.exec(d);
+  if (m) return `${m[1]!.padStart(2, "0")}.${m[2]}`;
+  const iso = /^(\d{4})-(\d{2})(?:-01)?$/.exec(d);
+  return iso ? `${iso[2]}.${iso[1]}` : d;
+}
+
+/** «EU» / «Eiropas Savienība» - reģions, nevis valsts (izsoles kataloga noklusējums). */
+export function isGenericRegionCountry(raw: string | null | undefined): boolean {
+  const t = (raw ?? "").trim().toLowerCase();
+  return t === "eu" || t === "eiropas savienība" || t === "eiropa" || t === "europe" || t === "european union";
+}
+
+/** Izsoles ieraksta reģistrācijas valsts (TheCarApi `car_country_extended` u.c.) tai pašai dienai. */
+function ccVinAuctionCountryForDate(block: CcVinBlockState | null | undefined, date: string): string {
+  const day = parseDotOrIsoDateToMs(date);
+  if (!Number.isFinite(day) || day <= 0) return "";
+  for (const rec of block?.thecarapiRecords ?? []) {
+    if (parseDotOrIsoDateToMs(rec.date ?? "") !== day) continue;
+    const raw = (rec.raw ?? {}) as Record<string, unknown>;
+    const fromRaw = [raw.car_country_extended, raw.countryOfRegistration, raw.car_country].find(
+      (v): v is string => typeof v === "string" && v.trim().length > 0,
+    );
+    const fromFields = (rec.fields ?? []).find(
+      (f) => ["car_country_extended", "countryOfRegistration", "car_country"].includes(f.key) && f.value.trim(),
+    )?.value;
+    const code = (fromRaw ?? fromFields ?? "").trim();
+    if (code && !isGenericRegionCountry(code) && countryLabelToIso2(code)) return normalizeCountryNameLv(code);
+  }
+  return "";
+}
+
+/** Rindā ir arī neatkarīgs (ne sludinājuma) avots - piem. izsole ar odometra foto tajā pašā km. */
+function hasNonListingLabel(labels: readonly string[]): boolean {
+  return labels.some((lbl) => !isListingMileageSource({ sourceLabel: lbl }));
+}
+
 /** CSDD / TA un oficiālais dīleris - prioritāte tikai vienā datumā / nelielā starpībā. */
 export function isVerifiedMileageSource(
   r: Pick<UnifiedMileageRow, "sourceLabel" | "countryUnverified"> & { sourceLabels?: string[] },
@@ -263,6 +303,19 @@ export function parseOdometerKm(raw: string): number | null {
   const n = Number.parseInt(digits, 10);
   if (n < 100 || n > 2_000_000) return null;
   return n;
+}
+
+/**
+ * A16 (Business audits 23.11): jauna auto piegādes rādījumi (5 / 10 / 17 km) ir tabulā, tātad arī grafikā.
+ * `parseOdometerKm` tos (<100 km) ignorē anomāliju analīzei - šeit tikai zīmēšanai.
+ */
+export function parseChartOdometerKm(raw: string): number | null {
+  const km = parseOdometerKm(raw);
+  if (km != null) return km;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  const n = Number.parseInt(digits, 10);
+  return n >= 1 && n < 100 ? n : null;
 }
 
 /**
@@ -365,14 +418,41 @@ function uniqueSourceLabelsOrdered(rows: UnifiedMileageRow[]): string[] {
   return out;
 }
 
+function dropGenericRegionCountries(countries: string[]): string[] {
+  const specific = countries.filter((c) => !isGenericRegionCountry(c));
+  return specific.length > 0 ? specific : countries;
+}
+
+/**
+ * A18: «01.04.2026» no avota, kas dod tikai mēnesi (AutoDNA glabā 1. datumu). Ja tajā pašā rindā ir mēneša
+ * precizitātes ieraksts tam pašam mēnesim un visi «dienas» ieraksti ir mēneša 1. datumā - tas ir mēnesis.
+ */
+function mergedDatePrecision(
+  rows: readonly Pick<UnifiedMileageRow, "datePrecision" | "sortableTime" | "sourceLabel">[],
+): "day" | "month" {
+  if (rows.every((r) => r.datePrecision === "month")) return "month";
+  const months = rows.filter((r) => r.datePrecision === "month");
+  if (months.length === 0) return "day";
+  const dayRows = rows.filter((r) => r.datePrecision !== "month");
+  // Tikai AutoDNA (mēneša avots, ielasē 1. datums); dīlera / CSDD 1. datums var būt īsts vizītes datums.
+  if (!dayRows.every((r) => /^autodna$/i.test(r.sourceLabel.trim()))) return "day";
+  const firstOfMonth = dayRows.every((r) => Number.isFinite(r.sortableTime) && new Date(r.sortableTime).getUTCDate() === 1);
+  const sameMonth = dayRows.every((d) => months.some((m) => sameCalendarMonth(m.sortableTime, d.sortableTime)));
+  return firstOfMonth && sameMonth ? "month" : "day";
+}
+
 function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDisplayRow {
   const chrono = sortMileageChronological(cluster);
   const dayPrecise = chrono.filter((r) => r.datePrecision !== "month");
   const pickFrom = dayPrecise.length > 0 ? dayPrecise : chrono;
   const primary = pickFrom[pickFrom.length - 1] ?? cluster[0]!;
   const labels = uniqueSourceLabelsOrdered(cluster);
+  // Business audits 23.11 (A7): sludinājuma etiķete nedrīkst būt galvenā, ja to pašu km apstiprina izsole u.c.
+  if (labels.length > 1 && hasNonListingLabel(labels)) {
+    labels.sort((a, b) => Number(isListingMileageSource({ sourceLabel: a })) - Number(isListingMileageSource({ sourceLabel: b })));
+  }
   const filledLabels = labels.length > 0 ? labels : [primary.sourceLabel.trim() || "Nezināms avots"];
-  const countries = [...new Set(cluster.map((r) => r.country.trim()).filter(Boolean))];
+  const countries = dropGenericRegionCountries([...new Set(cluster.map((r) => r.country.trim()).filter(Boolean))]);
   // Ja to pašu km apstiprina kāds neatkarīgs nolasījums, apvienotā rinda vairs nav tikai dokumenta vērtība.
   const documentValue = cluster.every((r) => r.documentValue === true);
   // Valsts paliek nesertificēta tikai tad, ja pilnīgi visi avoti šajā km klasterī ir nesertificēti
@@ -380,7 +460,7 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   const countryUnverified = cluster.every((r) => r.countryUnverified === true);
   const countryInferred = cluster.every((r) => r.countryInferred === true);
   const visitOdometer = cluster.every((r) => r.visitOdometer === true);
-  const datePrecision = cluster.every((r) => r.datePrecision === "month") ? "month" : "day";
+  const datePrecision = mergedDatePrecision(cluster);
   const knownCountries = countries.filter((c) => c && c !== CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL);
   return {
     ...primary,
@@ -479,8 +559,11 @@ function mergeCrossSourceRows(
     const lbl = raw.trim() || "Nezināms avots";
     if (!labels.some((v) => v.toLowerCase() === lbl.toLowerCase())) labels.push(lbl);
   }
+  if (labels.length > 1 && hasNonListingLabel(labels)) {
+    labels.sort((a, b) => Number(isListingMileageSource({ sourceLabel: a })) - Number(isListingMileageSource({ sourceLabel: b })));
+  }
   const filledLabels = labels.length > 0 ? labels : [later.sourceLabel.trim() || "Nezināms avots"];
-  const countries = [...new Set([later.country.trim(), earlier.country.trim()].filter(Boolean))];
+  const countries = dropGenericRegionCountries([...new Set([later.country.trim(), earlier.country.trim()].filter(Boolean))]);
   const documentValue = later.documentValue === true && earlier.documentValue === true;
   const countryUnverified = later.countryUnverified === true && earlier.countryUnverified === true;
   const dayRow = later.datePrecision !== "month" ? later : earlier.datePrecision !== "month" ? earlier : later;
@@ -490,7 +573,7 @@ function mergeCrossSourceRows(
     sourceOrder: Math.min(earlier.sourceOrder, later.sourceOrder),
     sourceLabel: filledLabels[0] ?? later.sourceLabel,
     sourceLabels: filledLabels,
-    datePrecision: later.datePrecision === "month" && earlier.datePrecision === "month" ? "month" : "day",
+    datePrecision: mergedDatePrecision([earlier, later]),
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
     ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
   };
@@ -1258,7 +1341,10 @@ export function collectUnifiedMileageRows(
   if (!options?.omitCcVin) {
     for (const r of (p.ccVinBlock?.mileage ?? []).filter(autoRecordsRowHasData)) {
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-      pushRow(r.date, odoOut, r.country, CC_VIN_PDF_SOURCE_LABEL, false, false, r.unit ?? r.odometer);
+      const country = isGenericRegionCountry(r.country)
+        ? ccVinAuctionCountryForDate(p.ccVinBlock, r.date) || r.country
+        : r.country;
+      pushRow(r.date, odoOut, country, CC_VIN_PDF_SOURCE_LABEL, false, false, r.unit ?? r.odometer);
     }
   }
 

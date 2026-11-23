@@ -40,7 +40,7 @@ describe("checkPrePdfContradictions", () => {
     expect(flags.filter((f) => f.id.startsWith("c1") || f.id.startsWith("c2") || f.id.startsWith("c3"))).toEqual([]);
     const tiles = buildPdfReportSummaryTiles(summaryInput);
     const mileage = tiles.find((t) => t.id === "mileage");
-    expect(mileage?.note).toMatch(/2 ieraksti bez pretrunām/);
+    expect(mileage?.note).toMatch(/2 rādījumi bez pretrunām/);
     expect(mileage?.value).toMatch(/148 200/);
   });
 

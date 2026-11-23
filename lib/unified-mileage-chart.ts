@@ -8,6 +8,8 @@ import {
   analyzeUnifiedMileageAnomalies,
   sortMileageChronological,
   parseOdometerKm,
+  formatMileageRowDateLabel,
+  parseChartOdometerKm,
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
@@ -203,14 +205,14 @@ function chartSeriesFromRows(rows: UnifiedMileageRow[], chartExclude: Set<number
   return sortMileageChronological(rows)
     .map((r) => {
       if (chartExclude.has(r.sourceOrder)) return null;
-      const km = parseOdometerKm(r.odometer);
+      const km = parseChartOdometerKm(r.odometer);
       if (km == null || r.sortableTime === Number.NEGATIVE_INFINITY) return null;
       return {
         year: new Date(r.sortableTime).getUTCFullYear(),
         time: r.sortableTime,
         km,
         sourceOrder: r.sourceOrder,
-        dateDisplay: r.date.trim(),
+        dateDisplay: formatMileageRowDateLabel(r),
         sourceKeys: rowSourceLabels(r).map(mileageSourceLabelToPdfKey),
       };
     })
@@ -243,8 +245,10 @@ function areaUnderPath(d: string, pts: ChartXY[], bottomY: number): string {
   return `${d} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
 }
 
+/** A15: grafika punkti ir «rādījumi» - avota «ieraksti» (virsrakstā) var būt vairāk (bojājumi, sludinājumi u.c.). */
 function mileageReadingCountLabel(n: number): string {
-  return n === 1 ? "1 ieraksts" : `${n} ieraksti`;
+  const one = n % 10 === 1 && n % 100 !== 11;
+  return `${n} ${one ? "rādījums" : "rādījumi"}`;
 }
 
 function mileageSeriesSpanHtml(points: ChartSeriesPoint[]): string {
@@ -394,6 +398,9 @@ ${mileageSeriesSpanHtml(series)}
  * Avota sadaļas līkne (01): laukums izplūst, bez rāmja / ass / režģa.
  * Fonā blāva kopējā līkne; priekšplānā šī avota krāsa; malās šī avota sākuma/beigu datums.
  */
+/** Avota mini grafiks tikai ar vismaz 3 rādījumiem (D37). */
+export const SOURCE_SPARK_MIN_POINTS = 3;
+
 export function buildSourceMileageSparkHtml(
   rows: UnifiedMileageRow[],
   sourceKey: MileagePdfSourceKey,
@@ -404,7 +411,8 @@ export function buildSourceMileageSparkHtml(
   const series = chartSeriesFromRows(rows, chartExclude);
   if (series.length === 0) return "";
   const mine = series.filter((s) => s.sourceKeys.includes(sourceKey));
-  if (mine.length === 0) return "";
+  // D37 (Business audits 23.11): 1-2 punktu līkne bez ass neko neizsaka - tādu nerāda (dati ir tabulā).
+  if (mine.length < SOURCE_SPARK_MIN_POINTS) return "";
 
   const tMin = series[0]!.time;
   const tMax = series[series.length - 1]!.time;
@@ -412,11 +420,11 @@ export function buildSourceMileageSparkHtml(
   const color = MILEAGE_PDF_SOURCE_COLOR[sourceKey];
 
   const W = 480;
-  const H = 80;
+  const H = 96;
   const padL = 10;
   const padR = 10;
   const padT = 8;
-  const padB = 8;
+  const padB = 22;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const xOf = (time: number) => {
@@ -430,7 +438,21 @@ export function buildSourceMileageSparkHtml(
   const ghostD = monotoneCubicSvgPath(allPts);
   const mineD = monotoneCubicSvgPath(minePts);
   const fadeId = `pdfSrcSparkFade-${sourceKey}`;
-  const fillD = areaUnderPath(mineD, minePts, H);
+  const fillD = areaUnderPath(mineD, minePts, H - padB);
+  // D37: gadu ass kā kopējā nobraukuma grafikā.
+  const yStart = series[0]!.year;
+  const yEnd = series[series.length - 1]!.year;
+  const yearCandidates: { year: number; x: number }[] = [];
+  for (let y = yStart; y <= yEnd; y++) {
+    const gx = yearLabelXInRange(y, tMin, tMax, xOf, padL, plotW);
+    if (gx != null) yearCandidates.push({ year: y, x: gx });
+  }
+  const yearLabels = pickNonOverlappingYearTicks(yearCandidates, 30)
+    .map(
+      ({ year, x }) =>
+        `<text class="pdf-mileage-chart-year pdf-src-mileage-spark-year" x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${year}</text>`,
+    )
+    .join("");
 
   const ghostPath = ghostD
     ? `<path class="pdf-src-mileage-spark-ghost" fill="none" d="${ghostD}" />`
@@ -453,6 +475,7 @@ export function buildSourceMileageSparkHtml(
   ${ghostPath}
   ${fillPath}
   ${sourcePath}
+  ${yearLabels}
 </svg>
 ${mileageSeriesSpanHtml(mine)}
 </div>`;

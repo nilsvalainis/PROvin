@@ -52,6 +52,7 @@ import {
 import {
   analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
+  isVerifiedMileageSource,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
 import {
@@ -1127,7 +1128,10 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     const anomaly = anomalyBySourceOrder.get(r.sourceOrder) === true;
     // 17.11 (Nils B2): sludinājumā mazāk nekā iepriekš fiksēts - atsevišķs brīdinājums, ne odometra pretruna.
     const listingBelow = listingBelowRecordedSourceOrders.has(r.sourceOrder);
-    const listingCountry = odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
+    // A8 (Business audits 23.11): ja to pašu km apstiprina dīleris / CSDD, tas nav «pēc sludinājuma» rādījums -
+    // citādi tas paliek atsevišķs «Odometra ieraksts» blakus tās pašas dienas dīlera vizītei.
+    const listingCountry =
+      !isVerifiedMileageSource(r) && odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
     const vendorCaDisputed = vendorCanadaDisputedAgainstUs(
       r.country,
       r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel],

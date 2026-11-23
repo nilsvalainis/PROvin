@@ -193,7 +193,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   const rollback = hasActiveRollbackAnomaly(rows, input.odometerAnomalyOverrides);
   const note = rollback
     ? pluralLv(1, "nobraukuma kritums", "nobraukuma kritumi")
-    : `${pluralLv(chartCount, "ieraksts", "ieraksti")} bez pretrunām`;
+    : `${pluralLv(chartCount, "rādījums", "rādījumi")} bez pretrunām`;
   const listing = [...rows]
     .filter((r) => isListingMileageSource(r) && parseOdometerKm(r.odometer) != null)
     .sort((a, b) => a.sortableTime - b.sortableTime)
@@ -304,9 +304,10 @@ function buildListingTile(input: PdfSummaryInput): PdfSummaryTile {
 
 function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
   const ar = input.autoRecordsBlock;
-  const dealer =
-    (ar?.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-    (ar?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  // Dīlera vizītes: darbu saraksts un nobraukuma rindas apraksta tās pašas vizītes - nesaskaitīt abus
+  // (Business audits 23.11: 17 + 15 = «32 ieraksti», bet dīlera sadaļā «Vizītes 15»).
+  const dealerWorks = (ar?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  const dealer = dealerWorks > 0 ? dealerWorks : (ar?.serviceHistory ?? []).filter(autoRecordsRowHasData).length;
   const others = (input.citiAvoti?.sections ?? []).reduce(
     (sum, s) =>
       sum +
