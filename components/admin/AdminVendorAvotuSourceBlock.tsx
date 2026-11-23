@@ -67,6 +67,7 @@ import {
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 import { AdminCarVerticalPurchaseButton } from "@/components/admin/AdminCarVerticalPurchaseButton";
+import { AdminCarVerticalAutoPanel } from "@/components/admin/AdminCarVerticalAutoPanel";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -214,6 +215,15 @@ export function AdminVendorAvotuSourceBlock({
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
         <AdminMileageRangeBar rows={displayRows} />
+        {blockKey === "carvertical" && getSourceBlocks && applyPatchedBlocks ? (
+          <AdminCarVerticalAutoPanel
+            sessionId={sessionId}
+            disabled={disabled}
+            readOnly={readOnly}
+            getSourceBlocks={getSourceBlocks}
+            applyPatchedBlocks={applyPatchedBlocks}
+          />
+        ) : null}
         {blockKey === "carvertical" ? (
           <AdminCarVerticalPurchaseButton disabled={disabled} readOnly={readOnly} />
         ) : null}

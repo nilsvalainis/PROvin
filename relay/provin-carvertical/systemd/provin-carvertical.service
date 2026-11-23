@@ -1,0 +1,31 @@
+[Unit]
+Description=PROVIN CarVertical relay (atskaites ar kredītu, atlikums), 127.0.0.1:8792
+After=network.target provin-carvertical-xvfb.service
+Requires=provin-carvertical-xvfb.service
+
+[Service]
+Type=simple
+User=provin-carvertical
+Group=provin-carvertical
+WorkingDirectory=/opt/provin-carvertical
+EnvironmentFile=/etc/provin-carvertical.env
+Environment=DISPLAY=:95
+Environment=HOME=/var/lib/provin-carvertical
+Environment=PLAYWRIGHT_BROWSERS_PATH=/var/lib/provin-carvertical/ms-playwright
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/provin-carvertical/server.mjs
+Restart=always
+RestartSec=5
+# Pieteikšanās dati nedrīkst nonākt žurnālā: serviss tos nekad nedrukā, log() tos papildus aizvieto ar ***.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=provin-carvertical
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-carvertical
+MemoryMax=900M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target
