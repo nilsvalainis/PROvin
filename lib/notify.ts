@@ -1,4 +1,5 @@
 import { sendAdminPush } from "@/lib/admin-push";
+import { getSiteOrigin } from "@/lib/email/mail-config";
 import { adminPushSlaMessage } from "@/lib/admin-push-shared";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import {
@@ -15,33 +16,26 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function formatMessage(p: OrderPayload): string {
-  const deliveryLine = p.contactMethod
-    ? `<b>Saziņas veids:</b> ${escapeHtml(contactLabel(p.contactMethod))}`
-    : `<b>Atskaite klientam:</b> e-pastā`;
+/** Vārda iniciālis (personas dati Telegram trešajā pusē - tikai minimums). */
+export function telegramNameInitial(name: string | null | undefined): string {
+  const first = (name ?? "").trim().charAt(0);
+  return first ? `${first.toLocaleUpperCase("lv")}.` : "-";
+}
 
+/**
+ * Telegram ziņa: bez klienta e-pasta, tālruņa un komentāra (tie ir adminā un admina e-pastā).
+ * Tikai vārda iniciālis, VIN, summa un saite uz pasūtījumu.
+ */
+export function formatAdminTelegramOrderMessage(p: OrderPayload, siteOrigin = getSiteOrigin()): string {
+  const adminUrl = `${siteOrigin}/admin/orders/${encodeURIComponent(p.sessionId)}`;
   return [
     "🚗 <b>Jauns PROVIN pasūtījums</b>",
     "",
-    `<b>Session:</b> <code>${escapeHtml(p.sessionId)}</code>`,
-    `<b>Vārds:</b> ${escapeHtml(p.customerName ?? "-")}`,
-    `<b>E-pasts:</b> ${escapeHtml(p.customerEmail ?? "-")}`,
-    `<b>Tālrunis:</b> ${escapeHtml(p.customerPhone ?? "-")}`,
+    `<b>Klients:</b> ${escapeHtml(telegramNameInitial(p.customerName))}`,
     `<b>VIN:</b> ${escapeHtml(p.vin ?? "-")}`,
-    `<b>Sludinājums:</b> ${escapeHtml(p.listingUrl ?? "-")}`,
-    deliveryLine,
-    p.notes ? `<b>Piezīmes:</b> ${escapeHtml(p.notes)}` : "",
-    p.heardAbout ? `<b>Kur uzzināja:</b> ${escapeHtml(p.heardAbout)}` : "",
     `<b>Summa:</b> ${escapeHtml(p.amountTotal ?? "-")} ${escapeHtml(p.currency ?? "")}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-function contactLabel(v: string | null): string {
-  if (v === "whatsapp") return "WhatsApp";
-  if (v === "telegram") return "Telegram";
-  return v ?? "-";
+    `<b>Pasūtījums:</b> ${escapeHtml(adminUrl)}`,
+  ].join("\n");
 }
 
 export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> {
@@ -52,7 +46,7 @@ export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   const body = {
     chat_id: chatId,
-    text: formatMessage(payload),
+    text: formatAdminTelegramOrderMessage(payload),
     parse_mode: "HTML" as const,
     disable_web_page_preview: true,
   };

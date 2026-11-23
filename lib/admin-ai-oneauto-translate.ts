@@ -3,6 +3,7 @@ import "server-only";
 import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { adminGenerateJsonText, hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { originalDealerWorksForRow } from "@/lib/admin-ai-dealer-facts";
+import { UNTRUSTED_DATA_RULE, wrapUntrustedData } from "@/lib/ai-untrusted-data";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AI_ADMIN_MODEL_TIER_DEFAULT } from "@/lib/ai-admin-model-tier";
@@ -22,6 +23,7 @@ import {
   applyOneautoTranslatedDisplay,
   applyOneautoTranslatedWorks,
   oneautoDisplayWorksNeedLvTranslation,
+  oneautoTranslatedDisplayRowCountsMatch,
   oneautoWorksNeedLvTranslation,
   parseOneautoTranslateDisplay,
   parseOneautoWorksTranslatePayload,
@@ -47,7 +49,8 @@ RULES:
 - A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
 - Dates and odometer values stay exactly as given.
 - No markdown. No em dash. No EUR repair estimates.
-- Latvian, client-readable, compact.`;
+- Latvian, client-readable, compact.
+- ${UNTRUSTED_DATA_RULE}`;
 
 /**
  * Noklusējums Gemini (Smart). Ja Gemini nav pieejams vai atbilde neder, viens mēģinājums ar Claude Sonnet,
@@ -116,7 +119,7 @@ export async function translateOneautoDisplayWithAi(input: {
     `Iztulko šos OneAuto OEM datus skaidrā latviešu valodā. Saglabā rindu skaitu un kārtību.
 Gatavo komplektāciju (equipment) NETULKO un neatgriez.
 
-${JSON.stringify({ powertrain: current.powertrain, serviceTimeline: current.serviceTimeline }, null, 2)}
+${wrapUntrustedData("oneauto", JSON.stringify({ powertrain: current.powertrain, serviceTimeline: current.serviceTimeline }, null, 2))}
 
 Atbildi tikai ar JSON.`,
     { operatorNotes: input.operatorNotes },
@@ -127,7 +130,11 @@ Atbildi tikai ar JSON.`,
     systemInstruction: ONEAUTO_TRANSLATE_SYSTEM,
     userPrompt,
     temperature: 0.15,
-    parse: (r) => jsonParses(r, parseOneautoTranslateDisplay),
+    parse: (r) =>
+      jsonParses(r, (v) => {
+        const d = parseOneautoTranslateDisplay(v);
+        return d && oneautoTranslatedDisplayRowCountsMatch(current, d);
+      }),
   });
 
   let parsedJson: unknown;
@@ -159,7 +166,8 @@ RULES:
 - Keep one item per line exactly as in the source: never split one item at a comma inside parentheses or inside the item name (e.g. „Brake fluid DOT4, low viscosity” is ONE item: „Bremžu šķidrums DOT4, zemas viskozitātes”).
 - A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
 - No markdown. No em dash. No EUR.
-- Latvian, client-readable, compact.`;
+- Latvian, client-readable, compact.
+- ${UNTRUSTED_DATA_RULE}`;
 
 export async function translateOneautoWorksWithAi(input: {
   display: OneautoDisplaySections;
@@ -168,15 +176,12 @@ export async function translateOneautoWorksWithAi(input: {
 }): Promise<OneautoDisplaySections> {
   const events = filledOneautoServiceEvents(input.display.serviceTimeline);
   if (events.length === 0) throw new Error("empty_source_data");
+  const sourceWorks = events.map((ev) => repairDealerImportText(ev.works));
 
   const userPrompt = appendAiOperatorNotesSection(
     `Iztulko TIKAI šos servisa darbu tekstus skaidrā latviešu valodā. Saglabā skaitu un kārtību.
 
-${JSON.stringify(
-  events.map((ev) => repairDealerImportText(ev.works)),
-  null,
-  2,
-)}
+${wrapUntrustedData("oneauto", JSON.stringify(sourceWorks, null, 2))}
 
 Atbildi tikai ar JSON: { "works": ["..."] }.`,
     { operatorNotes: input.operatorNotes },
@@ -187,7 +192,7 @@ Atbildi tikai ar JSON: { "works": ["..."] }.`,
     systemInstruction: ONEAUTO_WORKS_TRANSLATE_SYSTEM,
     userPrompt,
     temperature: 0.1,
-    parse: (r) => jsonParses(r, parseOneautoWorksTranslatePayload),
+    parse: (r) => jsonParses(r, (v) => parseOneautoWorksTranslatePayload(v)?.length === events.length),
   });
 
   let parsedJson: unknown;
@@ -198,6 +203,11 @@ Atbildi tikai ar JSON: { "works": ["..."] }.`,
   }
   const works = parseOneautoWorksTranslatePayload(parsedJson);
   if (!works) throw new Error("ai_invalid_json");
+  if (works.length !== events.length) {
+    // Rindu skaits nesakrīt arī pēc rezerves modeļa - paliek oriģināls (nevis nobīdītas rindas).
+    console.warn("[oneauto-translate] works count mismatch", { expected: events.length, got: works.length });
+    return input.display;
+  }
   return applyOneautoTranslatedWorks(input.display, works);
 }
 

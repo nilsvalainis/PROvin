@@ -72,6 +72,27 @@ export function buildOneautoProductResult(fetched: {
   return { ok: true, ...base };
 }
 
+/**
+ * Žurnālam: tikai atbildes forma un ierakstu skaits (bez satura - tajā var būt servisa teksti).
+ * Kļūdas teksts (string) tiek īsināts līdz 120 zīmēm.
+ */
+export function oneautoResponseLogSummary(payload: unknown): string {
+  if (payload == null) return "empty";
+  if (typeof payload === "string") return `text:${payload.slice(0, 120)}`;
+  if (Array.isArray(payload)) return `records:${payload.length}`;
+  if (typeof payload === "object") {
+    let records = 0;
+    for (const v of Object.values(payload as Record<string, unknown>)) {
+      if (Array.isArray(v)) records += v.length;
+      else if (v && typeof v === "object") {
+        for (const w of Object.values(v as Record<string, unknown>)) if (Array.isArray(w)) records += w.length;
+      }
+    }
+    return `keys:${Object.keys(payload as object).length} records:${records}`;
+  }
+  return typeof payload;
+}
+
 export function oneautoResponsePreview(payload: unknown, max = 300): string {
   if (payload == null) return "";
   if (typeof payload === "string") return payload.slice(0, max);

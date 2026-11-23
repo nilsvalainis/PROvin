@@ -155,6 +155,15 @@ describe("decideDealerDataRun", () => {
 describe("decideDealerRefund", () => {
   const noData = job({ status: "no_data" });
 
+  it("override bez dīlera darba atļauts tikai dīlera produktam", () => {
+    expect(
+      decideDealerRefund({ job: null, amountTotalCents: 1900, paid: true, override: true, dealerProduct: false }),
+    ).toEqual({ allowed: false, reason: "not_dealer_product" });
+    expect(
+      decideDealerRefund({ job: null, amountTotalCents: 1900, paid: true, override: true, dealerProduct: true }),
+    ).toEqual({ allowed: true, amountCents: 1900 });
+  });
+
   it("atļauj atmaksu, kad OEM datu nav", () => {
     expect(decideDealerRefund({ job: noData, amountTotalCents: 1900, paid: true })).toEqual({
       allowed: true,

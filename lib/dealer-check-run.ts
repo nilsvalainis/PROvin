@@ -165,7 +165,7 @@ export async function generateDealerCheckComments(record: DealerCheckRecord): Pr
       })
     ).trim();
   } catch (e) {
-    console.warn("[dealer-check] Gemini servisa komentārs neizdevās", e);
+    console.warn("[dealer-check] Gemini servisa komentārs neizdevās", e instanceof Error ? e.message.slice(0, 200) : "unknown");
   }
   try {
     oilIntervals = (
@@ -176,7 +176,7 @@ export async function generateDealerCheckComments(record: DealerCheckRecord): Pr
       })
     ).trim();
   } catch (e) {
-    console.warn("[dealer-check] Gemini eļļas komentārs neizdevās", e);
+    console.warn("[dealer-check] Gemini eļļas komentārs neizdevās", e instanceof Error ? e.message.slice(0, 200) : "unknown");
   }
   return {
     serviceHistory: sanitizeDealerCheckComment(serviceHistory, false),
@@ -204,7 +204,7 @@ export async function runDealerCheck(args: {
     return { error: "invalid_vin", status: 400 };
   }
 
-  const fetched = await fetchOneautoProducts({ vin, products: products as OneautoProductId[] });
+  const fetched = await fetchOneautoProducts({ vin, products: products as OneautoProductId[], manual: true });
   const displayOriginal = fetched.display;
   const display = await translateOneautoWorksOnIngest(fetched.display);
   const chargedCents = dealerCheckChargedCents(products, fetched.results);

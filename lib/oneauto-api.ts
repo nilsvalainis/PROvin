@@ -16,7 +16,7 @@ import type { OneautoProductResult } from "@/lib/oneauto-block";
 import {
   buildOneautoProductResult,
   classifyOneautoError,
-  oneautoResponsePreview,
+  oneautoResponseLogSummary,
 } from "@/lib/oneauto-product-result";
 import {
   mergeVinDecodeFallbackPowertrain,
@@ -62,7 +62,7 @@ function classifyError(status: number, bodyText: string): string {
 }
 
 function logOneautoProduct(vin: string, product: string, status: number, payload: unknown): void {
-  console.info("[oneauto]", vin, product, status, oneautoResponsePreview(payload, 300));
+  console.info("[oneauto]", vin, product, status, oneautoResponseLogSummary(payload));
 }
 
 async function fetchVinDecoderFallbackRows(vin: string) {
@@ -200,6 +200,8 @@ export async function fetchOneautoProducts(opts: {
    * saglabāts, pat ja funkcija pēc tam tiek apturēta.
    */
   onResults?: (results: Partial<Record<OneautoProductId, OneautoProductResult>>) => Promise<void>;
+  /** Admina manuāls pirkums (dienas brīdinājumam: > 15 manuālu pirkumu dienā). */
+  manual?: boolean;
 }): Promise<{
   source: typeof ONEAUTO_SOURCE_TAG;
   vin: string;
@@ -262,6 +264,7 @@ export async function fetchOneautoProducts(opts: {
     }
   }
   await persistOneautoChargedCosts(opts.vin, opts.products, results);
+  await recordOneautoSpendSafe(costCents, Boolean(opts.manual));
   return {
     source: ONEAUTO_SOURCE_TAG,
     vin: opts.vin,
@@ -271,6 +274,17 @@ export async function fetchOneautoProducts(opts: {
     display,
     pendingRequestIds,
   };
+}
+
+/** Dienas tēriņa uzraudzība - tikai brīdinājums, kļūda neko neaptur. */
+async function recordOneautoSpendSafe(costCents: number, manual: boolean): Promise<void> {
+  if (!(costCents > 0)) return;
+  try {
+    const { recordOneautoDailySpend } = await import("@/lib/oneauto-daily-spend-store");
+    await recordOneautoDailySpend({ costCents, manual });
+  } catch (err) {
+    console.error("[oneauto] daily spend record failed", err instanceof Error ? err.message : "unknown");
+  }
 }
 
 async function persistOneautoChargedCosts(
@@ -411,6 +425,7 @@ export async function fetchAndStoreOneautoVehicleImages(opts: {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  await recordOneautoSpendSafe(oneautoImageFetchCostCents(photoIds.length), true);
   return {
     vin: opts.vin,
     photoIds,

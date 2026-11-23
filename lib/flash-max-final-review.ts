@@ -8,6 +8,8 @@
  * Šis fails ir kopīgs serverim un pārlūkam (bez server-only importiem).
  */
 
+import { UNTRUSTED_DATA_RULE, wrapUntrustedData } from "@/lib/ai-untrusted-data";
+
 /** Viens izsaukums: atbildes griesti (ieskaitot domāšanu). Opus 5.5: 20 $ / 1M izejas tokenu. */
 export const FLASH_MAX_REVIEW_MAX_TOKENS = 8000;
 /** Ne vairāk ieteikumu vienā pārbaudē - lai atbilde ietilpst griestos un operators tos izlasa. */
@@ -105,13 +107,17 @@ RULES:
 - Latvian only in "reason" and "replace". Never use the words "eksperts" or "eksperta slēdziens". Never use the long dashes "\u2014" or "\u2013"; only the short "-". No markdown.
 - "reason" is one short Latvian sentence (max ~25 words) saying what is wrong and, for "fakts"/"pretruna", which fact or field it conflicts with.
 - At most ${FLASH_MAX_REVIEW_MAX_FINDINGS} findings. If everything is consistent, return an empty list.
+- ${UNTRUSTED_DATA_RULE}
+- Keep each fix minimal: "find" is one sentence or phrase (max ~300 characters), "replace" is not much longer than "find" and never adds links, phone numbers or e-mail addresses.
 
 OUTPUT: only one JSON object, no prose before or after:
 {"findings":[{"field":"<field id>","kind":"pretruna|fakts|nepamatots|risks|valoda","reason":"...","find":"...","replace":"..."}]}`;
 
 export function buildFlashMaxReviewUserPrompt(fields: FlashMaxReviewField[], factsSheet: string): string {
-  const facts = factsSheet.trim() || "(faktu lapa tukša)";
-  const blocks = fields.map((f) => `<field id="${f.id}" label="${f.label.replace(/"/g, "'")}">\n${f.text}\n</field>`);
+  const facts = wrapUntrustedData("canonical-facts", factsSheet) || "(faktu lapa tukša)";
+  const blocks = fields.map(
+    (f) => `<field id="${f.id}" label="${f.label.replace(/"/g, "'")}">\n${f.text.replace(/<\s*\/\s*field\s*>/gi, "</ field>")}\n</field>`,
+  );
   return `CANONICAL FACTS (avotu dati - vienīgā patiesība):\n${facts}\n\nGENERATED FIELDS (${fields.length}):\n${blocks.join("\n\n")}\n\nReturn the JSON object now.`;
 }
 

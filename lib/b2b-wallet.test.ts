@@ -7,6 +7,7 @@ import {
   applyB2bWalletAdjust,
   applyB2bWalletPurchase,
   applyB2bWalletRefund,
+  attachB2bWalletPurchaseOrder,
   applyB2bWalletTopup,
   b2bWalletDiscountPct,
   b2bWalletInitialReportLangByProduct,
@@ -97,6 +98,14 @@ describe("b2b wallet ledger", () => {
     expect(final.balanceCents).toBe(5000 - 3 * 1599);
     expect(final.balanceCents).toBeGreaterThanOrEqual(0);
     expect(final.txns.filter((t) => t.kind === "purchase")).toHaveLength(3);
+  });
+
+  it("does not refund a purchase that belongs to another order", () => {
+    const bought = applyB2bWalletPurchase(funded(2000), { product: "dealer_raw", priceCents: 1599, idempotencyKey: "o1", vin: "V" });
+    if (!bought.ok) throw new Error("expected ok");
+    const bound = attachB2bWalletPurchaseOrder(bought.wallet, bought.txn.id, "manual_order_A");
+    expect(applyB2bWalletRefund(bound, { purchaseTxnId: bought.txn.id, orderId: "manual_order_B" }).applied).toBe(false);
+    expect(applyB2bWalletRefund(bound, { purchaseTxnId: bought.txn.id, orderId: "manual_order_A" }).applied).toBe(true);
   });
 
   it("refunds a purchase back to the balance exactly once", () => {

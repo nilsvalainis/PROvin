@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDealerCommentReviewFindings,
+  isDealerReviewFindingWithinLimits,
   DEALER_REVIEW_DEDUP_RULES,
   dealerCommentPlainCleanup,
   dropDealerCommentsDuplicatingOil,
@@ -42,7 +43,7 @@ describe("applyDealerCommentReviewFindings", () => {
       { id: "a", fieldId: "comments", kind: "fakts", reason: "r", find: "50 000 km", replace: "60 000 km" },
       { id: "b", fieldId: "comments", kind: "risks", reason: "r", find: "", replace: "Papildu teksts." },
       { id: "c", fieldId: "oilChangeIntervalNotes", kind: "valoda", reason: "r", find: "nav tāda", replace: "x" },
-    ]);
+    ], "Serviss 2020-05-01, nobraukums 60 000 km");
     expect(applied).toBe(1);
     expect(texts.comments).toBe("Pēdējais serviss 2020. gadā pie 60 000 km.");
     expect(texts.oilChangeIntervalNotes).toBe(fields[1]!.text);
@@ -107,5 +108,47 @@ describe("dropDealerCommentsDuplicatingOil (Nils 22.11: komentāri dubulto apkop
     ]);
     expect(r.applied).toBe(1);
     expect(r.texts.comments).toBe("A teikums. B teikums.");
+  });
+});
+
+describe("Opus automātisko labojumu robežas (drošība)", () => {
+  const facts = "29.04.2019 Kopējais nobraukums 74 210 km. Nomainīta motoreļļa.";
+  const f = (kind: "fakts" | "atkartojums" | "valoda", find: string, replace: string) => ({ kind, find, replace });
+
+  it("pieņem mazu labojumu ar skaitli no avota datiem", () => {
+    expect(isDealerReviewFindingWithinLimits(f("fakts", "pie 70 000 km", "pie 74 210 km"), facts)).toBe(true);
+  });
+  it("noraida jaunu skaitli, kura nav ne fragmentā, ne datos", () => {
+    expect(isDealerReviewFindingWithinLimits(f("fakts", "pie 70 000 km", "pie 99 999 km"), facts)).toBe(false);
+  });
+  it("noraida saiti, e-pastu vai tālruni aizvietojumā", () => {
+    expect(isDealerReviewFindingWithinLimits(f("valoda", "apkopes veiktas", "apkopes veiktas, sk. example.com"), facts)).toBe(false);
+    expect(isDealerReviewFindingWithinLimits(f("valoda", "apkopes veiktas", "zvaniet +371 2000 0000"), facts)).toBe(false);
+    expect(isDealerReviewFindingWithinLimits(f("valoda", "apkopes veiktas", "rakstiet a@b.lv"), facts)).toBe(false);
+  });
+  it("noraida pārāk garu fragmentu vai pārāk garu aizvietojumu", () => {
+    expect(isDealerReviewFindingWithinLimits(f("fakts", "x".repeat(301), "y"), facts)).toBe(false);
+    expect(isDealerReviewFindingWithinLimits(f("valoda", "īss teksts", "īss teksts ar daudz jauna satura klāt, ko avotā nav"), facts)).toBe(false);
+  });
+  it("atkārtojums drīkst dzēst rindkopu, bet nedrīkst pagarināt", () => {
+    expect(isDealerReviewFindingWithinLimits(f("atkartojums", "a".repeat(800), ""), facts)).toBe(true);
+    expect(isDealerReviewFindingWithinLimits(f("atkartojums", "īss", "garāks teksts"), facts)).toBe(false);
+  });
+  it("nedrīkst izdzēst „Ražotāja intervāls” rindu", () => {
+    expect(isDealerReviewFindingWithinLimits(f("atkartojums", "Ražotāja intervāls: 15 000 km.", ""), facts)).toBe(false);
+  });
+  it("vienā laukā kopā nemaina vairāk par 60% teksta", () => {
+    const text = "Pirmais teikums par remontu. Otrais teikums par remontu. Trešais teikums.";
+    const r = applyDealerCommentReviewFindings(
+      [{ id: "comments", label: "K", text }],
+      [
+        { id: "1", fieldId: "comments", kind: "atkartojums", reason: "r", find: "Pirmais teikums par remontu. ", replace: "" },
+        { id: "2", fieldId: "comments", kind: "atkartojums", reason: "r", find: "Otrais teikums par remontu. ", replace: "" },
+      ],
+      facts,
+    );
+    expect(r.applied).toBe(1);
+    expect(r.skipped).toBe(1);
+    expect(r.texts.comments).toBe("Otrais teikums par remontu. Trešais teikums.");
   });
 });

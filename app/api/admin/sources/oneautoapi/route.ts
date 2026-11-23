@@ -49,6 +49,7 @@ export async function POST(req: Request) {
     const fetched = await fetchOneautoProducts({
       vin,
       products: toFetch,
+      manual: true,
       // Uzreiz serverī (pirms izmaksu ieraksta): dati nepazūd, ja lapu aizver pirms melnraksta saglabāšanas.
       onResults: sessionId
         ? (results) => recordManualOneautoPurchase({ sessionId, vin, results })

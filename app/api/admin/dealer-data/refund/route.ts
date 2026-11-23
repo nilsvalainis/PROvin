@@ -23,10 +23,12 @@ import { readDealerDataJob, upsertDealerDataJob, writeDealerDataJob } from "@/li
 import {
   DEALER_REFUND_MAX_CENTS,
   decideDealerRefund,
+  isDealerDataAutoFetchOrder,
   type DealerRefundRecord,
 } from "@/lib/dealer-data-job-types";
 import { trySendDealerDataRefundEmail } from "@/lib/email/send-transactional";
 import { getStripe } from "@/lib/stripe";
+import { getCheckoutLineFromSession } from "@/lib/stripe-session";
 import { formatEurFromCents } from "@/lib/order-upsell";
 
 export const runtime = "nodejs";
@@ -161,6 +163,10 @@ export async function POST(req: Request) {
     amountTotalCents: session.amount_total,
     paid: session.payment_status === "paid",
     override: o.override === true,
+    dealerProduct: isDealerDataAutoFetchOrder({
+      checkoutLine: getCheckoutLineFromSession(session),
+      amountTotalCents: session.amount_total,
+    }),
   });
   if (!decision.allowed) {
     return NextResponse.json(

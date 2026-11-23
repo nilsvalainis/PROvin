@@ -54,6 +54,18 @@ describe("ensureDealerServiceWorksLatvian", () => {
     expect(r.warning).toBeNull();
   });
 
+  it("ja tulkojumā cits rindu skaits (arī rezervei), rindas paliek oriģinālā", async () => {
+    generate.mockResolvedValue(JSON.stringify({ works: ["Bremžu kluči"] }));
+    const rows = [
+      { date: "01.06.2022", odometer: "80000", location: "", works: "Oil service" },
+      { date: "01.06.2023", odometer: "88000", location: "", works: "Brake pads front" },
+    ];
+    const r = await ensureDealerServiceWorksLatvian({ serviceWorks: rows });
+    expect(r.serviceWorks.map((x) => x.works)).toEqual(["Oil service", "Brake pads front"]);
+    expect(r.translatedCount).toBe(0);
+    expect(r.warning).toMatch(/netulkotas|neizdevās/);
+  });
+
   it("kļūme neatceļ ģenerāciju un dod admin brīdinājumu", async () => {
     generate.mockRejectedValue(new Error("upstream"));
     const rows = [{ date: "01.06.2023", odometer: "88000", location: "", works: "Pneumatic spring, rear" }];
