@@ -66,6 +66,8 @@ const nextConfig: NextConfig = {
     // Dīlera datu platforma: tas pats servera PDF (priekšskatījums, e-pasts, Autoparks + STOCK).
     "/api/admin/dealer-check/server-pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/dealer-check/deliver": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
+    // Izsoļu arhīvs dīlera datu vietā: «Izsoļu arhīvs» PDF (tas pats Chromium renderis).
+    "/api/admin/auction-archive-offer": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
@@ -210,6 +212,22 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/:locale(lv|en|de|ru)/atskaite/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/:locale(lv|en|de|ru)/izvele/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/api/izvele/:path*",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
           { key: "Cache-Control", value: "private, no-store, max-age=0" },

@@ -24,6 +24,9 @@ import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 import { headers } from "next/headers";
 import { loadAdminOrderIngests } from "@/lib/admin-orders-ingest-load";
+import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import { AUCTION_ARCHIVE_STATUS_LV, AUCTION_ARCHIVE_STATUS_TONE, type AuctionArchiveStatus } from "@/lib/auction-archive-offer";
+import { readAuctionArchiveOffer } from "@/lib/auction-archive-offer-store";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -156,7 +159,34 @@ export default async function AdminOrdersPage({
       ...(ingest ? { ingest } : {}),
     };
   });
-  const ordersWithUpsell = ordersWithDealerAlert.map((o) => {
+  // Izsoļu arhīva piedāvājumi (Nils 23.11): statuss sarakstā; «Nav nosūtīts» vietā, ja piedāvājums ir.
+  const dealerAlertSince = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
+  const archiveIds = ordersWithInvoice
+    .filter(
+      (o) =>
+        !o.isB2bPack &&
+        o.created >= dealerAlertSince &&
+        isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal }),
+    )
+    .map((o) => o.id);
+  const archiveStatus = new Map<string, AuctionArchiveStatus>();
+  await Promise.all(
+    archiveIds.map(async (id) => {
+      const doc = await readAuctionArchiveOffer(id).catch(() => null);
+      if (doc && doc.status !== "withdrawn") archiveStatus.set(id, doc.status);
+    }),
+  );
+  const ordersWithArchive = ordersWithDealerAlert.map((o) => {
+    const st = archiveStatus.get(o.id);
+    if (!st) return o;
+    const { dealerJobAlert: alert, ...rest } = o as typeof o & { dealerJobAlert?: string };
+    return {
+      ...rest,
+      ...(alert && alert !== "Nav nosūtīts" ? { dealerJobAlert: alert } : {}),
+      archiveStatus: { label: AUCTION_ARCHIVE_STATUS_LV[st], tone: AUCTION_ARCHIVE_STATUS_TONE[st] },
+    };
+  });
+  const ordersWithUpsell = ordersWithArchive.map((o) => {
     const overlay = upsellListOverlay(upsellOffers.get(o.id) ?? []);
     if (!overlay) return o;
     return {
@@ -192,11 +222,37 @@ export default async function AdminOrdersPage({
         currency: o.currency,
       })),
   );
+  // Filtrs ?arh=pending|chose_archive|chose_refund|archive_sent (makets 5. solis).
+  const archFilter = typeof sp.arh === "string" && archiveStatus.size > 0 ? sp.arh : "";
   const tableOrders = sortAdminOrdersIncompleteFirst(
     serializeAdminOrderTableRows(
-      ordersWithUpsell.map((o) => ({ ...o, repeatVin: repeatVin.get(o.id) ?? 0, clientOrders: clientOrders.get(o.id) ?? [] })),
+      ordersWithUpsell
+        .filter((o) => !archFilter || archiveStatus.get(o.id) === archFilter)
+        .map((o) => ({ ...o, repeatVin: repeatVin.get(o.id) ?? 0, clientOrders: clientOrders.get(o.id) ?? [] })),
     ),
   );
+  const archCount = (st: AuctionArchiveStatus) => [...archiveStatus.values()].filter((v) => v === st).length;
+  const archChips = (
+    [
+      ["pending", "Gaida klienta izvēli"],
+      ["chose_archive", "Jāsūta arhīvs"],
+      ["chose_refund", "Jāatmaksā"],
+      ["archive_sent", "Arhīvs nosūtīts"],
+    ] as const
+  )
+    .filter(([st]) => archCount(st) > 0 || archFilter === st)
+    .map(([st, label]) => (
+      <Link
+        key={st}
+        href={archFilter === st ? "/admin/dashboard" : `/admin/dashboard?arh=${st}`}
+        aria-pressed={archFilter === st}
+        className={`admin-nav-link inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[12px] transition ${
+          archFilter === st ? "bg-[#1d1d1f] font-semibold text-white" : st === "chose_refund" ? "bg-[#fdecec] text-[#c62828]" : "bg-[#e9e9ee] text-[#3a3a3c]"
+        }`}
+      >
+        {label} · {archCount(st)}
+      </Link>
+    ));
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);
@@ -243,6 +299,7 @@ export default async function AdminOrdersPage({
   })();
   const toolbarEnd = (
     <>
+      {archChips}
       {amountChip}
       <AdminCreateManualOrderButton compact />
     </>

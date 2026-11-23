@@ -1,4 +1,5 @@
 import { stripLocalePrefix } from "@/i18n/locales";
+import { isAuctionArchivePath } from "@/lib/auction-archive-offer";
 import { isClientReportLinkPath } from "@/lib/client-report-link";
 
 /**
@@ -12,6 +13,8 @@ export function isPublicSiteAnalyticsPath(pathname: string): boolean {
   if (path === "/b2b-demo" || path.startsWith("/b2b-demo/")) return false;
   // Klienta atskaites saite: tokens URL nedrīkst nonākt analītikā.
   if (isClientReportLinkPath(path)) return false;
+  // Izsoļu arhīva izvēles lapa: tas pats (tokens URL).
+  if (isAuctionArchivePath(path)) return false;
 
   const rest = stripLocalePrefix(path);
   if (rest === "/demo" || rest.startsWith("/demo/")) return false;

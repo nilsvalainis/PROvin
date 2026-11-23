@@ -57,6 +57,8 @@ export type SerializedAdminOrderTableRow = {
   fullyReversed?: boolean;
   /** Dīlera datu ielases problēma («Nav VIN», «Dīlera ielase: kļūda» u.c.) - sarkana atzīme. */
   dealerJobAlert?: string;
+  /** Izsoļu arhīva piedāvājuma statuss (Nils 23.11): «Gaida klienta izvēli», «Izvēlējās atmaksu» (sarkans) u.c. */
+  archiveStatus?: { label: string; tone: "wait" | "todo" | "alert" | "done" | "muted" };
   /** Telefona saraksts: ielases indikācija (dīlera darbs vai VIN SCAN). */
   ingest?: AdminOrderIngest;
 };
@@ -94,6 +96,7 @@ type RowInput = {
   clientOrders?: unknown;
   paymentAdjustment?: unknown;
   dealerJobAlert?: unknown;
+  archiveStatus?: unknown;
   ingest?: unknown;
 };
 
@@ -207,6 +210,13 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(typeof o.dealerJobAlert === "string" && o.dealerJobAlert.trim()
         ? { dealerJobAlert: o.dealerJobAlert.trim().slice(0, 60) }
         : {}),
+      ...(() => {
+        const a = o.archiveStatus as { label?: unknown; tone?: unknown } | null | undefined;
+        const tones = ["wait", "todo", "alert", "done", "muted"] as const;
+        return a && typeof a.label === "string" && a.label.trim() && tones.includes(a.tone as (typeof tones)[number])
+          ? { archiveStatus: { label: a.label.trim().slice(0, 60), tone: a.tone as (typeof tones)[number] } }
+          : {};
+      })(),
       ...(() => {
         const ingest = parseAdminOrderIngest(o.ingest);
         return ingest ? { ingest } : {};
