@@ -46,7 +46,11 @@ const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "carpass",
 ]);
 
+/** AutoDNA priekšskatījums: ~0,5 MB lapa; ar Turnstile (ja ieslēgts) + gaidīšana līdz ~36 s. */
+const AUTODNA_PRECHECK_TIMEOUT_MS = 60_000;
+
 export function vinScanSourceTimeoutMs(id: VinScanSourceId): number {
+  if (id === "autodna_precheck") return AUTODNA_PRECHECK_TIMEOUT_MS;
   if (THECARAPI_SOURCES.has(id)) return THECARAPI_TIMEOUT_MS;
   if (id === "mnt_ee") return MNT_EE_TIMEOUT_MS;
   if (MULTI_STEP_SOURCES.has(id)) return MULTI_STEP_TIMEOUT_MS;

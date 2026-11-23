@@ -46,6 +46,7 @@ import {
 } from "@/lib/vin-scan/probes-extra";
 import { probeCzRsv, probeDvsaMot } from "@/lib/vin-scan/probes-cz-uk";
 import { probeEuSafetyGate } from "@/lib/vin-scan/probes-eu-recalls";
+import { probeAutodnaPrecheck } from "@/lib/vin-scan/probe-autodna-precheck";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import {
   CARINFO_SUPER_SEARCH_DIRECT_MS,
@@ -363,6 +364,7 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   auchistory: probeAuchistory,
   carfax_eu: probeCarfaxEu,
   checkcar_vin: probeCheckcarVin,
+  autodna_precheck: probeAutodnaPrecheck,
   plc_auction: probePlcAuction,
   bidfax: probeBidfax,
   poctra: probePoctra,

@@ -57,8 +57,8 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
     expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(37);
-    expect(VIN_SCAN_CATALOG).toHaveLength(37);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(38);
+    expect(VIN_SCAN_CATALOG).toHaveLength(38);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
