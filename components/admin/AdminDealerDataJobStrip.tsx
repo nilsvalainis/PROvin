@@ -9,6 +9,7 @@ import {
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 import { dealerSendStatusLine, lastDealerSend } from "@/lib/order-client-marks";
+import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDataJobControls } from "@/components/admin/useDealerDataJobControls";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
@@ -176,6 +177,9 @@ export function AdminDealerDataJobStrip({
         >
           Sūtīt klientam
         </button>
+      </div>
+      <div className="mt-2">
+        <AdminClientReportLinkControl sessionId={sessionId} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">

@@ -7,7 +7,8 @@
  * Rāda tikai telefonā (OrderDetailWorkspace montē tikai `phoneStack`).
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import {
   adminIngestFromDealerJob,
@@ -102,6 +103,8 @@ export type MobileDealerOrderPanelViewProps = {
   onShadowRecheck?: () => void;
   /** «Atsauksmes iespēja» (tikai ieteikums). */
   review?: DealerReviewScore | null;
+  /** Zem 2×2 pogām (piem. «Klienta saite»). */
+  afterActions?: ReactNode;
 };
 
 /** Prezentācija (bez stāvokļa) - testējama ar SSR. */
@@ -135,6 +138,8 @@ export function MobileDealerOrderPanelView(p: MobileDealerOrderPanelViewProps) {
           {p.busy === "run" ? "Ielasa…" : p.rerunLabel}
         </AmxButton>
       </div>
+
+      {p.afterActions ?? null}
 
       {p.notice ? <p className="amx-mut mt-2 px-1 text-[13px] [overflow-wrap:anywhere]">{p.notice}</p> : null}
 
@@ -315,6 +320,7 @@ export function MobileDealerOrderPanel({
         shadowBusy={c.shadowBusy}
         onShadowRecheck={job ? () => void c.recheckShadow("manual") : undefined}
         review={review}
+        afterActions={<AdminClientReportLinkControl sessionId={sessionId} variant="glass" />}
       />
       <AdminDealerSendDialog
         open={c.dialog !== null}
