@@ -1184,6 +1184,38 @@ export async function trySendDealerDataOperatorEmail(opts: {
   }
 }
 
+/**
+ * Izsoļu arhīvs dīlera datu vietā (piedāvājums / gatavs PDF): HTML veido `lib/email/auction-archive-email.ts`.
+ * From = info@provin.lv (SMTP_FROM). Sūta tikai pēc Nila pogas sūtīšanas logā.
+ */
+export async function trySendAuctionArchiveClientEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  attachments?: ReportReadyMailAttachment[];
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[auction-archive] SMTP nav iestatīts, e-pasts nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendSmtpMail({
+      to: opts.to,
+      subject: opts.subject.trim().slice(0, 180),
+      text: opts.text,
+      html: opts.html,
+      ...(opts.attachments?.length
+        ? { attachments: opts.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType })) }
+        : {}),
+    });
+    return true;
+  } catch (err) {
+    console.error("[auction-archive] e-pasts neizdevās", err instanceof Error ? err.message.slice(0, 160) : "error");
+    return false;
+  }
+}
+
 /** Admin rīta kopsavilkums (Vercel Cron). From = SMTP_FROM / info@provin.lv. */
 export async function sendMorningSummaryEmail(opts: {
   to: string | string[];

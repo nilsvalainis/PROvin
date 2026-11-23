@@ -20,6 +20,7 @@ import { formatRigaDayTime } from "@/lib/order-client-marks";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import { requestOpenAdminBlock } from "@/lib/admin-mobile-ds";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { AdminAuctionArchivePanel } from "@/components/admin/AdminAuctionArchive";
 import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerShadowGate } from "@/lib/dealer-shadow-types";
 import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -257,6 +258,7 @@ export function MobileDealerOrderPanel({
 }: ContainerProps) {
   const c = useDealerDataJobControls({ sessionId, orderVin, editable: true, canRefund, walletRefund });
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [archKey, setArchKey] = useState(0);
   const records = useMemo(() => mobileDealerRecordsFromWorks(serviceWorks), [serviceWorks]);
   const reviewTexts = useMemo(() => (sourceBlocks ? collectSourceBlockTexts(sourceBlocks) : []), [sourceBlocks]);
   const review = useDealerReviewScore({ sessionId, job: c.job, autoRecords, vin: c.vin, extraTexts: reviewTexts });
@@ -320,7 +322,12 @@ export function MobileDealerOrderPanel({
         shadowBusy={c.shadowBusy}
         onShadowRecheck={job ? () => void c.recheckShadow("manual") : undefined}
         review={review}
-        afterActions={<AdminClientReportLinkControl sessionId={sessionId} variant="glass" />}
+        afterActions={
+          <>
+            <AdminClientReportLinkControl sessionId={sessionId} variant="glass" />
+            <AdminAuctionArchivePanel sessionId={sessionId} refreshKey={archKey} onOpenSend={() => c.setDialog("archive")} />
+          </>
+        }
       />
       <AdminDealerSendDialog
         open={c.dialog !== null}
@@ -337,6 +344,7 @@ export function MobileDealerOrderPanel({
         onSent={(next, msg) => {
           if (next) c.setMarks(next);
           c.setNotice(msg);
+          setArchKey((k) => k + 1);
         }}
         shadow={
           job

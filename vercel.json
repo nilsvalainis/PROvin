@@ -26,6 +26,10 @@
       "maxDuration": 120,
       "memory": 3008
     },
+    "app/api/admin/auction-archive-offer/route.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
     "app/api/admin/dealer-check/deliver/route.ts": {
       "maxDuration": 120,
       "memory": 3008
@@ -195,6 +199,10 @@
     {
       "path": "/api/cron/business-poga-digest",
       "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/auction-archive-remind",
+      "schedule": "20 6 * * *"
     },
     {
       "path": "/api/cron/vin-model-learn",
