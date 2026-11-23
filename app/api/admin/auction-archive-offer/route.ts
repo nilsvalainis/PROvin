@@ -11,11 +11,28 @@
  *   - withdraw       - atsaukt piedāvājumu (saite vairs nedarbojas).
  *   - delete         - dzēst piedāvājumu un bilžu kopijas.
  *   - statuses       {ids[]} - saraksta statusi.
+ *   - send_offer     {channel, previewIds[], manualSources[], subject, text, customerEmail} - prepare +
+ *                    e-pasts klientam (Nila poga «Sūtīt piedāvājumu»). WhatsApp: tikai prepare (ziņu atver Nils).
+ *   - pdf            - sagatavo «Izsoļu arhīvs» PDF (priekšskatījums: GET ?sessionId=&pdf=1).
+ *   - send_archive   {channel, subject, text, customerEmail} - TIKAI pēc klienta «Jā» (statuss
+ *                    «Izvēlējās arhīvu»): e-pasts ar PDF; WhatsApp - atzīme pēc tam, kad Nils PDF nosūtījis.
+ *   - marks          {marks[]} - operatora «Redzams bildē» atzīmes PDF shēmai.
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
+import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
+import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
+import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
+import {
+  auctionArchiveOfferEmailHtml,
+  auctionArchiveOfferPlainText,
+  auctionArchiveReadyEmailHtml,
+} from "@/lib/email/auction-archive-email";
+import { trySendAuctionArchiveClientEmail } from "@/lib/email/send-transactional";
+import { buildAuctionArchivePdf } from "@/lib/auction-archive-pdf";
+import { formatIsoDayLv, markAuctionArchiveSent, sanitizeOperatorMarks, type AuctionArchiveOfferDoc } from "@/lib/auction-archive-offer";
 import {
   auctionArchiveOfferForAdmin,
   isAuctionArchiveChoice,
@@ -31,6 +48,7 @@ import { collectAuctionArchivePhotoSources } from "@/lib/auction-archive-offer-p
 import {
   deleteAuctionArchiveOffer,
   readAuctionArchiveOffer,
+  readAuctionArchivePdf,
   readAuctionArchivePhoto,
   updateAuctionArchiveOffer,
 } from "@/lib/auction-archive-offer-store";
@@ -49,6 +67,39 @@ export const maxDuration = 300;
 const PREPARE_BUDGET_MS = 240_000;
 const STATUS_MAX_IDS = 200;
 const PHOTO_ID_RE = /^ih_ph_[a-f0-9]{24}$/;
+const SUBJECT_MAX = 180;
+const TEXT_MAX = 12_000;
+
+function previewCaption(doc: AuctionArchiveOfferDoc, i: number): string {
+  const p = doc.photos.find((x) => x.id === doc.previewIds[i]);
+  if (!p) return "";
+  const date = formatIsoDayLv(p.date);
+  return [date, /odomet/i.test(p.caption) ? "Odometrs" : ""].filter(Boolean).join(" · ");
+}
+
+/** Tas pats saņēmēja noteikums kā dīlera «Sūtīt klientam» (pasūtījuma e-pasts; cits - tikai ar apstiprinājumu). */
+async function recipientFor(
+  sessionId: string,
+  body: Record<string, unknown>,
+): Promise<{ ok: true; to: string } | { ok: false; status: number; body: Record<string, unknown> }> {
+  const order = await getCheckoutSessionDetail(sessionId);
+  if (!order) return { ok: false, status: 404, body: { error: "not_found" } };
+  const draft = await readOrderDraft(sessionId);
+  const recipient = await resolveDealerSendRecipient({
+    logTag: "api/admin/auction-archive-offer",
+    sessionId,
+    requested: String(body.customerEmail ?? ""),
+    confirmOverride: body.confirmRecipientOverride === true,
+    draftEmail: draft?.orderEdits?.customerEmail?.trim() ?? "",
+    orderEmail: (order.customerEmail ?? order.customerDetailsEmail ?? "").trim(),
+    order: { partnerId: order.partnerId, notes: order.notes },
+  });
+  if (!recipient.ok) return { ok: false, status: recipient.status, body: dealerSendRecipientErrorBody(recipient) };
+  if (!canNotifyClientOrder(order, recipient.to)) {
+    return { ok: false, status: 400, body: { error: "order_not_eligible", message: "Nepieciešams derīgs klienta e-pasts (un apmaksa, ja nav manuāls)." } };
+  }
+  return { ok: true, to: recipient.to };
+}
 
 function bad(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
@@ -59,6 +110,21 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const sessionId = (url.searchParams.get("sessionId") ?? "").trim();
   if (!isSafeOrderDraftSessionId(sessionId)) return bad("invalid_session");
+
+  if (url.searchParams.get("pdf") === "1") {
+    const pdf = await readAuctionArchivePdf(sessionId).catch(() => null);
+    if (!pdf) return bad("not_found", 404);
+    const doc = await readAuctionArchiveOffer(sessionId).catch(() => null);
+    const vin = (doc?.summary.vin ?? "VIN").replace(/[^A-Za-z0-9]/g, "");
+    return new NextResponse(new Uint8Array(pdf), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `${url.searchParams.get("dl") === "1" ? "attachment" : "inline"}; filename="PROVIN_izsolu_arhivs_${vin}.pdf"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
 
   const photo = (url.searchParams.get("photo") ?? "").trim();
   if (photo) {
@@ -134,6 +200,113 @@ export async function POST(req: Request) {
 
   const sessionId = String(body.sessionId ?? "").trim();
   if (!isSafeOrderDraftSessionId(sessionId)) return bad("invalid_session");
+
+  if (action === "send_offer" || action === "send_archive") {
+    const channel = body.channel === "whatsapp" ? "whatsapp" : "email";
+    const subject = String(body.subject ?? "").trim().slice(0, SUBJECT_MAX);
+    const text = String(body.text ?? "").trim().slice(0, TEXT_MAX);
+    let to = "";
+    if (channel === "email") {
+      if (!subject || !text) return bad("missing_subject_or_text");
+      const rec = await recipientFor(sessionId, body);
+      if (!rec.ok) return NextResponse.json(rec.body, { status: rec.status });
+      to = rec.to;
+    }
+
+    if (action === "send_offer") {
+      const previewIds = (Array.isArray(body.previewIds) ? body.previewIds : [])
+        .filter((v): v is string => typeof v === "string" && PHOTO_ID_RE.test(v))
+        .slice(0, 2);
+      const r = await prepareAuctionArchiveOffer({
+        sessionId,
+        channel,
+        locale: "lv",
+        previewIds,
+        manualSources: sanitizeManualSources(body.manualSources),
+        deadline: startedAt + PREPARE_BUDGET_MS,
+      });
+      if (!r.ok) return bad(r.error, r.error === "not_found" ? 404 : r.error === "store_failed" ? 503 : 409);
+      if (channel === "whatsapp") {
+        return NextResponse.json({ ok: true, choiceUrl: r.choiceUrl, offer: auctionArchiveOfferForAdmin(r.doc) });
+      }
+      const previews = r.previewUrls.map((u, i) => ({ url: u, caption: previewCaption(r.doc, i) }));
+      const sent = await trySendAuctionArchiveClientEmail({
+        to,
+        subject,
+        text: auctionArchiveOfferPlainText(text, r.choiceUrl),
+        html: auctionArchiveOfferEmailHtml({ summary: r.doc.summary, paidCents: r.doc.paidCents, text, choiceUrl: r.choiceUrl, previews }),
+      });
+      if (!sent) {
+        // Klients neko nesaņēma - saite nedrīkst palikt «Gaida klienta izvēli».
+        await updateAuctionArchiveOffer(sessionId, (cur) => (cur ? { next: withdrawAuctionArchiveOffer(cur), result: null } : { result: null })).catch(
+          () => null,
+        );
+        return bad("email_failed", 502);
+      }
+      return NextResponse.json({ ok: true, to, offer: auctionArchiveOfferForAdmin(r.doc) });
+    }
+
+    // send_archive: TIKAI pēc klienta «Jā».
+    const cur = await readAuctionArchiveOffer(sessionId);
+    if (!cur) return bad("not_found", 404);
+    if (cur.status !== "chose_archive") return bad(cur.status === "archive_sent" ? "already_sent" : "not_chosen", 409);
+    if (channel === "email") {
+      let built: Awaited<ReturnType<typeof buildAuctionArchivePdf>>;
+      try {
+        built = await buildAuctionArchivePdf(sessionId);
+      } catch (e) {
+        console.error("[admin/auction-archive-offer] pdf", e instanceof Error ? e.message.slice(0, 160) : "error");
+        return bad("pdf_failed", 500);
+      }
+      const sent = await trySendAuctionArchiveClientEmail({
+        to,
+        subject,
+        text,
+        html: auctionArchiveReadyEmailHtml({ summary: cur.summary, text, attachment: { filename: built.filename, bytes: built.pdf.length } }),
+        attachments: [{ filename: built.filename, content: built.pdf, contentType: "application/pdf" }],
+      });
+      if (!sent) return bad("email_failed", 502);
+    } else if (!(await readAuctionArchivePdf(sessionId).catch(() => null))) {
+      return bad("pdf_missing", 409);
+    }
+    try {
+      const doc = await updateAuctionArchiveOffer(sessionId, (c) =>
+        c && c.status === "chose_archive" ? { next: markAuctionArchiveSent(c), result: markAuctionArchiveSent(c) } : { result: c },
+      );
+      return NextResponse.json({ ok: true, to: to || null, offer: doc ? auctionArchiveOfferForAdmin(doc) : null });
+    } catch {
+      return bad("store_failed", 503);
+    }
+  }
+
+  if (action === "pdf") {
+    const cur = await readAuctionArchiveOffer(sessionId);
+    if (!cur) return bad("not_found", 404);
+    try {
+      const built = await buildAuctionArchivePdf(sessionId);
+      return NextResponse.json({
+        ok: true,
+        bytes: built.pdf.length,
+        photos: built.photos,
+        missingPhotos: built.missingPhotos,
+        url: `/api/admin/auction-archive-offer?sessionId=${encodeURIComponent(sessionId)}&pdf=1`,
+      });
+    } catch (e) {
+      console.error("[admin/auction-archive-offer] pdf", e instanceof Error ? e.message.slice(0, 160) : "error");
+      return bad("pdf_failed", 500);
+    }
+  }
+
+  if (action === "marks") {
+    const marks = sanitizeOperatorMarks(body.marks);
+    try {
+      const doc = await updateAuctionArchiveOffer(sessionId, (c) => (c ? { next: { ...c, marks }, result: { ...c, marks } } : { result: null }));
+      if (!doc) return bad("not_found", 404);
+      return NextResponse.json({ ok: true, offer: auctionArchiveOfferForAdmin(doc) });
+    } catch {
+      return bad("store_failed", 503);
+    }
+  }
 
   if (action === "prepare") {
     const channel = body.channel === "whatsapp" ? "whatsapp" : "email";

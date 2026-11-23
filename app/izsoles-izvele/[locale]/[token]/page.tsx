@@ -55,6 +55,7 @@ export default async function AuctionArchiveChoicePage({ params, searchParams }:
       token,
       change: one(sp.mainit) === "1",
       notice: one(sp.r),
+      preselect: one(sp.v),
     });
     return <AuctionArchiveChoicePageView view={view} />;
   } catch (e) {

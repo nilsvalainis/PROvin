@@ -291,13 +291,13 @@ export default async function middleware(request: NextRequest) {
     return res;
   }
 
-  // Izsoļu arhīva izvēle `/{locale}/izvele/<token>` → savs apvalks. `?mainit=1&r=` paliek (lapas stāvoklis).
+  // Izsoļu arhīva izvēle `/{locale}/izvele/<token>` → savs apvalks. `?mainit=1&r=&v=` paliek (lapas stāvoklis).
   const archiveChoicePath = auctionArchiveRewritePath(pathname);
   if (archiveChoicePath) {
     const dest = request.nextUrl.clone();
     dest.pathname = archiveChoicePath;
     const keep = new URLSearchParams();
-    for (const k of ["mainit", "r"]) {
+    for (const k of ["mainit", "r", "v"]) {
       const v = request.nextUrl.searchParams.get(k);
       if (v && /^[a-z0-9]{1,8}$/.test(v)) keep.set(k, v);
     }

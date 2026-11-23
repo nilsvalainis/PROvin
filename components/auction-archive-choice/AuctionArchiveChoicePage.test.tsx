@@ -46,6 +46,7 @@ function doc(over: Partial<AuctionArchiveOfferDoc> = {}): AuctionArchiveOfferDoc
     photos: [],
     photosMissing: 0,
     previewIds: [ph(1)],
+    marks: [],
     history: [],
     ...over,
   };
@@ -110,6 +111,14 @@ describe("izvēles lapa (SSR)", () => {
     rl.mockImplementation(async () => ({ ok: false }));
     find.mockResolvedValue({ sessionId: "cs_test_1", doc: doc() });
     expect(await html()).toContain("Saite vairs nav derīga");
+  });
+
+  it("e-pasta poga iepriekš atzīmē variantu (?v=), bet neko nesaglabā", async () => {
+    find.mockResolvedValue({ sessionId: "cs_test_1", doc: doc() });
+    expect(await html(params("lv", TOKEN, { v: "refund" }))).toMatch(/checked="" value="refund"/);
+    find.mockResolvedValue({ sessionId: "cs_test_1", doc: doc({ status: "chose_archive", choice: "archive" }) });
+    expect(await html(params("lv", TOKEN, { v: "refund" }))).toContain("Apstiprināt");
+    expect(record).not.toHaveBeenCalled();
   });
 
   it("angliski", async () => {

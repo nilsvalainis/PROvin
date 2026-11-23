@@ -59,6 +59,7 @@ function doc(over: Partial<AuctionArchiveOfferDoc> = {}): AuctionArchiveOfferDoc
     photos: [{ id: ph(1), auctionKey: "openlane:1", date: "2026-10-21", caption: "Openlane · 2026-10-21" }],
     photosMissing: 0,
     previewIds: [ph(1)],
+    marks: [],
     history: [],
     ...over,
   };

@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-dealer-data-refund";
 import { DEALER_DATA_RETRY_NO_RECHARGE_HINT, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import type { DealerSendSituation } from "@/lib/dealer-send-message";
+import type { DealerSendMode } from "@/components/admin/AdminDealerSendDialog";
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import type { OrderClientMarks } from "@/lib/order-client-marks";
 
@@ -62,7 +63,7 @@ export function useDealerDataJobControls({
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<null | "run" | "refund">(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<DealerSendSituation | null>(null);
+  const [dialog, setDialog] = useState<DealerSendMode | null>(null);
   const [marks, setMarksState] = useState<OrderClientMarks | null>(null);
 
   const setJob = useCallback(

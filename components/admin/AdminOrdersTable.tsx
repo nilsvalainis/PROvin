@@ -166,6 +166,20 @@ function DealerJobAlertTag({ label }: { label?: string }) {
   return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{label}</span>;
 }
 
+const ARCHIVE_TAG_TONE: Record<string, string> = {
+  wait: "!border-[#f3d9a4] !text-[#a15c07]",
+  todo: "!border-[#bcd7f5] !text-[#0061D2]",
+  alert: "!border-[#f5c2c0] !text-[#c62828]",
+  done: "!border-[#bfe3cb] !text-[#1d7a3e]",
+  muted: "",
+};
+
+/** Izsoļu arhīva piedāvājuma statuss (makets 5. solis). */
+function ArchiveStatusTag({ status }: { status?: { label: string; tone: string } }) {
+  if (!status) return null;
+  return <span className={`${CALM_TAG} ${ARCHIVE_TAG_TONE[status.tone] ?? ""}`}>{status.label}</span>;
+}
+
 function PaymentAdjustmentTag({ row }: { row: { paymentAdjustmentLabel?: string } }) {
   if (!row.paymentAdjustmentLabel) return null;
   return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{row.paymentAdjustmentLabel}</span>;
@@ -1287,6 +1301,7 @@ export function AdminOrdersTable({
                 {view.reportLangLabel ? <span className={CALM_TAG}>{view.reportLangLabel}</span> : null}
                 {view.miniHighlight ? <span className={CALM_TAG}>MINI</span> : null}
                 <DealerJobAlertTag label={row.dealerJobAlert} />
+                <ArchiveStatusTag status={row.archiveStatus} />
                 {row.repeatVin ? <span className={CALM_TAG}>Atkārtots VIN</span> : null}
                 {row.upsellBadge ? <span className={CALM_TAG}>{row.upsellBadge}</span> : null}
               </div>
@@ -1464,6 +1479,7 @@ export function AdminOrdersTable({
                         </span>
                       ) : null}
                       <DealerJobAlertTag label={o.dealerJobAlert} />
+                      <ArchiveStatusTag status={o.archiveStatus} />
                       <DealerShadowDot ingest={o.ingest} />
                       {o.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                       {isPack ? (

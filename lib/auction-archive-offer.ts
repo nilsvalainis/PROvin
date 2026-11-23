@@ -390,6 +390,43 @@ export type AuctionArchivePhoto = {
   caption: string;
 };
 
+export const AUCTION_ARCHIVE_MARK_ZONES = ["front", "rear", "left", "right", "roof"] as const;
+export type AuctionArchiveMarkZone = (typeof AUCTION_ARCHIVE_MARK_ZONES)[number];
+
+/** Operatora atzīme «Redzams bildē» (izsole bojājumus nenorādīja, bet bildē tie redzami). */
+export type AuctionArchiveOperatorMark = {
+  auctionKey: string;
+  zone: AuctionArchiveMarkZone;
+  part?: string;
+  note?: string;
+};
+
+export const AUCTION_ARCHIVE_MARKS_MAX = 20;
+
+export function sanitizeOperatorMarks(raw: unknown): AuctionArchiveOperatorMark[] {
+  if (!Array.isArray(raw)) return [];
+  const clean = (v: unknown, max: number) =>
+    String(v ?? "")
+      .replace(/[\u0000-\u001f<>]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, max);
+  const out: AuctionArchiveOperatorMark[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const zone = o.zone as AuctionArchiveMarkZone;
+    if (!(AUCTION_ARCHIVE_MARK_ZONES as readonly string[]).includes(String(zone))) continue;
+    const auctionKey = clean(o.auctionKey, 120);
+    if (!auctionKey) continue;
+    const part = clean(o.part, 60);
+    const note = clean(o.note, 200);
+    out.push({ auctionKey, zone, ...(part ? { part } : {}), ...(note ? { note } : {}) });
+    if (out.length >= AUCTION_ARCHIVE_MARKS_MAX) break;
+  }
+  return out;
+}
+
 export type AuctionArchiveOfferDoc = {
   sessionId: string;
   status: AuctionArchiveStatus;
@@ -407,6 +444,8 @@ export type AuctionArchiveOfferDoc = {
   photosMissing: number;
   /** Izvēlētās bildes e-pasta priekšskatījumam (izplūdinātas serverī). */
   previewIds: string[];
+  /** Operatora atzīmes PDF bojājumu shēmā. */
+  marks: AuctionArchiveOperatorMark[];
   choice?: AuctionArchiveChoice;
   choiceAt?: string;
   choiceVia?: AuctionArchiveChoiceVia;
@@ -516,6 +555,7 @@ export function parseAuctionArchiveOfferDoc(raw: unknown, sessionId: string): Au
     previewIds: (Array.isArray(o.previewIds) ? o.previewIds : [])
       .filter((v): v is string => typeof v === "string" && ids.has(v))
       .slice(0, AUCTION_ARCHIVE_PREVIEW_MAX),
+    marks: sanitizeOperatorMarks(o.marks),
     ...(isAuctionArchiveChoice(o.choice) ? { choice: o.choice } : {}),
     ...opt("choiceAt"),
     ...(o.choiceVia === "link" || o.choiceVia === "manual" ? { choiceVia: o.choiceVia } : {}),

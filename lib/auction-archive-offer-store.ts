@@ -60,6 +60,7 @@ const docRel = (sessionId: string) => `${DOC_DIR}/${sessionId}.json`;
 const indexRel = (hash: string) => `${INDEX_DIR}/${hash}.json`;
 const photoRel = (sessionId: string, id: string) => `${DOC_DIR}/${sessionId}/photos/${id}.jpg`;
 const previewRel = (sessionId: string, n: number) => `${DOC_DIR}/${sessionId}/preview-${n}.jpg`;
+const pdfRel = (sessionId: string) => `${DOC_DIR}/${sessionId}/izsolu-arhivs.pdf`;
 
 function localDir(): string | null {
   const dir = getOrderDraftStorageDir();
@@ -180,6 +181,18 @@ export async function readAuctionArchivePreview(sessionId: string, n: number): P
   if (!isSafeOrderDraftSessionId(sessionId) || !Number.isInteger(n) || n < 0 || n > 1) return null;
   const buf = await readBinary(previewRel(sessionId, n));
   return isJpeg(buf) ? buf : null;
+}
+
+/** Izsoļu arhīva PDF (pēdējā versija, kas sagatavota / nosūtīta klientam). */
+export async function writeAuctionArchivePdf(sessionId: string, pdf: Buffer): Promise<boolean> {
+  if (!isSafeOrderDraftSessionId(sessionId) || pdf.subarray(0, 5).toString("latin1") !== "%PDF-") return false;
+  return writeBody(pdfRel(sessionId), pdf, "application/pdf");
+}
+
+export async function readAuctionArchivePdf(sessionId: string): Promise<Buffer | null> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+  const buf = await readBinary(pdfRel(sessionId));
+  return buf && buf.subarray(0, 5).toString("latin1") === "%PDF-" ? buf : null;
 }
 
 /* ---------- Dokuments ---------- */
@@ -310,6 +323,7 @@ export async function createAuctionArchiveOffer(input: CreateOfferInput): Promis
         photos: input.photos,
         photosMissing: Math.max(0, Math.floor(input.photosMissing)),
         previewIds: input.previewIds.filter((id) => ids.has(id)).slice(0, 2),
+        marks: cur?.marks ?? [],
         history: [...(cur?.history ?? []), { at, event: "offer_sent" as const, channel: input.channel }].slice(-40),
       };
       return { next: doc, result: { ok: true, token, doc } };
@@ -385,7 +399,7 @@ export async function listAuctionArchiveOfferSessionIds(max = 500): Promise<stri
 export async function deleteAuctionArchiveOffer(sessionId: string): Promise<boolean> {
   if (!isSafeOrderDraftSessionId(sessionId)) return false;
   const doc = await readAuctionArchiveOffer(sessionId);
-  const rels = [docRel(sessionId), previewRel(sessionId, 0), previewRel(sessionId, 1)];
+  const rels = [docRel(sessionId), previewRel(sessionId, 0), previewRel(sessionId, 1), pdfRel(sessionId)];
   if (doc) {
     rels.push(indexRel(doc.tokenHash));
     for (const p of doc.photos) rels.push(photoRel(sessionId, p.id));

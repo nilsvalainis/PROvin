@@ -40,6 +40,7 @@ function doc(over: Partial<AuctionArchiveOfferDoc> = {}): AuctionArchiveOfferDoc
     photos: [],
     photosMissing: 0,
     previewIds: [],
+    marks: [],
     history: [],
     ...over,
   };

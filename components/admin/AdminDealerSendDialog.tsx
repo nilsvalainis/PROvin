@@ -27,6 +27,24 @@ import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow
 import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerReviewScore } from "@/lib/dealer-review-score";
 import { AdminDealerReviewIndicator } from "@/components/admin/AdminDealerReviewCard";
+import {
+  AuctionArchiveSendSection,
+  auctionArchiveErrorLv,
+  postAuctionArchive,
+  useAuctionArchiveState,
+} from "@/components/admin/AdminAuctionArchive";
+import type { AuctionArchiveManualSource } from "@/lib/auction-archive-offer";
+import {
+  auctionArchiveOfferSubject,
+  auctionArchiveOfferText,
+  auctionArchiveOfferWhatsappText,
+  auctionArchiveReadySubject,
+  auctionArchiveReadyText,
+  auctionArchiveReadyWhatsappText,
+} from "@/lib/email/auction-archive-email";
+
+/** Sūtīšanas loga situācija: 3 dīlera situācijas + «Izsoļu arhīvs» (Nils 23.11). */
+export type DealerSendMode = DealerSendSituation | "archive";
 
 /** Ēnu režīms (Nils 22.11): spriedums + atsauksme sūtīšanas formā. Sūtīšanu NEbloķē. */
 export type DealerSendShadow = {
@@ -62,7 +80,7 @@ type Props = {
   vin: string;
   b2b: boolean;
   customerEmail: string;
-  defaultSituation: DealerSendSituation;
+  defaultSituation: DealerSendMode;
   refundCents: number | null;
   pdfLang: ClientReportLang;
   bridge?: DealerSendBridge | null;
@@ -131,14 +149,31 @@ export function AdminDealerSendDialog({
   review = null,
 }: Props) {
   const [channel, setChannel] = useState<DealerSendChannel>("email");
-  const [situation, setSituation] = useState<DealerSendSituation>(defaultSituation);
+  const [situation, setSituation] = useState<DealerSendMode>(defaultSituation);
   const [opts, setOpts] = useState<DealerSendOptions>({ offer: false, review: false });
   const [offer, setOffer] = useState<DealerSendOffer | null>(null);
   const [doc, setDoc] = useState<MessageTemplatesDoc | null>(templatesDocCache);
   // Sākuma temats un teksts jau pirmajā renderēšanā (no veidnes), nevis tukši līdz efektam.
   const [initialMsg] = useState(() =>
-    buildDealerSendMessage({ channel: "email", situation: defaultSituation, b2b, vin, refundCents, doc: templatesDocCache }),
+    buildDealerSendMessage({
+      channel: "email",
+      situation: defaultSituation === "archive" ? "no_data" : defaultSituation,
+      b2b,
+      vin,
+      refundCents,
+      doc: templatesDocCache,
+    }),
   );
+  // Izsoļu arhīvs: stāvoklis tikai kamēr logs atvērts.
+  const { state: arch, setState: setArch } = useAuctionArchiveState(sessionId, open);
+  const [previewIds, setPreviewIds] = useState<string[]>([]);
+  const [manualSources, setManualSources] = useState<AuctionArchiveManualSource[]>([]);
+  const archMode = situation === "archive";
+  const archReady = archMode && arch?.offer?.status === "chose_archive";
+  const archBlocked =
+    archMode && (arch?.offer?.status === "chose_refund" || arch?.offer?.status === "archive_sent" || arch?.offer?.status === "refunded");
+  const archVisible = Boolean(arch && (arch.eligible || arch.offer)) || defaultSituation === "archive";
+  const archSuggested = Boolean(arch?.eligible && !arch.offer && defaultSituation === "no_data");
   const [subject, setSubject] = useState(initialMsg.subject ?? "");
   const [text, setText] = useState(initialMsg.text);
   const [busy, setBusy] = useState<null | "offer" | "pdf" | "send">(null);
@@ -158,6 +193,8 @@ export function AdminDealerSendDialog({
     setOpts({ offer: false, review: false });
     setErr(null);
     setPdfLink(null);
+    setPreviewIds([]);
+    setManualSources([]);
     void loadAdminMessageTemplatesDoc().then((d) => d && setDoc(d));
   }, [open, defaultSituation]);
 
@@ -182,7 +219,29 @@ export function AdminDealerSendDialog({
 
   // Teksts pārģenerējas pēc katras izvēles (kanāls, situācija, ķekši).
   useEffect(() => {
-    if (!open) return;
+    if (!open || situation !== "archive" || !arch) return;
+    const ready = arch.offer?.status === "chose_archive";
+    const sum = arch.offer && ready ? arch.offer.summary : arch.summary;
+    if (channel === "whatsapp") {
+      setSubject("");
+      setText(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents));
+    } else {
+      setSubject(ready ? auctionArchiveReadySubject(sum) : auctionArchiveOfferSubject(sum));
+      setText(ready ? auctionArchiveReadyText(sum) : auctionArchiveOfferText(sum, arch.paidCents));
+    }
+  }, [open, situation, channel, arch]);
+
+  // Noklusējuma 2 bildes: pirmā + odometrs (makets 5A); Nils var mainīt.
+  useEffect(() => {
+    if (!open || !arch || previewIds.length > 0) return;
+    const withThumb = arch.photos.filter((p) => p.thumb);
+    if (withThumb.length === 0) return;
+    const odo = withThumb.find((p) => /odomet/i.test(p.caption));
+    setPreviewIds([withThumb[0]!.id, ...(odo && odo.id !== withThumb[0]!.id ? [odo.id] : withThumb[1] ? [withThumb[1].id] : [])]);
+  }, [open, arch, previewIds.length]);
+
+  useEffect(() => {
+    if (!open || situation === "archive") return;
     const m = buildDealerSendMessage({
       channel,
       situation,
@@ -231,11 +290,82 @@ export function AdminDealerSendDialog({
     [offer, sessionId],
   );
 
-  const sendFlags = () => ({
-    situation,
-    offer: situation === "ready" && opts.offer,
-    review: situation === "ready" && opts.review,
-  });
+  const sendFlags = () => {
+    const sit: DealerSendSituation = situation === "archive" ? "no_data" : situation;
+    return { situation: sit, offer: sit === "ready" && opts.offer, review: sit === "ready" && opts.review };
+  };
+
+  /** «Izsoļu arhīvs»: piedāvājums (pirms klienta izvēles) vai PDF (tikai pēc klienta «Jā»). */
+  const sendArchive = async () => {
+    if (!arch) return;
+    if (archBlocked) {
+      setErr("Klients jau izvēlējās atmaksu vai piedāvājums noslēgts.");
+      return;
+    }
+    if (channel === "email" && !customerEmail.trim()) {
+      setErr("Nav klienta e-pasta (sadaļa «Klienta dati»).");
+      return;
+    }
+    if (channel === "email" && !subject.trim()) {
+      setErr("Temats ir tukšs.");
+      return;
+    }
+    setBusy("send");
+    try {
+      if (archReady && channel === "whatsapp") {
+        // WhatsApp: PDF sagatavo un atver, Nils to pievieno ziņai; pēc tam atzīme «Arhīvs nosūtīts».
+        const pdf = await postAuctionArchive({ action: "pdf", sessionId });
+        if (!pdf.ok || typeof pdf.data.url !== "string") {
+          setErr(auctionArchiveErrorLv(pdf.data.error));
+          return;
+        }
+        window.open(`${pdf.data.url}&dl=1`, "_blank", "noopener,noreferrer");
+        window.open(dealerSendWhatsappUrl(bridge?.customerPhoneDigits, text.trim()), "_blank", "noopener,noreferrer");
+        if (!window.confirm("PDF lejupielādēts un WhatsApp atvērts. Atzīmēt «Arhīvs nosūtīts», kad PDF aizsūtīts?")) return;
+      }
+      const post = (confirmRecipientOverride: boolean) =>
+        postAuctionArchive({
+          action: archReady ? "send_archive" : "send_offer",
+          sessionId,
+          channel,
+          subject: subject.trim(),
+          text: text.trim(),
+          customerEmail: customerEmail.trim(),
+          previewIds,
+          manualSources,
+          ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+        });
+      let r = await post(false);
+      if (
+        r.status === 409 &&
+        r.data.error === "recipient_mismatch" &&
+        window.confirm(`${String(r.data.message ?? "Saņēmējs atšķiras no pasūtījumā saglabātā.")}\n\nSūtīt uz ${String(r.data.requested ?? customerEmail.trim())}?`)
+      ) {
+        r = await post(true);
+      }
+      if (!r.ok) {
+        setErr(typeof r.data.message === "string" ? r.data.message : auctionArchiveErrorLv(r.data.error));
+        return;
+      }
+      if (r.data.offer) setArch({ ...arch, offer: r.data.offer as NonNullable<typeof arch.offer> });
+      if (!archReady && channel === "whatsapp") {
+        window.open(dealerSendWhatsappUrl(bridge?.customerPhoneDigits, text.trim()), "_blank", "noopener,noreferrer");
+      }
+      onSent(
+        null,
+        archReady
+          ? channel === "email"
+            ? `Izsoļu arhīvs (PDF) nosūtīts uz ${String(r.data.to ?? customerEmail)}.`
+            : "Atzīmēts: izsoļu arhīvs nosūtīts (WhatsApp)."
+          : channel === "email"
+            ? `Piedāvājums nosūtīts uz ${String(r.data.to ?? customerEmail)} - gaida klienta izvēli.`
+            : "WhatsApp atvērts - gaida klienta izvēli (atbildi «1/2» atzīmē pasūtījumā).",
+      );
+      onClose();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   /** E-pastu ieraksta serveris (atgriež `serverMarks`); WhatsApp vai servera ieraksta kļūdas gadījumā - šeit. */
   const finish = async (notice: string, serverMarks?: OrderClientMarks | null) => {
@@ -269,6 +399,14 @@ export function AdminDealerSendDialog({
   const send = async () => {
     if (busy) return;
     setErr(null);
+    if (situation === "archive") {
+      if (!text.trim()) {
+        setErr("Teksts ir tukšs.");
+        return;
+      }
+      await sendArchive();
+      return;
+    }
     if (!text.trim()) {
       setErr("Teksts ir tukšs.");
       return;
@@ -428,15 +566,35 @@ export function AdminDealerSendDialog({
           <div>
             <p className="amx-mut mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500 max-md:text-[11.5px]">Situācija</p>
             <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Situācija">
-              {(["ready", "no_data", "cancelled"] as const).map((s) => (
+              {(archVisible ? (["ready", "no_data", "archive", "cancelled"] as const) : (["ready", "no_data", "cancelled"] as const)).map((s) => (
                 <button key={s} type="button" role="tab" aria-selected={situation === s} className={seg(situation === s)} onClick={() => setSituation(s)}>
-                  {DEALER_SEND_SITUATION_LV[s]}
+                  {s === "archive" ? (
+                    <>
+                      {archSuggested ? <span aria-label="Ieteikts" className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#0061D2] align-middle" /> : null}
+                      Izsoļu arhīvs
+                    </>
+                  ) : (
+                    DEALER_SEND_SITUATION_LV[s]
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {ready ? (
+          {archMode ? (
+            arch ? (
+              <AuctionArchiveSendSection
+                state={arch}
+                previewIds={previewIds}
+                onPreviewIds={setPreviewIds}
+                manualSources={manualSources}
+                onManualSources={setManualSources}
+                disabled={busy !== null}
+              />
+            ) : (
+              <p className="amx-mut text-[11.5px] text-slate-500">Ielādē izsoļu arhīvu…</p>
+            )
+          ) : ready ? (
             <div className="space-y-1.5">
               {priceBox ? (
                 <label
@@ -562,6 +720,18 @@ export function AdminDealerSendDialog({
             </div>
           ) : null}
 
+          {archReady ? (
+            <div className="amx-card flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 max-md:min-h-[54px] max-md:px-3.5">
+              <div className="amx-tx flex min-w-0 items-center gap-2 text-[11.5px] text-slate-700 max-md:text-[14px]">
+                <span className="rounded bg-rose-600 px-1 py-px text-[9px] font-bold text-white">PDF</span>
+                <span className="truncate">Izsoļu arhīvs · {arch?.offer?.photos.length ?? 0} bildes</span>
+              </div>
+              <span className="amx-mut text-[11px] text-slate-500 max-md:text-[13px]">
+                {channel === "email" ? "PDF pievienos automātiski" : "PDF lejupielādēsies"}
+              </span>
+            </div>
+          ) : null}
+
           {shadow?.gate ? (
             <AdminDealerShadowFeedback
               gate={shadow.gate}
@@ -584,7 +754,7 @@ export function AdminDealerSendDialog({
           <button
             type="button"
             className={`${channel === "email" ? primary : waBtn} amx-btn amx-btn--primary max-md:flex-1`}
-            disabled={busy !== null}
+            disabled={busy !== null || (archMode && (!arch || archBlocked))}
             onClick={() => void send()}
           >
             {busy === "pdf" && channel === "email"
@@ -592,7 +762,11 @@ export function AdminDealerSendDialog({
               : busy === "send"
                 ? "Sūta…"
                 : channel === "email"
-                  ? "Sūtīt e-pastu"
+                  ? archMode
+                    ? archReady
+                      ? "Sūtīt izsoļu arhīvu"
+                      : "Sūtīt piedāvājumu"
+                    : "Sūtīt e-pastu"
                   : "Atvērt WhatsApp"}
           </button>
         </div>

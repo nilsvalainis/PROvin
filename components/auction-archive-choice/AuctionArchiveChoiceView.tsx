@@ -34,8 +34,10 @@ export type AuctionArchiveChoiceViewModel = {
 /** Tīra funkcija: piedāvājums → lapas skats (testējama bez servera). */
 export function auctionArchiveChoiceView(
   doc: AuctionArchiveOfferDoc,
-  args: { locale: AppLocale; token: string; change: boolean; notice: string },
+  args: { locale: AppLocale; token: string; change: boolean; notice: string; preselect?: string },
 ): AuctionArchiveChoiceViewModel {
+  // E-pasta poga atzīmē variantu iepriekš (`?v=archive|refund`); izvēli fiksē tikai «Apstiprināt».
+  const pre = args.preselect === "archive" || args.preselect === "refund" ? args.preselect : null;
   const base = {
     locale: args.locale,
     token: args.token,
@@ -49,10 +51,11 @@ export function auctionArchiveChoiceView(
   } as const;
   if (doc.status === "archive_sent") return { ...base, mode: "closed", closedKind: "archive" };
   if (doc.status === "refunded") return { ...base, mode: "closed", closedKind: "refund" };
-  if (doc.choice && isAuctionArchiveChoiceOpen(doc.status) && doc.status !== "pending" && !args.change && args.notice !== "pick") {
+  const chosen = doc.choice && isAuctionArchiveChoiceOpen(doc.status) && doc.status !== "pending";
+  if (chosen && !args.change && args.notice !== "pick" && (!pre || pre === doc.choice)) {
     return { ...base, mode: "thanks" };
   }
-  return { ...base, mode: "form" };
+  return { ...base, mode: "form", choice: pre ?? base.choice };
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

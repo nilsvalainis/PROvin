@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import {
@@ -14,6 +14,7 @@ import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDa
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { AdminAuctionArchivePanel } from "@/components/admin/AdminAuctionArchive";
 import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
 import { AdminDealerReviewCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
 import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -123,6 +124,7 @@ export function AdminDealerDataJobStrip({
     recheckShadow,
     submitShadowFeedback,
   } = useDealerDataJobControls({ sessionId, orderVin, editable, canRefund, walletRefund });
+  const [archKey, setArchKey] = useState(0);
 
   const resolvedInitialLang = resolveDealerPdfLang(reportLang);
   // Citu avotu teksti (NL «Taxi: Ja», DK «Taxikørsel»); pārrēķina, kad mainās dīlera bloks.
@@ -180,6 +182,7 @@ export function AdminDealerDataJobStrip({
       </div>
       <div className="mt-2">
         <AdminClientReportLinkControl sessionId={sessionId} />
+        <AdminAuctionArchivePanel sessionId={sessionId} refreshKey={archKey} onOpenSend={() => setDialog("archive")} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -262,6 +265,7 @@ export function AdminDealerDataJobStrip({
         onSent={(next, msg) => {
           if (next) setMarks(next);
           setNotice(msg);
+          setArchKey((k) => k + 1);
         }}
         shadow={
           job

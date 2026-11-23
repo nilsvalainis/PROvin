@@ -26,6 +26,10 @@
       "maxDuration": 120,
       "memory": 3008
     },
+    "app/api/admin/auction-archive-offer/route.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
     "app/api/admin/dealer-check/deliver/route.ts": {
       "maxDuration": 120,
       "memory": 3008
