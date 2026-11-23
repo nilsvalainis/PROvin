@@ -76,11 +76,11 @@ export function AdminListingPeekConversionCard({ stats, variant = "full" }: Prop
           {formatRate(stats.conversionRatePct)}
         </p>
       </div>
-      <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+      <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
         {stats.convertedPeople.toLocaleString("lv-LV")} no {stats.uniquePeople.toLocaleString("lv-LV")} unikālajiem
         klientiem pēc iesūtījuma apmaksāja pakalpojumu.
       </p>
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" data-amx-kpis>
         <Kpi label="Pieprasījumi" value={stats.peekCount.toLocaleString("lv-LV")} />
         <Kpi label="Klienti" value={stats.uniquePeople.toLocaleString("lv-LV")} />
         <Kpi label="Pirkumi" value={stats.orderCount.toLocaleString("lv-LV")} />

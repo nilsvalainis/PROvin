@@ -27,7 +27,7 @@ export default async function AdminConsultationsPage() {
   const hasStripeIssue = Boolean(stripeError);
 
   return (
-    <div className="w-full max-w-none">
+    <div className="amx amx-pg amx-pg--konsultacijas w-full max-w-none">
       {/* Telefonā virsraksts "Konsultācijas" ir saraksta mobilajā galvenē. */}
       <div className="max-md:hidden">
         <AdminDashboardHeaderWithMenu>

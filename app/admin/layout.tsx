@@ -16,6 +16,7 @@ import "./mobile/glass.css";
 import "./mobile/order-glass.css";
 import "./admin-iriss-theme.css";
 import "./iriss-tokens.css";
+import "./mobile/pages-glass-2.css";
 import "./admin-costs-theme.css";
 
 export const metadata: Metadata = {

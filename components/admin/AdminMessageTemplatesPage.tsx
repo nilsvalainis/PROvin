@@ -245,15 +245,17 @@ export function AdminMessageTemplatesPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-16 pt-6 md:px-8">
       <h1 className="text-[24px] font-semibold tracking-tight text-[#1d1d1f]">Tekstu šabloni</h1>
-      <p className="mt-1 text-[14px] text-[#8e8e93]">
+      <p className="mt-1 text-[14px] text-[#8e8e93]" data-amx-hint>
         Visi automātiskie un iepriekš aizpildītie teksti. Ja tekstu nemaini, tiek lietots noklusējums no koda.
       </p>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap gap-2" data-amx-chips>
         {CHANNELS.map((c) => (
           <button
             key={c.key}
             type="button"
+            aria-pressed={channel === c.key}
+            data-amx-keep
             onClick={() => {
               setChannel(c.key);
               setSelectedId(null);
@@ -284,6 +286,7 @@ export function AdminMessageTemplatesPage() {
                     key={it.id}
                     type="button"
                     onClick={() => setSelectedId(it.id)}
+                    data-amx-keep
                     className={`mb-0.5 flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13.5px] ${
                       on ? "bg-[#f2f2f7] font-semibold" : "hover:bg-[#f9f9fb]"
                     }`}
@@ -291,7 +294,7 @@ export function AdminMessageTemplatesPage() {
                     <span className="min-w-0 truncate">{it.title}</span>
                     <span className="ml-2 flex shrink-0 gap-1">
                       {it.overridden ? (
-                        <span className="rounded-md bg-[#eef4ff] px-1.5 py-0.5 text-[10.5px] font-medium text-[#0a66d8]">
+                        <span className="rounded-md bg-[#eef4ff] px-1.5 py-0.5 text-[10.5px] font-medium text-[#0a66d8]" data-amx-tag>
                           mainīts
                         </span>
                       ) : null}

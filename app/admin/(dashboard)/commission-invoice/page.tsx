@@ -14,7 +14,7 @@ export default async function CommissionInvoicePage() {
   await requireAdminPage();
   const invoices = await listPkdCommissionInvoiceDrafts();
   return (
-    <div className="w-full max-w-none max-md:px-4">
+    <div className="amx amx-pg amx-pg--rekini w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           Apstrādes telpa
@@ -22,7 +22,7 @@ export default async function CommissionInvoicePage() {
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Rēķini
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
           Izveido jaunu rēķinu ar nākamo numuru un atver katru ierakstu atsevišķi rediģēšanai.
         </p>
       </AdminDashboardHeaderWithMenu>
@@ -40,7 +40,7 @@ export default async function CommissionInvoicePage() {
         </div>
       ) : (
         <>
-        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden">
+        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden" data-amx-list>
           {invoices.map((inv) => (
             <li key={inv.id} className="border-b border-[#e5e5ea] last:border-b-0">
               <Link
@@ -55,7 +55,9 @@ export default async function CommissionInvoicePage() {
                     {inv.recipientCompany} · {inv.amountEur} EUR
                   </span>
                 </span>
-                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]">Atvērt</span>
+                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]" data-amx-open>
+                  Atvērt
+                </span>
               </Link>
             </li>
           ))}
