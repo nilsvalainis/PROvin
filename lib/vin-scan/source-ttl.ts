@@ -53,6 +53,8 @@ export function vinScanRowTtlMs(id: string, status: string): number {
   if (!vinScanStatusIsCacheable(status)) return 0;
   if (id === "vin_decode") return 30 * DAY_MS;
   if (id === "listing_history") return 12 * HOUR_MS;
+  // Viens AutoDNA pieprasījums uz VIN diennaktī (23.11).
+  if (id === "autodna_precheck") return DAY_MS;
   if (REGISTRY_IDS.has(id)) return status === "found" ? 7 * DAY_MS : VIN_SCAN_NONE_ROW_TTL_MS;
   if (AUCTION_ARCHIVE_IDS.has(id)) return status === "found" ? 30 * DAY_MS : VIN_SCAN_NONE_ROW_TTL_MS;
   if (RECALL_IDS.has(id)) return 7 * DAY_MS;

@@ -47,6 +47,11 @@ export function runWithVinScanDeadline<T>(deadlineMs: number, run: () => Promise
   return vinScanDeadline.run({ deadlineMs }, run);
 }
 
+/** Pašreizējā VIN SCAN avota ārējais termiņš (epoch ms) vai `undefined` ārpus skenēšanas. */
+export function currentVinScanDeadlineMs(): number | undefined {
+  return vinScanDeadline.getStore()?.deadlineMs;
+}
+
 function solverBudgetMs(localTimeoutMs: number, startedAt: number, now = Date.now()): number {
   const localRemain = localTimeoutMs - (now - startedAt);
   const slot = vinScanDeadline.getStore();

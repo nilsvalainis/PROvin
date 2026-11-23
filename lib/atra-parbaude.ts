@@ -52,7 +52,7 @@ const GROUPS: ReadonlyArray<{ id: AtraFreeGroupId; label: string; ids: readonly 
   {
     id: "izsoles",
     label: "Izsoles un foto",
-    ids: ["thecarapi_eu", "auchistory", "bid_cars", "bidfax", "poctra", "plc_auction", "stat_vin", "checkcar_vin", "carfax_eu"],
+    ids: ["thecarapi_eu", "auchistory", "bid_cars", "bidfax", "poctra", "plc_auction", "stat_vin", "checkcar_vin", "carfax_eu", "autodna_precheck"],
   },
   { id: "citi", label: "Atsaukumi, drošība, citi", ids: [] },
 ];

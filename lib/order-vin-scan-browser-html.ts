@@ -9,7 +9,7 @@ import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { isVinScanSourceId, vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
-import { parseAuctionArchive, parseNicbHtml } from "@/lib/vin-scan/parse-extra";
+import { parseAuctionArchive, parseBiluppgifter, parseNicbHtml } from "@/lib/vin-scan/parse-extra";
 import { formatStatVinOdometerKm, parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
@@ -19,7 +19,11 @@ import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 /** Aptuveni 900 KB. Garāku lapu skripts saīsina, serveris noraida. */
 export const ORDER_VIN_SCAN_BROWSER_HTML_MAX = 900_000;
 
-const VIN_TOKEN = /[A-HJ-NPR-Z0-9]{17}/g;
+/**
+ * Tikai atsevišķs 17 zīmju vārds. Bez robežām regex trāpīja garāku hešu iekšienē
+ * (piem. `main.c968a041fe49804bed66.js`) un īstas lapas tika noraidītas kā `vin_mismatch`.
+ */
+const VIN_TOKEN = /(?<![A-Z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Z0-9])/g;
 const PHOTO_SKIP_RE = /logo|favicon|sprite|pixel|1x1|avatar|icon|emoji|placeholder|spinner|badge|flag/i;
 
 const ARCHIVE_LABEL: Partial<Record<VinScanSourceId, string>> = {
@@ -376,9 +380,11 @@ export function applyBrowserArchiveHtml(input: {
   if (input.record.vin.trim().toUpperCase() !== vin) return { ok: false, error: "vin_mismatch" };
   if (html.length > ORDER_VIN_SCAN_BROWSER_HTML_MAX) return { ok: false, error: "too_large" };
   if (!html.trim()) return { ok: false, error: "page_not_ready" };
-  if (!vinMatchesPage(html, pageUrl, vin)) return { ok: false, error: "vin_mismatch" };
+  // biluppgifter.se 404 = VIN nav reģistrā. Lapā ir citu auto saites, tāpēc VIN pārbaude te neder.
+  const notFound404 = id === "biluppgifter" && input.httpStatus === 404 && !html.toUpperCase().includes(vin);
+  if (!notFound404 && !vinMatchesPage(html, pageUrl, vin)) return { ok: false, error: "vin_mismatch" };
 
-  const parsed = parseArchiveHtml(id, html, pageUrl, vin, input.httpStatus);
+  const parsed = notFound404 ? parseBiluppgifter(404, html, vin) : parseArchiveHtml(id, html, pageUrl, vin, input.httpStatus);
   if (typeof parsed === "string") return { ok: false, error: parsed };
   const safe = onlyAllowedPhotos(parsed);
   const enriched = isSwedishBrowserSourceId(id)

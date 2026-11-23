@@ -39,6 +39,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "auchistory",
   "carfax_eu",
   "checkcar_vin",
+  "autodna_precheck",
   "plc_auction",
   "bidfax",
   "poctra",
@@ -408,6 +409,14 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     hint: "Vai atskaitē ir foto",
     needs: ["vin"],
     openUrl: (vin) => `https://checkcar.vin/report/check/${vinQuery(vin)}`,
+  },
+  {
+    id: "autodna_precheck",
+    label: "AutoDNA (priekšskatījums)",
+    country: "EU",
+    hint: "Bezmaksas: ierakstu skaits sadaļās, bez pirkuma",
+    needs: ["vin"],
+    openUrl: (vin) => `https://www.autodna.lv/vin/${vinQuery(vin)}`,
   },
   {
     id: "plc_auction",
