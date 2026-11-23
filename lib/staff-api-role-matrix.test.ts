@@ -43,6 +43,7 @@ const ADMIN_ONLY_PREFIXES = [
   "/api/admin/order-draft",
   "/api/admin/order-upsell",
   "/api/admin/client-links",
+  "/api/admin/client-report-link",
   "/api/admin/vin-history",
 ];
 

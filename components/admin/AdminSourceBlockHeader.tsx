@@ -11,6 +11,8 @@ import { companionSourceOpensForBlock, resolveSourceBlockExternalOpen } from "@/
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { TRAFFIC_HEADER_STRIP_CLASS } from "@/lib/admin-block-traffic-status";
 import type { AutoIngestChip } from "@/lib/admin-auto-ingest";
+import { AmxStatusDot, type AmxDotTone } from "@/components/admin/mobile/AdminMobileGlass";
+import "@/components/admin/mobile/order-sources-glass.css";
 
 const AutoIngestChipCtx = createContext<Partial<Record<string, AutoIngestChip>>>({});
 
@@ -50,13 +52,31 @@ function ExternalLinkIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Telefona avotu saraksta statuss labajā pusē (22.11 makets v2): punkts + teksts.
+ * «Nav datu» / «Kļūda» - sarkans (Nila likums), ielasīts - zaļš, pārējais neitrāls.
+ */
+export function sourceBlockPhoneStatus(
+  trafficFillLevel: TrafficFillLevel | undefined,
+  ingestChip: AutoIngestChip | undefined,
+): { label: string; tone: AmxDotTone } | null {
+  if (ingestChip?.tone === "failed") return { label: "Kļūda", tone: "err" };
+  if (ingestChip?.tone === "no_data") return { label: "Nav datu", tone: "err" };
+  if (trafficFillLevel === "complete") return { label: "Ielasīts", tone: "ok" };
+  if (trafficFillLevel === "partial") return { label: "Daļēji", tone: "neutral" };
+  if (trafficFillLevel === "empty") return { label: "Nav ielasīts", tone: "outline" };
+  return null;
+}
+
 type Props = {
   blockKey: SourceBlockKey;
   className?: string;
   trafficFillLevel?: TrafficFillLevel;
+  /** Testiem: piespiedu telefona skats. */
+  phone?: boolean;
 };
 
-export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFillLevel }: Props) {
+export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFillLevel, phone: phoneProp }: Props) {
   const ingestChip = useContext(AutoIngestChipCtx)[blockKey];
   const label = SOURCE_BLOCK_LABELS[blockKey];
   const vin = useAdminVinHandoff()?.vin ?? "";
@@ -79,7 +99,9 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
       ? companionSourceOpensForBlock(blockKey, vin)
       : [];
 
-  const phone = useAdminIsPhone();
+  const phoneHook = useAdminIsPhone();
+  const phone = phoneProp ?? phoneHook;
+  const phoneStatus = phone ? sourceBlockPhoneStatus(trafficFillLevel, ingestChip) : null;
   const openCompanions = () => {
     for (const extra of companions) {
       window.open(extra.href, "_blank", "noopener,noreferrer");
@@ -93,14 +115,12 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
       <span className={`provin-source-title inline-flex min-w-0 flex-1 items-center gap-2 font-medium uppercase tracking-wide ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}>
         <AdminProvinLucide icon={Icon} />
         <span className="min-w-0 truncate whitespace-nowrap">{SOURCE_BLOCK_PHONE_LABELS[blockKey] ?? label}</span>
-        {ingestChip ? (
-          <span
-            className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal ${INGEST_CHIP_TONE[ingestChip.tone]}`}
-          >
-            {ingestChip.label}
-          </span>
-        ) : null}
       </span>
+      {phoneStatus ? (
+        <span className="amx inline-flex shrink-0" data-source-status={phoneStatus.tone} title={ingestChip?.label}>
+          <AmxStatusDot tone={phoneStatus.tone}>{phoneStatus.label}</AmxStatusDot>
+        </span>
+      ) : null}
       <a
         href={href}
         target="_blank"
@@ -138,7 +158,8 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
     </a>
   );
 
-  if (trafficFillLevel) {
+  // Telefonā krāsainās malas vietā - statuss labajā pusē.
+  if (trafficFillLevel && !phone) {
     return (
       <div className={`mb-2 overflow-hidden rounded-t-lg ${TRAFFIC_HEADER_STRIP_CLASS[trafficFillLevel]}`}>
         <div className={`px-1.5 py-1 ${className}`}>{row}</div>

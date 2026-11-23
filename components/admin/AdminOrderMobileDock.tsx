@@ -93,6 +93,10 @@ type Props = {
   /** FLASH MAX noslēguma pārbaudes neizlemtie ieteikumi (poga statusā atver sarakstu). */
   finalReviewPending?: number;
   onOpenFinalReview?: () => void;
+  /** Katra palielināšana atver PDF izvēli (no «Vairāk» lapas). */
+  pdfRequest?: number;
+  /** «Sūtīt» joslā (zilā): AUDITS/PRO - «Sūtīt atskaiti» logs; dīlera pasūtījumam - B1 bloks. */
+  onSend?: () => void;
   /** Ārējs paziņojums (piem. „Reģ. numurs nokopēts”, maksas avota ielāde). */
   notice?: AdminMobileDockStatus | null;
   onDismissNotice?: () => void;
@@ -188,6 +192,8 @@ export function AdminOrderMobileDock({
   onMore,
   sourceBlocks,
   flashRequest = 0,
+  pdfRequest = 0,
+  onSend,
   flashMaxPhase = null,
   flashMaxNotice = null,
   flashMaxErr = null,
@@ -216,6 +222,9 @@ export function AdminOrderMobileDock({
     if (flashRequest > 0) setSheet("flash");
   }, [flashRequest]);
 
+  useEffect(() => {
+    if (pdfRequest > 0) setSheet("pdf");
+  }, [pdfRequest]);
   // Jauns FLASH MAX rezultāts - rādām vēlreiz.
   useEffect(() => {
     if (flashMaxBusy) setFlashResultHidden(false);
@@ -309,14 +318,18 @@ export function AdminOrderMobileDock({
               onClick: () => setSheet("pdf"),
               disabled: pdfProgressKey !== null,
             },
-            {
-              id: "listing",
-              label: "Sludinājums",
-              icon: "sludinajums",
-              href: listingHref ?? undefined,
-              disabled: !listingHref,
-            },
+            // 22.11 makets v2: «Sūtīt» joslā; «Sludinājums» pārcelts uz «Vairāk» lapu.
+            onSend
+              ? { id: "send", label: "Sūtīt", icon: "sutit" as const, onClick: onSend, primary: true }
+              : {
+                  id: "listing",
+                  label: "Sludinājums",
+                  icon: "sludinajums" as const,
+                  href: listingHref ?? undefined,
+                  disabled: !listingHref,
+                },
           ]}
+          glass
           more={() => {
             if (onMore) onMore();
             else setSheet("more");

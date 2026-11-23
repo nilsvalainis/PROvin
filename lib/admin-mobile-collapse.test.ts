@@ -93,10 +93,11 @@ describe("admin mobile spec files", () => {
     expect(bar).not.toMatch(/scheduleAdminIdleWork/);
   });
 
-  it("PRO kartītes ir kompaktas un galvenē paliek tikai +", () => {
+  it("PRO saraksts ir viens stikla saraksts dienas grupai un galvenē paliek tikai +", () => {
     const orders = readFileSync(new URL("../components/admin/AdminOrdersTable.tsx", import.meta.url), "utf8");
-    expect(orders).toMatch(/min-h-\[96px\]/);
-    expect(orders).toMatch(/space-y-2/);
+    // 22.11 makets v2: bez krāsainām kartītēm - `amx-card amx-list`, rindas atdala mats.
+    expect(orders).toContain('<ul className="amx-card amx-list">');
+    expect(orders).not.toMatch(/min-h-\[96px\]/);
     expect(orders).toMatch(/AdminCreateManualOrderButton compact/);
     expect(orders).not.toMatch(/belowTitle \? <div className="mb-3">/);
   });

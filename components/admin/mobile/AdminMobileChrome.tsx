@@ -250,6 +250,7 @@ export function AdminMobileChips({
           <button
             key={it.id}
             type="button"
+            aria-pressed={on}
             onClick={() => onChange(it.id)}
             className={`am-press inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ${
               on
@@ -457,6 +458,7 @@ export function AdminMobileSectionNav({
           <button
             key={it.id}
             type="button"
+            aria-current={on ? "true" : undefined}
             onClick={() => onPick(it.id)}
             className={`am-press inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[13px] ${
               on
@@ -485,16 +487,31 @@ export function AdminMobileActionDock({
   more,
   status = null,
   onDismissStatus,
+  glass = false,
 }: {
-  actions: { id: string; label: string; icon: AdminMobileIconName; onClick?: () => void; href?: string; disabled?: boolean }[];
+  actions: {
+    id: string;
+    label: string;
+    icon: AdminMobileIconName;
+    onClick?: () => void;
+    href?: string;
+    disabled?: boolean;
+    /** Stikla joslā - zilā galvenā darbība (piem. «Sūtīt»). */
+    primary?: boolean;
+  }[];
   more?: () => void;
   /** Īss stāvoklis virs doka (FLASH MAX progress, VIN SCAN, „nokopēts”), lai darbība nav „klusa”. */
   status?: AdminMobileDockStatus | null;
   onDismissStatus?: () => void;
+  /** 22.11 makets v2: viena stikla josla ar 5 vienādām vietām; «Vairāk» ar nosaukumu, nevis melns aplis. */
+  glass?: boolean;
 }) {
   const tone = status?.tone ?? "info";
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
+    <div
+      className={`pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden${glass ? " amx" : ""}`}
+      data-amx-dock={glass ? "glass" : undefined}
+    >
       {status ? (
         <div
           role="status"
@@ -528,6 +545,44 @@ export function AdminMobileActionDock({
           ) : null}
         </div>
       ) : null}
+      {glass ? (
+        <nav className="amx-dock5 pointer-events-auto min-w-0 flex-1" aria-label="Pasūtījuma darbības">
+          {actions.map((a) => {
+            const inner = (
+              <>
+                <AdminMobileIcon name={a.icon} className="h-5 w-5" />
+                <span className="max-w-full truncate px-0.5 text-center leading-none">{a.label}</span>
+              </>
+            );
+            if (a.href && !a.disabled) {
+              return (
+                <a key={a.id} href={a.href} target="_blank" rel="noopener noreferrer" className="am-press" data-amx-primary={a.primary ? "true" : undefined}>
+                  {inner}
+                </a>
+              );
+            }
+            return (
+              <button
+                key={a.id}
+                type="button"
+                aria-label={a.label}
+                disabled={a.disabled}
+                onClick={a.onClick}
+                className="am-press"
+                data-amx-primary={a.primary ? "true" : undefined}
+              >
+                {inner}
+              </button>
+            );
+          })}
+          {more ? (
+            <button type="button" aria-label="Vairāk" onClick={more} className="am-press">
+              <AdminMobileIcon name="vairak" className="h-5 w-5" />
+              <span className="max-w-full truncate px-0.5 text-center leading-none">Vairāk</span>
+            </button>
+          ) : null}
+        </nav>
+      ) : (
       <nav className="am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5">
         {actions.map((a) => {
           const inner = (
@@ -551,7 +606,8 @@ export function AdminMobileActionDock({
           );
         })}
       </nav>
-      {more ? (
+      )}
+      {more && !glass ? (
         <button
           type="button"
           aria-label="Vairāk"

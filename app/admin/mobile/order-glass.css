@@ -1,0 +1,196 @@
+/*
+ * PRO admin telefonā - 2. posms (22.11 makets v2 + v3, palete 2): pasūtījumu saraksts un pasūtījuma darba vieta.
+ * Tikai telefonā (<768 px). Datorā šīs klases neko nemaina. Mainīgie - `glass.css` (`.amx`).
+ */
+
+@media (max-width: 767px) {
+  /* ---- Galvene: apaļās pogas, meklēšana, filtru čipi ---- */
+  .admin-m .amx-orders .am-topbar .am-press.rounded-full:not([data-amx-keep]),
+  .admin-m .amx-ws .am-topbar a.am-press.rounded-full,
+  .admin-m .amx-ws .am-topbar button.am-press.rounded-full {
+    background: var(--amx-glass) !important;
+    border: 1px solid var(--amx-edge) !important;
+    color: var(--amx-tx) !important;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+
+  .admin-m .amx-orders .am-search {
+    min-height: 46px;
+    border-radius: var(--amx-r) !important;
+    background: var(--amx-glass2) !important;
+    border: 1px solid var(--amx-edge);
+    color: var(--amx-soft);
+  }
+  .admin-m .amx-orders .am-search input {
+    font-size: 16px !important;
+    color: var(--amx-tx) !important;
+  }
+
+  .admin-m :is(.amx-orders, .amx-ws) .am-chip-fade > button {
+    min-height: 40px;
+    height: auto !important;
+    border-radius: 999px !important;
+    background: var(--amx-glass2) !important;
+    border: 1px solid var(--amx-edge) !important;
+    color: var(--amx-mut) !important;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: none;
+  }
+  .admin-m :is(.amx-orders, .amx-ws) .am-chip-fade > button:is([aria-pressed="true"], [aria-current="true"]) {
+    background: var(--amx-glass) !important;
+    color: var(--amx-tx) !important;
+    font-weight: 600;
+    box-shadow: var(--amx-sh);
+  }
+  .admin-m :is(.amx-orders, .amx-ws) .am-chip-count {
+    opacity: 1;
+    color: var(--amx-mut);
+    font-weight: 500;
+  }
+
+  /* ---- Pasūtījumu saraksts: viens stikla saraksts dienas grupai ---- */
+  .amx-list {
+    overflow: hidden;
+    padding: 0 !important;
+  }
+  .amx-list > li {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 54px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--amx-hair);
+    background: transparent;
+    color: var(--amx-tx);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .amx-list > li:first-child {
+    border-top: none;
+  }
+  .amx-list > li:active {
+    background: var(--amx-glass2);
+  }
+  .amx-list .amx-row-title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--amx-tx);
+  }
+  .amx-list .amx-row-vin {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--amx-mut);
+  }
+  .amx-list .amx-row-sub {
+    font-size: 13px;
+    color: var(--amx-mut);
+  }
+  /* Termiņa statuss labajā pusē: punkts + teksts, pieskāriena laukums ≥44 px. */
+  .amx-list .amx-row-end {
+    display: inline-flex;
+    min-height: 44px;
+    margin: -10px -6px -10px 0;
+    padding: 0 6px;
+    align-items: center;
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  /* ---- Pasūtījuma darba vieta: galvene ---- */
+  .amx-ws .am-topbar h1 {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em;
+  }
+  .amx-ws .amx-save {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 6px;
+    padding: 0 2px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--amx-mut);
+    background: transparent !important;
+    border: 0 !important;
+  }
+  .amx-ws .amx-save--err {
+    color: var(--amx-red);
+  }
+
+  /* ---- Apakšējā josla: 5 vienādas vietas, «Sūtīt» zils ---- */
+  .amx-dock5 {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px;
+    border-radius: 24px;
+    background: var(--amx-glass);
+    border: 1px solid var(--amx-edge);
+    -webkit-backdrop-filter: blur(28px) saturate(1.4);
+    backdrop-filter: blur(28px) saturate(1.4);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
+  }
+  .admin-m .amx-dock5 > :is(a, button) {
+    display: flex;
+    min-width: 0;
+    min-height: 50px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 16px !important;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--amx-mut);
+    background: transparent;
+    border: 0;
+  }
+  .admin-m .amx-dock5 > :is(a, button)[data-amx-primary="true"] {
+    background: var(--amx-acc) !important;
+    color: var(--amx-acctx) !important;
+    font-weight: 600;
+  }
+  .amx-dock5 > :is(a, button):disabled,
+  .amx-dock5 > [aria-disabled="true"] {
+    opacity: 0.4;
+  }
+
+  /* ---- «Vairāk» lapa: saraksts ar nosaukumiem ---- */
+  .admin-m .amx-more .amx-card > button,
+  .admin-m .amx-more .amx-card > a {
+    display: flex;
+    width: 100%;
+    min-height: 54px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--amx-hair);
+    border-radius: 0 !important;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--amx-tx);
+    background: transparent;
+  }
+  .admin-m .amx-more .amx-card > :first-child {
+    border-top: none;
+  }
+  .admin-m .amx-more .amx-card > :disabled {
+    opacity: 0.45;
+  }
+  .amx-more .amx-more-sub {
+    display: block;
+    margin-top: 1px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--amx-mut);
+  }
+  .amx-more .amx-lbl:first-child {
+    margin-top: 4px;
+  }
+}

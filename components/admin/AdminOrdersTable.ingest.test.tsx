@@ -60,6 +60,39 @@ describe("Pasūtījumu saraksts telefonā - ielases indikācija (variants 3)", (
   });
 });
 
+describe("Pasūtījumu saraksts telefonā - stikla saraksts (2. posms)", () => {
+  const due = (h: number) => Math.round(Date.now() / 1000) - 48 * 3600 + h * 3600;
+  const list = [
+    row({ id: "cs_glass_a", checkoutLine: "audit", amountTotal: 9999, makeModel: "BMW 535", vin: "WBANJ91020CR00000", created: due(45) }),
+    row({ id: "cs_glass_b", checkoutLine: "mini", amountTotal: 3999, makeModel: "BMW 740", vin: "WBAGE81090D000000", created: due(-6) }),
+  ];
+
+  it("dienas grupa ir viens stikla saraksts, bez krāsainām kartītēm", () => {
+    const html = renderHtml(<AdminOrdersTable orders={list} />);
+    expect(html).toContain('class="amx amx-orders md:hidden"');
+    expect(html).toContain('class="amx-card amx-list"');
+    expect(html).not.toContain("am-tone-");
+    expect(html).not.toContain("min-h-[96px]");
+  });
+
+  it("rindā produkts · laiks · cena; termiņš ar punktu, sarkans tikai kavējot", () => {
+    const html = renderHtml(<AdminOrdersTable orders={list} />);
+    const t = renderText(<AdminOrdersTable orders={list} />);
+    expect(t).toMatch(/AUDITS · [\d.]+ [\d:]+ · 99,99 €/);
+    expect(t).toMatch(/MINI · /);
+    expect(t).not.toContain("PROVIN AUDITS");
+    expect(t).not.toContain("Atlikušas");
+    // Termiņa aprēķins atkarīgs no pulksteņa (CI) - pārbaudām formu, ne precīzas stundas.
+    expect(html).toMatch(/<span class="amx-st amx-st--err">Kavē \d+ [hd]<\/span>/);
+    expect(html).toMatch(/<span class="amx-st(?: amx-st--outline)?">\d+ (?:h|min)<\/span>/);
+  });
+
+  it("filtru čipiem ir aria-pressed (stikla stāvoklis)", () => {
+    const html = renderHtml(<AdminOrdersTable orders={list} />);
+    expect(html).toMatch(/<button type="button" aria-pressed="true"[^>]*>Visi/);
+  });
+});
+
 describe("«Sūtīt klientam» forma telefonā - stikla stils", () => {
   const html = renderHtml(
     <AdminDealerSendDialog

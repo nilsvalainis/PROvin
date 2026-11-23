@@ -32,7 +32,7 @@ import type { OneautoServiceEvent } from "@/lib/oneauto-catalog";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { buildDealerVisitSummary } from "@/lib/pdf-dealer-timeline";
-import { extractRegistryDrivetrain, findDrivetrainContradictions, type RegistryDrivetrain } from "@/lib/registry-drivetrain";
+import { extractVehicleDrivetrain, findDrivetrainContradictions, type RegistryDrivetrain } from "@/lib/registry-drivetrain";
 
 export type DealerQualityGateInput = {
   jobVin: string;
@@ -420,6 +420,9 @@ function checkTranslation(input: DealerQualityGateInput): DealerGateCheck {
 export const DEALER_GATE_RECOMMENDATION_RE =
   /jāpārbauda|ieteicam\p{L}*|iesakām|iesak\p{L}*|ieteikum\p{L}*|pārdevējam\s+jā\p{L}*|jālūdz\p{L}*|jāprasa\p{L}*|lūdziet|pārbaudiet|pārbaudīt\s+apskat\p{L}*|apskatē\s+(?:jā)?pārbaud\p{L}*|vajadzētu|būtu\s+jā\p{L}*|jāpārliecinās|vērts\s+pārbaudīt|nepieciešams\s+(?:pārbaudīt|pieprasīt|lūgt)|pieprasīt\p{L}*\s+(?:dokument|rēķin|servisa\s+grāmatiņ)\p{L}*/iu;
 const EXPERT_RE = /eksper\p{L}*/iu;
+/** Vecā dīlera „Komentāri” lomu virsraksti, kas atkārto PDF tabulas (pirms #1115 / #1118). */
+export const DEALER_GATE_OLD_COMMENT_ROLE_RE =
+  /agregātu\s+(?:un\s+aprīkojuma\s+|\/\s*aprīkojuma\s+)?identifikācij\p{L}*|servisa\s+vēstures\s+ieraksti|servisa\s+(?:un|\/)\s+remontu\s+vēsture/iu;
 const LONG_DASH_RE = /[—–]/u;
 const IRISS_RE = /(?<!\p{L})[iī]riss(?!\p{L})/iu;
 
@@ -445,6 +448,9 @@ function checkForbidden(input: DealerQualityGateInput): DealerGateCheck {
       if (hit) return fail("forbidden", "block", `${f.label}: ${rule.what} - «${clip(hit)}»`, f.place);
     }
   }
+  // 23.11.2026: vecā prompta struktūra „Komentāros” (identifikācija, vizīšu uzskaite) - PDF to jau drukā tabulās.
+  const oldRole = firstHit(input.comments, DEALER_GATE_OLD_COMMENT_ROLE_RE);
+  if (oldRole) return fail("forbidden", "block", `Komentāri: vecā struktūra (identifikācija / vizīšu uzskaite) - «${clip(oldRole)}»`, "comments");
   const tableHit = input.serviceWorks.find((r) => IRISS_RE.test(r.works) || IRISS_RE.test(r.location));
   if (tableHit) return fail("forbidden", "block", `Servisa tabulā «IRISS» (${tableHit.date || "datums nav"}).`, "service_table");
   return ok("forbidden");
@@ -649,7 +655,7 @@ export function buildDealerQualityGateInput(args: {
       longestGapMonths: summary?.longestGap?.months ?? null,
       monthsSinceLast: summary?.monthsSinceLast ?? null,
     },
-    drivetrain: extractRegistryDrivetrain(blocks),
+    drivetrain: extractVehicleDrivetrain(blocks),
     powertrainContradiction: Boolean(comments) && commentContradictsPowertrain(comments, identity),
     draftVin: ar.outvinReport?.vehicleInfo?.vinCode ?? "",
     pdf: args.pdf,

@@ -52,13 +52,18 @@ export function auctionPhotoContentHash(jpeg: Buffer): string {
   return createHash("sha256").update(jpeg).digest("hex");
 }
 
-async function fetchOnce(url: string, storedMaxBytes: number): Promise<AuctionPhotoFetchResult> {
+/** Atlikušais laiks līdz termiņam (bez termiņa - Infinity). */
+function leftMs(deadline?: number): number {
+  return deadline == null ? Number.POSITIVE_INFINITY : deadline - Date.now();
+}
+
+async function fetchOnce(url: string, storedMaxBytes: number, deadline?: number): Promise<AuctionPhotoFetchResult> {
   if (!isAllowedVinScanAuctionPhotoUrl(url)) {
     return { ok: false, url, reason: "host_not_allowed" };
   }
   const referer = refererForAuctionPhoto(url);
   // Viens laika limits visai ķēdei, ne katram solim.
-  const signal = AbortSignal.timeout(AUCTION_PHOTO_FETCH_TIMEOUT_MS);
+  const signal = AbortSignal.timeout(Math.max(1_000, Math.min(AUCTION_PHOTO_FETCH_TIMEOUT_MS, leftMs(deadline))));
   let current = url;
   let res: Response;
   for (let hop = 0; ; hop += 1) {
@@ -108,10 +113,12 @@ async function fetchOnce(url: string, storedMaxBytes: number): Promise<AuctionPh
 export async function fetchAuctionPhotoJpeg(
   url: string,
   storedMaxBytes: number,
+  deadline?: number,
 ): Promise<AuctionPhotoFetchResult> {
   let last: AuctionPhotoFetchResult = { ok: false, url, reason: "unknown" };
   for (let attempt = 0; attempt < AUCTION_PHOTO_FETCH_ATTEMPTS; attempt += 1) {
-    last = await fetchOnce(url, storedMaxBytes);
+    if (attempt > 0 && leftMs(deadline) < 2_000) return last;
+    last = await fetchOnce(url, storedMaxBytes, deadline);
     if (last.ok) return last;
     if (NO_RETRY_REASONS.has(last.reason)) return last;
   }
@@ -121,7 +128,8 @@ export async function fetchAuctionPhotoJpeg(
 export async function fetchAuctionPhotoJpegs(
   urls: readonly string[],
   storedMaxBytes: number,
-  opts?: { concurrency?: number },
+  /** `deadline` (epoch ms): pēc tā jaunus URL nesāk; neiesāktie atgriežas kā failed «deadline». */
+  opts?: { concurrency?: number; deadline?: number },
 ): Promise<{ ok: AuctionPhotoFetchOk[]; failed: AuctionPhotoFetchFail[] }> {
   const wanted = [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
   const ok: AuctionPhotoFetchOk[] = [];
@@ -133,7 +141,11 @@ export async function fetchAuctionPhotoJpegs(
       const url = wanted[i];
       i += 1;
       if (!url) continue;
-      const result = await fetchAuctionPhotoJpeg(url, storedMaxBytes);
+      if (leftMs(opts?.deadline) < 2_000) {
+        failed.push({ ok: false, url, reason: "deadline" });
+        continue;
+      }
+      const result = await fetchAuctionPhotoJpeg(url, storedMaxBytes, opts?.deadline);
       if (result.ok) ok.push(result);
       else failed.push(result);
     }

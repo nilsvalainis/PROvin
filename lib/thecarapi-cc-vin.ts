@@ -66,6 +66,14 @@ export async function fetchThecarapiCcVinMerge(opts: {
   deps?: ThecarapiDeps;
   fetchJpegs?: ThecarapiGalleryFetch;
   writeJpeg?: ThecarapiGalleryWrite;
+  /** Epoch ms: kopējais laika budžets (TheCarApi + bildes). Pēc tā atgriež jau iegūto ar `partial`. */
+  deadline?: number;
+  /**
+   * Tikai no keša, bez neviena TheCarApi izsaukuma (UI atjaunošana pēc 504).
+   * Ja keša nav vai tas vecāks par `cacheSince` - `error: "no_cache"`.
+   */
+  cacheOnly?: boolean;
+  cacheSince?: string;
 }): Promise<{
   parse: VinScanParse;
   block: CcVinBlockState;
@@ -78,7 +86,9 @@ export async function fetchThecarapiCcVinMerge(opts: {
   records: ThecarapiAdminRecord[];
   /** Lotes bez detaļas: statuss, atbildes atslēgas, ceļš (bez hosta un vērtībām). */
   detailDiag?: ThecarapiDetailDiag[];
-  error?: "missing_thecarapi_credentials" | "thecarapi_disabled";
+  /** Termiņš pienāca: daļa detaļu/bilžu netika ielādēta (kešā saglabāts iegūtais). */
+  partial?: boolean;
+  error?: "missing_thecarapi_credentials" | "thecarapi_disabled" | "no_cache";
 }> {
   const env = opts.deps?.env ?? process.env;
   const prev = opts.prev ?? emptyCcVinBlock();
@@ -114,7 +124,48 @@ export async function fetchThecarapiCcVinMerge(opts: {
     };
   }
 
-  const result = await fetchThecarapiVinWithDetails(opts.vin, { ...opts.deps, env, skipCache: opts.skipCache === true });
+  let result: Awaited<ReturnType<typeof fetchThecarapiVinWithDetails>>;
+  if (opts.cacheOnly) {
+    const cached = await readThecarapiVinCache(opts.vin.trim().toUpperCase()).catch(() => null);
+    const since = opts.cacheSince ? Date.parse(opts.cacheSince) : Number.NaN;
+    const fresh = cached && (!Number.isFinite(since) || Date.parse(cached.cachedAt) >= since);
+    if (!cached || !fresh) {
+      const snap = await usage();
+      return {
+        parse: { status: "unknown", summary: "Kešā nav svaigu TheCarApi datu" },
+        block: prev,
+        fromCache: true,
+        cachedAt: cached?.cachedAt ?? null,
+        billable: false,
+        used: snap.used,
+        cap: snap.cap,
+        httpStatus: null,
+        records: [],
+        error: "no_cache",
+      };
+    }
+    result = {
+      parse: cached.parse,
+      httpStatus: cached.httpStatus ?? null,
+      fromCache: true,
+      cachedAt: cached.cachedAt,
+      billable: false,
+      refs: cached.refs ?? [],
+      records: cached.records ?? [],
+      recordsComplete: cached.recordsComplete === true,
+      etag: cached.etag ?? null,
+      rawJson: null,
+      detailsBillable: false,
+      partial: cached.recordsComplete !== true,
+    };
+  } else {
+    result = await fetchThecarapiVinWithDetails(opts.vin, {
+      ...opts.deps,
+      env,
+      skipCache: opts.skipCache === true,
+      deadline: opts.deadline ?? opts.deps?.deadline,
+    });
+  }
   const snap = await usage();
 
   const gallery = await storeThecarapiGallery({
@@ -124,7 +175,9 @@ export async function fetchThecarapiCcVinMerge(opts: {
     existing: prev.photoGroups,
     fetchJpegs: opts.fetchJpegs,
     writeJpeg: opts.writeJpeg,
+    deadline: opts.deadline ?? opts.deps?.deadline,
   });
+  const partial = result.partial === true || gallery.partial;
   const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
   let records = gallery.records;
   if (records.length > 0) {
@@ -153,7 +206,11 @@ export async function fetchThecarapiCcVinMerge(opts: {
     }).catch(() => undefined);
   }
 
-  const indicator = buildVinScanIndicator(THECARAPI_SOURCE_ID, opts.vin, result.parse);
+  const parseOut: VinScanParse =
+    partial && result.parse.status === "found" && !/daļēji/.test(result.parse.summary)
+      ? { ...result.parse, summary: `${result.parse.summary} (daļēji)` }
+      : result.parse;
+  const indicator = buildVinScanIndicator(THECARAPI_SOURCE_ID, opts.vin, parseOut);
   const parsed = vinScanAuctionsToCcVinParsed([indicator]);
   let block = applyCcVinParsedReport(parsed, prev);
   if (result.parse.detail?.trim()) {
@@ -172,7 +229,7 @@ export async function fetchThecarapiCcVinMerge(opts: {
     hidePhotoWatermarks: retainSavedHidePhotoWatermarks(prev),
   };
   return {
-    parse: result.parse,
+    parse: parseOut,
     block: normalizeCcVinBlock(block),
     fromCache: result.fromCache,
     cachedAt: result.cachedAt,
@@ -182,5 +239,6 @@ export async function fetchThecarapiCcVinMerge(opts: {
     httpStatus: result.httpStatus,
     records,
     detailDiag: result.detailDiag ?? [],
+    partial,
   };
 }
