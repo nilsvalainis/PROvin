@@ -476,3 +476,20 @@
     color: var(--amx-tx) !important;
   }
 }
+
+/* Meklēšanas lauks (`.am-search`): stikla josla, iekšējais lauks bez otra rāmja. */
+@media (max-width: 767px) {
+  .amx-pg .am-search {
+    min-height: 46px;
+    border-radius: var(--amx-r) !important;
+    border: 1px solid var(--amx-edge);
+    background: var(--amx-glass2) !important;
+    color: var(--amx-soft);
+  }
+  .amx-pg .am-search input {
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+}
