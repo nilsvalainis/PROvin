@@ -398,9 +398,6 @@ ${mileageSeriesSpanHtml(series)}
  * Avota sadaļas līkne (01): laukums izplūst, bez rāmja / ass / režģa.
  * Fonā blāva kopējā līkne; priekšplānā šī avota krāsa; malās šī avota sākuma/beigu datums.
  */
-/** Avota mini grafiks tikai ar vismaz 3 rādījumiem (D37). */
-export const SOURCE_SPARK_MIN_POINTS = 3;
-
 export function buildSourceMileageSparkHtml(
   rows: UnifiedMileageRow[],
   sourceKey: MileagePdfSourceKey,
@@ -411,8 +408,8 @@ export function buildSourceMileageSparkHtml(
   const series = chartSeriesFromRows(rows, chartExclude);
   if (series.length === 0) return "";
   const mine = series.filter((s) => s.sourceKeys.includes(sourceKey));
-  // D37 (Business audits 23.11): 1-2 punktu līkne bez ass neko neizsaka - tādu nerāda (dati ir tabulā).
-  if (mine.length < SOURCE_SPARK_MIN_POINTS) return "";
+  // Nils 24.11: mini grafiks rādās arī ar 1-2 rādījumiem (1 punkts = punkts); gadu ass paliek (D37).
+  if (mine.length === 0) return "";
 
   const tMin = series[0]!.time;
   const tMax = series[series.length - 1]!.time;
