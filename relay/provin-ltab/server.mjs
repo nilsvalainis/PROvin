@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * PROVIN LTAB relejs (Hetzner): services.ltab.lv/VehicleInsAndAcc ar latvija.lv Smart-ID.
+ * PROVIN LTAB relejs (Hetzner): services.ltab.lv/VehicleInsAndAcc ar Vienotās pieteikšanās (vpm.viss.gov.lv) Smart-ID.
  * Atsevišķs serviss no CSDD (8787), mnt.ee (8788), listings (8789).
  *
  * PROVIN (Vercel) -> Caddy /ltab/* -> 127.0.0.1:8791 -> īsts Chrome (Xvfb :97), profils /var/lib/provin-ltab/profile.
@@ -119,7 +119,7 @@ async function openContext() {
   } catch {
     context = await chromium.launchPersistentContext(PROFILE_DIR, opts);
   }
-  // Galvenā loga navigācija tikai uz LTAB / latvija.lv (resursus no CDN neaiztiek).
+  // Galvenā loga navigācija tikai uz LTAB / vpm.viss.gov.lv / latvija.lv (resursus no CDN neaiztiek).
   await context.route("**/*", (route) => {
     const req = route.request();
     let mainNav = false;

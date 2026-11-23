@@ -1,6 +1,6 @@
 # provin-ltab: LTAB OCTA zaudējumu izziņa PROVIN pasūtījumiem (Hetzner, bez AI)
 
-`services.ltab.lv/VehicleInsAndAcc` -> ķeksītis "Esmu informēts..." -> latvija.lv Smart-ID (Nils apstiprina telefonā)
+`services.ltab.lv/VehicleInsAndAcc` -> ķeksītis "Esmu informēts..." -> Vienotā pieteikšanās `vpm.viss.gov.lv` (agrāk latvija.lv) Smart-ID (Nils apstiprina telefonā)
 -> meklēšana **tikai pēc Latvijas numurzīmes** (otrais ķeksītis formā) -> rezultāts. Ja ir negadījumi, relejs lejupielādē
 **oriģinālo PDF** un nosūta to uz PROVIN. PROVIN to saglabā pasūtījuma Dropbox mapē (`/_PROv/<auto VIN>/LTAB - AB1234.pdf`)
 un rāda LTAB blokā avotos kā "LTAB".
@@ -11,7 +11,8 @@ Kad relejs saņem uzdevumu, to nosaka PROVIN: tikai, ja CSDD dati rāda LV reģi
 | Fails | Kas |
 | --- | --- |
 | `server.mjs` | HTTP 127.0.0.1:8791, Bearer, Chrome profils, atzvans uz PROVIN |
-| `lib/ltab-flow.mjs` | Pārlūka soļi: LTAB sākumlapa, latvija.lv Smart-ID, meklēšana, PDF |
+| `lib/ltab-flow.mjs` | Pārlūka soļi: LTAB sākumlapa, Smart-ID, meklēšana, PDF |
+| `lib/viss-sso.mjs` | Vienotā pieteikšanās (vpm.viss.gov.lv) + Smart-ID; IDENTISKS fails e.csdd relejā |
 | `lib/ltab-page.mjs` | Lapu atpazīšana (tīras funkcijas), personas koda redakcija, nakts logs |
 | `lib/jobs.mjs` | Rinda: viens uzdevums vienlaikus, 20/h, naktī automātika gaida, `jobs.json` |
 | `systemd/` | `provin-ltab.service` + `provin-ltab-xvfb.service` (:97) |
@@ -34,13 +35,14 @@ relejs  -> PROVIN /api/ltab/relay-callback:
 - Smart-ID pieprasījumu sāk tikai pasūtījums (pēc apmaksas, `LTAB_AUTO_ENABLED=1`) vai Nila poga "Pieprasīt no LTAB".
   Naktī 22:00-07:00 automātiskie gaida rītu; poga strādā vienmēr. Atkārtoti pats Smart-ID neprasa.
 - Relejs nekad neapmaksā (maksājuma poga -> `paid`, stop) un nerisina captcha (`captcha`, stop).
-- Galvenā loga navigācija tikai uz `services.ltab.lv` un latvija.lv; viss cits tiek bloķēts.
+- Galvenā loga navigācija tikai uz `services.ltab.lv`, `*.viss.gov.lv` un latvija.lv; viss cits tiek bloķēts.
 
 ## Drošība
 
 - `SMARTID_PERSONAL_CODE` tikai `/etc/provin-ltab.env` (root 600). Ieraksta **Nils pats** no 1Password. Nav Vercel, nav repo.
 - Žurnālā personas kodi (`000000-00000`, arī bez defises) un tokeni aizvietoti ar `***`.
-- latvija.lv lapām netiek taisīti ekrānuzņēmumi vai HTML kopijas. Atkļūdošanai `debug/` tikai LTAB lapu teksts bez kodiem.
+- Pieteikšanās (SSO) lapām netiek taisīti ekrānuzņēmumi vai HTML kopijas. Atkļūdošanai `debug/`: LTAB lapu teksts bez kodiem;
+  SSO lapām tikai neatpazītos soļos - pogas/lauku etiķetes un teksts, kurā visi cipari aizvietoti ar `#`.
 - Kill switch: `POST /ltab/logout` (izdzēš profilu) vai `systemctl stop provin-ltab`; Vercel `LTAB_AUTO_ENABLED=0`.
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)
@@ -73,7 +75,7 @@ Dropbox: tie paši `DROPBOX_*`, kas Autoparkam; mape `PROV_ORDERS_DROPBOX_ROOT` 
 Lapa pēc pieteikšanās vēl nav redzēta, tāpēc selektori ir teksta bāzēti. Pirmajā reizē Nils ir klāt ar telefonu:
 
 ```bash
-journalctl -u provin-ltab -f          # soļi: ltab_login -> latvija_choose -> latvija_code_input -> latvija_wait -> ltab_search -> ...
+journalctl -u provin-ltab -f          # soļi: ltab_login -> sso_choose -> sso_code_input -> sso_wait -> ltab_search -> ...
 ls /var/lib/provin-ltab/debug/         # LTAB lapu teksts (bez personas kodiem), ja kāds solis neatpazīts
 ```
 

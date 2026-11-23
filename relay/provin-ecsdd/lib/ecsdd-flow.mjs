@@ -15,13 +15,12 @@ import {
   ECSDD_SSO_URL,
   ECSDD_TADATI_URL,
   extractTadatiText,
-  extractVerificationCode,
   isEcsddHost,
   isPayText,
   isSsoHost,
-  looksLikeSsoFailure,
   redact,
 } from "./ecsdd-page.mjs";
+import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
 
 export class EcsddFlowError extends Error {
   constructor(code, message) {
@@ -64,32 +63,47 @@ async function snapshot(page) {
       .filter(vis)
       .map((el) => ({ text: (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80), href: (el.getAttribute("href") || "").slice(0, 200) }))
       .slice(0, 200);
-    const codeCandidates = [...document.querySelectorAll('[id*="code" i], [class*="code" i], [id*="verif" i], [class*="verif" i], [class*="kods" i]')]
-      .filter(vis)
-      .map((el) => (el.textContent || "").replace(/\s+/g, "").slice(0, 12));
     return {
       path: location.pathname,
       text: (document.body?.innerText || "").replace(/\s+/g, " ").slice(0, 20000),
       inputs,
       buttons,
       links,
-      codeCandidates,
-      hasAgree: Boolean(document.querySelector('input[type="checkbox"][name="agree"]')),
       hasCaptchaFrame: Boolean(document.querySelector('iframe[src*="captcha" i], .g-recaptcha, .h-captcha')),
     };
   });
-  return { host, ...data };
+  const sso = isSsoHost(host) ? await page.evaluate(collectSsoExtras).catch(() => ({})) : {};
+  return { host, ...data, ...sso };
 }
 
 export function createEcsddBrowser({ getContext, personalCode, log = () => undefined, debugDir = "", smartIdTimeoutMs = 120_000 }) {
   const secrets = [personalCode];
 
   async function saveDebug(name, snap) {
-    // Tikai e.csdd lapas (nekad SSO / Smart-ID lapas).
-    if (!debugDir || !isEcsddHost(snap.host)) return;
+    // e.csdd lapas: teksts bez personas kodiem. SSO lapas: tikai neatpazītos soļos, visi cipari aizvietoti ar `#`.
+    if (!debugDir || (!isEcsddHost(snap.host) && !isSsoHost(snap.host))) return;
     try {
       await fs.mkdir(debugDir, { recursive: true, mode: 0o700 });
-      const body = JSON.stringify({ host: snap.host, path: snap.path, text: redact(snap.text, secrets).slice(0, 8000), buttons: snap.buttons, links: snap.links }, null, 1);
+      const sso = isSsoHost(snap.host);
+      const text = redact(snap.text, secrets);
+      const body = JSON.stringify(
+        sso
+          ? {
+              host: snap.host,
+              path: snap.path,
+              text: text.replace(/\d/g, "#").slice(0, 4000),
+              inputs: (snap.inputs ?? []).map((i) => ({ ...i, label: String(i.label ?? "").replace(/\d/g, "#") })),
+              buttons: snap.buttons,
+              hasAgree: snap.hasAgree,
+              smartIdChoice: snap.smartIdChoice,
+              smartIdAdapter: snap.smartIdAdapter,
+              codeCandidates: (snap.codeCandidates ?? []).length,
+              digitCandidates: (snap.digitCandidates ?? []).length,
+            }
+          : { host: snap.host, path: snap.path, text: text.slice(0, 8000), buttons: snap.buttons, links: snap.links },
+        null,
+        1,
+      );
       await fs.writeFile(path.join(debugDir, `${new Date().toISOString().replace(/[:.]/g, "-")}-${name}.json`), redact(body, secrets), { mode: 0o600 });
     } catch {
       /* atkļūdošana nav obligāta */
@@ -144,7 +158,12 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
       await page.goto(ECSDD_SSO_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
       for (let step = 0; step < 25; step++) {
         await page.waitForLoadState("domcontentloaded").catch(() => undefined);
-        const snap = await snapshot(page);
+        // Pāradresācijas laikā (VISS forma iesniedz ar fetch + location.replace) evaluate var krist - vēlreiz.
+        const snap = await snapshot(page).catch(async () => {
+          await sleep(2000);
+          await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+          return snapshot(page);
+        });
         const kind = classifySnapshot(snap);
         log(`pieteikšanās solis ${step}: ${kind} (${snap.host})`);
 
@@ -159,60 +178,44 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
         }
 
         if (kind === "sso_choose") {
-          const agree = page.locator('input[type="checkbox"][name="agree"]').first();
-          if ((await agree.count()) && !(await agree.isChecked().catch(() => true))) {
-            await agree.check({ force: true }).catch(async () => {
-              const id = await agree.getAttribute("id");
-              if (id) await page.locator(`label[for="${id}"]`).click();
-            });
+          if (codeFilled) throw new EcsddFlowError(codeSent ? "smartid_refused" : "page_changed", "Vienotā pieteikšanās: atpakaļ uz metodes izvēli");
+          if (!(await chooseSmartId(page))) {
+            await saveDebug(`sso-no-smartid-${step}`, snap);
+            throw new EcsddFlowError("page_changed", "Vienotā pieteikšanās: nav Smart-ID izvēles");
           }
-          await sleep(800);
-          const smartId = page.locator('.js--vpm-auth-button[data-url*="scheme=smartid" i]').first();
-          if (await smartId.count()) await smartId.click();
-          else if (!(await clickByText(page, /smart[\s-]?id/i))) throw new EcsddFlowError("page_changed", "Vienotā pieteikšanās: nav Smart-ID izvēles");
-          await page.waitForLoadState("domcontentloaded", { timeout: 30_000 }).catch(() => undefined);
-          await sleep(1500);
           continue;
         }
 
         if (kind === "sso_code_input") {
           if (codeFilled) throw new EcsddFlowError("page_changed", "Smart-ID: personas koda forma atkārtojas");
-          let input = page.locator("#identity-number");
-          if (!(await input.count())) input = page.locator('input[type="text"], input[type="tel"], input:not([type])').first();
-          if (!(await input.isVisible().catch(() => false))) throw new EcsddFlowError("page_changed", "Smart-ID: nav personas koda lauka");
-          await input.fill(personalCode);
+          if (!(await submitPersonalCode(page, personalCode))) {
+            await saveDebug(`sso-no-input-${step}`, snap);
+            throw new EcsddFlowError("page_changed", "Smart-ID: nav personas koda lauka");
+          }
           codeFilled = true;
-          const ok = page.locator("#ok");
-          if (await ok.count()) await ok.click();
-          else if (!(await clickByText(page, /autentific|turpin[aā]t|pieteikties|t[aā]l[aā]k|apstiprin/i))) await page.keyboard.press("Enter");
-          await sleep(2500);
           continue;
         }
 
         if (kind === "sso_wait") {
-          const code = extractVerificationCode(snap.text, snap.codeCandidates);
-          if (!code) throw new EcsddFlowError("code_not_read");
-          if (!codeSent) {
-            codeSent = true;
-            await onCode(code);
+          if (!codeFilled && !codeSent) {
+            await saveDebug(`sso-wait-unexpected-${step}`, snap);
+            throw new EcsddFlowError("page_changed", "Smart-ID: koda lapa bez pieprasījuma");
           }
-          const deadline = Date.now() + smartIdTimeoutMs;
-          while (Date.now() < deadline) {
-            await sleep(2000);
-            if (!isSsoHost(new URL(page.url()).hostname)) break;
-            const t = await page.evaluate(() => document.body?.innerText || "").catch(() => "");
-            if (looksLikeSsoFailure(t)) throw new EcsddFlowError("smartid_refused");
-          }
-          if (isSsoHost(new URL(page.url()).hostname)) {
-            // Pēc apstiprinājuma SSO var prasīt vēl vienu "Turpināt".
-            const after = await snapshot(page);
-            if (!extractVerificationCode(after.text, after.codeCandidates) && (await clickByText(page, /turpin[aā]t|piekr[iī]tu|apstiprin/i))) continue;
+          const res = await waitForSmartId(page, { snapshotFn: snapshot, onCode, codeAlreadySent: codeSent, timeoutMs: smartIdTimeoutMs });
+          codeSent = codeSent || res.codeSent;
+          log(`Smart-ID gaidīšana: ${res.status}`);
+          if (res.status === "refused") throw new EcsddFlowError("smartid_refused");
+          if (res.status === "timeout") {
+            await saveDebug(`sso-timeout-${step}`, await snapshot(page).catch(() => snap));
             throw new EcsddFlowError("smartid_timeout");
           }
           continue;
         }
 
-        if (kind === "sso_failed") throw new EcsddFlowError(codeSent ? "smartid_refused" : "page_changed", "Vienotā pieteikšanās atteica");
+        if (kind === "sso_failed") {
+          await saveDebug(`sso-failed-${step}`, snap);
+          throw new EcsddFlowError(codeFilled ? "smartid_refused" : "page_changed", "Vienotā pieteikšanās atteica");
+        }
 
         // Nezināma lapa. Pēc SSO e.csdd var atvērt profila lapu - pārbaudām sākumlapu.
         if (isEcsddHost(snap.host) && codeSent) {

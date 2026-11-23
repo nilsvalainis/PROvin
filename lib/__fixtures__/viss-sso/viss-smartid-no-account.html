@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="lv"><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="Smart ID autentifikācijas adapteris">
+    <title>Smart-ID autentifikācijas adapteris</title>
+<meta name="x-stylesheet-fallback-test" content="" class="vpm-page__main">
+<style>.d-none{display:none!important}@media (min-width:992px){.d-lg-none{display:none!important}}</style></head>
+<body>
+    <div id="root">
+        <div class="vpm-page">
+            <header class="vpm-page__header">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-xl-6 col-lg-7 col-10">
+                            <div class="vpm-page__header-inner">
+                                <p class="text-medium-bold">Smart-ID autentifikācijas adapteris</p> 
+                                <div class="header__control-bar">
+                                    <div class="header__control-actions">
+        <button aria-label="Pārslēgties uz angļu (EN) valodu" type="button" class="btn btn-no-border-dark  header__control-action header__control-action--lang-btn" action="/VPM.IdP.SmartId/SetLanguage?returnUrl=RETURN" culture="en" onclick="SetLanguage(this);return false;">
+            <span class="addon addon--left"><i class="ic ic-globe"></i></span>EN
+        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="vpm-page__main">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-xl-6 col-lg-7 col-10">
+        <div class="js--alert alert" role="alert">
+            <div class="alert__inner align-items-center">
+                <div class="alert__content">
+                    <p id="alert-message">Lietotājam nav konta Smart-ID sistēmā</p>
+                </div>
+                <button aria-describedby="alert-message" aria-label="Aizvērt paziņojumu" type="button" class="btn btn-outlined-dark btn-alert-close js--close-button">
+                    <i class="ic ic-close"></i>
+                </button>
+            </div>
+        </div>
+        <section id="smart-id-device-link" class="d-flex flex-column align-items-center my-4 text-center" aria-label="Autentificēties ar QR kodu">
+            <div id="smart-id-qr-accordion" class="accordion js--accordion w-100">
+                <div class="accordion__item js--accordion-item">
+                    <div class="accordion__item-header d-lg-none">
+                        <button id="smart-id-qr-accordion-toggle" aria-expanded="false" type="button" class="btn btn-no-border-dark js--accordion-item-toggle-button">
+                            Autentificēties ar QR kodu
+                            <i class="ic ic-arrow-down" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="accordion__item-body-wrapper">
+                        <div class="accordion__item-body" role="region" aria-labelledby="smart-id-qr-accordion-toggle">
+                            <h2 id="smart-id-qr-title" class="d-none d-lg-block">Autentificēties ar QR kodu</h2>
+                            <p id="smart-id-device-link-info" class="mt-1 mb-4 text-center">Atveriet Smart-ID lietotni un noskenējiet šo QR kodu</p>
+                            <div id="smart-id-device-link-qr-wrapper" class="d-inline-block bg-white p-2">
+                                <img id="smart-id-qr-code" class="d-block w-100 img-fluid" src="blob:QR" alt="Smart-ID autentifikācijas QR kods">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <div id="smart-id-device-link-expired" class="d-none text-center" role="status">
+                    <p class="mb-20">Autentifikācijas sesijas derīguma termiņš ir beidzies. Sāciet jaunu sesiju, nospiežot pogu “Sākt jaunu sesiju”, vai autentificējieties, izmantojot zemāk esošo Smart-ID paziņojuma iespēju.</p>
+                    <a id="smart-id-device-link-restart" class="btn btn-dark" href="/VPM.IdP.SmartId/Account/SmartIdAuthentication?returnUrl=RETURN&amp;handler=StartDeviceLink">
+                        Sākt jaunu sesiju
+                    </a>
+                </div>
+        </section>
+        <div id="smart-id-web2app-layout" class="d-lg-none">
+            <div id="smart-id-web2app" class="d-none">
+                    <div class="d-flex align-items-center gap-3 my-4 text-secondary" aria-hidden="true">
+                        <span class="border-top flex-grow-1"></span>
+                        <span>vai</span>
+                        <span class="border-top flex-grow-1"></span>
+                    </div>
+                <div class="my-4 text-center">
+                    <a id="smart-id-web2app-link" class="btn btn-dark">
+                        Atvērt Smart-ID lietotni
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div id="smart-id-auth-separator" class="d-flex align-items-center gap-3 my-4 text-secondary" aria-hidden="true">
+            <span class="border-top flex-grow-1"></span>
+            <span>vai</span>
+            <span class="border-top flex-grow-1"></span>
+        </div>
+        <h2 class="text-center">Saņemt paziņojumu Smart-ID lietotnē</h2>
+        <form method="post" class="form vpm-page__form js--form-validator" action="/VPM.IdP.SmartId/Account/SmartIdAuthentication?returnUrl=RETURN">
+            <input type="hidden" id="DeviceLinkState" name="DeviceLinkState" value="TOKEN">
+            <p class="mb-20"><span class="text-danger me-1">*</span>Lauki atzīmēti ar zvaigznes simbolu ir obligāti</p>
+            <div class="form-group ">
+                <label for="identity-number" class="form-group__label">Personas kods<span class="text-danger">*</span></label>
+                <p data-validation-message-for-input="NationalIdentityNumber" id="00000000-0000-0000-0000-000000000000" class="form-group__error-message d-none"> <i class="ic ic-warning"></i> <span class="js--message"></span> </p>
+                <div class="form-group__text-input-wrapper">
+                    <input id="identity-number" type="text" aria-describedby="00000000-0000-0000-0000-000000000000" aria-required="true" class="form-control input-validation-error" aria-invalid="false" placeholder="xxxxxx-xxxxx" value="" inputmode="numeric" data-val="true" data-val-required="The NationalIdentityNumber field is required." name="NationalIdentityNumber">
+                </div>
+                <div class="button-group mt-20">
+                    <button id="ok" type="submit" class="btn btn-dark">
+                        Autentificēties
+                    </button>
+                    <button onclick="onCancel(event, this)" href="/VPM.IdP.SmartId/Account/SmartIdAuthentication?state=TOKEN&amp;handler=CancelDeviceLink" data-device-link="true" type="button" class="btn btn-gray">Atcelt</button>
+                </div>
+            </div>
+        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body></html>

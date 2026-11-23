@@ -98,7 +98,7 @@ export function createRelayCore({ queue, browser, notify, cfg, now = () => new D
       await browser.login({
         onCode: async (code) => {
           await setSession(onAwaitingSmartId(session, now(), code));
-          for (const job of queue.queued()) await send(jobBody(job, "awaiting_smartid", { verificationCode: code }));
+          for (const job of queue.queued()) await send(jobBody(job, "awaiting_smartid", code ? { verificationCode: code } : {}));
         },
       });
       await setSession(onLoginOk(session, now()));

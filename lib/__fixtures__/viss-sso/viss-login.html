@@ -1,0 +1,228 @@
+<!DOCTYPE html><html lang="lv" style=""><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="Vienotās pieteikšanās modulis">
+    <title>Vienotās pieteikšanās modulis</title>
+<meta name="x-stylesheet-fallback-test" content="" class="vpm-page__main">
+<style>.d-none{display:none!important}@media (min-width:992px){.d-lg-none{display:none!important}}</style></head>
+<body>
+    <div id="root">
+        <div class="vpm-page">
+            <header class="vpm-page__header header">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-xl-6 col-lg-7 col-10">
+                            <div class="vpm-page__header-inner">
+                                <div class="header__logo-wrapper">
+                                    <img src="/LVP.STS/css/images/icons/logo-vpm.svg" alt="Vienotās pieteikšanās modulis">
+                                </div>
+                                <div class="header__control-bar">
+                                    <div class="header__control-actions">
+        <button role="link" aria-label="Pārslēgties uz angļu (EN) valodu" type="button" class="btn btn-no-border-dark  header__control-action header__control-action--lang-btn" data-action="/LVP.STS/Home/SetLanguage?culture=en&amp;returnUrl=RETURN" onclick="location.href=this.dataset.action;return false;">
+            <span class="addon addon--left"><i class="ic ic-globe"></i></span>EN
+        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <main class="vpm-page__main">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-xl-6 col-lg-7 col-10">
+        <div class="vpm-page__agree-terms">
+            <div class="warning-box  js--warning-message mb-24">
+                <div class="warning-box__message " role="alert">
+                    <p id="warning-message-id" class="paragraph-with-icon"> <i class="ic ic-warning"></i> <span class="js--warning-message-content">Lai pieteiktos jums ir jāpiekrīt lietošanas noteikumiem</span> </p>
+                </div>
+            </div>
+            <p class="mb-20"><span class="text-danger me-1">*</span>Lauki atzīmēti ar zvaigznes simbolu ir obligāti</p>
+            <div class="form-group ">
+                <p data-validation-message-for-input="agree" id="00000000-0000-0000-0000-000000000000" class="form-group__error-message d-none"> <i class="ic ic-warning"></i> <span class="js--message"></span> </p>
+                <div class="form-group__checkbox-button"> <span class="form-group__checkbox-checkmark"> 
+                    <input class="" aria-describedby="00000000-0000-0000-0000-000000000000" name="agree" id="00000000-0000-0000-0000-000000000000" type="checkbox" aria-invalid="false" aria-required="true"> 
+                    <span class="form-group__checkbox-mark"> <i class="ic ic-check"></i> </span> </span> 
+                    <label for="00000000-0000-0000-0000-000000000000">
+                        <span><span>Piekrītu identifikācijas veikšanas <a id="agreement_btn" aria-label="Identifikācijas veikšanas noteikumi" class="d-inline-block" href="#">noteikumiem</a> un manu datu (vārda, uzvārda un personas koda) nosūtīšanai e-pakalpojuma sniedzējam - <b>Latvijas Transportlīdzekļu apdrošinātāju birojs (Toma iela 4, Rīga, LV-1003)</b>.</span></span>
+                        <span class="text-danger"> *</span>
+                    </label> 
+                </div>
+            </div>
+        </div>
+        <div class="vpm-page__providers ">
+            <p id="provider-title-1" class="fw-bold mb-20">Identifikācija ar kvalificētu paaugstinātas drošības elektroniskās identifikācijas līdzekli</p>
+            <ul aria-labelledby="provider-title-1">
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=eid&amp;returnUrl=RETURN">
+                            eID
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/sc-logo-sm.svg" alt="Pietiekties izmantojot eID">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=mobeid&amp;returnUrl=RETURN">
+                            eID Scan
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/eidscan-logo-sm.svg" alt="Pietiekties izmantojot eID Scan">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=mobile&amp;returnUrl=RETURN">
+                            eParaksts mobile
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/mobileid-logo-sm.svg" alt="Pietiekties izmantojot eParaksts mobile">
+                            </span> 
+                        </a>
+                    </li>
+            </ul>
+        </div>
+        <div class="vpm-page__providers ">
+            <p id="provider-title-1" class="fw-bold mb-20">Identifikācija ar kvalificētu elektroniskās identifikācijas līdzekli</p>
+            <ul aria-labelledby="provider-title-1">
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=smartid&amp;returnUrl=RETURN">
+                            Smart-ID
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/smart-id-logo-sm.svg" alt="Pietiekties izmantojot Smart-ID">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=eidas&amp;returnUrl=RETURN">
+                            eIDAS
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/eu-flag-logo-sm.svg" alt="Pietiekties izmantojot eIDAS">
+                            </span> 
+                        </a>
+                    </li>
+            </ul>
+        </div>
+        <div class="vpm-page__providers ">
+            <p id="provider-title-1" class="fw-bold mb-20">Identifikācija ar banku identifikācijas līdzekli</p>
+            <ul aria-labelledby="provider-title-1">
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=swed&amp;returnUrl=RETURN">
+                            Swedbank
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/swedbank-logo-sm.svg" alt="Pietiekties izmantojot Swedbank">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=citadele&amp;returnUrl=RETURN">
+                            Citadele
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/citadele-logo-sm.svg" alt="Pietiekties izmantojot Citadele">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=SEB&amp;returnUrl=RETURN">
+                            SEB
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/seb-logo-sm.png" alt="Pietiekties izmantojot SEB">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=blueorange&amp;returnUrl=RETURN">
+                            BluOr
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/blubank-logo-sm.svg" alt="Pietiekties izmantojot BluOr">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=industra&amp;returnUrl=RETURN">
+                            Industra
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/industra-logo-sm.png" alt="Pietiekties izmantojot Industra">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=pastabanka&amp;returnUrl=RETURN">
+                            Magnetiq
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/magnetiq-logo-sm.png" alt="Pietiekties izmantojot Magnetiq">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=Luminor&amp;returnUrl=RETURN">
+                            Luminor
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/luminor-logo-sm.png" alt="Pietiekties izmantojot Luminor">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=rietumu&amp;returnUrl=RETURN">
+                            Rietumu
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/rietumu-logo-sm.png" alt="Pietiekties izmantojot Rietumu">
+                            </span> 
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="btn btn-outlined-bright js--vpm-auth-button" data-url="/LVP.STS/External/Challenge?scheme=SignetBank&amp;returnUrl=RETURN">
+                            Signet
+                            <span class="addon addon--right"> 
+                                <img src="/LVP.STS/IdentityProviders/signet-logo-sm.png" alt="Pietiekties izmantojot Signet">
+                            </span> 
+                        </a>
+                    </li>
+            </ul>
+        </div>
+<dialog id="modal_0" data-modal-id="modal0" class="modal js--modal" aria-modal="true" aria-labelledby="modal-title">
+    <div class="container">
+        <div class="row h-100">
+            <div class="m-auto col-lg-6 col-10">
+                <div class="modal__container js--modal-container">
+                    <div class="modal__header">
+                        <div class="modal__header-content" id="00000000-0000-0000-0000-000000000000">
+                            <h2 id="modal-title">Elektroniskās identifikācijas risinājuma lietošanas noteikumi</h2>
+                        </div>
+                        <button aria-describedby="00000000-0000-0000-0000-000000000000" aria-label="Close modal" type="button" class="btn btn-outlined-dark modal__header-close-button js--close-button">
+                            <i class="ic ic-close"></i>
+                        </button>
+                    </div>
+                    <div class="modal__body">
+                        <div class="modal__body__inner">
+                            <div class="text-block">
+    <p class="font-weight-light">1. Elektroniskās identifikācijas risinājums darbojas atbilstoši Fizisko personu elektroniskās identifikācijas likuma prasībām, ievērojot Vispārīgās datu aizsardzības regulas (ES) 2016/679  (VDAR) nosacījumus.</p>
+    <p class="font-weight-light">2. Nepiekrītot šiem noteikumiem un datu nodošanai elektronisko pakalpojumu sniedzējam, Jūs nevarēsiet izmantot elektroniskās identifikācijas risinājumu un tos elektroniskos pakalpojumus, kur identifikācija ir obligāta.</p>
+    <p class="font-weight-light">3. Lietotāja personas datu (vārda, uzvārda, personas koda) apmaiņu starp Valsts digitālās attīstības aģentūru (<strong>Aģentūra</strong>) un elektroniskās identifikācijas servisa sniedzēju regulē starp šīm pusēm noslēgtās vienošanās.</p>
+    <p class="font-weight-light">4. Elektroniskās identifikācijas process:</p>
+    <p class="font-weight-light">4.1. Jūs apstipriniet, ka esiet iepazinies ar šiem noteikumiem un personas datu apstrādes mērķi, un atļaujiet Valsts digitālās attīstības aģentūrai (<strong>Aģentūra</strong>) saņemt Jūsu datus (vārdu, uzvārdu un personas kodu), lai tos automātiski nodotu elektroniskā pakalpojuma sniedzējam;</p>
+    <p class="font-weight-light">4.2. Jūs izvēlieties vienu no portālā pieejamajiem elektroniskās identifikācijas servisa sniedzējiem;</p>
+    <p class="font-weight-light">4.3. Izvēlētajā elektroniskās identifikācijas servisa sniedzēja tīmekļa lapā veiciet identifikācijas procesu, prasītajos laukos ievadot attiecīgā servisa sniedzēja prasīto informāciju, kas ļaus Jūs identificēt;</p>
+    <p class="font-weight-light">4.4. Veiksmīgas elektroniskās identifikācijas rezultātā, identifikācijas servisa sniedzējs Jūsu personas datus nodod <strong>Aģentūrai</strong>;</p>
+    <p class="font-weight-light">4.5. <strong>Aģentūra</strong> saņemtos lietotāja personas datus nodod atbilstošajam elektroniskā pakalpojuma sniedzējam, kas nodrošina Jums izvēlēto pakalpojumu lietošanu;</p>
+    <p class="font-weight-light">4.6. Elektroniskās identifikācijas risinājumā nodrošināts vienotās pieteikšanās princips (Single sign on), kas ļauj Jūsu identifikācijas datus saglabāt, lai jūs varētu, bez atkārtotas identifikācijas procesa veikšanas, pieslēgties arī citām sistēmām, kurās tiek izmantots vienotās pieteikšanās moduļa elektroniskās identifikācijas risinājums. Šie dati netiek saglabāti pastāvīgi, bet tikai līdz brīdim, kad aizvērsiet savu tīmekļa pārlūkprogrammu (visus atvērtos pārlūkprogrammas logus).</p>
+    <p class="font-weight-light">4.7. Lai izvairītos no nesankcionētas jūsu identitātes izmantošanas apdraudējuma, beidzot darbu sistēmā, aicinām atslēgties no sistēmas , kā arī aizvērt tīmekļa pārlūkprogrammu (visus atvērtos pārlūkprogrammas logus).</p>
+</div>
+                        </div>
+                    </div>
+                    <div class="modal__footer">
+                        <button type="button" class="btn btn-outlined-bright" data-modal-hide="modal0">
+                            Aizvērt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<div tabindex="0" aria-hidden="true" style="position: absolute;"></div></dialog>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body></html>

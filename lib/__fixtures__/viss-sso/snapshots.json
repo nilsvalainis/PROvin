@@ -1,0 +1,269 @@
+{
+ "viss-login": {
+  "host": "vpm.viss.gov.lv",
+  "text": "EN Lai pieteiktos jums ir jāpiekrīt lietošanas noteikumiem *Lauki atzīmēti ar zvaigznes simbolu ir obligāti Piekrītu identifikācijas veikšanas noteikumiem un manu datu (vārda, uzvārda un personas koda) nosūtīšanai e-pakalpojuma sniedzējam - Latvijas Transportlīdzekļu apdrošinātāju birojs (Toma iela 4, Rīga, LV-1003). * Identifikācija ar kvalificētu paaugstinātas drošības elektroniskās identifikācijas līdzekli eID eID Scan eParaksts mobile Identifikācija ar kvalificētu elektroniskās identifikācijas līdzekli Smart-ID eIDAS Identifikācija ar banku identifikācijas līdzekli Swedbank Citadele SEB BluOr Industra Magnetiq Luminor Rietumu Signet ",
+  "checkboxes": [
+   {
+    "label": " Piekrītu identifikācijas veikšanas noteikumiem un manu datu (vārda, uzvārda un personas koda) nosūtīšanai e-pakalpojuma sniedzējam - Latvijas Transportlīdzekļu apdrošinātāju birojs (Toma iela 4, Rīga, LV-1003). * agree 00000000-0000-0000-0000-000000000000 ",
+    "checked": false,
+    "visible": true
+   }
+  ],
+  "inputs": [],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "eID",
+    "visible": true
+   },
+   {
+    "text": "eID Scan",
+    "visible": true
+   },
+   {
+    "text": "eParaksts mobile",
+    "visible": true
+   },
+   {
+    "text": "Smart-ID",
+    "visible": true
+   },
+   {
+    "text": "eIDAS",
+    "visible": true
+   },
+   {
+    "text": "Swedbank",
+    "visible": true
+   },
+   {
+    "text": "Citadele",
+    "visible": true
+   },
+   {
+    "text": "SEB",
+    "visible": true
+   },
+   {
+    "text": "BluOr",
+    "visible": true
+   },
+   {
+    "text": "Industra",
+    "visible": true
+   },
+   {
+    "text": "Magnetiq",
+    "visible": true
+   },
+   {
+    "text": "Luminor",
+    "visible": true
+   },
+   {
+    "text": "Rietumu",
+    "visible": true
+   },
+   {
+    "text": "Signet",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": false
+   },
+   {
+    "text": "Aizvērt",
+    "visible": false
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/LVP.STS/Account/Login",
+  "hasAgree": true,
+  "smartIdChoice": true,
+  "smartIdAdapter": false,
+  "codeCandidates": [],
+  "digitCandidates": []
+ },
+ "viss-smartid-code-labelled": {
+  "host": "vpm.viss.gov.lv",
+  "text": "Smart-ID autentifikācijas adapteris EN Saņemt paziņojumu Smart-ID lietotnē Smart-ID lietotnē nosūtīts paziņojums. Pārliecinieties, ka kontroles kods sakrīt. Kontroles kods 4821 Atcelt",
+  "checkboxes": [],
+  "inputs": [],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "Atcelt",
+    "visible": true
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/VPM.IdP.SmartId/Account/SmartIdAuthentication",
+  "hasAgree": false,
+  "smartIdChoice": false,
+  "smartIdAdapter": true,
+  "codeCandidates": [
+   "4821"
+  ],
+  "digitCandidates": [
+   "4821"
+  ]
+ },
+ "viss-smartid-code-pending": {
+  "host": "vpm.viss.gov.lv",
+  "text": "Smart-ID autentifikācijas adapteris EN Saņemt paziņojumu Smart-ID lietotnē Notiek pieprasījuma nosūtīšana uz Smart-ID lietotni. Lūdzu, uzgaidiet. Atcelt",
+  "checkboxes": [],
+  "inputs": [],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "Atcelt",
+    "visible": true
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/VPM.IdP.SmartId/Account/SmartIdAuthentication",
+  "hasAgree": false,
+  "smartIdChoice": false,
+  "smartIdAdapter": true,
+  "codeCandidates": [],
+  "digitCandidates": []
+ },
+ "viss-smartid-code-plain": {
+  "host": "vpm.viss.gov.lv",
+  "text": "Smart-ID autentifikācijas adapteris EN Apstipriniet autentifikāciju Smart-ID lietotnē Pārbaudiet, vai lietotnē redzamais kods sakrīt ar šo: 7305 Atcelt",
+  "checkboxes": [],
+  "inputs": [],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "Atcelt",
+    "visible": true
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/VPM.IdP.SmartId/Account/SmartIdAuthentication",
+  "hasAgree": false,
+  "smartIdChoice": false,
+  "smartIdAdapter": true,
+  "codeCandidates": [],
+  "digitCandidates": [
+   "7305",
+   "7305"
+  ]
+ },
+ "viss-smartid-form": {
+  "host": "vpm.viss.gov.lv",
+  "text": "Smart-ID autentifikācijas adapteris EN Atveriet Smart-ID lietotni un noskenējiet šo QR kodu vai Saņemt paziņojumu Smart-ID lietotnē *Lauki atzīmēti ar zvaigznes simbolu ir obligāti Personas kods* Autentificēties Atcelt",
+  "checkboxes": [],
+  "inputs": [
+   {
+    "label": "Personas kods* xxxxxx-xxxxx NationalIdentityNumber identity-number ",
+    "type": "text",
+    "id": "identity-number",
+    "visible": true
+   }
+  ],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "Autentificēties ar QR kodu",
+    "visible": false
+   },
+   {
+    "text": "Sākt jaunu sesiju",
+    "visible": false
+   },
+   {
+    "text": "Atvērt Smart-ID lietotni",
+    "visible": false
+   },
+   {
+    "text": "Autentificēties",
+    "visible": true
+   },
+   {
+    "text": "Atcelt",
+    "visible": true
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/VPM.IdP.SmartId/Account/SmartIdAuthentication",
+  "hasAgree": false,
+  "smartIdChoice": false,
+  "smartIdAdapter": true,
+  "codeCandidates": [],
+  "digitCandidates": []
+ },
+ "viss-smartid-no-account": {
+  "host": "vpm.viss.gov.lv",
+  "text": "Smart-ID autentifikācijas adapteris EN Lietotājam nav konta Smart-ID sistēmā Atveriet Smart-ID lietotni un noskenējiet šo QR kodu vai Saņemt paziņojumu Smart-ID lietotnē *Lauki atzīmēti ar zvaigznes simbolu ir obligāti Personas kods* Autentificēties Atcelt",
+  "checkboxes": [],
+  "inputs": [
+   {
+    "label": "Personas kods* xxxxxx-xxxxx NationalIdentityNumber identity-number ",
+    "type": "text",
+    "id": "identity-number",
+    "visible": true
+   }
+  ],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "Autentificēties ar QR kodu",
+    "visible": false
+   },
+   {
+    "text": "Sākt jaunu sesiju",
+    "visible": false
+   },
+   {
+    "text": "Atvērt Smart-ID lietotni",
+    "visible": false
+   },
+   {
+    "text": "Autentificēties",
+    "visible": true
+   },
+   {
+    "text": "Atcelt",
+    "visible": true
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false,
+  "path": "/VPM.IdP.SmartId/Account/SmartIdAuthentication",
+  "hasAgree": false,
+  "smartIdChoice": false,
+  "smartIdAdapter": true,
+  "codeCandidates": [],
+  "digitCandidates": []
+ }
+}
