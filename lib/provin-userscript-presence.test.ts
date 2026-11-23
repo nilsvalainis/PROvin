@@ -306,7 +306,7 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     expect(dom.observerFires).toBeGreaterThan(20);
   });
 
-  it("1.26.1 stamp TM 5.5 aklā getAttribute gadījumā atvieno observeri un nestormo", async () => {
+  it("1.26.2 stamp TM 5.5 aklā getAttribute gadījumā atvieno observeri un nestormo", async () => {
     const dom = installFakeDom({ maxAttrMutations: 40, blindUserscriptAttr: true });
     installCurrentUserscriptAdminHeader();
     reactWipesHtml(dom);
@@ -315,10 +315,10 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     expect(dom.attrMutations).toBeLessThan(8);
     expect(dom.observerFires).toBeLessThan(12);
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.26.2")).toBe(false);
   });
 
-  it("1.26.1 + aizsargs + watch atjauno atribūtu pēc React noņemšanas un nestormo", async () => {
+  it("1.26.2 + aizsargs + watch atjauno atribūtu pēc React noņemšanas un nestormo", async () => {
     const dom = installFakeDom({ maxAttrMutations: 40 });
     new Function(PROVIN_USERSCRIPT_GUARD_SNIPPET)();
     installCurrentUserscriptAdminHeader();
@@ -328,22 +328,22 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(50);
     await flushMany(10);
-    expect(versions.filter(Boolean).at(-1)).toBe("1.26.1");
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(versions.filter(Boolean).at(-1)).toBe("1.26.2");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.2");
+    expect(vinScanUserscriptUpdateNeeded("1.26.2")).toBe(false);
     expect(dom.attrMutations).toBeLessThan(20);
     stop();
   });
 
-  it("1.26.1 stamp ar boxed getAttribute nostājas pēc React noņemšanas", async () => {
+  it("1.26.2 stamp ar boxed getAttribute nostājas pēc React noņemšanas", async () => {
     const dom = installFakeDom({ maxAttrMutations: 40, boxedUserscriptAttr: true });
     installCurrentUserscriptAdminHeader();
     reactWipesHtml(dom);
     await flushMany(10);
     vi.advanceTimersByTime(200);
     await flushMany(10);
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.2");
     expect(dom.attrMutations).toBeLessThan(8);
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.26.2")).toBe(false);
   });
 });

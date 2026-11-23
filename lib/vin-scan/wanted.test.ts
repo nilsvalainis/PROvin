@@ -53,6 +53,17 @@ describe("policijas meklētie TL", () => {
     expect(isVinScanWantedSource("plc_auction")).toBe(false);
   });
 
+  it("jaunā ePolicija lapa (2026-11): forma, nav meklēšanā, meklēšanā", () => {
+    const form =
+      "Paieška ieškomų transporto priemonių registre. Paiešką galima atlikti pagal: transporto priemonės kėbulo numerį. " +
+      "Ieškomos transporto priemonės numerio rašymas didžiosiomis ar mažosiomis raidėmis paieškai neturi įtakos. Kėbulo numeris";
+    expect(classifyPoliceWanted("lt_itpr", form, VIN)).toBeNull();
+    const none = `Pagal paieškos kriterijus: Kėbulo numeris - ${VIN} transporto priemonė (arba jos agregatas), valstybinis numeris NĖRA IEŠKOMA (-AS).`;
+    expect(classifyPoliceWanted("lt_itpr", none, VIN)).toMatchObject({ status: "none", summary: "Nav meklēšanā" });
+    const hit = `Ši transporto priemonė (ar jos agregatas) yra IEŠKOMA. Duomenys įtraukti į ieškomų transporto priemonių registrą! Kėbulo numeris: ${VIN} Valstybė: Lietuva`;
+    expect(classifyPoliceWanted("lt_itpr", hit, VIN)?.status).toBe("found");
+  });
+
   it("404 nav apgalvojums, ka nav meklēšanā", () => {
     expect(classifyPoliceWanted("lt_itpr", "Lapa netika atrasta. Page not found.", VIN)).toMatchObject({
       status: "unknown",

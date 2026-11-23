@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.26.1
+// @version      1.26.2
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -111,7 +111,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.26.1";
+  const SCRIPT_VERSION = "1.26.2";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -440,7 +440,7 @@
         return "https://poctra.com/search?q=" + encodeURIComponent(vin);
       },
       lt_itpr: function (vin) {
-        return "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + encodeURIComponent(vin);
+        return "https://www.epolicija.lt/wanted-vehicles-search?vin=" + encodeURIComponent(vin);
       },
       biluppgifter: function (vin) {
         return "https://biluppgifter.se/" + encodeURIComponent(vin);
@@ -903,7 +903,7 @@
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/?vin=" + v,
-      lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + v,
+      lt_itpr: "https://www.epolicija.lt/wanted-vehicles-search?vin=" + v,
       nicb: "https://www.nicb.org/vincheck?vin=" + v,
       bidfax: "https://bidfax.info/?s=" + v,
       poctra: "https://poctra.com/search?q=" + v,
@@ -1101,10 +1101,10 @@
       if (/lapa netika atrasta|lapa nav atrasta|page not found|404 not found|šāda lapa neeksistē/i.test(text)) {
         return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
       }
-      if (/duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(text)) {
+      if (/nėra ieškoma|duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(text)) {
         return { status: "none", summary: "Nav meklēšanā" };
       }
-      if (/paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(text)) {
+      if (/paieškos priežast|paiešką paskelb|yra\s+ieškoma|ieškoma transporto priemon|pavogt|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(text)) {
         const reason =
           (text.match(/paieškos priežast(?:is)?:?\s*([^\n.]{3,80})/i) ||
             text.match(/meklēšanas iemesls:?\s*([^\n.]{3,80})/i) ||

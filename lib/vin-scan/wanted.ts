@@ -41,13 +41,14 @@ function isFormOnly(text: string): boolean {
 }
 
 function isClearNone(text: string): boolean {
-  return /duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(
+  // „NĖRA IEŠKOMA (-AS)” ir jaunās ePolicija lapas (wanted-vehicles-search) atbilde kopš 2026-11.
+  return /nėra ieškoma|duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(
     text,
   );
 }
 
 function isWantedHit(text: string): boolean {
-  return /paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt[ae]|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(
+  return /paieškos priežast|paiešką paskelb|yra\s+ieškoma|ieškoma transporto priemon|pavogt[ae]|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(
     text,
   );
 }
