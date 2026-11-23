@@ -328,8 +328,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(50);
     await flushMany(10);
-    expect(versions.filter(Boolean).at(-1)).toBe("1.26.1");
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
+    expect(versions.filter(Boolean).at(-1)).toBe("1.26.2");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.2");
     expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
     expect(dom.attrMutations).toBeLessThan(20);
     stop();
@@ -342,7 +342,7 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(200);
     await flushMany(10);
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.2");
     expect(dom.attrMutations).toBeLessThan(8);
     expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
   });
