@@ -42,6 +42,8 @@ describe("Ātrā pārbaude (dators)", () => {
     expect(html).toContain("Dzintarzeme Auto");
     expect(html).toContain("Pēdējās pārbaudes");
     expect(html).toContain("data-dealer-check-embedded");
+    // e.csdd.lv saite paliek zemāk (liegumu kartīte augšā tikai ar meklēšanu).
+    expect(html).toContain("Liegumi - pārbaudīt e.csdd.lv");
     // Iegultajā dīlera daļā nav otras meklēšanas un šablona.
     expect(html).not.toContain("Valsts numurzīme (v/n)");
     expect(html).not.toContain("Šablons - kam paredzēts");
@@ -96,9 +98,16 @@ describe("Ātrā pārbaude (dators)", () => {
     expect(desk).toContain("Stāsta potenciāls");
     expect(desk).toContain("Notīts nobraukums ≥ 107 849 km");
     expect(desk).toContain("Kritums ≥ 107 849 km");
-    expect(desk).toContain('href="https://e.csdd.lv/"');
-    expect(desk).toContain("Pārbaudīt e.csdd.lv");
+    // Tukšās kartītes («Jāpārbauda», «Nav datu», «Nav sludinājuma») augšā nav.
+    expect(desk).not.toContain('data-atra-fact="Liegumi"');
+    expect(desk).not.toContain("Nav datu");
+    expect(desk).not.toContain("Nav sludinājuma");
+    expect(desk).toContain('data-atra-facts-count="2"');
     const phone = renderHtml(<AdminAtraFactCards facts={facts} vin={VIN} glass />);
     expect(phone).toContain("var(--am-s1)");
+    // Ar meklēšanu - liegumu kartīte ar e.csdd.lv saiti.
+    const wanted = renderHtml(<AdminAtraFactCards facts={{ ...facts, wanted: ["LT policija"] }} vin={VIN} />);
+    expect(wanted).toContain('href="https://e.csdd.lv/"');
+    expect(wanted).toContain("Meklēšanā: 1");
   });
 });

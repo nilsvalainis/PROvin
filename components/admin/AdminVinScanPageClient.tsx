@@ -45,7 +45,8 @@ import {
   AdminAtraPotential,
   AdminAtraPreviewBanners,
 } from "@/components/admin/AdminAtraParbaudeFacts";
-import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
+import { ECSDD_URL, atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
+import { useSettledWhileBusy } from "@/lib/use-settled-while-busy";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 max-md:h-12 max-md:rounded-[10px] max-md:text-[17px]";
@@ -171,7 +172,7 @@ export function AdminVinScanPageClient({
   );
   const scanBusy = Boolean(scanSnapshot?.busy);
   // «Ātrā pārbaude» telefonā: stāsta potenciāls, faktu kartītes un kopsavilkums (kods, tie paši fakti kā datorā).
-  const atra = useMemo(() => {
+  const atraLive = useMemo(() => {
     if (!glass || !valid || !hasScanResult || !scanSnapshot) return null;
     const v = plate?.ok ? { make: plate.make, model: plate.model, year: plate.year } : pickVinScanVehicle(scanSnapshot.rows);
     const title = [v?.make, v?.model].filter(Boolean).join(" ");
@@ -189,6 +190,8 @@ export function AdminVinScanPageClient({
     const score = atraStoryScore(facts);
     return { facts, score, text: atraSummaryText({ vin, title, year }, facts, score) };
   }, [glass, valid, hasScanResult, scanSnapshot, plate, vin, plates.lv, csddData, listingUrl]);
+  // Kamēr avoti ielādējas, kartītes paliek iepriekšējās - jaunās parādās vienā reizē, bez lēcieniem.
+  const atra = useSettledWhileBusy(atraLive, scanBusy, vin);
   const onSnapshot = useCallback((snapshot: VinScanPanelSnapshot) => {
     setScanSnapshot(snapshot);
   }, []);
@@ -609,6 +612,13 @@ export function AdminVinScanPageClient({
         onSnapshot={onSnapshot}
         historyOpen={historyOpen}
       />
+      {atra ? (
+        <p className="px-4 text-[13px] md:hidden" data-atra-ecsdd>
+          <a href={ECSDD_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--am-accent,#0b3fa8)]">
+            Liegumi - pārbaudīt e.csdd.lv ›
+          </a>
+        </p>
+      ) : null}
       {footer ? (
         <VinScanLiveCountsContext.Provider
           value={

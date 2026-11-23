@@ -16,7 +16,8 @@ import {
   AdminAtraPotential,
   AdminAtraPreviewBanners,
 } from "@/components/admin/AdminAtraParbaudeFacts";
-import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
+import { ECSDD_URL, atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
+import { useSettledWhileBusy } from "@/lib/use-settled-while-busy";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
 import { AdminMobileSegments } from "@/components/admin/mobile/AdminMobileChrome";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
@@ -191,6 +192,13 @@ export function AdminAtraParbaudePage({
     [vin, plate, title, vehicle, rows, dealerRecordForFacts, csdd, listingUrl],
   );
   const score = useMemo(() => atraStoryScore(facts), [facts]);
+  // Augšējās kartītes: kamēr avoti ielādējas, paliek iepriekšējās (vai nav nekā) - jaunās parādās vienā reizē, bez lēcieniem.
+  const conclusionFacts = useSettledWhileBusy(
+    hasScanResult || dealerRecordForFacts ? facts : null,
+    scanBusy || Boolean(dealerState?.busy),
+    vin,
+  );
+  const conclusionScore = useMemo(() => (conclusionFacts ? atraStoryScore(conclusionFacts) : null), [conclusionFacts]);
   const summary = useMemo(() => atraSummaryText({ vin, title, year: vehicle?.year ?? "" }, facts, score), [vin, title, vehicle, facts, score]);
 
   /* ---------- vēsture: abas krātuves ---------- */
@@ -652,12 +660,12 @@ export function AdminAtraParbaudePage({
         </section>
       ) : null}
 
-      {showResult && valid ? (
+      {showResult && valid && conclusionFacts && conclusionScore ? (
         <section className="space-y-2.5" data-atra-conclusion>
           <h2 className="px-1 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">Ātrais secinājums</h2>
-          <AdminAtraPotential score={score} />
-          <AdminAtraFactCards facts={facts} vin={vin} />
-          <AdminAtraPreviewBanners previews={facts.previews} />
+          <AdminAtraPotential score={conclusionScore} />
+          <AdminAtraFactCards facts={conclusionFacts} vin={vin} />
+          <AdminAtraPreviewBanners previews={conclusionFacts.previews} />
         </section>
       ) : null}
 
@@ -673,6 +681,13 @@ export function AdminAtraParbaudePage({
         paidSourceIds={paidScanIds}
         layout="table"
       />
+      {valid ? (
+        <p className="px-1 text-[13px]" data-atra-ecsdd>
+          <a href={ECSDD_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#0b3fa8]">
+            Liegumi - pārbaudīt e.csdd.lv ›
+          </a>
+        </p>
+      ) : null}
 
       {isAdmin && dealer ? (
         <AdminDealerCheckPage

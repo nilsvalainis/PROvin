@@ -7,6 +7,9 @@ import {
   ECSDD_URL,
   atraLvDate,
   formatKm,
+  atraVisibleFacts,
+  atraVisiblePreviews,
+  type AtraFactKey,
   type AtraFacts,
   type AtraMileageFact,
   type AtraScore,
@@ -106,7 +109,7 @@ function Fact({
   s,
   src,
   alert,
-  wide,
+  span,
   glass,
   children,
 }: {
@@ -115,14 +118,14 @@ function Fact({
   s?: React.ReactNode;
   src?: React.ReactNode;
   alert?: boolean;
-  wide?: boolean;
+  span: string;
   glass: boolean;
   children?: React.ReactNode;
 }) {
   const t = useTone(glass);
   return (
     <div
-      className={`${t.card} flex min-w-0 flex-col gap-1.5 ${glass ? `min-h-[126px] ${wide ? "sm:col-span-2" : ""}` : "h-full"} ${
+      className={`${t.card} ${span} flex min-w-0 flex-col gap-1.5 ${glass ? "min-h-[126px]" : "h-full"} ${
         alert && !glass ? "!border-[#f3c1c6]" : ""
       }`}
       data-atra-fact={k}
@@ -134,6 +137,36 @@ function Fact({
       {src ? <span className={`mt-auto text-[11.5px] ${t.mut}`}>{src}</span> : null}
     </div>
   );
+}
+
+/* Režģis 12 kolonnās: kartītes plūst pēc skaita, pēdējā rinda izstiepjas (bez caurumiem). */
+const SPAN_BASE: Record<number, string> = { 12: "col-span-12", 6: "col-span-6" };
+const SPAN_SM: Record<number, string> = { 12: "sm:col-span-12", 6: "sm:col-span-6" };
+const SPAN_LG: Record<number, string> = { 12: "lg:col-span-12", 6: "lg:col-span-6", 4: "lg:col-span-4", 3: "lg:col-span-3" };
+const SPAN_XL: Record<number, string> = { 12: "xl:col-span-12", 6: "xl:col-span-6", 4: "xl:col-span-4", 3: "xl:col-span-3" };
+
+/** Kolonnu skaits platajā ekrānā: 1-4 vienā rindā, 5-6 pa 3, 7-8 pa 4. */
+export function atraWideCols(n: number): number {
+  return n <= 4 ? Math.max(1, n) : n <= 6 ? 3 : 4;
+}
+
+/** Kartītes `i` platums (no 12) režģī ar `cols` kolonnām un `n` kartītēm - pēdējā rinda aizpilda visu platumu. */
+export function atraCardSpan(i: number, n: number, cols: number): number {
+  const full = Math.floor(n / cols) * cols;
+  const lastRow = n - full;
+  return i < full || lastRow === 0 ? 12 / cols : 12 / lastRow;
+}
+
+function apskatesWord(n: number): string {
+  return `${n} ${n % 10 === 1 && n % 100 !== 11 ? "apskate" : "apskates"}`;
+}
+
+function spanClass(i: number, n: number, glass: boolean): string {
+  const wide = atraWideCols(n);
+  const two = atraCardSpan(i, n, 2);
+  return glass
+    ? `col-span-12 ${SPAN_SM[two]} ${SPAN_LG[atraCardSpan(i, n, wide)]}`
+    : `${SPAN_BASE[two]} ${SPAN_XL[atraCardSpan(i, n, wide)]}`;
 }
 
 export function AdminAtraFactCards({
@@ -150,18 +183,17 @@ export function AdminAtraFactCards({
   const d = facts.dealer;
   const shown = a.photos.slice(0, 4);
   const more = Math.max(0, a.photoCount - shown.length);
-  return (
-    // Datorā: vienāds režģis 4 kolonnās (8 kartītes = 2 pilnas rindas, vienāds augstums rindā). Telefons (glass) - kā līdz šim.
-    <div
-      className={glass ? "grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4" : "grid grid-cols-2 gap-2.5 xl:grid-cols-4"}
-      data-atra-facts
-    >
+  const keys = atraVisibleFacts(facts);
+  if (!keys.length) return null;
+  const cards: Record<AtraFactKey, (span: string) => React.ReactNode> = {
+    mileage: (span) => (
       <Fact
+        key="mileage"
+        span={span}
         glass={glass}
-        wide
         alert={Boolean(m.drop)}
         k="Nobraukums"
-        v={m.drop ? `Kritums ≥ ${formatKm(m.drop.km)} km` : m.last ? `${formatKm(m.last.km)} km` : "Nav datu"}
+        v={m.drop ? `Kritums ≥ ${formatKm(m.drop.km)} km` : m.last ? `${formatKm(m.last.km)} km` : ""}
         s={
           m.drop ? (
             <>
@@ -170,23 +202,26 @@ export function AdminAtraFactCards({
               {m.last && m.last !== m.drop.to ? ` Pēdējais ${atraLvDate(m.last.date)}: ${formatKm(m.last.km)} km.` : ""}{" "}
               <b>Faktiski ≥ {formatKm(m.actualMinKm)} km.</b>
             </>
-          ) : m.points.length ? (
+          ) : (
             `${m.points.length} ieraksti · pēdējais ${atraLvDate(m.last!.date)}`
-          ) : undefined
+          )
         }
         src={[...new Set(m.points.map((p) => p.source))].slice(0, 4).join(" · ")}
       >
         <MileageChart m={m} />
       </Fact>
+    ),
+    wanted: (span) => (
       <Fact
+        key="wanted"
+        span={span}
         glass={glass}
-        alert={facts.wanted.length > 0}
+        alert
         k="Liegumi"
-        v={facts.wanted.length ? `Meklēšanā: ${facts.wanted.length}` : "Jāpārbauda"}
+        v={`Meklēšanā: ${facts.wanted.length}`}
         s={
           <>
-            {facts.wanted.length ? `${facts.wanted.join(", ")}. ` : ""}
-            CSDD API liegumus nedod.{" "}
+            {facts.wanted.join(", ")}.{" "}
             <a href={ECSDD_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#0b3fa8]">
               Pārbaudīt e.csdd.lv ›
             </a>
@@ -194,19 +229,26 @@ export function AdminAtraFactCards({
         }
         src="e.csdd.lv (Smart-ID)"
       />
+    ),
+    incidents: (span) => (
       <Fact
+        key="incidents"
+        span={span}
         glass={glass}
-        alert={facts.incidents.count > 0}
+        alert
         k="Negadījumi"
-        v={facts.incidents.count ? `${facts.incidents.count} fiksēti` : "Nav fiksēti"}
+        v={`${facts.incidents.count} fiksēti`}
         s={facts.incidents.items.slice(0, 3).join(" · ") || undefined}
         src={facts.incidents.sources.join(" · ") || undefined}
       />
+    ),
+    auctions: (span) => (
       <Fact
+        key="auctions"
+        span={span}
         glass={glass}
-        wide
         k="Izsoles"
-        v={a.count ? `${a.count} izsole${a.count === 1 ? "" : "s"}${a.years.length ? ` · ${a.years.join(", ")}` : ""}` : a.photoCount ? `${a.photoCount} bildes` : "Nav atrastas"}
+        v={a.count ? `${a.count} izsole${a.count === 1 ? "" : "s"}${a.years.length ? ` · ${a.years.join(", ")}` : ""}` : `${a.photoCount || a.photos.length} bildes`}
         s={a.venues.join(", ") || undefined}
         src={
           a.sources.length ? (
@@ -231,45 +273,68 @@ export function AdminAtraFactCards({
           </div>
         ) : null}
       </Fact>
+    ),
+    countries: (span) => (
       <Fact
+        key="countries"
+        span={span}
         glass={glass}
         k="Valstis"
-        v={facts.countries.length ? facts.countries.join(" + ") : "Nav datu"}
+        v={facts.countries.join(" + ")}
         s={facts.countries.length >= 2 ? "Auto bijis vairākās valstīs" : undefined}
         src="reģistri"
       />
+    ),
+    dealer: (span) =>
+      d ? (
+        <Fact
+          key="dealer"
+          span={span}
+          glass={glass}
+          k="Dīlera apkopes"
+          v={`${d.visits} vizītes`}
+          s={`${d.firstYear}-${d.lastYear} · garākais robs ${d.longestGapMonths} mēn. · pēdējā ${d.lastDate}${d.lastKm ? `, ${d.lastKm} km` : ""}`}
+          src="OneAuto"
+        />
+      ) : null,
+    listing: (span) => (
       <Fact
-        glass={glass}
-        k="Dīlera apkopes"
-        v={d ? `${d.visits} vizītes` : "Nav ielādētas"}
-        s={
-          d
-            ? `${d.firstYear}-${d.lastYear} · garākais robs ${d.longestGapMonths} mēn. · pēdējā ${d.lastDate}${d.lastKm ? `, ${d.lastKm} km` : ""}`
-            : "OE Service History (maksas) augšā"
-        }
-        src={d ? "OneAuto" : undefined}
-      />
-      <Fact
+        key="listing"
+        span={span}
         glass={glass}
         alert={facts.listing.kmDeviates}
         k="Cena / vērtība"
-        v={facts.listing.price || (facts.listing.has ? "Sludinājums" : "Nav sludinājuma")}
+        v={facts.listing.price || "Sludinājums"}
         s={
-          facts.listing.has
-            ? [facts.listing.km ? `${formatKm(facts.listing.km)} km` : "", facts.listing.kmDeviates ? "km būtiski mazāks par datiem" : ""]
-                .filter(Boolean)
-                .join(" · ") || undefined
-            : "Pievieno saiti augšā - salīdzinās cenu un km"
+          [facts.listing.km ? `${formatKm(facts.listing.km)} km` : "", facts.listing.kmDeviates ? "km būtiski mazāks par datiem" : ""]
+            .filter(Boolean)
+            .join(" · ") || undefined
         }
         src="Sludinājuma vēsture"
       />
+    ),
+    inspection: (span) => (
       <Fact
+        key="inspection"
+        span={span}
         glass={glass}
         k="Tehniskā apskate"
-        v={facts.inspection.until ? `līdz ${facts.inspection.until}` : "Nav datu"}
-        s={facts.inspection.count ? `${facts.inspection.count} apskates${facts.inspection.last ? ` · pēdējā ${facts.inspection.last}` : ""}` : undefined}
+        v={facts.inspection.until ? `līdz ${facts.inspection.until}` : apskatesWord(facts.inspection.count)}
+        s={
+          facts.inspection.until && facts.inspection.count
+            ? `${apskatesWord(facts.inspection.count)}${facts.inspection.last ? ` · pēdējā ${facts.inspection.last}` : ""}`
+            : facts.inspection.last
+              ? `pēdējā ${facts.inspection.last}`
+              : undefined
+        }
         src="CSDD"
       />
+    ),
+  };
+  return (
+    // Tikai kartītes ar rezultātu; 12 kolonnu režģis - pēdējā rinda izstiepjas, caurumu nav.
+    <div className="grid grid-cols-12 gap-2.5" data-atra-facts data-atra-facts-count={keys.length}>
+      {keys.map((key, i) => cards[key](spanClass(i, keys.length, glass)))}
     </div>
   );
 }
@@ -284,12 +349,14 @@ const PREVIEW_TONE: Record<AtraPreviewTone, { box: string; badge: string; dot: s
 /** «Maksas atskaišu priekšskatījums (bez maksas)»: AutoDNA, CheckCar.vin, CARFAX.eu. */
 export function AdminAtraPreviewBanners({ previews, glass = false }: { previews: readonly AtraPreview[]; glass?: boolean }) {
   const t = useTone(glass);
-  if (!previews.length) return null;
+  const shown = atraVisiblePreviews(previews);
+  if (!shown.length) return null;
+  const cols = shown.length === 1 ? "" : shown.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-[1.6fr_1fr_1fr]";
   return (
     <section className={t.card} data-atra-previews>
       <small className={`text-[11.5px] font-semibold uppercase tracking-[0.5px] ${t.mut}`}>Maksas atskaišu priekšskatījums (bez maksas)</small>
-      <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-[1.6fr_1fr_1fr]">
-        {previews.map((p) => {
+      <div className={`mt-2 grid grid-cols-1 gap-2 ${cols}`}>
+        {shown.map((p) => {
           const tone = PREVIEW_TONE[p.tone];
           const keyItems = p.items.filter((i) => i.key);
           const rest = p.items.filter((i) => !i.key);
