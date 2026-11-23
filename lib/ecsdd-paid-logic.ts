@@ -48,7 +48,7 @@ export type EcsddPaidSmsLinkResult =
   | { status: "error"; code?: string };
 
 export type EcsddPaidReportResult =
-  | { status: "found"; rawText: string; fields: CsddFormFields; paidAt?: string; plate?: string }
+  | { status: "found"; rawText: string; fields: CsddFormFields; paidAt?: string; plate?: string; emailSent?: boolean }
   | { status: "pending" | "no_button" | "not_configured" | "unreachable" }
   | { status: "needs_login"; sessionState?: string }
   | { status: "error"; code?: string };
