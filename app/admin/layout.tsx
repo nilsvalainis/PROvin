@@ -15,6 +15,7 @@ import "./mobile/menu-grid.css";
 import "./mobile/glass.css";
 import "./mobile/order-glass.css";
 import "./mobile/order-colors.css";
+import "./mobile/pro-today.css";
 import "./admin-iriss-theme.css";
 import "./iriss-tokens.css";
 import "./admin-costs-theme.css";

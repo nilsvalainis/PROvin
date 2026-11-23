@@ -1,0 +1,148 @@
+/*
+ * PRO telefona sākums «Šodien» (22.11 makets v3, izvēlne B, palete 2). Tikai telefonā (<768 px).
+ * Mainīgie - `glass.css` (`.amx`). Datorā šī lapa uzreiz pāriet uz Pasūtījumiem.
+ */
+
+@media (max-width: 767px) {
+  .admin-ios-theme .pro-mobile-menu-home.amx-home {
+    min-height: 100dvh;
+  }
+  .amx-home .am-topbar .am-press.rounded-full {
+    background: var(--amx-glass) !important;
+    border: 1px solid var(--amx-edge);
+    color: var(--amx-tx) !important;
+  }
+
+  .amx-today {
+    padding: 0 16px;
+  }
+  .amx-today-search {
+    margin: 4px 0 12px;
+  }
+  .amx-today .am-search {
+    min-height: 46px;
+    border-radius: var(--amx-r) !important;
+    background: var(--amx-glass2) !important;
+    border: 1px solid var(--amx-edge);
+    color: var(--amx-soft);
+  }
+  .amx-today .am-search input {
+    font-size: 16px !important;
+    color: var(--amx-tx) !important;
+  }
+
+  /* Darāmais: liels skaitlis + kas jādara. */
+  .amx-today-todo {
+    overflow: hidden;
+  }
+  .amx-today-row {
+    min-height: 66px;
+    padding: 12px 14px;
+    color: var(--amx-tx) !important;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .amx-today-row:active,
+  .amx-today-sec:active,
+  .amx-today-find:active {
+    background: var(--amx-glass2);
+  }
+  .amx-today-n {
+    min-width: 44px;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--amx-tx);
+  }
+  .amx-today-n.amx-tx--red {
+    color: var(--amx-red);
+  }
+  .amx-today-t {
+    display: block;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .amx-today-s {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.25;
+    color: var(--amx-mut);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .amx-today-chev {
+    height: 18px;
+    width: 18px;
+    flex: none;
+    color: var(--amx-soft);
+  }
+
+  /* Sadaļas: kompakts 2 kolonnu saraksts, ikonas vienā krāsā. */
+  .amx-today-list {
+    padding: 6px;
+  }
+  .amx-today-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+  .amx-today-sec {
+    display: flex;
+    min-height: 48px;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--amx-tx) !important;
+    font-size: 14.5px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .amx-today-sec-ic {
+    display: grid;
+    height: 30px;
+    width: 30px;
+    flex: none;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--amx-glass2);
+    border: 1px solid var(--amx-edge);
+    color: var(--amx-tx);
+  }
+  .amx-today-sec-t {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .amx-today-sec-n {
+    flex: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--amx-mut);
+    font-variant-numeric: tabular-nums;
+  }
+  .amx-today-find {
+    width: 100%;
+    border-radius: 10px;
+    color: var(--amx-tx);
+    font-size: 15px;
+    text-align: left;
+  }
+  .amx-today-grid + .amx-today-find {
+    margin-top: 4px;
+  }
+}

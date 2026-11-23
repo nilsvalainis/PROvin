@@ -2,7 +2,13 @@ import { formatAuditDeadlineRemaining, isAdminOrderInactive } from "@/lib/admin-
 import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 
 /** PRO sākuma flīze: aktīvo skaits, kavētie un tuvākā VĒL NEKAVĒTĀ termiņa sākuma laiks (unix s). */
-export type ProHomeTile = { count: number; overdue: number; nextDeadlineFromUnix: number | null };
+export type ProHomeTile = {
+  count: number;
+  overdue: number;
+  nextDeadlineFromUnix: number | null;
+  /** Vecākā kavētā termiņa sākums (unix s) - telefona «Šodien»: «vecākais 24 d». Tikai, ja ir kavētie. */
+  oldestOverdueFromUnix?: number;
+};
 
 export type ProHomeSummary = {
   /** MINI + auditi (bez dīleriem). */
@@ -52,6 +58,7 @@ export function summarizeProHome(rows: readonly Row[], nowMs: number): ProHomeSu
     tile.count += 1;
     if (formatAuditDeadlineRemaining(from, nowMs).status === "overdue") {
       tile.overdue += 1;
+      if (tile.oldestOverdueFromUnix == null || from < tile.oldestOverdueFromUnix) tile.oldestOverdueFromUnix = from;
       continue;
     }
     if (tile.nextDeadlineFromUnix == null || from < tile.nextDeadlineFromUnix) tile.nextDeadlineFromUnix = from;

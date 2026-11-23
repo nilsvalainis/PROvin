@@ -17,7 +17,7 @@ describe("PRO sākuma paziņojumi", () => {
       ],
       now,
     );
-    expect(s.orders).toEqual({ count: 3, overdue: 1, nextDeadlineFromUnix: nowS - 30 * h });
+    expect(s.orders).toEqual({ count: 3, overdue: 1, nextDeadlineFromUnix: nowS - 30 * h, oldestOverdueFromUnix: nowS - 60 * h });
     expect(s.dealers).toEqual({ count: 1, overdue: 0, nextDeadlineFromUnix: nowS - 5 * h });
   });
 });
