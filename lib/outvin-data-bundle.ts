@@ -184,7 +184,13 @@ export function migrateOutvinReportToBundle(
   const apiEquip = base.equipment.filter(outvinEquipmentLineHasData);
   return {
     ...base,
-    vehicleInfo: overlayNonemptyVehicleInfo(report.vehicleInfo, apiInfo),
+    // 23.11.2026 (Nils): operatora adminā labotais lauks (outvinReport) VIENMĒR uzvar API vērtību;
+    // API aizpilda tikai tukšos laukus. Agrāk API pārrakstīja labojumu (Modelis „Mercedes-Benz E 300 de”
+    // PDF tabulā / vākā palika „MERCEDES-BENZ”). Sk. arī `lib/vehicle-display-name.ts`.
+    vehicleInfo: overlayNonemptyVehicleInfo(
+      overlayNonemptyVehicleInfo(report.vehicleInfo, apiInfo),
+      sanitizeDealerVehicleInfo(report.vehicleInfo),
+    ),
     equipment: apiEquip.length > 0 ? base.equipment : report.equipment,
     accidentCheck: base.accidentCheck.trim() || report.accidentCheck,
     stolenCheck: base.stolenCheck.trim() || report.stolenCheck,

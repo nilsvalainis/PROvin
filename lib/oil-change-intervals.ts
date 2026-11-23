@@ -63,7 +63,7 @@ export function oilClaimCautionHtml(): string {
     )}
     ${b(
       "Vispārīgi apmeklējumi.",
-      "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu. Tas nav apgalvojums, ka eļļa nav mainīta.",
+      "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Ja ražotāja servisa veids pēc plāna neietver eļļas maiņu vai tas nav zināms, tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu - tas nav apgalvojums, ka eļļa nav mainīta. Ražotāja apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), tabulā skaitām.",
     )}
     ${b(
       "Secinājums.",
@@ -253,9 +253,28 @@ export function foldOilWorkText(raw: string): string {
   return folded.replace(/\b(\d{1,2})\s*[-]?\s*w\s*[-]?\s*(\d{2,3})\b/g, "$1w$2");
 }
 
+/**
+ * Mercedes-Benz ASSYST plānotās apkopes „Service A” / „Service B” (arī „Wartung A/B”, „Serviceumfang A/B”,
+ * „A-Service”, „B-Service”, LV tulkojumā „Apkope A/B”, ar „plus” vai bez). Pēc ražotāja plāna ABAS apkopes
+ * VIENMĒR ietver dzinēja eļļas un eļļas filtra maiņu, tāpēc tās skaitām kā eļļas maiņu ar augstu ticamību
+ * (Nils 23.11.2026). „Service A/C” (kondicionieris) un parasts teikums („a service”) neatbilst.
+ * Citu ražotāju vispārīgos nosaukumus (Volvo „Service 1/2/3”, Opel „Service Plus” u.c.) šeit NELIEKAM:
+ * tie ne vienmēr ietver eļļu. BMW „Oil service” / „Motoröl-Service” un VW/Audi „Inspektion mit Ölwechsel” /
+ * „Ölwechsel-Service” jau atpazīst `ENGINE_OIL_NAME_RE`.
+ */
+const MANUFACTURER_AB_OIL_SERVICE_RE =
+  /(?:^|[^\p{L}\p{N}])(?:service|wartung|serviceumfang|wartungsumfang|apkope|apkopes\s+veids|maintenance\s+service)[\s:]+[ab](?:\s*(?:\+|plus))?(?![\p{L}\p{N}])(?!\s*[/-]\s*c(?![\p{L}]))|(?:^|[^\p{L}\p{N}])[ab]-(?:service|wartung)(?![\p{L}])/u;
+
+/** Vai teksts satur ražotāja A/B apkopi, kas pēc plāna ietver dzinēja eļļas maiņu (sk. `MANUFACTURER_AB_OIL_SERVICE_RE`). */
+export function isManufacturerOilServiceWork(works: string): boolean {
+  const folded = foldOilWorkText(works);
+  return Boolean(folded) && MANUFACTURER_AB_OIL_SERVICE_RE.test(folded);
+}
+
 function engineOilSignalInFolded(folded: string): boolean {
   if (!folded) return false;
   if (ENGINE_OIL_NAME_RE.test(folded)) return true;
+  if (MANUFACTURER_AB_OIL_SERVICE_RE.test(folded)) return true;
   if (ENGINE_OIL_FILTER_RE.test(folded)) return true;
   if (ENGINE_VISCOSITY_RE.test(folded)) return true;
   return false;

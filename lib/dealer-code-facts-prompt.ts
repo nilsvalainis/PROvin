@@ -11,6 +11,10 @@ import { isGearboxOilChangeWork } from "@/lib/dealer-major-works";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { buildDealerVisitSummary } from "@/lib/pdf-dealer-timeline";
+import { detectDealerTaxiSignals } from "@/lib/dealer-review-score";
+import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { extractVehicleDrivetrain, formatRegistryDrivetrainFactLine } from "@/lib/registry-drivetrain";
+import { resolveVehicleDisplayName } from "@/lib/vehicle-display-name";
 
 function groupDigits(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -55,6 +59,39 @@ export function dealerOilChangePointsForPrompt(
   }));
 }
 
+/** Mercedes taksometra / nomas rūpnīcas kodu latviskais skaidrojums (tikai fakts). */
+const TAXI_CODE_LV: Record<string, string> = {
+  "965": "elektroinstalācijas sagatave taksometram / nomas auto",
+  "937": "taksometra / nomas pastiprinājuma pakete",
+};
+
+/**
+ * Rūpnīcas aprīkojuma fakts par taksometra / nomas izpildījumu (Nils 23.11.2026, piem. WDD2120251A120979
+ * E 350 CDI: 965 + 937). Tā pati noteikšana ar izņēmumiem kā ēnu režīma vērtējumā
+ * (`detectDealerTaxiSignals`: 9A0, «Without taxi alarm», «Parts excluded for TAXI», «TAXI Adm variant» - nē).
+ */
+export function dealerTaxiEquipmentFactLine(sourceBlocks: WorkspaceSourceBlocks): string {
+  const ar = mergeSourceBlocksWithDefaults(sourceBlocks).auto_records;
+  const bundle = getAutoRecordsOutvinBundle(ar);
+  const vin = bundle.vehicleInfo.vinCode || ar.outvinReport?.vehicleInfo?.vinCode || bundle.vin || "";
+  const equipment = bundle.equipment.length > 0 ? bundle.equipment : (ar.outvinReport?.equipment ?? []);
+  const signals = detectDealerTaxiSignals({
+    vin,
+    equipment,
+    texts: [ar.rawUnprocessedData ?? "", ar.aiContextRaw ?? ""],
+  }).filter((sig) => sig.kind === "taxi" || sig.kind === "rental");
+  if (signals.length === 0) return "";
+  const parts = signals.map((sig) => {
+    const code = sig.text.match(/^(\d{3}[A-Z]?)\s/)?.[1] ?? "";
+    const lv = TAXI_CODE_LV[code.replace(/[A-Z]$/, "")];
+    return lv ? `${sig.text} (${lv})` : sig.text;
+  });
+  return (
+    `- Rūpnīcas aprīkojums / reģistrs - taksometra vai nomas izpildījums: ${parts.join("; ")}. ` +
+    "Laukā „Komentāri” to OBLIGĀTI min kā faktu ar kodu un nozīmi (piem. „Rūpnīcas aprīkojumā: 965 - elektroinstalācijas sagatave taksometram / nomas auto, 937 - taksometra / nomas pastiprinājuma pakete”), bez secinājumiem un ieteikumiem; eļļas laukā to neraksti."
+  );
+}
+
 export function buildDealerCodeFactsForPrompt(
   sourceBlocks: WorkspaceSourceBlocks,
   nowMs: number = Date.now(),
@@ -67,6 +104,13 @@ export function buildDealerCodeFactsForPrompt(
   const lines: string[] = [
     "=== Koda faktu saraksts (deterministisks; skaitļi tie paši, ko PDF - cits skaits aizliegts) ===",
   ];
+  const name = resolveVehicleDisplayName(blocks);
+  if (name) lines.push(`- Modelis (tas pats nosaukums, ko PDF): ${name}.`);
+  // 23.11.2026 (W1K2132161A909201): AI rakstīja „4MATIC ar pilnpiedziņu”, lai gan ražotāja dati 4x2 (RWD).
+  const drivetrain = extractVehicleDrivetrain(blocks);
+  if (drivetrain) lines.push(`- ${formatRegistryDrivetrainFactLine(drivetrain, false)}.`);
+  const taxi = dealerTaxiEquipmentFactLine(blocks);
+  if (taxi) lines.push(taxi);
   if (summary) {
     lines.push(
       `- Dīlera ieraksti: ${rows.length}; pirmais ${summary.firstDate || "datums nav"}, pēdējais ${summary.lastDate || "datums nav"} (${summary.lastKm || "km nav"}).`,

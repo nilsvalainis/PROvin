@@ -94,6 +94,14 @@ function mergeFactCards(primary: string, extra: string): string {
     if (!parsed || drop.has(parsed.key)) continue;
     byKey.set(parsed.key, parsed.raw);
   }
+  // 23.11 (Mercedes E 300 de RWD): DMR „traekkendeAksler” = 2, bet nummerplade „Baghjulstrukket”.
+  // Skaidri nosaukta vienas ass piedziņa ir prioritāra - pretrunīgo asu rindu („2 (pilnpiedziņa)”) nerādām,
+  // citādi AI un pārbaudes to lasa kā pilnpiedziņu.
+  const power = byKey.get("jauda / piedziņa") ?? "";
+  const axles = byKey.get("dzenošās asis (dmr)") ?? "";
+  if (/(?:priekšējo|aizmugurējo)\s+riteņu\s+piedziņa/i.test(power) && /pilnpiedziņa/i.test(axles)) {
+    byKey.delete("dzenošās asis (dmr)");
+  }
   const used = new Set<string>();
   const ordered: string[] = [];
   for (const key of FACT_KEY_ORDER) {

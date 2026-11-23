@@ -71,7 +71,7 @@ import {
 } from "@/lib/admin-workspace-field-labels";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
-  extractRegistryDrivetrain,
+  extractVehicleDrivetrain,
   formatRegistryDrivetrainFactLine,
   otherSourcesClaimAwd,
   type RegistryDrivetrain,
@@ -521,7 +521,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerRowsLv,
     dealerComponentCounts,
     registryStatusLines,
-    drivetrain: extractRegistryDrivetrain(blocks),
+    drivetrain: extractVehicleDrivetrain(blocks),
     drivetrainOtherSourcesAwd: otherSourcesClaimAwd(haystack),
     dealerCampaigns,
     recallCodes,
