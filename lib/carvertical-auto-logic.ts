@@ -144,3 +144,31 @@ export function carverticalPdfFileName(vin: string): string {
   const v = String(vin ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
   return `CarVertical - ${v || "atskaite"}.pdf`;
 }
+
+/** CarVertical e-pasta kods derīgs 15 min - vecākas vēstules netiek lietotas. */
+export const CARVERTICAL_EMAIL_CODE_MAX_AGE_MS = 15 * 60_000;
+/** Pulksteņu nobīde starp Gmail un releju. */
+export const CARVERTICAL_EMAIL_CODE_SKEW_MS = 60_000;
+
+/** 6 burti/cipari (tas pats noteikums kā relejā `normalizeLoginCode`). */
+export function normalizeCarverticalLoginCode(raw: unknown): string {
+  const c = String(raw ?? "")
+    .trim()
+    .replace(/\s+/g, "")
+    .toUpperCase();
+  return /^[A-Z0-9]{6}$/.test(c) ? c : "";
+}
+
+/**
+ * Vai e-pasta kods der šai releja sesijai: relejs gaida kodu UN vēstule pienākusi pēc pieteikšanās sākuma
+ * (`loginStartedAt`, rezerve `codeRequestedAt`) mīnus pulksteņu nobīde.
+ */
+export function carverticalEmailCodeFits(
+  session: { state?: unknown; loginStartedAt?: unknown; codeRequestedAt?: unknown } | null | undefined,
+  receivedMs: number,
+): boolean {
+  if (!session || session.state !== "awaiting_code" || !Number.isFinite(receivedMs)) return false;
+  const startRaw = typeof session.loginStartedAt === "string" ? session.loginStartedAt : typeof session.codeRequestedAt === "string" ? session.codeRequestedAt : "";
+  const startMs = Date.parse(startRaw);
+  return Number.isFinite(startMs) && receivedMs >= startMs - CARVERTICAL_EMAIL_CODE_SKEW_MS;
+}

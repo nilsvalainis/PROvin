@@ -63,6 +63,8 @@ export function createRelayCore({
   loginWaitMs = 30 * 60_000,
   reportWaitMs = 8 * 60_000,
   balanceTtlMs = 30 * 60_000,
+  /** Cik ilgi gaida kodu no e-pasta (Apps Script -> PROVIN -> šeit), pirms prasa Nilam (push "ievadi kodu"). */
+  autoCodeWaitMs = 10 * 60_000,
   sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
   pdfStore = memoryPdfStore(),
 }) {
@@ -74,6 +76,10 @@ export function createRelayCore({
   let session = { state: "unknown", updatedAt: now().toISOString() };
   let busy = false;
   let codeNotifiedAt = "";
+  /** Kods pieprasīts (CarVertical nosūtīja e-pastu) - Nilam paziņo tikai, ja automātiskais kods neatnāk `autoCodeWaitMs` laikā. */
+  let codePendingAt = "";
+  /** E-pasta kods ir vecāks par pieteikšanās sākumu mīnus šis (pulksteņu nobīde) -> netiek lietots. */
+  const CODE_CLOCK_SKEW_MS = 60_000;
 
   async function persist() {
     if (!stateFile) return;
@@ -99,7 +105,25 @@ export function createRelayCore({
 
   function setSession(next) {
     session = { ...next, updatedAt: now().toISOString() };
+    if (session.state === "awaiting_code") {
+      const at = Date.parse(session.codeRequestedAt ?? "");
+      if (Number.isFinite(at)) session.autoCodeUntil = new Date(at + autoCodeWaitMs).toISOString();
+    }
     return session;
+  }
+
+  /**
+   * Push Nilam "ievadi kodu" tikai, ja kods no e-pasta neatnāca `autoCodeWaitMs` laikā (viens paziņojums uz pieprasījumu).
+   * Bez pārlūka - lieto pēdējo zināmo sesiju. Serveris sauc ik 30 s.
+   */
+  async function checkCodeReminder() {
+    if (session.state !== "awaiting_code" || !codePendingAt || codeNotifiedAt === codePendingAt) return false;
+    const at = Date.parse(codePendingAt);
+    const since = Number.isFinite(at) ? at : Date.parse(session.updatedAt);
+    if (now().getTime() - since < autoCodeWaitMs) return false;
+    codeNotifiedAt = codePendingAt;
+    await emit({ kind: "session", state: "awaiting_code", at: now().toISOString() });
+    return true;
   }
 
   async function emit(body) {
@@ -146,9 +170,10 @@ export function createRelayCore({
   async function ensureSession() {
     const s = await browser.ensureSession();
     setSession(s);
-    if (s.state === "awaiting_code" && codeNotifiedAt !== s.codeRequestedAt) {
-      codeNotifiedAt = s.codeRequestedAt ?? now().toISOString();
-      await emit({ kind: "session", state: "awaiting_code", at: now().toISOString() });
+    if (s.state === "awaiting_code") {
+      if (s.codeRequestedAt) codePendingAt = s.codeRequestedAt;
+      else if (!codePendingAt) codePendingAt = now().toISOString();
+      await checkCodeReminder();
     } else if (s.state === "needs_human") {
       await emit({ kind: "session", state: "needs_human", code: s.code ?? "", at: now().toISOString() });
     }
@@ -314,10 +339,22 @@ export function createRelayCore({
     return job.state !== "awaiting_login" || prevState !== "awaiting_login";
   }
 
-  /** Nila ievadītais e-pasta kods. */
-  async function submitCode(raw) {
+  /**
+   * E-pasta kods: Nila ievadīts adminā (`source` tukšs) vai automātiski no e-pasta (`source: "email"`, Apps Script ->
+   * PROVIN /api/carvertical/login-code). Automātiskais kods tikai, ja relejs tieši tagad gaida kodu un vēstule
+   * pienākusi PĒC šīs pieteikšanās sākuma. Kods netiek logots.
+   */
+  async function submitCode(raw, { source = "", receivedAt = "" } = {}) {
     const code = normalizeLoginCode(raw);
     if (!code) return { ok: false, error: "invalid_code" };
+    if (source === "email") {
+      if (session.state !== "awaiting_code") return { ok: false, error: "not_waiting", session };
+      const startedAt = Date.parse(session.loginStartedAt ?? session.codeRequestedAt ?? "");
+      const got = Date.parse(receivedAt);
+      if (!Number.isFinite(startedAt) || !Number.isFinite(got) || got < startedAt - CODE_CLOCK_SKEW_MS) {
+        return { ok: false, error: "stale_code", session };
+      }
+    }
     if (busy) return { ok: false, error: "busy" };
     busy = true;
     try {
@@ -383,6 +420,7 @@ export function createRelayCore({
     enqueue,
     tick,
     submitCode,
+    checkCodeReminder,
     login,
     refreshBalance,
     listReports,

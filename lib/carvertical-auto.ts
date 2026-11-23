@@ -8,6 +8,9 @@ import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import {
   applyBalanceUpdate,
   balanceIsStale,
+  CARVERTICAL_EMAIL_CODE_MAX_AGE_MS,
+  carverticalEmailCodeFits,
+  normalizeCarverticalLoginCode,
   carverticalPdfFileName,
   decideStart,
   isPdfBytes,
@@ -195,6 +198,8 @@ export type CarverticalOverview = {
   relayConfigured: boolean;
   balance: CarverticalBalance | null;
   session: CarverticalSessionState;
+  /** Gaida kodu: līdz šim brīdim relejs gaida kodu no e-pasta automātiski (pēc tam push Nilam). */
+  autoCodeUntil?: string;
 };
 
 /** Atlikums adminam: kešs; ja vecāks par 30 min - pajautā relejam (tas atdod savu kešu un atjauno fonā). */
@@ -202,22 +207,27 @@ export async function getCarverticalOverview(opts: { refresh?: boolean } = {}): 
   const config = readCarverticalRelayConfig();
   let balance = await readCarverticalBalance();
   let session: CarverticalSessionState = "unknown";
+  let autoCodeUntil: string | undefined;
   if (!config) return { relayConfigured: false, balance, session };
-  if (opts.refresh || balanceIsStale(balance, new Date())) {
-    try {
-      const { res, json } = await relayFetch(config, `/balance${opts.refresh ? "?refresh=1" : ""}`, { timeoutMs: 5000 });
-      const b = json.balance as { credits?: unknown; checkedAt?: unknown } | undefined;
-      const s = (json.session as { state?: unknown } | undefined)?.state;
-      if (typeof s === "string") session = s as CarverticalSessionState;
-      const relayAt = typeof b?.checkedAt === "string" ? Date.parse(b.checkedAt) : NaN;
-      if (res.ok && typeof b?.credits === "number" && Number.isFinite(relayAt) && relayAt > (Date.parse(balance?.checkedAt ?? "") || 0)) {
-        balance = await storeBalance(b.credits, new Date(relayAt).toISOString());
-      }
-    } catch {
-      /* relejs nav sasniedzams - rādām kešu */
+  const stale = Boolean(opts.refresh) || balanceIsStale(balance, new Date());
+  try {
+    // Svaigs atlikums -> tikai sesija (/session, bez pārlūka darba), lai panelis redz "gaida kodu" / "aktīvs".
+    const path = stale ? `/balance${opts.refresh ? "?refresh=1" : ""}` : "/session";
+    const { res, json } = await relayFetch(config, path, { timeoutMs: stale ? 5000 : 3000 });
+    const b = json.balance as { credits?: unknown; checkedAt?: unknown } | undefined;
+    const sess = json.session as { state?: unknown; autoCodeUntil?: unknown } | undefined;
+    if (typeof sess?.state === "string") session = sess.state as CarverticalSessionState;
+    if (session === "awaiting_code" && typeof sess?.autoCodeUntil === "string" && Number.isFinite(Date.parse(sess.autoCodeUntil))) {
+      autoCodeUntil = sess.autoCodeUntil;
     }
+    const relayAt = typeof b?.checkedAt === "string" ? Date.parse(b.checkedAt) : NaN;
+    if (stale && res.ok && typeof b?.credits === "number" && Number.isFinite(relayAt) && relayAt > (Date.parse(balance?.checkedAt ?? "") || 0)) {
+      balance = await storeBalance(b.credits, new Date(relayAt).toISOString());
+    }
+  } catch {
+    /* relejs nav sasniedzams - rādām kešu */
   }
-  return { relayConfigured: true, balance, session };
+  return { relayConfigured: true, balance, session, ...(autoCodeUntil ? { autoCodeUntil } : {}) };
 }
 
 /** Nila pogas: "Pieslēgt CarVertical" (CarVertical sūta kodu uz e-pastu) un koda ievade. */
@@ -241,6 +251,50 @@ export async function carverticalSessionAction(
     };
   } catch {
     return { ok: false, session: "unknown", error: "relay_unreachable" };
+  }
+}
+
+export type CarverticalEmailCodeOutcome = "accepted" | "rejected" | "ignored" | "retry" | "invalid";
+
+/**
+ * CarVertical pieteikšanās kods no konta e-pasta (Nila Gmail -> pāradresē uz info@provin.lv -> Apps Script
+ * docs/apps-script/csdd-pdf-inbox.gs -> POST /api/carvertical/login-code). Kods tiek nodots relejam TIKAI, ja relejs
+ * tieši tagad gaida kodu un vēstule pienākusi pēc pieteikšanās sākuma; citādi ignorē (204). Kods netiek logots.
+ *   accepted 200 | rejected 200 (CarVertical neatzina) | ignored 204 | invalid 400 | retry 503 (relejs aizņemts / nav sasniedzams)
+ */
+export async function submitCarverticalEmailCode(
+  input: { code: unknown; receivedAt: unknown },
+  nowMs: number = Date.now(),
+): Promise<{ outcome: CarverticalEmailCodeOutcome; httpStatus: number }> {
+  const code = normalizeCarverticalLoginCode(input.code);
+  const receivedMs = typeof input.receivedAt === "string" ? Date.parse(input.receivedAt) : NaN;
+  if (!code || !Number.isFinite(receivedMs)) return { outcome: "invalid", httpStatus: 400 };
+  const ignored = { outcome: "ignored" as const, httpStatus: 204 };
+  if (nowMs - receivedMs > CARVERTICAL_EMAIL_CODE_MAX_AGE_MS) return ignored;
+  const config = readCarverticalRelayConfig();
+  if (!config) return ignored;
+  const retry = { outcome: "retry" as const, httpStatus: 503 };
+  try {
+    const { res, json } = await relayFetch(config, "/session", { timeoutMs: 5000 });
+    if (!res.ok) return retry;
+    const sess = json.session as { state?: unknown; loginStartedAt?: unknown; codeRequestedAt?: unknown } | undefined;
+    if (!carverticalEmailCodeFits(sess, receivedMs)) return ignored;
+  } catch {
+    return retry;
+  }
+  try {
+    const { res, json } = await relayFetch(config, "/login/code", {
+      method: "POST",
+      body: { code, source: "email", receivedAt: new Date(receivedMs).toISOString() },
+      timeoutMs: 50_000,
+    });
+    if (res.ok && json.ok === true) return { outcome: "accepted", httpStatus: 200 };
+    const err = typeof json.error === "string" ? json.error : "";
+    if (err === "busy" || res.status >= 500) return retry;
+    if (err === "not_waiting" || err === "stale_code") return ignored;
+    return { outcome: "rejected", httpStatus: 200 };
+  } catch {
+    return retry;
   }
 }
 
@@ -339,7 +393,7 @@ export async function handleCarverticalRelayEvent(
       title: ev.state === "awaiting_code" ? "CarVertical: ievadi kodu" : "CarVertical: vajag tevi",
       body:
         ev.state === "awaiting_code"
-          ? "CarVertical nosūtīja pieteikšanās kodu uz konta e-pastu. Ievadi to pasūtījuma CarVertical blokā."
+          ? "Kods no CarVertical e-pasta 10 min laikā automātiski neatnāca. Ievadi to pasūtījuma CarVertical blokā (derīgs 15 min)."
           : "CarVertical prasa captcha vai citu pārbaudi - ielogojies pats.",
       url: "/admin",
       tag: "carvertical-login",

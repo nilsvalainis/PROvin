@@ -256,13 +256,13 @@ describe("CarVertical relejs: pirkuma rinda", () => {
     expect(events.find((e) => e.state === "error")).toMatchObject({ code: "not_found" });
   });
 
-  it("bez sesijas: uzdevums gaida kodu (viens paziņojums par kodu), nepērk", async () => {
+  it("bez sesijas: uzdevums gaida kodu (push par kodu tikai pēc 10 min bez e-pasta koda), nepērk", async () => {
     const b = fakeBrowser({ credits: 9, session: "awaiting_code" });
     const { core, events } = makeCore(b);
     core.enqueue({ ref: "sess_123456", vin: VIN, kind: "purchase" });
     await core.tick();
     await core.tick();
-    expect(events.filter((e) => e.kind === "session" && e.state === "awaiting_code")).toHaveLength(1);
+    expect(events.filter((e) => e.kind === "session" && e.state === "awaiting_code")).toHaveLength(0);
     expect(jobStates(events)).toEqual(["awaiting_login"]);
     expect(b.calls.some((c) => c.startsWith("purchase") || c === "account")).toBe(false);
   });
