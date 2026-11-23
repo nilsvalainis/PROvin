@@ -245,7 +245,7 @@ describe("buildUnifiedMileageChartWrapHtml", () => {
     expect(html).toContain("pdf-svc-span");
     expect(html).toContain("50 000 km");
     expect(html).toContain("110 000 km");
-    expect(html).toContain("4 ieraksti");
+    expect(html).toContain("4 rādījumi");
   });
 });
 
@@ -283,6 +283,14 @@ describe("buildSourceMileageSparkHtml", () => {
     sourceOrder: 1,
     sourceLabel: "AutoDNA",
   };
+  const dnaLate: UnifiedMileageRow = {
+    date: "01.06.2019",
+    odometer: "100000",
+    country: "DE",
+    sortableTime: Date.UTC(2019, 5, 1),
+    sourceOrder: 3,
+    sourceLabel: "AutoDNA",
+  };
   const csddLate: UnifiedMileageRow = {
     date: "01.06.2020",
     odometer: "120000",
@@ -298,7 +306,7 @@ describe("buildSourceMileageSparkHtml", () => {
   });
 
   it("draws a ghost unified curve and a source path in AutoDNA blue", () => {
-    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, dnaLate, csddLate], "autodna");
     expect(html).toContain("pdf-src-mileage-spark");
     expect(html).toContain('data-src-spark="autodna"');
     expect(html).toContain("pdf-src-mileage-spark-ghost");
@@ -310,31 +318,35 @@ describe("buildSourceMileageSparkHtml", () => {
     expect(html).not.toContain("Nobraukums");
   });
 
-  it("labels this source start and end dates, not year ticks", () => {
-    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+  it("labels this source start and end dates and draws a year axis (Business audits 23.11, D37)", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, dnaLate, csddLate], "autodna");
     expect(html).toContain("01.03.2016");
-    expect(html).toContain("01.06.2018");
-    expect(html).not.toContain("pdf-mileage-chart-year");
-    expect(html).not.toContain(">2020<");
+    expect(html).toContain("01.06.2019");
+    expect(html).toContain("pdf-src-mileage-spark-year");
+    expect(html).toContain(">2016<");
+    expect(html).toContain(">2020<");
+  });
+
+  it("hides the spark when the source has fewer than 3 readings (D37)", () => {
+    expect(buildSourceMileageSparkHtml([dnaEarly, csddLate], "autodna")).toBe("");
+    expect(buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna")).toBe("");
   });
 
   it("puts first and last km in the dealer-style reading window", () => {
-    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, dnaLate, csddLate], "autodna");
     expect(html).toContain("pdf-svc-span");
     expect(html).toContain("50 000 km");
-    expect(html).toContain("80 000 km");
-    expect(html).toContain("2 ieraksti");
+    expect(html).toContain("100 000 km");
+    expect(html).toContain("3 rādījumi");
     expect(html).not.toContain("pdf-src-mileage-spark-date");
     expect(html.indexOf("pdf-src-mileage-spark-svg")).toBeLessThan(html.indexOf("pdf-svc-span"));
   });
 
-  it("shares the unified time scale so an early DNA point sits left of a late CSDD point", () => {
-    const rows = [dnaEarly, csddLate];
-    const dna = buildSourceMileageSparkHtml(rows, "autodna");
-    const csdd = buildSourceMileageSparkHtml(rows, "csdd");
-    const dnaX = Number.parseFloat(dna.match(/class="pdf-src-mileage-spark-dot" cx="([\d.]+)"/)![1]!);
-    const csddX = Number.parseFloat(csdd.match(/class="pdf-src-mileage-spark-dot" cx="([\d.]+)"/)![1]!);
-    expect(dnaX).toBeLessThan(csddX);
+  it("shares the unified time scale so the DNA path starts left of the CSDD-era years", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly, dnaMid, dnaLate, csddLate], "autodna");
+    const startX = Number.parseFloat(html.match(/class="pdf-src-mileage-spark-path" fill="none" stroke="#[0-9A-F]+" d="M ([\d.]+)/i)![1]!);
+    const x2020 = Number.parseFloat(html.match(/x="([\d.]+)"[^>]*>2020</)![1]!);
+    expect(startX).toBeLessThan(x2020);
   });
 });
 

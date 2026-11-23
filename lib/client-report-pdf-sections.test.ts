@@ -329,6 +329,8 @@ describe("PDF design system", () => {
   it("embeds a shared-scale mileage spark in the AutoDNA source zone", () => {
     const csdd = emptyCsddFields();
     csdd.mileageHistory.push({ date: "01.06.2020", odometer: "120000", country: "LV" });
+    csdd.mileageHistory.push({ date: "01.06.2021", odometer: "130000", country: "LV" });
+    csdd.mileageHistory.push({ date: "01.06.2022", odometer: "140000", country: "LV" });
     const html = buildClientReportDocumentHtml({
       payload: minimalPayload({
         csddForm: csdd,
@@ -337,6 +339,7 @@ describe("PDF design system", () => {
             title: "AutoDNA",
             mileageRows: [
               { date: "01.03.2016", odometer: "80000", country: "DE" },
+              { date: "01.06.2017", odometer: "88000", country: "DE" },
               { date: "01.06.2018", odometer: "95000", country: "DE" },
             ],
             incidentRows: [],
@@ -360,7 +363,7 @@ describe("PDF design system", () => {
     expect(autodnaZone).toContain("pdf-svc-span");
     expect(autodnaZone).toContain("80 000 km");
     expect(autodnaZone).toContain("95 000 km");
-    expect(autodnaZone).toContain("2 ieraksti");
+    expect(autodnaZone).toContain("3 rādījumi");
     expect(html).toContain(".pdf-src-mileage-spark-ghost");
     expect(html).toContain(".pdf-src-mileage-spark .pdf-svc-span");
   });

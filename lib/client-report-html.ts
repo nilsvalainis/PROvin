@@ -230,6 +230,7 @@ import {
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
+  formatMileageRowDateLabel,
 } from "@/lib/unified-mileage";
 import { countryEvidenceFromRows } from "@/lib/service-works-country";
 import {
@@ -1253,7 +1254,7 @@ function buildUnifiedMileageTableRowHtml(
       ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--yellow"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span></td>`
       : `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>`;
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(formatMileageRowDateLabel(r))}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 /** Zemsvītras piezīme CSDD rādījumam bez datuma (BMW makets, Nils apstiprināja 24.10). */
@@ -1366,7 +1367,10 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder, staleOrEntryError)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder, staleOrEntryError)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder, staleOrEntryError)}</div></div>`;
 
-  const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
+  // A17: skaits = leģendas avoti (AutoDNA un «AutoDNA (sludinājums)» ir viens avots).
+  const sourceCount = mileagePdfLegendKeysInOrder(
+    collectMileagePdfSourceKeysFromLabels(mileageRows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]))),
+  ).length;
   const legend = buildPdfMileageSourceLegendHtml(mileageRows);
   const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
   const yellowNote = (text: string) =>
@@ -3449,6 +3453,7 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-src-mileage-spark-svg{display:block;width:100%;max-width:none;height:auto;margin:0;}
+      .pdf-src-mileage-spark-svg .pdf-src-mileage-spark-year{font-size:6px;}
       .pdf-src-mileage-spark-ghost{
         stroke:#94A3B8;stroke-width:1.6;opacity:0.28;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
