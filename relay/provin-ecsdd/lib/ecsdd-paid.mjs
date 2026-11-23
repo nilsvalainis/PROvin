@@ -8,7 +8,8 @@
  *     Relejs saiti tikai NOLASA (nekad nespiež, nekad nesūta SMS, nekad nemaksā).
  *  3. Izvēlne -> Maksas Izziņas -> "Apmaksātās izziņas": "Atjaunot sarakstu", tabula Reģistrācijas nr | Statuss | Datums
  *  4. Izziņa: akordeoni (Aizliegumi, Būtiski bojājumi CSNg, Reģistrācijas dati, ..., Tehnisko apskašu vēsture),
- *     poga "Nosūtīt uz reģistrēto epastu" (relejs nespiež).
+ *     poga "Nosūtīt uz reģistrēto epastu" (bez maksas; relejs to spiež TIKAI ar `sendEmail: true` un tikai pēc
+ *     veiksmīgi nolasītas izziņas - PDF arhīvam, nonāk info@provin.lv; sk. PAID_SEND_EMAIL_RE).
  * Web e.csdd (dators un iPhone Safari) šīs sadaļas NErāda (debug 23.11.2026 19:17). Tās rāda tikai CSDD lietotnei
  * (Android lv.csdd.ecsdd 3.9.9 / versionCode 325, iOS id661663816) - WebView uz https://e.csdd.lv, kas identificējas ar:
  *  - User-Agent = WebView noklusētais UA + " csdd_mob_app_android_v2 uid=<android_id+SERIAL> verCode=<versionCode>";
@@ -32,6 +33,19 @@ export const PAID_PREPARE_SMS_RE = /sagatavot\s+[iī]szi[ņn]u/i;
 export const PAID_LIST_LINK_RE = /apmaks[aā]t[aā]s\s+izzi[ņn]as/i;
 export const PAID_MENU_RE = /^\s*maksas\s+izzi[ņn]as\s*$/i;
 export const PAID_REFRESH_RE = /atjaunot\s+sarakstu/i;
+/**
+ * Vienīgā izņēmuma poga (Nils 23.11): "Nosūtīt uz reģistrēto epastu" apmaksātas izziņas lapā - bez maksas, PDF arhīvam.
+ * Precīzs teksts (visa vadīkla), lai nekad nenospiestu ko citu (piem. "Nosūtīt īsziņu", maksas pogas).
+ */
+export const PAID_SEND_EMAIL_RE = /^\s*nos[uū]t[iī]t\s+uz\s+re[gģ]istr[eē]to\s+e-?pastu\s*$/i;
+
+/** Vai vadīkla ir tieši "Nosūtīt uz reģistrēto epastu" (nav saite uz sms:/tel:, nav cenas). */
+export function isPaidSendEmailControl(ctl) {
+  const text = String(ctl?.text ?? "");
+  const href = String(ctl?.href ?? "");
+  return PAID_SEND_EMAIL_RE.test(text) && !/EUR|€|\d+[,.]\d{2}/.test(text) && !/^(sms|tel):/i.test(href);
+}
+
 /** Pogas, ko relejs nekad nespiež izziņas lapās. */
 export const PAID_FORBIDDEN_RE = /nos[uū]t[iī]t|e-?past|sagatavot\s+[iī]szi|dz[eē]st|anul|apmaks[aā]t(?!\p{L})|samaks|^\s*iziet\s*$/iu;
 
