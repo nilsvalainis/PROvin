@@ -122,8 +122,20 @@ export type CsddRegistrySignals = {
   foreignInspectionPermit: boolean;
 };
 
+/**
+ * Zināmie e.csdd sadaļu virsraksti (PDF teksts un releja tadati akordeoni). Sadaļas vērtība beidzas pie nākamā
+ * virsraksta - tukša/sakļauta sadaļa nedrīkst „paņemt” nākamās sadaļas tekstu (piem. CSNg -> Nobraukuma vēsture LV).
+ */
 const SECTION_STOP =
-  "Aizliegumi|Būtiski\\s+bojājumi|Informācija\\s+no\\s+(?:policijas|apdrošinātājiem)|Reģistrācijas\\s+dati|Reģistrācijas\\s+numurs|Tehniskie\\s+dati|Transportlīdzekļa\\s|Civiltiesisk|Pilnvara|Informācija\\s+sagatavota";
+  "Aizliegumi|Būtiski\\s+bojājumi|Informācija\\s+no\\s+(?:policijas|apdrošinātājiem)|Reģistrācijas\\s+dati|Reģistrācijas\\s+numurs|Tehniskie\\s+dati|Transportlīdzekļa\\s|Civiltiesisk|Pilnvara|Informācija\\s+sagatavota" +
+  "|Nobraukuma\\s+vēsture|Nobraukums\\s+ārvalstīs|Bremžu\\s+vērtējums|Detalizētais\\s+vērtējums|Pēdēj[āa]\\s+tehnisk|Tehnisko\\s+apska|Uzņēmuma\\s+vieglo|Iepriekšējās\\s+reģistrācijas|Datums\\s*:?\\s+Odometrs|Powered\\s+by";
+
+const SECTION_HEADING_RE = new RegExp(`^(?:${SECTION_STOP})`, "i");
+
+/** Rinda ir cita e.csdd sadaļas virsraksts, nevis vērtība. */
+export function isCsddSectionHeadingLine(line: string): boolean {
+  return SECTION_HEADING_RE.test(line.trim());
+}
 
 function sectionAfterLine(text: string, headRe: string): string | null {
   const re = new RegExp(`(?:^|\\n)[ \\t]*${headRe}[ \\t]*:?[ \\t]*([^\\n]*)([\\s\\S]{0,2000}?)(?=\\n[ \\t]*(?:${SECTION_STOP})|$)`, "i");
@@ -134,7 +146,10 @@ function sectionAfterLine(text: string, headRe: string): string | null {
 
 function sectionState(body: string | null): { state: CsddSectionState; text: string } {
   if (body == null) return { state: "not_checked", text: "" };
-  const lines = body.split("\n").map((l) => l.trim()).filter(Boolean);
+  const all = body.split("\n").map((l) => l.trim()).filter(Boolean);
+  // Drošībai: vērtība nekad neturpinās pāri citas sadaļas virsrakstam.
+  const stop = all.findIndex(isCsddSectionHeadingLine);
+  const lines = stop >= 0 ? all.slice(0, stop) : all;
   if (lines.length === 0) return { state: "not_checked", text: "" };
   if (lines.every(isNavValue)) return { state: "none", text: "" };
   return { state: "present", text: oneLine(lines.filter((l) => !isNavValue(l)).join("; "), 300) };

@@ -5,7 +5,11 @@ import {
   csddInspectionHasNoLatvianRating,
 } from "@/lib/csdd-registry-signals";
 import {
+  CSDD_DEFECTS_NOT_LISTED_TEXT,
+  CSDD_NO_DEFECTS_TEXT,
+  csddInspectionDefectsMissing,
   formatParticleNumber,
+  sortCsddInspectionRows,
   groupTechnicalInspectionsByYear,
   isoDateToLvDisplay,
   previousInspectionBlockToRow,
@@ -31,7 +35,7 @@ function inspectionYearFromDate(date: string): number | null {
   return Number.isFinite(y) ? y : null;
 }
 
-function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
+function DefectTable({ defects, listMissing }: { defects: CsddInspectionDefectRow[]; listMissing?: boolean }) {
   const novCell =
     "w-[2.25rem] min-w-[2.25rem] max-w-[2.75rem] shrink-0 whitespace-nowrap py-0.5 pl-0 pr-3 text-left tabular-nums";
   const descCell = `${mileCell} pl-1 text-left`;
@@ -62,7 +66,7 @@ function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
         ) : (
           <tr>
             <td colSpan={2} className={`${mileCell} text-[var(--color-provin-muted)]`}>
-              Nav reģistrētu trūkumu vai bojājumu.
+              {listMissing ? CSDD_DEFECTS_NOT_LISTED_TEXT : CSDD_NO_DEFECTS_TEXT}
             </td>
           </tr>
         )}
@@ -112,7 +116,7 @@ export function CsddInspectionBlock({
           {formatParticleNumber(emissions.particleNumber)}
         </p>
       ) : null}
-      <DefectTable defects={row.defects ?? []} />
+      <DefectTable defects={row.defects ?? []} listMissing={csddInspectionDefectsMissing(row)} />
     </div>
   );
 }
@@ -122,7 +126,7 @@ type Props = {
 };
 
 export function AdminCsddInspectionHistoryTable({ rows }: Props) {
-  const data = rows.filter((r) => r.date.trim());
+  const data = sortCsddInspectionRows(rows.filter((r) => r.date.trim()));
   if (data.length === 0) return null;
 
   const byYear = groupTechnicalInspectionsByYear(data);

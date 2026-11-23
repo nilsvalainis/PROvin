@@ -3,7 +3,9 @@ import "server-only";
 import { computeFreeSourceSeed } from "@/lib/admin-free-source-seed";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { quickEvalVinScanInput } from "@/lib/quick-eval-vin-scan";
-import { runVinScan } from "@/lib/vin-scan/run";
+import { recordSourceOutcomes } from "@/lib/source-health-store";
+import { runSharedVinScan } from "@/lib/vin-scan/shared-scan";
+import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { readOrderDraft, patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
@@ -88,7 +90,7 @@ function resetFreeBlocks(baseline: WorkspaceSourceBlocks, keys: readonly SourceB
 
 /**
  * Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE)
- * plus pilnais VIN SCAN katalogs (`quickEvalVinScanInput`, tas pats cauruļvads kā VIN SCAN lapai).
+ * plus VIN SCAN ar to pašu izpildītāju un kešu kā VIN SCAN lapa (`runSharedVinScan`, avoti `defaultVinScanSourceIds`).
  * `refresh` ielasa visu no jauna; `only` – tikai vienu avotu (kartītes „Mēģināt vēlreiz”).
  */
 export async function seedQuickEval(
@@ -112,16 +114,22 @@ export async function seedQuickEval(
   const seeded = await seedPromise;
   const vin = seeded?.resolvedVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
   const blocksForScan = seeded?.blocks ?? current.sourceBlocks;
-  const scan =
+  // Tas pats izpildītājs, avotu saraksts un kešs pēc VIN kā VIN SCAN / «Ātrā pārbaude» lapā.
+  const scanInput =
     doScan && vin && isValidVin(vin)
-      ? await runVinScan(
-          quickEvalVinScanInput({
-            vin,
-            listingUrl: peek.listingUrl,
-            registrationNumber: blocksForScan.csdd.registry?.data?.registrationNumber || blocksForScan.csdd.registrationNumber,
-          }),
-        ).catch(() => null)
+      ? quickEvalVinScanInput({
+          vin,
+          listingUrl: peek.listingUrl,
+          registrationNumber: blocksForScan.csdd.registry?.data?.registrationNumber || blocksForScan.csdd.registrationNumber,
+        })
       : null;
+  const shared = scanInput
+    ? await runSharedVinScan({ ...scanInput, force: Boolean(opts.refresh || opts.only === "vin_scan") }).catch(() => null)
+    : null;
+  if (shared?.scanned.length) {
+    await recordSourceOutcomes(vinScanSourceHealthOutcomes(shared.scanned)).catch(() => undefined);
+  }
+  const scan = shared?.indicators ?? null;
   const now = new Date().toISOString();
   return updateQuickEval(peek.id, (doc) => {
     const parts = seeded ? { ...(opts.only ? doc.seed?.parts : {}), ...seeded.parts } : doc.seed?.parts ?? {};

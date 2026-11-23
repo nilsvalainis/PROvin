@@ -344,7 +344,7 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
 
   const smokeOpacity = firstMatch(
     t,
-    /(?:d[ūu]main[īi]bas\s+koeficients|d[ūu]main[īi]ba)(?:\s*\([^)]*\))?\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?)/i,
+    /(?:d[ūu]main[īi]bas\s+koeficients|d[ūu]main[īi]ba)(?:[ \t]*\([^)\n]*\))?[ \t]*[:\-]?[ \t]*([0-9]+(?:[.,][0-9]+)?)/i,
   );
 
   return {

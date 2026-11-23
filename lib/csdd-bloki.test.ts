@@ -13,7 +13,27 @@ import {
   type CsddTaAnalysis,
 } from "@/lib/csdd-bloki";
 import type { CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
-import { ECSDD_NEW_FORMAT_DEREGISTERED, ECSDD_OLD_FORMAT_MEASUREMENTS } from "@/lib/csdd-bloki.fixtures";
+import fs from "node:fs";
+import path from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AdminCsddBlokiPanel } from "@/components/admin/AdminCsddBlokiPanel";
+import {
+  ECSDD_NEW_FORMAT_DEREGISTERED,
+  ECSDD_OLD_FORMAT_MEASUREMENTS,
+  ECSDD_PAID_LAST_TA_ONLY_HEAD,
+  ECSDD_TADATI_TOYOTA_LAST_ONLY,
+} from "@/lib/csdd-bloki.fixtures";
+import {
+  cleanCsddInspectionNotes,
+  csddInspectionDefectsMissing,
+  resolveCsddInspectionDisplay,
+  sortCsddInspectionRows,
+} from "@/lib/csdd-extended-parse";
+import { AdminCsddInspectionHistoryTable } from "@/components/admin/AdminCsddInspectionHistoryTable";
+import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { buildCsddRegistrySignalFactLines, parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
+import { formatTadatiPanels } from "@/relay/provin-ecsdd/lib/ecsdd-page.mjs";
 import { buildCsddBlokiPdfParts, buildCsddWarningSummaryTiles } from "@/lib/csdd-bloki-pdf-html";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
@@ -337,5 +357,209 @@ describe("e.csdd bloki - klienta PDF", () => {
     const html = doc(payload(ML, { csddPdfWarnings: true, csddPdfTaAnalysis: true }), "en");
     expect(html).toContain("No valid policy");
     expect(html).toContain("Technical inspection defect analysis");
+  });
+});
+
+describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota Auris 23.11.2026)", () => {
+  const AURIS = form(ECSDD_TADATI_TOYOTA_LAST_ONLY);
+
+  it("apdrošinātāju CSNg tukšs -> «nav pārbaudīts», nevis «Nobraukuma vēsture LV»; brīdinājuma «Ir CSNg» nav", () => {
+    const b = buildCsddBloki(AURIS, "lv", NOW)!;
+    const rows = Object.fromEntries(b.restrictions.rows.map((r) => [r.key, r]));
+    expect(rows.csngInsurers).toEqual({ key: "csngInsurers", state: "not_checked", text: "" });
+    expect(rows.csngPolice!.state).toBe("none");
+    expect(rows.restrictions!.state).toBe("not_checked");
+    expect(b.warnings.map((w) => w.id)).not.toContain("csng");
+    // Reģistrācijas brīdinājums (atļauja beigusies) paliek.
+    expect(b.warnings).toEqual([
+      {
+        id: "registration",
+        tone: "alert",
+        label: "Reģistrācija",
+        value: "Atļauja beigusies 11.11.2026",
+        note: "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 11.11.2026",
+      },
+    ]);
+    const json = JSON.stringify(b);
+    expect(json).not.toContain("Nobraukuma");
+    expect(json).not.toContain("136423 136423");
+    expect(json).not.toContain("**");
+    // AI fakti lieto to pašu parseri.
+    expect(buildCsddRegistrySignalFactLines(AURIS, NOW).join("\n")).not.toContain("Nobraukuma");
+  });
+
+  it("tikai pēdējā apskate ar «Novērtējums: **» -> «Latvijā TA vēl nav veikta», PDF TA bloka nav", () => {
+    const b = buildCsddBloki(AURIS, "lv", NOW)!;
+    expect(b.ta.inspectionCount).toBe(0);
+    expect(b.taHistoryState).toBe("no_lv_rating");
+    const parts = buildCsddBlokiPdfParts(AURIS, { csddPdfWarnings: true, csddPdfRestrictions: true, csddPdfMeasurements: true, csddPdfTaAnalysis: true }, "lv", NOW);
+    expect(parts.beforeInspections).toBe("");
+    expect(parts.afterTable).not.toContain("Nobraukuma");
+    expect(parts.afterTable).toContain("92 g/km");
+    expect(buildCsddWarningSummaryTiles(AURIS, "lv", NOW).map((t) => [t.id, t.value])).toEqual([
+      ["csdd-registration", "Atļauja beigusies 11.11.2026"],
+    ]);
+  });
+
+  it("pēdējā apskate ar vērtējumu, bez vēstures -> «TA vēsture nav ielādēta»", () => {
+    const raw = ECSDD_TADATI_TOYOTA_LAST_ONLY.replace("Novērtējums:\t**", "Novērtējums:\t1 - Ar pieļaujamiem defektiem");
+    const b = buildCsddBloki(form(raw), "lv", NOW)!;
+    expect(b.taHistoryState).toBe("last_only");
+    expect(buildCsddBloki(ML, "lv", NOW)!.taHistoryState).toBe("");
+  });
+
+  it("releja tadati fiksācija: pilns CSNg - abi «Nav»; bez vērtības vai sakļauts akordeons - «nav pārbaudīts»", () => {
+    const snaps = JSON.parse(fs.readFileSync(path.join(__dirname, "__fixtures__", "relay-pages", "snapshots.json"), "utf8"));
+    const { panels, footer } = snaps["ecsdd-tadati-result"].tadati as { panels: { title: string; rows: string[][] }[]; footer: string };
+    const sig = (ps: typeof panels) => {
+      const raw = formatTadatiPanels(ps, footer);
+      return parseCsddRegistrySignals({ ...form(raw), rawUnprocessedData: raw }, NOW);
+    };
+    const full = sig(panels);
+    expect([full.csngPolice.state, full.csngInsurers.state]).toEqual(["none", "none"]);
+
+    const withCsng = (rows: string[][]) => panels.map((p) => (/CSNg/.test(p.title) ? { ...p, rows } : p));
+    const emptyInsurer = sig(withCsng([["Informācija no policijas:"], ["Nav"], ["Informācija no apdrošinātājiem:"]]));
+    expect(emptyInsurer.csngPolice.state).toBe("none");
+    expect(emptyInsurer.csngInsurers).toEqual({ state: "not_checked", text: "" });
+
+    const emptyPolice = sig(withCsng([["Informācija no policijas:"], ["Informācija no apdrošinātājiem:"], ["Nav"]]));
+    expect(emptyPolice.csngPolice).toEqual({ state: "not_checked", text: "" });
+    expect(emptyPolice.csngInsurers.state).toBe("none");
+
+    const collapsed = sig(withCsng([]));
+    expect([collapsed.csngPolice.state, collapsed.csngInsurers.state, collapsed.restrictions.state]).toEqual([
+      "not_checked",
+      "not_checked",
+      "not_checked",
+    ]);
+  });
+
+  it("īsta atzīme paliek atzīme; vērtība beidzas pie nākamās sadaļas virsraksta (arī aizliegumi)", () => {
+    const raw =
+      "Aizliegumi\nAizliegums atsavināt (tiesu izpildītājs) 01.02.2026\nNobraukuma vēsture LV\n03.11.2026\t1\t1\n" +
+      "Būtiski bojājumi CSNg\nInformācija no policijas:\nNav\nInformācija no apdrošinātājiem:\nCSNg 12.03.2021\n\nBremžu vērtējums\nAss\tKreisais\tLabais\tBremžu tips\n1\t2.0\t2.0\tD\n";
+    const s = parseCsddRegistrySignals({ ...emptyCsddFields(), rawUnprocessedData: raw }, NOW);
+    expect(s.restrictions).toEqual({ state: "present", text: "Aizliegums atsavināt (tiesu izpildītājs) 01.02.2026" });
+    expect(s.csngInsurers).toEqual({ state: "present", text: "CSNg 12.03.2021" });
+    expect(s.csngPolice.state).toBe("none");
+  });
+
+  it("admin panelis: bez sarkanām fona joslām un bez pasvītrotiem virsrakstiem", () => {
+    const html = renderToStaticMarkup(createElement(AdminCsddBlokiPanel, { value: AURIS }));
+    expect(html).not.toContain("Ir CSNg atzīmes");
+    expect(html).not.toContain("Nobraukuma");
+    expect(html).toContain("Latvijā TA vēl nav veikta");
+    expect(html).toContain("Atļauja beigusies 11.11.2026");
+    // admin-ios-theme.css `.text-red-700` / `.text-red-600` = sarkans fons ar baltu tekstu.
+    expect(html).not.toMatch(/text-red-(?:600|700)\b/);
+    // admin-pro-order-theme.css: uppercase + tracking-wide + text-[10px]/[11px] virsrakstam liek pasvītrojumu.
+    for (const m of html.matchAll(/<p class="([^"]*)"/g)) {
+      const c = m[1]!.split(/\s+/);
+      const underlined = c.includes("uppercase") && c.includes("tracking-wide") && (c.includes("text-[10px]") || c.includes("text-[11px]"));
+      expect(underlined, m[1]).toBe(false);
+    }
+    const ml = renderToStaticMarkup(createElement(AdminCsddBlokiPanel, { value: ML }));
+    expect(ml).not.toMatch(/text-red-(?:600|700)\b/);
+    expect(ml).toContain("Nav spēkā esošas OCTA");
+  });
+});
+
+describe("e.csdd: tukšas vērtības, piezīmes un TA hronoloģija (maksas izziņa, LAND ROVER 23.11.2026)", () => {
+  const LR = form(ECSDD_PAID_LAST_TA_ONLY_HEAD);
+
+  it("tukša dūmainība / CO / HC / Lambda neņem nākamās rindas vai sadaļas tekstu", () => {
+    expect(LR.opacityCoefficient).toBe("");
+    const m = parseCsddMeasurements(LR);
+    expect([m.co, m.coHigh, m.hc, m.lambda, m.smoke]).toEqual(["", "", "", "", ""]);
+    expect(JSON.stringify(LR)).not.toContain("\"Tehnisko apskašu vēsture\"");
+  });
+
+  it("piezīmes = tikai «Piezīmes» vērtība; daļiņas savā laukā; dublētās defektu galvenes ignorētas", () => {
+    const row = LR.technicalInspectionHistory.find((r) => r.date === "27.05.2025")!;
+    expect(row.notes).toBe("Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.");
+    expect(row.particleNumber).toBe("1800");
+    expect(row.defects).toEqual([]);
+    expect(buildCsddBloki(LR, "lv", NOW)!.ta.notes).toEqual([
+      { text: "Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.", dates: ["27.05.2025"] },
+    ]);
+    // Saglabātie melnraksti ar veco netīro tekstu.
+    expect(
+      cleanCsddInspectionNotes(
+        "Atgāzu cietās daļiņas: 1800 Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša. Kods Novērt. Trūkumi vai bojājumi Kods Novērt. Trūkumi vai bojājumi",
+      ),
+    ).toBe("Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.");
+    expect(cleanCsddInspectionNotes("Atgāzu cietās daļiņas: 1800")).toBe("");
+  });
+
+  it("bloks = pēdējā apskate (03.06.2026), vēsturē tā neatkārtojas; jaunākā augšā", () => {
+    expect(LR.technicalInspectionHistory.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+    expect(LR.prevInspectionBlock).toMatchObject({ inspectionDateText: "03.06.2026", odometer: "171579", ratingLevel: 1, defects: [] });
+    const d = resolveCsddInspectionDisplay(LR.prevInspectionBlock, LR.technicalInspectionHistory, LR.prevInspectionDate);
+    expect(d.showPrevBlock).toBe(true);
+    expect(d.historyRows.map((r) => r.date)).toEqual(["27.05.2025"]);
+  });
+
+  it("vecs melnraksts (bloks = vecāka apskate, kas jau ir vēsturē): bloku nerāda, vēsture hronoloģiski", () => {
+    const old = { ...LR.prevInspectionBlock, inspectionDateText: "27.05.2025", ratingLabel: "0 - Teicamā tehniskā stāvoklī", ratingLevel: null };
+    const rows = [...LR.technicalInspectionHistory].reverse();
+    const d = resolveCsddInspectionDisplay(old, rows, LR.prevInspectionDate);
+    expect(d.showPrevBlock).toBe(false);
+    expect(d.historyRows.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+  });
+
+  it("saglabāts melnraksts lasot: dūmainība bez virsraksta, piezīmes tīras, vēsture jaunākā augšā", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        fields: {
+          makeModel: "LAND ROVER DISCOVERY",
+          opacityCoefficient: "Tehnisko apskašu vēsture",
+          technicalInspectionHistory: [
+            { date: "27.05.2025", inspectionType: "pamatpārbaude", ratingLabel: "0", notes: "Atgāzu cietās daļiņas: 1800 Pilnpiedziņa. Kods Novērt. Trūkumi vai bojājumi", defects: [] },
+            { date: "03.06.2026", inspectionType: "", ratingLabel: "1 - Ar pieļaujamiem defektiem", ratingLevel: 1, notes: "", defects: [] },
+          ],
+        },
+      },
+    });
+    expect(blocks.csdd.opacityCoefficient).toBe("");
+    expect(blocks.csdd.technicalInspectionHistory.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+    expect(blocks.csdd.technicalInspectionHistory[1]!.notes).toBe("Pilnpiedziņa.");
+  });
+
+  it("kārtošana: jaunākā augšā, tajā pašā dienā pamatpārbaude pirms atkārtotās, ISO un DD.MM.YYYY", () => {
+    const rows = [
+      { date: "10.07.2025", inspectionType: "atkārtota pārbaude" },
+      { date: "2026-01-02", inspectionType: "" },
+      { date: "", inspectionType: "" },
+      { date: "10.07.2025", inspectionType: "pamatpārbaude" },
+      { date: "16.07.2025", inspectionType: "atkārtota pārbaude" },
+    ];
+    expect(sortCsddInspectionRows(rows).map((r) => `${r.date}|${r.inspectionType}`)).toEqual([
+      "2026-01-02|",
+      "16.07.2025|atkārtota pārbaude",
+      "10.07.2025|pamatpārbaude",
+      "10.07.2025|atkārtota pārbaude",
+      "|",
+    ]);
+  });
+
+  it("vērtējums 1/2/3 bez defektu saraksta - «Defektu saraksts avotā nav norādīts» (admin + PDF); 0 - «Nav reģistrētu…»", () => {
+    const [last, prev] = LR.technicalInspectionHistory;
+    expect(csddInspectionDefectsMissing(last!)).toBe(true);
+    expect(csddInspectionDefectsMissing(prev!)).toBe(false);
+    const admin = renderToStaticMarkup(createElement(AdminCsddInspectionHistoryTable, { rows: LR.technicalInspectionHistory }));
+    expect(admin).toContain("Defektu saraksts avotā nav norādīts.");
+    expect(admin).toContain("Nav reģistrētu trūkumu vai bojājumu.");
+    expect(admin.indexOf("03.06.2026")).toBeLessThan(admin.indexOf("27.05.2025"));
+
+    const html = doc(payload(LR));
+    const csdd = html.slice(html.indexOf("Iepriekšējās apskates dati"));
+    expect(csdd).toContain("Defektu saraksts avotā nav norādīts.");
+    expect(csdd).not.toContain("Kods Novērt");
+    expect(csdd).not.toContain("Tehnisko apskašu vēsture</p><div class=\"pdf-csdd-ta-table-wrap\"><div class=\"pdf-csdd-ta-year-block\"><p class=\"pdf-csdd-ta-year-heading\">2026");
+    // 03.06.2026 blokā (augšā), 27.05.2025 vēsturē - katrs vienu reizi.
+    expect(csdd.indexOf("03.06.2026")).toBeLessThan(csdd.indexOf("27.05.2025"));
+    expect(csdd.split("27.05.2025 · pamatpārbaude").length - 1).toBe(1);
+    expect(csdd.split("03.06.2026 · 171 579 km").length - 1).toBe(1);
   });
 });

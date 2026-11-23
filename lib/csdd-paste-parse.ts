@@ -223,6 +223,8 @@ export function parseCsddTechnicalFields(
   if (opacityCoefficient) opacityCoefficient = opacityCoefficient.replace(/\s+/g, " ").slice(0, 80);
   /** Daļiņu skaits (>= 50) nav dūmainība - to rāda „Atgāzu cietās daļiņas”. */
   if (opacityCoefficient && isImplausibleSmokeOpacity(opacityCoefficient)) opacityCoefficient = "";
+  /** Tukšai e.csdd vērtībai nedrīkst palikt nākamās rindas/sadaļas teksts. */
+  if (opacityCoefficient && !/^\d/.test(opacityCoefficient)) opacityCoefficient = "";
 
   let particulateMatter = (st.particulateMatter ?? "").trim();
   if (!particulateMatter) {
@@ -595,8 +597,14 @@ export function applyCsddPasteToForm(
 
   let opacityCoefficient = tech.opacityCoefficient;
   const prevSmoke = prevInspectionBlock.smokeCoefficient.trim();
+  // Jaunākās apskates dūmainība: bloks, citādi jaunākā vēstures rinda ar vērtību (rindu teksts var saturēt vairākas
+  // «Dūmainības koeficients» rindas - pēdējā tekstā ir VECĀKĀ).
+  const newestHistorySmoke =
+    technicalInspectionHistory.map((r) => r.smokeCoefficient.trim()).find((v) => v && looksLikeSmokeOpacity(v)) ?? "";
   if (prevSmoke && looksLikeSmokeOpacity(prevSmoke)) {
     opacityCoefficient = prevSmoke;
+  } else if (newestHistorySmoke) {
+    opacityCoefficient = newestHistorySmoke;
   }
 
   let mileageHistory = parsed.mileageHistory;

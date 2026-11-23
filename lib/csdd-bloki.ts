@@ -11,9 +11,15 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   effectiveInspectionSeverity,
   normalizeCsddRawText,
+  sortCsddInspectionRows,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
-import { parseCsddRegistrySignals, type CsddRegistrySignals, type CsddSectionState } from "@/lib/csdd-registry-signals";
+import {
+  csddInspectionHasNoLatvianRating,
+  parseCsddRegistrySignals,
+  type CsddRegistrySignals,
+  type CsddSectionState,
+} from "@/lib/csdd-registry-signals";
 
 /* -------------------------------------------------------------------------- */
 /* PDF karogi                                                                  */
@@ -122,6 +128,18 @@ export const CSDD_BLOKI_TX = {
     de: "gefährliche Mängel, Fahrverbot",
   },
   legend0: { lv: "defekts nav konstatēts", en: "no defect found", ru: "дефект не выявлен", de: "kein Mangel festgestellt" },
+  taLastOnly: {
+    lv: "TA vēsture nav ielādēta (tikai pēdējā apskate)",
+    en: "Inspection history not loaded (last inspection only)",
+    ru: "История техосмотров не загружена (только последний)",
+    de: "HU-Historie nicht geladen (nur letzte Prüfung)",
+  },
+  taNoLvInspection: {
+    lv: "Latvijā TA vēl nav veikta",
+    en: "No technical inspection in Latvia yet",
+    ru: "Техосмотр в Латвии ещё не проводился",
+    de: "In Lettland noch keine HU durchgeführt",
+  },
 } satisfies Record<string, Tx>;
 
 export function csddBlokiT(key: keyof typeof CSDD_BLOKI_TX, lang: ClientReportLang, vars: Record<string, string | number> = {}): string {
@@ -441,14 +459,14 @@ export const CSDD_BRAKE_DIFF_WARN_PCT = 30;
 
 export function parseCsddMeasurements(csdd: Pick<CsddFormFields, "rawUnprocessedData" | "emissionStandard" | "prevInspectionBlock" | "prevInspectionDate" | "technicalInspectionHistory">): CsddMeasurements {
   const text = normalizeCsddRawText(csdd.rawUnprocessedData ?? "");
-  const co2 = firstMatch(text, /(?:^|\n)\s*CO2(?:\s+(WLTP|NEDC))?\s*:\s*([\d.,]+)/i);
-  const cons = firstMatch(text, /Degviela\s?s\s+patēriņš(?:\s+(WLTP|NEDC))?\s*:\s*([\d.,]+)/i);
-  const city = firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:\s*([\d.,]+)/i);
-  const co = firstMatch(text, /(?:^|\n)\s*CO\s*\(%\)\s*:\s*([\d.,]+)/i);
-  const coHigh = firstMatch(text, /CO\s+paaugst\.?\s*\(%\)\s*:\s*([\d.,]+)/i);
-  const hc = firstMatch(text, /HC\s*\(ppm\)\s*:\s*([\d.,]+)/i);
-  const lambda = firstMatch(text, /Lambda\s*:\s*([\d.,]+)/i);
-  const euro = String(csdd.emissionStandard ?? "").trim() || (firstMatch(text, /Emisiju\s+standarts\s*:\s*([^\n]+)/i)?.[1] ?? "").trim();
+  const co2 = firstMatch(text, /(?:^|\n)\s*CO2(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
+  const cons = firstMatch(text, /Degviela\s?s\s+patēriņš(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
+  const city = firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:[ \t]*([\d.,]+)/i);
+  const co = firstMatch(text, /(?:^|\n)\s*CO[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const coHigh = firstMatch(text, /CO\s+paaugst\.?[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const hc = firstMatch(text, /HC[ \t]*\(ppm\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const lambda = firstMatch(text, /Lambda[ \t]*:[ \t]*([\d.,]+)/i);
+  const euro = String(csdd.emissionStandard ?? "").trim() || (firstMatch(text, /Emisiju\s+standarts\s*:[ \t]*([^\n]+)/i)?.[1] ?? "").trim();
 
   const prev = csdd.prevInspectionBlock;
   const firstRowWithSmoke = (csdd.technicalInspectionHistory ?? []).find((r) => r.smokeCoefficient.trim());
@@ -654,7 +672,8 @@ export const CSDD_TA_REPEAT_MIN_YEARS = 2;
 
 function dedupeRows(rows: readonly CsddTechnicalInspectionRow[]): CsddTechnicalInspectionRow[] {
   const seen = new Set<string>();
-  return rows.filter((r) => {
+  // Jaunākā augšā (tālāk «pirmais sastaptais = jaunākais»).
+  return sortCsddInspectionRows(rows).filter((r) => {
     const d = r.date.trim();
     const key = `${d}|${r.inspectionType.trim().toLowerCase()}`;
     if (!d || seen.has(key)) return false;
@@ -825,7 +844,26 @@ export type CsddBloki = {
   restrictions: CsddRestrictionsBlock;
   measurements: CsddMeasurements;
   ta: CsddTaAnalysis;
+  /**
+   * TA vēstures nav, bet ir pēdējā apskate (e.csdd tadati): `no_lv_rating` - «Novērtējums: **» (Latvijā TA vēl nav),
+   * `last_only` - tikai pēdējā apskate. Tukšs - ir vēsture vai nav nekā.
+   */
+  taHistoryState: "" | "last_only" | "no_lv_rating";
 };
+
+/** TA vēstures stāvoklis, ja analīzei nav rindu (sk. CsddBloki.taHistoryState). */
+export function csddTaHistoryState(
+  csdd: Pick<CsddFormFields, "technicalInspectionHistory" | "prevInspectionBlock" | "prevInspectionDate">,
+  ta: Pick<CsddTaAnalysis, "inspectionCount">,
+): CsddBloki["taHistoryState"] {
+  if (ta.inspectionCount > 0) return "";
+  const prev = csdd.prevInspectionBlock;
+  const hasLast = Boolean(
+    String(csdd.prevInspectionDate ?? "").trim() || (prev?.inspectionDateText ?? "").trim() || (prev?.ratingLabel ?? "").trim(),
+  );
+  if (!hasLast) return "";
+  return prev && csddInspectionHasNoLatvianRating(prev) ? "no_lv_rating" : "last_only";
+}
 
 export function buildCsddBloki(
   csdd: CsddFormFields | null | undefined,
@@ -834,12 +872,14 @@ export function buildCsddBloki(
 ): CsddBloki | null {
   if (!csdd || !(csdd.rawUnprocessedData ?? "").trim()) return null;
   const signals = parseCsddRegistrySignals(csdd, nowMs);
+  const ta = buildCsddTaAnalysis(csdd);
   return {
     hasRaw: true,
     infoDate: signals.infoDate,
     warnings: buildCsddWarnings(csdd, lang, nowMs),
     restrictions: buildCsddRestrictionsBlock(signals),
     measurements: parseCsddMeasurements(csdd),
-    ta: buildCsddTaAnalysis(csdd),
+    ta,
+    taHistoryState: csddTaHistoryState(csdd, ta),
   };
 }

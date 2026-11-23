@@ -7,8 +7,13 @@ import {
   csddInspectionHasNoLatvianRating,
 } from "@/lib/csdd-registry-signals";
 import {
+  CSDD_DEFECTS_NOT_LISTED_TEXT,
+  CSDD_NO_DEFECTS_TEXT,
+  csddInspectionDefectsMissing,
   formatParticleNumber,
   groupTechnicalInspectionsByYear,
+  previousInspectionBlockHasData,
+  sortCsddInspectionRows,
   previousInspectionBlockToRow,
   resolveInspectionEmissions,
   type CsddPreviousInspectionBlock,
@@ -40,7 +45,7 @@ function inspectionYearFromDate(date: string): number | null {
   return Number.isFinite(y) ? y : null;
 }
 
-function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: boolean): string {
+function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: boolean, listMissing = false): string {
   const tableClass = historic
     ? "mirror-table mirror-table--csdd-defect-historic mirror-table--csdd-defect-2col"
     : "mirror-table mirror-table--csdd-defect-current mirror-table--csdd-defect-2col";
@@ -52,7 +57,8 @@ function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: bool
             return `<tr><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${escapeHtml(d.description)}</td></tr>`;
           })
           .join("\n")
-      : `<tr><td colspan="2" class="pdf-csdd-defect-empty">Nav reģistrētu trūkumu vai bojājumu.</td></tr>`;
+      : // Vērtējums 1/2/3 bez saraksta avotā - nevis «nav trūkumu» (tā būtu pretruna).
+        `<tr><td colspan="2" class="pdf-csdd-defect-empty">${listMissing ? CSDD_DEFECTS_NOT_LISTED_TEXT : CSDD_NO_DEFECTS_TEXT}</td></tr>`;
 
   return `<table class="${tableClass}" role="table">
 <colgroup><col class="pdf-csdd-defect-col-nov" /><col class="pdf-csdd-defect-col-desc" /></colgroup>
@@ -104,7 +110,7 @@ function buildInspectionInnerHtml(
     );
   }
   const extrasHtml = extras.length > 0 ? `<div class="pdf-csdd-ta-extras">${extras.join("")}</div>` : "";
-  const tableHtml = buildDefectTableHtml(row.defects ?? [], historic);
+  const tableHtml = buildDefectTableHtml(row.defects ?? [], historic, csddInspectionDefectsMissing(row));
 
   return `<div class="pdf-csdd-ta-inspection${historic ? " pdf-csdd-ta-inspection--historic" : ""}">
 <p class="pdf-csdd-ta-inspection-meta">${meta}</p>
@@ -133,7 +139,7 @@ export function buildTechnicalInspectionHistoryTableHtml(
   rows: CsddTechnicalInspectionRow[],
   warnings?: CsddInspectionWarningRow[],
 ): string {
-  const data = rows.filter((r) => r.date.trim());
+  const data = sortCsddInspectionRows(rows.filter((r) => r.date.trim()));
   const warningsHtml = buildSectionPreambleWarnings(warnings);
   if (data.length === 0) {
     if (!warningsHtml) return "";
@@ -165,7 +171,7 @@ export function buildPreviousInspectionBlockHtml(
   warnings?: CsddInspectionWarningRow[],
 ): string {
   const warningsHtml = buildSectionPreambleWarnings(warnings);
-  const hasBlock = block.inspectionType.trim() || (block.defects?.length ?? 0) > 0;
+  const hasBlock = previousInspectionBlockHasData(block);
   if (!hasBlock && !warningsHtml) return "";
   const dateDisplay = block.inspectionDateText.trim() || inspectionDate;
   const inner = hasBlock

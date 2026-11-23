@@ -136,11 +136,14 @@ describe("e.csdd.lv TCPDF → CSDD forma", () => {
     expect(fields.mileageHistory.some((r) => r.odometer === "181044")).toBe(true);
     expect(fields.mileageHistory.some((r) => r.odometer === "181076")).toBe(true);
 
+    // «Iepriekšējās apskates dati» = PĒDĒJĀ apskate (10.06.2026); neizturētā 19.05.2026 ar defektiem ir vēsturē
+    // (bloks vairs nedublē vecāku vēstures rindu - hronoloģija jaunākā augšā).
     expect(previousInspectionBlockHasData(fields.prevInspectionBlock)).toBe(true);
-    expect(fields.prevInspectionBlock.inspectionDateText).toBe("19.05.2026");
-    expect(fields.prevInspectionBlock.odometer).toBe("181044");
-    expect(fields.prevInspectionBlock.ratingLevel).toBe(2);
-    const codes = fields.prevInspectionBlock.defects.map((d) => d.code);
+    expect(fields.prevInspectionBlock.inspectionDateText).toBe("10.06.2026");
+    expect(fields.prevInspectionBlock.odometer).toBe("181076");
+    const failed = fields.technicalInspectionHistory.find((r) => r.date === "19.05.2026")!;
+    expect(failed.ratingLevel).toBe(2);
+    const codes = failed.defects.map((d) => d.code);
     expect(codes).toEqual(expect.arrayContaining(["8.2.2.3.", "4.6.1.", "4.3.1.", "4.3.2."]));
 
     const dates = fields.technicalInspectionHistory.map((r) => r.date);
@@ -161,7 +164,7 @@ describe("e.csdd.lv TCPDF → CSDD forma", () => {
     expect(fields.mileageHistory.some((r) => r.odometer === "269950")).toBe(true);
     expect(fields.mileageHistory.some((r) => r.odometer === "274726")).toBe(true);
 
-    expect(fields.prevInspectionBlock.defects.some((d) => d.code === "5.3.4.")).toBe(true);
+    expect(fields.technicalInspectionHistory.some((r) => r.defects.some((d) => d.code === "5.3.4."))).toBe(true);
     const old = fields.technicalInspectionHistory.find((r) => r.date === "27.01.2016");
     expect(old?.defects.some((d) => d.code === "503")).toBe(true);
   });
@@ -170,7 +173,7 @@ describe("e.csdd.lv TCPDF → CSDD forma", () => {
     const parsed = parseCsddPaste(ON8848_TCPDF);
     const form = applyCsddPasteToForm(emptyCsddFields(), ON8848_TCPDF, parsed);
     expect(form.registrationNumber).toBe("ON8848");
-    expect(form.prevInspectionBlock.defects.length).toBe(4);
+    expect(form.technicalInspectionHistory.find((r) => r.date === "19.05.2026")?.defects.length).toBe(4);
     expect(form.rawUnprocessedData).toContain("Reģistrācijas numursON8848");
   });
 });
