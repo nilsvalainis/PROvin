@@ -15,7 +15,9 @@ import {
   writeAuctionArchivePreview,
 } from "@/lib/auction-archive-offer-store";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 import { thecarapiArchivePhotoSession } from "@/lib/thecarapi-photos";
+import { thecarapiDownloadUrls, thecarapiImageUrls } from "@/lib/vin-scan/thecarapi-fields";
 
 /**
  * Izsoļu arhīva bildes pie mums (E): TheCarApi bildes ir saites uz Openlane u.c. CDN - tās beidzas.
@@ -77,7 +79,11 @@ export function collectAuctionArchivePhotoSources(args: {
         ...(p.sourceUrl ? { url: p.sourceUrl } : {}),
       });
     }
-    for (const url of r.photoUrls) {
+    // Vecie ieraksti (pirms BCA hostu atļaujas) glabā tukšu `photoUrls`, lai gan avota datos `ImageUrls` ir.
+    const urls = r.photoUrls.length
+      ? r.photoUrls
+      : thecarapiDownloadUrls(thecarapiImageUrls(r.rawHistory, r.rawDetail, r.rawImages), isAllowedVinScanAuctionPhotoUrl);
+    for (const url of urls) {
       if (!url || seenUrl.has(url)) continue;
       seenUrl.add(url);
       out.push({ id: makeCcVinPhotoId(), auctionKey, date, caption, url });
