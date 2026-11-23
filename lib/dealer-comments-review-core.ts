@@ -10,27 +10,82 @@ import {
 
 export type DealerReviewField = { id: string; label: string; text: string };
 
+/** Automātiskā labojuma robežas (operators to neredz, tāpēc labojumam jābūt mazam un pamatotam). */
+export const DEALER_REVIEW_FIND_MAX_CHARS = 300;
+/** „atkartojums” drīkst izdzēst visu rindkopu, bet ne garāku par šo. */
+export const DEALER_REVIEW_DELETE_MAX_CHARS = 1500;
+/** Viena lauka kopējais mainītais apjoms pret sākotnējo garumu. */
+export const DEALER_REVIEW_FIELD_CHANGE_MAX_RATIO = 0.6;
+
+const LINK_LIKE_RE = /https?:\/\/|www\.|\b[\w.-]+\.(?:lv|com|net|org|eu|de|ru|io|info|biz)\b|@[\w-]+\.|\+\d[\d\s-]{6,}\d|\b[26]\d{7}\b/iu;
+
+function numberTokens(s: string): string[] {
+  return (s.replace(/(\d)[\s\u00a0](?=\d{3}\b)/g, "$1").match(/\d+(?:[.,]\d+)*/g) ?? []).filter((t) => t.length >= 2);
+}
+
+/**
+ * Vai Opus ieteikumu drīkst piemērot bez operatora: īss fragments, aizvietojums nav daudz garāks,
+ * nav jaunu saišu / kontaktu / skaitļu, kuru nav ne fragmentā, ne avota datos.
+ */
+export function isDealerReviewFindingWithinLimits(
+  finding: Pick<FlashMaxReviewFinding, "kind" | "find" | "replace">,
+  factsText = "",
+): boolean {
+  const find = finding.find ?? "";
+  const replace = finding.replace ?? "";
+  if (!find) return false;
+  if (/Ražotāja intervāls:/i.test(find) && !/Ražotāja intervāls:/i.test(replace)) return false;
+  const isDelete = finding.kind === "atkartojums" && !replace.trim();
+  if (isDelete) return find.length <= DEALER_REVIEW_DELETE_MAX_CHARS;
+  if (finding.kind === "atkartojums") {
+    if (find.length > DEALER_REVIEW_DELETE_MAX_CHARS || replace.length > find.length) return false;
+  } else {
+    if (find.length > DEALER_REVIEW_FIND_MAX_CHARS) return false;
+    if (replace.length > Math.max(Math.ceil(find.length * 1.5), find.length + 30)) return false;
+  }
+  if (LINK_LIKE_RE.test(replace) && !LINK_LIKE_RE.test(find)) return false;
+  const known = new Set([...numberTokens(find), ...numberTokens(factsText)]);
+  if (numberTokens(replace).some((t) => !known.has(t))) return false;
+  return true;
+}
+
 /**
  * Piemēro Opus ieteikumus automātiski. „risks” (pievienot tekstu beigās) izlaižam: dīlera produkts
  * ir izolēts, un pievienots teksts var ienest ko jaunu. Fragmentu labojumi („pretruna”, „fakts”,
- * „nepamatots”, „valoda”) tiek piemēroti, ja fragments laukā joprojām ir.
+ * „nepamatots”, „valoda”) tiek piemēroti, ja fragments laukā joprojām ir un labojums ir robežās
+ * (`isDealerReviewFindingWithinLimits`); vienā laukā kopā nedrīkst mainīt vairāk par 60% teksta.
  */
 export function applyDealerCommentReviewFindings(
   fields: readonly DealerReviewField[],
   findings: readonly FlashMaxReviewFinding[],
-): { texts: Record<string, string>; applied: number } {
+  factsText = "",
+): { texts: Record<string, string>; applied: number; skipped: number } {
   const texts: Record<string, string> = Object.fromEntries(fields.map((f) => [f.id, f.text]));
+  const budget: Record<string, number> = Object.fromEntries(
+    fields.map((f) => [f.id, Math.floor(f.text.length * DEALER_REVIEW_FIELD_CHANGE_MAX_RATIO)]),
+  );
   let applied = 0;
+  let skipped = 0;
   for (const finding of findings) {
     if (finding.kind === "risks" || !finding.find) continue;
     const cur = texts[finding.fieldId];
     if (cur == null) continue;
+    if (!isDealerReviewFindingWithinLimits(finding, factsText)) {
+      skipped++;
+      continue;
+    }
+    const cost = Math.max(finding.find.length, finding.replace.length);
+    if (cost > (budget[finding.fieldId] ?? 0)) {
+      skipped++;
+      continue;
+    }
     const next = applyFlashMaxReviewFinding(cur, finding);
     if (next == null || next === cur) continue;
     texts[finding.fieldId] = next;
+    budget[finding.fieldId] = (budget[finding.fieldId] ?? 0) - cost;
     applied++;
   }
-  return { texts, applied };
+  return { texts, applied, skipped };
 }
 
 /**

@@ -120,6 +120,36 @@ describe("OneAuto → oficiālā dīlera forma", () => {
     ]);
   });
 
+  it("tulkojums ar citu rindu skaitu nenobīda darbus pie cita datuma", () => {
+    const current = {
+      equipment: [],
+      powertrain: [],
+      serviceTimeline: [
+        { date: "01.01.2020", odometer: "10000", place: "A", works: "Oil service" },
+        { date: "01.01.2021", odometer: "20000", place: "A", works: "Brake pads" },
+      ],
+    };
+    expect(applyOneautoTranslatedWorks(current, ["Bremžu kluči"])).toBe(current);
+    expect(parseOneautoWorksTranslatePayload({ works: ["", "Bremžu kluči"] })).toEqual(["", "Bremžu kluči"]);
+    const keptFirst = applyOneautoTranslatedWorks(current, ["", "Bremžu kluči"]);
+    expect(keptFirst.serviceTimeline.map((e) => e.works)).toEqual(["Oil service", "Bremžu kluči"]);
+    const fewer = applyOneautoTranslatedDisplay(current, {
+      equipment: [],
+      powertrain: [],
+      serviceTimeline: [{ date: "01.01.2021", odometer: "20000", place: "A", works: "Bremžu kluči" }],
+    });
+    expect(fewer.serviceTimeline.map((e) => e.works)).toEqual(["Oil service", "Brake pads"]);
+    const swapped = applyOneautoTranslatedDisplay(current, {
+      equipment: [],
+      powertrain: [],
+      serviceTimeline: [
+        { date: "01.01.2021", odometer: "20000", place: "A", works: "Bremžu kluči" },
+        { date: "01.01.2020", odometer: "10000", place: "A", works: "Eļļas serviss" },
+      ],
+    });
+    expect(swapped.serviceTimeline.map((e) => e.works)).toEqual(["Oil service", "Brake pads"]);
+  });
+
   it("tukšs bloks paliek bez piezīmēm", () => {
     expect(emptyOneautoBlock().serviceHistoryNotes).toBe("");
     expect(emptyOneautoBlock().oilChangeIntervalNotes).toBe("");

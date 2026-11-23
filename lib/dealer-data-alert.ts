@@ -23,7 +23,8 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-async function telegram(title: string, body: string, adminUrl: string): Promise<void> {
+/** Admina Telegram brīdinājums (ja TELEGRAM_* iestatīts). Bez klienta personas datiem. */
+export async function sendAdminTelegramAlert(title: string, body: string, adminUrl: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
@@ -68,7 +69,7 @@ export async function sendDealerDataAlertIfNeeded(
         if (!to || !isSmtpConfigured()) return;
         await sendAdminDealerDataAlertEmail({ to, title, body, sessionId, adminUrl });
       })(),
-      telegram(title, body, adminUrl),
+      sendAdminTelegramAlert(title, body, adminUrl),
     ]);
     for (const r of results) if (r.status === "rejected") console.error("[dealer-data-alert]", r.reason);
     await upsertDealerDataJob(sessionId, { vin: job.vin, alert: { key, at: new Date().toISOString() } });

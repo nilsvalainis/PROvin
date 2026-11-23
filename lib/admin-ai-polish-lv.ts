@@ -1,4 +1,5 @@
 import "server-only";
+import { UNTRUSTED_DATA_RULE, wrapUntrustedData } from "@/lib/ai-untrusted-data";
 
 /**
  * Groq OpenAI-saderīgais Chat API (server only).
@@ -11,7 +12,8 @@ export const LV_POLISH_SYSTEM_PROMPT =
 
 /** Sludinājuma iekopētais apraksts → pārdošanas konteksts eksperta atskaitei (admin). */
 export const LV_LISTING_ANALYSIS_SYSTEM_PROMPT =
-  "Tu esi auto tirgus un tehniskās atskaites asistents. Lietotājs iesniedz sludinājuma aprakstu (bieži neapkoptu, kopētu no portāla). Izveido īsu, profesionālu tekstu latviešu valodā laukam „Pārdošanas sludinājuma konteksts”: izcel galveno pārdošanas vēstījumu, būtiskās tehniskās norādes, cenu/ nobraukuma kontekstu (ja minēts), acīmredzamas pretrunas vai riskus. Saglabā objektīvu toni. Atgriez TIKAI gatavo tekstu bez ievada, kopsavilkuma virsraksta vai paskaidrojumiem par uzdevumu.";
+  "Tu esi auto tirgus un tehniskās atskaites asistents. Lietotājs iesniedz sludinājuma aprakstu (bieži neapkoptu, kopētu no portāla). Izveido īsu, profesionālu tekstu latviešu valodā laukam „Pārdošanas sludinājuma konteksts”: izcel galveno pārdošanas vēstījumu, būtiskās tehniskās norādes, cenu/ nobraukuma kontekstu (ja minēts), acīmredzamas pretrunas vai riskus. Saglabā objektīvu toni. Atgriez TIKAI gatavo tekstu bez ievada, kopsavilkuma virsraksta vai paskaidrojumiem par uzdevumu. " +
+  UNTRUSTED_DATA_RULE;
 
 const MAX_INPUT_CHARS = 48_000;
 
@@ -177,6 +179,11 @@ function coerceListingAnalysisText(raw: string): string {
 }
 
 export async function analyzeListingPasteForSalesContextWithGroq(raw: string): Promise<string> {
-  const out = await groqChatComplete(GROQ_MODEL_ANALYZE, LV_LISTING_ANALYSIS_SYSTEM_PROMPT, raw, 0.35);
+  const out = await groqChatComplete(
+    GROQ_MODEL_ANALYZE,
+    LV_LISTING_ANALYSIS_SYSTEM_PROMPT,
+    wrapUntrustedData("sludinajums", raw.slice(0, MAX_INPUT_CHARS)),
+    0.35,
+  );
   return coerceListingAnalysisText(out);
 }

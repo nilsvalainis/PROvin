@@ -4,6 +4,7 @@ import {
   setAdminSessionCookie,
   verifyAdminCredentials,
 } from "@/lib/admin-auth";
+import { clearAdminLoginGuard, noteAdminLoginFailure, readAdminLoginGuard } from "@/lib/admin-login-guard-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { envAdminDisplayName, setStaffSessionCookie, signTotpChallenge, verifyTotpChallenge } from "@/lib/staff-auth";
@@ -77,7 +78,26 @@ export async function POST(req: Request) {
     );
   }
 
+  // Visām instancēm kopīgs konta aizsargs (Blob): progresīva aizture un bloķēšana pēc 10 neveiksmēm.
+  const guard = await readAdminLoginGuard(username);
+  if (!guard.allowed) {
+    await appendStaffAudit({
+      userId: ENV_ADMIN_USER_ID,
+      action: "login_lock",
+      target: actorKey(username),
+      meta: { ip },
+      ip,
+      userAgent,
+    });
+    return NextResponse.json(
+      { error: "Pārāk daudz mēģinājumu. Uzgaidi un mēģini vēlreiz." },
+      { status: 429, headers: { "Retry-After": String(guard.retryAfterSec) } },
+    );
+  }
+  if (guard.delayMs > 0) await new Promise((r) => setTimeout(r, guard.delayMs));
+
   if (adminAuthConfigured() && verifyAdminCredentials(username, password)) {
+    await clearAdminLoginGuard(username);
     await setAdminSessionCookie();
     await appendStaffAudit({
       userId: envAdminId(),
@@ -102,10 +122,12 @@ export async function POST(req: Request) {
       }
       const pending = verifyTotpChallenge(challenge);
       if (!pending || pending.uid !== staffAuth.user.id || !verifyTotpCode(staffAuth.user.totpSecret ?? "", totp)) {
+        await noteAdminLoginFailure(username);
         return NextResponse.json({ error: "Nepareizs 2FA kods" }, { status: 401 });
       }
     }
 
+    await clearAdminLoginGuard(username);
     const { session } = await createStaffSession({ user: staffAuth.user, ip, userAgent });
     await setStaffSessionCookie({
       sessionId: session.id,
@@ -131,6 +153,7 @@ export async function POST(req: Request) {
     );
   }
 
+  await noteAdminLoginFailure(username);
   await appendStaffAudit({
     userId: envAdminId(),
     action: staffAuth.error === "locked" ? "login_lock" : "login_failure",

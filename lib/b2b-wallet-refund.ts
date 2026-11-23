@@ -45,7 +45,7 @@ export async function refundB2bWalletOrder(
   if (!partnerId || !isSafeB2bPartnerId(partnerId)) return { refunded: false, reason: "partner_missing" };
 
   const refund = await updateB2bWallet(partnerId, (wallet) => {
-    const r = applyB2bWalletRefund(wallet, { purchaseTxnId: marks.txnId, note: opts.reason });
+    const r = applyB2bWalletRefund(wallet, { purchaseTxnId: marks.txnId, note: opts.reason, orderId });
     if (!r.txn) return { value: null };
     return r.applied ? { value: r.txn, next: r.wallet } : { value: r.txn };
   });

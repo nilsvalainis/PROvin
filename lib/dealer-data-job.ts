@@ -206,7 +206,17 @@ async function generateDealerNotes(
   if (commentLang === "lv") {
     try {
       const review = await reviewDealerCommentsWithOpus({ vin, sourceBlocks: blocks, fields });
-      texts = review.texts;
+      // Pēc Opus labojumiem atkārto piedziņas/dzinēja sargu: ja labojums ienesa pretrunu, paliek Gemini teksts.
+      texts = Object.fromEntries(
+        fields.map((f) => {
+          const next = review.texts[f.id] ?? f.text;
+          const broke =
+            next !== f.text &&
+            commentContradictsPowertrain(next, identity) &&
+            !commentContradictsPowertrain(f.text, identity);
+          return [f.id, broke ? f.text : next];
+        }),
+      );
       if (review.applied > 0) {
         console.info("[dealer-data-job] Opus review applied", { sessionId, applied: review.applied });
       }

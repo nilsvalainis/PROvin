@@ -110,6 +110,7 @@ export type DealerRefundDecision =
       reason:
         | "already_refunded"
         | "not_no_data"
+        | "not_dealer_product"
         | "amount_missing"
         | "amount_above_cap"
         | "not_paid";
@@ -125,9 +126,14 @@ export function decideDealerRefund(args: {
   paid: boolean;
   /** Operators var apzināti apiet `no_data` prasību (piem. klients atcēla). */
   override?: boolean;
+  /** Vai sesija ir dīlera produkts (darbs eksistē vai checkout_line/cena). `false` - override aizliegts. */
+  dealerProduct?: boolean;
 }): DealerRefundDecision {
   if (!args.paid) return { allowed: false, reason: "not_paid" };
   if (args.job?.refund) return { allowed: false, reason: "already_refunded" };
+  if (args.override && !args.job && args.dealerProduct === false) {
+    return { allowed: false, reason: "not_dealer_product" };
+  }
   if (!args.override && args.job?.status !== "no_data") {
     return { allowed: false, reason: "not_no_data" };
   }

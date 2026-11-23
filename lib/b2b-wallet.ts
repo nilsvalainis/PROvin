@@ -552,7 +552,13 @@ export function refundKey(purchaseTxnId: string): string {
 
 export function applyB2bWalletRefund(
   wallet: B2bWallet,
-  args: { purchaseTxnId: string; note?: string; now?: Date },
+  args: {
+    purchaseTxnId: string;
+    note?: string;
+    now?: Date;
+    /** Ja norādīts: pirkumam jāpieder šim pasūtījumam (cita pasūtījuma darījumu neatmaksā). */
+    orderId?: string;
+  },
 ): { applied: boolean; wallet: B2bWallet; txn: B2bWalletTxn | null } {
   const now = args.now ?? new Date();
   const key = refundKey(args.purchaseTxnId);
@@ -560,6 +566,9 @@ export function applyB2bWalletRefund(
   if (existing) return { applied: false, wallet, txn: existing };
   const purchase = findB2bWalletTxnById(wallet, args.purchaseTxnId);
   if (!purchase || purchase.kind !== "purchase") return { applied: false, wallet, txn: null };
+  if (args.orderId && purchase.orderId && purchase.orderId !== args.orderId) {
+    return { applied: false, wallet, txn: null };
+  }
   const amount = Math.abs(purchase.amountCents);
   const balanceCents = wallet.balanceCents + amount;
   const txn: B2bWalletTxn = {

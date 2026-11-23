@@ -16,6 +16,7 @@ import {
   DEALER_REVIEW_DEDUP_RULES,
   type DealerReviewField,
 } from "@/lib/dealer-comments-review-core";
+import { UNTRUSTED_DATA_RULE, wrapUntrustedData } from "@/lib/ai-untrusted-data";
 import { runFlashMaxFinalReview } from "@/lib/flash-max-final-review-server";
 
 export type DealerCommentsReviewResult = {
@@ -39,13 +40,18 @@ export async function reviewDealerCommentsWithOpus(args: {
   const review = await runFlashMaxFinalReview({
     fields: args.fields,
     facts: { vin: args.vin, sourceBlocks: isolated },
-    extraFactsText: dealerText ? `OFICIĀLĀ DĪLERA DATI (vienīgais avots šim produktam):\n${dealerText}` : "",
-    extraSystemRules: DEALER_REVIEW_DEDUP_RULES,
+    extraFactsText: dealerText
+      ? `OFICIĀLĀ DĪLERA DATI (vienīgais avots šim produktam):\n${wrapUntrustedData("oficiala-dilera-dati", dealerText)}`
+      : "",
+    extraSystemRules: DEALER_REVIEW_DEDUP_RULES + "\n- " + UNTRUSTED_DATA_RULE,
   });
   if (!review.ok) {
     console.warn("[dealer-comments-review] skipped", { error: review.error });
     return { texts: original, applied: 0, ok: false };
   }
-  const { texts, applied } = applyDealerCommentReviewFindings(args.fields, review.findings);
+  // Skaitļi labojumā drīkst būt tikai no dīlera datiem vai abiem laukiem (pretrunu labojumiem).
+  const knownText = [dealerText, ...args.fields.map((f) => f.text)].join("\n");
+  const { texts, applied, skipped } = applyDealerCommentReviewFindings(args.fields, review.findings, knownText);
+  if (skipped > 0) console.info("[dealer-comments-review] findings outside limits skipped", { skipped });
   return { texts, applied, ok: true };
 }
