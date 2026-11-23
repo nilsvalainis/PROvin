@@ -1,0 +1,165 @@
+<html><body>
+<script type="text/javascript">
+ document.addEventListener("DOMContentLoaded", () => {
+ const $count_services = 11;
+ const $registration_number = "";
+ const $registration_number_country_code = "";
+ const $vin = "WAUZZZ8K4EA139196";
+
+ let runAnimation = true;
+ let step = 0;
+ let redirectStarted = false;
+ const animationSteps = 7;
+
+ function animateNextStep() {
+ animateImages(step);
+ step++;
+ }
+
+ function waitForAnimations() {
+ return Promise.all(
+ document.querySelector(".precheck-loading")
+ .getAnimations({ subtree: true })
+ .filter(animation => Number.isFinite(animation.effect.getComputedTiming().endTime))
+ .map(animation => animation.finished)
+ );
+ }
+
+ async function updateView() {
+ if (redirectStarted) return;
+
+ try {
+ const response = await fetch(
+ "/ajax/get_precheck_progress?" +
+ new URLSearchParams({
+ vin: $vin,
+ registration_number: $registration_number,
+ registration_number_country_code: $registration_number_country_code,
+ time: Date.now()
+ }),
+ {
+ headers: {
+ "X-Requested-With": "XMLHttpRequest"
+ }
+ }
+ );
+
+ const data = await response.json();
+ 
+ if (redirectStarted) return;
+
+ const isCompleted = Number(data.count_completed) > 0;
+ const count = parseInt(data.count);
+ const percent = (count / $count_services) * 100;
+
+ runAnimation = true;
+
+ if ((step > 3 && percent <= 50) || (step > 5 && percent <= 75)) {
+ runAnimation = false;
+ }
+
+ if (runAnimation && step < animationSteps && !isCompleted) {
+ animateNextStep();
+ }
+
+ if (isCompleted) {
+ redirectStarted = true;
+ clearInterval(timerProgress);
+
+ try {
+ await waitForAnimations();
+
+ while (step < animationSteps) {
+ animateNextStep();
+ await waitForAnimations();
+ }
+
+ const redirect_url = document.getElementById("redirect_url")?.innerHTML;
+
+ if (typeof redirect_url !== "undefined") {
+ const redirect_string = redirect_url
+ .replace(/&amp;/g, "&")
+ .replace(/&lt;/g, "<")
+ .replace(/&gt;/g, ">");
+
+ const redirect_url_parser = new URL(redirect_string);
+ const log_id_param = redirect_url_parser.searchParams.get("log_id");
+
+ const redirectResponse = await fetch("/ajax/redirect_precheck", {
+ method: "POST",
+ headers: {
+ "Content-Type": "application/x-www-form-urlencoded"
+ },
+ body: new URLSearchParams({
+ log_id: log_id_param
+ })
+ });
+
+ if (!redirectResponse.ok) {
+ throw new Error(`HTTP ${redirectResponse.status}`);
+ }
+
+ window.location.href = redirect_string;
+ } else {
+ window.location.reload();
+ }
+ } catch (error) {
+ console.error("Redirect error:", error);
+ }
+ }
+ } catch (error) {
+ console.error("Error:", error);
+ }
+ }
+ let timerProgress
+ window.precheck_captcha_callback = function() {
+ timerProgress = setInterval(updateView, 3000);
+ remove_captcha_widget('precheck_loading');
+ }
+
+ window.precheck_captcha_callback_error_fetch = function() {
+ reset_captcha_widget('precheck_loading');
+ }
+ });
+</script>
+
+
+<div class="precheck-loading">
+ <img class="loading-report loading-report-1" src="/assets/images/precheck-loading/report-card-2.webp?c=1723542881" alt="">
+ <img class="loading-report loading-report-2" src="/assets/images/precheck-loading/report-card-3.webp?c=1723542881" alt="">
+
+ 
+ <script 
+ data-visible="0x4AAAAAABhgcxYkqg6rrD7o" 
+ data-invisible="0x4AAAAAABhgTsJBvp3ESBT7" 
+ src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+ async 
+ defer>
+ </script>
+
+ <script src="/assets/js/captcha.min.js?c=1754291282" defer type="text/javascript" charset="utf-8"></script>
+ 
+ <style>
+ .captcha {
+ position: relative;
+ z-index: 1;
+ min-height: 72px;
+ margin-bottom: 15px;
+ }
+ </style>
+
+ <div 
+ class="captcha" 
+ data-type="visible" 
+ id="precheck_loading" 
+ data-callback="precheck_captcha_callback"
+ data-callback-error-backend="precheck_captcha_callback_error_fetch"
+ ></div> <div class="vin-checking-box vin-checking-box--title vin-checking-box--title--mobile">
+ <div class="vin-checking-title">
+ <h1 class="vin-checking-h1">
+ Pārbauda ievadīto VIN numuru </h1>
+
+ <p class="vin-checking-p">Meklē pieejamo informāciju...</p>
+ </div>
+ </div>
+ <div class="</div></body></html>

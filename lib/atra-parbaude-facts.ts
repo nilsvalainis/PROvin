@@ -8,6 +8,7 @@
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
+import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
 
 export const ECSDD_URL = "https://e.csdd.lv/";
 
@@ -19,6 +20,7 @@ export type AtraFactRow = {
   status: string;
   summary: string;
   detail?: string;
+  openUrl?: string;
   vehicle?: { make?: string; model?: string; year?: string };
   mileage?: { date: string; odometer: string; source?: string }[];
   media?: { photoUrl?: string; photoCount?: number };
@@ -80,6 +82,8 @@ export type AtraFacts = {
   listing: { has: boolean; price: string; km: number; kmDeviates: boolean; priceDeviates: boolean } ;
   inspection: { until: string; count: number; last: string };
   flags: { totalLoss: boolean; commercial: boolean };
+  /** Maksas atskaišu bezmaksas priekšskatījums (AutoDNA, CheckCar.vin, CARFAX.eu). */
+  previews: AtraPreview[];
 };
 
 export function formatKm(n: number): string {
@@ -270,6 +274,7 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
       last: lastInspection ? [atraLvDate(atraSortableDate(lastInspection.date)), lastInspection.result].filter(Boolean).join(" · ") : "",
     },
     flags: { totalLoss: TOTAL_LOSS_RE.test(text), commercial: COMMERCIAL_RE.test(text) },
+    previews: buildAtraPreviews(input.vin, input.rows),
   };
 }
 
@@ -288,6 +293,10 @@ export function atraStoryScore(f: AtraFacts): AtraScore {
   if (f.wanted.length) reasons.push({ points: 2, text: `Meklēšanā: ${f.wanted.join(", ")}` });
   if (f.auctions.photoCount > 0 || f.auctions.photos.length > 0) {
     reasons.push({ points: 2, text: `Izsoles bildes${f.auctions.years.length ? ` ${f.auctions.years.join(", ")}` : ""}` });
+  } else {
+    // AutoDNA arhīva foto vai CheckCar bildes skaitās kā izsoļu bildes, ja tās vēl nav ieskaitītas.
+    const photoSources = atraPreviewPhotoSources(f.previews ?? []);
+    if (photoSources.length) reasons.push({ points: 2, text: `Izsoļu bildes (${photoSources.join(", ")})` });
   }
   if (f.flags.commercial) reasons.push({ points: 2, text: "Taksometrs, noma vai policija" });
   if (f.listing.kmDeviates || f.listing.priceDeviates) {
@@ -327,6 +336,14 @@ export function atraSummaryText(input: Pick<AtraFactsInput, "vin" | "title" | "y
   const extra = [f.countries.length ? `Valstis: ${f.countries.join(", ")}` : "", f.dealer ? `dīlera apkopes ${f.dealer.visits}` : ""].filter(Boolean);
   if (extra.length) lines.push(extra.join(" · "));
   if (f.inspection.until) lines.push(`TA līdz ${f.inspection.until}`);
+  const previews = (f.previews ?? []).filter((p) => p.tone === "ok" || p.tone === "none");
+  if (previews.length) {
+    const parts = previews.map((p) => {
+      const key = p.items.filter((i) => i.key && i.value !== "-").map((i) => `${i.label.toLowerCase()} ${i.value}`);
+      return `${p.label} ${p.headline.charAt(0).toLowerCase()}${p.headline.slice(1)}${key.length ? ` (${key.join(", ")})` : ""}`;
+    });
+    lines.push(`Priekšskatījums: ${parts.join(" · ")}`);
+  }
   lines.push(`Stāsta potenciāls: ${LEVEL_LOWER[score.level]} (${score.points}/${ATRA_SCORE_MAX})`);
   return lines.join("\n");
 }

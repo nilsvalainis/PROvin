@@ -39,7 +39,12 @@ import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
 import { vinScanCountBreakdown } from "@/lib/vin-scan/types";
-import { AdminAtraCopyButton, AdminAtraFactCards, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import {
+  AdminAtraCopyButton,
+  AdminAtraFactCards,
+  AdminAtraPotential,
+  AdminAtraPreviewBanners,
+} from "@/components/admin/AdminAtraParbaudeFacts";
 import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 
 const inp =
@@ -587,6 +592,7 @@ export function AdminVinScanPageClient({
       {atra ? (
         <div className="space-y-2.5 px-4 md:hidden" data-atra-phone>
           <AdminAtraPotential score={atra.score} glass />
+          <AdminAtraPreviewBanners previews={atra.facts.previews} glass />
           <AdminAtraFactCards facts={atra.facts} vin={vin} glass />
           <AdminAtraCopyButton
             text={atra.text}

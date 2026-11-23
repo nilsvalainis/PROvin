@@ -10,7 +10,12 @@ import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobile
 import { AdminDealerCheckPage, type DealerCheckEmbedState } from "@/components/admin/AdminDealerCheckPage";
 import { AdminAtraFreeSources, AdminAtraPaidSources, RunButton } from "@/components/admin/AdminAtraParbaudeSources";
 import { AdminAtraParbaudeHistory } from "@/components/admin/AdminAtraParbaudeHistory";
-import { AdminAtraCopyButton, AdminAtraFactCards, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import {
+  AdminAtraCopyButton,
+  AdminAtraFactCards,
+  AdminAtraPotential,
+  AdminAtraPreviewBanners,
+} from "@/components/admin/AdminAtraParbaudeFacts";
 import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
 import { AdminMobileSegments } from "@/components/admin/mobile/AdminMobileChrome";
@@ -658,6 +663,7 @@ export function AdminAtraParbaudePage({
       {showResult && valid ? (
         <>
           <AdminAtraPotential score={score} />
+          <AdminAtraPreviewBanners previews={facts.previews} />
           <AdminAtraFactCards facts={facts} vin={vin} />
         </>
       ) : null}

@@ -11,6 +11,7 @@ import {
   type AtraMileageFact,
   type AtraScore,
 } from "@/lib/atra-parbaude-facts";
+import type { AtraPreview, AtraPreviewTone } from "@/lib/atra-prieksskatijums";
 
 /** Dators: esošais admin stils. Telefons (`glass`): 3. posma stikla palete (--am-* mainīgie). */
 function useTone(glass: boolean) {
@@ -264,6 +265,62 @@ export function AdminAtraFactCards({
         src="CSDD"
       />
     </div>
+  );
+}
+
+const PREVIEW_TONE: Record<AtraPreviewTone, { box: string; badge: string; dot: string }> = {
+  ok: { box: "bg-[rgba(52,199,89,0.10)] border-[rgba(52,199,89,0.45)]", badge: "text-[#1a7f37]", dot: "bg-[#34c759]" },
+  none: { box: "bg-[rgba(142,142,147,0.10)] border-[rgba(142,142,147,0.35)]", badge: "text-[#8e8e93]", dot: "bg-[#8e8e93]" },
+  wait: { box: "bg-[rgba(142,142,147,0.08)] border-dashed border-[rgba(142,142,147,0.45)]", badge: "text-[#8e8e93]", dot: "bg-[#c7c7cc]" },
+  error: { box: "bg-[rgba(215,0,21,0.07)] border-[rgba(215,0,21,0.40)]", badge: "text-[#d70015]", dot: "bg-[#d70015]" },
+};
+
+/** «Maksas atskaišu priekšskatījums (bez maksas)»: AutoDNA, CheckCar.vin, CARFAX.eu. */
+export function AdminAtraPreviewBanners({ previews, glass = false }: { previews: readonly AtraPreview[]; glass?: boolean }) {
+  const t = useTone(glass);
+  if (!previews.length) return null;
+  return (
+    <section className={t.card} data-atra-previews>
+      <small className={`text-[11.5px] font-semibold uppercase tracking-[0.5px] ${t.mut}`}>Maksas atskaišu priekšskatījums (bez maksas)</small>
+      <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+        {previews.map((p) => {
+          const tone = PREVIEW_TONE[p.tone];
+          const keyItems = p.items.filter((i) => i.key);
+          const rest = p.items.filter((i) => !i.key);
+          return (
+            <div key={p.id} className={`flex flex-col gap-1.5 rounded-[12px] border px-3 py-2.5 ${tone.box}`} data-atra-preview={p.id} data-tone={p.tone}>
+              <div className="flex items-center gap-2">
+                <i className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} aria-hidden />
+                <b className={`text-[14px] font-semibold ${t.ink}`}>{p.label}</b>
+                <span className={`text-[14px] font-semibold ${tone.badge}`}>{p.headline}</span>
+                <a href={p.openUrl} target="_blank" rel="noopener noreferrer" className={`ml-auto shrink-0 text-[12.5px] font-semibold ${t.acc}`}>
+                  Atvērt ›
+                </a>
+              </div>
+              {keyItems.length ? (
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {keyItems.map((i) => (
+                    <span key={i.label} className={`text-[13px] ${t.mut2}`}>
+                      {i.label}:{" "}
+                      <b className={`text-[16px] font-bold ${i.tone === "ok" ? "text-[#1a7f37]" : t.mut}`}>{i.value}</b>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {rest.length ? (
+                <div className={`flex flex-wrap gap-x-3 gap-y-0.5 text-[11.5px] ${t.mut}`}>
+                  {rest.map((i) => (
+                    <span key={i.label}>
+                      {i.label}: <b className={i.tone === "ok" ? t.mut2 : ""}>{i.value}</b>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
