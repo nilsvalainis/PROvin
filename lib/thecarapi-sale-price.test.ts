@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { auctionArchiveLotFacts, auctionArchiveVehicleRows } from "@/lib/auction-archive-facts";
 import { auctionArchiveDescriptions } from "@/lib/auction-archive-pdf-html";
 import { buildCcVinPdfInnerHtml } from "@/lib/cc-vin-pdf-html";
-import { emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { emptyCcVinBlock, type CcVinSaleRow } from "@/lib/cc-vin-report";
 import { salesWithAuctionFinalPrice, thecarapiSalePrice, thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -77,7 +77,7 @@ describe("izsoles cena (Nils 23.11: divas cenas vienai izsolei)", () => {
 
   it("vecā pārdošanas rinda ar publisko cenu PDF renderī saņem noslēguma cenu", () => {
     const rows = salesWithAuctionFinalPrice(
-      [{ date: "01.10.2026", venue: "Openlane", odometer: "210 648 km", price: "11 168 EUR", status: "Openlane · 11628722" }],
+      [{ date: "01.10.2026", venue: "Openlane", odometer: "210 648 km", price: "11 168 EUR", status: "Openlane · 11628722" } as CcVinSaleRow],
       [openlane()],
     );
     expect(rows[0]!.price).toBe("7 300 EUR");
