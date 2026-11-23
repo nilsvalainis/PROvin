@@ -5,7 +5,7 @@ import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 
 /**
  * Telefonā arī lielās pasūtījuma sadaļas (Sludinājuma analīze, Kopsavilkums) var saklāt kā avotu kartītes.
- * Stāvoklis paliek katram pasūtījumam. Datorā nekas nemainās.
+ * 23.11 (Nils): atverot pasūtījumu sadaļas sakļautas; atvērtā paliek tikai, kamēr lapa atvērta. Datorā nekas nemainās.
  */
 export function AdminPhoneSectionCollapse({
   sessionId,
@@ -19,26 +19,15 @@ export function AdminPhoneSectionCollapse({
   children: ReactNode;
 }) {
   const phone = useAdminIsPhone();
-  const key = `provin-admin-ui-accordion-v1-${sessionId}-section-${sectionId}`;
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
+  // Cits pasūtījums tajā pašā lapā - atkal sakļauts.
   useEffect(() => {
-    try {
-      setCollapsed(localStorage.getItem(key) === "1");
-    } catch {
-      setCollapsed(false);
-    }
-  }, [key]);
+    setCollapsed(true);
+  }, [sessionId, sectionId]);
 
   function toggle() {
-    setCollapsed((c) => {
-      try {
-        localStorage.setItem(key, c ? "0" : "1");
-      } catch {
-        // nav krātuves
-      }
-      return !c;
-    });
+    setCollapsed((c) => !c);
   }
 
   if (!phone) {

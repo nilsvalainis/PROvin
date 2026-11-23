@@ -75,7 +75,7 @@ const STATE_ARIA: Record<AdminIngestState, string> = {
   idle: "Nav palaists",
 };
 
-/** Ielases statuss aplī: zaļš ķeksis, sarkans krusts, pelēks griežas, pelēki punkti. */
+/** Ielases statuss pildītā aplī (23.11): zaļš ar baltu ķeksi, sarkans ar baltu krustu, pelēks griežas, pelēki punkti. */
 export function AmxStatusIcon({ state, label }: { state: AdminIngestState; label?: string }) {
   return (
     <span className={`amx-sti amx-sti--${state}`} role="img" aria-label={label || STATE_ARIA[state]} data-amx-state={state}>
@@ -84,11 +84,27 @@ export function AmxStatusIcon({ state, label }: { state: AdminIngestState; label
   );
 }
 
-export type AmxDotTone = "ok" | "err" | "muted" | "outline" | "neutral";
+export type AmxDotTone = "ok" | "warn" | "err" | "muted" | "outline" | "neutral";
 
 /** Statuss ar punktu: «Ielasīts · 14 ieraksti», «Nav nosūtīts». */
 export function AmxStatusDot({ tone = "neutral", children }: { tone?: AmxDotTone; children: ReactNode }) {
   return <span className={`amx-st${tone === "neutral" ? "" : ` amx-st--${tone}`}`}>{children}</span>;
+}
+
+export type AmxChipTone = "ok" | "warn" | "err" | "neutral";
+
+/** Krāsains statusa čips (23.11): «Kavē 42 h» sarkans, «8 h» oranžs, «Nosūtīts» zaļš. Stils - `order-colors.css`. */
+export function AmxChip({ tone = "neutral", children }: { tone?: AmxChipTone; children: ReactNode }) {
+  return <span className={`amx-chip amx-chip--${tone}`}>{children}</span>;
+}
+
+/** Produkta veida birka (23.11): katram produktam sava atturīga krāsa. */
+export function AmxProductChip({ kind, children }: { kind: string; children: ReactNode }) {
+  return (
+    <span className={`amx-prod amx-prod--${kind}`} data-amx-product={kind}>
+      {children}
+    </span>
+  );
 }
 
 export type AmxButtonVariant = "primary" | "secondary" | "danger";

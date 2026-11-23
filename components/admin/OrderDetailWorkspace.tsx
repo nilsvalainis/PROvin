@@ -5900,6 +5900,7 @@ export function OrderDetailWorkspace({
         {(phoneStack || wizardStep === 0) ? (
           <div id="admin-m-sec-kopsavilkums" className="space-y-6">
             {payload.checkoutLine === "provin_select" ? null : (
+              <div className="amx amx-src">
               <AdminOrderVinScanCard
                 sessionId={payload.sessionId}
                 vin={payload.vin ?? ""}
@@ -5971,6 +5972,7 @@ export function OrderDetailWorkspace({
                   );
                 }}
               />
+              </div>
             )}
             {/* Telefonā Pielikumi / Klients / Maksājums / Auto - kompaktas rindas vienā stikla sarakstā. */}
             {dashboardSlot ? <div className="amx amx-meta">{dashboardSlot}</div> : null}
@@ -6073,7 +6075,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 3) ? (
-          <div id="admin-order-block-auto-records" className="min-w-0">
+          <div id="admin-order-block-auto-records" className="min-w-0 amx amx-src">
             <AdminAutoRecordsSourceBlock
               value={blocksDisplaySafe.auto_records}
               countryEvidence={workspaceCountryEvidence}
@@ -6121,7 +6123,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 5) ? (
-          <div id="admin-order-block-citi-avoti" className="min-w-0">
+          <div id="admin-order-block-citi-avoti" className="min-w-0 amx amx-src">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
               readOnly={false}
@@ -6142,7 +6144,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 4) ? (
-          <div id="admin-order-block-cc-vin" className="min-w-0">
+          <div id="admin-order-block-cc-vin" className="min-w-0 amx amx-src">
             <AdminCcVinSourceBlock
               value={blocksDisplaySafe.cc_vin}
               readOnly={false}
@@ -6161,7 +6163,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 11) ? (
-          <div id="admin-order-block-asv" className="min-w-0">
+          <div id="admin-order-block-asv" className="min-w-0 amx amx-src">
             <AdminAsvSourceBlock
               value={blocksDisplaySafe.asv}
               readOnly={false}
@@ -6183,7 +6185,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 6) ? (
-          <div id="admin-order-block-tjekbil" className="min-w-0">
+          <div id="admin-order-block-tjekbil" className="min-w-0 amx amx-src">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
               value={blocksDisplaySafe.tjekbil}
@@ -6204,7 +6206,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 10) ? (
-          <div id="admin-order-block-finnik" className="min-w-0">
+          <div id="admin-order-block-finnik" className="min-w-0 amx amx-src">
             <AdminVinRegistrySourceBlock
               blockKey="finnik"
               value={blocksDisplaySafe.finnik}
@@ -6227,7 +6229,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 9) ? (
-          <div id="admin-order-block-estonia" className="min-w-0">
+          <div id="admin-order-block-estonia" className="min-w-0 amx amx-src">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
               lkf={blocksDisplaySafe.lkf_ee}
@@ -6256,7 +6258,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 7) ? (
-          <div id="admin-order-block-carinfo" className="min-w-0">
+          <div id="admin-order-block-carinfo" className="min-w-0 amx amx-src">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
               value={blocksDisplaySafe.carinfo}
@@ -6277,7 +6279,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {(phoneStack || wizardStep === 8) ? (
-          <div id="admin-order-block-traficom-fi" className="min-w-0">
+          <div id="admin-order-block-traficom-fi" className="min-w-0 amx amx-src">
             <AdminVinRegistrySourceBlock
               blockKey="traficom_fi"
               value={blocksDisplaySafe.traficom_fi}

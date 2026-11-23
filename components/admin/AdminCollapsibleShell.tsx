@@ -116,6 +116,11 @@ export function AdminCollapsibleShell({
 
   useEffect(() => {
     if (collapseLocked) return;
+    // Telefonā (Nils 23.11): atverot pasūtījumu visi bloki sakļauti; atvērtais paliek tikai, kamēr lapa atvērta.
+    if (phone) {
+      setCollapsed(true);
+      return;
+    }
     try {
       const raw = localStorage.getItem(accordionStorageKey(sessionId, blockId));
       if (raw === "1") setCollapsed(true);
@@ -127,13 +132,13 @@ export function AdminCollapsibleShell({
   }, [sessionId, blockId, defaultCollapsed, collapseLocked, phone]);
 
   useEffect(() => {
-    if (collapseLocked) return;
+    if (collapseLocked || phone) return;
     try {
       localStorage.setItem(accordionStorageKey(sessionId, blockId), collapsed ? "1" : "0");
     } catch {
       /* quota */
     }
-  }, [sessionId, blockId, collapsed, collapseLocked]);
+  }, [sessionId, blockId, collapsed, collapseLocked, phone]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
 

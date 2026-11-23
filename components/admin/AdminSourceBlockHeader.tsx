@@ -53,8 +53,8 @@ function ExternalLinkIcon({ className }: { className?: string }) {
 }
 
 /**
- * Telefona avotu saraksta statuss labajā pusē (22.11 makets v2): punkts + teksts.
- * «Nav datu» / «Kļūda» - sarkans (Nila likums), ielasīts - zaļš, pārējais neitrāls.
+ * Telefona avotu saraksta statuss labajā pusē: punkts + teksts čipā (23.11 - skaidri atšķirams).
+ * «Ielasīts» - zaļš, «Daļēji» - oranžs, «Nav datu» / «Kļūda» - sarkans (Nila likums), «Nav ielasīts» - pelēks.
  */
 export function sourceBlockPhoneStatus(
   trafficFillLevel: TrafficFillLevel | undefined,
@@ -63,8 +63,8 @@ export function sourceBlockPhoneStatus(
   if (ingestChip?.tone === "failed") return { label: "Kļūda", tone: "err" };
   if (ingestChip?.tone === "no_data") return { label: "Nav datu", tone: "err" };
   if (trafficFillLevel === "complete") return { label: "Ielasīts", tone: "ok" };
-  if (trafficFillLevel === "partial") return { label: "Daļēji", tone: "neutral" };
-  if (trafficFillLevel === "empty") return { label: "Nav ielasīts", tone: "outline" };
+  if (trafficFillLevel === "partial") return { label: "Daļēji", tone: "warn" };
+  if (trafficFillLevel === "empty") return { label: "Nav ielasīts", tone: "muted" };
   return null;
 }
 

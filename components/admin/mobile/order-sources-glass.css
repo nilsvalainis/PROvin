@@ -45,7 +45,7 @@
     min-height: 54px;
     align-items: center;
   }
-  /* Nosaukums parastiem burtiem, bez ikonas (makets: nosaukums + statuss labajā pusē). */
+  /* Nosaukums parastiem burtiem; 23.11 - visiem avotiem ikona + nosaukums + statuss (vienots izskats). */
   :is(.amx-src, .amx-meta) [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) {
     text-transform: none !important;
     letter-spacing: 0 !important;
@@ -53,8 +53,57 @@
     font-weight: 600 !important;
     color: var(--amx-tx) !important;
   }
-  :is(.amx-src, .amx-meta) [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) > svg:first-child {
+  .amx-meta [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) > svg:first-child {
     display: none;
+  }
+  .amx-src [data-admin-block] > .provin-card-head :is(.provin-source-title, h2) > svg:first-child {
+    box-sizing: border-box;
+    width: 30px;
+    height: 30px;
+    padding: 6.5px;
+    border-radius: 9px;
+    flex: none;
+    color: var(--amx-mut) !important;
+    background: var(--amx-glass2);
+    box-shadow: inset 0 0 0 1px var(--amx-hair);
+    opacity: 1;
+  }
+  .amx-src [data-admin-block] > .provin-card-head:has([data-source-status="ok"]) :is(.provin-source-title, h2) > svg:first-child {
+    color: var(--amx-green) !important;
+    background: color-mix(in srgb, var(--amx-green) 15%, transparent);
+    box-shadow: none;
+  }
+  .amx-src [data-admin-block] > .provin-card-head:has([data-source-status="warn"]) :is(.provin-source-title, h2) > svg:first-child {
+    color: var(--amx-amber) !important;
+    background: color-mix(in srgb, var(--amx-amber) 14%, transparent);
+    box-shadow: none;
+  }
+  .amx-src [data-admin-block] > .provin-card-head:has([data-source-status="err"]) :is(.provin-source-title, h2) > svg:first-child {
+    color: var(--amx-red) !important;
+    background: color-mix(in srgb, var(--amx-red) 13%, transparent);
+    box-shadow: none;
+  }
+  /* Ielasīts - nosaukums arī zaļš, lai ielasītie avoti uzreiz pamanāmi. */
+  .amx-src [data-admin-block] > .provin-card-head:has([data-source-status="ok"]) :is(.provin-source-title, h2) {
+    color: var(--amx-green) !important;
+  }
+
+  /* Statuss labajā pusē - čips ar punktu (ielasīts zaļš, daļēji oranžs, kļūda sarkans, nav ielasīts pelēks). */
+  [data-source-status] > .amx-st {
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  [data-source-status="ok"] > .amx-st,
+  [data-source-status="warn"] > .amx-st,
+  [data-source-status="err"] > .amx-st {
+    background: color-mix(in srgb, currentColor 13%, transparent);
+  }
+  [data-source-status="muted"] > .amx-st {
+    background: var(--amx-glass2);
+    box-shadow: inset 0 0 0 1px var(--amx-hair);
   }
   /* Krāsainās «luksofora» malas telefonā nerāda - statuss ir punkts + teksts. */
   :is(.amx-src, .amx-meta) [class*="border-l-[5px]"] {

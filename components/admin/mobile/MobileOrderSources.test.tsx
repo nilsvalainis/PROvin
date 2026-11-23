@@ -12,8 +12,8 @@ const src = (f: string) => readFileSync(new URL(`../../../${f}`, import.meta.url
 describe("Avotu saraksts telefonā - statuss labajā pusē (22.11 makets v2)", () => {
   it("punkts + teksts: ielasīts / daļēji / nav ielasīts / kļūda / nav datu (sarkans)", () => {
     expect(sourceBlockPhoneStatus("complete", undefined)).toEqual({ label: "Ielasīts", tone: "ok" });
-    expect(sourceBlockPhoneStatus("partial", undefined)).toEqual({ label: "Daļēji", tone: "neutral" });
-    expect(sourceBlockPhoneStatus("empty", undefined)).toEqual({ label: "Nav ielasīts", tone: "outline" });
+    expect(sourceBlockPhoneStatus("partial", undefined)).toEqual({ label: "Daļēji", tone: "warn" });
+    expect(sourceBlockPhoneStatus("empty", undefined)).toEqual({ label: "Nav ielasīts", tone: "muted" });
     expect(sourceBlockPhoneStatus("complete", { label: "Auto: kļūda", tone: "failed" })).toEqual({ label: "Kļūda", tone: "err" });
     expect(sourceBlockPhoneStatus("empty", { label: "Auto: nav datu", tone: "no_data" })).toEqual({ label: "Nav datu", tone: "err" });
     expect(sourceBlockPhoneStatus(undefined, undefined)).toBeNull();
@@ -22,7 +22,7 @@ describe("Avotu saraksts telefonā - statuss labajā pusē (22.11 makets v2)", (
   it("telefonā bez krāsainās malas, ar statusu; datorā - kā līdz šim", () => {
     const phone = renderHtml(<AdminSourceBlockHeader blockKey="ltab" trafficFillLevel="empty" phone />);
     expect(phone).not.toContain("border-l-[5px]");
-    expect(phone).toContain('<span class="amx-st amx-st--outline">Nav ielasīts</span>');
+    expect(phone).toContain('<span class="amx-st amx-st--muted">Nav ielasīts</span>');
     const desk = renderHtml(<AdminSourceBlockHeader blockKey="ltab" trafficFillLevel="empty" phone={false} />);
     expect(desk).toContain("border-l-[5px]");
     expect(desk).not.toContain("amx-st");
@@ -34,6 +34,26 @@ describe("Avotu saraksts telefonā - statuss labajā pusē (22.11 makets v2)", (
     expect(ws).toContain('id="admin-m-sec-negadijumi" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2 amx amx-src"');
     expect(ws).toContain('<div className="amx amx-meta">{dashboardSlot}</div>');
     expect(ws).toContain('className="amx amx-ai mt-1.5');
+    // 23.11: visi avotu bloki vienā izskatā (arī atsevišķie - dīlera dati, citi avoti, ASV u.c.).
+    for (const id of ["auto-records", "citi-avoti", "cc-vin", "asv", "tjekbil", "finnik", "estonia", "carinfo", "traficom-fi"]) {
+      expect(ws).toContain(`id="admin-order-block-${id}" className="min-w-0 amx amx-src"`);
+    }
+  });
+
+  it("23.11: telefonā atverot pasūtījumu visi bloki un sadaļas sakļauti (bez localStorage); datorā kā līdz šim", () => {
+    const shell = src("components/admin/AdminCollapsibleShell.tsx");
+    expect(shell).toMatch(/if \(phone\) \{\s*setCollapsed\(true\);\s*return;/);
+    expect(shell).toContain("if (collapseLocked || phone) return;");
+    const sec = src("components/admin/AdminPhoneSectionCollapse.tsx");
+    expect(sec).toContain("useState(true)");
+    expect(sec).not.toContain("localStorage");
+  });
+
+  it("23.11: visiem avotiem ikona, ielasītie zaļi (ikona, nosaukums, čips)", () => {
+    const css = src("components/admin/mobile/order-sources-glass.css");
+    expect(css).toContain('.provin-card-head:has([data-source-status="ok"])');
+    expect(css).toMatch(/\.amx-meta \[data-admin-block\][^{]*> svg:first-child \{\s*display: none;/);
+    expect(css).not.toMatch(/\.amx-src[^{]*> svg:first-child \{\s*display: none;/);
   });
 
   it("CSS tikai telefonā, bez backdrop-filter konteineriem (pilnekrāna bloki paliek fixed)", () => {
