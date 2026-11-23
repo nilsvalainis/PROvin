@@ -75,16 +75,37 @@ describe("Pasūtījumu saraksts telefonā - stikla saraksts (2. posms)", () => {
     expect(html).not.toContain("min-h-[96px]");
   });
 
-  it("rindā produkts · laiks · cena; termiņš ar punktu, sarkans tikai kavējot", () => {
+  it("rindā produkta birka (krāsa pēc produkta) + laiks · cena; termiņš čipā, Kavē sarkans", () => {
     const html = renderHtml(<AdminOrdersTable orders={list} />);
     const t = renderText(<AdminOrdersTable orders={list} />);
-    expect(t).toMatch(/AUDITS · [\d.]+ [\d:]+ · 99,99 €/);
-    expect(t).toMatch(/MINI · /);
+    expect(html).toContain('<span class="amx-prod amx-prod--audits" data-amx-product="audits">AUDITS</span>');
+    expect(html).toContain('<span class="amx-prod amx-prod--mini" data-amx-product="mini">MINI</span>');
+    expect(t).toMatch(/[\d.]+ [\d:]+ · 99,99 €/);
     expect(t).not.toContain("PROVIN AUDITS");
     expect(t).not.toContain("Atlikušas");
     // Termiņa aprēķins atkarīgs no pulksteņa (CI) - pārbaudām formu, ne precīzas stundas.
-    expect(html).toMatch(/<span class="amx-st amx-st--err">Kavē \d+ [hd]<\/span>/);
-    expect(html).toMatch(/<span class="amx-st(?: amx-st--outline)?">\d+ (?:h|min)<\/span>/);
+    expect(html).toMatch(/<span class="amx-chip amx-chip--err">Kavē \d+ [hd]<\/span>/);
+    expect(html).toMatch(/<span class="amx-chip amx-chip--neutral">\d+ (?:h|min)<\/span>/);
+  });
+
+  it("tuvu termiņam (<12 h) - oranžs čips; Nav nosūtīts - oranžs, Nosūtīts - zaļš", () => {
+    const soon = [row({ id: "cs_soon", checkoutLine: "audit", amountTotal: 9999, makeModel: "BMW 535", created: due(5) })];
+    expect(renderHtml(<AdminOrdersTable orders={soon} />)).toMatch(/<span class="amx-chip amx-chip--warn">\d+ (?:h|min)<\/span>/);
+    const sent = [
+      row({ id: "cs_s1", ingest: { state: "done", label: "Ielasīts · 3", count: 3, source: "dealer", sent: false } }),
+      row({ id: "cs_s2", ingest: { state: "done", label: "Ielasīts · 4", count: 4, source: "dealer", sent: true } }),
+    ];
+    const html = renderHtml(<AdminOrdersTable orders={sent} />);
+    expect(html).toContain('<span class="amx-chip amx-chip--warn">Nav nosūtīts</span>');
+    expect(html).toContain('<span class="amx-chip amx-chip--ok">Nosūtīts</span>');
+    expect(html).toContain('data-amx-product="dealer"');
+  });
+
+  it("bez CSDD markas virsrakstā auto no VIN, nevis e-pasts", () => {
+    const t = renderText(
+      <AdminOrdersTable orders={[row({ id: "cs_vin", makeModel: null, customerEmail: "klients@example.com", vin: "WBA5R1C0XLFH42873" })]} />,
+    );
+    expect(t).toContain("BMW");
   });
 
   it("filtru čipiem ir aria-pressed (stikla stāvoklis)", () => {

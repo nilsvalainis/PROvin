@@ -1,0 +1,130 @@
+/*
+ * PRO admin telefonā - krāsas orientācijai (Nils 23.11: «vajag krāsas, pamanāmākus statusus»).
+ * Semantiskas, atturīgas: produkta veids - krāsaina birka; ielases ikona - pildīts aplis;
+ * termiņš un nosūtīšana - krāsaini čipi. Tikai telefonā (<768 px). Datorā šīs klases neko nemaina.
+ * Pamata mainīgie - `glass.css` (`.amx`); šeit tikai produktu krāsas un jaunās klases.
+ */
+
+@media (max-width: 767px) {
+  .amx {
+    /* Produkti: AUDITS - PROVIN zils, Dīlera dati - teal, MINI - dzeltens (kā datorā), BUSINESS - violets,
+       Konsultācija (SELECT) - oranžs. */
+    --amx-p-audits: #0b3fa8;
+    --amx-p-dealer: #0f766e;
+    --amx-p-mini: #7a5a00;
+    --amx-p-mini-bg: rgba(255, 214, 82, 0.42);
+    --amx-p-business: #6d28d9;
+    --amx-p-select: #c2410c;
+    --amx-chip-mix: 13%;
+  }
+}
+
+@media (max-width: 767px) and (prefers-color-scheme: dark) {
+  .amx {
+    --amx-p-audits: #8fb0ff;
+    --amx-p-dealer: #5ed6c4;
+    --amx-p-mini: #f5cf5a;
+    --amx-p-mini-bg: rgba(245, 207, 90, 0.16);
+    --amx-p-business: #c4b5fd;
+    --amx-p-select: #fdba74;
+    --amx-chip-mix: 18%;
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- Produkta birka ---- */
+  .amx-prod {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--amx-mut);
+    background: var(--amx-glass2);
+    box-shadow: inset 0 0 0 1px var(--amx-hair);
+  }
+  .amx-prod--audits,
+  .amx-prod--dealer,
+  .amx-prod--business,
+  .amx-prod--select {
+    box-shadow: none;
+    background: color-mix(in srgb, currentColor var(--amx-chip-mix), transparent);
+  }
+  .amx-prod--audits {
+    color: var(--amx-p-audits);
+  }
+  .amx-prod--dealer {
+    color: var(--amx-p-dealer);
+  }
+  .amx-prod--business {
+    color: var(--amx-p-business);
+  }
+  .amx-prod--select {
+    color: var(--amx-p-select);
+  }
+  .amx-prod--mini {
+    color: var(--amx-p-mini);
+    background: var(--amx-p-mini-bg);
+    box-shadow: none;
+  }
+
+  /* ---- Statusa čips (termiņš, nosūtīšana, avota statuss) ---- */
+  .amx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--amx-mut);
+    background: var(--amx-glass2);
+    box-shadow: inset 0 0 0 1px var(--amx-hair);
+  }
+  .amx-chip--ok,
+  .amx-chip--warn,
+  .amx-chip--err {
+    box-shadow: none;
+    background: color-mix(in srgb, currentColor var(--amx-chip-mix), transparent);
+  }
+  .amx-chip--ok {
+    color: var(--amx-green);
+  }
+  .amx-chip--warn {
+    color: var(--amx-amber);
+  }
+  .amx-chip--err {
+    color: var(--amx-red);
+  }
+
+  /* ---- Ielases ikona: pildīts aplis ar baltu zīmi ---- */
+  .amx-sti {
+    border: 0;
+  }
+  .amx-sti--done {
+    color: #ffffff;
+    background: var(--amx-green);
+  }
+  .amx-sti--no_data,
+  .amx-sti--error {
+    color: #ffffff;
+    background: var(--amx-red);
+  }
+  .amx-sti--running {
+    color: #ffffff;
+    background: var(--amx-soft);
+  }
+  .amx-sti--idle {
+    color: var(--amx-mut);
+    background: color-mix(in srgb, var(--amx-mut) 16%, transparent);
+  }
+}

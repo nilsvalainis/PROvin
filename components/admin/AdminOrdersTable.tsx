@@ -29,7 +29,8 @@ import {
 } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AmxStatusDot, AmxStatusIcon, type AmxDotTone } from "@/components/admin/mobile/AdminMobileGlass";
+import { AmxChip, AmxProductChip, AmxStatusIcon } from "@/components/admin/mobile/AdminMobileGlass";
+import { adminPhoneCarFromVin, adminPhoneDeadlineTone, adminPhoneProductKind, adminPhoneSentTone } from "@/lib/admin-phone-colors";
 import {
   adminIngestMatchesFilter,
   adminIngestSentLabel,
@@ -641,25 +642,22 @@ const ADMIN_INGEST_CHIPS: { id: Exclude<AdminIngestFilter, "all">; label: string
   { id: "running", label: "Ielasa" },
 ];
 
-/** Telefona kartītes virsraksts: auto, citādi klients vai VIN; nekad tikai "-". Bez lielajiem burtiem. */
+/**
+ * Telefona kartītes virsraksts: auto (CSDD melnrakstā, citādi no VIN), tad klients vai VIN; nekad tikai "-".
+ * 23.11: e-pasts / klienta vārds virsrakstā nav auto - ja VIN atšifrējas, rāda auto.
+ */
 export function adminOrderCardTitle(
   makeModel: string | null | undefined,
   v: { primaryClient: string; vin: string; hasVin: boolean },
 ): string {
   const model = makeModel?.trim();
   if (model) return model;
+  const fromVin = v.hasVin ? adminPhoneCarFromVin(v.vin) : null;
+  if (fromVin) return fromVin;
   if (v.primaryClient && v.primaryClient !== "-") return v.primaryClient;
   if (v.hasVin) return v.vin;
   return "Pasūtījums bez datiem";
 }
-
-/** Termiņš telefona rindā: sarkans tikai kavējot (22.11 makets v2), gatavs - zaļš, pārējais neitrāls. */
-const AMX_DEADLINE_TONE: Record<AdminMobileDeadlineTag["tone"], AmxDotTone> = {
-  overdue: "err",
-  urgent: "neutral",
-  ok: "outline",
-  done: "ok",
-};
 
 /** «Atlikušas 45 h» -> «45 h» (rindā vieta ir maza); «Kavē 6 h», «Gatavs» paliek. */
 export function phoneDeadlineText(tag: AdminMobileDeadlineTag): string {
@@ -1046,6 +1044,7 @@ export function AdminOrdersTable({
             miniHighlight: v.miniHighlight,
           });
           const ingest = v.isPack ? null : o.ingest ?? null;
+          const sentLabel = adminIngestSentLabel(ingest);
           const title = v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v);
           const deadline: AdminMobileDeadlineTag | null = v.isPack
             ? null
@@ -1174,7 +1173,9 @@ export function AdminOrdersTable({
                     {ingest.label}
                   </p>
                 ) : null}
-                <p className="amx-row-sub mt-0.5 truncate tabular-nums">
+                <p className="amx-row-sub mt-1 flex min-w-0 items-center gap-1.5 tabular-nums">
+                  {product ? <AmxProductChip kind={adminPhoneProductKind(product)}>{product}</AmxProductChip> : null}
+                  <span className="min-w-0 truncate">
                   {subClient ? (
                     <>
                       <span>{subClient}</span>
@@ -1182,13 +1183,13 @@ export function AdminOrdersTable({
                       {" · "}
                     </>
                   ) : null}
-                  {product ? `${product} · ` : null}
                   {dateFmt.format(new Date(o.created * 1000))}
                   {" · "}
                   {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
+                  </span>
                 </p>
               </div>
-              {deadline || adminIngestSentLabel(ingest) ? (
+              {deadline || sentLabel ? (
                 <div className="flex shrink-0 flex-col items-end gap-0.5">
                   {deadline ? (
                     <button
@@ -1200,12 +1201,18 @@ export function AdminOrdersTable({
                         setCardMenuId(o.id);
                       }}
                     >
-                      <AmxStatusDot tone={AMX_DEADLINE_TONE[deadline.tone]}>{phoneDeadlineText(deadline)}</AmxStatusDot>
+                      <AmxChip
+                        tone={
+                          o.fullyReversed
+                            ? "neutral"
+                            : adminPhoneDeadlineTone(deadline, o.deadlineFromUnix ?? o.created, nowMs ?? Date.now())
+                        }
+                      >
+                        {phoneDeadlineText(deadline)}
+                      </AmxChip>
                     </button>
                   ) : null}
-                  {adminIngestSentLabel(ingest) ? (
-                    <span className="amx-tx--mut text-[13px]">{adminIngestSentLabel(ingest)}</span>
-                  ) : null}
+                  {sentLabel ? <AmxChip tone={adminPhoneSentTone(sentLabel)}>{sentLabel}</AmxChip> : null}
                 </div>
               ) : null}
               <button
