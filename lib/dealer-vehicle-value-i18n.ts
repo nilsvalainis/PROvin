@@ -227,8 +227,14 @@ function looksLikeCode(s: string): boolean {
 /** Zirgspēku vienība jebkurā reģistrā: „Zs”, „zs”, „ZS”, „PS”, „ps”, „hp”, „HP”, „bhp”. kW netiek skarts. */
 const HORSEPOWER_UNIT_RE = /(?<!\p{L})(?:zs|ps|b?hp)(?!\p{L})/giu;
 
+/** „121 hp / 122 PS” - viena jauda divās vienībās; ZS / PS / л.с. ir metriskā (PS) vērtība. */
+const HP_AND_PS_RE = /(\d+(?:[.,]\d+)?)\s*b?hp\s*\/\s*(\d+(?:[.,]\d+)?)\s*ps\b|(\d+(?:[.,]\d+)?)\s*ps\s*\/\s*(\d+(?:[.,]\d+)?)\s*b?hp\b/i;
+
 function localizePower(raw: string, lang: ClientReportLang): string {
   let t = collapse(raw);
+  // A21 (Business audits 23.11): „90 kW (121 ZS / 122 ZS)” -> „90 kW (122 ZS)” - latviski ZS ir metriskie PS.
+  // Angliski paliek „hp” vērtība (citādi sanāk „121 hp / 122 hp”).
+  t = t.replace(HP_AND_PS_RE, (_m, hp1, ps1, ps2, hp2) => (lang === "en" ? `${hp1 ?? hp2} hp` : `${ps1 ?? ps2} PS`));
   // „180 KW” / „180 kw” - SI vienība vienmēr „kW” (krieviski tālāk „кВт”).
   t = t.replace(/(?<!\p{L})kw(?!\p{L})/giu, "kW");
   if (lang === "lv") t = t.replace(HORSEPOWER_UNIT_RE, "ZS");
@@ -339,7 +345,10 @@ export function translateDealerVehicleValue(
     const outerT = exactHit(outer, lang) ?? applyTokens(outer, lang);
     const innerT = exactHit(inner, lang) ?? applyTokens(inner, lang);
     if (outerT && innerT) {
-      const out = `${outerT} (${dedupeInnerAgainstOuter(outerT, innerT, lang)})`;
+      // B22: „LHD (left-hand drive)” -> „Kreisā stūre”, nevis „Kreisā stūre (Kreisā stūre)”.
+      const dedupedInner = dedupeInnerAgainstOuter(outerT, innerT, lang);
+      if (normKey(dedupedInner) === normKey(outerT)) return outerT;
+      const out = `${outerT} (${dedupedInner})`;
       // Pustulkojuma vietā labāk oriģināls nekā „Continuously Variable ātrumkārba”.
       return guardPartial && isHalfTranslated(t, out) ? t : out;
     }
@@ -362,3 +371,75 @@ export const DEALER_VEHICLE_VALUE_TRANSLATABLE_KEYS: (keyof OutvinVehicleInfo)[]
   "interior",
   "fuel",
 ];
+
+/* ---------- Business audits 23.11 (B23-B27, A9): tīrāki dīlera lauki PDF tabulā ---------- */
+
+const TRANSMISSION_TYPE: Record<"manual" | "automatic", LangMap> = {
+  manual: { lv: "Manuāla", en: "Manual", ru: "Механическая", de: "Schaltgetriebe" },
+  automatic: { lv: "Automātiskā", en: "Automatic", ru: "Автоматическая", de: "Automatik" },
+};
+const SPEEDS: LangMap = { lv: "{n} pakāpju", en: "{n}-speed", ru: "{n}-ступенчатая", de: "{n}-Gang" };
+
+/**
+ * B23: Stellantis „ML6CV (STT TYPE 6-SPEED MANUAL GEARBOX )” -> „Manuāla, 6 pakāpju (ML6CV)”.
+ * Tikai, ja formāts ir „KODS (apraksts ar SPEED + MANUAL/AUTOMATIC)”; citādi null.
+ */
+export function formatDealerTransmissionCode(raw: string, lang: ClientReportLang): string | null {
+  const m = /^([A-Z0-9]{3,10})\s*\((.+)\)\s*$/.exec(collapse(raw));
+  if (!m) return null;
+  const code = m[1]!;
+  const desc = m[2]!;
+  const type = /\bmanual\b/i.test(desc) ? "manual" : /\bauto(?:matic)?\b/i.test(desc) ? "automatic" : null;
+  const speeds = /\b(\d{1,2})[- ]?speed\b/i.exec(desc)?.[1];
+  if (!type && !speeds) return null;
+  const parts = [type ? TRANSMISSION_TYPE[type][lang] : "", speeds ? SPEEDS[lang].replace("{n}", speeds) : ""].filter(Boolean);
+  return `${parts.join(", ")} (${code})`;
+}
+
+const FUEL_WORD: Record<string, LangMap> = {
+  diesel: { lv: "dīzelis", en: "diesel", ru: "дизель", de: "Diesel" },
+  essence: { lv: "benzīns", en: "petrol", ru: "бензин", de: "Benzin" },
+  petrol: { lv: "benzīns", en: "petrol", ru: "бензин", de: "Benzin" },
+  gasoline: { lv: "benzīns", en: "petrol", ru: "бензин", de: "Benzin" },
+};
+
+function displacementLiters(raw: string, lang: ClientReportLang): string {
+  const t = collapse(raw).toLowerCase();
+  let liters: number | null = null;
+  const l = /^(\d+(?:[.,]\d+)?)\s*l$/.exec(t);
+  if (l) liters = Number(l[1]!.replace(",", "."));
+  const cc = /^(\d{3,4})\s*(?:cc|cm3|cm³|ccm)$/.exec(t);
+  if (cc) liters = Math.round(Number(cc[1]) / 100) / 10;
+  if (liters == null || !Number.isFinite(liters) || liters <= 0) return "";
+  const s = liters.toFixed(1);
+  return lang === "en" ? s : s.replace(".", ",");
+}
+
+/**
+ * B24: „(10 DY3M 4074562) DIESEL DW10FE FAP 90KW” -> „2,0 dīzelis DW10FE, 90 kW”.
+ * Iekavās ir dzinēja sērijas numurs - klientam to nerāda. Ja formāts neatpazīts - tikai bez sērijas numura.
+ */
+export function formatDealerEngineCode(raw: string, displacement: string, lang: ClientReportLang): string {
+  const t = collapse(raw);
+  const serial = /^\(([^)]*\d{5,}[^)]*)\)\s*(.*)$/.exec(t);
+  if (!serial) return t;
+  const rest = serial[2]!.trim();
+  if (!rest) return "";
+  const tokens = rest.split(/\s+/);
+  const fuelTok = tokens.find((w) => FUEL_WORD[w.toLowerCase()]);
+  const powerTok = tokens.find((w) => /^\d{2,3}kw$/i.test(w));
+  const codeTok = tokens.find((w) => /^[A-Z]{1,4}\d{1,3}[A-Z0-9]{0,4}$/.test(w) && w !== powerTok);
+  if (!fuelTok || !codeTok) return rest;
+  const head = [displacementLiters(displacement, lang), FUEL_WORD[fuelTok.toLowerCase()]![lang], codeTok].filter(Boolean).join(" ");
+  return powerTok ? `${head}, ${powerTok.replace(/kw$/i, " kW")}` : head;
+}
+
+/** B25: „Banquise white paint” - vārds „paint” krāsas laukā ir lieks. */
+export function stripPaintWord(raw: string): string {
+  return collapse(raw.replace(/\s+(?:paint|lack|peinture)\s*$/i, ""));
+}
+
+/** B26: „(FX)” - salons ir tikai kods bez apraksta. */
+export function isBareTrimCode(raw: string): boolean {
+  return /^\(?\s*[A-Z0-9]{1,6}\s*\)?$/.test(collapse(raw));
+}

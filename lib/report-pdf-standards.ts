@@ -81,6 +81,10 @@ export const CLIENT_REPORT_SECTION_LABELS = {
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
   "PROVIN.LV pakalpojums ir konsultatīvs: mēs izvērtējam pieejamo informāciju par transportlīdzekli un sniedzam ieteikumus. Atskaite ir digitāls datu apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
+/** C34 (Business audits 23.11): Business ir datu atskaite - atrunā nav «sniedzam ieteikumus». */
+export const CLIENT_REPORT_FOOTER_DISCLAIMER_BUSINESS =
+  "PROVIN.LV Business atskaite ir digitāls pieejamās informācijas par transportlīdzekli apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
+
 /** Konfidencialitāte un aizliegums nodot trešajām personām - treknrakstā PDF kājenē. */
 export const PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE =
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.";

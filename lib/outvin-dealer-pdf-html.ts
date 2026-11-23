@@ -1,5 +1,13 @@
 import { translateClientReportStatic, type ClientReportLang } from "@/lib/client-report-i18n";
-import { translateDealerVehicleValue } from "@/lib/dealer-vehicle-value-i18n";
+import {
+  formatDealerEngineCode,
+  formatDealerTransmissionCode,
+  isBareTrimCode,
+  stripPaintWord,
+  translateDealerVehicleValue,
+} from "@/lib/dealer-vehicle-value-i18n";
+import { countryLabelToIso2 } from "@/lib/country-names-lv";
+import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
 import { isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import {
@@ -26,6 +34,10 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function collapseSpaces(s: string): string {
+  return s.replace(/\s+/g, " ").trim();
+}
+
 function pdfSubLabel(title: string): string {
   return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
@@ -36,17 +48,45 @@ function vehicleInfoTable(
 ): string {
   const lang = opts?.lang ?? "lv";
   const rows: { k: string; v: string }[] = [];
+  const translated = (key: keyof OutvinVehicleInfo): string => {
+    const raw = vi[key].trim();
+    if (!raw || isPdfEmptyPlaceholder(raw)) return "";
+    return translateDealerVehicleValue(key, translateDealerVehicleCodeLv(key, raw), lang);
+  };
+  const bodyShown = translated("body");
   for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
     let v = vi[key].trim();
     if (!v || isPdfEmptyPlaceholder(v)) continue;
+    let labelLvShown = labelLv;
+    let keepCase = key === "power";
     if (key === "vinCode" && opts?.maskDemoVin) v = maskVinForDemo(v);
-    else {
+    else if (key === "transmission" && formatDealerTransmissionCode(v, lang)) {
+      v = formatDealerTransmissionCode(v, lang)!;
+    } else if (key === "engineCode") {
+      const formatted = formatDealerEngineCode(v, vi.displacement, lang);
+      if (!formatted) continue;
+      keepCase = formatted !== collapseSpaces(v);
+      v = formatted;
+    } else if (key === "interior" && isBareTrimCode(v)) {
+      continue;
+    } else if (key === "countryRegion") {
+      // A9: Outvin „Country/region” ir ražošanas valsts (sakrīt ar VIN WMI: VXE->FR, SJN->GB, WBA->DE).
+      // Rāda tikai tad, ja VIN to apstiprina, un ar precīzu etiķeti; citādi nozīme nav droša - nerāda.
+      const vinCountry = decodeVinLocal(vi.vinCode.trim()).countryCode;
+      if (!vinCountry || countryLabelToIso2(v) !== vinCountry) continue;
+      labelLvShown = "Ražošanas valsts";
+      v = translateDealerVehicleValue(key, v, lang);
+    } else {
+      if (key === "color") v = stripPaintWord(v);
       v = translateDealerVehicleCodeLv(key, v);
       v = translateDealerVehicleValue(key, v, lang);
+      // B27: „Transportlīdzekļa tips: Furgons” + „Virsbūve: Furgons” - viens lauks.
+      if (key === "vehicleType" && bodyShown && v.toLowerCase() === bodyShown.toLowerCase()) continue;
     }
-    const label = translateClientReportStatic(labelLv || labelEn, lang);
+    if (!v) continue;
+    const label = translateClientReportStatic(labelLvShown || labelEn, lang);
     // Jaudai vienība „kW” paliek ar mazo burtu (capitalize to padarītu par „KW”).
-    rows.push({ k: label, v: key === "power" ? v : keepVolumeUnitLowercase(capitalizeFactValue(v)) });
+    rows.push({ k: label, v: keepCase ? v : keepVolumeUnitLowercase(capitalizeFactValue(v)) });
   }
   const table = buildPdfKvPairHtml(rows);
   if (!table) return "";

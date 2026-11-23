@@ -38,7 +38,8 @@ const LANG_MARKERS: Record<ClientReportLang, { must: string[]; mustNot: string[]
       "Degviela",
       "Automātiskā",
       "Benzīns",
-      "Somija",
+      "Vācija",
+      "Ražošanas valsts",
     ],
     mustNot: [
       "content:\"Page \" counter(page)",
@@ -138,7 +139,7 @@ function dealerVehicle() {
     drive: "rear-wheel drive",
     fuel: "petrol",
     power: "250 kW / 340 hp",
-    countryRegion: "Finland",
+    countryRegion: "Germany", // A9: rāda tikai, ja sakrīt ar VIN WMI ražošanas valsti (WBA = DE)
     color: "Black metallic",
     interior: "Leather Black",
     steeringSide: "left-hand drive",

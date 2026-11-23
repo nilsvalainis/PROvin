@@ -36,7 +36,7 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).toContain("135 kW (184 ZS)");
     expect(html).toContain("31 400 km");
     expect(html).toContain("142 220 km");
-    expect(html).toContain("2 ieraksti");
+    expect(html).toContain("2 rādījumi");
     expect(html).not.toContain("vizītes");
     expect(html).not.toMatch(/vidēji/i);
     expect(html).toContain("pdf-dealer-cover-curve");
@@ -62,7 +62,7 @@ describe("PDF dīlera sadaļas vāks", () => {
         },
       ],
     });
-    expect(html).toContain("1 precīzs ieraksts");
+    expect(html).toContain("1 precīzs rādījums");
     expect(html).toContain("pdf-dealer-cover-curve");
     expect(html).not.toContain("pdf-dealer-cover-curve-path");
     expect(html).not.toContain("NOBRAUKUMS PA GADIEM");

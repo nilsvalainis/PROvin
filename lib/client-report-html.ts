@@ -494,9 +494,20 @@ function getVendorPdfBlock(p: ClientReportPayload, title: string): ClientManualV
   return (p.manualVendorBlocks ?? []).find((x) => x.title === title);
 }
 
+/**
+ * A10 / D35 / D41 (Business audits 23.11): CSDD forma, kurā ir tikai VIN un no VIN atšifrētais modeļa gads
+ * (auto LV nav reģistrēts), nav CSDD dati - nerāda tukšu kartīti un neskaita kā avotu.
+ */
+export function csddFormHasRegistryContent(f: CsddFormFields): boolean {
+  return csddFormHasContent({ ...f, vin: "", modelYear: "" });
+}
+
 function payloadCsddHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
   if (!vis.csdd) return false;
-  if (p.csddForm && csddFormHasContent(p.csddForm)) return true;
+  // Ja ir strukturētā forma, `p.csdd` ir tās teksta kopija (`csddFormToPlainText`) - lemj tikai forma.
+  if (p.csddForm) {
+    return csddFormHasRegistryContent(p.csddForm) || (p.csddForm.rawUnprocessedData ?? "").trim().length > 0;
+  }
   return p.csdd.trim().length > 0;
 }
 
@@ -1683,8 +1694,10 @@ function buildCsddAvotuSubsection(
   if (!vis.csdd) return "";
   const form = p.csddForm;
   const bloki = buildCsddBlokiPdfParts(form, vis, lang);
-  const hasStruct = Boolean(form && csddFormHasContent(form));
-  const hasRaw = p.csdd.trim().length > 0;
+  const hasStruct = Boolean(
+    form && (csddFormHasRegistryContent(form) || (bloki?.afterTable ?? "").trim() || (bloki?.beforeInspections ?? "").trim()),
+  );
+  const hasRaw = form ? (form.rawUnprocessedData ?? "").trim().length > 0 : p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
@@ -2491,7 +2504,11 @@ function buildExpertPdfSectionHtml(icon: string, title: string, html: string): s
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const techHtml = vis.irissTechnicalRisks ? (p.tehniskoRiskuAnalize ?? "").trim() : "";
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
-  const planHtml = vis.irissInspection ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
+  // C33 (Business audits 23.11): Business / dīlera datu atskaitē nav ieteikumu - «Ieteikumi klātienes apskatei»
+  // (arī statiskais krāsas biezuma bloks) tur nedrukājas.
+  const dataOnly = isBusinessBrandReport(p) || isDealerOnlyReport(p);
+  const planHtml =
+    vis.irissInspection && !dataOnly ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
   return [
     techHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS, techHtml) : "",
     planHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION, planHtml) : "",
@@ -3072,6 +3089,8 @@ ${clientReportPageChromeCss(running)}
         color:#0f172a;
         font-weight:700;
       }
+      /* D41: «KAS TIKA PĀRBAUDĪTS» nepielīp «Kopā» rindai (.pdf-subhead pārrakstīja atstarpi). */
+      .pdf-provin-sources-wrap .pdf-sources-checked-label{margin:22px 0 8px;}
       .pdf-listing-analysis-root.pdf-surface-card{
         border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);
         box-shadow:var(--pdf-shadow);
@@ -3275,6 +3294,10 @@ ${sourceDotColorCss()}
       }
       .pdf-svc-year:first-child,
       .pdf-svc-span + .pdf-svc-year{margin-top:0;}
+      /* D36 (Business audits 23.11): dīlera vāks (SVG grafiks nedalās), kopsavilkuma režģis un grafiki nepārlūzt pāri lapām. */
+      .pdf-dealer-cover,.pdf-svc-summary,.pdf-mileage-chart-wrap,.pdf-src-mileage-spark,.pdf-dealer-vehicle-kv{
+        break-inside:avoid;page-break-inside:avoid;
+      }
       .pdf-svc-summary{
         display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
         margin:10px 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
