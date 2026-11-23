@@ -477,12 +477,6 @@ export function AdminAtraParbaudePage({
       <div className="flex items-center justify-between gap-3 md:hidden">
         <h1 className="text-[22px] font-semibold tracking-tight text-[#111]">{ATRA_TITLE}</h1>
       </div>
-      <div className="flex justify-end">
-        <a href="#atra-pedejas" className="rounded-full border border-[#e5e5ea] bg-white px-[11px] py-1 text-[13px] text-[#3a3a3c]">
-          Pēdējās pārbaudes ›
-        </a>
-      </div>
-
       {/* Ievade */}
       <section className={card}>
         <div className="flex flex-wrap items-stretch gap-2.5">
@@ -526,6 +520,7 @@ export function AdminAtraParbaudePage({
           <button type="button" className={`${btn} md:hidden`} onClick={() => setCameraOpen(true)}>
             Kamera
           </button>
+          <RunButton cost={cost} canRun={canRun} busy={busy} onRun={() => void runCheck(false)} />
         </div>
         <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[13px] text-[#3a3a3c]">
           {plateBusy ? <span className="text-[#8e8e93]">CSDD…</span> : null}
@@ -549,6 +544,9 @@ export function AdminAtraParbaudePage({
           >
             Ārvalstu numuri{foreignCount && !foreignOpen ? ` · ${foreignCount}` : ""} {foreignOpen ? "▾" : "›"}
           </button>
+          <a href="#atra-pedejas" className="text-[13px] text-[#8e8e93] hover:text-[#111]">
+            Pēdējās pārbaudes ›
+          </a>
         </div>
         {foreignOpen ? (
           <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
@@ -575,8 +573,8 @@ export function AdminAtraParbaudePage({
         ) : null}
       </section>
 
-      {/* Avoti */}
-      <div className={`grid grid-cols-1 gap-3 ${isAdmin ? "lg:grid-cols-2" : ""}`}>
+      {/* Avoti: sakļauti pēc noklusējuma (bezmaksas ieslēgti, maksas izslēgti) */}
+      <section className="rounded-[14px] border border-[#e5e5ea] bg-white px-[18px] py-1" data-atra-source-picker>
         <AdminAtraFreeSources
           groups={groups}
           selected={freeOn}
@@ -592,16 +590,9 @@ export function AdminAtraParbaudePage({
             cost={cost}
             ledgerBar={dealerState?.ledgerBar ?? ""}
             vin={valid ? vin : ""}
-            canRun={canRun}
-            busy={busy}
-            onRun={() => void runCheck(false)}
           />
-        ) : (
-          <div className="flex justify-end">
-            <RunButton cost={cost} canRun={canRun} busy={busy} onRun={() => void runCheck(false)} />
-          </div>
-        )}
-      </div>
+        ) : null}
+      </section>
 
       {/* Rezultāts */}
       {showResult ? (
@@ -615,30 +606,31 @@ export function AdminAtraParbaudePage({
                 {vehicle?.year ? ` · ${vehicle.year}` : ""}
               </p>
             </div>
-            {progressTotal ? (
-              <div className="ml-auto flex items-center gap-2.5 text-[13px] text-[#3a3a3c]">
-                <span className="h-1.5 w-[140px] overflow-hidden rounded-[3px] bg-[#e5e5ea]">
-                  <i className="block h-full bg-[#0b3fa8]" style={{ width: `${Math.round((progressDone / progressTotal) * 100)}%` }} />
-                </span>
-                {progressDone} no {progressTotal} avotiem
-              </div>
-            ) : null}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {isAdmin ? (
-              <button
-                type="button"
-                disabled={!canCreate}
-                onClick={() => void createManualOrder()}
-                className={`${btn} !border-[#1b1c1f] !bg-[#1b1c1f] !text-white`}
-              >
-                {creating ? "Veido…" : ATRA_MANUAL_ORDER_LABEL}
+            <div className="flex min-w-[200px] items-center gap-2.5 text-[13px] tabular-nums text-[#3a3a3c]" data-atra-progress>
+              <span className="h-1.5 w-[120px] overflow-hidden rounded-[3px] bg-[#e5e5ea]">
+                <i
+                  className="block h-full bg-[#0b3fa8] transition-[width] duration-300"
+                  style={{ width: `${progressTotal ? Math.round((progressDone / progressTotal) * 100) : 0}%` }}
+                />
+              </span>
+              {progressTotal ? `${progressDone} no ${progressTotal}` : ""}
+            </div>
+            <div className="ml-auto flex flex-wrap gap-2">
+              {isAdmin ? (
+                <button
+                  type="button"
+                  disabled={!canCreate}
+                  onClick={() => void createManualOrder()}
+                  className={`${btn} !border-[#1b1c1f] !bg-[#1b1c1f] !text-white`}
+                >
+                  {creating ? "Veido…" : ATRA_MANUAL_ORDER_LABEL}
+                </button>
+              ) : null}
+              <AdminAtraCopyButton text={summary} className={btn} />
+              <button type="button" disabled={!canRun || busy} onClick={() => void runCheck(true)} className={btn}>
+                Skenēt no jauna
               </button>
-            ) : null}
-            <AdminAtraCopyButton text={summary} className={btn} />
-            <button type="button" disabled={!canRun || busy} onClick={() => void runCheck(true)} className={btn}>
-              Skenēt no jauna
-            </button>
+            </div>
           </div>
           {createError ? <p className="mt-2 text-[13px] text-[#d70015]">{createError}</p> : null}
           {speckr ? (
@@ -661,11 +653,12 @@ export function AdminAtraParbaudePage({
       ) : null}
 
       {showResult && valid ? (
-        <>
+        <section className="space-y-2.5" data-atra-conclusion>
+          <h2 className="px-1 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">Ātrais secinājums</h2>
           <AdminAtraPotential score={score} />
-          <AdminAtraPreviewBanners previews={facts.previews} />
           <AdminAtraFactCards facts={facts} vin={vin} />
-        </>
+          <AdminAtraPreviewBanners previews={facts.previews} />
+        </section>
       ) : null}
 
       <AdminVinScanPanel
@@ -678,6 +671,7 @@ export function AdminAtraParbaudePage({
         historyOpen={allScansOpen}
         sourceIds={freeOn}
         paidSourceIds={paidScanIds}
+        layout="table"
       />
 
       {isAdmin && dealer ? (

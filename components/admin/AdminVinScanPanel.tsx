@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
+import { AdminVinScanSourceTable, type SourceTableItem } from "@/components/admin/AdminVinScanSourceTable";
 
 // Rezultātu kartītes vajag tikai pēc pārbaudes — atsevišķs gabals, nav sākuma JS.
 const AdminVinScanResultCards = dynamic(
@@ -19,6 +20,7 @@ import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
+import { vinScanResultCards } from "@/lib/vin-scan/result-fields";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
   buildVinScanFacts,
@@ -299,6 +301,19 @@ function rowsFromIndicators(
 
 type HistoryEntry = { vin: string; scannedAt: string; found: number; none: number };
 
+function vinScanRowHasCard(row: ScanRow): boolean {
+  return vinScanResultCards([row]).length > 0;
+}
+
+/**
+ * Pārlūka (userscript) importa kļūda paliek pie sava avota rindas. «page_not_ready» nāk atkārtoti, kamēr
+ * lapa ielādējas - globāls paziņojums tad parādījās/pazuda katrā ciklā un raustīja lapu.
+ */
+export function browserImportRowNote(code: string | undefined): string {
+  if (code === "page_not_ready") return "Gaida lapu pārlūkā";
+  return browserImportErrorLv(code);
+}
+
 export function AdminVinScanPanel({
   vin,
   plates,
@@ -309,6 +324,7 @@ export function AdminVinScanPanel({
   historyOpen = false,
   sourceIds,
   paidSourceIds,
+  layout = "tiles",
 }: {
   vin: string;
   plates: VinScanPlates;
@@ -324,6 +340,8 @@ export function AdminVinScanPanel({
   sourceIds?: readonly string[];
   /** «Ātrā pārbaude»: maksas VIN SCAN avoti ar admina ķeksi (JoJ). Skrien pēc bezmaksas, bez force. */
   paidSourceIds?: readonly string[];
+  /** `table`: «Ātrā pārbaude» datorā - viena kompakta avotu tabula grupās. Telefons paliek ar flīzēm. */
+  layout?: "tiles" | "table";
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -336,6 +354,7 @@ export function AdminVinScanPanel({
   const [scannedAt, setScannedAt] = useState("");
   const [copyNote, setCopyNote] = useState("");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [importNotes, setImportNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const localDecode = valid ? localVinDecodeRow(clean) : null;
@@ -344,6 +363,7 @@ export function AdminVinScanPanel({
     setOpenId(null);
     setScannedAt("");
     setCopyNote("");
+    setImportNotes({});
     if (!valid) return;
     let cancelled = false;
     (async () => {
@@ -536,7 +556,8 @@ export function AdminVinScanPanel({
       const parsed = parseVinScanBrowserEventDetail((ev as CustomEvent).detail);
       if (!parsed || parsed.vin !== clean) return;
       const html = parsed.html;
-      setError("");
+      const sourceId = parsed.id;
+      const noteFor = (text: string) => setImportNotes((prev) => (prev[sourceId] === text ? prev : { ...prev, [sourceId]: text }));
       void fetch("/api/admin/vin-scan", {
         method: "POST",
         credentials: "include",
@@ -567,9 +588,15 @@ export function AdminVinScanPanel({
             error?: string;
           } | null;
           if (!r.ok) {
-            setError(browserImportErrorLv(data?.error));
+            noteFor(browserImportRowNote(data?.error));
             return;
           }
+          setImportNotes((prev) => {
+            if (!(sourceId in prev)) return prev;
+            const next = { ...prev };
+            delete next[sourceId];
+            return next;
+          });
           const indicators = data?.indicators;
           if (!data || !Array.isArray(indicators)) return;
           if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
@@ -583,7 +610,7 @@ export function AdminVinScanPanel({
             /* ignore */
           }
         })
-        .catch(() => setError("Importēšana neizdevās"));
+        .catch(() => noteFor("Importēšana neizdevās"));
     };
     document.addEventListener("provin-vin-scan-result", onResult);
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
@@ -616,6 +643,99 @@ export function AdminVinScanPanel({
       }),
     });
   }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing, tiles]);
+
+  const exportBtn =
+    "rounded-[8px] border border-[#e5e5ea] bg-white px-2.5 py-1 text-[12.5px] font-semibold text-[#111] hover:bg-[#f7f7f9] disabled:opacity-45";
+
+  if (layout === "table") {
+    const items: SourceTableItem[] = tiles.map((item) => {
+      const row = displayById[item.id];
+      const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
+      const hasDetails = Boolean(row && (row.detail.trim() || vinScanRowHasCard(row)));
+      return {
+        id: item.id,
+        label: item.label,
+        country: item.country,
+        status,
+        summary: row?.summary ?? "",
+        note: importNotes[item.id],
+        href: canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates, listing) : "",
+        hasDetails,
+      };
+    });
+    const showTable = busy || rows.length > 0;
+    return (
+      <>
+        {!busy && scannedAt ? <AdminVinScanBrowserFetchHandoff vin={clean} at={scannedAt} rows={Object.values(byId)} /> : null}
+        <AdminUserscriptUpdateHint />
+        {historyOpen ? (
+          <div className="flex flex-wrap gap-1" aria-label="Iepriekšējās pārbaudes">
+            {history.length === 0 ? <span className="text-[12px] text-[#8e8e93]">Vēsture tukša vai ielādējas…</span> : null}
+            {history.map((entry) => (
+              <a
+                key={`${entry.vin}-${entry.scannedAt}`}
+                href={`/admin/vin-scan?vin=${encodeURIComponent(entry.vin)}`}
+                className={`rounded-md border px-1.5 py-0.5 font-mono text-[11px] ${
+                  entry.vin === clean ? "border-[#0b3fa8]/40 bg-[#e8eefc]" : "border-[#e5e5ea] text-[#3a3a3c] hover:bg-[#f7f7f9]"
+                }`}
+              >
+                {entry.vin} · {entry.found}
+              </a>
+            ))}
+          </div>
+        ) : null}
+        {showTable ? (
+          <AdminVinScanSourceTable
+            items={items}
+            busy={busy}
+            error={error}
+            meta={[scannedAt ? formatVinScanScannedAt(scannedAt) : "", copyNote].filter(Boolean).join(" · ")}
+            actions={
+              <>
+                {nordicLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-provin-handoff-vin={clean || undefined}
+                    className={exportBtn}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                {canRetry ? (
+                  <button type="button" onClick={() => void retryUnknown()} className={exportBtn}>
+                    Atkārtot neizdevušos
+                  </button>
+                ) : null}
+                <button type="button" disabled={rows.length === 0} onClick={() => void copyExport("text")} className={exportBtn}>
+                  Kopēt tekstu
+                </button>
+                <button type="button" disabled={rows.length === 0} onClick={() => void copyExport("json")} className={exportBtn}>
+                  JSON
+                </button>
+              </>
+            }
+            details={(id) => {
+              const row = displayById[id];
+              if (!row) return null;
+              return (
+                <>
+                  {row.detail.trim() ? <p className="whitespace-pre-line break-words">{row.detail}</p> : null}
+                  {vinScanRowHasCard(row) ? (
+                    <div className={row.detail.trim() ? "mt-2" : ""}>
+                      <AdminVinScanResultCards rows={[row]} bare />
+                    </div>
+                  ) : null}
+                </>
+              );
+            }}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <section
@@ -739,8 +859,10 @@ export function AdminVinScanPanel({
                           : "text-[var(--color-provin-muted)]"
                       }`}
                     >
-                      {statusLabel(item.id, status, row?.summary)}
-                      {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
+                      {importNotes[item.id] && status !== "found" && status !== "none" && status !== "checking"
+                        ? importNotes[item.id]
+                        : statusLabel(item.id, status, row?.summary)}
+                      {status !== "checking" && row?.summary && !importNotes[item.id] ? ` · ${row.summary}` : ""}
                     </span>
                   </span>
                 </button>

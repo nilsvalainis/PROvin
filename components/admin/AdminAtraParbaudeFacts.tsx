@@ -122,7 +122,9 @@ function Fact({
   const t = useTone(glass);
   return (
     <div
-      className={`${t.card} flex min-h-[126px] flex-col gap-1.5 ${wide ? "sm:col-span-2" : ""} ${alert && !glass ? "!border-[#f3c1c6]" : ""}`}
+      className={`${t.card} flex min-w-0 flex-col gap-1.5 ${glass ? `min-h-[126px] ${wide ? "sm:col-span-2" : ""}` : "h-full"} ${
+        alert && !glass ? "!border-[#f3c1c6]" : ""
+      }`}
       data-atra-fact={k}
     >
       <span className={`text-[11.5px] font-semibold uppercase tracking-[0.4px] ${t.mut}`}>{k}</span>
@@ -149,7 +151,11 @@ export function AdminAtraFactCards({
   const shown = a.photos.slice(0, 4);
   const more = Math.max(0, a.photoCount - shown.length);
   return (
-    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4" data-atra-facts>
+    // Datorā: vienāds režģis 4 kolonnās (8 kartītes = 2 pilnas rindas, vienāds augstums rindā). Telefons (glass) - kā līdz šim.
+    <div
+      className={glass ? "grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4" : "grid grid-cols-2 gap-2.5 xl:grid-cols-4"}
+      data-atra-facts
+    >
       <Fact
         glass={glass}
         wide
