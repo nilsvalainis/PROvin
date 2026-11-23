@@ -29,6 +29,11 @@ type Phase =
   | { kind: "error"; message: string };
 
 const LOGIN_WAIT_MS = 3 * 60_000;
+
+type AutoInfo = {
+  job: { state: string; label: string; plate: string; appliedAt: string | null; rawText?: string; fields?: CsddFormFields } | null;
+  dropbox: { state: "ok" | "error"; path: string | null; error: string | null } | null;
+};
 const storeKey = (sessionId: string) => `provin:ecsdd-paid:${sessionId}`;
 
 function readPending(sessionId: string): Pending | null {
@@ -107,6 +112,50 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
   const linkInFlight = useRef(false);
   const autoInFlight = useRef(false);
   const [autoState, setAutoState] = useState<"" | "busy" | "sent" | "error">("");
+
+  // Automātiskā izziņa (pēc apmaksas) + pasūtījuma Dropbox mape.
+  const [autoInfo, setAutoInfo] = useState<AutoInfo | null>(null);
+  const autoAppliedRef = useRef(false);
+  const loadAuto = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/ecsdd/paid/auto-status?sessionId=${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+      if (res.ok) setAutoInfo((await res.json()) as AutoInfo);
+    } catch {
+      /* nākamajā reizē */
+    }
+  }, [sessionId]);
+  useEffect(() => {
+    void loadAuto();
+  }, [loadAuto]);
+  const autoJobState = autoInfo?.job?.state;
+  useEffect(() => {
+    if (autoJobState !== "queued" && autoJobState !== "sms_sent") return;
+    const t = setInterval(() => void loadAuto(), 20_000);
+    return () => clearInterval(t);
+  }, [autoJobState, loadAuto]);
+  // Servera ielasīšana neizdevās (piem. melnraksts tikko mainīts): ievieto šeit, tas pats ceļš kā pogai.
+  useEffect(() => {
+    const job = autoInfo?.job;
+    if (disabled || autoAppliedRef.current || !job?.rawText || !job.fields || job.appliedAt) return;
+    autoAppliedRef.current = true;
+    onChangeRef.current(applyCsddPaidReportToForm(valueRef.current, job.fields, job.rawText));
+    void fetch("/api/admin/ecsdd/paid/auto-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, action: "applied" }),
+    }).then(() => loadAuto(), () => undefined);
+  }, [autoInfo, disabled, sessionId, loadAuto]);
+  const recheckAuto = async () => {
+    try {
+      await fetch("/api/admin/ecsdd/paid/auto-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, action: "recheck" }),
+      });
+    } finally {
+      void loadAuto();
+    }
+  };
 
   useEffect(() => {
     setPlatform(smsPlatformFromUserAgent(navigator.userAgent));
@@ -283,6 +332,29 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
   const label = `CSDD maksas izziņa (${pending?.price || "1,50"} €)`;
   const busy = phase.kind === "busy" || phase.kind === "login";
 
+  const autoLine =
+    autoInfo?.job || autoInfo?.dropbox ? (
+      <div className="mt-1 flex flex-col gap-0.5" data-testid="csdd-paid-auto-status">
+        {autoInfo.job ? (
+          <span className={autoInfo.job.state === "error" ? "text-red-700" : "text-slate-600"}>
+            Automātiskā izziņa ({autoInfo.job.plate}): {autoInfo.job.label}
+            {autoInfo.job.state === "awaiting_payment" ? (
+              <button type="button" className="ml-2 text-slate-500 underline" onClick={() => void recheckAuto()}>
+                Pārbaudīt vēlreiz
+              </button>
+            ) : null}
+          </span>
+        ) : null}
+        {autoInfo.dropbox ? (
+          autoInfo.dropbox.state === "ok" && autoInfo.dropbox.path ? (
+            <span className="break-all text-slate-500">Dropbox: {autoInfo.dropbox.path}</span>
+          ) : (
+            <span className="text-red-700">Dropbox mape nav izveidota{autoInfo.dropbox.error ? ` (${autoInfo.dropbox.error})` : ""}</span>
+          )
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <div className="mb-2 text-[11px] text-slate-700" data-testid="csdd-paid-report">
       {phase.kind !== "sms" ? (
@@ -331,6 +403,7 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
           </div>
         </div>
       )}
+      {autoLine}
     </div>
   );
 }

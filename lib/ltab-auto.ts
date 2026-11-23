@@ -17,7 +17,8 @@ import {
 } from "@/lib/ltab-auto-logic";
 import { readLtabAutoStatus, writeLtabAutoStatus } from "@/lib/ltab-auto-store";
 import { isLtabAutoActive, type LtabAutoStatus } from "@/lib/ltab-auto-types";
-import { saveLtabPdfToOrderFolder } from "@/lib/ltab-dropbox";
+import { ltabPdfFileName, saveLtabPdfToOrderFolder } from "@/lib/ltab-dropbox";
+import { readOrderDropboxRecord, saveFileToOrderDropboxFolder } from "@/lib/order-dropbox";
 import { LTAB_SKIP_REASON_LV, resolveLtabQueryTarget } from "@/lib/ltab-query-target";
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { LtabCertificate } from "@/lib/ltab-report-extract";
@@ -244,8 +245,15 @@ export async function handleLtabRelayEvent(
     dropboxNote = " · Dropbox nav konfigurēts, PDF nav saglabāts";
   } else {
     try {
-      const saved = await saveLtabPdfToOrderFolder(client, car, bytes);
-      pdf = { dropboxPath: saved.path, name: saved.name, size: saved.size, savedAt: nowIso() };
+      // Jaunie pasūtījumi: sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
+      const orderFolder = await readOrderDropboxRecord(sessionId);
+      const inOrder = orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes) : null;
+      if (inOrder) {
+        pdf = { dropboxPath: inOrder.path, name: inOrder.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() };
+      } else {
+        const saved = await saveLtabPdfToOrderFolder(client, car, bytes);
+        pdf = { dropboxPath: saved.path, name: saved.name, size: saved.size, savedAt: nowIso() };
+      }
     } catch (e) {
       console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");
       dropboxNote = " · PDF neizdevās saglabāt Dropbox";

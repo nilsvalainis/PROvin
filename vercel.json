@@ -141,6 +141,10 @@
       "schedule": "*/6 6,7,10,11,14,15 * * *"
     },
     {
+      "path": "/api/cron/csdd-paid-auto",
+      "schedule": "*/5 4-21 * * *"
+    },
+    {
       "path": "/api/cron/dealer-data-sweep",
       "schedule": "*/5 * * * *"
     },
