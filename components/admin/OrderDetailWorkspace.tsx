@@ -28,6 +28,7 @@ import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog"
 import { MobileDealerOrderPanel } from "@/components/admin/mobile/MobileDealerOrderPanel";
 import { MobileOrderMoreSheet, type MobileOrderMoreGroup } from "@/components/admin/mobile/MobileOrderMoreSheet";
 import { AdminMobileGlassSaveStatus } from "@/components/admin/mobile/AdminMobileGlass";
+import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
@@ -4624,6 +4625,10 @@ export function OrderDetailWorkspace({
             />
           </div>
         </div>
+      </div>
+      {/* Klienta saite (22.11): atskaite tīmeklī; e-pastiem vēl nepievieno. */}
+      <div className="mt-1.5">
+        <AdminClientReportLinkControl sessionId={payload.sessionId} />
       </div>
       {prepareDraftPhase ? (
         <p className="mt-1 text-[10px] leading-snug text-[var(--color-provin-accent)]" role="status">

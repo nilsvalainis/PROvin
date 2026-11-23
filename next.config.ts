@@ -209,6 +209,22 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/:locale(lv|en|de|ru)/atskaite/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/api/atskaite/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
         source: "/s",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },

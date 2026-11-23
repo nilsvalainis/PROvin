@@ -27,6 +27,7 @@ import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isBusinessLinkPath } from "./lib/business-link";
 import { isClientLinkPath } from "./lib/client-link";
+import { CLIENT_REPORT_LINK_HEADERS, clientReportLinkRewritePath } from "./lib/client-report-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissCarSharePath } from "./lib/iriss-car-share";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
@@ -275,6 +276,17 @@ export default async function middleware(request: NextRequest) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     res.headers.set("Cache-Control", "private, no-store");
+    return res;
+  }
+
+  // Klienta atskaites saite `/{locale}/atskaite/<token>` → savs apvalks (bez vietnes galvenes/analītikas).
+  const reportLinkPath = clientReportLinkRewritePath(pathname);
+  if (reportLinkPath) {
+    const dest = request.nextUrl.clone();
+    dest.pathname = reportLinkPath;
+    dest.search = "";
+    const res = NextResponse.rewrite(dest);
+    for (const [k, v] of Object.entries(CLIENT_REPORT_LINK_HEADERS)) res.headers.set(k, v);
     return res;
   }
 
