@@ -1,9 +1,17 @@
 # CSDD izziņu PDF savācējs (info@provin.lv)
 
-Ko dara: ik 5 min Google skripts info@provin.lv pastkastē atrod jaunas vēstules ar PDF (pēdējās 7 dienas)
-un nosūta PDF uz PROVIN. PROVIN pats pārbauda, vai tā ir e.csdd izziņa ("Informācija sagatavota elektroniski"),
-atrod pasūtījumu pēc numura / VIN, ieliek PDF pasūtījuma Dropbox mapē un tekstu CSDD blokā.
-Apstrādātās vēstules saņem etiķeti **PROVIN-apstrādāts** (citi PDF - **PROVIN-nav-CSDD**). Nekas netiek dzēsts.
+Ko dara: ik 5 min Google skripts info@provin.lv pastkastē atrod jaunas vēstules ar PDF (pēdējās 7 dienas).
+Uz PROVIN sūta **tikai** PDF, kas:
+1. ir vēstulē, kas pāradresēta no Nila Gmail (adrese skripta iestatījumā `FORWARDED_FROM`, nevis kodā), **un**
+2. izskatās pēc e.csdd izziņas (PDF metadatos "TCPDF" vai numurzīme faila nosaukumā / tematā).
+
+PROVIN vēlreiz pārbauda, vai tā ir e.csdd izziņa ("Informācija sagatavota elektroniski"), atrod pasūtījumu pēc
+numura / VIN, ieliek PDF pasūtījuma Dropbox mapē un tekstu CSDD blokā.
+
+Etiķetes (nekas netiek dzēsts):
+- **PROVIN-apstrādāts** - izziņa nosūtīta PROVIN;
+- **PROVIN-pārbaudīt** - pāradresēts no Nila Gmail, bet nav pārliecības, ka tā ir CSDD izziņa - **netika sūtīts**, paskaties pats;
+- **PROVIN-nav-CSDD** - nav pāradresēts no Nila Gmail (rēķini, klientu dokumenti) - **netika sūtīts nekur**.
 
 Bez maksas, bez jaunām parolēm. Tokenu glabā tikai skripta iestatījumos (nevis kodā).
 
@@ -21,6 +29,9 @@ Bez maksas, bez jaunām parolēm. Tokenu glabā tikai skripta iestatījumos (nev
    **Add script property**:
    - **Property**: `CSDD_PDF_INBOX_TOKEN`
    - **Value**: tokens no 1Password (ieraksts «PROVIN CSDD PDF inbox token»)
+   - vēlreiz **Add script property**:
+     - **Property**: `FORWARDED_FROM`
+     - **Value**: tava Gmail adrese, no kuras CSDD e-pasti tiek pāradresēti uz info@provin.lv
    - spied **Save script properties**.
 5. Kreisajā malā atpakaļ uz **Editor** (`<>` ikona). Augšā funkciju sarakstā izvēlies **installTrigger** un spied **Run**.
 6. Parādīsies **Authorization required** -> **Review permissions** -> izvēlies info@provin.lv ->
@@ -34,7 +45,7 @@ Bez maksas, bez jaunām parolēm. Tokenu glabā tikai skripta iestatījumos (nev
 Apturēt: **Triggers** -> pie trigera trīs punkti -> **Delete trigger**.
 
 ## Piezīmes
-- Skripts sūta uz PROVIN visus jaunos PDF pielikumus (rēķinus u.c. arī); PROVIN saglabā tikai e.csdd izziņas,
-  pārējos neglabā un atbild `not_csdd`.
+- Privātums: PDF no citiem sūtītājiem (rēķini, klientu dokumenti) skripts nekad nesūta uz PROVIN serveri.
+- Ja PROVIN serveris atbild, ka PDF nav CSDD izziņa, vēstule saņem **PROVIN-pārbaudīt** (PDF netiek glabāts).
 - Ja PROVIN nav sasniedzams, etiķete netiek likta un nākamajā reizē mēģina vēlreiz.
 - Ja izziņai nav pasūtījuma pēdējās 7 dienās - push adminam «CSDD PDF bez pasūtījuma», vēstule saņem PROVIN-apstrādāts.
