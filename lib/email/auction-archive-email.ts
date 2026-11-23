@@ -68,23 +68,35 @@ export function auctionArchiveEmailFacts(s: AuctionArchiveSummary): AuctionArchi
 
 /* ---------- Piedāvājums ---------- */
 
+/** Vērtības teikums (Nils 23.11): bildēs redzams stāvoklis pirms ievešanas Latvijā. */
+export const AUCTION_ARCHIVE_VALUE_SENTENCE =
+  "Bildēs redzams auto stāvoklis pirms tā ievešanas Latvijā - skrāpējumi, iespējamie bojājumi un citas detaļas, ko pēc remonta vai sakopšanas vairs neredz.";
+
+/** «ar 84 oriģinālajām izsoles bildēm[, cenām] un nobraukumu» - cenas tikai ar «Rādīt izsoļu cenas». */
+function archiveWhat(photos: number, showPrices: boolean): string {
+  const tail = showPrices ? "cenām un nobraukumu" : "nobraukumu";
+  return photos > 0 ? `ar ${photos} oriģinālajām izsoles bildēm${showPrices ? ", " : " un "}${tail}` : `ar ${tail}`;
+}
+
 export function auctionArchiveOfferSubject(s: AuctionArchiveSummary): string {
   const car = [s.title, s.vin].filter(Boolean).join(" · ");
   return `Dīlera datu nav - piedāvājam izsoļu arhīvu ar bildēm${car ? ` (${car})` : ""}`.slice(0, 180);
 }
 
 /** Rediģējamais teksts (e-pasts): makets 1. solis. */
-export function auctionArchiveOfferText(s: AuctionArchiveSummary, paidCents: number | null): string {
+export function auctionArchiveOfferText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(paidCents);
   const where = [f.lastDate, f.countries].filter(Boolean).join(", ");
-  const what = f.photos > 0 ? `ar ${f.photos} oriģinālajām izsoles bildēm, cenām un nobraukumu` : "ar cenām un nobraukumu";
+  const what = archiveWhat(f.photos, showPrices);
   return [
     "Labdien!",
     "",
     `Pārbaudījām auto VIN ${s.vin}. Oficiālā dīlera servisa vēsture šim auto nav pieejama.`,
     "",
-    `Taču atradām to Eiropas izsoļu arhīvā: ${lvCount(f.auctions || 1, "izsole", "izsoles")}${where ? ` (${where})` : ""} ${what}.`,
+    `Taču atradām to Eiropas izsoļu arhīvā: ${lvCount(f.auctions || 1, "izsole", "izsoles")}${where ? ` (${where})` : ""} ${what}.${
+      f.photos > 0 ? ` ${AUCTION_ARCHIVE_VALUE_SENTENCE}` : ""
+    }`,
     "",
     "Varat izvēlēties:",
     "1 - nomainīt dīlera datus uz izsoļu arhīvu (bez piemaksas)",
@@ -99,7 +111,7 @@ export function auctionArchiveOfferText(s: AuctionArchiveSummary, paidCents: num
 }
 
 /** WhatsApp teksts: makets 2. solis (atbilde «1» vai «2», Nils atzīmē adminā). */
-export function auctionArchiveOfferWhatsappText(s: AuctionArchiveSummary, paidCents: number | null): string {
+export function auctionArchiveOfferWhatsappText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(paidCents);
   const car = s.title ? `Jūsu ${s.title} (VIN ${s.vin})` : `auto VIN ${s.vin}`;
@@ -107,11 +119,12 @@ export function auctionArchiveOfferWhatsappText(s: AuctionArchiveSummary, paidCe
   const parts = [
     lvCount(f.auctions || 1, "izsole", "izsoles") + (meta ? ` ${meta}` : ""),
     f.photos > 0 ? `${f.photos} oriģinālās bildes` : "",
-    "cenas, nobraukums un bojājumi pa zonām",
+    showPrices ? "cenas, nobraukums un bojājumi pa zonām" : "nobraukums un bojājumi pa zonām",
   ].filter(Boolean);
   return [
     `Labdien! Pārbaudījām ${car} - oficiālā dīlera vēstures šim auto nav.`,
     `Bet atradām to Eiropas izsoļu arhīvā: ${parts.join(", ")}.`,
+    ...(f.photos > 0 ? [AUCTION_ARCHIVE_VALUE_SENTENCE] : []),
     "Ko izvēlaties?",
     "1 - nomainīt uz izsoļu arhīvu (bez piemaksas)",
     `2 - atgriezt ${refund || "samaksāto summu"}`,
@@ -135,11 +148,13 @@ function previewRow(previews: readonly { url: string; caption: string }[]): stri
   return `<tr><td class="m-pad" style="padding:16px 36px 0;"><table ${TABLE} width="100%"><tr>${cells}</tr></table></td></tr>`;
 }
 
-function contentsRow(s: AuctionArchiveSummary): string {
+function contentsRow(s: AuctionArchiveSummary, showPrices: boolean): string {
   const f = auctionArchiveEmailFacts(s);
   const items = [
-    { t: "Visas izsoles bildes", sub: f.photos > 0 ? `${f.photos}, ar datumiem` : "ar datumiem" },
-    { t: "Izsoles cenas", sub: f.pricedAuctions > 0 ? lvCount(f.pricedAuctions, "izsolē", "izsolēs") : "ja izsole tās norāda" },
+    { t: "Visas izsoles bildes", sub: f.photos > 0 ? `${f.photos}, ar datumiem - stāvoklis pirms ievešanas Latvijā` : "ar datumiem" },
+    ...(showPrices
+      ? [{ t: "Izsoles cenas", sub: f.pricedAuctions > 0 ? lvCount(f.pricedAuctions, "izsolē", "izsolēs") : "ja izsole tās norāda" }]
+      : []),
     { t: "Nobraukums izsoles dienā", sub: "ar odometra bildi, ja tāda ir" },
     { t: "Bojājumi pa zonām", sub: "uz virsbūves shēmas" },
     { t: "Izsoles apraksts", sub: "oriģināls + tulkojums" },
@@ -161,6 +176,10 @@ export type AuctionArchiveOfferEmailInput = {
   /** Izvēles lapa `https://www.provin.lv/lv/izvele/<token>`. */
   choiceUrl: string;
   previews: readonly { url: string; caption: string }[];
+  /** «Rādīt izsoļu cenas» - citādi cenas e-pastā neparādās. */
+  showPrices?: boolean;
+  /** 3 dienu atgādinājums klientam (tās pašas 2 pogas). */
+  reminder?: boolean;
   date?: Date;
 };
 
@@ -200,8 +219,8 @@ export function auctionArchiveOfferEmailHtml(o: AuctionArchiveOfferEmailInput): 
   const rows = [
     emailStatusCardRow({
       icon: "gavel",
-      eyebrow: "Oficiālā dīlera dati",
-      title: "Dīlera datu nav - bet atradām izsoļu vēsturi ar bildēm",
+      eyebrow: o.reminder ? "Atgādinājums" : "Oficiālā dīlera dati",
+      title: o.reminder ? "Gaidām Jūsu izvēli - izsoļu arhīvs vai atmaksa" : "Dīlera datu nav - bet atradām izsoļu vēsturi ar bildēm",
       car: s.title || null,
       vin: s.vin || null,
       date: formatEmailDate(o.date ?? new Date()),
@@ -209,7 +228,7 @@ export function auctionArchiveOfferEmailHtml(o: AuctionArchiveOfferEmailInput): 
     paragraphs ? emailRow(paragraphs, "22px 36px 0") : "",
     facts,
     previewRow(o.previews),
-    contentsRow(s),
+    contentsRow(s, o.showPrices === true),
     buttons,
   ].join("\n");
   return emailDocument({ rows, lang: "lv", preheader: `${lvCount(f.auctions || 1, "izsole", "izsoles")}, ${f.photos} bildes - izvēlieties arhīvu vai atmaksu` });
@@ -220,6 +239,47 @@ export function auctionArchiveOfferPlainText(text: string, choiceUrl: string): s
   return `${text.trim()}\n\nIzvēlēties un apstiprināt: ${choiceUrl}`;
 }
 
+/* ---------- Atgādinājums klientam (3 dienas bez izvēles, vienreiz) ---------- */
+
+export function auctionArchiveReminderSubject(s: AuctionArchiveSummary): string {
+  const car = [s.title, s.vin].filter(Boolean).join(" · ");
+  return `Atgādinājums: izsoļu arhīvs vai atmaksa${car ? ` (${car})` : ""}`.slice(0, 180);
+}
+
+export function auctionArchiveReminderText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
+  const f = auctionArchiveEmailFacts(s);
+  const refund = formatEurCents(paidCents);
+  const where = [f.lastDate, f.countries].filter(Boolean).join(", ");
+  return [
+    "Labdien!",
+    "",
+    `Atgādinām par auto VIN ${s.vin}: oficiālā dīlera servisa vēsture nav pieejama, taču atradām to Eiropas izsoļu arhīvā - ${lvCount(f.auctions || 1, "izsole", "izsoles")}${where ? ` (${where})` : ""} ${archiveWhat(f.photos, showPrices)}.${
+      f.photos > 0 ? ` ${AUCTION_ARCHIVE_VALUE_SENTENCE}` : ""
+    }`,
+    "",
+    "Lūdzu, izvēlieties:",
+    "1 - nomainīt dīlera datus uz izsoļu arhīvu (bez piemaksas)",
+    `2 - atgriezt ${refund || "samaksāto summu"} uz karti`,
+    "",
+    "Kamēr neizvēlaties, neko nesūtām.",
+    "",
+    "Ar cieņu,",
+    "Nils Valainis",
+    "PROVIN.LV",
+  ].join("\n");
+}
+
+/** WhatsApp atgādinājums - Nilam kopēšanai (pats nosūta). */
+export function auctionArchiveReminderWhatsappText(s: AuctionArchiveSummary, paidCents: number | null, choiceUrl: string): string {
+  const refund = formatEurCents(paidCents);
+  return [
+    `Labdien! Atgādinu par auto VIN ${s.vin} - izsoļu arhīvs ar bildēm (bez piemaksas) vai atmaksa ${refund || "samaksātās summas"}?`,
+    "Atbildiet ar 1 (arhīvs) vai 2 (atmaksa), vai izvēlieties šeit:",
+    choiceUrl,
+    "Nils, PROVIN.LV",
+  ].join("\n");
+}
+
 /* ---------- Gatavs (PDF pēc klienta «Jā») ---------- */
 
 export function auctionArchiveReadySubject(s: AuctionArchiveSummary): string {
@@ -227,13 +287,13 @@ export function auctionArchiveReadySubject(s: AuctionArchiveSummary): string {
   return `Izsoļu arhīvs${car ? ` - ${car}` : ""}`.slice(0, 180);
 }
 
-export function auctionArchiveReadyText(s: AuctionArchiveSummary): string {
+export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = false): string {
   const f = auctionArchiveEmailFacts(s);
   const what = [lvCount(f.auctions || 1, "izsole", "izsoles"), f.photos > 0 ? lvCount(f.photos, "bilde", "bildes") : ""].filter(Boolean).join(", ");
   return [
     "Labdien!",
     "",
-    `Paldies par izvēli. Pielikumā izsoļu arhīvs auto VIN ${s.vin} (${what}) - bildes ar datumiem, cenas, nobraukums, bojājumi pa zonām un izsoles apraksts.`,
+    `Paldies par izvēli. Pielikumā izsoļu arhīvs auto VIN ${s.vin} (${what}) - bildes ar datumiem, ${showPrices ? "cenas, " : ""}nobraukums, bojājumi pa zonām un izsoles apraksts.`,
     "",
     "Piemaksa nav jāveic.",
     "",

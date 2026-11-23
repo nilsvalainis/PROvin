@@ -116,6 +116,22 @@ export function AuctionArchiveStatusBadge({ label, tone }: { label: string; tone
   return <span className={`inline-flex rounded border px-1.5 py-px text-[10.5px] font-medium ${TONE_CLS[tone]}`}>{label}</span>;
 }
 
+/** Ķeksis «Rādīt izsoļu cenas» (sūtīšanas logs un PDF ģenerēšana). */
+export function ShowPricesCheckbox({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="amx-tx flex cursor-pointer items-center gap-2 text-[12px] text-slate-800 max-md:min-h-[44px] max-md:text-[14px]" data-show-prices>
+      <input
+        type="checkbox"
+        className="max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      Rādīt izsoļu cenas
+    </label>
+  );
+}
+
 /* ---------- Sūtīšanas logs ---------- */
 
 export function AuctionArchiveSendSection({
@@ -125,6 +141,8 @@ export function AuctionArchiveSendSection({
   manualSources,
   onManualSources,
   disabled,
+  showPrices = false,
+  onShowPrices,
 }: {
   state: AuctionArchiveState;
   previewIds: string[];
@@ -132,6 +150,9 @@ export function AuctionArchiveSendSection({
   manualSources: AuctionArchiveManualSource[];
   onManualSources: (list: AuctionArchiveManualSource[]) => void;
   disabled: boolean;
+  /** «Rādīt izsoļu cenas» - tekstā, e-pastā un PDF (noklusējumā izslēgts). */
+  showPrices?: boolean;
+  onShowPrices?: (v: boolean) => void;
 }) {
   const [link, setLink] = useState("");
   const s = state.summary;
@@ -180,6 +201,7 @@ export function AuctionArchiveSendSection({
           Samaksāts {formatEurCents(state.paidCents) || "-"} · {state.refunded ? "atmaksāts" : "neatmaksāts"}
         </p>
       </div>
+      {onShowPrices ? <ShowPricesCheckbox checked={showPrices} disabled={disabled} onChange={onShowPrices} /> : null}
 
       {!ready ? (
         <>
@@ -271,6 +293,7 @@ const EVENT_LV: Record<string, string> = {
   refunded: "Atzīmēts: atmaksāts",
   withdrawn: "Piedāvājums atsaukts",
   admin_reminded: "Atgādinājums Nilam (3 d bez izvēles)",
+  client_reminded: "Atgādinājums klientam",
 };
 
 const ZONE_LV: Record<AuctionArchiveMarkZone, string> = {
@@ -299,8 +322,10 @@ export function AdminAuctionArchivePanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [markZone, setMarkZone] = useState<AuctionArchiveMarkZone>("rear");
   const [markNote, setMarkNote] = useState("");
+  const [showPrices, setShowPrices] = useState<boolean | null>(null);
   const offer = state?.offer ?? null;
   if (!state || !offer) return null;
+  const prices = showPrices ?? offer.showPrices === true;
 
   const act = async (action: string, extra: Record<string, unknown> = {}, confirmText?: string) => {
     if (busy) return;
@@ -365,7 +390,7 @@ export function AdminAuctionArchivePanel({
             </button>
           </>
         ) : null}
-        <button type="button" className={small} disabled={busy !== null} onClick={() => void act("pdf")}>
+        <button type="button" className={small} disabled={busy !== null} onClick={() => void act("pdf", { showPrices: prices })}>
           {busy === "pdf" ? "Gatavo PDF…" : "Skatīt PDF"}
         </button>
         {open ? (
@@ -389,6 +414,10 @@ export function AdminAuctionArchivePanel({
         <button type="button" className={small} disabled={busy !== null} onClick={() => void reload()}>
           Atjaunot
         </button>
+      </div>
+
+      <div className="mt-1.5">
+        <ShowPricesCheckbox checked={prices} disabled={busy !== null} onChange={setShowPrices} />
       </div>
 
       <details className="mt-1.5">

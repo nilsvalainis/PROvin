@@ -77,6 +77,29 @@ describe("izsoļu arhīva krātuve", () => {
     expect(await s.findAuctionArchiveOfferByToken("../../etc")).toBeNull();
   });
 
+  it("atgādinājums: otra saite (abas derīgas), vienreiz; showPrices saglabājas; dzēšana noņem abus indeksus", async () => {
+    const s = await load();
+    const { markAuctionArchiveReminded, isAuctionArchiveReminderDue } = await import("@/lib/auction-archive-offer");
+    const r = await s.createAuctionArchiveOffer({
+      sessionId: SID, locale: "lv", channel: "email", paidCents: 2499, summary, photos: [], photosMissing: 0, previewIds: [], showPrices: true,
+    });
+    if (!r.ok) throw new Error("create");
+    expect(r.doc.showPrices).toBe(true);
+    const later = Date.now() + 3 * 864e5 + 1000;
+    const issue = () =>
+      s.issueAuctionArchiveReminder(SID, (d) => isAuctionArchiveReminderDue(d, later), (d, h) => markAuctionArchiveReminded(d, later, { reminderTokenHash: h }));
+    const first = await issue();
+    expect(first?.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(await issue()).toBeNull();
+    expect((await s.findAuctionArchiveOfferByToken(first!.token))?.sessionId).toBe(SID);
+    expect((await s.findAuctionArchiveOfferByToken(r.token))?.sessionId).toBe(SID);
+    expect(walk(path.join(dir, "auction_archive_offer_tokens"))).toHaveLength(2);
+    const all = walk(dir).map((f) => readFileSync(f, "utf8")).join("\n");
+    expect(all).not.toContain(first!.token);
+    await s.deleteAuctionArchiveOffer(SID);
+    expect(walk(path.join(dir, "auction_archive_offer_tokens"))).toHaveLength(0);
+  });
+
   it("atkārtots piedāvājums: vecā saite vairs neder; pēc izvēles jaunu neizveido", async () => {
     const s = await load();
     const input = { sessionId: SID, locale: "lv" as const, channel: "email" as const, paidCents: 2499, summary, photos: [], photosMissing: 0, previewIds: [] };

@@ -1,6 +1,7 @@
 /**
- * Izsoļu arhīva piedāvājums: klients 3 dienas nav izvēlējies → atgādinājums TIKAI Nilam
- * (admin push + e-pasts), nekad klientam (Nila lēmums 23.11, 3A). Vienreiz katram piedāvājumam.
+ * Izsoļu arhīva piedāvājums: klients 3 dienas nav izvēlējies → vienreiz katram piedāvājumam
+ * (Nila lēmums 23.11, 3 = A+B): Nilam push + e-pasts UN e-pasta piedāvājumam automātisks atgādinājums
+ * klientam ar tām pašām 2 pogām. WhatsApp piedāvājumam klientam neko - Nilam gatavs WhatsApp teksts.
  * Auth: `Authorization: Bearer CRON_SECRET` (Vercel Cron).
  */
 import { NextResponse } from "next/server";

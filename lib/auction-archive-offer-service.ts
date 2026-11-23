@@ -11,7 +11,9 @@ import {
   auctionArchivePreviewPath,
   buildAuctionArchiveSummary,
   formatEurCents,
+  isAuctionArchiveClientReminderAllowed,
   isAuctionArchiveReminderDue,
+  markAuctionArchiveClientReminded,
   markAuctionArchiveRefunded,
   markAuctionArchiveReminded,
   type AuctionArchiveChannel,
@@ -29,12 +31,21 @@ import {
 } from "@/lib/auction-archive-offer-photos";
 import {
   createAuctionArchiveOffer,
+  issueAuctionArchiveReminder,
   listAuctionArchiveOfferSessionIds,
   readAuctionArchiveOffer,
   updateAuctionArchiveOffer,
 } from "@/lib/auction-archive-offer-store";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
-import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
+import { trySendAuctionArchiveClientEmail, trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
+import {
+  auctionArchiveOfferEmailHtml,
+  auctionArchiveOfferPlainText,
+  auctionArchiveReminderSubject,
+  auctionArchiveReminderText,
+  auctionArchiveReminderWhatsappText,
+} from "@/lib/email/auction-archive-email";
+import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getSiteOrigin } from "@/lib/email/mail-config";
@@ -120,6 +131,7 @@ export async function prepareAuctionArchiveOffer(args: {
   manualSources?: readonly AuctionArchiveManualSource[];
   deadline?: number;
   origin?: string;
+  showPrices?: boolean;
 }): Promise<PrepareOfferResult> {
   const ctx = await loadAuctionArchiveOrderContext(args.sessionId);
   if (!ctx) return { ok: false, error: "not_found" };
@@ -151,6 +163,7 @@ export async function prepareAuctionArchiveOffer(args: {
     photos: persisted.photos,
     photosMissing: persisted.missing,
     previewIds,
+    showPrices: args.showPrices === true,
   });
   if (!created.ok) return { ok: false, error: created.error };
   const origin = (args.origin || getPublicSiteOrigin()).replace(/\/+$/, "");
@@ -173,8 +186,12 @@ function adminOrderPath(sessionId: string): string {
 export async function notifyAdminAuctionArchive(args: {
   kind: "choice" | "reminder";
   doc: AuctionArchiveOfferDoc;
+  client?: "email_sent" | "email_failed" | "whatsapp";
+  /** WhatsApp piedāvājumam: gatavs atgādinājuma teksts ar saiti (Nils kopē un sūta pats). */
+  whatsappText?: string;
 }): Promise<{ push: number; email: boolean }> {
   const notice = auctionArchiveAdminNotice({
+    client: args.client,
     kind: args.kind,
     choice: args.doc.choice,
     title: args.doc.summary.title,
@@ -197,7 +214,9 @@ export async function notifyAdminAuctionArchive(args: {
     email = await trySendDealerDataOperatorEmail({
       to,
       subject: `PROVIN: ${notice.title}`,
-      text: `${notice.title}\n\n${notice.body}\n\nPasūtījums: ${getSiteOrigin().replace(/\/+$/, "")}${url}`,
+      text: `${notice.title}\n\n${notice.body}\n\nPasūtījums: ${getSiteOrigin().replace(/\/+$/, "")}${url}${
+        args.whatsappText ? `\n\nWhatsApp teksts kopēšanai:\n\n${args.whatsappText}` : ""
+      }`,
     }).catch(() => false);
   }
   return { push, email };
@@ -241,25 +260,96 @@ export async function recordAuctionArchiveChoice(args: {
   return outcome;
 }
 
-export type AuctionArchiveReminderResult = { ok: true; scanned: number; reminded: number; pushSent: number };
+export type AuctionArchiveReminderResult = {
+  ok: true;
+  scanned: number;
+  reminded: number;
+  pushSent: number;
+  /** Klientam automātiski nosūtīti atgādinājumi (e-pasts). */
+  clientEmails: number;
+};
 
-/** Cron: klients 3 dienas nav izvēlējies → atgādinājums TIKAI Nilam (vienreiz katram piedāvājumam). */
-export async function runAuctionArchiveReminders(nowMs = Date.now()): Promise<AuctionArchiveReminderResult> {
+/** Klienta e-pasts atgādinājumam: tas pats, uz kuru aizgāja piedāvājums; rezerve - pasūtījuma e-pasts. */
+async function reminderRecipient(doc: AuctionArchiveOfferDoc): Promise<string | null> {
+  const [order, draft] = await Promise.all([
+    getCheckoutSessionDetail(doc.sessionId).catch(() => null),
+    readOrderDraft(doc.sessionId).catch(() => null),
+  ]);
+  if (!order) return null;
+  if ((order.paymentAdjustment?.clawbackCents ?? 0) > 0) return null;
+  const to = (doc.sentTo || draft?.orderEdits?.customerEmail?.trim() || order.customerEmail || order.customerDetailsEmail || "").trim();
+  return to && canNotifyClientOrder(order, to) ? to : null;
+}
+
+type ReminderDeps = {
+  sendClientEmail?: typeof trySendAuctionArchiveClientEmail;
+  origin?: string;
+};
+
+/**
+ * Cron: klients 3 dienas nav izvēlējies (Nils 23.11, lēmums 3 = A+B), vienreiz katram piedāvājumam:
+ * - Nilam push + e-pasts (kā līdz šim);
+ * - e-pasta piedāvājumam - automātisks atgādinājums klientam ar tām pašām 2 pogām (otra saite, pirmā arī derīga);
+ * - WhatsApp piedāvājumam - klientam neko; Nila e-pastā gatavs WhatsApp teksts ar saiti kopēšanai.
+ * Nesūta, ja izvēle jau izdarīta, piedāvājums atsaukts / noslēgts vai saite beigusies.
+ */
+export async function runAuctionArchiveReminders(nowMs = Date.now(), deps: ReminderDeps = {}): Promise<AuctionArchiveReminderResult> {
+  const sendClientEmail = deps.sendClientEmail ?? trySendAuctionArchiveClientEmail;
+  const origin = (deps.origin || getPublicSiteOrigin()).replace(/\/+$/, "");
   const ids = await listAuctionArchiveOfferSessionIds();
   let reminded = 0;
   let pushSent = 0;
+  let clientEmails = 0;
   for (const id of ids) {
     const doc = await readAuctionArchiveOffer(id).catch(() => null);
     if (!doc || !isAuctionArchiveReminderDue(doc, nowMs)) continue;
-    const marked = await updateAuctionArchiveOffer<AuctionArchiveOfferDoc | null>(id, (cur) => {
-      if (!cur || !isAuctionArchiveReminderDue(cur, nowMs)) return { result: null };
-      const next = markAuctionArchiveReminded(cur, nowMs);
-      return { next, result: next };
-    }).catch(() => null);
-    if (!marked) continue;
-    const sent = await notifyAdminAuctionArchive({ kind: "reminder", doc: marked }).catch(() => ({ push: 0, email: false }));
+    const issued = await issueAuctionArchiveReminder(
+      id,
+      (cur) => isAuctionArchiveReminderDue(cur, nowMs),
+      (cur, hash) => markAuctionArchiveReminded(cur, nowMs, { reminderTokenHash: hash }),
+    ).catch(() => null);
+    if (!issued) continue;
+    let marked = issued.doc;
+    const choiceUrl = auctionArchiveAbsoluteUrl(origin, marked.locale, issued.token);
+    let client: "email_sent" | "email_failed" | "whatsapp" | undefined;
+    let whatsappText = "";
+    if (marked.channel === "whatsapp") {
+      client = "whatsapp";
+      whatsappText = auctionArchiveReminderWhatsappText(marked.summary, marked.paidCents, choiceUrl);
+    } else if (isAuctionArchiveClientReminderAllowed(marked, nowMs)) {
+      const to = await reminderRecipient(marked);
+      let ok = false;
+      if (to) {
+        const text = auctionArchiveReminderText(marked.summary, marked.paidCents, marked.showPrices === true);
+        ok = await sendClientEmail({
+          to,
+          subject: auctionArchiveReminderSubject(marked.summary),
+          text: auctionArchiveOfferPlainText(text, choiceUrl),
+          html: auctionArchiveOfferEmailHtml({
+            summary: marked.summary,
+            paidCents: marked.paidCents,
+            text,
+            choiceUrl,
+            // Izplūdinātās bildes caur jauno (atgādinājuma) tokenu - tās pašas kopijas.
+            previews: marked.previewIds.map((_, n) => ({ url: `${origin}${auctionArchivePreviewPath(issued.token, n)}`, caption: "" })),
+            showPrices: marked.showPrices === true,
+            reminder: true,
+            date: new Date(nowMs),
+          }),
+        }).catch(() => false);
+      }
+      client = ok ? "email_sent" : "email_failed";
+      if (ok) {
+        clientEmails += 1;
+        const after = await updateAuctionArchiveOffer<AuctionArchiveOfferDoc | null>(id, (cur) =>
+          cur && !cur.clientRemindedAt ? { next: markAuctionArchiveClientReminded(cur, nowMs), result: markAuctionArchiveClientReminded(cur, nowMs) } : { result: cur },
+        ).catch(() => null);
+        if (after) marked = after;
+      }
+    }
+    const sent = await notifyAdminAuctionArchive({ kind: "reminder", doc: marked, client, whatsappText }).catch(() => ({ push: 0, email: false }));
     reminded += 1;
     pushSent += sent.push;
   }
-  return { ok: true, scanned: ids.length, reminded, pushSent };
+  return { ok: true, scanned: ids.length, reminded, pushSent, clientEmails };
 }

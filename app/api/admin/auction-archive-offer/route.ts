@@ -101,6 +101,12 @@ async function recipientFor(
   return { ok: true, to: recipient.to };
 }
 
+function logPdfTimings(b: { photos: number; missingPhotos: number; pdf: Buffer; timings: { photosMs: number; renderMs: number; htmlBytes: number } }) {
+  console.info(
+    `[admin/auction-archive-offer] pdf photos=${b.photos} missing=${b.missingPhotos} photosMs=${b.timings.photosMs} renderMs=${b.timings.renderMs} htmlMB=${(b.timings.htmlBytes / 1e6).toFixed(1)} pdfMB=${(b.pdf.length / 1e6).toFixed(1)}`,
+  );
+}
+
 function bad(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
 }
@@ -205,6 +211,7 @@ export async function POST(req: Request) {
     const channel = body.channel === "whatsapp" ? "whatsapp" : "email";
     const subject = String(body.subject ?? "").trim().slice(0, SUBJECT_MAX);
     const text = String(body.text ?? "").trim().slice(0, TEXT_MAX);
+    const showPrices = body.showPrices === true;
     let to = "";
     if (channel === "email") {
       if (!subject || !text) return bad("missing_subject_or_text");
@@ -224,6 +231,7 @@ export async function POST(req: Request) {
         previewIds,
         manualSources: sanitizeManualSources(body.manualSources),
         deadline: startedAt + PREPARE_BUDGET_MS,
+        showPrices,
       });
       if (!r.ok) return bad(r.error, r.error === "not_found" ? 404 : r.error === "store_failed" ? 503 : 409);
       if (channel === "whatsapp") {
@@ -234,7 +242,7 @@ export async function POST(req: Request) {
         to,
         subject,
         text: auctionArchiveOfferPlainText(text, r.choiceUrl),
-        html: auctionArchiveOfferEmailHtml({ summary: r.doc.summary, paidCents: r.doc.paidCents, text, choiceUrl: r.choiceUrl, previews }),
+        html: auctionArchiveOfferEmailHtml({ summary: r.doc.summary, paidCents: r.doc.paidCents, text, choiceUrl: r.choiceUrl, previews, showPrices }),
       });
       if (!sent) {
         // Klients neko nesaņēma - saite nedrīkst palikt «Gaida klienta izvēli».
@@ -243,7 +251,11 @@ export async function POST(req: Request) {
         );
         return bad("email_failed", 502);
       }
-      return NextResponse.json({ ok: true, to, offer: auctionArchiveOfferForAdmin(r.doc) });
+      // Atgādinājumam - tas pats saņēmējs, uz kuru aizgāja piedāvājums.
+      const saved = await updateAuctionArchiveOffer(sessionId, (c) =>
+        c && c.status === "pending" ? { next: { ...c, sentTo: to }, result: { ...c, sentTo: to } } : { result: c },
+      ).catch(() => null);
+      return NextResponse.json({ ok: true, to, offer: auctionArchiveOfferForAdmin(saved ?? r.doc) });
     }
 
     // send_archive: TIKAI pēc klienta «Jā».
@@ -253,7 +265,8 @@ export async function POST(req: Request) {
     if (channel === "email") {
       let built: Awaited<ReturnType<typeof buildAuctionArchivePdf>>;
       try {
-        built = await buildAuctionArchivePdf(sessionId);
+        built = await buildAuctionArchivePdf(sessionId, { showPrices });
+        logPdfTimings(built);
       } catch (e) {
         console.error("[admin/auction-archive-offer] pdf", e instanceof Error ? e.message.slice(0, 160) : "error");
         return bad("pdf_failed", 500);
@@ -282,8 +295,19 @@ export async function POST(req: Request) {
   if (action === "pdf") {
     const cur = await readAuctionArchiveOffer(sessionId);
     if (!cur) return bad("not_found", 404);
+    const showPrices = typeof body.showPrices === "boolean" ? body.showPrices : cur.showPrices === true;
     try {
-      const built = await buildAuctionArchivePdf(sessionId);
+      const built = await buildAuctionArchivePdf(sessionId, { showPrices });
+      logPdfTimings(built);
+      if (showPrices !== (cur.showPrices === true)) {
+        await updateAuctionArchiveOffer(sessionId, (c) => {
+          if (!c) return { result: null };
+          const { showPrices: _old, ...rest } = c;
+          void _old;
+          const next = showPrices ? { ...rest, showPrices: true } : rest;
+          return { next, result: null };
+        }).catch(() => null);
+      }
       return NextResponse.json({
         ok: true,
         bytes: built.pdf.length,

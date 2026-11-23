@@ -372,7 +372,8 @@ export type AuctionArchiveEvent =
   | "archive_sent"
   | "refunded"
   | "withdrawn"
-  | "admin_reminded";
+  | "admin_reminded"
+  | "client_reminded";
 
 export type AuctionArchiveHistoryRow = {
   at: string;
@@ -453,6 +454,14 @@ export type AuctionArchiveOfferDoc = {
   refundedAt?: string;
   withdrawnAt?: string;
   adminRemindedAt?: string;
+  /** Automātiskais atgādinājums klientam (vienreiz, tas pats kanāls - tikai e-pasts). */
+  clientRemindedAt?: string;
+  /** Atgādinājuma saites tokena hešs (otra derīgā saite; pirmā saite arī strādā). */
+  reminderTokenHash?: string;
+  /** E-pasts, uz kuru aizgāja piedāvājums (atgādinājumam - tas pats saņēmējs). */
+  sentTo?: string;
+  /** «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): pēc noklusējuma NErāda tekstos un PDF. */
+  showPrices?: boolean;
   history: AuctionArchiveHistoryRow[];
 };
 
@@ -509,6 +518,7 @@ const EVENTS: readonly AuctionArchiveEvent[] = [
   "refunded",
   "withdrawn",
   "admin_reminded",
+  "client_reminded",
 ];
 
 function parseHistory(raw: unknown): AuctionArchiveHistoryRow[] {
@@ -563,6 +573,10 @@ export function parseAuctionArchiveOfferDoc(raw: unknown, sessionId: string): Au
     ...opt("refundedAt"),
     ...opt("withdrawnAt"),
     ...opt("adminRemindedAt"),
+    ...opt("clientRemindedAt"),
+    ...(isAuctionArchiveHash(str(o.reminderTokenHash, 64).toLowerCase()) ? { reminderTokenHash: str(o.reminderTokenHash, 64).toLowerCase() } : {}),
+    ...(/^[^\s@<>]{1,64}@[^\s@<>]{1,190}$/.test(str(o.sentTo, 254)) ? { sentTo: str(o.sentTo, 254) } : {}),
+    ...(o.showPrices === true ? { showPrices: true } : {}),
     history: parseHistory(o.history),
   } as AuctionArchiveOfferDoc;
 }
@@ -634,21 +648,44 @@ export function isAuctionArchiveReminderDue(doc: AuctionArchiveOfferDoc, nowMs =
   return Number.isFinite(t) && nowMs - t >= AUCTION_ARCHIVE_REMIND_AFTER_MS;
 }
 
-export function markAuctionArchiveReminded(doc: AuctionArchiveOfferDoc, nowMs = Date.now()): AuctionArchiveOfferDoc {
+export function markAuctionArchiveReminded(
+  doc: AuctionArchiveOfferDoc,
+  nowMs = Date.now(),
+  opts: { reminderTokenHash?: string } = {},
+): AuctionArchiveOfferDoc {
   const at = new Date(nowMs).toISOString();
-  return { ...doc, adminRemindedAt: at, history: pushHistory(doc, { at, event: "admin_reminded" }) };
+  return {
+    ...doc,
+    adminRemindedAt: at,
+    ...(opts.reminderTokenHash ? { reminderTokenHash: opts.reminderTokenHash } : {}),
+    history: pushHistory(doc, { at, event: "admin_reminded" }),
+  };
+}
+
+/**
+ * Klienta atgādinājums (Nils 23.11, lēmums 3 = A+B): vienreiz, tikai e-pasta piedāvājumam, tikai kamēr
+ * klients nav izvēlējies, piedāvājums nav atsaukts un saite derīga. WhatsApp - tikai Nilam ar gatavu tekstu.
+ */
+export function isAuctionArchiveClientReminderAllowed(doc: AuctionArchiveOfferDoc, nowMs = Date.now()): boolean {
+  return doc.channel === "email" && doc.status === "pending" && !doc.clientRemindedAt && isAuctionArchiveLinkActive(doc, nowMs);
+}
+
+export function markAuctionArchiveClientReminded(doc: AuctionArchiveOfferDoc, nowMs = Date.now()): AuctionArchiveOfferDoc {
+  const at = new Date(nowMs).toISOString();
+  return { ...doc, clientRemindedAt: at, history: pushHistory(doc, { at, event: "client_reminded", channel: "email" }) };
 }
 
 /** Admin skats bez tokena heša. */
-export type AuctionArchiveOfferPublic = Omit<AuctionArchiveOfferDoc, "tokenHash"> & {
+export type AuctionArchiveOfferPublic = Omit<AuctionArchiveOfferDoc, "tokenHash" | "reminderTokenHash"> & {
   statusLabel: string;
   tone: AuctionArchiveTone;
   linkActive: boolean;
 };
 
 export function auctionArchiveOfferForAdmin(doc: AuctionArchiveOfferDoc, nowMs = Date.now()): AuctionArchiveOfferPublic {
-  const { tokenHash: _omit, ...rest } = doc;
+  const { tokenHash: _omit, reminderTokenHash: _omit2, ...rest } = doc;
   void _omit;
+  void _omit2;
   return {
     ...rest,
     statusLabel: AUCTION_ARCHIVE_STATUS_LV[doc.status],
@@ -665,10 +702,20 @@ export function auctionArchiveAdminNotice(args: {
   title: string;
   vin: string;
   refundLabel?: string;
+  /** Kas notika ar klienta atgādinājumu: e-pasts aizgāja / neizdevās / WhatsApp (tikai Nilam). */
+  client?: "email_sent" | "email_failed" | "whatsapp";
 }): { title: string; body: string } {
   const car = [args.title, args.vin].filter(Boolean).join(" · ");
   if (args.kind === "reminder") {
-    return { title: "Klients 3 dienas nav izvēlējies", body: `${car} - izsoļu arhīvs vai atmaksa? Atzīmē manuāli vai atgādini.` };
+    const tail =
+      args.client === "email_sent"
+        ? "Klientam automātiski nosūtīts atgādinājums e-pastā."
+        : args.client === "email_failed"
+          ? "Klienta atgādinājums e-pastā NEIZDEVĀS - atgādini pats."
+          : args.client === "whatsapp"
+            ? "Piedāvājums bija WhatsApp - gatavs teksts e-pastā, nosūti pats."
+            : "Atzīmē manuāli vai atgādini.";
+    return { title: "Klients 3 dienas nav izvēlējies", body: `${car} - izsoļu arhīvs vai atmaksa? ${tail}` };
   }
   if (args.choice === "refund") {
     return {

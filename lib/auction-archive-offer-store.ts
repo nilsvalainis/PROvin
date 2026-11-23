@@ -279,6 +279,8 @@ export type CreateOfferInput = {
   photos: AuctionArchivePhoto[];
   photosMissing: number;
   previewIds: string[];
+  /** «Rādīt izsoļu cenas» (noklusējumā izslēgts). */
+  showPrices?: boolean;
   nowMs?: number;
 };
 
@@ -300,6 +302,7 @@ export async function createAuctionArchiveOffer(input: CreateOfferInput): Promis
   const indexed = await writeBody(indexRel(tokenHash), JSON.stringify({ sessionId, tokenHash }), "application/json");
   if (!indexed) return { ok: false, error: "store_failed" };
   let prevHash: string | null = null;
+  let prevReminderHash: string | null = null;
   try {
     const out = await updateAuctionArchiveOffer<CreateOfferResult>(sessionId, (cur) => {
       if (cur && (cur.status === "chose_archive" || cur.status === "chose_refund")) {
@@ -309,6 +312,7 @@ export async function createAuctionArchiveOffer(input: CreateOfferInput): Promis
         return { result: { ok: false, error: "closed" } };
       }
       prevHash = cur?.tokenHash ?? null;
+      prevReminderHash = cur?.reminderTokenHash ?? null;
       const ids = new Set(input.photos.map((p) => p.id));
       const doc: AuctionArchiveOfferDoc = {
         sessionId,
@@ -324,12 +328,16 @@ export async function createAuctionArchiveOffer(input: CreateOfferInput): Promis
         photosMissing: Math.max(0, Math.floor(input.photosMissing)),
         previewIds: input.previewIds.filter((id) => ids.has(id)).slice(0, 2),
         marks: cur?.marks ?? [],
+        ...(input.showPrices ? { showPrices: true } : {}),
         history: [...(cur?.history ?? []), { at, event: "offer_sent" as const, channel: input.channel }].slice(-40),
       };
       return { next: doc, result: { ok: true, token, doc } };
     });
     if (!out.ok) await removeRel([indexRel(tokenHash)]);
-    else if (prevHash && prevHash !== tokenHash) await removeRel([indexRel(prevHash)]);
+    else {
+      const stale = ([prevHash, prevReminderHash] as (string | null)[]).filter((h): h is string => Boolean(h) && h !== tokenHash);
+      if (stale.length) await removeRel(stale.map(indexRel));
+    }
     return out;
   } catch {
     await removeRel([indexRel(tokenHash)]);
@@ -357,8 +365,42 @@ export async function findAuctionArchiveOfferByToken(
   }
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
   const doc = await readAuctionArchiveOffer(sessionId);
-  if (!doc || !hashesEqual(doc.tokenHash, hash)) return null;
+  if (!doc) return null;
+  const main = hashesEqual(doc.tokenHash, hash);
+  const reminder = doc.reminderTokenHash ? hashesEqual(doc.reminderTokenHash, hash) : false;
+  if (!main && !reminder) return null;
   return { sessionId, doc };
+}
+
+/**
+ * 3 dienu atgādinājums: otra saite (jauns tokens, pirmā saite arī paliek derīga) + atzīme `adminRemindedAt`
+ * vienā CAS ierakstā. `due` pārbauda vēlreiz zem slēdzenes - divi cron izsaukumi neatgādina divreiz.
+ * Atgriež tokenu (tikai atmiņā - klienta e-pastam / Nila WhatsApp tekstam) vai null.
+ */
+export async function issueAuctionArchiveReminder(
+  sessionId: string,
+  due: (doc: AuctionArchiveOfferDoc) => boolean,
+  mark: (doc: AuctionArchiveOfferDoc, reminderTokenHash: string) => AuctionArchiveOfferDoc,
+): Promise<{ doc: AuctionArchiveOfferDoc; token: string } | null> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+  const token = newAuctionArchiveToken();
+  const tokenHash = hashAuctionArchiveToken(token);
+  if (!(await writeBody(indexRel(tokenHash), JSON.stringify({ sessionId, tokenHash }), "application/json"))) return null;
+  try {
+    const doc = await updateAuctionArchiveOffer<AuctionArchiveOfferDoc | null>(sessionId, (cur) => {
+      if (!cur || !due(cur)) return { result: null };
+      const next = mark(cur, tokenHash);
+      return { next, result: next };
+    });
+    if (!doc) {
+      await removeRel([indexRel(tokenHash)]);
+      return null;
+    }
+    return { doc, token };
+  } catch {
+    await removeRel([indexRel(tokenHash)]);
+    return null;
+  }
 }
 
 /** Visi piedāvājumi (cron atgādinājumam). Tikai augšējā līmeņa JSON, bez bilžu mapēm. */
@@ -402,6 +444,7 @@ export async function deleteAuctionArchiveOffer(sessionId: string): Promise<bool
   const rels = [docRel(sessionId), previewRel(sessionId, 0), previewRel(sessionId, 1), pdfRel(sessionId)];
   if (doc) {
     rels.push(indexRel(doc.tokenHash));
+    if (doc.reminderTokenHash) rels.push(indexRel(doc.reminderTokenHash));
     for (const p of doc.photos) rels.push(photoRel(sessionId, p.id));
   }
   await removeRel(rels);

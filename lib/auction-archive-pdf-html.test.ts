@@ -5,7 +5,9 @@ import {
   auctionArchiveDescriptions,
   buildAuctionArchivePdfHtml,
   damageSlotLv,
+  stripThecarapiPdfPrices,
 } from "@/lib/auction-archive-pdf-html";
+import type { ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 const ph = (n: number) => `ih_ph_${String(n).padStart(24, "0")}`;
@@ -46,6 +48,7 @@ describe("izsoļu arhīva PDF HTML", () => {
       dataUrls,
       translations: new Map([["Condition: driving, no technical damage, 1 key", "Stāvoklis: braucošs, tehnisku bojājumu nav, 1 atslēga"]]),
       generatedAt: new Date("2026-11-23T08:20:00Z"),
+      showPrices: true,
     });
     expect(html).toContain("Eiropas izsoļu arhīvs");
     expect(html).toContain("Izsoles hronoloģiski");
@@ -61,6 +64,28 @@ describe("izsoļu arhīva PDF HTML", () => {
     expect(html).not.toContain("https://checkcar.vin/x");
     expect(html).not.toMatch(/TheCarApi/);
     expect(html).toContain('data-provin-fonts","ready"');
+  });
+
+  it("cenas pēc noklusējuma NErāda (Nils 23.11, lēmums 4): ne hronoloģijā, ne pie izsolēm", () => {
+    const html = buildAuctionArchivePdfHtml({ summary, records: [rec], photos: [], dataUrls: new Map() });
+    expect(html).toContain("Izsoles hronoloģiski");
+    expect(html).not.toContain("<th>Cena</th>");
+    expect(html).not.toContain("13 070");
+    const m = {
+      prices: [{ label: "Noslēguma cena", value: "13 070 €" }],
+      basics: [
+        { label: "Marka", value: "Audi" },
+        { label: "PVN režīms", value: "Bruto" },
+      ],
+      other: [
+        { label: "Rezerves summa", value: "12 000 EUR" },
+        { label: "Sēdvietas", value: "5" },
+      ],
+    } as unknown as ThecarapiPdfModel;
+    const out = stripThecarapiPdfPrices(m);
+    expect(out.prices).toEqual([]);
+    expect(out.basics.map((r) => r.label)).toEqual(["Marka"]);
+    expect(out.other.map((r) => r.label)).toEqual(["Sēdvietas"]);
   });
 
   it("9 pamatdati; trūkstošie sarkanā «Nav datu»", () => {
