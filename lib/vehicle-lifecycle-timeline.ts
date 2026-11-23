@@ -368,27 +368,39 @@ function pushCcVinStyleHistory(
   }
   for (const s of ccVin?.sales ?? []) {
     if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
-    const sold = !/nav\s+pārdots/i.test(s.status);
+    // «Pārdots» tikai, ja avots to tieši norāda (Nils 23.11); citādi neitrāls «Izsole» / «Pārdošanas ieraksts».
+    const sale = lifecycleSaleOutcome(s.status);
     const priceText = ccVinAmountToEurDisplay(s.price) || s.price.trim();
     const venueText = lifecyclePublicCaption(s.venue);
     out.push(
       makeEvent({
         kind: "sale",
         rawDate: s.date,
-        title: sold
-          ? venueText
-            ? `Pārdots · ${venueText}`
-            : "Pārdots izsolē"
-          : venueText
-            ? `Nav pārdots · ${venueText}`
-            : "Nepārdota izsole",
-        detail: priceText,
+        title: lifecycleSaleTitle(sale, venueText),
+        detail: priceText && s.priceLabel ? `${s.priceLabel} ${priceText}` : priceText,
         odometer: s.odometer,
         source,
         tone: "info",
       }),
     );
   }
+}
+
+const AUCTION_VENUE_RE = /\b(openlane|adesa|bca|auto1|autobid|copart|iaai|iaa|manheim|ecarstrade|caronsale|vwfs|ayvens|izsol)/i;
+
+/** Pārdošanas rezultāts tikai no skaidra avota statusa. */
+export function lifecycleSaleOutcome(status: string): "sold" | "unsold" | "unknown" {
+  const t = status.toLowerCase();
+  if (/nav\s+pārdots|nepārdots|not\s+sold|unsold|no\s+sale|nicht\s+verkauft|invendu/.test(t)) return "unsold";
+  if (/(^|[^\p{L}])(pārdots|sold|verkauft|vendu|venduto|vendido)([^\p{L}]|$)/u.test(t)) return "sold";
+  return "unknown";
+}
+
+export function lifecycleSaleTitle(outcome: "sold" | "unsold" | "unknown", venue: string): string {
+  if (outcome === "sold") return venue ? `Pārdots · ${venue}` : "Pārdots izsolē";
+  if (outcome === "unsold") return venue ? `Nav pārdots · ${venue}` : "Nepārdota izsole";
+  if (!venue) return "Izsole";
+  return AUCTION_VENUE_RE.test(venue) ? `Izsole · ${venue}` : `Pārdošanas ieraksts · ${venue}`;
 }
 
 /**

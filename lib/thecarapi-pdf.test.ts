@@ -88,9 +88,14 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
 
     const block = emptyCcVinBlock();
     block.thecarapiRecords = records;
+    // Klienta PDF (Nils 23.11): kopīgā izsoles kartīte - bez «Citi dati» tehniskā izmetiena; pilns saraksts tikai adminā.
     const section = buildCcVinPdfInnerHtml(block);
+    expect(section).toContain('class="aa-embed"');
+    expect(section).toContain("Izsoļu hronoloģija");
     expect(section).toContain("Priekšējais bamperis");
-    expect(section).toContain("Keep zone");
+    expect(section).toContain("Bojājumi un defekti");
+    expect(section).not.toContain("Citi dati");
+    expect(section).not.toContain("Keep zone");
     expect(section).not.toContain("TheCarApi");
   });
 

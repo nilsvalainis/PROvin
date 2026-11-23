@@ -14,6 +14,7 @@
 import type { AppLocale } from "@/i18n/locales";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 
 export const AUCTION_ARCHIVE_PUBLIC_SEGMENT = "izvele";
 export const AUCTION_ARCHIVE_INTERNAL_PREFIX = "/izsoles-izvele";
@@ -196,6 +197,11 @@ function fieldValue(record: ThecarapiAdminRecord, keys: readonly string[]): stri
   return "";
 }
 
+function salePriceEur(r: ThecarapiAdminRecord): number | null {
+  const n = thecarapiSalePriceFromFields(r.fields).eur;
+  return n != null && n < 10_000_000 ? Math.round(n) : null;
+}
+
 function parseIntLoose(raw: string, max: number): number | null {
   const n = Number(raw.replace(/[^\d.,]/g, "").replace(/[.,](\d{1,2})$/, "").replace(/[.,]/g, ""));
   return Number.isFinite(n) && n > 0 && n < max ? Math.round(n) : null;
@@ -295,7 +301,7 @@ export function buildAuctionArchiveSummary(args: {
       platform: auctionPlatformName(r.site, r.venue),
       country: cleanCountry(fieldValue(r, ["country", "country_code", "car_country_extended"]), args.countryName),
       km: parseIntLoose(fieldValue(r, ["mileage", "odometer"]), 5_000_000),
-      priceEur: parseIntLoose(fieldValue(r, ["public_price_eur", "final_price", "current_final", "current_price", "start_price"]), 10_000_000),
+      priceEur: salePriceEur(r),
       photos,
     });
   }

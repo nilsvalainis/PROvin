@@ -2,6 +2,7 @@
  * TheCarApi ieraksts -> VIN atmiņas novērojums.
  * Dedup: VIN (šķemba) + platforma + izsoles ID.
  */
+import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinMemorySource, VinObservationInput } from "@/lib/vin-memory";
 
@@ -12,6 +13,11 @@ const SOURCE_BY_SITE: Record<string, VinMemorySource> = {
   autobid: "autobid",
   ecarstrade: "ecarstrade",
 };
+
+function salePriceText(record: ThecarapiAdminRecord): string | undefined {
+  const n = thecarapiSalePriceFromFields(record.fields).eur;
+  return n != null ? String(Math.round(n)) : undefined;
+}
 
 function fieldValue(record: ThecarapiAdminRecord, keys: readonly string[]): string {
   for (const key of keys) {
@@ -74,7 +80,7 @@ export function thecarapiArchiveInputs(vin: string, records: readonly ThecarapiA
       auctionId,
       platform,
       venue: record.venue || undefined,
-      price: fieldValue(record, ["public_price_eur", "final_price", "current_price", "start_price"]) || undefined,
+      price: salePriceText(record),
       fields: record.fields,
       raw: record.raw,
       photos: record.photos.map((photo) => ({

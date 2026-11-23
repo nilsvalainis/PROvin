@@ -12,6 +12,7 @@ import {
   type ThecarapiPdfKv,
   type ThecarapiPdfModel,
 } from "@/lib/thecarapi-pdf-model";
+import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import { thecarapiPhotoCaption, type ThecarapiAdminRecord, type ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 
 type Tone = "ok" | "warn" | "alert" | "neutral";
@@ -185,6 +186,7 @@ function RecordBlock({
   const photos = record.photos ?? [];
   const missingPhotos = Math.max(0, (record.photoUrls?.length ?? 0) - photos.length);
   const damages = damageCount(model);
+  const priceConflict = useMemo(() => thecarapiSalePriceFromFields(record.fields).conflict, [record]);
   const serviceRows: ThecarapiPdfKv[] = [
     ...(model.service.summary ? [{ label: "Kopsavilkums", value: model.service.summary }] : []),
     ...model.service.rows,
@@ -202,6 +204,7 @@ function RecordBlock({
         </Section>
         <Section title="Cenas" empty={model.prices.length === 0}>
           <KvList rows={model.prices} />
+          {priceConflict ? <p className="mt-1 text-[12px] font-medium text-red-700">Pretruna: {priceConflict}</p> : null}
         </Section>
         <Section title="Nobraukums" empty={model.mileage.length === 0}>
           <KvList rows={model.mileage} />

@@ -125,6 +125,8 @@ import {
   normalizeSourceBlockPhotoGroups,
 } from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
+import { salesWithAuctionFinalPrice } from "@/lib/thecarapi-sale-price";
+import { auctionArchiveModelTitle } from "@/lib/auction-archive-facts";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -135,10 +137,8 @@ import {
 } from "@/lib/cc-vin-report";
 import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
 import {
-  buildThecarapiPdfGalleryHtml,
   collectPdfPhotoKeys,
   selectThecarapiPdfPhotos,
-  thecarapiPdfPhotoCategories,
   THECARAPI_PDF_GALLERY_MAX,
 } from "@/lib/thecarapi-pdf";
 import {
@@ -1057,6 +1057,8 @@ function resolvePdfReportMakeModelFromPayload(p: ClientReportPayload): string {
       listingText: p.listingAnalysis?.sellerPortrait ?? "",
       ltabMakeModel: p.manualLtabBlock?.certificate?.makeModel,
     }),
+    // Izsoļu portālu arhīvs (TheCarApi): «Opel Vivaro 2.0» - kad nekā cita nav (piem. auto nav LV reģistrā).
+    auctionArchiveModelTitle(p.ccVinBlock?.thecarapiRecords ?? []),
   ];
   const blocks = {
     ...createDefaultSourceBlocks(),
@@ -2075,27 +2077,39 @@ function buildCcVinAvotuSubsection(
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
-  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b) : "";
   const tcIds = new Set((b?.thecarapiRecords ?? []).flatMap((record) => record.photos.map((photo) => photo.id)));
+  // Izsoles bildes, kas pasūtījuma bilžu grupā saglabātas ar citu id (tā pati saite / saturs), arī pieder izsoles
+  // kartītei - citādi tās drukājas vecajā grupas galerijā ārpus kopīgā dizaina.
+  const tcKeys = collectPdfPhotoKeys((b?.thecarapiRecords ?? []).map((record) => ({ photos: record.photos })));
+  const isTcPhoto = (photo: { id?: string; sourceUrl?: string; contentHash?: string }): boolean =>
+    tcIds.has(photo.id ?? "") || [...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && tcKeys.has(k));
+  const groupTcPhotos = (b?.photoGroups ?? []).flatMap((group) =>
+    group.photos
+      .filter((photo) => !tcIds.has(photo.id) && isTcPhoto(photo))
+      .map((photo) => ({ id: photo.id, sourceUrl: photo.sourceUrl ?? "", contentHash: photo.contentHash ?? "", date: "", venue: "", caption: "" })),
+  );
   const otherGroups = (b?.photoGroups ?? []).map((group) => ({
     ...group,
     title: thecarapiPdfGroupTitle(group.title),
-    photos: group.photos.filter((photo) => !tcIds.has(photo.id)),
+    photos: group.photos.filter((photo) => !isTcPhoto(photo)),
   }));
   const usedKeys = collectPdfPhotoKeys(otherGroups);
   for (const key of externalPhotoKeys ?? []) usedKeys.add(key);
-  const tcPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
+  const recordPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
     usedKeys,
     max: THECARAPI_PDF_GALLERY_MAX,
-  });
-  const photosHtml = b
-    ? [
-        buildSourcePhotoGroupsPdfHtml(otherGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups),
-        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls, thecarapiPdfPhotoCategories(b.thecarapiRecords)),
-      ]
-        .filter(Boolean)
-        .join("")
-    : "";
+  }).filter((photo) => photoDataUrls?.has(photo.id));
+  // Ierakstā esošā bilde bez datiem → tās pašas bildes kopija no bilžu grupas (ja tai ir dati).
+  const haveKeys = collectPdfPhotoKeys([{ photos: recordPhotos }]);
+  const tcPhotos = [
+    ...recordPhotos,
+    ...groupTcPhotos.filter((photo) => photoDataUrls?.has(photo.id) && ![...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && haveKeys.has(k))),
+  ].slice(0, THECARAPI_PDF_GALLERY_MAX);
+  // Izsoļu bildes - kopīgās izsoles kartītes galerijā (tas pats dizains kā «Izsoļu arhīva» PDF).
+  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "" }) : "";
+  const tcPhotoIds = new Set([...tcIds, ...groupTcPhotos.map((photo) => photo.id)]);
+  const legacyPhotos = (b?.photos ?? []).filter((photo) => !tcPhotoIds.has(photo.id));
+  const photosHtml = b ? buildSourcePhotoGroupsPdfHtml(otherGroups, legacyPhotos, photoDataUrls, normalizeCcVinPhotoGroups) : "";
   const comments = (b?.comments ?? "").trim();
   if (!inner && !photosHtml && !comments && !sparkHtml) return "";
   const head = sectionHeadBrand(
@@ -3776,7 +3790,7 @@ export function buildClientReportDocumentHtml(args: {
   lang?: ClientReportLang;
 }): string {
   const {
-    payload: p,
+    payload: rawPayload,
     dateFmt,
     lang = "lv",
     listingAnalysisPhotoDataUrls,
@@ -3787,6 +3801,16 @@ export function buildClientReportDocumentHtml(args: {
     sourceBlockPhotoDataUrls,
     printInk = false,
   } = args;
+  // Izsoļu pārdošanas rindām - noslēguma cena no izsoles ieraksta (nevis publiskā cena ar maksām).
+  const p: ClientReportPayload = rawPayload.ccVinBlock?.thecarapiRecords?.length
+    ? {
+        ...rawPayload,
+        ccVinBlock: {
+          ...rawPayload.ccVinBlock,
+          sales: salesWithAuctionFinalPrice(rawPayload.ccVinBlock.sales ?? [], rawPayload.ccVinBlock.thecarapiRecords),
+        },
+      }
+    : rawPayload;
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);

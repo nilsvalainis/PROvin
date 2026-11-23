@@ -174,7 +174,8 @@ describe("izsoļu arhīva fakti (v2)", () => {
   it("izsoles fakti: serviss, apskate, izcelsme, dokumenti; cenas tikai ar ķeksi", () => {
     const b = auctionArchiveLotFacts(bca);
     const kv = Object.fromEntries([...b.sale, ...b.condition].map((r) => [r.k, r.v]));
-    expect(kv["Izsoles laiks"]).toBe("19.10.2026 19:30 - 21.10.2026 12:00");
+    // batch_start_date bez zonas = portāla vietējais laiks (Vācija, +2 h oktobrī) → Rīgā 17:30.
+    expect(kv["Izsoles laiks"]).toBe("19.10.2026 17:30 - 21.10.2026 12:00");
     expect(kv["Pārdevējs"]).toBe("Alphabet");
     expect(kv["Auto izcelsme"]).toBe("Līzinga auto");
     expect(kv["Atslēgas"]).toBe("2");
@@ -184,7 +185,9 @@ describe("izsoļu arhīva fakti (v2)", () => {
     expect(kv["Auto atrašanās vieta"]).toBeUndefined();
     expect(b.prices).toEqual([]);
     const p = Object.fromEntries(auctionArchiveLotFacts(bca, { showPrices: true }).prices.map((r) => [r.k, r.v]));
-    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", "Noslēguma cena": "12 409,96 €", PVN: "Atskaitāms (22 %)" });
+    // current_final (publiskā cena) nozīme nav dokumentēta - klientam nerāda (Nils 23.11).
+    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", PVN: "Atskaitāms (22 %)" });
+    expect(p["Noslēguma cena"]).toBeUndefined();
     const o = auctionArchiveLotFacts(openlane);
     const okv = Object.fromEntries([...o.sale, ...o.condition].map((r) => [r.k, r.v]));
     expect(okv["Auto atrašanās vieta"]).toBe("Drizzona");
@@ -311,7 +314,7 @@ describe("izsoļu arhīva PDF HTML (katalogs, PROVIN PDF valoda)", () => {
       [{ zone: "Aizmugure", part: "Buferis", type: "Skrāpējums", size: "20-50 mm", quantity: "1", repair: "", notes: "" }],
       [{ auctionKey: "openlane:1", zone: "right", note: "pēdas durvīs" }],
     );
-    expect(html).toContain('<p class="pdf-subhead">Bojājumi · 1 bojājums</p>');
+    expect(html).toContain('<p class="pdf-subhead">Bojājumi un defekti · 1 bojājums</p>');
     expect(html).toContain("Skrāpējums · 20-50 mm");
     expect(html).toContain("Redzams bildē (PROVIN atzīme) · pēdas durvīs");
     expect(html).toContain("<svg");
