@@ -392,11 +392,14 @@ describe("countVinScanStatuses", () => {
 
 describe("vinScanSourceTimeoutMs", () => {
   it("pārlūka avoti (zonde bez tīkla) krīt uz 14 s noklusējumu", () => {
-    for (const id of ["stat_vin", "bid_cars", "plc_auction", "checkcar_vin", "bidfax", "poctra", "nicb"] as const) {
+    for (const id of ["stat_vin", "plc_auction", "checkcar_vin", "bidfax", "poctra", "nicb"] as const) {
       expect(vinScanSourceTimeoutMs(id)).toBe(14_000);
     }
     // epolicija.lt: reCAPTCHA v2 serverī (CapSolver).
     expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
+    // bid.cars un CARFAX.eu iet caur releja Chrome (/listings/vinsource ≤40 s + klienta 47 s).
+    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(50_000);
+    expect(vinScanSourceTimeoutMs("carfax_eu")).toBe(50_000);
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
     expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(45_000);
   });

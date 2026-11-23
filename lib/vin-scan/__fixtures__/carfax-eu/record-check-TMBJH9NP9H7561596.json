@@ -1,0 +1,68 @@
+{
+  "status": 200,
+  "body": {
+    "packagesPricing": {
+      "creditsPackages": [
+        {
+          "name": "medium",
+          "currency": "EUR",
+          "creditsAmount": 2,
+          "basePrice": 44.99,
+          "discounted": false,
+          "price": 44.99
+        },
+        {
+          "name": "large",
+          "currency": "EUR",
+          "creditsAmount": 3,
+          "basePrice": 49.99,
+          "discounted": false,
+          "price": 49.99
+        }
+      ],
+      "singleReportPricing": {
+        "localHistoryPrice": 39.99
+      }
+    },
+    "recordCheck": {
+      "co2EmissionsMixedDriving": null,
+      "displayRecords": 10,
+      "encryptedVinreg": null,
+      "enginePowerKW": 110,
+      "enginePowerPS": "150",
+      "euEmissionStandard": "EURO_6",
+      "externalReports": null,
+      "fuelType": "Diesel",
+      "inspectionRecordsCount": 5,
+      "make": "SKODA",
+      "makeAndModel": "SKODA Superb",
+      "model": "Superb",
+      "motorPowerKW": null,
+      "odometerReadingsCount": 3,
+      "presentCountry": "se",
+      "query": "TMBJH9NP9H7561596",
+      "recordsPerCountry": {
+        "se": 10
+      },
+      "riskFactorNumber": 1,
+      "serviceAndRepairRecordsCount": 0,
+      "vin": "TMBJH9NP9H7561596"
+    },
+    "reportPricing": {
+      "currency": "EUR",
+      "euHistory": {
+        "hasHistory": false,
+        "amount": null
+      },
+      "localHistory": {
+        "hasHistory": true,
+        "amount": 19.99
+      },
+      "totalAmount": 19.99,
+      "usHistory": {
+        "hasHistory": false,
+        "amount": null
+      }
+    }
+  }
+}

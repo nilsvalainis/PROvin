@@ -1,0 +1,74 @@
+{
+  "status": 200,
+  "body": {
+    "packagesPricing": {
+      "creditsPackages": [
+        {
+          "name": "medium",
+          "currency": "EUR",
+          "creditsAmount": 2,
+          "basePrice": 44.99,
+          "discounted": false,
+          "price": 44.99
+        },
+        {
+          "name": "large",
+          "currency": "EUR",
+          "creditsAmount": 3,
+          "basePrice": 49.99,
+          "discounted": false,
+          "price": 49.99
+        }
+      ],
+      "singleReportPricing": {
+        "localHistoryPrice": 39.99
+      }
+    },
+    "recordCheck": {
+      "co2EmissionsMixedDriving": "126",
+      "displayRecords": 8,
+      "encryptedVinreg": null,
+      "enginePowerKW": 190,
+      "enginePowerPS": "258",
+      "euEmissionStandard": "EURO_6",
+      "externalReports": {
+        "us": {
+          "displayRecords": 7,
+          "makeAndModel": null
+        }
+      },
+      "fuelType": "Petrol",
+      "inspectionRecordsCount": 0,
+      "make": "BMW",
+      "makeAndModel": "BMW 330i",
+      "model": "330i",
+      "motorPowerKW": null,
+      "odometerReadingsCount": 4,
+      "presentCountry": "de",
+      "query": "WBA5R1C0XLFH42873",
+      "recordsPerCountry": {
+        "eu": 1,
+        "us": 7
+      },
+      "riskFactorNumber": 6,
+      "serviceAndRepairRecordsCount": 0,
+      "vin": "WBA5R1C0XLFH42873"
+    },
+    "reportPricing": {
+      "currency": "EUR",
+      "euHistory": {
+        "hasHistory": true,
+        "amount": 9.99
+      },
+      "localHistory": {
+        "hasHistory": true,
+        "amount": 29.99
+      },
+      "totalAmount": 39.99,
+      "usHistory": {
+        "hasHistory": true,
+        "amount": 39.99
+      }
+    }
+  }
+}

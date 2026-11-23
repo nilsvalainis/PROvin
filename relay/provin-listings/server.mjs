@@ -26,6 +26,7 @@
  *   GET  /listings/health                 bez auth: tikai { ok: true }; ar Bearer: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
+ *   POST /listings/vinsource              {source, vin}  bid.cars / CARFAX.eu pēc VIN (Chrome ≤40 s, kešs 24 h)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
  *   POST /listings/detail                 {platform, url}  j56: viena Auto1/Openlane auto detaļu lapa
  *   POST /listings/lot-vins               {platform: openlane|autobid, urls[<=12]}  VIN no ielogotām lotes lapām
@@ -62,6 +63,13 @@ import { fetchLotVins } from "./lib/lot-vin-page.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } from "./lib/vinscan-page.mjs";
+import {
+  createVinSourceCache,
+  validVinSourceRequest,
+  VINSOURCE_TIMEOUT_MS,
+  vinSourceLaneKey,
+} from "./lib/vinsource-logic.mjs";
+import { readVinSource } from "./lib/vinsource-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.LISTINGS_RELAY_PORT || 8789);
@@ -76,6 +84,7 @@ const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MA
 const LOTVIN_MAX_PER_DAY = envPositiveInt(process.env.LISTINGS_LOTVIN_MAX_PER_DAY, 300);
 const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
+const vinSourceCache = createVinSourceCache();
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
 
@@ -392,6 +401,45 @@ const server = createServer(async (req, res) => {
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
       log(`vinscan page kļūda: ${note}`);
+      return sendJson(res, 500, { ok: false, error: note });
+    }
+  }
+
+  if (path === "/vinsource") {
+    const reqd = validVinSourceRequest(body);
+    if (!reqd.ok) return sendJson(res, 400, { ok: false, error: reqd.error });
+    const { source, vin } = reqd;
+    const key = vinSourceLaneKey(source, vin);
+    const hit = vinSourceCache.get(key);
+    if (hit) {
+      log(`vinsource ${source} kešs ${hit.kind}`);
+      return sendJson(res, 200, { ok: true, source, vin, ...hit });
+    }
+    const shared = vinScanLanes.peek(key);
+    if (!shared && vinScanLanes.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
+    if (!shared && state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
+      return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
+    }
+    log(`vinsource ${source} (rinda ${vinScanLanes.queueLength})`);
+    try {
+      // Visi vinsource darbi dala vienu joslu (viens hosts) - viens Chrome vienlaikus šiem avotiem.
+      const out = await vinScanLanes.run(key, async () => {
+        const started = Date.now();
+        const { page, close } = await openProfile(`vinsource-${source}`, { headless: false, timeoutMs: 20_000 });
+        try {
+          const budget = Math.max(5_000, VINSOURCE_TIMEOUT_MS - (Date.now() - started));
+          const got = await readVinSource(page, source, vin, { timeoutMs: budget });
+          return { ...got, elapsedMs: Date.now() - started };
+        } finally {
+          await close();
+        }
+      });
+      vinSourceCache.set(key, out);
+      log(`vinsource ${source} ${out.kind} ${out.elapsedMs} ms${out.note ? ` (${out.note})` : ""}`);
+      return sendJson(res, 200, { ok: true, source, vin, cached: false, ...out });
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+      log(`vinsource ${source} kļūda: ${note}`);
       return sendJson(res, 500, { ok: false, error: note });
     }
   }

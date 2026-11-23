@@ -61,7 +61,9 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
       return hasVin(text, vin) ? null : unknownPageWithoutVin("AucHistory", text);
     case "carfax_eu": {
       const found = /we found\s+(\d+)\s+record/i.exec(text);
-      if (found) return { status: "found", summary: `${found[1]} ieraksti CARFAX priekšskatījumā` };
+      // «We found 0 records» ir tukšas priekšskatījuma lapas noklusējums (VIN nav padots) - tas nav rezultāts.
+      if (found && Number(found[1]) > 0) return { status: "found", summary: `${found[1]} ieraksti CARFAX priekšskatījumā` };
+      if (found) return null;
       if (/no records found|couldn.t find any records|we didn.t find any|0 records for this (car|vin)/i.test(text)) {
         return { status: "none", summary: "CARFAX priekšskatījumā ierakstu nav" };
       }

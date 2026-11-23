@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import {
+  carfaxRecordCheckMatches,
+  createVinSourceCache,
+  readBidCarsSearch,
+  readCarfaxRecordCheck,
+  validBidCarsLotUrl,
+  validVinSourceRequest,
+  vinSourceLaneKey,
+} from "./vinsource-logic.mjs";
+
+const VIN = "WBA5R1C0XLFH42873";
+
+test("validVinSourceRequest: tikai zināmi avoti un 17 zīmju VIN", () => {
+  assert.deepEqual(validVinSourceRequest({ source: "bid_cars", vin: " wba5r1c0xlfh42873 " }), { ok: true, source: "bid_cars", vin: VIN });
+  assert.equal(validVinSourceRequest({ source: "plc_auction", vin: VIN }).ok, false);
+  assert.equal(validVinSourceRequest({ source: "carfax_eu", vin: "WBA5R1C0XLFH4287" }).ok, false);
+  assert.equal(validVinSourceRequest({ source: "carfax_eu", vin: "WBA5R1C0XLFH4287O" }).ok, false);
+  assert.equal(validVinSourceRequest(null).ok, false);
+});
+
+test("vinSourceLaneKey: visi avoti vienā hostā (viena Chrome josla)", () => {
+  const a = new URL(vinSourceLaneKey("bid_cars", VIN)).hostname;
+  const b = new URL(vinSourceLaneKey("carfax_eu", VIN)).hostname;
+  assert.equal(a, b);
+});
+
+test("readBidCarsSearch: lots, nav, kļūda", () => {
+  const lot = readBidCarsSearch(
+    '{"results":1,"url":"https:\\/\\/bid.cars\\/en\\/lot\\/0-27382814\\/2020-BMW-3-Series-WBA5R1C0XLFH42873"}',
+    VIN,
+  );
+  assert.equal(lot.kind, "lot");
+  assert.equal(lot.lotUrl, "https://bid.cars/en/lot/0-27382814/2020-BMW-3-Series-WBA5R1C0XLFH42873");
+  assert.equal(
+    readBidCarsSearch('{"results":0,"url":"https:\\/\\/bid.cars\\/en\\/search\\/archived\\/results?search-type=typing&query=X"}', VIN).kind,
+    "none",
+  );
+  assert.equal(readBidCarsSearch('{"results":0}', VIN).kind, "none");
+  assert.equal(readBidCarsSearch("<html>Just a moment</html>", VIN).kind, "error");
+  // Cita VIN lots nav šī auto lapa.
+  assert.equal(readBidCarsSearch('{"results":1,"url":"https://bid.cars/en/lot/1-1234567/2019-Jeep-1C4PJMDB9JD528953"}', VIN).kind, "error");
+});
+
+test("validBidCarsLotUrl: tikai bid.cars https lota ceļš", () => {
+  assert.equal(validBidCarsLotUrl(`https://evil.example/en/lot/0-27382814/x-${VIN}`, VIN), "");
+  assert.equal(validBidCarsLotUrl(`http://bid.cars/en/lot/0-27382814/x-${VIN}`, VIN), "");
+  assert.equal(validBidCarsLotUrl(`https://bid.cars/en/search/x-${VIN}`, VIN), "");
+});
+
+test("readCarfaxRecordCheck: 200 ar recordCheck = found, 422/404 = none, citādi kļūda", () => {
+  assert.equal(readCarfaxRecordCheck(200, '{"recordCheck":{"displayRecords":8}}').kind, "found");
+  assert.equal(readCarfaxRecordCheck(422, '{"make":"VOLKSWAGEN"}').kind, "none");
+  assert.equal(readCarfaxRecordCheck(404, "").kind, "none");
+  assert.equal(readCarfaxRecordCheck(500, "oops").kind, "error");
+  assert.equal(readCarfaxRecordCheck(200, '{"foo":1}').kind, "error");
+});
+
+test("carfaxRecordCheckMatches: tikai šī VIN record-check", () => {
+  assert.equal(carfaxRecordCheckMatches(`https://web-backend.carfax.eu/api/v1/record-check/${VIN}?variant=VARIANT_1&recaptchaToken=x`, VIN), true);
+  assert.equal(carfaxRecordCheckMatches("https://web-backend.carfax.eu/api/v1/record-check/TMBJH9NP9H7561596", VIN), false);
+  assert.equal(carfaxRecordCheckMatches(`https://evil.example/api/v1/record-check/${VIN}`, VIN), false);
+});
+
+test("createVinSourceCache: 24 h tikai found/none, vecākie izkrīt", () => {
+  let t = 0;
+  const cache = createVinSourceCache({ now: () => t, ttlMs: 1000, max: 2 });
+  cache.set("a", { kind: "error", note: "x" });
+  assert.equal(cache.get("a"), null);
+  cache.set("a", { kind: "found", html: "<p>" });
+  assert.equal(cache.get("a").cached, true);
+  t = 1500;
+  assert.equal(cache.get("a"), null);
+  cache.set("b", { kind: "none" });
+  cache.set("c", { kind: "none" });
+  cache.set("d", { kind: "none" });
+  assert.equal(cache.size, 2);
+  assert.equal(cache.get("b"), null);
+});
