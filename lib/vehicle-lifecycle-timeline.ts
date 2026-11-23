@@ -41,7 +41,7 @@ import {
   iso2ToLvDisplayName,
   normalizeCountryNameLv,
 } from "@/lib/country-names-lv";
-import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
+import { dealerVisitTimelineTitle } from "@/lib/dealer-visit-kind";
 import { capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import {
   aggregateUnifiedIncidents,
@@ -292,9 +292,9 @@ function makeEvent(args: {
     time: ms > 0 ? ms : 0,
     year: yearOf(args.rawDate, ms),
     title: args.title,
-    detail: lifecyclePublicCaption(args.detail ?? ""),
+    detail: lifecyclePublicCaption(stripEuSuffix(args.detail ?? "")),
     ...(args.body?.trim() ? { body: lifecyclePublicCaption(args.body) } : null),
-    country: normalizeCountryNameLv(args.country ?? "") || (args.country ?? "").trim(),
+    country: normalizeCountryNameLv(stripEuSuffix(args.country ?? "")) || stripEuSuffix(args.country ?? ""),
     odometer: args.odometer?.trim() ?? "",
     sources: args.source?.trim() ? [args.source.trim()] : [],
     tone: args.tone ?? "info",
@@ -304,6 +304,19 @@ function makeEvent(args: {
   };
   collapseCountryOnlyDetail(ev);
   return ev;
+}
+
+/** „Vācija / Eiropas Savienība”, „Germany, EU” → „Vācija” (ES piebilde aiz valsts ir lieka). */
+const EU_SUFFIX_RE = /\s*(?:\/|,|·|-)\s*(?:eiropas\s+savien[īi]ba|european\s+union|europ(?:ä|a)ische\s+union|\beu\b|\bes\b)\s*$/iu;
+
+/** Tikai „Eiropas Savienība” / „EU” nav valsts (izsoles reģions) - valsts lauks paliek tukšs. */
+const EU_ONLY_RE = /^(?:eiropas\s+savien[īi]ba|european\s+union|europ(?:ä|a)ische\s+union|eu|es|europe|eiropa)$/iu;
+
+export function stripEuSuffix(raw: string): string {
+  const t = (raw ?? "").trim();
+  if (EU_ONLY_RE.test(t)) return "";
+  const cut = t.replace(EU_SUFFIX_RE, "").trim();
+  return cut && cut !== t ? cut : t;
 }
 
 function pushCcVinStyleHistory(
@@ -690,12 +703,14 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       makeEvent({
         kind: "service",
         rawDate: w.date,
-        title: lifecycleDealerVisitTitle(w.works),
+        // Tas pats veids kā dīlera sadaļā (`classifyDealerVisitKinds`) - viena vizīte, viens nosaukums.
+        title: dealerVisitTimelineTitle(w.works),
         // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā - tikai vieta (ne valsts dublikāts).
         detail: locIsCountry ? "" : loc,
         country: locIsCountry ? loc : "",
         odometer: w.odometer,
-        source: "Dīleris",
+        // Tas pats avota nosaukums kā nobraukuma rindām → PDF „Dīlera dati” (ne pelēkais „Citi avoti”).
+        source: SOURCE_BLOCK_LABELS.auto_records,
       }),
     );
   }

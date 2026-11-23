@@ -135,7 +135,7 @@ describe("3. Mercedes «Apkope A/B» = dzinēja eļļas maiņa (ASSYST)", () => 
   });
 
   it("statiskā piezīme saka, ka ražotāja A/B apkopes skaitām", () => {
-    expect(oilClaimCautionHtml()).toContain("Mercedes-Benz „Apkope A” / „Apkope B”");
+    expect(oilClaimCautionHtml({ makeModel: "Mercedes-Benz E 350" })).toContain("Mercedes-Benz „Apkope A” / „Apkope B”");
   });
 });
 

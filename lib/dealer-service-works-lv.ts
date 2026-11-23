@@ -11,6 +11,7 @@ import {
   collectUntranslatedServiceWorks,
 } from "@/lib/service-work-term-lv";
 import type { VendorServiceEntry } from "@/lib/vendor-service-history";
+import { DEALER_WORK_LV_STYLE_RULES } from "@/lib/dealer-work-lv-polish";
 
 export const DEALER_SERVICE_WORKS_LV_SYSTEM = `You are the PROVIN.LV translator for official dealer / factory service-history work items (BMW ETK, Mercedes, VW workshop printouts, etc.).
 
@@ -35,6 +36,7 @@ STYLE
   „Keilrippenriemen” = „Ķīļrievu siksna”; „Exhaust gas radiator / exhaust cooler / AGR-Kühler” = „EGR dzesētājs”; „Grundierfüller / primer / primed” = „Grunts pildviela / gruntēts” (paint material).
 - Keep one item per line exactly as in the source: never split one item at a comma inside parentheses or inside the item name (e.g. „Brake fluid DOT4, low viscosity” is ONE item: „Bremžu šķidrums DOT4, zemas viskozitātes”).
 - A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
+${DEALER_WORK_LV_STYLE_RULES}
 - Never use *, ** or em/en dashes (— –). ASCII hyphen only if a hyphen is needed.
 
 Return JSON only.`;
