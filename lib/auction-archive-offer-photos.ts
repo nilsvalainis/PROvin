@@ -187,6 +187,34 @@ export async function blurAuctionArchivePreview(jpeg: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
+/** PDF bildes izmērs (Nils 23.11, ~84 bildes): garākā mala ≤1600 px, JPEG 80% - lai Vercel funkcija nepārsniedz laiku/atmiņu. */
+export const AUCTION_ARCHIVE_PDF_PHOTO_MAX_PX = 1600;
+export const AUCTION_ARCHIVE_PDF_PHOTO_QUALITY = 80;
+
+/**
+ * Samazina bildi pirms ievietošanas PDF. Jau maza bilde (≤ robeža un ≤ 400 KB) paliek kā ir.
+ * Kļūda (bojāts fails) - null (PDF to izlaiž, nevis krīt).
+ */
+export async function shrinkAuctionArchivePdfPhoto(jpeg: Buffer): Promise<Buffer | null> {
+  try {
+    const img = sharp(jpeg, { failOn: "none" });
+    const meta = await img.metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    const max = AUCTION_ARCHIVE_PDF_PHOTO_MAX_PX;
+    if (meta.format === "jpeg" && w > 0 && h > 0 && w <= max && h <= max && jpeg.length <= 400_000 && !(meta.orientation && meta.orientation > 1)) {
+      return jpeg;
+    }
+    return await img
+      .rotate()
+      .resize({ width: max, height: max, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: AUCTION_ARCHIVE_PDF_PHOTO_QUALITY })
+      .toBuffer();
+  } catch {
+    return null;
+  }
+}
+
 /** Ģenerē un saglabā līdz 2 izplūdinātām bildēm no jau nokopētajām. Atgriež izdevušos ID. */
 export async function writeAuctionArchivePreviews(args: {
   sessionId: string;

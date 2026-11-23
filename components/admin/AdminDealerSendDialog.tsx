@@ -168,6 +168,8 @@ export function AdminDealerSendDialog({
   const { state: arch, setState: setArch } = useAuctionArchiveState(sessionId, open);
   const [previewIds, setPreviewIds] = useState<string[]>([]);
   const [manualSources, setManualSources] = useState<AuctionArchiveManualSource[]>([]);
+  // «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): noklusējumā izslēgts - cenas nav ne tekstā, ne PDF.
+  const [showPrices, setShowPrices] = useState(false);
   const archMode = situation === "archive";
   const archReady = archMode && arch?.offer?.status === "chose_archive";
   const archBlocked =
@@ -195,6 +197,7 @@ export function AdminDealerSendDialog({
     setPdfLink(null);
     setPreviewIds([]);
     setManualSources([]);
+    setShowPrices(false);
     void loadAdminMessageTemplatesDoc().then((d) => d && setDoc(d));
   }, [open, defaultSituation]);
 
@@ -224,12 +227,18 @@ export function AdminDealerSendDialog({
     const sum = arch.offer && ready ? arch.offer.summary : arch.summary;
     if (channel === "whatsapp") {
       setSubject("");
-      setText(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents));
+      setText(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents, showPrices));
     } else {
       setSubject(ready ? auctionArchiveReadySubject(sum) : auctionArchiveOfferSubject(sum));
-      setText(ready ? auctionArchiveReadyText(sum) : auctionArchiveOfferText(sum, arch.paidCents));
+      setText(ready ? auctionArchiveReadyText(sum, showPrices) : auctionArchiveOfferText(sum, arch.paidCents, showPrices));
     }
-  }, [open, situation, channel, arch]);
+  }, [open, situation, channel, arch, showPrices]);
+
+  // Piedāvājumā jau saglabātā izvēle (piem. «Sūtīt izsoļu arhīvu» pēc klienta «Jā»).
+  const archOfferShowPrices = arch?.offer?.showPrices === true;
+  useEffect(() => {
+    if (open) setShowPrices(archOfferShowPrices);
+  }, [open, archOfferShowPrices]);
 
   // Noklusējuma 2 bildes: pirmā + odometrs (makets 5A); Nils var mainīt.
   useEffect(() => {
@@ -314,7 +323,7 @@ export function AdminDealerSendDialog({
     try {
       if (archReady && channel === "whatsapp") {
         // WhatsApp: PDF sagatavo un atver, Nils to pievieno ziņai; pēc tam atzīme «Arhīvs nosūtīts».
-        const pdf = await postAuctionArchive({ action: "pdf", sessionId });
+        const pdf = await postAuctionArchive({ action: "pdf", sessionId, showPrices });
         if (!pdf.ok || typeof pdf.data.url !== "string") {
           setErr(auctionArchiveErrorLv(pdf.data.error));
           return;
@@ -333,6 +342,7 @@ export function AdminDealerSendDialog({
           customerEmail: customerEmail.trim(),
           previewIds,
           manualSources,
+          showPrices,
           ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
         });
       let r = await post(false);
@@ -590,6 +600,8 @@ export function AdminDealerSendDialog({
                 manualSources={manualSources}
                 onManualSources={setManualSources}
                 disabled={busy !== null}
+                showPrices={showPrices}
+                onShowPrices={setShowPrices}
               />
             ) : (
               <p className="amx-mut text-[11.5px] text-slate-500">Ielādē izsoļu arhīvu…</p>

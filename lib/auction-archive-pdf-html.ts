@@ -21,7 +21,7 @@ import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib
 import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import { buildPdfRunningFooterLine, buildPdfRunningHeaderLine, clientReportRunningPageCss } from "@/lib/pdf-running-page";
 import { renderThecarapiPdfModelHtml } from "@/lib/thecarapi-pdf";
-import { buildThecarapiPdfModel, type ThecarapiPdfDamage } from "@/lib/thecarapi-pdf-model";
+import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 function esc(s: string): string {
@@ -227,7 +227,24 @@ export type AuctionArchivePdfInput = {
   generatedAt?: Date;
   /** «Sagatavots klientam: …» kājenē (vārds, ja ir). */
   preparedFor?: string;
+  /** «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): noklusējumā cenas PDF NErāda. */
+  showPrices?: boolean;
 };
+
+const PRICE_LABEL_RE = /cen[aāu]|solījum|likm|price|bid|reserve|eur\b|€|pvn|vat|izmaks|vērtīb|value/i;
+
+const PRICE_VALUE_RE = /€|\bEUR\b/i;
+const isPriceRow = (r: { label: string; value: string }): boolean => PRICE_LABEL_RE.test(r.label) || PRICE_VALUE_RE.test(r.value);
+
+/** Bez cenām: izsoles cenu bloks, kopsavilkuma «Noslēguma cena» un cenu rindas «Citi dati». */
+export function stripThecarapiPdfPrices(model: ThecarapiPdfModel): ThecarapiPdfModel {
+  return {
+    ...model,
+    prices: [],
+    basics: model.basics.filter((r) => !isPriceRow(r)),
+    other: model.other.filter((r) => !isPriceRow(r)),
+  };
+}
 
 function recordKey(r: ThecarapiAdminRecord): string {
   return `${(r.site || "thecarapi").toLowerCase()}:${r.id}`.slice(0, 120);
@@ -284,6 +301,7 @@ const ARCHIVE_CSS = `
 
 export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): string {
   const s = input.summary;
+  const showPrices = input.showPrices === true;
   const now = input.generatedAt ?? new Date();
   const translations = input.translations ?? new Map<string, string>();
   const marks = input.marks ?? [];
@@ -298,10 +316,10 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     { k: "Nobraukums", v: km != null ? formatKm(km) : "-" },
   ];
   const chrono = s.auctions.length
-    ? `<p class="pdf-subhead">Izsoles hronoloģiski</p><table class="aa-table"><thead><tr><th>Datums</th><th>Portāls</th><th>Valsts</th><th>Nobraukums</th><th>Cena</th><th>Bildes</th></tr></thead><tbody>${s.auctions
+    ? `<p class="pdf-subhead">Izsoles hronoloģiski</p><table class="aa-table"><thead><tr><th>Datums</th><th>Portāls</th><th>Valsts</th><th>Nobraukums</th>${showPrices ? "<th>Cena</th>" : ""}<th>Bildes</th></tr></thead><tbody>${s.auctions
         .map((a) => {
           const photos = input.photos.filter((p) => p.auctionKey === a.key).length;
-          return `<tr><td>${esc(formatIsoDayLv(a.date) || "-")}</td><td>${esc(a.platform || "-")}</td><td>${esc(a.country || "-")}</td><td>${esc(formatKm(a.km) || "-")}</td><td>${esc(formatEurWhole(a.priceEur) || "-")}</td><td>${photos || "-"}</td></tr>`;
+          return `<tr><td>${esc(formatIsoDayLv(a.date) || "-")}</td><td>${esc(a.platform || "-")}</td><td>${esc(a.country || "-")}</td><td>${esc(formatKm(a.km) || "-")}</td>${showPrices ? `<td>${esc(formatEurWhole(a.priceEur) || "-")}</td>` : ""}<td>${photos || "-"}</td></tr>`;
         })
         .join("")}</tbody></table>`
     : "";
@@ -319,6 +337,7 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     let model: ReturnType<typeof buildThecarapiPdfModel> | null = null;
     try {
       model = buildThecarapiPdfModel(r);
+      if (!showPrices) model = stripThecarapiPdfPrices(model);
     } catch {
       model = null;
     }
