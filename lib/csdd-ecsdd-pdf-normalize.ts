@@ -58,10 +58,11 @@ function repairSplitFuelLabels(text: string): string {
 
 function joinSuperscriptUnits(text: string): string {
   return text
-    .replace(/\(\s*cm\s*\n\s*-3\s*\n\s*\)\s*:?\s*/gi, "(cm-3): ")
-    .replace(/\(\s*m\s*\n\s*-1\s*\n\s*\)\s*:?\s*/gi, "(m-1): ")
-    .replace(/\(cm\s*-3\)\s*:?\s*/gi, "(cm-3): ")
-    .replace(/\(m\s*-1\)\s*:?\s*/gi, "(m-1): ");
+    // Nākamo rindu pievelk tikai, ja tā ir skaitlis: tukšai vērtībai nedrīkst pievilkt nākamās sadaļas virsrakstu.
+    .replace(/\(\s*cm\s*\n\s*-3\s*\n\s*\)[ \t]*:?(?:\s*(?=\d[\d ]*(?:[.,]\d+)?[ \t]*(?:\n|$))|[ \t]*)/gi, "(cm-3): ")
+    .replace(/\(\s*m\s*\n\s*-1\s*\n\s*\)[ \t]*:?(?:\s*(?=\d[\d ]*(?:[.,]\d+)?[ \t]*(?:\n|$))|[ \t]*)/gi, "(m-1): ")
+    .replace(/\(cm[ \t]*-3\)[ \t]*:?(?:\s*(?=\d[\d ]*(?:[.,]\d+)?[ \t]*(?:\n|$))|[ \t]*)/gi, "(cm-3): ")
+    .replace(/\(m[ \t]*-1\)[ \t]*:?(?:\s*(?=\d[\d ]*(?:[.,]\d+)?[ \t]*(?:\n|$))|[ \t]*)/gi, "(m-1): ");
 }
 
 function unstickDefectCodes(text: string): string {

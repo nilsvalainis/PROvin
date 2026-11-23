@@ -21,8 +21,17 @@ import { AdminCsddBlokiPanel } from "@/components/admin/AdminCsddBlokiPanel";
 import {
   ECSDD_NEW_FORMAT_DEREGISTERED,
   ECSDD_OLD_FORMAT_MEASUREMENTS,
+  ECSDD_PAID_LAST_TA_ONLY_HEAD,
   ECSDD_TADATI_TOYOTA_LAST_ONLY,
 } from "@/lib/csdd-bloki.fixtures";
+import {
+  cleanCsddInspectionNotes,
+  csddInspectionDefectsMissing,
+  resolveCsddInspectionDisplay,
+  sortCsddInspectionRows,
+} from "@/lib/csdd-extended-parse";
+import { AdminCsddInspectionHistoryTable } from "@/components/admin/AdminCsddInspectionHistoryTable";
+import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { buildCsddRegistrySignalFactLines, parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
 import { formatTadatiPanels } from "@/relay/provin-ecsdd/lib/ecsdd-page.mjs";
 import { buildCsddBlokiPdfParts, buildCsddWarningSummaryTiles } from "@/lib/csdd-bloki-pdf-html";
@@ -453,5 +462,104 @@ describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota
     const ml = renderToStaticMarkup(createElement(AdminCsddBlokiPanel, { value: ML }));
     expect(ml).not.toMatch(/text-red-(?:600|700)\b/);
     expect(ml).toContain("Nav spēkā esošas OCTA");
+  });
+});
+
+describe("e.csdd: tukšas vērtības, piezīmes un TA hronoloģija (maksas izziņa, LAND ROVER 23.11.2026)", () => {
+  const LR = form(ECSDD_PAID_LAST_TA_ONLY_HEAD);
+
+  it("tukša dūmainība / CO / HC / Lambda neņem nākamās rindas vai sadaļas tekstu", () => {
+    expect(LR.opacityCoefficient).toBe("");
+    const m = parseCsddMeasurements(LR);
+    expect([m.co, m.coHigh, m.hc, m.lambda, m.smoke]).toEqual(["", "", "", "", ""]);
+    expect(JSON.stringify(LR)).not.toContain("\"Tehnisko apskašu vēsture\"");
+  });
+
+  it("piezīmes = tikai «Piezīmes» vērtība; daļiņas savā laukā; dublētās defektu galvenes ignorētas", () => {
+    const row = LR.technicalInspectionHistory.find((r) => r.date === "27.05.2025")!;
+    expect(row.notes).toBe("Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.");
+    expect(row.particleNumber).toBe("1800");
+    expect(row.defects).toEqual([]);
+    expect(buildCsddBloki(LR, "lv", NOW)!.ta.notes).toEqual([
+      { text: "Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.", dates: ["27.05.2025"] },
+    ]);
+    // Saglabātie melnraksti ar veco netīro tekstu.
+    expect(
+      cleanCsddInspectionNotes(
+        "Atgāzu cietās daļiņas: 1800 Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša. Kods Novērt. Trūkumi vai bojājumi Kods Novērt. Trūkumi vai bojājumi",
+      ),
+    ).toBe("Pilnpiedziņa. Stāvbremzes efektivitāte pietiekoša.");
+    expect(cleanCsddInspectionNotes("Atgāzu cietās daļiņas: 1800")).toBe("");
+  });
+
+  it("bloks = pēdējā apskate (03.06.2026), vēsturē tā neatkārtojas; jaunākā augšā", () => {
+    expect(LR.technicalInspectionHistory.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+    expect(LR.prevInspectionBlock).toMatchObject({ inspectionDateText: "03.06.2026", odometer: "171579", ratingLevel: 1, defects: [] });
+    const d = resolveCsddInspectionDisplay(LR.prevInspectionBlock, LR.technicalInspectionHistory, LR.prevInspectionDate);
+    expect(d.showPrevBlock).toBe(true);
+    expect(d.historyRows.map((r) => r.date)).toEqual(["27.05.2025"]);
+  });
+
+  it("vecs melnraksts (bloks = vecāka apskate, kas jau ir vēsturē): bloku nerāda, vēsture hronoloģiski", () => {
+    const old = { ...LR.prevInspectionBlock, inspectionDateText: "27.05.2025", ratingLabel: "0 - Teicamā tehniskā stāvoklī", ratingLevel: null };
+    const rows = [...LR.technicalInspectionHistory].reverse();
+    const d = resolveCsddInspectionDisplay(old, rows, LR.prevInspectionDate);
+    expect(d.showPrevBlock).toBe(false);
+    expect(d.historyRows.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+  });
+
+  it("saglabāts melnraksts lasot: dūmainība bez virsraksta, piezīmes tīras, vēsture jaunākā augšā", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        fields: {
+          makeModel: "LAND ROVER DISCOVERY",
+          opacityCoefficient: "Tehnisko apskašu vēsture",
+          technicalInspectionHistory: [
+            { date: "27.05.2025", inspectionType: "pamatpārbaude", ratingLabel: "0", notes: "Atgāzu cietās daļiņas: 1800 Pilnpiedziņa. Kods Novērt. Trūkumi vai bojājumi", defects: [] },
+            { date: "03.06.2026", inspectionType: "", ratingLabel: "1 - Ar pieļaujamiem defektiem", ratingLevel: 1, notes: "", defects: [] },
+          ],
+        },
+      },
+    });
+    expect(blocks.csdd.opacityCoefficient).toBe("");
+    expect(blocks.csdd.technicalInspectionHistory.map((r) => r.date)).toEqual(["03.06.2026", "27.05.2025"]);
+    expect(blocks.csdd.technicalInspectionHistory[1]!.notes).toBe("Pilnpiedziņa.");
+  });
+
+  it("kārtošana: jaunākā augšā, tajā pašā dienā pamatpārbaude pirms atkārtotās, ISO un DD.MM.YYYY", () => {
+    const rows = [
+      { date: "10.07.2025", inspectionType: "atkārtota pārbaude" },
+      { date: "2026-01-02", inspectionType: "" },
+      { date: "", inspectionType: "" },
+      { date: "10.07.2025", inspectionType: "pamatpārbaude" },
+      { date: "16.07.2025", inspectionType: "atkārtota pārbaude" },
+    ];
+    expect(sortCsddInspectionRows(rows).map((r) => `${r.date}|${r.inspectionType}`)).toEqual([
+      "2026-01-02|",
+      "16.07.2025|atkārtota pārbaude",
+      "10.07.2025|pamatpārbaude",
+      "10.07.2025|atkārtota pārbaude",
+      "|",
+    ]);
+  });
+
+  it("vērtējums 1/2/3 bez defektu saraksta - «Defektu saraksts avotā nav norādīts» (admin + PDF); 0 - «Nav reģistrētu…»", () => {
+    const [last, prev] = LR.technicalInspectionHistory;
+    expect(csddInspectionDefectsMissing(last!)).toBe(true);
+    expect(csddInspectionDefectsMissing(prev!)).toBe(false);
+    const admin = renderToStaticMarkup(createElement(AdminCsddInspectionHistoryTable, { rows: LR.technicalInspectionHistory }));
+    expect(admin).toContain("Defektu saraksts avotā nav norādīts.");
+    expect(admin).toContain("Nav reģistrētu trūkumu vai bojājumu.");
+    expect(admin.indexOf("03.06.2026")).toBeLessThan(admin.indexOf("27.05.2025"));
+
+    const html = doc(payload(LR));
+    const csdd = html.slice(html.indexOf("Iepriekšējās apskates dati"));
+    expect(csdd).toContain("Defektu saraksts avotā nav norādīts.");
+    expect(csdd).not.toContain("Kods Novērt");
+    expect(csdd).not.toContain("Tehnisko apskašu vēsture</p><div class=\"pdf-csdd-ta-table-wrap\"><div class=\"pdf-csdd-ta-year-block\"><p class=\"pdf-csdd-ta-year-heading\">2026");
+    // 03.06.2026 blokā (augšā), 27.05.2025 vēsturē - katrs vienu reizi.
+    expect(csdd.indexOf("03.06.2026")).toBeLessThan(csdd.indexOf("27.05.2025"));
+    expect(csdd.split("27.05.2025 · pamatpārbaude").length - 1).toBe(1);
+    expect(csdd.split("03.06.2026 · 171 579 km").length - 1).toBe(1);
   });
 });

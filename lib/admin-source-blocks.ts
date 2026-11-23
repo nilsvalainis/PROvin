@@ -163,9 +163,11 @@ import type {
   CsddInspectionDefectRow,
 } from "@/lib/csdd-extended-parse";
 import {
+  cleanCsddInspectionNotes,
   emptyCsddPreviousInspectionBlock,
   previousInspectionBlockHasData,
   resolveInspectionEmissions,
+  sortCsddInspectionRows,
 } from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
@@ -2423,7 +2425,8 @@ function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspect
     ratingLevel,
     smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
     ...particleNumberStoredField(o.particleNumber),
-    notes: clipCsddField(o.notes, 2000),
+    // Saglabātajos melnrakstos piezīmēs var būt daļiņu priedēklis / defektu galvene - lasot notīra (dati netiek pārrakstīti).
+    notes: cleanCsddInspectionNotes(clipCsddField(o.notes, 2000)),
     defects: parseCsddInspectionDefectStoredRaw(o.defects),
   };
 }
@@ -2445,7 +2448,8 @@ function parseCsddInspectionDefectStoredRaw(raw: unknown): CsddInspectionDefectR
 
 function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspectionRow[] {
   if (!Array.isArray(raw)) return [];
-  return raw
+  // Viena kārtība visur (CSDD API, tadati, maksas izziņa, PDF imports): jaunākā augšā.
+  return sortCsddInspectionRows(raw
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const o = item as Record<string, unknown>;
@@ -2463,11 +2467,17 @@ function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspe
         maxDefectLevel,
         smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
         ...particleNumberStoredField(o.particleNumber),
-        notes: clipCsddField(o.notes, 500),
+        notes: cleanCsddInspectionNotes(clipCsddField(o.notes, 500)),
         defects: parseCsddInspectionDefectStoredRaw(o.defects),
       };
     })
-    .filter((r): r is CsddTechnicalInspectionRow => r != null && r.date.trim().length > 0);
+    .filter((r): r is CsddTechnicalInspectionRow => r != null && r.date.trim().length > 0));
+}
+
+/** Dūmainībai jābūt skaitlim; vecos melnrakstos tur var būt nākamās sadaļas virsraksts («Tehnisko apskašu vēsture»). */
+function storedOpacityCoefficient(raw: unknown): string {
+  const v = clipCsddField(raw, 40);
+  return /^\s*\d/.test(v) ? v : "";
 }
 
 function parseCsddOwnerEventsStoredRaw(raw: unknown): CsddOwnerChangeRow[] {
@@ -2503,7 +2513,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     seatCount: clipCsddField(raw.seatCount, 16),
     roadTaxEur: clipCsddField(raw.roadTaxEur, 80),
     registrationStatus: clipCsddField(raw.registrationStatus, 120),
-    opacityCoefficient: clipCsddField(raw.opacityCoefficient, 40),
+    opacityCoefficient: storedOpacityCoefficient(raw.opacityCoefficient),
     particulateMatter: clipCsddField(raw.particulateMatter, 80),
     previousRegistrationCountry: clipCsddField(raw.previousRegistrationCountry, 120),
     ownerCountLatvia: clipCsddField(raw.ownerCountLatvia, 8),

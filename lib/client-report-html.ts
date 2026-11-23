@@ -282,7 +282,7 @@ import {
   csddPreviousRegistrationCountryForPdf,
   emptyCsddPreviousInspectionBlock,
   isoDateToLvDisplay,
-  previousInspectionBlockHasData,
+  resolveCsddInspectionDisplay,
   splitSmokeAndParticleNumber,
 } from "@/lib/csdd-extended-parse";
 import { buildOutvinBundleEquipmentPdfHtml, buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
@@ -1622,13 +1622,15 @@ export function buildCsddAvotuZoneHtml(
     ? isoDateToLvDisplay(form.prevInspectionDate)
     : "";
   const prevWarnings = filterCsddInspectionWarnings(form.prevInspectionWarnings);
-  const hasPrevBlock = prevBlock && previousInspectionBlockHasData(prevBlock);
+  // Tas pats kā admin: viena apskate nav divreiz, secība jaunākā augšā.
+  const taDisplay = resolveCsddInspectionDisplay(prevBlock, form.technicalInspectionHistory ?? [], form.prevInspectionDate);
+  const hasPrevBlock = taDisplay.showPrevBlock;
   const prevInspectionHtml =
     hasPrevBlock || prevWarnings.length > 0
       ? `<div class="pdf-csdd-ta-section"><p class="pdf-subhead">${escapeHtml(CSDD_PREVIOUS_INSPECTION_TITLE)}</p>${buildPreviousInspectionBlockHtml(prevBlock ?? emptyCsddPreviousInspectionBlock(), prevInspectionDateDisplay, prevWarnings)}</div>`
       : "";
 
-  const taRows = (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim());
+  const taRows = taDisplay.historyRows;
   const taWarnings = filterCsddInspectionWarnings(form.technicalInspectionWarnings);
   const taTableHtml =
     taRows.length > 0 || taWarnings.length > 0

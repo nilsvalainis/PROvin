@@ -291,10 +291,10 @@ function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBl
     } else if (nk.includes("dumainib")) {
       block.smokeCoefficient = val;
     } else if (nk.includes("cietas") && nk.includes("dalin")) {
+      // Daļiņu skaits ir savā laukā - piezīmēs to neliek.
       if (val) block.particleNumber = val.replace(/\s+/g, "");
-      if (!block.notes.trim()) block.notes = `Atgāzu cietās daļiņas: ${val}`;
     } else if (nk.includes("piezim")) {
-      block.notes = val;
+      block.notes = cleanCsddInspectionNotes(val);
     }
   }
 }
@@ -456,16 +456,34 @@ export function resolvePrevInspectionBlockFromRaw(raw: string): CsddPreviousInsp
   const detailed = parseDetailedRatingBlockFromRaw(raw);
   if ((detailed.defects?.length ?? 0) > 0) return detailed;
 
-  const history = parseTechnicalInspectionHistorySection(raw);
-  const withDefects = history.find((r) => (r.defects?.length ?? 0) > 0) ?? history[0];
-  if (withDefects) {
-    const odo =
-      findOdometerForInspectionDate(raw, withDefects.date) ||
-      (detailed.inspectionDateText === withDefects.date ? detailed.odometer : "");
-    return technicalRowToPrevBlock(withDefects, odo);
+  // Bloks = PĒDĒJĀ apskate (jaunākā), nevis pirmā ar defektiem - citādi tas dublē vecāku vēstures rindu un
+  // jauc hronoloģiju. Ja jaunākā ir tikai «Pēdējā tehniskā apskate» galvā (bez vēstures rindas) - no galvas.
+  const history = sortCsddInspectionRows(parseTechnicalInspectionHistorySection(raw));
+  const head = parseLastTechnicalInspectionHead(raw);
+  const newest = history[0];
+  // Bez vēstures (vecais/tadati formāts) - kā līdz šim «Tehniskie dati» + «Detalizētais vērtējums».
+  if (!newest) return detailed;
+  if (head?.date && inspectionSortMs(head.date) > inspectionSortMs(newest.date)) {
+    const sameAsDetailed =
+      previousInspectionBlockHasData(detailed) &&
+      (!detailed.inspectionDateText.trim() || normalizeDotDate(detailed.inspectionDateText) === head.date);
+    const base = sameAsDetailed ? detailed : emptyCsddPreviousInspectionBlock();
+    const ratingLabel = base.ratingLabel.trim() || head.ratingLabel;
+    const nextM = normalizeCsddRawText(raw).match(/Nākošā\s+TA\s*[:.]?\s*(\d{2}[./]\d{2}[./]\d{4})/i);
+    return {
+      ...base,
+      inspectionDateText: head.date,
+      nextInspectionDateText: base.nextInspectionDateText.trim() || (nextM?.[1] ? normalizeDotDate(nextM[1]) : ""),
+      odometer: base.odometer.trim() || head.odometer,
+      ratingLabel,
+      ratingLevel: base.ratingLevel ?? (ratingLabel ? toRatingLevel(Number.parseInt(ratingLabel, 10)) : null),
+    };
   }
-
-  return detailed;
+  const odo =
+    findOdometerForInspectionDate(raw, newest.date) ||
+    (head?.date === newest.date ? head.odometer : "") ||
+    (detailed.inspectionDateText === newest.date ? detailed.odometer : "");
+  return technicalRowToPrevBlock(newest, odo);
 }
 
 /** „Iepriekšējās apskates dati” → rinda tehnisko apskašu vēsturei. */
@@ -536,12 +554,6 @@ export function normalizeCsddRawText(raw: string): string {
 
 function normalizeDotDate(date: string): string {
   return date.trim().replace(/\//g, ".");
-}
-
-function parseInspectionDateMs(date: string): number {
-  const m = date.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (!m) return 0;
-  return Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
 }
 
 function parseInspectionYear(date: string): number | null {
@@ -650,6 +662,93 @@ function parseDefectsFromBlock(block: string): CsddInspectionDefectRow[] {
   return defects;
 }
 
+/** Etiķetes, pie kurām beidzas TA «Piezīmes» vērtība. */
+const INSPECTION_NOTE_STOP =
+  "Kods\\s+Nov|Nov\\.\\s+Trūkumi|Apskates\\s+datums|Apskates\\s+tips|Novērtējums|Atgāzu|Dūmainības|CO\\s*\\(|CO\\s+paaugst|HC\\s*\\(|Lambda|Tehnisko\\s+apska|Pēdēj[āa]\\s+tehnisk|Nobraukuma\\s+vēsture|Informācija\\s+sagatavota";
+
+/**
+ * TA piezīmju tīrīšana (arī saglabātiem melnrakstiem): bez «Atgāzu cietās daļiņas: N» priedēkļa (tas ir savā laukā)
+ * un bez defektu tabulas galvenes «Kods Novērt. Trūkumi vai bojājumi» (arī dublētas) un visa, kas aiz tās.
+ */
+export function cleanCsddInspectionNotes(raw: string): string {
+  let t = String(raw ?? "").replace(/\s+/g, " ").trim();
+  t = t.replace(/^Atgāzu\s+cietās\s+daļiņas(?:\s*\([^)]*\))?\s*:?\s*[\d\s]*\d\s*/i, "");
+  const cut = t.search(/\b(?:Kods\s+Nov(?:ērt(?:ējums)?)?\.?|Nov\.)\s+Trūkumi/i);
+  if (cut >= 0) t = t.slice(0, cut);
+  t = t.trim();
+  return t.length > 500 ? t.slice(0, 500) : t;
+}
+
+/** Dūmainības koeficientam jābūt skaitlim - citādi (piem. nākamās sadaļas virsraksts) tukšs. */
+export function sanitizeCsddSmokeValue(raw: string): string {
+  const t = String(raw ?? "").trim();
+  return /^\d+(?:[.,]\d+)?$/.test(t) ? t : "";
+}
+
+function inspectionSortMs(date: string): number {
+  const t = String(date ?? "").trim();
+  const dot = t.match(/^(\d{2})[./](\d{2})[./](\d{4})/);
+  if (dot) return Date.UTC(Number(dot[3]), Number(dot[2]) - 1, Number(dot[1]));
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  return Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * Viena TA kārtība visur (admin, PDF, analīze, AI): jaunākā augšā; tajā pašā dienā pamatpārbaude pirms
+ * atkārtotās. Stabila - pārējā secība nemainās. Rindas bez datuma beigās.
+ */
+export function sortCsddInspectionRows<T extends { date: string; inspectionType?: string }>(rows: readonly T[]): T[] {
+  const rank = (t: string | undefined) => (/atkārtot/i.test(String(t ?? "")) ? 1 : 0);
+  return rows
+    .map((r, i) => ({ r, i, ms: inspectionSortMs(r.date) }))
+    .sort((a, b) => {
+      if (a.ms !== b.ms) return b.ms > a.ms ? 1 : -1;
+      return rank(a.r.inspectionType) - rank(b.r.inspectionType) || a.i - b.i;
+    })
+    .map((x) => x.r);
+}
+
+/** Datums DD.MM.YYYY no bloka vai ISO lauka. */
+function prevBlockDate(block: CsddPreviousInspectionBlock, prevInspectionDateIso?: string): string {
+  const d = block.inspectionDateText.trim();
+  if (d) return d.replace(/\//g, ".");
+  const iso = String(prevInspectionDateIso ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : "";
+}
+
+/**
+ * Ko rādīt «Iepriekšējās apskates dati» un «Tehnisko apskašu vēsture» (admin + PDF), lai viena apskate nebūtu
+ * divreiz un secība būtu hronoloģiska (jaunākā augšā):
+ * - bloks ir pēdējā apskate -> vēsturē tās pašas dienas rindu nerāda (bloks to jau parāda ar nobraukumu);
+ * - bloks ir vecāka apskate, kas jau ir vēsturē (vecs melnraksts) -> bloku nerāda, rinda paliek vēsturē.
+ */
+export function resolveCsddInspectionDisplay(
+  block: CsddPreviousInspectionBlock | null | undefined,
+  rows: readonly CsddTechnicalInspectionRow[],
+  prevInspectionDateIso?: string,
+): { showPrevBlock: boolean; historyRows: CsddTechnicalInspectionRow[] } {
+  const sorted = sortCsddInspectionRows(rows.filter((r) => r.date.trim()));
+  if (!block || !previousInspectionBlockHasData(block)) return { showPrevBlock: false, historyRows: sorted };
+  const date = prevBlockDate(block, prevInspectionDateIso);
+  if (!date) return { showPrevBlock: true, historyRows: sorted };
+  const ms = inspectionSortMs(date);
+  const sameDay = (r: CsddTechnicalInspectionRow) => inspectionSortMs(r.date) === ms;
+  const newestMs = sorted.length ? inspectionSortMs(sorted[0]!.date) : Number.NEGATIVE_INFINITY;
+  if (ms < newestMs && sorted.some(sameDay)) return { showPrevBlock: false, historyRows: sorted };
+  return { showPrevBlock: true, historyRows: sorted.filter((r) => !sameDay(r)) };
+}
+
+/** Vērtējums 1/2/3, bet defektu saraksta avotā nav (nevis «nav trūkumu»). */
+export function csddInspectionDefectsMissing(row: Pick<CsddTechnicalInspectionRow, "ratingLabel" | "ratingLevel" | "defects">): boolean {
+  if ((row.defects ?? []).length > 0) return false;
+  const lvl = row.ratingLevel ?? toRatingLevel(Number.parseInt(String(row.ratingLabel ?? "").trim(), 10));
+  return lvl === 1 || lvl === 2 || lvl === 3;
+}
+
+export const CSDD_DEFECTS_NOT_LISTED_TEXT = "Defektu saraksts avotā nav norādīts.";
+export const CSDD_NO_DEFECTS_TEXT = "Nav reģistrētu trūkumu vai bojājumu.";
+
 function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null {
   const dateM = block.match(/Apskates\s+datums\s*[:.]?\s*(\d{2}\.\d{2}\.\d{4})/i);
   if (!dateM?.[1]) return null;
@@ -663,10 +762,10 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
   const ratingLevel = ratingM?.[1] ? toRatingLevel(Number.parseInt(ratingM[1], 10)) : null;
 
   const smokeM = block.match(
-    /Dūmainības\s+koeficients(?:\s*\([^)]*\))?\s*:?\s*([0-9]+(?:[.,][0-9]+)?)/i,
+    /Dūmainības\s+koeficients(?:[ \t]*\([^)\n]*\))?[ \t]*:?[ \t]*([0-9]+(?:[.,][0-9]+)?)/i,
   );
   const particleM = block.match(
-    /Atgāzu\s+cietās\s+daļiņas(?:\s*\([^)]*\))?\s*:?\s*([0-9][\d\s]*)/i,
+    /Atgāzu\s+cietās\s+daļiņas(?:[ \t]*\([^)\n]*\))?[ \t]*:?[ \t]*([0-9][\d \t]*)/i,
   );
   /** Tikai pirmā rinda - `\s` regex var aizķert nākamās rindas ciparus (defekta kodu). */
   const particleRaw = (particleM?.[1] ?? "").split("\n")[0]!.trim();
@@ -675,12 +774,11 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
     particleRaw.replace(/\s+/g, ""),
   );
 
-  const notesM = block.match(/Piezīmes\s*[:.]?\s*([\s\S]*?)(?=\n\s*Kods\s+Novērtējums|\n\s*[\d.]+\s+\d\s+|$)/i);
-  let notes = notesM?.[1]?.replace(/\s+/g, " ").trim() ?? "";
-  if (particleRaw && smokeM?.[1] == null && !/cietās\s+daļiņas/i.test(notes)) {
-    notes = [`Atgāzu cietās daļiņas: ${particleRaw}`, notes].filter(Boolean).join(" ");
-  }
-  if (notes.length > 500) notes = notes.slice(0, 500);
+  // Piezīmes = tikai rindas «Piezīmes …» vērtība līdz nākamajai zināmajai etiķetei (daļiņu skaits ir savā laukā).
+  const notesM = block.match(
+    new RegExp(`Piezīmes[ \\t]*[:.]?[ \\t]*([\\s\\S]*?)(?=\\n\\s*(?:${INSPECTION_NOTE_STOP})|\\n\\s*[\\d.]+\\s+\\d\\s+|$)`, "i"),
+  );
+  const notes = cleanCsddInspectionNotes(notesM?.[1] ?? "");
 
   const defects = parseDefectsFromBlock(block);
   let maxDefectLevel: 1 | 2 | 3 | null = null;
@@ -746,7 +844,7 @@ export function parseTechnicalInspectionHistory(raw: string): CsddTechnicalInspe
     });
   }
 
-  return rows.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
+  return sortCsddInspectionRows(rows);
 }
 
 export function groupTechnicalInspectionsByYear(
@@ -760,9 +858,7 @@ export function groupTechnicalInspectionsByYear(
     arr.push(row);
     map.set(y, arr);
   }
-  for (const arr of map.values()) {
-    arr.sort((a, b) => parseInspectionDateMs(b.date) - parseInspectionDateMs(a.date));
-  }
+  for (const [y, arr] of map) map.set(y, sortCsddInspectionRows(arr));
   return map;
 }
 

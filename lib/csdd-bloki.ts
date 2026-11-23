@@ -11,6 +11,7 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   effectiveInspectionSeverity,
   normalizeCsddRawText,
+  sortCsddInspectionRows,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
 import {
@@ -458,14 +459,14 @@ export const CSDD_BRAKE_DIFF_WARN_PCT = 30;
 
 export function parseCsddMeasurements(csdd: Pick<CsddFormFields, "rawUnprocessedData" | "emissionStandard" | "prevInspectionBlock" | "prevInspectionDate" | "technicalInspectionHistory">): CsddMeasurements {
   const text = normalizeCsddRawText(csdd.rawUnprocessedData ?? "");
-  const co2 = firstMatch(text, /(?:^|\n)\s*CO2(?:\s+(WLTP|NEDC))?\s*:\s*([\d.,]+)/i);
-  const cons = firstMatch(text, /Degviela\s?s\s+patēriņš(?:\s+(WLTP|NEDC))?\s*:\s*([\d.,]+)/i);
-  const city = firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:\s*([\d.,]+)/i);
-  const co = firstMatch(text, /(?:^|\n)\s*CO\s*\(%\)\s*:\s*([\d.,]+)/i);
-  const coHigh = firstMatch(text, /CO\s+paaugst\.?\s*\(%\)\s*:\s*([\d.,]+)/i);
-  const hc = firstMatch(text, /HC\s*\(ppm\)\s*:\s*([\d.,]+)/i);
-  const lambda = firstMatch(text, /Lambda\s*:\s*([\d.,]+)/i);
-  const euro = String(csdd.emissionStandard ?? "").trim() || (firstMatch(text, /Emisiju\s+standarts\s*:\s*([^\n]+)/i)?.[1] ?? "").trim();
+  const co2 = firstMatch(text, /(?:^|\n)\s*CO2(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
+  const cons = firstMatch(text, /Degviela\s?s\s+patēriņš(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
+  const city = firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:[ \t]*([\d.,]+)/i);
+  const co = firstMatch(text, /(?:^|\n)\s*CO[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const coHigh = firstMatch(text, /CO\s+paaugst\.?[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const hc = firstMatch(text, /HC[ \t]*\(ppm\)[ \t]*:[ \t]*([\d.,]+)/i);
+  const lambda = firstMatch(text, /Lambda[ \t]*:[ \t]*([\d.,]+)/i);
+  const euro = String(csdd.emissionStandard ?? "").trim() || (firstMatch(text, /Emisiju\s+standarts\s*:[ \t]*([^\n]+)/i)?.[1] ?? "").trim();
 
   const prev = csdd.prevInspectionBlock;
   const firstRowWithSmoke = (csdd.technicalInspectionHistory ?? []).find((r) => r.smokeCoefficient.trim());
@@ -671,7 +672,8 @@ export const CSDD_TA_REPEAT_MIN_YEARS = 2;
 
 function dedupeRows(rows: readonly CsddTechnicalInspectionRow[]): CsddTechnicalInspectionRow[] {
   const seen = new Set<string>();
-  return rows.filter((r) => {
+  // Jaunākā augšā (tālāk «pirmais sastaptais = jaunākais»).
+  return sortCsddInspectionRows(rows).filter((r) => {
     const d = r.date.trim();
     const key = `${d}|${r.inspectionType.trim().toLowerCase()}`;
     if (!d || seen.has(key)) return false;

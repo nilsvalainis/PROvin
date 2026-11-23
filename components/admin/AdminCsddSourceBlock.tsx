@@ -30,7 +30,7 @@ import {
   AdminCsddInspectionHistoryTable,
   AdminCsddPreviousInspectionBlock,
 } from "@/components/admin/AdminCsddInspectionHistoryTable";
-import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import { previousInspectionBlockHasData, resolveCsddInspectionDisplay } from "@/lib/csdd-extended-parse";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
 import { AdminEcsddAutoPanel } from "@/components/admin/AdminEcsddAutoPanel";
 import { AdminCsddPaidReportButton } from "@/components/admin/AdminCsddPaidReportButton";
@@ -287,8 +287,14 @@ export function AdminCsddSourceBlock({
     }
   }, [value.rawUnprocessedData, value, onChange]);
 
-  const taRows = value.technicalInspectionHistory.filter((r) => r.date.trim());
-  const hasPrevInspection = previousInspectionBlockHasData(value.prevInspectionBlock);
+  // Viena apskate nav divreiz, secība jaunākā augšā (tas pats PDF).
+  const taDisplay = resolveCsddInspectionDisplay(
+    value.prevInspectionBlock,
+    value.technicalInspectionHistory,
+    value.prevInspectionDate,
+  );
+  const taRows = taDisplay.historyRows;
+  const hasPrevInspection = taDisplay.showPrevBlock;
   const mileageRows =
     value.mileageHistory.length > 0 ? value.mileageHistory : [emptyCsddMileageRow()];
 
@@ -764,7 +770,7 @@ export function AdminCsddSourceBlock({
           {CSDD_TECHNICAL_INSPECTION_HISTORY_TITLE}
         </p>
         {taRows.length > 0 ? (
-          <AdminCsddInspectionHistoryTable rows={value.technicalInspectionHistory} />
+          <AdminCsddInspectionHistoryTable rows={taRows} />
         ) : !readOnly && !disabled ? null : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
             Ielīmē pilnu CSDD raw tekstu - tehnisko apskašu tabula (pa gadiem, katrs aizrādījums atsevišķā rindā)

@@ -2,6 +2,7 @@
  * Deterministisks CSDD tehniskās apskates nosegums ✨ promptam.
  * Aģentam nav jāmin, ko MK 295 jau ir pārbaudījis — to aprēķina kods.
  */
+import { sortCsddInspectionRows } from "@/lib/csdd-extended-parse";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   emptyCsddFields,
@@ -67,8 +68,7 @@ function pickLastInspection(csdd: CsddFormFields): {
   ratingLabel: string;
   odometer: string;
 } | null {
-  const history = [...(csdd.technicalInspectionHistory ?? [])].filter((r) => r.date.trim());
-  history.sort((a, b) => dateMs(b.date) - dateMs(a.date));
+  const history = sortCsddInspectionRows((csdd.technicalInspectionHistory ?? []).filter((r) => r.date.trim()));
   const newest = history[0];
   const prev = csdd.prevInspectionDate.trim();
   const block = csdd.prevInspectionBlock;

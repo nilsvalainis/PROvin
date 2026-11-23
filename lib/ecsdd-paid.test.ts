@@ -165,6 +165,7 @@ describe("maksas izziņa: izziņas teksts -> esošais CSDD parsers", () => {
     owners: "4",
     next: "2026-12-02",
     insurance: "2026-11-29",
+    // Jaunākā apskate ar dūmainību (22.11.2024); 24.11.2025 avotā tās nav, 0.06 ir 2018. gada.
     opacity: "0.18",
     gross: "2350",
     curb: "1845",
@@ -221,7 +222,8 @@ describe("maksas izziņa: izziņas teksts -> esošais CSDD parsers", () => {
         "21.05.2018/4",
         "13.05.2017/2",
       ]);
-      expect(s.prevDefects).toEqual(["7.1.6.|1", "8.4.1.|1", "6.1.1.|1"]);
+      // Bloks = pēdējā apskate 24.11.2025 (saraksta avotā nav); 22.11.2024 defekti ir vēsturē (sk. s.ta «22.11.2024/3»).
+      expect(s.prevDefects).toEqual([]);
     });
   }
 
