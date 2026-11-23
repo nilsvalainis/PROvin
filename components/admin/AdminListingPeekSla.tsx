@@ -97,7 +97,10 @@ export function AdminListingPeekSla({
         </span>
       ) : null}
       {hours ? (
-        <span className="inline-flex h-[22px] items-center rounded-[7px] bg-[var(--am-fill,#f2f2f7)] px-1.5 text-[11px] font-medium text-[var(--am-ink2,#5e636e)] md:hidden">
+        <span
+          className="inline-flex h-[22px] items-center rounded-[7px] bg-[var(--am-fill,#f2f2f7)] px-1.5 text-[11px] font-medium text-[var(--am-ink2,#5e636e)] md:hidden"
+          data-amx-sla={complete ? "done" : rejected ? "rejected" : (sla?.status ?? "ok")}
+        >
           {hours}
         </span>
       ) : null}

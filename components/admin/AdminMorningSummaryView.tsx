@@ -25,7 +25,10 @@ function CountTile({
         ? "border-amber-200 bg-amber-50"
         : "border-[#e5e5ea] bg-white";
   return (
-    <div className={`flex min-h-[5.5rem] flex-1 flex-col justify-center rounded-2xl border px-3 py-3 ${wrap}`}>
+    <div
+      className={`flex min-h-[5.5rem] flex-1 flex-col justify-center rounded-2xl border px-3 py-3 ${wrap}`}
+      data-amx-count={value > 0 ? tone : "ok"}
+    >
       <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{label}</p>
       <p className="mt-1 text-[2rem] font-bold leading-none tabular-nums text-[var(--color-apple-text)]">{value}</p>
     </div>
@@ -34,6 +37,13 @@ function CountTile({
 
 function ItemCard({ item }: { item: MorningQueueItem }) {
   const pill = item.deadlineStatus ? TONE[item.deadlineStatus] : "bg-[#f2f2f7] text-[#3a3a3c]";
+  const phoneSub =
+    item.kind === "audit"
+      ? item.product || ""
+      : item.subtitle
+          .split(" · ")
+          .filter((part) => !part.includes("@"))
+          .join(" · ");
   return (
     <li>
       <Link
@@ -42,9 +52,14 @@ function ItemCard({ item }: { item: MorningQueueItem }) {
       >
         <div className="min-w-0 flex-1">
           <p className="truncate text-[16px] font-semibold text-[var(--color-apple-text)]">{item.title}</p>
-          {item.subtitle ? <p className="mt-0.5 truncate text-[12px] text-[#8e8e93]">{item.subtitle}</p> : null}
+          {item.subtitle ? <p className="mt-0.5 truncate text-[12px] text-[#8e8e93] max-md:hidden">{item.subtitle}</p> : null}
+          {/* Telefonā bez e-pasta: auto + produkts (22.11 makets v2). */}
+          {phoneSub ? <p className="mt-0.5 hidden truncate text-[13px] text-[#8e8e93] max-md:block">{phoneSub}</p> : null}
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums ${pill}`}>
+        <span
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums ${pill}`}
+          data-amx-pill={item.deadlineStatus ?? "none"}
+        >
           {item.deadlineLabel ?? (item.isNew ? "Jauns" : "Atvērt")}
         </span>
       </Link>
@@ -59,7 +74,7 @@ function Section({ title, items }: { title: string; items: MorningQueueItem[] })
       <h2 className="px-0.5 text-[13px] font-semibold text-[#3a3a3c]">
         {title} <span className="font-normal text-[#8e8e93]">{items.length}</span>
       </h2>
-      <ul className="mt-2 flex flex-col gap-2">
+      <ul className="mt-2 flex flex-col gap-2" data-amx-list>
         {items.map((item) => (
           <ItemCard key={`${item.kind}-${item.id}`} item={item} />
         ))}
@@ -85,7 +100,7 @@ export function AdminMorningSummaryView({
 
   return (
     <div className="mx-auto w-full max-w-lg pb-8">
-      <div className="flex gap-2">
+      <div className="flex gap-2" data-amx-counts>
         <CountTile label="Atvērti" value={counts.open} tone="ok" />
         <CountTile label="Steidzami" value={counts.urgent} tone="urgent" />
         <CountTile label="Kavēti" value={counts.overdue} tone="overdue" />

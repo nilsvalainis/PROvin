@@ -19,6 +19,7 @@ import {
   type VinScanHistoryEntry,
 } from "@/lib/vin-scan/camera-vin";
 import { useRouter } from "next/navigation";
+import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import {
   AdminVinScanPanel,
@@ -80,6 +81,8 @@ export function AdminVinScanPageClient({
   footer?: React.ReactNode;
 }) {
   const router = useRouter();
+  // 3. posms (22.11 makets v2): telefonā stikla stils tikai PRO; IRISS VIN pārbaude nemainās.
+  const glass = useAdminShellLayout()?.workspace !== "iriss";
   const [draft, setDraft] = useState(() => normalizeVin(initialVin));
   const [platesDraft, setPlatesDraft] = useState<VinScanPlates>(() => emptyVinScanPlates());
   const [plateBusy, setPlateBusy] = useState(false);
@@ -338,7 +341,9 @@ export function AdminVinScanPageClient({
   );
 
   return (
-    <div className="mt-4 space-y-4 max-md:pb-[calc(var(--admin-tabbar-h,0px)+8.75rem)] md:mt-5">
+    <div
+      className={`mt-4 space-y-4 max-md:pb-[calc(var(--admin-tabbar-h,0px)+8.75rem)] md:mt-5${glass ? " amx amx-pg amx-pg--vin max-md:mt-0" : ""}`}
+    >
       <AdminVinHandoffBinder vin={valid ? vin : ""} />
       {/* Galddators: viena rinda augšā. */}
       <div className="hidden md:block">
@@ -380,7 +385,10 @@ export function AdminVinScanPageClient({
         </AdminMobileTopBar>
         <div className="mx-4 mt-3 overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
           <label className="block border-b border-[var(--am-hair)] px-4 py-3">
-            <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">VIN</span>
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
+              VIN
+            </span>
+            <span className="flex items-center gap-2">
             <input
               type="text"
               inputMode="text"
@@ -391,12 +399,32 @@ export function AdminVinScanPageClient({
               value={draft}
               onChange={(e) => setDraft(e.target.value.toUpperCase())}
               aria-label="VIN"
+              placeholder={glass ? "VIN" : undefined}
             />
+            {glass ? (
+              // Kamera - ikona VIN laukā (tā pati funkcija kā «Ieslēgt kameru»).
+              <button
+                type="button"
+                aria-label="Ieslēgt kameru"
+                data-amx-camera
+                data-amx-keep
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCameraOpen(true);
+                }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--am-ink)]"
+              >
+                <AdminMobileIcon name="kamera" className="h-5 w-5" />
+              </button>
+            ) : null}
+            </span>
           </label>
           {vinMode === "listing" ? (
             <>
             <label className="block border-b border-[var(--am-hair)] px-4 py-3">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">LV numurs</span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
+                LV numurs
+              </span>
               <input
                 type="text"
                 inputMode="text"
@@ -407,10 +435,13 @@ export function AdminVinScanPageClient({
                 value={platesDraft.lv}
                 onChange={(e) => setPlatesDraft((prev) => ({ ...prev, lv: e.target.value.toUpperCase() }))}
                 aria-label="LV numurs"
+                placeholder={glass ? "LV numurs" : undefined}
               />
             </label>
             <label className="block px-4 py-3">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Sludinājums</span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
+                Sludinājums
+              </span>
               <input
                 type="url"
                 inputMode="url"
@@ -420,6 +451,7 @@ export function AdminVinScanPageClient({
                 value={listingDraft}
                 onChange={(e) => setListingDraft(e.target.value)}
                 aria-label="Sludinājums"
+                placeholder={glass ? "Sludinājuma saite" : undefined}
               />
             </label>
             </>
@@ -429,10 +461,12 @@ export function AdminVinScanPageClient({
           <AdminMobilePrimaryButton disabled={!canScan || scanBusy || plateBusy} onClick={() => void runScan(false)}>
             {scanBusy ? "Pārbauda…" : "Pārbaudīt"}
           </AdminMobilePrimaryButton>
-          <AdminMobileSecondaryButton onClick={() => setCameraOpen(true)}>
-            <AdminMobileIcon name="kamera" className="h-5 w-5" />
-            Ieslēgt kameru
-          </AdminMobileSecondaryButton>
+          {glass ? null : (
+            <AdminMobileSecondaryButton onClick={() => setCameraOpen(true)}>
+              <AdminMobileIcon name="kamera" className="h-5 w-5" />
+              Ieslēgt kameru
+            </AdminMobileSecondaryButton>
+          )}
         </div>
         <div className="mx-4 mt-3">
           <AdminVinScanRecent entries={recent} onPick={(v) => setDraft(v)} />
