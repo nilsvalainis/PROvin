@@ -32,6 +32,10 @@
  *   POST /ecsdd/lookup           {query, ref, trigger} -> {jobId, session}
  *   GET  /ecsdd/jobs/:id         uzdevuma stāvoklis
  *   POST /ecsdd/logout           kill switch: iziet + izdzēš pārlūka profilu
+ *   POST /ecsdd/paid/sms-link    {query, login?} -> {status:"ok", number, body, price, vehicle, plate} | needs_login | not_found | no_button
+ *                                (nolasa "Sagatavot īsziņu" saiti; nekad nesūta SMS un nemaksā; Smart-ID tikai ar login:true)
+ *   POST /ecsdd/paid/list        -> {status:"ok", items:[{plate, status, paidAt, dateText}]}
+ *   POST /ecsdd/paid/report      {plate, since?} -> {status:"found", rawText, plate, paidAt} | pending | needs_login
  */
 import { createServer } from "node:http";
 import fs from "node:fs/promises";
@@ -278,6 +282,33 @@ const server = createServer(async (req, res) => {
       } catch (e) {
         return sendJson(res, 503, { error: e?.code || "queue_error" });
       }
+    }
+
+    // Maksas izziņa (1,50 € ar SMS). Relejs tikai nolasa: SMS nesūta, nemaksā, e-pastu nesūta.
+    if (req.method === "POST" && p === "/paid/sms-link") {
+      const body = await readJson(req);
+      const query = normalizeQuery(body.query);
+      if (!queryKind(query)) return sendJson(res, 400, { error: "invalid_query" });
+      const login = body.login === true;
+      const out = await core.direct(() => browser.paidSmsLink(query), { login });
+      if (out.loginStarted) setTimeout(() => void pump(), 50);
+      log(`paid sms-link: ${out.status}${out.code ? ` ${out.code}` : ""}`);
+      return sendJson(res, 200, out);
+    }
+
+    if (req.method === "POST" && p === "/paid/list") {
+      const out = await core.direct(() => browser.paidList());
+      return sendJson(res, 200, out);
+    }
+
+    if (req.method === "POST" && p === "/paid/report") {
+      const body = await readJson(req);
+      const plate = normalizeQuery(body.plate ?? body.query);
+      if (queryKind(plate) !== "plate") return sendJson(res, 400, { error: "invalid_plate" });
+      const since = typeof body.since === "string" && !Number.isNaN(Date.parse(body.since)) ? body.since : "";
+      const out = await core.direct(() => browser.paidReport(plate, since));
+      log(`paid report: ${out.status}${out.code ? ` ${out.code}` : ""}`);
+      return sendJson(res, 200, out);
     }
 
     const jobMatch = p.match(/^\/jobs\/([a-f0-9-]{36})$/);

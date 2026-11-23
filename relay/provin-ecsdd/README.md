@@ -75,6 +75,26 @@ sesija:  logged_out -> logging_in -> awaiting_smartid -> active -> (kicked + yie
 - Sīkdatnes = pieteikšanās: profils `/var/lib/provin-ecsdd/profile` (700).
 - Kill switch: `POST /ecsdd/logout` (iziet + izdzēš profilu) vai `systemctl stop provin-ecsdd`; Vercel `ECSDD_AUTO_ENABLED=0`.
 
+## Maksas izziņa (1,50 € ar SMS) - `lib/ecsdd-paid.mjs`
+
+Relejs NEKAD nesūta SMS, nemaksā un nespiež "Nosūtīt uz reģistrēto epastu". Darbības iet tikai aktīvā sesijā (bez rindas);
+bez sesijas atbilde `needs_login`, Smart-ID sāk tikai ar `login: true` (admin poga "CSDD maksas izziņa").
+
+| Galapunkts | Kas |
+| --- | --- |
+| `POST /ecsdd/paid/sms-link {query, login?}` | `tadati` -> "Pieprasīt maksas izziņu" -> NOLASA "Sagatavot īsziņu" saiti -> `{number, body, price, vehicle, plate}` |
+| `POST /ecsdd/paid/list` | Izvēlne -> Maksas Izziņas -> Apmaksātās izziņas ("Atjaunot sarakstu") -> `{items}` |
+| `POST /ecsdd/paid/report {plate, since}` | jaunākā apmaksātā izziņa pēc `since` -> visi akordeoni -> `rawText` (tāds pats kā e.csdd maksas PDF teksts) |
+
+- Datorā šīs sadaļas var nebūt redzamas: ja pogas/saites nav, solis atkārtojas ar iPhone UA + 390 px skatu (tikai šajā cilnē).
+- Lapas atpazīst pēc teksta; neatpazītā solī `debug/paid-*.json` (tālruņi, ZTI vārdi, SMS konta kods -> `***`).
+- Fiksācijas un testi: `lib/__fixtures__/ecsdd-paid/`, `npx vitest run lib/ecsdd-paid.test.ts lib/ecsdd-paid-logic.test.ts`.
+
+PROVIN (Vercel) puse: `/api/admin/ecsdd/paid/sms-link`, `/api/admin/ecsdd/paid/report`, `/api/admin/ecsdd/paid/auto-send`
+("Sūtīt automātiski": e-pasts no info@provin.lv, temats `PROVIN CSDD SMS`, 1. rinda numurs, 2. rinda teksts; adresāts
+`ECSDD_SMS_TRIGGER_EMAIL`, noklusējums Nila Gmail; `ECSDD_SMS_TRIGGER_MODE=pull` - bez e-pasta) un Īsceļiem
+`GET /api/ecsdd/paid-sms` ar `Authorization: Bearer <ECSDD_PAID_API_TOKEN>` (bez env izslēgts).
+
 ## Uzstādīšana (root, SSH uz 37.27.149.106)
 
 ```bash

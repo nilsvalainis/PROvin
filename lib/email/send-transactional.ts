@@ -1354,3 +1354,19 @@ export async function trySendUnpaidOrderReminderEmail(opts: {
     return false;
   }
 }
+
+/**
+ * CSDD maksas izziņa: signāls Nila iPhone Īsceļu automatizācijai. Temats precīzi "PROVIN CSDD SMS",
+ * teksts: 1. rinda - SMS numurs, 2. rinda - SMS teksts (piem. "CSDD 12345 AB1234"). Tikai teksts, bez HTML.
+ */
+export const CSDD_SMS_TRIGGER_SUBJECT = "PROVIN CSDD SMS";
+
+export async function sendCsddSmsTriggerEmail(opts: { to: string; number: string; body: string }): Promise<void> {
+  await sendSmtpMail({
+    to: opts.to,
+    subject: CSDD_SMS_TRIGGER_SUBJECT,
+    text: `${opts.number}\n${opts.body}\n`,
+    html: "",
+    from: mailFromWithName("PROVIN.LV"),
+  });
+}

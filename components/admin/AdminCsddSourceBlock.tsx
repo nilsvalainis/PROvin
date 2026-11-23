@@ -31,6 +31,7 @@ import {
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
 import { AdminEcsddAutoPanel } from "@/components/admin/AdminEcsddAutoPanel";
+import { AdminCsddPaidReportButton } from "@/components/admin/AdminCsddPaidReportButton";
 import { AdminCsddTechFetchButton } from "@/components/admin/AdminCsddTechFetchButton";
 import {
   applyCsddPasteToForm,
@@ -347,6 +348,15 @@ export function AdminCsddSourceBlock({
           disabled={disabled}
           readOnly={readOnly}
           onApplyRaw={handleRawInput}
+        />
+      ) : null}
+      {ecsddAuto && !readOnly ? (
+        <AdminCsddPaidReportButton
+          sessionId={sessionId}
+          orderVin={orderVin}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
         />
       ) : null}
       {!readOnly ? (
