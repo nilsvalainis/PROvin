@@ -262,3 +262,40 @@ describe("5. vienots modeļa nosaukums", () => {
     expect(keepVolumeUnitLowercase("1995 Ccm")).toBe("1995 ccm");
   });
 });
+
+describe("taksometra / nomas rūpnīcas aprīkojums koda faktu sarakstā", () => {
+  const withEquip = (vin: string, equipment: { code: string; description: string }[]) => {
+    const b = blocks();
+    b.auto_records = {
+      ...b.auto_records,
+      outvin: { ...b.auto_records.outvin!, vin, vehicleInfo: { ...b.auto_records.outvin!.vehicleInfo, vinCode: vin }, equipment },
+    };
+    return b;
+  };
+
+  it("WDD2120251A120979 (E 350 CDI W212): 965 + 937 kā fakts ar nozīmi", () => {
+    const facts = buildDealerCodeFactsForPrompt(
+      withEquip("WDD2120251A120979", [
+        { code: "937", description: "REINFORCEMENT PACKAGE" },
+        { code: "965", description: "ELECTR. PROVISION FOR HIRED CARS / TAXICAB" },
+        { code: "580", description: "Air conditioning" },
+      ]),
+      NOW,
+    );
+    expect(facts).toContain("937 REINFORCEMENT PACKAGE (taksometra / nomas pastiprinājuma pakete)");
+    expect(facts).toContain("965 ELECTR. PROVISION FOR HIRED CARS / TAXICAB (elektroinstalācijas sagatave taksometram / nomas auto)");
+    expect(facts).toMatch(/OBLIGĀTI min kā faktu/);
+  });
+
+  it("izņēmumi (9A0, «Without taxi alarm», «Parts excluded for TAXI») - nav faktu rindas", () => {
+    const facts = buildDealerCodeFactsForPrompt(
+      withEquip(VIN, [
+        { code: "9A0", description: "TAXI Adm variant" },
+        { code: "551", description: "Anti-theft alarm without taxi alarm" },
+        { code: "U99", description: "Parts excluded for TAXI" },
+      ]),
+      NOW,
+    );
+    expect(facts).not.toMatch(/taksometra vai nomas izpildījums/);
+  });
+});

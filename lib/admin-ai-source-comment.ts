@@ -98,7 +98,7 @@ SKAITĻI: ierakstu skaitu, eļļas maiņu skaitu, mēnešus kopš pēdējā iera
  */
 export const DEALER_COMMENTS_NO_TABLE_REPEAT_DIRECTIVE = `DĪLERA „KOMENTĀRI” - NEDUBLĒT TABULAS UN EĻĻAS LAUKU:
 PDF jau drukā „Transportlīdzekļa informācija” (modelis, gads, VIN, dzinējs, kārba, krāsa, salons), „Servisa un remontu vēsture” (katra vizīte ar datumu, km un darbiem) un „Eļļas maiņas intervāli” (tabula + atsevišķs komentārs). Tos NEPĀRRAKSTI: nekādas identifikācijas rindkopas, nekāda vizīšu saraksta, nekādu kārtējo apkopju (eļļa, filtri, bremžu šķidrums, apkope A/B) uzskaitījuma, NEKO par eļļas maiņām un intervāliem.
-Raksti tikai faktus, ko tabulas pašas nepasaka: lielie mezgli un ne-kārtējie remonti (datums, km), atsaukumi / kampaņas / garantijas darbi, nobraukuma ierakstu nesakritības (kā fakts, no koda faktu saraksta). Ja ir tikai kārtējās apkopes - 1-2 īsi teikumi (pēdējais dīlera ieraksts ar datumu un km).
+Raksti tikai faktus, ko tabulas pašas nepasaka: lielie mezgli un ne-kārtējie remonti (datums, km), atsaukumi / kampaņas / garantijas darbi, nobraukuma ierakstu nesakritības (kā fakts, no koda faktu saraksta), rūpnīcas taksometra / nomas aprīkojums (kods un nozīme, ja koda faktu sarakstā ir). Ja ir tikai kārtējās apkopes - 1-2 īsi teikumi (pēdējais dīlera ieraksts ar datumu un km).
 ${DEALER_FACTS_ONLY_DIRECTIVE}`;
 
 function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
