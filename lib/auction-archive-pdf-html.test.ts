@@ -239,7 +239,7 @@ describe("izsoļu arhīva PDF HTML (v2, kartītes)", () => {
     expect(html).toContain('<h2 class="aa-hero__model">Audi A4 Avant 40 TDI</h2>');
     expect(html).toContain("2.0 40 TDI Business Advanced S tronic");
     for (const t of ["Izsoļu hronoloģija", "Galvenie fakti", "Transportlīdzekļa dati", "Aprīkojums", "Izsoles dati", "Stāvoklis un dokumenti", "Cenas"]) {
-      expect(html).toContain(`<span>${t}</span>`);
+      expect(html).toContain(`${t}</span>`);
     }
     expect(html.match(/class="aa-tl"/g)).toHaveLength(2);
     expect(html).toMatch(/13\s070\s€/);
@@ -258,6 +258,18 @@ describe("izsoļu arhīva PDF HTML (v2, kartītes)", () => {
     expect(html).not.toContain("https://checkcar.vin/x");
   });
 
+  it("aprīkojums - PDF pēdējā sadaļa (pēc galerijas); pagaidu dizaina varianti A/B/C", () => {
+    const html = build(true);
+    expect(html.indexOf("Aprīkojums</span>")).toBeGreaterThan(html.lastIndexOf('class="aa-gallery"'));
+    expect(html).toContain("aa-theme-a");
+    expect(html).not.toMatch(/border-top:3px solid/);
+    const b = buildAuctionArchivePdfHtml({ summary, records: [bca, openlane], photos, dataUrls, theme: "B" });
+    expect(b.match(/class="aa-trow"/g)).toHaveLength(2);
+    const c = buildAuctionArchivePdfHtml({ summary, records: [bca, openlane], photos, dataUrls, theme: "C" });
+    expect(c.match(/class="aa-cat__item"/g)).toHaveLength(2);
+    expect(c).toContain("Izsolē bilžu nav");
+  });
+
   it("nekādu jēlu avota lauku, kodu un «Nav datu» kaudžu", () => {
     const html = build(true);
     expect(html).not.toMatch(/TheCarApi|carcolor|Sequential|Has maintenance|BCAEquipment|Bcaequipment|#009246|eur_rates|Country marker|Basic Inspection|external_damage|Unknown/);
@@ -266,7 +278,7 @@ describe("izsoļu arhīva PDF HTML (v2, kartītes)", () => {
 
   it("cenas pēc noklusējuma NErāda (Nils 23.11, lēmums 4)", () => {
     const html = build();
-    expect(html).not.toContain("<span>Cenas</span>");
+    expect(html).not.toContain("Cenas</span>");
     expect(html).not.toMatch(/13\s070/);
     expect(html).not.toMatch(/12\s409/);
     expect(html).not.toMatch(/Rezerves|solījums|komisija/);
@@ -280,7 +292,7 @@ describe("izsoļu arhīva PDF HTML (v2, kartītes)", () => {
       [{ zone: "Aizmugure", part: "Buferis", type: "Skrāpējums", size: "20-50 mm", quantity: "1", repair: "", notes: "" }],
       [{ auctionKey: "openlane:1", zone: "right", note: "pēdas durvīs" }],
     );
-    expect(html).toContain("<span>Bojājumi</span>");
+    expect(html).toContain("Bojājumi</span>");
     expect(html).toContain("1 bojājums");
     expect(html).toContain("Skrāpējums · 20-50 mm");
     expect(html).toContain("Redzams bildē (PROVIN atzīme) · pēdas durvīs");

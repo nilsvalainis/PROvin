@@ -35,6 +35,7 @@ import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { buildPdfRunningFooterLine, buildPdfRunningHeaderLine, clientReportRunningPageCss } from "@/lib/pdf-running-page";
+import { sectionIconPdfHtmlSized, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage } from "@/lib/thecarapi-pdf-model";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -44,9 +45,10 @@ function esc(s: string): string {
 
 /* ---------- Kartīšu primitīvi ---------- */
 
-function card(title: string, body: string, opts: { cls?: string; aside?: string } = {}): string {
+function card(title: string, body: string, opts: { cls?: string; aside?: string; icon?: SectionIconId } = {}): string {
   if (!body) return "";
-  return `<section class="aa-card${opts.cls ? ` ${opts.cls}` : ""}"><h3 class="aa-card__title"><span>${esc(title)}</span>${
+  const ico = opts.icon ? `<i class="aa-ico">${sectionIconPdfHtmlSized(opts.icon, 13)}</i>` : "";
+  return `<section class="aa-card${opts.cls ? ` ${opts.cls}` : ""}"><h3 class="aa-card__title"><span>${ico}${esc(title)}</span>${
     opts.aside ? `<em>${esc(opts.aside)}</em>` : ""
   }</h3>${body}</section>`;
 }
@@ -127,7 +129,7 @@ export function auctionArchiveDamageCardHtml(
     ),
   ].join("");
   const aside = damages.length ? lvCount(damages.length, "bojājums", "bojājumi") : "";
-  return card("Bojājumi", `<div class="aa-dmg">${svg}<ul class="aa-dmg__list">${rows}</ul></div>`, { cls: "aa-card--alert", aside });
+  return card("Bojājumi", `<div class="aa-dmg">${svg}<ul class="aa-dmg__list">${rows}</ul></div>`, { cls: "aa-card--alert", aside, icon: "shield" });
 }
 
 /* ---------- Apraksts ---------- */
@@ -161,7 +163,7 @@ function descriptionCard(texts: readonly string[], translations: ReadonlyMap<str
       }</div>`;
     })
     .join("");
-  return card("Izsoles apraksts", items);
+  return card("Izsoles apraksts", items, { icon: "fileText" });
 }
 
 /* ---------- Galerija ---------- */
@@ -220,7 +222,11 @@ export type AuctionArchivePdfInput = {
   preparedFor?: string;
   /** «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): noklusējumā cenas PDF NErāda. */
   showPrices?: boolean;
+  /** PAGAIDU (makets Nilam 23.11): A - tīras kartītes ar ikonām, B - laika līnija, C - katalogs. Pēc izvēles paliks viens. */
+  theme?: AuctionArchivePdfTheme;
 };
+
+export type AuctionArchivePdfTheme = "A" | "B" | "C";
 
 function recordKey(r: ThecarapiAdminRecord): string {
   return `${(r.site || "thecarapi").toLowerCase()}:${r.id}`.slice(0, 120);
@@ -249,11 +255,11 @@ const ARCHIVE_CSS = `
 .aa-card{border:1px solid var(--aa-line);border-radius:12px;background:#fff;padding:12px 14px;margin:0 0 9px;break-inside:avoid;page-break-inside:avoid}
 .aa-card__title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 9px;font:700 9px/1.2 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#475569}
 .aa-card__title span{display:flex;align-items:center;gap:7px}
-.aa-card__title span::before{content:"";display:inline-block;width:3px;height:10px;border-radius:2px;background:var(--aa-blue)}
+.aa-ico{display:inline-flex;color:var(--aa-blue)}.aa-ico svg{width:13px;height:13px}
 .aa-card__title em{font-style:normal;font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--aa-mute);font-size:9.5px}
-.aa-card--alert .aa-card__title span::before{background:var(--aa-red)}
+.aa-card--alert .aa-ico{color:var(--aa-red)}
 .aa-red{color:var(--aa-red)!important;font-weight:650}
-.aa-hero{border:1px solid var(--aa-line);border-radius:12px;padding:16px 18px;margin:0 0 9px;background:linear-gradient(180deg,#EEF5FF 0%,#fff 78%);break-inside:avoid}
+.aa-hero{border:1px solid var(--aa-line);border-radius:12px;padding:16px 18px;margin:0 0 9px;background:#fff;break-inside:avoid}
 .aa-hero__kicker{margin:0;font:700 9px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--aa-blue)}
 .aa-hero__model{margin:4px 0 0;font:800 21px/1.15 Inter,sans-serif;color:var(--aa-ink)}
 .aa-hero__ver{margin:3px 0 0;font:500 11.5px Inter,sans-serif;color:#334155}
@@ -265,15 +271,15 @@ const ARCHIVE_CSS = `
 .aa-stat b{display:block;margin-top:3px;font:750 15px Inter,sans-serif;color:var(--aa-ink);font-variant-numeric:tabular-nums}
 .aa-timeline{display:grid;gap:7px}
 .aa-timeline--1{grid-template-columns:1fr}.aa-timeline--2{grid-template-columns:1fr 1fr}.aa-timeline--3{grid-template-columns:1fr 1fr 1fr}
-.aa-tl{position:relative;border:1px solid var(--aa-line);border-top:3px solid var(--aa-blue);border-radius:10px;padding:9px 11px 10px;background:#FAFCFF;break-inside:avoid}
+.aa-tl{position:relative;border:1px solid var(--aa-line);border-radius:10px;padding:9px 11px 10px;background:#fff;break-inside:avoid}
 .aa-tl__n{position:absolute;top:8px;right:10px;font:700 8.5px Inter,sans-serif;color:var(--aa-mute)}
 .aa-tl__date{margin:0;font:750 13px Inter,sans-serif;color:var(--aa-ink)}
-.aa-tl__where{margin:1px 0 7px;font:600 10.5px Inter,sans-serif;color:var(--aa-blue)}
+.aa-tl__where{margin:1px 0 7px;font:600 10.5px Inter,sans-serif;color:#334155}
 .aa-tl__facts{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font:500 9.5px Inter,sans-serif}
 .aa-tl__facts dt{color:var(--aa-mute)}.aa-tl__facts dd{margin:0;color:var(--aa-ink);font-weight:650;font-variant-numeric:tabular-nums}
 .aa-findings{margin:0;padding:0;list-style:none}
 .aa-findings li{position:relative;padding:0 0 5px 14px;font:500 10.5px/1.45 Inter,sans-serif;color:#1e293b}
-.aa-findings li::before{content:"";position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--aa-blue)}
+.aa-findings li::before{content:"";position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:#94A3B8}
 .aa-findings li.aa-red::before{background:var(--aa-red)}
 .aa-kv{display:grid;gap:0 18px;margin:0}
 .aa-kv--2{grid-template-columns:1fr 1fr}.aa-kv--1{grid-template-columns:1fr}
@@ -285,9 +291,11 @@ const ARCHIVE_CSS = `
 .aa-chips{display:flex;flex-wrap:wrap;gap:4px}
 .aa-chip{display:inline-block;padding:3px 8px;border:1px solid #E2E8F0;border-radius:999px;background:#F8FAFC;font:500 9.5px Inter,sans-serif;color:#1e293b}
 .aa-lot{margin-top:4px}
-.aa-lot__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 0 8px;padding:0 0 6px;border-bottom:2px solid var(--aa-blue);break-after:avoid}
+.aa-lot__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 0 8px;padding:0 0 6px;border-bottom:1px solid #E2E8F0;break-after:avoid}
 .aa-lot__head h2{margin:0;font:800 15px Inter,sans-serif;color:var(--aa-ink)}
-.aa-lot__head h2 small{font-weight:600;color:var(--aa-blue);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
+.aa-lot__head h2{display:flex;align-items:center;gap:8px}
+.aa-lot__head h2 small{font-weight:600;color:var(--aa-mute);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.aa-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid #CBD5E1;font:700 9.5px Inter,sans-serif;color:var(--aa-ink)}
 .aa-lot__head span{font:500 10px Inter,sans-serif;color:var(--aa-mute)}
 .aa-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;align-items:start}
 .aa-dmg{display:grid;grid-template-columns:44% 1fr;gap:12px;align-items:center}
@@ -299,7 +307,7 @@ const ARCHIVE_CSS = `
 .aa-desc{margin:0 0 6px}.aa-desc__lv{margin:0;font:500 10.5px/1.5 Inter,sans-serif;color:var(--aa-ink)}
 .aa-desc__orig{margin:3px 0 0;font:400 8.5px/1.45 Inter,sans-serif;color:#94a3b8}.aa-desc__orig span{font-weight:600}
 .aa-gallery{break-before:page;page-break-before:always}
-.aa-gallery__head{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 7px;padding:0 0 5px;border-bottom:2px solid var(--aa-blue)}
+.aa-gallery__head{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 7px;padding:0 0 5px;border-bottom:1px solid #E2E8F0}
 .aa-gallery__head h3{margin:0;font:800 13px Inter,sans-serif;color:var(--aa-ink)}
 .aa-gallery__head span{font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
 .aa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 7px}
@@ -310,6 +318,57 @@ const ARCHIVE_CSS = `
 .aa-sources{margin:0;padding:0 0 0 14px;font:500 10px Inter,sans-serif;color:#334155}
 .aa-foot{font:500 8.5px/1.5 Inter,sans-serif;color:var(--aa-mute);margin:10px 0 0}
 `;
+
+/** Pagaidu dizaina varianti (Nils 23.11 - «izstrādā vairākus variantus»). */
+const THEME_CSS: Record<AuctionArchivePdfTheme, string> = {
+  // A - tīras kartītes: plāna pelēka apmale, maza līniju ikona virsrakstā, bez krāsainām svītrām.
+  A: `
+.aa-theme-a .aa-hero{background:#F8FAFC}
+.aa-theme-a .aa-tl__n{top:9px;right:10px}
+`,
+  // B - laika līnija: izsoles kā rindas ar punktiem un vertikālu līniju; kartītes pārējam, virsraksti bez ikonām.
+  B: `
+.aa-theme-b .aa-ico{display:none}
+.aa-tlist{position:relative;margin:2px 0 0;padding:0;list-style:none}
+.aa-trow{position:relative;display:grid;grid-template-columns:20mm 16px 1fr auto;gap:0 10px;align-items:start;padding:0 0 12px}
+.aa-trow:last-child{padding-bottom:2px}
+.aa-trow__date{font:750 11.5px Inter,sans-serif;color:var(--aa-ink);padding-top:1px}
+.aa-trow__axis{position:relative;height:100%}
+.aa-trow__axis::before{content:"";position:absolute;left:7px;top:4px;bottom:-14px;width:1px;background:#CBD5E1}
+.aa-trow:last-child .aa-trow__axis::before{display:none}
+.aa-trow__axis::after{content:"";position:absolute;left:3px;top:4px;width:7px;height:7px;border-radius:50%;background:#fff;border:1.5px solid var(--aa-blue)}
+.aa-trow__main b{display:block;font:700 11px Inter,sans-serif;color:var(--aa-ink)}
+.aa-trow__main span{display:block;margin-top:1px;font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
+.aa-trow__data{display:flex;gap:16px;text-align:right}
+.aa-trow__data div span{display:block;font:600 8px Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--aa-mute)}
+.aa-trow__data div b{display:block;font:650 10.5px Inter,sans-serif;color:var(--aa-ink);font-variant-numeric:tabular-nums}
+.aa-theme-b .aa-num{border-color:var(--aa-blue);color:var(--aa-blue)}
+`,
+  // C - katalogs: liela bilde katrai izsolei + datu josla blakus; minimāli rāmji (sadaļas atdala plāna līnija).
+  C: `
+.aa-theme-c .aa-ico{display:none}
+.aa-theme-c .aa-card{border:none;border-top:1px solid #E2E8F0;border-radius:0;padding:10px 0 4px;margin:0 0 6px}
+.aa-theme-c .aa-hero{border:none;padding:4px 0 10px;border-bottom:1px solid #E2E8F0;border-radius:0;margin-bottom:10px}
+.aa-theme-c .aa-hero__model{font-size:24px}
+.aa-theme-c .aa-stats{gap:0;margin-bottom:12px}
+.aa-theme-c .aa-stat{border:none;border-left:1px solid #E2E8F0;border-radius:0;padding:2px 12px}
+.aa-theme-c .aa-stat:first-child{border-left:none;padding-left:0}
+.aa-cat{display:grid;gap:10px}
+.aa-cat__item{display:grid;grid-template-columns:64mm 1fr;gap:14px;align-items:stretch;break-inside:avoid}
+.aa-cat__img{display:block;width:100%;height:42mm;object-fit:cover;border-radius:8px;background:#F1F5F9}
+.aa-cat__noimg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:42mm;border-radius:8px;background:#F8FAFC;border:1px dashed #CBD5E1;font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
+.aa-cat__noimg svg{width:18px;height:18px;color:#94A3B8}
+.aa-cat__n{font:600 9px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--aa-mute);margin:2px 0 0}
+.aa-cat__date{margin:2px 0 0;font:800 16px Inter,sans-serif;color:var(--aa-ink)}
+.aa-cat__where{margin:1px 0 8px;font:600 11px Inter,sans-serif;color:#334155}
+.aa-cat__facts{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font:500 10px Inter,sans-serif}
+.aa-cat__facts dt{color:var(--aa-mute)}.aa-cat__facts dd{margin:0;font-weight:650;color:var(--aa-ink);font-variant-numeric:tabular-nums}
+.aa-theme-c .aa-fig{border:none;border-radius:0}
+.aa-theme-c .aa-fig img{border-radius:6px}
+.aa-theme-c .aa-fig figcaption{border-top:none;padding:3px 1px 0}
+.aa-theme-c .aa-chip{background:#fff}
+`,
+};
 
 type Lot = {
   key: string;
@@ -327,6 +386,7 @@ type Lot = {
 export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): string {
   const s = input.summary;
   const showPrices = input.showPrices === true;
+  const theme: AuctionArchivePdfTheme = input.theme ?? "A";
   const now = input.generatedAt ?? new Date();
   const translations = input.translations ?? new Map<string, string>();
   const marks = input.marks ?? [];
@@ -379,26 +439,57 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   ];
   const statsHtml = `<div class="aa-stats">${stats.map((x) => `<div class="aa-stat"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div>`;
 
-  const tlCards = lots
-    .map((l) => {
-      const facts: [string, string][] = [
-        ["Valsts", l.facts.country || l.auction?.country || ""],
-        ["Nobraukums", formatKm(l.km)],
-        ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
-      ];
-      if (showPrices && l.auction?.priceEur != null) facts.push(["Cena", formatEurWhole(l.auction.priceEur)]);
-      return `<article class="aa-tl"><span class="aa-tl__n">${l.n}.</span><p class="aa-tl__date">${esc(
-        formatIsoDayLv(l.date) || "Datums nav zināms",
-      )}</p><p class="aa-tl__where">${esc(l.platform)}</p><dl class="aa-tl__facts">${facts
-        .filter(([, v]) => v)
-        .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
-        .join("")}</dl></article>`;
-    })
-    .join("");
-  const timeline = lots.length
-    ? card("Izsoļu hronoloģija", `<div class="aa-timeline aa-timeline--${Math.min(lots.length, 3)}">${tlCards}</div>`, {
-        aside: lvCount(lots.length, "izsole", "izsoles"),
+  const tlFacts = (l: Lot): [string, string][] => {
+    const out: [string, string][] = [
+      ["Valsts", l.facts.country || l.auction?.country || ""],
+      ["Nobraukums", formatKm(l.km)],
+      ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
+    ];
+    if (showPrices && l.auction?.priceEur != null) out.push(["Cena", formatEurWhole(l.auction.priceEur)]);
+    return out.filter(([, v]) => v);
+  };
+  const tlDate = (l: Lot) => esc(formatIsoDayLv(l.date) || "Datums nav zināms");
+  let tlBody = "";
+  if (theme === "B") {
+    tlBody = `<ol class="aa-tlist">${lots
+      .map((l) => {
+        const data = tlFacts(l).filter(([k]) => k !== "Valsts");
+        return `<li class="aa-trow"><div class="aa-trow__date">${tlDate(l)}</div><div class="aa-trow__axis"></div><div class="aa-trow__main"><b>${l.n}. ${esc(
+          l.platform,
+        )}</b><span>${esc(l.facts.country || l.auction?.country || "")}</span></div><div class="aa-trow__data">${data
+          .map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`)
+          .join("")}</div></li>`;
       })
+      .join("")}</ol>`;
+  } else if (theme === "C") {
+    tlBody = `<div class="aa-cat">${lots
+      .map((l) => {
+        const cover = l.photos.find((p) => input.dataUrls.has(p.id));
+        const img = cover
+          ? `<img class="aa-cat__img" src="${input.dataUrls.get(cover.id)!}" alt=""/>`
+          : `<div class="aa-cat__noimg">${sectionIconPdfHtmlSized("camera", 18)}<span>Izsolē bilžu nav</span></div>`;
+        const facts = [...tlFacts(l), ...(l.facts.lotNo ? ([["Izsoles Nr.", l.facts.lotNo]] as [string, string][]) : [])];
+        return `<article class="aa-cat__item"><div>${img}</div><div><p class="aa-cat__n">${l.n}. izsole</p><p class="aa-cat__date">${tlDate(
+          l,
+        )}</p><p class="aa-cat__where">${esc(l.platform)}</p><dl class="aa-cat__facts">${facts
+          .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
+          .join("")}</dl></div></article>`;
+      })
+      .join("")}</div>`;
+  } else {
+    tlBody = `<div class="aa-timeline aa-timeline--${Math.min(lots.length, 3)}">${lots
+      .map(
+        (l) =>
+          `<article class="aa-tl"><span class="aa-tl__n aa-num">${l.n}</span><p class="aa-tl__date">${tlDate(l)}</p><p class="aa-tl__where">${esc(
+            l.platform,
+          )}</p><dl class="aa-tl__facts">${tlFacts(l)
+            .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
+            .join("")}</dl></article>`,
+      )
+      .join("")}</div>`;
+  }
+  const timeline = lots.length
+    ? card("Izsoļu hronoloģija", tlBody, { aside: lvCount(lots.length, "izsole", "izsoles"), icon: "history" })
     : "";
   const findings = auctionArchiveKeyFindings(
     lots.map((l) => ({
@@ -410,11 +501,11 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     })),
   );
   const findingsHtml = findings.length
-    ? card("Galvenie fakti", `<ul class="aa-findings">${findings.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`)
+    ? card("Galvenie fakti", `<ul class="aa-findings">${findings.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`, { icon: "listChecks" })
     : "";
 
   /* --- 2. Transportlīdzeklis --- */
-  const vehicle = records.length ? card("Transportlīdzekļa dati", kvGrid(auctionArchiveVehicleRows(records))) : "";
+  const vehicle = records.length ? card("Transportlīdzekļa dati", kvGrid(auctionArchiveVehicleRows(records)), { icon: "car" }) : "";
   const equipment = auctionArchiveEquipment(records, translations);
   const equipHtml = equipment.groups.length
     ? card(
@@ -425,7 +516,7 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
               `<div class="aa-equip__g"><h4>${esc(g.group)}</h4><div class="aa-chips">${g.items.map((i) => `<span class="aa-chip">${esc(i)}</span>`).join("")}</div></div>`,
           )
           .join("")}</div>`,
-        { aside: "pēc izsoļu datiem" },
+        { aside: "pēc izsoļu datiem", icon: "layers" },
       )
     : "";
   const sources = s.manualSources.length
@@ -435,10 +526,10 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   /* --- 3. Izsoles --- */
   const lotHtml = lots.map((l) => {
     const sub = [formatIsoDayLv(l.date), l.facts.country].filter(Boolean).join(" · ");
-    const head = `<div class="aa-lot__head"><h2><small>${l.n}. izsole</small>${esc(l.platform)}</h2><span>${esc(sub)}</span></div>`;
-    const saleCard = card("Izsoles dati", kvGrid(l.facts.sale, 1));
-    const condCard = card("Stāvoklis un dokumenti", kvGrid(l.facts.condition, 1));
-    const priceCard = showPrices ? card("Cenas", kvGrid(l.facts.prices, 1), { aside: "avota dati" }) : "";
+    const head = `<div class="aa-lot__head"><h2><span class="aa-num">${l.n}</span>${esc(l.platform)}<small>izsole</small></h2><span>${esc(sub)}</span></div>`;
+    const saleCard = card("Izsoles dati", kvGrid(l.facts.sale, 1), { icon: "clipboard" });
+    const condCard = card("Stāvoklis un dokumenti", kvGrid(l.facts.condition, 1), { icon: "shieldCheck" });
+    const priceCard = showPrices ? card("Cenas", kvGrid(l.facts.prices, 1), { aside: "avota dati", icon: "wallet" }) : "";
     const left = [saleCard, priceCard].filter(Boolean).join("");
     const cols = left && condCard ? `<div class="aa-cols"><div>${left}</div><div>${condCard}</div></div>` : left + condCard;
     const dmg = auctionArchiveDamageCardHtml(l.damages, marks.filter((m) => m.auctionKey === l.key));
@@ -456,7 +547,7 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
 
   const header = buildPdfRunningHeaderLine(title, s.vin, `PROVIN.LV · ${AUCTION_ARCHIVE_PDF_TITLE}`);
   const footer = buildPdfRunningFooterLine({ vin: s.vin, dateLabel: fmtDateTime(now), preparedBy: input.preparedFor ?? "" });
-  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${ARCHIVE_CSS}`;
+  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${ARCHIVE_CSS}${THEME_CSS[theme]}`;
   const note = `<p class="aa-foot">Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, ${
     showPrices ? "cenas, " : ""
   }nobraukums un apraksti ir avota dati; tulkojums un apkopojums - PROVIN.${
@@ -470,9 +561,9 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   })}${note}`;
   return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="color-scheme" content="light"/><title>${esc(
     `Izsolu_arhivs_${s.vin}.pdf`,
-  )}</title><style>${css}</style></head><body class="provin-report-doc"><div class="sheet">${hero}${statsHtml}${timeline}${findingsHtml}${vehicle}${equipHtml}${sources}${lotHtml.join(
+  )}</title><style>${css}</style></head><body class="provin-report-doc aa-theme-${theme.toLowerCase()}"><div class="sheet">${hero}${statsHtml}${timeline}${findingsHtml}${vehicle}${sources}${lotHtml.join(
     "\n",
-  )}${galleries}${manual}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
+  )}${galleries}${manual}${equipHtml ? `<div class="aa-tail">${equipHtml}</div>` : ""}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
 }
 
 /** Servera renderis gaida `data-provin-fonts="ready"` (kā klienta atskaitē). */
