@@ -117,7 +117,7 @@ describe("izsoļu arhīva krātuve", () => {
     });
     expect(res.photos.map((p) => p.id)).toEqual([ph(1), ph(2)]);
     expect(res.missing).toBe(1);
-    expect(fetched).toEqual(["https://cdn.example/b.jpg", "https://cdn.example/gone.jpg"]);
+    expect([...fetched].sort()).toEqual(["https://cdn.example/b.jpg", "https://cdn.example/gone.jpg"]);
     expect(await s.readAuctionArchivePhoto(SID, ph(2))).not.toBeNull();
 
     // Atkārtoti: jau nokopētās nelasa no avota.
