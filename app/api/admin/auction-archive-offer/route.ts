@@ -32,6 +32,7 @@ import {
 } from "@/lib/email/auction-archive-email";
 import { trySendAuctionArchiveClientEmail } from "@/lib/email/send-transactional";
 import { buildAuctionArchivePdf } from "@/lib/auction-archive-pdf";
+import { auctionArchivePdfFilename } from "@/lib/auction-archive-pdf-html";
 import { formatIsoDayLv, markAuctionArchiveSent, sanitizeOperatorMarks, type AuctionArchiveOfferDoc } from "@/lib/auction-archive-offer";
 import {
   auctionArchiveOfferForAdmin,
@@ -121,12 +122,12 @@ export async function GET(req: Request) {
     const pdf = await readAuctionArchivePdf(sessionId).catch(() => null);
     if (!pdf) return bad("not_found", 404);
     const doc = await readAuctionArchiveOffer(sessionId).catch(() => null);
-    const vin = (doc?.summary.vin ?? "VIN").replace(/[^A-Za-z0-9]/g, "");
+    const vin = doc?.summary.vin || (await loadAuctionArchiveOrderContext(sessionId).catch(() => null))?.vin || "VIN";
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `${url.searchParams.get("dl") === "1" ? "attachment" : "inline"}; filename="PROVIN_izsolu_arhivs_${vin}.pdf"`,
+        "Content-Disposition": `${url.searchParams.get("dl") === "1" ? "attachment" : "inline"}; filename="${auctionArchivePdfFilename(vin)}"`,
         "Cache-Control": "private, no-store",
       },
     });

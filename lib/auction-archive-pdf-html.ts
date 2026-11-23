@@ -11,12 +11,18 @@ import {
   formatEurWhole,
   formatIsoDayLv,
   formatKm,
+  lvCount,
   type AuctionArchiveAuction,
   type AuctionArchiveOperatorMark,
   type AuctionArchivePhoto,
   type AuctionArchiveSummary,
 } from "@/lib/auction-archive-offer";
+import { CC_VIN_PDF_SOURCE_LABEL } from "@/lib/cc-vin-report";
 import { getClientReportPrintCss } from "@/lib/client-report-html";
+import { mileageSourceLabelToPdfKey } from "@/lib/pdf-mileage-source";
+import { sectionIconPdfHtml } from "@/lib/section-icons";
+import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
+import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import { buildPdfRunningFooterLine, buildPdfRunningHeaderLine, clientReportRunningPageCss } from "@/lib/pdf-running-page";
@@ -270,16 +276,11 @@ function fmtDateTime(d: Date): string {
   return `${p.day}.${p.month}.${p.year} ${p.hour}:${p.minute}`;
 }
 
+/** Dokumenta nosaukums vākā, galvenē un kolofonā (kā «OFICIĀLĀ DĪLERA DATI»). */
+export const AUCTION_ARCHIVE_PDF_TITLE = "IZSOĻU ARHĪVS";
+
 const ARCHIVE_CSS = `
-.aa-cover{padding:2mm 0 4mm;border-bottom:1px solid #E9EDF3;margin-bottom:5mm}
-.aa-brand{font:800 18pt Inter,sans-serif;letter-spacing:-.4px;margin:0}.aa-brand b{color:#0066ff}
-.aa-kicker{font:700 8pt Inter,sans-serif;letter-spacing:.12em;color:#0061D2;margin:3mm 0 0;text-transform:uppercase}
-.aa-meta{font:500 8pt Inter,sans-serif;color:#64748b;margin:1mm 0 0}
-.aa-h1{font:800 20pt Inter,sans-serif;letter-spacing:-.4px;margin:5mm 0 0;color:#0f172a}
-.aa-model{font:700 12pt Inter,sans-serif;margin:1.5mm 0 0;text-transform:uppercase;color:#0f172a}
-.aa-vin{font:600 9pt Menlo,Consolas,monospace;margin:1mm 0 0;color:#334155;letter-spacing:.3px}
-.aa-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:2.5mm;margin:5mm 0 0}
-.aa-stat{background:#F6F7F9;border-radius:8px;padding:3mm}.aa-stat span{display:block;font:500 7.5pt Inter,sans-serif;color:#64748b}.aa-stat b{display:block;font:700 12pt Inter,sans-serif;color:#0f172a;margin-top:1mm}
+.aa-cover{margin:0 0 5mm}
 .aa-table{width:100%;border-collapse:collapse;font:500 8.5pt Inter,sans-serif;margin:2mm 0 5mm}
 .aa-table th{text-align:left;font-weight:600;color:#64748b;border-bottom:1px solid #E9EDF3;padding:2mm 1.5mm}
 .aa-table td{border-bottom:1px solid #F1F5F9;padding:2mm 1.5mm;color:#0f172a}
@@ -315,6 +316,8 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     { k: "Pēdējā izsole", v: formatIsoDayLv(lastDate) || "-" },
     { k: "Nobraukums", v: km != null ? formatKm(km) : "-" },
   ];
+  const platforms = [...new Set(s.auctions.map((a) => a.platform).filter(Boolean))].join(", ");
+  const countries = [...new Set(s.auctions.map((a) => a.country).filter(Boolean))].join(", ");
   const chrono = s.auctions.length
     ? `<p class="pdf-subhead">Izsoles hronoloģiski</p><table class="aa-table"><thead><tr><th>Datums</th><th>Portāls</th><th>Valsts</th><th>Nobraukums</th>${showPrices ? "<th>Cena</th>" : ""}<th>Bildes</th></tr></thead><tbody>${s.auctions
         .map((a) => {
@@ -326,9 +329,19 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   const basics = input.records.length
     ? `<div class="pdf-keep-head"><p class="pdf-subhead">Transportlīdzekļa informācija</p><div class="pdf-dealer-vehicle-kv">${buildPdfKvPairHtml(auctionArchiveBasicRows(input.records))}</div></div>`
     : "";
-  const cover = `<header class="aa-cover"><p class="aa-brand">PRO<b>VIN</b>.LV</p><p class="aa-kicker">Izsoļu arhīvs</p><p class="aa-meta">Ģenerēts: ${esc(fmtDateTime(now))} · VIN ${esc(s.vin)}</p>
-<h1 class="aa-h1">Eiropas izsoļu arhīvs</h1>${s.title ? `<p class="aa-model">${esc(s.title)}</p>` : ""}<p class="aa-vin">${esc(s.vin)}</p>
-<div class="aa-stats">${stats.map((x) => `<div class="aa-stat"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div></header>`;
+  // Tā pati PROVIN produktu ģimene kā «OFICIĀLĀ DĪLERA DATI» PDF (Nils 23.11): vāks ar logo un dokumenta
+  // nosaukumu, dīlera vāka kartīte (kicker / modelis / meta), kopsavilkuma josla, kolofons.
+  const cover = `<header class="pdf-v1-hero"><div class="pdf-v1-hero-inner">${provincLogoSvg({ includeLvSuffix: true })}<div class="pdf-v1-hero-text"><h1 class="pdf-v1-doc-title">${esc(
+    AUCTION_ARCHIVE_PDF_TITLE,
+  )}</h1><p class="pdf-v1-meta">Ģenerēts: ${esc(fmtDateTime(now))} · VIN <span class="pdf-vin">${esc(s.vin)}</span></p></div></div></header>
+<div class="pdf-unified-mileage-zone pdf-surface-card pdf-src-zone pdf-src-zone--${mileageSourceLabelToPdfKey(CC_VIN_PDF_SOURCE_LABEL)} aa-cover" role="region"><div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${sectionIconPdfHtml(
+    "globe",
+  )}</span><h2 class="pdf-sec pdf-sec--nobar">${esc(AUCTION_ARCHIVE_PDF_TITLE)}</h2>${
+    s.auctions.length ? `<span class="pdf-src-count-badge pdf-src-count-badge--ok">${esc(lvCount(s.auctions.length, "izsole", "izsoles"))}</span>` : ""
+  }</div><div class="pdf-source-section-body"><div class="pdf-dealer-cover"><p class="pdf-dealer-cover__kicker">Eiropas izsoļu arhīvs</p><h3 class="pdf-dealer-cover__model">${esc(
+    (s.title || s.vin).toUpperCase(),
+  )}</h3><p class="pdf-dealer-cover__meta">${esc([`VIN ${s.vin}`, platforms, countries].filter(Boolean).join(" · "))}</p></div>
+<div class="pdf-svc-summary">${stats.map((x) => `<div class="pdf-svc-summary__cell"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div>${chrono}${basics}</div></div>`;
 
   const ordered = [...input.records].sort((a, b) => (byKey.get(recordKey(a))?.date || "9999").localeCompare(byKey.get(recordKey(b))?.date || "9999"));
   const lots = ordered.map((r) => {
@@ -356,20 +369,28 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
         .join("")}</ul></div>`
     : "";
 
-  const header = buildPdfRunningHeaderLine(s.title, s.vin, "PROVIN.LV");
+  const header = buildPdfRunningHeaderLine(s.title, s.vin, `PROVIN.LV · ${AUCTION_ARCHIVE_PDF_TITLE}`);
   const footer = buildPdfRunningFooterLine({ vin: s.vin, dateLabel: fmtDateTime(now), preparedBy: input.preparedFor ?? "" });
   const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${ARCHIVE_CSS}`;
-  const foot = `<p class="aa-foot">Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, cenas, nobraukums un apraksti ir avota dati; tulkojums - PROVIN. Bojājumi «Redzams bildē» - PROVIN atzīme pēc bildes.</p>`;
+  const foot = `<p class="aa-foot">Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, ${
+    showPrices ? "cenas, " : ""
+  }nobraukums un apraksti ir avota dati; tulkojums - PROVIN. Bojājumi «Redzams bildē» - PROVIN atzīme pēc bildes.</p>${buildPdfDocFooterHtml({
+    vin: s.vin,
+    amountTotalCents: null,
+    generatedLabel: `Ģenerēts ${fmtDateTime(now)}`,
+    productLabel: AUCTION_ARCHIVE_PDF_TITLE,
+  })}`;
   return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="color-scheme" content="light"/><title>${esc(
     `Izsolu_arhivs_${s.vin}.pdf`,
-  )}</title><style>${css}</style></head><body class="provin-report-doc"><div class="sheet">${cover}${chrono}${basics}${sources}${lots.join("\n")}${manual}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
+  )}</title><style>${css}</style></head><body class="provin-report-doc"><div class="sheet">${cover}${sources}${lots.join("\n")}${manual}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
 }
 
 /** Servera renderis gaida `data-provin-fonts="ready"` (kā klienta atskaitē). */
 const FONT_READY_SCRIPT = `<script>(function(){function done(){document.documentElement.setAttribute("data-provin-fonts","ready")}if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load("400 12px Inter"),document.fonts.load("700 12px Inter")]).then(done,done)}else done()})();</script>`;
 
 export function auctionArchivePdfFilename(vin: string): string {
-  const v = vin.replace(/[^A-Za-z0-9]/g, "").slice(0, 17) || "VIN";
-  return `PROVIN_izsolu_arhivs_${v}.pdf`;
+  // Nils 23.11: viens nosaukums visur (piedāvājuma PDF un atsevišķais pakalpojums).
+  const v = vin.replace(/[^A-Za-z0-9]/g, "").slice(0, 17).toUpperCase() || "VIN";
+  return `IZSOLU_ARHIVS_${v}.pdf`;
 }
 

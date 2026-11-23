@@ -77,7 +77,11 @@ const STATUS_REPORT_READY: Record<ClientReportLang, string> = {
   de: "Bericht fertig",
 };
 
-const STATUS_PRODUCT_EYEBROW: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
+/** Operatora e-pasta produkts: atskaites veidi + «Izsoļu arhīvs» (atsevišķs pakalpojums, 23.11, tikai LV). */
+export type OperatorEmailProductKind = ReportReadyProductKind | "auction_archive";
+
+const STATUS_PRODUCT_EYEBROW: Record<OperatorEmailProductKind, Record<ClientReportLang, string>> = {
+  auction_archive: { lv: "Izsoļu arhīvs", en: "Auction archive", ru: "Архив аукционов", de: "Auktionsarchiv" },
   dealer: {
     lv: "Oficiālā dīlera dati",
     en: "Official dealer data",
@@ -735,7 +739,7 @@ export type ReportEmailExtras = {
 /** Sūtīšanas brīža konteksts statusa kartei, faktiem un pielikumiem. Bez tā - tikai teksts rāmī. */
 export type OperatorEmailContext = {
   situation: OperatorEmailSituation;
-  productKind?: ReportReadyProductKind;
+  productKind?: OperatorEmailProductKind;
   vin?: string | null;
   car?: string | null;
   /** DD.MM.YYYY; noklusējums - šodien (Rīga). */
@@ -828,19 +832,27 @@ function parseOfferFromParagraphs(paragraphs: string[]): ParsedOffer | null {
   return { url, lead, prices, charge, ttlText, consumed, at };
 }
 
-function offerBlockFromParsed(o: ParsedOffer, expiresAt?: string | null): string {
+/** Izsoļu arhīva klientam: arhīvs jau ir - piedāvājumā dīlera servisa vēsture izsoļu vietā. */
+const OFFER_BENEFITS_AUCTION_ARCHIVE = [
+  OFFER_BENEFITS[0],
+  { icon: "doc", title: "Dīlera servisa vēsture", sub: "Oficiālie servisi, ja pieejama" },
+  OFFER_BENEFITS[2],
+] as const;
+
+function offerBlockFromParsed(o: ParsedOffer, expiresAt?: string | null, kind: OperatorEmailProductKind = "dealer"): string {
+  const archive = kind === "auction_archive";
   const until = formatEmailDateIso(expiresAt);
   const ttl = until ? `Saite derīga līdz ${until}` : o.ttlText ? o.ttlText.charAt(0).toUpperCase() + o.ttlText.slice(1) : "";
   const labelMap = (label: string): string => {
-    if (/^jau samaksāts$/i.test(label)) return "Jau samaksāts (dīlera dati)";
+    if (/^jau samaksāts$/i.test(label)) return archive ? "Jau samaksāts (izsoļu arhīvs)" : "Jau samaksāts (dīlera dati)";
     if (/^kopā$/i.test(label)) return "Kopā PROVIN AUDITS";
     return label.charAt(0).toUpperCase() + label.slice(1);
   };
   return emailOfferRow({
     eyebrow: "Piedāvājums šim auto",
     title: "Papildiniet līdz pilnam PROVIN AUDITAM",
-    lead: o.lead,
-    benefits: OFFER_BENEFITS,
+    lead: archive && o.lead === OFFER_DEFAULT_LEAD ? "Izsoļu arhīvs rāda auto stāvokli izsoles dienā. Tajā pašā pasūtījumā pievienosim:" : o.lead,
+    benefits: archive ? OFFER_BENEFITS_AUCTION_ARCHIVE : OFFER_BENEFITS,
     prices: o.prices.map((p) => ({ label: labelMap(p.label), value: p.value })),
     ctaHref: o.url,
     ctaLabel: o.charge ? `Pasūtīt pilno auditu par ${o.charge}` : "Pasūtīt pilno auditu",
@@ -856,7 +868,7 @@ function operatorStatusRow(ctx: OperatorEmailContext, lang: ClientReportLang): s
     return emailStatusCardRow({
       icon: "check",
       eyebrow: STATUS_PRODUCT_EYEBROW[kind][lang],
-      title: STATUS_REPORT_READY[lang],
+      title: kind === "auction_archive" && lang === "lv" ? "Izsoļu arhīvs gatavs" : STATUS_REPORT_READY[lang],
       car: ctx.car,
       vin: vin || null,
       date,
@@ -899,8 +911,9 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
     .filter(Boolean);
 
   // Strukturētais AUDITS piedāvājums - tikai dīlera «Dati gatavi» e-pastā (LV teksti).
+  const offerKind = ctx?.productKind ?? "dealer";
   const offer =
-    lang === "lv" && ctx?.situation === "ready" && (ctx.productKind ?? "dealer") === "dealer"
+    lang === "lv" && ctx?.situation === "ready" && (offerKind === "dealer" || offerKind === "auction_archive")
       ? parseOfferFromParagraphs(paragraphs)
       : null;
 
@@ -966,7 +979,7 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
 
   paragraphs.forEach((block, i) => {
     if (offer && i === offer.at) {
-      rows.push(offerBlockFromParsed(offer, ctx?.offerExpiresAt));
+      rows.push(offerBlockFromParsed(offer, ctx?.offerExpiresAt, offerKind));
       first = false;
     }
     if (!offer?.consumed.has(i) && !boxedWithPrev.has(i)) {

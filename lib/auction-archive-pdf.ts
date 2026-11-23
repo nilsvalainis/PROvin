@@ -2,14 +2,18 @@ import "server-only";
 
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { readAuctionArchiveOffer, readAuctionArchivePhoto, writeAuctionArchivePdf } from "@/lib/auction-archive-offer-store";
-import { loadAuctionArchiveOrderContext } from "@/lib/auction-archive-offer-service";
+import { auctionArchiveSummaryFor, loadAuctionArchiveOrderContext } from "@/lib/auction-archive-offer-service";
 import {
   auctionArchiveDescriptions,
   auctionArchivePdfFilename,
   buildAuctionArchivePdfHtml,
 } from "@/lib/auction-archive-pdf-html";
-import { isUsefulThecarapiRecord } from "@/lib/auction-archive-offer";
-import { shrinkAuctionArchivePdfPhoto } from "@/lib/auction-archive-offer-photos";
+import { isUsefulThecarapiRecord, type AuctionArchivePhoto, type AuctionArchiveSummary } from "@/lib/auction-archive-offer";
+import {
+  collectAuctionArchivePhotoSources,
+  persistAuctionArchivePhotos,
+  shrinkAuctionArchivePdfPhoto,
+} from "@/lib/auction-archive-offer-photos";
 import { renderReportHtmlToPdf } from "@/lib/report-pdf-server";
 
 const TRANSLATE_SYSTEM = `You translate used-car auction descriptions into Latvian for a vehicle history report.
@@ -57,21 +61,40 @@ const PHOTO_PARALLEL = 4;
 
 /**
  * Servera PDF (Chromium + Inter, kā dīlera atskaite): visas pasūtījuma mapē saglabātās bildes kā data: URI.
+ * Piedāvājuma ceļš (#1140) - bildes un atzīmes no piedāvājuma. Atsevišķais pakalpojums (23.11, bez piedāvājuma) -
+ * bildes nokopē pasūtījuma mapē tieši pirms ģenerēšanas (jau nokopētās nelasa vēlreiz).
  * Saglabā `auction_archive_offers/<sessionId>/izsolu-arhivs.pdf` (tas pats fails, kas aiziet klientam).
  */
 export async function buildAuctionArchivePdf(
   sessionId: string,
-  opts: { preparedFor?: string; showPrices?: boolean } = {},
+  opts: { preparedFor?: string; showPrices?: boolean; deadline?: number; requireOffer?: boolean } = {},
 ): Promise<AuctionArchivePdfResult> {
   const t0 = Date.now();
   const [doc, ctx] = await Promise.all([readAuctionArchiveOffer(sessionId), loadAuctionArchiveOrderContext(sessionId)]);
-  if (!doc) throw new Error("no_offer");
-  const records = (ctx?.block?.thecarapiRecords ?? []).filter(isUsefulThecarapiRecord);
+  if (!doc && opts.requireOffer !== false) throw new Error("no_offer");
+  if (!ctx) throw new Error("not_found");
+  const records = (ctx.block?.thecarapiRecords ?? []).filter(isUsefulThecarapiRecord);
+  let photos: AuctionArchivePhoto[];
+  let missingCopies = 0;
+  let summary: AuctionArchiveSummary;
+  if (doc) {
+    photos = doc.photos;
+    summary = doc.summary;
+  } else {
+    if (!ctx.vin) throw new Error("no_vin");
+    const sources = collectAuctionArchivePhotoSources({ vin: ctx.vin, sessionId, block: ctx.block });
+    const persisted = await persistAuctionArchivePhotos({ sessionId, sources, deadline: opts.deadline });
+    photos = persisted.photos;
+    missingCopies = persisted.missing;
+    const base = auctionArchiveSummaryFor(ctx);
+    summary = { ...base, photoCount: Math.max(base.photoCount, photos.length) };
+    if (summary.auctions.length === 0 && photos.length === 0) throw new Error("no_archive_data");
+  }
   const dataUrls = new Map<string, string>();
   let next = 0;
   const work = async () => {
-    while (next < doc.photos.length) {
-      const p = doc.photos[next]!;
+    while (next < photos.length) {
+      const p = photos[next]!;
       next += 1;
       const raw = await readAuctionArchivePhoto(sessionId, p.id).catch(() => null);
       // Samazina pirms base64 (oriģināli 2-4 MB × 84 = simtiem MB HTML Chromium atmiņā).
@@ -79,18 +102,18 @@ export async function buildAuctionArchivePdf(
       if (buf) dataUrls.set(p.id, `data:image/jpeg;base64,${buf.toString("base64")}`);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(PHOTO_PARALLEL, doc.photos.length) }, work));
+  await Promise.all(Array.from({ length: Math.min(PHOTO_PARALLEL, photos.length) }, work));
   const photosMs = Date.now() - t0;
   const translations = await translateAuctionArchiveTexts(records.flatMap(auctionArchiveDescriptions));
   const html = buildAuctionArchivePdfHtml({
-    summary: doc.summary,
+    summary,
     records,
-    photos: doc.photos,
+    photos,
     dataUrls,
     translations,
-    marks: doc.marks,
+    marks: doc?.marks ?? [],
     preparedFor: opts.preparedFor,
-    showPrices: opts.showPrices ?? doc.showPrices === true,
+    showPrices: opts.showPrices ?? doc?.showPrices === true,
   });
   const photoCount = dataUrls.size;
   dataUrls.clear();
@@ -99,9 +122,9 @@ export async function buildAuctionArchivePdf(
   await writeAuctionArchivePdf(sessionId, pdf);
   return {
     pdf,
-    filename: auctionArchivePdfFilename(doc.summary.vin),
+    filename: auctionArchivePdfFilename(summary.vin),
     photos: photoCount,
-    missingPhotos: doc.photos.length - photoCount,
+    missingPhotos: photos.length - photoCount + missingCopies,
     timings: { photosMs, renderMs: r.ms, htmlBytes: html.length },
   };
 }

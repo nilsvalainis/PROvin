@@ -7,6 +7,8 @@
  * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas - akcents ir uz sarkanajiem karogiem.
  */
 
+import { AdminAuctionArchiveReportStrip } from "@/components/admin/AdminAuctionArchiveReport";
+import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
@@ -114,6 +116,12 @@ type Props = {
   onPhotoGroupsStructuralCommit?: (
     next: CcVinBlockState["photoGroups"],
   ) => void | Promise<void>;
+  /** «Izsoļu arhīvs» kā atsevišķs PDF/pakalpojums (23.11): klienta e-pasts, B2B, tālrunis + samaksātais. */
+  customerEmail?: string | null;
+  b2bClient?: boolean;
+  archiveBridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents"> | null;
+  /** Palielina apakšējās joslas «Ģenerēt izsoļu arhīva PDF» pēc ģenerēšanas. */
+  archiveRefreshKey?: number;
 };
 
 export function AdminCcVinSourceBlock({
@@ -130,6 +138,10 @@ export function AdminCcVinSourceBlock({
   aiComment,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  customerEmail = null,
+  b2bClient = false,
+  archiveBridge = null,
+  archiveRefreshKey = 0,
 }: Props) {
   const editable = !readOnly && !disabled;
   const handoffVin = useAdminVinHandoff()?.vin ?? "";
@@ -297,6 +309,15 @@ export function AdminCcVinSourceBlock({
             onChange={onChange}
           />
           <AdminThecarapiRecords vin={handoffVin} records={value.thecarapiRecords ?? []} />
+          {sessionId ? (
+            <AdminAuctionArchiveReportStrip
+              sessionId={sessionId}
+              customerEmail={customerEmail}
+              b2bClient={b2bClient}
+              bridge={archiveBridge}
+              refreshKey={archiveRefreshKey}
+            />
+          ) : null}
 
           <div className="mb-1 flex flex-wrap items-end gap-2">
             {headerField("Atskaites datums", "reportDate", "13.07.2026")}

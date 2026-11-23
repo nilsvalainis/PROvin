@@ -27,6 +27,7 @@ import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecords
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { MobileDealerOrderPanel } from "@/components/admin/mobile/MobileDealerOrderPanel";
 import { MobileOrderMoreSheet, type MobileOrderMoreGroup } from "@/components/admin/mobile/MobileOrderMoreSheet";
+import { AuctionArchivePdfSplitButton, generateAuctionArchiveReportPdf } from "@/components/admin/AdminAuctionArchiveReport";
 import { AdminMobileGlassSaveStatus } from "@/components/admin/mobile/AdminMobileGlass";
 import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
@@ -5084,6 +5085,18 @@ export function OrderDetailWorkspace({
     }
     setSendReportOpen(true);
   };
+  /** «Izsoļu arhīvs» kā atsevišķs PDF (Nils 23.11): apakšējā josla + «Vairāk» + izsoļu bloks. Tikai LV. */
+  const [archivePdfBusy, setArchivePdfBusy] = useState(false);
+  const [archiveRefreshKey, setArchiveRefreshKey] = useState(0);
+  const openAuctionArchivePdf = async (showPrices: boolean) => {
+    if (archivePdfBusy) return;
+    setArchivePdfBusy(true);
+    const r = await generateAuctionArchiveReportPdf(payload.sessionId, showPrices);
+    setArchivePdfBusy(false);
+    if (r.error) window.alert(r.error);
+    else setArchiveRefreshKey((n) => n + 1);
+  };
+
   const mobileMoreGroups: MobileOrderMoreGroup[] = [
     {
       id: "report",
@@ -5099,6 +5112,13 @@ export function OrderDetailWorkspace({
           disabled: notifyPhase === "loading",
         },
         { id: "print-ink", label: "Drukājamā versija", onClick: () => void openPrintReport({ printInk: true }) },
+        {
+          id: "auction-archive-pdf",
+          label: "Izsoļu arhīva PDF",
+          sub: "Bez cenām · sūtīšana - «Izsoļu portālu arhīvs» blokā",
+          onClick: () => void openAuctionArchivePdf(false),
+          disabled: archivePdfBusy,
+        },
       ],
     },
     {
@@ -6158,6 +6178,10 @@ export function OrderDetailWorkspace({
               onPhotoGroupsStructuralCommit={commitCcVinPhotoGroupsStructural}
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
+              customerEmail={payload.customerEmail}
+              b2bClient={b2bClientOrder}
+              archiveBridge={dealerSendBridge}
+              archiveRefreshKey={archiveRefreshKey}
             />
           </div>
         ) : null}
@@ -6781,6 +6805,15 @@ export function OrderDetailWorkspace({
             dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ dealerOnly: true })}
             onLang={(lang) => void openPrintReport({ dealerOnly: true, lang })}
+          />
+          <AuctionArchivePdfSplitButton
+            label="Ģenerēt izsoļu arhīva PDF"
+            title="Tikai IZSOĻU ARHĪVS (bildes, nobraukums, bojājumi). ▾ - ar izsoļu cenām."
+            busyLabel={archivePdfBusy ? "Gatavo…" : null}
+            disabled={archivePdfBusy}
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            dividerClass="border-[var(--admin-border-subtle)]"
+            onGenerate={(showPrices) => void openAuctionArchivePdf(showPrices)}
           />
           <AdminPdfLangSplitButton
             label="Ģenerēt ASV PDF"
