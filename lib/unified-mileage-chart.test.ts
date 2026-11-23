@@ -327,9 +327,36 @@ describe("buildSourceMileageSparkHtml", () => {
     expect(html).toContain(">2020<");
   });
 
-  it("hides the spark when the source has fewer than 3 readings (D37)", () => {
-    expect(buildSourceMileageSparkHtml([dnaEarly, csddLate], "autodna")).toBe("");
-    expect(buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna")).toBe("");
+  it("still draws the spark with 1-2 readings (Nils 24.11 - grafiki atpakaļ, gadu ass paliek)", () => {
+    const one = buildSourceMileageSparkHtml([dnaEarly, csddLate], "autodna");
+    expect(one).toContain("pdf-src-mileage-spark-dot");
+    expect(one).not.toContain("pdf-src-mileage-spark-path");
+    expect(one).toContain("pdf-src-mileage-spark-year");
+    const two = buildSourceMileageSparkHtml([dnaEarly, dnaMid, csddLate], "autodna");
+    expect(two).toContain("pdf-src-mileage-spark-path");
+    expect(two).toContain("2 rādījumi");
+    expect(two).toContain(">2016<");
+    expect(two).toContain(">2020<");
+  });
+
+  it("shows one year tick (no duplicates) when the whole series is a single reading", () => {
+    const html = buildSourceMileageSparkHtml([dnaEarly], "autodna");
+    expect(html).toContain("pdf-src-mileage-spark-dot");
+    const years = [...html.matchAll(/pdf-src-mileage-spark-year[^>]*>(\d{4})</g)].map((m) => m[1]);
+    expect(years).toEqual(["2016"]);
+    const cx = Number.parseFloat(html.match(/class="pdf-src-mileage-spark-dot" cx="([\d.]+)"/)![1]!);
+    expect(cx).toBeCloseTo(240, 0);
+  });
+
+  it("shows each year once when 1 reading sits inside a short same-year series", () => {
+    const sameYear: UnifiedMileageRow = { ...csddLate, date: "01.10.2020", odometer: "125000", sortableTime: Date.UTC(2020, 9, 1), sourceOrder: 5 };
+    const html = buildSourceMileageSparkHtml([csddLate, sameYear], "csdd");
+    const years = [...html.matchAll(/pdf-src-mileage-spark-year[^>]*>(\d{4})</g)].map((m) => m[1]);
+    expect(years).toEqual(["2020"]);
+  });
+
+  it("returns empty only when this source has no readings", () => {
+    expect(buildSourceMileageSparkHtml([csddLate], "autodna")).toBe("");
   });
 
   it("puts first and last km in the dealer-style reading window", () => {

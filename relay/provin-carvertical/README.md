@@ -23,6 +23,13 @@ Testi (repo saknē): `npx vitest run lib/carvertical-relay.test.ts lib/carvertic
 - Pēc paroles **vienmēr** `/lv/auth/code`: "Tavs pierakstīšanās kods ir nosūtīts" - 6 rakstzīmju kods uz konta e-pastu
   (derīgs 15 min; CarVertical `requiresLoginCode`). Konta e-pasts ir Nila Gmail, kam serverim piekļuves nav, tāpēc kodu
   ievada **Nils** adminā (lauks "Kods no CarVertical e-pasta"). Pēc tam sesija paliek profilā (sīkdatnes pārdzīvo restartu).
+- **Kods no e-pasta automātiski (24.11):** Nila Gmail filtrs pāradresē CarVertical koda vēstules uz info@provin.lv ->
+  Apps Script (`docs/apps-script/csdd-pdf-inbox.gs`, `processCarverticalCodes`, ik 1 min) -> PROVIN
+  `POST /api/carvertical/login-code` -> relejs `POST /carvertical/login/code {code, source:"email", receivedAt}`.
+  Relejs kodu ņem tikai, ja tieši tagad gaida kodu un vēstule pienākusi pēc pieteikšanās sākuma (`loginStartedAt`,
+  1 min nobīde); citādi `not_waiting` / `stale_code`. Kods netiek logots (žurnālā tikai "kods no e-pasta: pieņemts").
+  Push Nilam "ievadi kodu" tikai, ja automātiskais kods neatnāk **10 min** laikā (`checkCodeReminder` ik 30 s);
+  līdz tam admin panelī "Gaida kodu no e-pasta…" (`session.autoCodeUntil`).
 - Konta dati nāk no lapas pašas pieprasījumiem uz `api.carvertical.net`, relejs tos tikai nolasa:
   `GET /user/quotas?productId=N` (kredīti), `GET /reports?productId=N` (atskaites: `id`, `vin`, `reportStatus` 10/20/30),
   `GET /reports/{id}/pdf/full?locale=lv` -> `pdfUrl` -> fails no `www.carvertical.com/pdf/...` (tieši tā strādā lapas poga).
@@ -53,7 +60,7 @@ relejs -> PROVIN /api/carvertical/relay-callback:
    {kind:"job", state: checking | awaiting_login | purchasing | waiting_report | downloading}
    {kind:"job", state:"result", reportId, existing, credits, pdfSize}  -> PROVIN paņem GET /carvertical/jobs/:id/pdf
    {kind:"job", state:"error", code}   insufficient_credits | already_purchased | no_credit_link | captcha | ...
-   {kind:"session", state:"awaiting_code"}  -> push Nilam "ievadi kodu"
+   {kind:"session", state:"awaiting_code"}  -> push Nilam "ievadi kodu" (tikai pēc 10 min bez koda no e-pasta)
    {kind:"balance", credits}                -> kešs; < 5 -> sarkans + viens push dienā
 PROVIN: PDF -> Blob + Dropbox `/_PROv/<auto>/CarVertical - VIN.pdf`; admin panelis vienreiz ievieto blokā (esošais parseris).
 ```

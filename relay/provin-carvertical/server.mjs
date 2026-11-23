@@ -20,7 +20,9 @@
  *   GET  /carvertical/health          bez auth: dzīvs, vai pieteikšanās dati iestatīti (bez vērtībām)
  *   GET  /carvertical/session         sesija + atlikuma kešs
  *   POST /carvertical/login           Nila poga: sākt pieteikšanos (CarVertical sūta kodu uz konta e-pastu)
- *   POST /carvertical/login/code      {code}: Nila ievadītais 6 rakstzīmju kods
+ *   POST /carvertical/login/code      {code}: Nila ievadītais 6 rakstzīmju kods; {code, source:"email", receivedAt}: kods no
+ *                                     konta e-pasta (Apps Script -> PROVIN /api/carvertical/login-code) - tikai ja relejs gaida
+ *                                     kodu un vēstule pienākusi pēc pieteikšanās sākuma. Push Nilam tikai pēc 10 min bez koda.
  *   GET  /carvertical/balance         {credits, checkedAt} no keša; ja vecāks par 30 min - atjauno fonā
  *   POST /carvertical/reports         "Manas atskaites" saraksts (tikai lasīšana)
  *   POST /carvertical/purchase        {vin, ref, requestId, confirm:true} -> {jobId}; TIKAI ar confirm:true (Nila poga)
@@ -214,6 +216,8 @@ async function pump() {
 setInterval(() => void pump(), 20_000).unref();
 // Atlikums ik 30 min (tikai aktīvā sesijā; jaunu pieteikšanos/kodu nesāk).
 setInterval(() => void core.refreshBalance(), BALANCE_MIN * 60_000).unref();
+// Kods no e-pasta neatnāca 10 min laikā -> viens push Nilam "ievadi kodu".
+setInterval(() => void core.checkCodeReminder().catch(() => undefined), 30_000).unref();
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -234,7 +238,10 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "POST" && p === "/login/code") {
       const body = await readJson(req);
-      const out = await core.submitCode(body.code);
+      // source "email": kods no konta e-pasta (Apps Script -> PROVIN); relejs to ņem tikai, ja gaida kodu un vēstule ir jaunāka.
+      const source = body.source === "email" ? "email" : "";
+      const out = await core.submitCode(body.code, { source, receivedAt: typeof body.receivedAt === "string" ? body.receivedAt : "" });
+      if (source === "email") log(`kods no e-pasta: ${out.ok ? "pieņemts" : out.error || out.session?.code || "nav pieņemts"}`);
       if (out.ok) setTimeout(() => void pump(), 50);
       return sendJson(res, out.error === "invalid_code" ? 400 : 200, out);
     }
