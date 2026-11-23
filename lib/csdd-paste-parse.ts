@@ -28,6 +28,7 @@ import {
   isImplausibleSmokeOpacity,
   looksLikeSmokeOpacity,
 } from "@/lib/csdd-extended-parse";
+import { csddOctaFieldValueFromRaw } from "@/lib/csdd-registry-signals";
 import {
   extractRegistryStructuredFields,
   normalizeRoadTaxDisplay,
@@ -286,7 +287,7 @@ export function parseCsddIdentityFromRaw(raw: string): { vin: string; modelYear:
   if (vinM?.[1]) vin = vinM[1].toUpperCase();
 
   let modelYear = "";
-  const yM = raw.match(/Izlaiduma\s+gads\s*[:\t ]\s*((?:19|20)\d{2})\b/i);
+  const yM = raw.match(/(?:Izlaiduma|Izgatavošanas)\s+gads\s*[:\t ]\s*((?:19|20)\d{2})\b/i);
   if (yM?.[1]) modelYear = yM[1];
 
   let color = "";
@@ -647,6 +648,8 @@ export function applyCsddPasteToForm(
     ownerCountLatvia: ownerReg.ownerCount,
     nextInspectionDate,
     prevInspectionDate,
+    // e.csdd „Civiltiesiskā apdrošināšana”: beigu datums vai „Nav” (API vērtību sargā protectCsddApiFields).
+    insuranceValidUntil: csddOctaFieldValueFromRaw(normalizedRaw),
   };
 
   const base: CsddFormFields = { ...emptyCsddFields(), ...current };
@@ -670,6 +673,15 @@ export function applyCsddPasteToForm(
     if (v.trim()) (merged[key] as string) = v;
   }
   return protectCsddApiFields(current, merged, "raw");
+}
+
+/** Salipis defekta kods ar ass numuru: normalizētā tekstā „5.3.3. 1 2. tilts.”. */
+const GLUED_AXLE_DEFECT_RE = /(?:^|\n)\d+(?:\.\d+)+\.\s[123]\s\d\.\s?(?:tilts|ass)/;
+/** Tas pats kods, kas vecajā parsēšanā palicis iepriekšējā defekta aprakstā. */
+const GLUED_AXLE_DEFECT_IN_DESC_RE = /\d+(?:\.\d+)+\.[123]\d\.\s?(?:tilts|ass)/;
+
+function countDefects(rows: readonly { defects?: unknown[] }[]): number {
+  return rows.reduce((n, r) => n + (r.defects?.length ?? 0), 0);
 }
 
 /** Aizpilda jaunos laukus no jau saglabātā raw (piem. pēc deploy vai migrācijas). */
@@ -699,6 +711,16 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   if (!(csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && ta.length > 0) {
     patch.technicalInspectionHistory = ta;
   } else if (
+    // Vecā parsēšana salipušu kodu („5.3.3.12. tilts.”) pievienoja iepriekšējam defektam - pārlasām no RAW.
+    GLUED_AXLE_DEFECT_RE.test(raw) &&
+    ta.length === (csdd.technicalInspectionHistory ?? []).length &&
+    countDefects(ta) > countDefects(csdd.technicalInspectionHistory ?? []) &&
+    (csdd.technicalInspectionHistory ?? []).some((r) =>
+      (r.defects ?? []).some((d) => GLUED_AXLE_DEFECT_IN_DESC_RE.test(d.description)),
+    )
+  ) {
+    patch.technicalInspectionHistory = ta;
+  } else if (
     ta.length > 0 &&
     !(csdd.technicalInspectionHistory ?? []).some((r) => (r.defects?.length ?? 0) > 0) &&
     ta.some((r) => (r.defects?.length ?? 0) > 0)
@@ -716,6 +738,11 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   if (!String(csdd.vin ?? "").trim() && tech.vin.trim()) patch.vin = tech.vin;
   if (!String(csdd.modelYear ?? "").trim() && tech.modelYear.trim()) patch.modelYear = tech.modelYear;
   if (!String(csdd.color ?? "").trim() && tech.color.trim()) patch.color = tech.color;
+  if (!String(csdd.fuelType ?? "").trim() && tech.fuelType.trim()) patch.fuelType = tech.fuelType;
+  if (!String(csdd.insuranceValidUntil ?? "").trim()) {
+    const octa = csddOctaFieldValueFromRaw(raw);
+    if (octa) patch.insuranceValidUntil = octa;
+  }
 
   if (
     !previousInspectionBlockHasData(csdd.prevInspectionBlock) &&

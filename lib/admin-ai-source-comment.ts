@@ -165,6 +165,8 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
           internalComment: input.internalComment ?? undefined,
           mileageComment: input.mileageComment ?? undefined,
           sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
+          // CSDD reģistra signāli (liegumi, OCTA, TA defekti) ir AUDITS/PRO komentāriem, ne dīlera datiem.
+          omitCsddRegistrySignals: isOfficialDealerBlock(input.blockKey),
         },
         isOilInterval ? "summary" : "source",
       );

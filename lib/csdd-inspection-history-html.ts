@@ -3,6 +3,10 @@
  */
 
 import {
+  CSDD_FOREIGN_PERMIT_NO_LV_INSPECTION_TEXT,
+  csddInspectionHasNoLatvianRating,
+} from "@/lib/csdd-registry-signals";
+import {
   formatParticleNumber,
   groupTechnicalInspectionsByYear,
   previousInspectionBlockToRow,
@@ -77,7 +81,9 @@ function buildInspectionInnerHtml(
 ): string {
   const metaParts = [row.date, row.inspectionType];
   if (opts?.odometer?.trim()) metaParts.push(`${formatInspectionOdometer(opts.odometer)} km`);
-  if (row.ratingLabel.trim()) metaParts.push(`Novērtējums ${row.ratingLabel.trim()}`);
+  // Ārvalstu TA atļauja: e.csdd vērtējums ir „**” - Latvijā apskate nav veikta.
+  if (csddInspectionHasNoLatvianRating(row)) metaParts.push(CSDD_FOREIGN_PERMIT_NO_LV_INSPECTION_TEXT);
+  else if (row.ratingLabel.trim()) metaParts.push(`Novērtējums ${row.ratingLabel.trim()}`);
   const meta = escapeHtml(metaParts.filter(Boolean).join(" · "));
   const extras: string[] = [];
   if (opts?.nextInspectionDateText?.trim()) {

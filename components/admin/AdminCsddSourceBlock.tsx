@@ -113,6 +113,12 @@ const dateKeys = new Set<keyof CsddFormFields>([
   "insuranceValidUntil",
 ]);
 
+/** e.csdd „Civiltiesiskā apdrošināšana: Nav” - teksts, ko datuma ievade nerādītu. */
+function isNonDateOctaValue(key: keyof CsddFormFields, value: string): boolean {
+  const v = value.trim();
+  return key === "insuranceValidUntil" && v !== "" && !/^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
 const CONFLICT_SOURCE_LABEL = { pdf: "PDF", raw: "RAW", manual: "Iepriekš laukā" } as const;
 
 /** API bloķēta lauka žetons + konflikta rinda ar „Pieņemt PDF vērtību” / „Atjaunot API”. */
@@ -259,6 +265,8 @@ export function AdminCsddSourceBlock({
       backfilled.ownerCountLatvia !== value.ownerCountLatvia ||
       backfilled.vin !== value.vin ||
       backfilled.modelYear !== value.modelYear ||
+      backfilled.fuelType !== value.fuelType ||
+      backfilled.insuranceValidUntil !== value.insuranceValidUntil ||
       backfilled.ownerRegistrationEvents.length !== value.ownerRegistrationEvents.length ||
       backfilled.technicalInspectionHistory.length !== value.technicalInspectionHistory.length ||
       backfilled.technicalInspectionHistory.some(
@@ -481,7 +489,7 @@ export function AdminCsddSourceBlock({
                           <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">
                             {strVal.trim() ? strVal : <span className="text-slate-400">-</span>}
                           </div>
-                        ) : dateKeys.has(key) ? (
+                        ) : dateKeys.has(key) && !isNonDateOctaValue(key, strVal) ? (
                           <input
                             type="date"
                             className={inpAlertInner}
@@ -525,7 +533,7 @@ export function AdminCsddSourceBlock({
                         />
                       ) : null}
                     </>
-                  ) : dateKeys.has(key) ? (
+                  ) : dateKeys.has(key) && !isNonDateOctaValue(key, strVal) ? (
                     <input
                       type="date"
                       className={inp}

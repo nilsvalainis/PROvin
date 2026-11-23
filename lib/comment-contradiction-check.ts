@@ -12,6 +12,7 @@ import {
   type CanonicalFacts,
 } from "@/lib/canonical-facts-sheet";
 import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
+import { CSDD_RESTRICTIONS_NOT_CHECKED_LINE } from "@/lib/csdd-registry-signals";
 import { extractCampaignCodes, splitSentences } from "@/lib/unit-facts/check";
 import type { FactCheckFlag, FactCheckLevel } from "@/lib/unit-facts/types";
 import {
@@ -138,6 +139,9 @@ const FIRST_REG_LV_RE =
   /pirmā\s+reģistrācija\s*(?:[:\-–]|\bir\b|\bbija\b)\s*[^.\n]{0,30}latvij|izcelsmes\s+valst.{0,20}latvij|pirmo\s+reizi\s+reģistrēt\w*\s+latvijā|(?:jauns|no\s+jauna)\s+(?:iegādāt\w*\s+)?latvijā/i;
 const FIRST_REG_DE_RE = /pirmā\s+reģistrācija.{0,40}vācij|izcelsmes\s+valst.{0,20}vācij/i;
 const ATSAVINASANAI_RE = /atsavināšanai/i;
+/** „nav atzīmēti atsavināšanas aizliegumi”, „bez liegumiem”, „apgrūtinājumu nav”. */
+const NO_RESTRICTIONS_CLAIM_RE =
+  /(?:\bnav\b|\bbez\b|\bnekād\p{L}*)[^.!?\n]{0,80}(?:\bliegum|aizliegum|apgrūtinājum)|(?:\bliegum|aizliegum|apgrūtinājum)\p{L}*[^.!?\n]{0,60}\bnav\b/iu;
 const LEAK_PHRASES: Array<{ re: RegExp; id: string; label: string }> = [
   { re: /operatora\s+norād/i, id: "leak_operator_notes", label: "operatora norādes" },
   { re: /šajā\s+auditā/i, id: "leak_this_audit", label: "šajā auditā" },
@@ -584,6 +588,21 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     });
   }
 
+  // 5b) 23.11: „liegumu nav” bez avota - e.csdd tekstā sadaļas „Aizliegumi” nav, tātad nav pārbaudīts.
+  if ((facts.csddSignalLines ?? []).includes(CSDD_RESTRICTIONS_NOT_CHECKED_LINE)) {
+    const bad = sentences.find((s) => NO_RESTRICTIONS_CLAIM_RE.test(s) && !/nav\s+pārbaudīt/i.test(s));
+    if (bad) {
+      push({
+        id: "unsourced_no_restrictions",
+        kind: "unsourced",
+        level: "W",
+        message:
+          "Teksts saka, ka liegumu / aizliegumu nav, bet e.csdd tekstā sadaļas „Aizliegumi” nav - tas nav pārbaudīts. Teikums jāizņem vai jāraksta „nav pārbaudīts”.",
+        sentence: bad,
+      });
+    }
+  }
+
   // 6) atsavināšanai, ja nav avotā.
   if (ATSAVINASANAI_RE.test(text) && !ATSAVINASANAI_RE.test(facts.sourceHaystack)) {
     push({
@@ -834,6 +853,7 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     ),
     countryPeriods: parseCountryPeriodsFromSheet(sheet),
     registryStatusLines: [],
+    csddSignalLines: sheet.includes(CSDD_RESTRICTIONS_NOT_CHECKED_LINE) ? [CSDD_RESTRICTIONS_NOT_CHECKED_LINE] : [],
     drivetrain: (() => {
       const dm = sheet.match(/Piedziņa \(oficiālais (?:reģistrs|avots) ([^,)]+)[^)]*\):\s*(\d)\s+dzenoš/);
       if (dm) return { drivenAxles: Number(dm[2]), awd: false, sourceLabel: dm[1]!.trim() };
