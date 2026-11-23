@@ -103,6 +103,15 @@ export function browserImportErrorLv(code: string | undefined): string {
   return "Importēšana neizdevās";
 }
 
+/**
+ * Pārlūka (userscript) importa kļūda paliek pie sava avota rindas. «page_not_ready» nāk atkārtoti, kamēr
+ * lapa ielādējas - globāls paziņojums tad parādījās/pazuda katrā ciklā un raustīja lapu (#1152).
+ */
+export function browserImportRowNote(code: string | undefined): string {
+  if (code === "page_not_ready") return "Gaida lapu pārlūkā";
+  return browserImportErrorLv(code);
+}
+
 export type VinScanBrowserEventDetail = {
   id: string;
   vin: string;

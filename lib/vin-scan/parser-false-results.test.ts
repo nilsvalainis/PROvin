@@ -30,6 +30,35 @@ describe("NICB: tīra lapa ar VIN nav „zagts”", () => {
   });
 });
 
+describe("NICB: VINCheck formas lapa nav „zagts” (WBAFB71080LV66575, 23.11)", () => {
+  const EU_VIN = "WBAFB71080LV66575";
+  // Formas lapa pēc Cloudflare: apraksts ar „stolen”, VIN skriptā (drupalSettings) un ievades laukā; rezultāta nav.
+  const formPage = `<html><head><script>var drupalSettings={"path":{"currentQuery":{"vin":"${EU_VIN}"}}};</script></head>
+<body><h1>VINCheck®</h1><p>NICB's VINCheck is a free lookup service provided to help determine if a vehicle has been
+reported as stolen but not recovered, or has been reported as a salvage vehicle by cooperating NICB member insurance companies.</p>
+<form><input name="vin" value="${EU_VIN}"><div class="g-recaptcha"></div><input name="form_build_id" value="x"></form></body></html>`;
+  const echoPage = `<div>VIN: ${EU_VIN}</div><p>To help determine if a vehicle has been reported as stolen, enter the VIN.</p>`;
+
+  it.each([formPage, echoPage])("serveris: nav found, nav stolen karoga (%#)", (html) => {
+    const r = parseNicbHtml(html, EU_VIN);
+    expect(r.status).not.toBe("found");
+    expect(r.flags?.stolen).toBeUndefined();
+  });
+  it("pārlūka zonde: formas lapa gaida (null), nevis found", () => {
+    const text = formPage.replace(/<[^>]+>/g, " ");
+    expect(classifyBrowserProbe("nicb", text, EU_VIN)).toBeNull();
+  });
+  it("NICB tīrā atbilde „No NICB VINCheck theft records were found” ir none", () => {
+    expect(parseNicbHtml(`<p>${EU_VIN}</p><p>No NICB VINCheck Theft Records Were Found</p>`, EU_VIN).status).toBe("none");
+  });
+  it("skaidrs zādzības rezultāts paliek found", () => {
+    expect(parseNicbHtml(`<p>${EU_VIN}</p><p>1 NICB VINCheck theft record was found</p>`, EU_VIN)).toMatchObject({
+      status: "found",
+      flags: { stolen: true },
+    });
+  });
+});
+
 describe("OEM atsaukumi: 10 nav 0", () => {
   it.each([
     ["10 recalls found", "found", 10],

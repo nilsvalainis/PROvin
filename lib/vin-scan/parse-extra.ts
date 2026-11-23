@@ -225,28 +225,55 @@ export function parseVegvesen(status: number, text: string): VinScanParse {
 
 /** NICB VINCheck negatīvā atbilde (nav zagts / nav total loss). */
 export const NICB_CLEAN_RE =
-  /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear|has not been reported|not been reported as (stolen|a theft)/i;
+  /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear|has not been reported|not been reported as (stolen|a theft)|no\b[^.\n]{0,40}\b(theft|total loss|salvage)\b[^.\n]{0,20}\brecords?\b[^.\n]{0,20}\b(were|was|found)/i;
 
-export function parseNicbHtml(html: string, vin: string): VinScanParse {
-  const text = html.replace(/<[^>]+>/g, " ");
+/**
+ * Tikai skaidrs NICB rezultāts par zādzību. Vārds „stolen” vien neder: VINCheck formas lapas
+ * apraksts („help determine if a vehicle has been reported as stolen…”) to satur vienmēr,
+ * un VIN lapā ir arī tad, ja rezultāta nav (URL/skripti, ievades lauks).
+ */
+export const NICB_STOLEN_RE =
+  /(this|the|your|subject) vehicle (has been|was|is) (reported|listed) as stolen|\b(\d+|one|a)\s+(nicb\s+)?(vincheck\s+)?theft records?\s+(was|were|has been|have been)?\s*found|theft record found|\bstolen\s*(status)?\s*:\s*yes\b/i;
+
+const NICB_TOTAL_LOSS_RE =
+  /(this|the|your|subject) vehicle (has been|was|is) (reported|listed) as (a )?(total loss|salvage)|\b(\d+|one|a)\s+(nicb\s+)?(vincheck\s+)?(total loss|salvage) records?\s+(was|were|has been|have been)?\s*found|total loss record from/i;
+
+/** Redzamais teksts: bez <script>/<style>, kur VIN ir URL/iestatījumos, nevis rezultātā. */
+export function nicbVisibleText(html: string): string {
+  return html
+    .replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+/** Kopīgs lēmums servera HTML ielasei un pārlūka zondei (redzamais teksts). */
+export function classifyNicbText(text: string, vin: string): VinScanParse | null {
   const upperVin = vin.trim().toUpperCase();
   const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
   // Tīrā NICB lapa satur gan VIN, gan vārdu „stolen” („not listed as stolen”). Negatīvo frāzi jāpārbauda pirmo.
   if (NICB_CLEAN_RE.test(text)) {
     return { status: "none", summary: "NICB sarakstā nav" };
   }
-  if (/stolen/i.test(text) && hasVin) {
+  if (hasVin && NICB_STOLEN_RE.test(text)) {
     return { status: "found", summary: "NICB: iespējams zagts", flags: { stolen: true } };
   }
-  if (/total loss|salvage/i.test(text) && hasVin) {
+  if (hasVin && NICB_TOTAL_LOSS_RE.test(text)) {
     return { status: "found", summary: "NICB: total loss / salvage ieraksts" };
   }
-  if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(text) && !hasVin) {
+  return null;
+}
+
+export function parseNicbHtml(html: string, vin: string): VinScanParse {
+  const text = nicbVisibleText(html);
+  const read = classifyNicbText(text, vin);
+  if (read) return read;
+  const upperVin = vin.trim().toUpperCase();
+  const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(html) && !hasVin) {
     return { status: "unknown", summary: "NICB captcha netika apieta - atver pārlūkā" };
   }
-  if (/vincheck|check a vin|nicb\.org|vehicle identification number/i.test(text) || /g-recaptcha|form_build_id/i.test(html)) {
-    return { status: "unknown", summary: "NICB: atver pārlūkā" };
-  }
+  // Formas lapa / captcha / Cloudflare: rezultāts ielādējas tikai pēc captcha pārlūkā.
   return { status: "unknown", summary: "NICB: atver pārlūkā" };
 }
 

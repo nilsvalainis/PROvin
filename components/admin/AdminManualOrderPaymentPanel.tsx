@@ -39,8 +39,22 @@ function replacePayUrl(text: string, prev: string, next: string): string {
   return text;
 }
 
+/** Kamēr dati ielādējas, josla jau aizņem savu vietu (agrāk parādījās ~2 s vēlāk un nobīdīja visu lapu uz leju). */
+const LOADING_PREFILL: Prefill = {
+  email: "",
+  phone: "",
+  customerName: "",
+  amountCents: null,
+  serviceName: "",
+  paid: false,
+  paidAt: null,
+  paidStripeSessionId: null,
+  checkoutUrl: null,
+};
+
 export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string }) {
-  const [prefill, setPrefill] = useState<Prefill | null>(null);
+  const [loaded, setLoaded] = useState<Prefill | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [amountText, setAmountText] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -55,7 +69,10 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
         credentials: "include",
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setLoadFailed(true);
+        return;
+      }
       const data = (await res.json()) as Partial<Prefill>;
       const next: Prefill = {
         email: typeof data.email === "string" ? data.email : "",
@@ -68,11 +85,12 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
         paidStripeSessionId: typeof data.paidStripeSessionId === "string" ? data.paidStripeSessionId : null,
         checkoutUrl: typeof data.checkoutUrl === "string" ? data.checkoutUrl : null,
       };
-      setPrefill(next);
+      setLoaded(next);
       setAmountText((prev) => prev || amountInputFromCents(next.amountCents));
       setServiceName((prev) => prev || next.serviceName);
     } catch {
       /* josla nav kritiska */
+      setLoadFailed(true);
     }
   }, [sessionId]);
 
@@ -98,7 +116,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
           sessionId,
           amountCents,
           serviceName: name,
-          email: draft?.email || prefill?.email || "",
+          email: draft?.email || loaded?.email || "",
         }),
       });
       const data = (await res.json().catch(() => ({}))) as Draft & { error?: string };
@@ -119,8 +137,8 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
       }
       setDraft({
         url: data.url,
-        email: data.email || prefill?.email || "",
-        phone: data.phone || prefill?.phone || "",
+        email: data.email || loaded?.email || "",
+        phone: data.phone || loaded?.phone || "",
         subject: data.subject ?? "",
         emailText: data.emailText ?? "",
         whatsappText: data.whatsappText ?? "",
@@ -168,7 +186,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
   }
 
   async function copyLink() {
-    const url = draft?.url || prefill?.checkoutUrl;
+    const url = draft?.url || loaded?.checkoutUrl;
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
@@ -178,9 +196,13 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
     }
   }
 
-  if (!prefill) return null;
+  if (!loaded && loadFailed) return null;
+  const loading = !loaded;
+  const prefill = loaded ?? LOADING_PREFILL;
 
-  const mobileSummary = prefill.paid
+  const mobileSummary = loading
+    ? "…"
+    : prefill.paid
     ? `Apmaksāts${prefill.amountCents != null ? ` · ${formatManualOrderPayAmount(prefill.amountCents)}` : ""}`
     : `${amountText ? `${amountText} €` : "Summa nav"} · ${prefill.checkoutUrl || draft ? "saite izveidota" : "saite nav izveidota"}`;
 
@@ -223,6 +245,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
               className="mt-0.5 w-full rounded border border-slate-200 px-2 py-1 text-[12px]"
               inputMode="decimal"
               placeholder="99,99"
+              disabled={loading}
               value={amountText}
               onChange={(e) => setAmountText(e.target.value)}
             />
@@ -232,6 +255,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
             <input
               className="mt-0.5 w-full rounded border border-slate-200 px-2 py-1 text-[12px]"
               placeholder="PROVIN AUDITS - Audi A3"
+              disabled={loading}
               value={serviceName}
               onChange={(e) => setServiceName(e.target.value)}
             />
@@ -240,7 +264,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
             <button
               type="button"
               className={`${btn} ${ADMIN_PRO_TONE.money}`}
-              disabled={busy !== null}
+              disabled={busy !== null || loading}
               onClick={() => void createLink()}
             >
               {busy === "create" ? "Gatavo…" : "Izveidot apmaksas saiti"}

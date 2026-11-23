@@ -16,7 +16,7 @@ import {
   type AdminMobileVinScanState,
 } from "@/lib/admin-mobile-ds";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
-import { browserImportErrorLv, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
+import { browserImportRowNote, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
@@ -91,12 +91,20 @@ export function AdminOrderVinScanCard({
   const [showNone, setShowNone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
-  const [importNote, setImportNote] = useState("");
+  /**
+   * Pārlūka importa piezīmes pa avotiem. Agrāk viens globāls paziņojums virs saraksta tika notīrīts katrā
+   * userscript ciklā un atkal parādīts («Lapa vēl nav gatava…»), tāpēc saraksts lēkāja (tas pats, kas #1152).
+   */
+  const [importNotes, setImportNotes] = useState<Record<string, string>>({});
   const [photoFail, setPhotoFail] = useState(0);
 
   useEffect(() => {
     setRecord(initial);
   }, [initial]);
+
+  useEffect(() => {
+    setImportNotes({});
+  }, [vin]);
 
   useEffect(() => {
     if (record?.status !== "running") return;
@@ -138,7 +146,9 @@ export function AdminOrderVinScanCard({
       const d = parseVinScanBrowserEventDetail((ev as CustomEvent).detail);
       if (!d || d.vin !== vin.trim().toUpperCase()) return;
       const html = d.html;
-      setImportNote("");
+      const sourceId = d.id;
+      const noteFor = (text: string) =>
+        setImportNotes((prev) => (prev[sourceId] === text ? prev : { ...prev, [sourceId]: text }));
       void fetch("/api/admin/order-vin-scan", {
         method: "POST",
         credentials: "include",
@@ -163,13 +173,19 @@ export function AdminOrderVinScanCard({
         .then(async (r) => {
           const json = (await r.json().catch(() => null)) as { vinScan?: unknown; error?: string } | null;
           if (!r.ok) {
-            setImportNote(browserImportErrorLv(json?.error));
+            noteFor(browserImportRowNote(json?.error));
             return;
           }
+          setImportNotes((prev) => {
+            if (!(sourceId in prev)) return prev;
+            const rest = { ...prev };
+            delete rest[sourceId];
+            return rest;
+          });
           const next = parseOrderVinScanRecord(json?.vinScan);
           if (next) setRecord(next);
         })
-        .catch(() => setImportNote("Importēšana neizdevās"));
+        .catch(() => noteFor("Importēšana neizdevās"));
     };
     document.addEventListener("provin-vin-scan-result", onResult);
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
@@ -400,7 +416,6 @@ export function AdminOrderVinScanCard({
       {showFields ? (
         <div className="px-2 pb-2">
           <AdminUserscriptUpdateHint showInactive={false} />
-          {importNote ? <p className="mb-2 text-[11px] text-rose-700">{importNote}</p> : null}
           {!listExpanded ? (
             collapsedStrip
           ) : (
@@ -452,9 +467,11 @@ export function AdminOrderVinScanCard({
                           : ""
                     }`}
                   >
-                    {row.blocked
-                      ? "Avots bloķē serveri - atver pārlūkā un importē"
-                      : row.hint || (row.state === "error" ? "Kļūda" : "")}
+                    {importNotes[row.id] && row.state !== "found" && row.state !== "none"
+                      ? importNotes[row.id]
+                      : row.blocked
+                        ? "Avots bloķē serveri - atver pārlūkā un importē"
+                        : row.hint || (row.state === "error" ? "Kļūda" : "")}
                   </span>
                   <span className="flex items-center justify-end gap-1">
                     {row.photoUrls.slice(0, 3).map((url) => (
