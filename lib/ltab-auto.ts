@@ -246,8 +246,9 @@ export async function handleLtabRelayEvent(
   } else {
     try {
       // Jaunie pasūtījumi: sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
-      const orderFolder = await readOrderDropboxRecord(sessionId);
-      const inOrder = orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes) : null;
+      const orderFolder = await readOrderDropboxRecord(sessionId).catch(() => null);
+      const inOrder =
+        orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes).catch(() => null) : null;
       if (inOrder) {
         pdf = { dropboxPath: inOrder.path, name: inOrder.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() };
       } else {
