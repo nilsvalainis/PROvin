@@ -1,13 +1,12 @@
+import { redirect } from "next/navigation";
 import { requireAdminPage } from "@/lib/admin-auth";
-import { AdminDealerCheckServerPage, type DealerCheckSearchParams } from "@/components/admin/AdminDealerCheckServerPage";
-
-export const metadata = {
-  title: "Dīlera datu pārbaude",
-};
+import { atraHrefFromDealerParams, type AtraSearchParams } from "@/lib/atra-parbaude";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDealerCheckRoute({ searchParams }: { searchParams?: Promise<DealerCheckSearchParams> }) {
+/** «Dīlera dati» tagad ir «Ātrā pārbaude» daļa: pāradresē ar tiem pašiem parametriem (vin, vn, no, id). */
+export default async function AdminDealerCheckRoute({ searchParams }: { searchParams?: Promise<AtraSearchParams> }) {
   await requireAdminPage();
-  return <AdminDealerCheckServerPage searchParams={searchParams} />;
+  const sp = searchParams ? await searchParams : undefined;
+  redirect(atraHrefFromDealerParams(sp));
 }

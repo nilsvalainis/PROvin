@@ -17,6 +17,7 @@ import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-fie
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
+import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -306,6 +307,8 @@ export function AdminVinScanPanel({
   scanForce = false,
   onSnapshot,
   historyOpen = false,
+  sourceIds,
+  paidSourceIds,
 }: {
   vin: string;
   plates: VinScanPlates;
@@ -315,6 +318,12 @@ export function AdminVinScanPanel({
   onSnapshot?: (snapshot: VinScanPanelSnapshot) => void;
   /** Iepriekšējās pārbaudes — ielādē un rāda tikai, kad atvērts. */
   historyOpen?: boolean;
+  /**
+   * «Ātrā pārbaude»: ieķeksētie avoti (bezmaksas + TheCarApi paketē). Bez tā - visi bezmaksas (vecā uzvedība).
+   */
+  sourceIds?: readonly string[];
+  /** «Ātrā pārbaude»: maksas VIN SCAN avoti ar admina ķeksi (JoJ). Skrien pēc bezmaksas, bez force. */
+  paidSourceIds?: readonly string[];
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -398,11 +407,22 @@ export function AdminVinScanPanel({
     return next;
   }, [byId, plates]);
 
+  const sourceKey = sourceIds ? sourceIds.join(",") : "";
+  const paidKey = paidSourceIds ? paidSourceIds.join(",") : "";
   const tiles = useMemo(() => {
+    if (sourceIds) {
+      // Ieķeksētie + tie, kam jau ir rinda (TheCarApi/JoJ no iepriekšējās pārbaudes).
+      const wanted = new Set<string>([...sourceIds, ...(paidSourceIds ?? [])]);
+      return VIN_SCAN_CATALOG.filter(
+        (item) => !item.disabled && (wanted.has(item.id) || ((item.id === "thecarapi_eu" || item.id === "joj_copart_iaai") && displayById[item.id])),
+      );
+    }
     const extra = VIN_SCAN_CATALOG.find((item) => item.id === "thecarapi_eu");
     if (!extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id)) return CATALOG;
     return [...CATALOG, extra];
-  }, [displayById]);
+    // sourceKey/paidKey aizstāj masīvu identitāti.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayById, sourceKey, paidKey]);
 
   const rows = tiles.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
@@ -413,7 +433,7 @@ export function AdminVinScanPanel({
   const linkBtn =
     "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
-  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}): Promise<boolean> {
+  async function scanServer(opts: { force?: boolean; sources?: string[]; paidSources?: string[] } = {}): Promise<boolean> {
     const res = await fetch("/api/admin/vin-scan", {
       method: "POST",
       credentials: "include",
@@ -424,6 +444,7 @@ export function AdminVinScanPanel({
         listingUrl: listing,
         force: Boolean(opts.force),
         ...(opts.sources?.length ? { sources: opts.sources } : {}),
+        ...(opts.paidSources?.length ? { paidSources: opts.paidSources } : {}),
       }),
     });
     const data = (await res.json().catch(() => null)) as {
@@ -457,13 +478,20 @@ export function AdminVinScanPanel({
     setScannedAt(new Date().toISOString());
     try {
       // Ar VIN: vispirms ātrie avoti (rezultāti redzami pēc dažām sekundēm), tad lēnie. Viens pēc otra, ne paralēli.
-      const phases = valid ? vinScanScanPhases() : null;
+      const picked = sourceIds ? (sourceIds.filter((id) => id !== "joj_copart_iaai") as VinScanSourceId[]) : null;
+      const phases = valid ? vinScanScanPhases(picked ?? undefined) : null;
+      let ok = true;
       if (phases && phases.fast.length > 0 && phases.slow.length > 0) {
-        const ok = await scanServer({ force, sources: phases.fast });
-        if (ok) await scanServer({ force, sources: phases.slow });
+        ok = await scanServer({ force, sources: phases.fast });
+        if (ok) ok = await scanServer({ force, sources: phases.slow });
+      } else if (picked && picked.length === 0) {
+        ok = true;
       } else {
-        await scanServer({ force });
+        ok = await scanServer({ force, ...(picked ? { sources: picked } : {}) });
       }
+      // Maksas avoti (JoJ) - tikai ar ķeksi un VIN, nekad ar force (kešs 12 h pasargā no atkārtotas maksas).
+      const paid = valid && paidSourceIds?.length ? [...paidSourceIds] : [];
+      if (ok && paid.length) await scanServer({ sources: paid, paidSources: paid });
     } catch {
       setError("Servera skenēšana neizdevās");
     } finally {

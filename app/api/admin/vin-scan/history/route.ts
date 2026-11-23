@@ -7,6 +7,7 @@ import {
   readVinScanHistory,
   vinScanHistoryUserKey,
 } from "@/lib/vin-scan/history-store";
+import { parseAtraHistoryMeta } from "@/lib/atra-parbaude";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,11 +23,16 @@ export async function GET() {
 export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("vin");
   if (!gate.ok) return gate.response;
-  const body = (await req.json().catch(() => null)) as { vin?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { vin?: unknown; meta?: unknown } | null;
   const vin = normalizeVin(typeof body?.vin === "string" ? body.vin : "");
   if (!isValidVin(vin)) return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
   try {
-    const entries = await addVinScanHistory(vinScanHistoryUserKey(gate.actor), vin, new Date().toISOString());
+    const entries = await addVinScanHistory(
+      vinScanHistoryUserKey(gate.actor),
+      vin,
+      new Date().toISOString(),
+      body?.meta && typeof body.meta === "object" ? parseAtraHistoryMeta(body.meta) : null,
+    );
     return NextResponse.json({ enabled: isVinScanHistoryStoreEnabled(), entries });
   } catch {
     return NextResponse.json({ error: "store_failed" }, { status: 502 });

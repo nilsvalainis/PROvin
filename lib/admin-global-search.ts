@@ -79,8 +79,8 @@ type SectionSeed = { id: string; title: string; subtitle: string; href: string; 
 const ADMIN_SEARCH_SECTIONS: readonly SectionSeed[] = [
   { id: "pro-orders", title: "Pasūtījumi", subtitle: "PRO", href: "/admin/dashboard", text: "pasūtījumi" },
   { id: "morning", title: "Rīta kopsavilkums", subtitle: "PRO", href: "/admin/kopsavilkums", text: "rīta kopsavilkums" },
-  { id: "vin-scan", title: "VIN pārbaude", subtitle: "PRO", href: "/admin/vin-scan", text: "VIN pārbaude VIN SCAN" },
-  { id: "dealer-check", title: "Dīlera dati", subtitle: "PRO", href: "/admin/dilera-dati", text: "dīlera datu pārbaude OneAuto" },
+  { id: "vin-scan", title: "Ātrā pārbaude", subtitle: "PRO", href: "/admin/vin-scan", text: "Ātrā pārbaude VIN pārbaude VIN SCAN" },
+  { id: "dealer-check", title: "Dīlera dati", subtitle: "PRO · Ātrā pārbaude", href: "/admin/vin-scan", text: "dīlera datu pārbaude OneAuto" },
   { id: "fast", title: "Ātrie vērtējumi", subtitle: "PRO", href: "/admin/atras-vertesanas", text: "ātrie vērtējumi" },
   { id: "iriss-orders", title: "Pasūtījumi", subtitle: "IRISS", href: "/admin/iriss/pasutijumi", text: "IRISS pasūtījumi" },
   { id: "iriss-new", title: "Jauns pasūtījums", subtitle: "IRISS", href: "/admin/iriss/pasutijumi/new", text: "jauns pasūtījums" },

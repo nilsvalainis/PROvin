@@ -48,7 +48,20 @@ export type RunVinScanInput = {
   readHealth?: () => Promise<SourceHealthDoc>;
   /** Testiem: pašreizējais laiks ms. */
   nowMs?: number;
+  /**
+   * Maksas avoti, ko admins skaidri ieķeksēja «Ātrā pārbaude» lapā (tikai JoJ).
+   * Bez šī saraksta maksas avoti nekad neskrien.
+   */
+  allowPaid?: readonly string[];
 };
+
+/** Maksas VIN SCAN avoti, ko drīkst palaist pēc admina ķekša (ar cenu pirms palaišanas). */
+export const VIN_SCAN_OPT_IN_PAID_IDS = ["joj_copart_iaai"] as const satisfies readonly VinScanSourceId[];
+
+export function sanitizeVinScanPaidSourceIds(raw: unknown): VinScanSourceId[] {
+  if (!Array.isArray(raw)) return [];
+  return VIN_SCAN_OPT_IN_PAID_IDS.filter((id) => raw.includes(id));
+}
 
 const HEALTH_READ_TIMEOUT_MS = 3_000;
 
@@ -69,8 +82,9 @@ async function readHealthBestEffort(read: () => Promise<SourceHealthDoc>): Promi
 }
 
 /** Visi avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
-function isRunnableVinScanSourceId(id: string): id is VinScanSourceId {
+function isRunnableVinScanSourceId(id: string, allowPaid: readonly string[] = []): id is VinScanSourceId {
   if (!isVinScanSourceId(id)) return false;
+  if ((VIN_SCAN_OPT_IN_PAID_IDS as readonly string[]).includes(id)) return allowPaid.includes(id);
   if (id === "thecarapi_eu") return thecarapiVinScanEnabled();
   return isFreeVinScanSourceId(id);
 }
@@ -86,7 +100,7 @@ export async function runVinScan(
     listingUrl: input.listingUrl?.trim() ?? "",
   };
   const ids = input.sourceIds?.length
-    ? input.sourceIds.filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id))
+    ? input.sourceIds.filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id, input.allowPaid))
     : freeVinScanSourceIds();
   const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
   const nowMs = input.nowMs ?? Date.now();
@@ -135,10 +149,10 @@ export async function runVinScan(
   });
 }
 
-export function sanitizeVinScanSourceIds(raw: unknown): VinScanSourceId[] | undefined {
+export function sanitizeVinScanSourceIds(raw: unknown, allowPaid: readonly string[] = []): VinScanSourceId[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const ids = raw
     .filter((v): v is string => typeof v === "string")
-    .filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id));
+    .filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id, allowPaid));
   return ids.length > 0 ? ids : undefined;
 }
