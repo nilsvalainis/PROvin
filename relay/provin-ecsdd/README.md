@@ -60,7 +60,9 @@ sesija:  logged_out -> logging_in -> awaiting_smartid -> active -> (kicked + yie
 ## Drošība
 
 - `SMARTID_PERSONAL_CODE` tikai `/etc/provin-ecsdd.env` (root 600). Ieraksta **Nils pats** no 1Password. Nav Vercel, nav repo.
-- Žurnālā personas kodi (arī bez defises) un tokeni aizvietoti ar `***`. SSO / Smart-ID lapām nekas netiek saglabāts.
+- Žurnālā personas kodi (arī bez defises) un tokeni aizvietoti ar `***`. SSO / Smart-ID lapām nav ekrānuzņēmumu/HTML;
+  tikai neatpazītos soļos `debug/` - pogas/lauku etiķetes un teksts, kurā visi cipari aizvietoti ar `#`.
+- Vienotās pieteikšanās + Smart-ID soļi: `lib/viss-sso.mjs` (IDENTISKS fails LTAB relejā; tests pārbauda, ka sakrīt).
 - `tadati` tekstā rindas ar īpašnieka / turētāja vārdu, adresi, personas kodu tiek aizvietotas ar `***` pirms nosūtīšanas.
 - `debug/` (700, tikai servisa lietotājs): neatpazītu e.csdd lapu teksts bez personas kodiem. Ielogotā lapā var būt
   Nila vārds - mape netiek kopēta nekur.

@@ -1,26 +1,26 @@
 /**
- * LTAB plūsma pārlūkā: sākumlapa (ķeksītis #vdar) -> latvija.lv Smart-ID -> meklēšana pēc numurzīmes
+ * LTAB plūsma pārlūkā: sākumlapa (ķeksītis #vdar) -> Vienotā pieteikšanās (vpm.viss.gov.lv) Smart-ID -> meklēšana pēc numurzīmes
  * (otrais ķeksītis) -> rezultāts un oriģinālais PDF. Tikai lasīšana; nekad neapmaksā, nekad nepilda citas formas.
  *
- * Drošība: personas kods tiek ievadīts ar `locator.fill` un nekur netiek logots; latvija.lv lapās
- * netiek taisīti ekrānuzņēmumi vai HTML kopijas. Atkļūdošanai saglabā tikai LTAB lapu tekstu bez personas kodiem.
+ * Drošība: personas kods tiek ievadīts ar `locator.fill` un nekur netiek logots; pieteikšanās (SSO) lapās
+ * netiek taisīti ekrānuzņēmumi vai HTML kopijas. Atkļūdošanai: LTAB lapu teksts bez personas kodiem; SSO lapām
+ * tikai neatpazītos soļos - struktūra (pogas, lauku etiķetes) un teksts ar aizvietotiem personas kodiem un cipariem.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 
 import {
   classifySnapshot,
-  extractVerificationCode,
   isConsentLabel,
   isLatvijaHost,
   isLtabHost,
   isPayText,
   isPdfControlText,
   isSearchFieldLabel,
-  looksLikeSmartIdFailure,
   LTAB_START_URL,
   redact,
 } from "./ltab-page.mjs";
+import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
 
 export class LtabFlowError extends Error {
   constructor(code, message) {
@@ -33,7 +33,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const pause = () => sleep(2000 + Math.round(Math.random() * 3000));
 
 /** Lapas kopsavilkums `classifySnapshot` vajadzībām (tikai redzamie elementi). */
-async function snapshot(page) {
+export async function snapshot(page) {
   const host = new URL(page.url()).hostname;
   const data = await page.evaluate(() => {
     const vis = (el) => {
@@ -59,7 +59,7 @@ async function snapshot(page) {
       visible: vis(el) || (el.labels && [...el.labels].some(vis)),
     }));
     const inputs = [...document.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea")].map(
-      (el) => ({ label: labelOf(el), type: (el.getAttribute("type") || "").toLowerCase(), visible: vis(el) }),
+      (el) => ({ label: labelOf(el), type: (el.getAttribute("type") || "").toLowerCase(), id: el.getAttribute("id") || "", visible: vis(el) }),
     );
     const buttons = [
       ...document.querySelectorAll('button, input[type="submit"], input[type="button"], a[role="button"], a.btn, a[href*="pdf" i], a[href*="Print" i], a[download]'),
@@ -79,15 +79,38 @@ async function snapshot(page) {
       hasCaptchaFrame: Boolean(document.querySelector('iframe[src*="captcha" i], .g-recaptcha, .h-captcha')),
     };
   });
-  return { host, ...data };
+  const sso = isLatvijaHost(host) ? await page.evaluate(collectSsoExtras).catch(() => ({})) : {};
+  return { host, ...data, ...sso };
 }
 
-/** Atkļūdošanai: tikai LTAB lapu teksts (bez latvija.lv), personas kodi aizvietoti. */
+/** Atkļūdošanai: LTAB lapu teksts; SSO lapām tikai struktūra + teksts bez personas kodiem un cipariem. */
 async function saveDebug(debugDir, name, snap, secrets) {
-  if (!debugDir || !isLtabHost(snap.host)) return;
+  if (!debugDir || (!isLtabHost(snap.host) && !isLatvijaHost(snap.host))) return;
   try {
     await fs.mkdir(debugDir, { recursive: true, mode: 0o700 });
-    const body = JSON.stringify({ ...snap, text: redact(snap.text, secrets).slice(0, 8000) }, null, 1);
+    const sso = isLatvijaHost(snap.host);
+    const text = redact(snap.text, secrets);
+    const body = redact(
+      JSON.stringify(
+        sso
+          ? {
+              host: snap.host,
+              path: snap.path,
+              text: text.replace(/\d/g, "#").slice(0, 4000),
+              inputs: (snap.inputs ?? []).map((i) => ({ ...i, label: String(i.label ?? "").replace(/\d/g, "#") })),
+              buttons: snap.buttons,
+              hasAgree: snap.hasAgree,
+              smartIdChoice: snap.smartIdChoice,
+              smartIdAdapter: snap.smartIdAdapter,
+              codeCandidates: (snap.codeCandidates ?? []).length,
+              digitCandidates: (snap.digitCandidates ?? []).length,
+            }
+          : { ...snap, text: text.slice(0, 8000) },
+        null,
+        1,
+      ),
+      secrets,
+    );
     await fs.writeFile(path.join(debugDir, `${new Date().toISOString().replace(/[:.]/g, "-")}-${name}.json`), body, { mode: 0o600 });
   } catch {
     /* atkļūdošana nav obligāta */
@@ -217,13 +240,19 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
 
   for (let step = 0; step < 25; step++) {
     await page.waitForLoadState("domcontentloaded").catch(() => undefined);
-    const snap = await snapshot(page);
+    // Pāradresācijas laikā (VISS forma iesniedz ar fetch + location.replace) evaluate var krist - vēlreiz.
+    const snap = await snapshot(page).catch(async () => {
+      await sleep(2000);
+      await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+      return snapshot(page);
+    });
     const kind = classifySnapshot(snap, { submitted });
     log(`solis ${step}: ${kind} (${snap.host})`);
 
     if (kind === "captcha") throw new LtabFlowError("captcha");
 
     if (kind === "ltab_login") {
+      if (codeSent) throw new LtabFlowError("page_changed", "pēc Smart-ID LTAB atkal prasa pieteikšanos");
       await page.locator("#vdar").check({ force: true });
       await pause();
       if (!(await clickByText(page, /latvija\.lv|piekr[iī]tu|pieteikties|pieslēgties/i))) {
@@ -234,63 +263,51 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
       continue;
     }
 
-    if (kind === "latvija_choose") {
-      if (!(await clickByText(page, /smart[\s-]?id/i))) throw new LtabFlowError("page_changed", "latvija.lv: nav Smart-ID izvēles");
-      await sleep(1500);
+    if (kind === "sso_choose") {
+      if (codeFilled) throw new LtabFlowError(codeSent ? "smartid_refused" : "page_changed", "Vienotā pieteikšanās: atpakaļ uz metodes izvēli");
+      if (!(await chooseSmartId(page))) {
+        await saveDebug(debugDir, `sso-no-smartid-${step}`, snap, secrets);
+        throw new LtabFlowError("page_changed", "Vienotā pieteikšanās: nav Smart-ID izvēles");
+      }
       continue;
     }
 
-    if (kind === "latvija_code_input") {
-      if (codeFilled) throw new LtabFlowError("page_changed", "latvija.lv: personas koda forma atkārtojas");
-      const input = page
-        .locator('input[type="text"], input[type="tel"], input[type="number"], input:not([type])')
-        .filter({ hasNot: page.locator("[type=hidden]") });
-      const n = await input.count();
-      let filled = false;
-      for (let i = 0; i < n; i++) {
-        const el = input.nth(i);
-        if (!(await el.isVisible().catch(() => false))) continue;
-        await el.fill(personalCode);
-        filled = true;
-        break;
+    if (kind === "sso_code_input") {
+      if (codeFilled) throw new LtabFlowError("page_changed", "Smart-ID: personas koda forma atkārtojas");
+      if (!(await submitPersonalCode(page, personalCode))) {
+        await saveDebug(debugDir, `sso-no-input-${step}`, snap, secrets);
+        throw new LtabFlowError("page_changed", "Smart-ID: nav personas koda lauka");
       }
-      if (!filled) throw new LtabFlowError("page_changed", "latvija.lv: nav personas koda lauka");
       codeFilled = true;
-      // Valsts izvēle (ja ir): Latvija.
-      const country = page.locator("select").first();
-      if (await country.isVisible().catch(() => false)) {
-        await country.selectOption({ label: "Latvija" }).catch(() => country.selectOption({ value: "LV" }).catch(() => undefined));
-      }
-      if (!(await clickByText(page, /turpin[aā]t|pieteikties|ien[aā]kt|t[aā]l[aā]k|apstiprin[aā]t|n[aā]kamais|continue|submit/i))) {
-        await page.keyboard.press("Enter");
-      }
-      await sleep(2000);
       continue;
     }
 
-    if (kind === "latvija_wait") {
-      const code = extractVerificationCode(snap.text);
-      if (!code) throw new LtabFlowError("code_not_read");
-      if (!codeSent) {
-        codeSent = true;
-        await onProgress("awaiting_smartid", { verificationCode: code });
+    if (kind === "sso_wait") {
+      if (!codeFilled && !codeSent) {
+        // Koda lapa bez mūsu personas koda (piem. vecs profils) - neko neapstiprinām.
+        await saveDebug(debugDir, `sso-wait-unexpected-${step}`, snap, secrets);
+        throw new LtabFlowError("page_changed", "Smart-ID: koda lapa bez pieprasījuma");
       }
       // Gaida, kamēr Nils apstiprina telefonā (pāradresācija atpakaļ uz LTAB) vai atsaka.
-      const deadline = Date.now() + smartIdTimeoutMs;
-      while (Date.now() < deadline) {
-        await sleep(2000);
-        const host = new URL(page.url()).hostname;
-        if (!isLatvijaHost(host)) break;
-        const t = await page.evaluate(() => document.body?.innerText || "").catch(() => "");
-        if (looksLikeSmartIdFailure(t)) throw new LtabFlowError("smartid_refused");
-      }
-      if (isLatvijaHost(new URL(page.url()).hostname)) {
-        // latvija.lv var prasīt piekrišanu datu nodošanai LTAB pēc apstiprinājuma.
-        const after = await snapshot(page);
-        if (!extractVerificationCode(after.text) && (await clickByText(page, /piekr[iī]tu|turpin[aā]t|apstiprin[aā]t/i))) continue;
+      const res = await waitForSmartId(page, {
+        snapshotFn: snapshot,
+        codeAlreadySent: codeSent,
+        timeoutMs: smartIdTimeoutMs,
+        onCode: (code) => onProgress("awaiting_smartid", code ? { verificationCode: code } : {}),
+      });
+      codeSent = codeSent || res.codeSent;
+      log(`Smart-ID gaidīšana: ${res.status}`);
+      if (res.status === "refused") throw new LtabFlowError("smartid_refused");
+      if (res.status === "timeout") {
+        await saveDebug(debugDir, `sso-timeout-${step}`, await snapshot(page).catch(() => snap), secrets);
         throw new LtabFlowError("smartid_timeout");
       }
       continue;
+    }
+
+    if (kind === "sso_failed") {
+      await saveDebug(debugDir, `sso-failed-${step}`, snap, secrets);
+      throw new LtabFlowError(codeFilled ? "smartid_refused" : "page_changed", "Vienotā pieteikšanās atteica");
     }
 
     if (kind === "ltab_search") {
@@ -334,6 +351,15 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
       throw new LtabFlowError("page_changed", "LTAB: nezināma rezultātu lapa");
     }
     if (step > 3 && !isLatvijaHost(snap.host) && !isLtabHost(snap.host)) throw new LtabFlowError("page_changed", `nezināms hosts ${snap.host}`);
+    if (isLatvijaHost(snap.host) && codeSent) {
+      // Pēc apstiprinājuma SSO var prasīt "Turpināt" / "Piekrītu" (nekad "Atcelt").
+      const cont = page.locator("button, input[type=submit], a").filter({ hasText: /turpin[aā]t|piekr[iī]tu|continue/i }).first();
+      if (await cont.isVisible().catch(() => false)) {
+        await cont.click().catch(() => undefined);
+        await sleep(2000);
+        continue;
+      }
+    }
     await saveDebug(debugDir, `unknown-${step}`, snap, secrets);
     await sleep(2500);
   }

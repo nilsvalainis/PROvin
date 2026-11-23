@@ -9,7 +9,12 @@
  *  - "Autorizēties uzziņai" / "Reģistrētiem lietotājiem" (e-pasts + parole) vairs nav: lapa piedāvā tikai
  *    "Autorizēties visām darbībām". Tāpēc serveris var pieteikties tikai ar Vienoto pieteikšanos.
  *  - Lapas pēc pieteikšanās (ielogots sākums, tadati rezultāts) vēl nav redzētas - atpazīšana ir teksta bāzēta.
+ *  - 23.11.2026: Smart-ID adapteris pēc personas koda rāda koda lapu, ko vecā atpazīšana sajauca ar metodes izvēli.
+ *    SSO soļi tagad ir `viss-sso.mjs` (identisks LTAB relejā).
  */
+import { classifySso, isSsoHost } from "./viss-sso.mjs";
+
+export { extractVerificationCode, isSsoHost, looksLikeSsoFailure } from "./viss-sso.mjs";
 
 export const ECSDD_HOME_URL = "https://e.csdd.lv/";
 export const ECSDD_SSO_URL = "https://e.csdd.lv/simplesaml/";
@@ -29,19 +34,6 @@ export function isAllowedHost(host) {
 
 export function isEcsddHost(host) {
   return String(host ?? "").toLowerCase() === "e.csdd.lv";
-}
-
-/** Vienotā pieteikšanās: vpm.viss.gov.lv (2026) un vecais latvija.lv. */
-export function isSsoHost(host) {
-  const h = String(host ?? "").toLowerCase();
-  return (
-    h === "viss.gov.lv" ||
-    h.endsWith(".viss.gov.lv") ||
-    h === "latvija.lv" ||
-    h.endsWith(".latvija.lv") ||
-    h === "latvija.gov.lv" ||
-    h.endsWith(".latvija.gov.lv")
-  );
 }
 
 /** Numurzīme vai VIN tādā formā, kā to pieņem e.csdd meklēšanas lauks `rn`. */
@@ -86,10 +78,6 @@ export function isWorkHoursRiga(date = new Date(), fromHour = 8, toHour = 20) {
 }
 
 const CAPTCHA_RE = /captcha|recaptcha|hcaptcha|neesmu\s+robots|i'?m\s+not\s+a\s+robot/i;
-const SMARTID_RE = /smart[\s-]?id/i;
-const CODE_RE = /(kontrol\p{L}*|verifik\p{L}*|verific\p{L}*|control|dro[sš][iī]bas)\s*(kods|kodu|code)\D{0,40}?(\d{4})(?!\d)/iu;
-const SSO_FAIL_RE =
-  /atcelts|atteikts|atteic|noilg|neizdev[aā]s\s+(pieteikties|autentific)|beidzies\s+laiks|sesijas\s+der[iī]guma\s+termi[nņ][sš]\s+ir\s+beidzies|refused|timed?\s*out|canceled|cancelled/i;
 const LOGGED_OUT_RE = /autoriz[eē]ties\s+vis[aā]m\s+darb[iī]b[aā]m|izv[eē]lieties\s+pieteik[sš]an[aā]s\s+veidu|var\s+izmantot\s+tikai\s+re[gģ]istr[eē]ti\s+lietot[aā]ji/i;
 const LOGOUT_CONTROL_RE = /\b(iziet|izrakst[iī]ties|beigt\s+darbu|atteikties|log\s*out)\b/i;
 const NOT_FOUND_RE =
@@ -101,24 +89,9 @@ export function isPayText(text) {
   return PAY_RE.test(String(text ?? ""));
 }
 
-/** 4 ciparu Smart-ID kontrolkods no lapas teksta vai atsevišķa koda elementa (vai `null`). */
-export function extractVerificationCode(text, candidates = []) {
-  const m = String(text ?? "").replace(/\s+/g, " ").match(CODE_RE);
-  if (m) return m[3];
-  for (const c of candidates ?? []) {
-    const t = String(c ?? "").trim();
-    if (/^\d{4}$/.test(t)) return t;
-  }
-  return null;
-}
-
-export function looksLikeSsoFailure(text) {
-  return SSO_FAIL_RE.test(String(text ?? ""));
-}
-
 /**
  * snapshot: { host, path, text, inputs:[{label,type,visible,id}], buttons:[{text,visible}], links:[{text,href}],
- *             codeCandidates:[string], hasAgree, hasCaptchaFrame }
+ *             codeCandidates, digitCandidates, hasAgree, smartIdChoice, smartIdAdapter, hasCaptchaFrame }
  * opts.submitted: vai tadati meklēšana jau iesniegta šajā lapā.
  * Atgriež: captcha | ecsdd_logged_out | ecsdd_logged_in | tadati_result | tadati_not_found |
  *          sso_choose | sso_code_input | sso_wait | sso_failed | unknown
@@ -126,23 +99,11 @@ export function looksLikeSsoFailure(text) {
 export function classifySnapshot(snap, opts = {}) {
   const host = String(snap?.host ?? "");
   const text = String(snap?.text ?? "");
-  const inputs = (snap?.inputs ?? []).filter((i) => i.visible !== false);
   const buttons = (snap?.buttons ?? []).filter((b) => b.visible !== false);
   const links = snap?.links ?? [];
   if (CAPTCHA_RE.test(text) || snap?.hasCaptchaFrame) return "captcha";
 
-  if (isSsoHost(host)) {
-    if (extractVerificationCode(text, snap?.codeCandidates)) return "sso_wait";
-    const codeInput = inputs.some(
-      (i) =>
-        i.id === "identity-number" ||
-        (/text|tel|number|^$/.test(String(i.type ?? "")) && /personas\s*kod|identity|isikukood|xxxxxx/i.test(String(i.label ?? ""))),
-    );
-    if (codeInput) return "sso_code_input";
-    if (looksLikeSsoFailure(text) && !snap?.hasAgree) return "sso_failed";
-    if (snap?.hasAgree || buttons.some((b) => SMARTID_RE.test(b.text)) || SMARTID_RE.test(text)) return "sso_choose";
-    return "unknown";
-  }
+  if (isSsoHost(host)) return classifySso(snap);
 
   if (isEcsddHost(host)) {
     const hasLogout =

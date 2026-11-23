@@ -48,12 +48,12 @@ describe("LTAB relejs: lapu atpazīšana", () => {
     expect(classifySnapshot({ ...ltabSearch, text: "Negadījumu skaits: 0" }, { submitted: true })).toBe("ltab_result_none");
   });
 
-  it("latvija.lv: method choice, personal code form, waiting for the phone with a control code", () => {
-    expect(classifySnapshot({ host: "latvija.lv", text: "Izvēlieties autentifikācijas veidu", buttons: [{ text: "Smart-ID", visible: true }] })).toBe("latvija_choose");
+  it("old latvija.lv login: method choice, personal code form, waiting for the phone with a control code", () => {
+    expect(classifySnapshot({ host: "latvija.lv", text: "Izvēlieties autentifikācijas veidu", buttons: [{ text: "Smart-ID", visible: true }] })).toBe("sso_choose");
     expect(
       classifySnapshot({ host: "www.latvija.lv", text: "Smart-ID pieteikšanās", inputs: [{ label: "Personas kods", type: "text", visible: true }] }),
-    ).toBe("latvija_code_input");
-    expect(classifySnapshot({ host: "latvija.lv", text: "Smart-ID. Kontroles kods: 4821. Pārbaudiet telefonā" })).toBe("latvija_wait");
+    ).toBe("sso_code_input");
+    expect(classifySnapshot({ host: "latvija.lv", text: "Smart-ID. Kontroles kods: 4821. Pārbaudiet telefonā" })).toBe("sso_wait");
   });
 
   it("stops on captcha on any host", () => {
@@ -76,9 +76,11 @@ describe("LTAB relejs: lapu atpazīšana", () => {
     expect(isPdfControlText("Pirkt izziņu")).toBe(false);
   });
 
-  it("navigates only to LTAB and latvija.lv", () => {
+  it("navigates only to LTAB and the national login (vpm.viss.gov.lv, latvija.lv)", () => {
     expect(isAllowedHost("services.ltab.lv")).toBe(true);
+    expect(isAllowedHost("vpm.viss.gov.lv")).toBe(true);
     expect(isAllowedHost("lvp.latvija.lv")).toBe(true);
+    expect(isAllowedHost("vpm.viss.gov.lv.evil.com")).toBe(false);
     expect(isAllowedHost("evil.example.com")).toBe(false);
     expect(isAllowedHost("latvija.lv.evil.com")).toBe(false);
   });

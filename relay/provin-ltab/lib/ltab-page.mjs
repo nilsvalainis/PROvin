@@ -1,7 +1,12 @@
+import { classifySso, isSsoHost } from "./viss-sso.mjs";
+
+export { extractVerificationCode, looksLikeSsoFailure as looksLikeSmartIdFailure } from "./viss-sso.mjs";
+
 /**
- * LTAB / latvija.lv lapu atpazīšana bez pārlūka (tīras funkcijas, testi: lib/ltab-relay.test.ts repo saknē).
+ * LTAB / Vienotās pieteikšanās (vpm.viss.gov.lv, agrāk latvija.lv) lapu atpazīšana bez pārlūka (tīras funkcijas, testi: lib/ltab-relay.test.ts repo saknē).
  * Pārlūks (`ltab-flow.mjs`) savāc lapas kopsavilkumu (`snapshot`), šeit izlemj, kas tā ir un ko darīt.
  * Selektori ir teksta bāzēti, jo lapu pēc pieteikšanās vēl neesam redzējuši (Posms 0 ar Nilu).
+ * 23.11.2026: LTAB pieteikšanās tagad ved uz vpm.viss.gov.lv (sk. `viss-sso.mjs`).
  */
 
 export const LTAB_START_URL = "https://services.ltab.lv/VehicleInsAndAcc";
@@ -13,19 +18,17 @@ export function isAllowedHost(host) {
     h === "services.ltab.lv" ||
     h === "www.ltab.lv" ||
     h === "ltab.lv" ||
-    h === "latvija.lv" ||
-    h.endsWith(".latvija.lv") ||
-    h === "latvija.gov.lv" ||
-    h.endsWith(".latvija.gov.lv") ||
-    // Smart-ID ikonas / skripti latvija.lv lapā
+    // Vienotā pieteikšanās: vpm.viss.gov.lv (no 2026) un vecais latvija.lv
+    isSsoHost(h) ||
+    // Smart-ID ikonas / skripti pieteikšanās lapā
     h.endsWith(".smart-id.com") ||
     h.endsWith(".sk.ee")
   );
 }
 
+/** Pieteikšanās (SSO) hosts: vpm.viss.gov.lv vai latvija.lv. */
 export function isLatvijaHost(host) {
-  const h = String(host ?? "").toLowerCase();
-  return h === "latvija.lv" || h.endsWith(".latvija.lv") || h === "latvija.gov.lv" || h.endsWith(".latvija.gov.lv");
+  return isSsoHost(host);
 }
 
 export function isLtabHost(host) {
@@ -82,9 +85,6 @@ const NO_RESULT_RE =
   /nav\s+(atrast|re[gģ]istr|ierakst|zaud[eē]jum|negad[iī]jum)|netika\s+atrast|ieraksti\s+nav|nav\s+datu|0\s+negad[iī]jum|negad[iī]jumu\s+skaits\s*:\s*0\b/i;
 const RESULT_RE = /negad[iī]jumu\s+skaits\s*:\s*[1-9]|CSNg|cietu[sš]ais|atbild[iī]gs|norakst[aā]m/i;
 const CAPTCHA_RE = /captcha|recaptcha|hcaptcha|neesmu\s+robots|i'?m\s+not\s+a\s+robot/i;
-const SMARTID_RE = /smart[\s-]?id/i;
-const CODE_RE = /(kontrol\p{L}*|verifik\p{L}*|verific\p{L}*|control|dro[sš][iī]bas)\s*(kods|kodu|code)\D{0,40}?(\d{4})(?!\d)/iu;
-const SMARTID_FAIL_RE = /atcelts|atteikts|atteic|noilg|neizdev[aā]s\s+pieteikties|beidzies\s+laiks|refused|timed?\s*out|canceled|cancelled/i;
 
 export function isConsentLabel(label) {
   const t = String(label ?? "");
@@ -109,22 +109,12 @@ export function isPdfControlText(text) {
   return PDF_RE.test(t) && !PAY_RE.test(t);
 }
 
-/** 4 ciparu Smart-ID kontrolkods no latvija.lv lapas teksta (vai `null`). */
-export function extractVerificationCode(text) {
-  const m = String(text ?? "").replace(/\s+/g, " ").match(CODE_RE);
-  return m ? m[3] : null;
-}
-
-export function looksLikeSmartIdFailure(text) {
-  return SMARTID_FAIL_RE.test(String(text ?? ""));
-}
-
 /**
  * snapshot: { host, text, checkboxes: [{label, checked, visible}], inputs: [{label, type, visible}],
  *             buttons: [{text, visible}], hasVdar }
  * opts.submitted: vai "Meklēt" jau nospiests.
- * Atgriež: ltab_login | ltab_search | ltab_result_none | ltab_result_found | latvija_choose |
- *          latvija_code_input | latvija_wait | captcha | unknown
+ * Atgriež: ltab_login | ltab_search | ltab_result_none | ltab_result_found | sso_choose |
+ *          sso_code_input | sso_wait | sso_failed | captcha | unknown (SSO soļi: `viss-sso.mjs`)
  */
 export function classifySnapshot(snap, opts = {}) {
   const host = String(snap?.host ?? "");
@@ -133,15 +123,7 @@ export function classifySnapshot(snap, opts = {}) {
   const buttons = (snap?.buttons ?? []).filter((b) => b.visible !== false);
   if (CAPTCHA_RE.test(text) || snap?.hasCaptchaFrame) return "captcha";
 
-  if (isLatvijaHost(host)) {
-    if (extractVerificationCode(text)) return "latvija_wait";
-    const codeInput = inputs.some(
-      (i) => /text|tel|number|search|^$/.test(String(i.type ?? "")) && /personas\s*kod|person|identity|isikukood|kods/i.test(String(i.label ?? "")),
-    );
-    if (codeInput && SMARTID_RE.test(text)) return "latvija_code_input";
-    if (buttons.some((b) => SMARTID_RE.test(b.text)) || SMARTID_RE.test(text)) return "latvija_choose";
-    return "unknown";
-  }
+  if (isSsoHost(host)) return classifySso(snap);
 
   if (isLtabHost(host)) {
     if (snap?.hasVdar) return "ltab_login";
