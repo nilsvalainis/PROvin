@@ -48,6 +48,7 @@ export function AdminCarVerticalAutoPanel({ sessionId, disabled, readOnly, getSo
   const [balance, setBalance] = useState<CarverticalBalance | null>(null);
   const [session, setSession] = useState<CarverticalSessionState>("unknown");
   const [relayConfigured, setRelayConfigured] = useState(false);
+  const [autoCodeUntil, setAutoCodeUntil] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [code, setCode] = useState("");
@@ -64,11 +65,13 @@ export function AdminCarVerticalAutoPanel({ sessionId, disabled, readOnly, getSo
           balance: CarverticalBalance | null;
           session: CarverticalSessionState;
           relayConfigured: boolean;
+          autoCodeUntil?: string;
         };
         setStatus(data.status);
         setBalance(data.balance);
         setSession(data.session);
         setRelayConfigured(data.relayConfigured);
+        setAutoCodeUntil(data.autoCodeUntil ?? "");
       } catch {
         /* nākamajā reizē */
       }
@@ -82,11 +85,13 @@ export function AdminCarVerticalAutoPanel({ sessionId, disabled, readOnly, getSo
 
   const active = isCarverticalAutoActive(status);
   const stale = active && Date.now() - Date.parse(status?.updatedAt ?? "") > 20 * 60_000;
+  // Gaida kodu (arī bez uzdevuma): kods no e-pasta var atnākt automātiski - panelis to redz bez pārlādes.
+  const pollSession = session === "awaiting_code";
   useEffect(() => {
-    if (!active) return;
-    const t = setInterval(() => void load(), 5000);
+    if (!active && !pollSession) return;
+    const t = setInterval(() => void load(), active ? 5000 : 10_000);
     return () => clearInterval(t);
-  }, [active, load]);
+  }, [active, pollSession, load]);
 
   const apply = useCallback(async () => {
     setBusy(true);
@@ -171,6 +176,7 @@ export function AdminCarVerticalAutoPanel({ sessionId, disabled, readOnly, getSo
   const credits = balance?.credits;
   const low = isLowCredits(credits);
   const awaitingCode = session === "awaiting_code" || status?.state === "awaiting_login";
+  const waitingEmailCode = session === "awaiting_code" && Date.parse(autoCodeUntil) > Date.now();
   const ready = status?.state === "ready";
   const when = fmtWhen(status?.readyAt ?? status?.updatedAt);
   const canBuy = relayConfigured && isValidVin(vin) && (!active || stale) && !(ready && status?.vin === vin);
@@ -189,9 +195,10 @@ export function AdminCarVerticalAutoPanel({ sessionId, disabled, readOnly, getSo
         {status ? <span>· {status.message ?? ""}</span> : null}
         {when && status ? <span className="text-slate-500">· {when}</span> : null}
       </div>
+      {awaitingCode && waitingEmailCode ? <p className="mt-1 text-slate-600">Gaida kodu no e-pasta…</p> : null}
       {awaitingCode && !readOnly ? (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span>Kods no CarVertical e-pasta:</span>
+          <span>{waitingEmailCode ? "Vai ievadi pats:" : "Kods no CarVertical e-pasta:"}</span>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
