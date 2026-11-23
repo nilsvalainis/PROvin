@@ -84,7 +84,7 @@ bez sesijas atbilde `needs_login`, Smart-ID sāk tikai ar `login: true` (admin p
 | --- | --- |
 | `POST /ecsdd/paid/sms-link {query, login?}` | `tadati` -> "Pieprasīt maksas izziņu" -> NOLASA "Sagatavot īsziņu" saiti -> `{number, body, price, vehicle, plate}` |
 | `POST /ecsdd/paid/list` | Izvēlne -> Maksas Izziņas -> Apmaksātās izziņas ("Atjaunot sarakstu") -> `{items}` |
-| `POST /ecsdd/paid/report {plate, since}` | jaunākā apmaksātā izziņa pēc `since` -> visi akordeoni -> `rawText` (tāds pats kā e.csdd maksas PDF teksts) |
+| `POST /ecsdd/paid/report {plate, since, sendEmail?}` | jaunākā apmaksātā izziņa pēc `since` -> visi akordeoni -> `rawText` (tāds pats kā e.csdd maksas PDF teksts); ar `sendEmail: true` pēc tam nospiež TIKAI "Nosūtīt uz reģistrēto epastu" (bez maksas, PDF arhīvam) -> `emailSent` |
 
 - Web e.csdd (dators un iPhone Safari) šīs sadaļas nerāda - tikai CSDD lietotne (Android `lv.csdd.ecsdd` 3.9.9, versionCode 325).
   Relejs maksas soļos (tikai šajā cilnē) uzdodas par lietotnes WebView: UA `... wv) ... Mobile Safari/537.36 csdd_mob_app_android_v2 uid=<id> verCode=325`,
@@ -97,6 +97,8 @@ PROVIN (Vercel) puse: `/api/admin/ecsdd/paid/sms-link`, `/api/admin/ecsdd/paid/r
 ("Sūtīt automātiski": e-pasts no info@provin.lv, temats `PROVIN CSDD SMS`, 1. rinda numurs, 2. rinda teksts; adresāts
 `ECSDD_SMS_TRIGGER_EMAIL` (bez tā poga nav redzama); `ECSDD_SMS_TRIGGER_MODE=pull` - bez e-pasta) un Īsceļiem
 `GET /api/ecsdd/paid-sms` ar `Authorization: Bearer <ECSDD_PAID_API_TOKEN>` (bez env izslēgts).
+Automātiski pēc apmaksas (AUDITS ar LV numuru, `CSDD_PAID_AUTO_ENABLED=1`): `lib/csdd-paid-auto.ts` + cron `/api/cron/csdd-paid-auto`.
+CSDD PDF no info@provin.lv: `docs/apps-script/csdd-pdf-inbox.md` -> `POST /api/ecsdd/pdf-inbox`.
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)
 

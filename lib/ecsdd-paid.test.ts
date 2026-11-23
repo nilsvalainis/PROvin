@@ -21,6 +21,8 @@ import {
   parsePaidListRows,
   parseSmsHref,
   PAID_FORBIDDEN_RE,
+  PAID_SEND_EMAIL_RE,
+  isPaidSendEmailControl,
   PAID_LIST_LINK_RE,
   PAID_MENU_RE,
   PAID_REQUEST_RE,
@@ -343,5 +345,21 @@ describe("maksas izziņa: CSDD lietotnes identitāte (APK lv.csdd.ecsdd 3.9.9)",
     expect(calls).toEqual([["composesms", "1800", "CSDD 99999 AB1234"]]);
     expect(smsHrefsFromMobintCalls(calls).map((h: string) => parseSmsHref(h))).toEqual([{ number: "1800", body: "CSDD 99999 AB1234" }]);
     expect(smsHrefsFromMobintCalls([["callnumber", "1800"]])).toEqual([]);
+  });
+});
+
+describe("Nosūtīt uz reģistrēto epastu (tikai šī poga)", () => {
+  it("atbilst tikai precīzajai pogai no fiksācijas", () => {
+    const html = fs.readFileSync(path.join(__dirname, "__fixtures__/ecsdd-paid/paid-report.html"), "utf8");
+    const m = html.match(/<button[^>]*name="sendmail"[^>]*>([^<]+)<\/button>/);
+    expect(m?.[1]).toBeTruthy();
+    expect(isPaidSendEmailControl({ text: m![1]!, href: "" })).toBe(true);
+    expect(PAID_SEND_EMAIL_RE.test("Nosūtīt uz reģistrēto e-pastu")).toBe(true);
+  });
+  it("nekad: SMS, maksas, citas nosūtīšanas pogas", () => {
+    for (const text of ["Sagatavot īsziņu", "Nosūtīt īsziņu", "Nosūtīt uz reģistrēto epastu EUR 1,50", "Nosūtīt", "Pieprasīt maksas izziņu", "Apmaksāt"]) {
+      expect(isPaidSendEmailControl({ text, href: "" })).toBe(false);
+    }
+    expect(isPaidSendEmailControl({ text: "Nosūtīt uz reģistrēto epastu", href: "sms:1800" })).toBe(false);
   });
 });
