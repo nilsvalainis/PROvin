@@ -69,7 +69,20 @@ export type ThecarapiDeps = {
   skipCache?: boolean;
   sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
+  /**
+   * Absolūts termiņš (epoch ms). Pēc tā jaunus TheCarApi izsaukumus nesāk un atgriež jau iegūto
+   * ar `partial: true`, lai Vercel funkcija neaizietu līdz 504.
+   */
+  deadline?: number;
 };
+
+/**
+ * TheCarApi izsaukumi (vēsture, detaļas, bilžu saraksti) iet pēc kārtas - tie ir ātri un skaitāmi;
+ * laiku ņem CDN bildes un Blob ieraksti (tie paralēli, sk. thecarapi-photos). Termiņu pārbauda pirms katra.
+ */
+export const THECARAPI_PARALLEL = 1;
+/** Rezerve pirms termiņa: jaunu izsaukumu nesāk, ja palicis mazāk. */
+export const THECARAPI_DEADLINE_RESERVE_MS = 3_000;
 
 export type ThecarapiHistoryResult = {
   parse: VinScanParse;
@@ -90,6 +103,8 @@ export type ThecarapiDetailsResult = {
   fromCache: boolean;
   billable: boolean;
   rawByKey: Record<string, unknown>;
+  /** Termiņš pienāca - daļa lotu netika pieprasīta. */
+  partial?: boolean;
   /** Lotes, kurām detaļa netika atrasta: HTTP statuss un atbildes augšējās atslēgas (bez vērtībām). */
   diag: ThecarapiDetailDiag[];
 };
@@ -100,7 +115,7 @@ export type ThecarapiDetailDiag = {
   status: number | null;
   topKeys: string[];
   path: string;
-  note: "detail_absent" | "not_cacheable";
+  note: "detail_absent" | "not_cacheable" | "deadline";
 };
 
 type RawCall = {
@@ -118,6 +133,39 @@ function envOf(deps: ThecarapiDeps): ThecarapiEnv {
 
 function monthOf(deps: ThecarapiDeps): string {
   return thecarapiUsageMonth(deps.now ? deps.now() : new Date());
+}
+
+function nowMs(deps: ThecarapiDeps): number {
+  return (deps.now ? deps.now() : new Date()).getTime();
+}
+
+/** Atlikušais laiks līdz `deps.deadline` (bez termiņa - Infinity). */
+export function thecarapiRemainingMs(deps: ThecarapiDeps): number {
+  if (deps.deadline == null || !Number.isFinite(deps.deadline)) return Number.POSITIVE_INFINITY;
+  return deps.deadline - nowMs(deps);
+}
+
+export function thecarapiPastDeadline(deps: ThecarapiDeps, reserveMs = THECARAPI_DEADLINE_RESERVE_MS): boolean {
+  return thecarapiRemainingMs(deps) <= reserveMs;
+}
+
+/** Paralēli ar limitu; rezultāti ieejas secībā. */
+export async function thecarapiMapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      out[index] = await fn(items[index]!, index);
+    }
+  });
+  await Promise.all(workers);
+  return out;
 }
 
 async function sleepMs(ms: number, deps: ThecarapiDeps): Promise<void> {
@@ -150,10 +198,17 @@ export async function thecarapiUsageSnapshot(deps: ThecarapiDeps = {}): Promise<
   return { used, cap: thecarapiMonthlyCap(envOf(deps)), month };
 }
 
-async function bumpUsage(deps: ThecarapiDeps): Promise<void> {
-  const month = monthOf(deps);
-  const used = await readThecarapiMonthlyUsage(month).catch(() => 0);
-  await writeThecarapiMonthlyUsage(month, used + 1).catch(() => undefined);
+let usageChain: Promise<void> = Promise.resolve();
+
+/** Paralēliem izsaukumiem skaitītāju palielina pa vienam (lasīt+rakstīt nedrīkst pārklāties). */
+function bumpUsage(deps: ThecarapiDeps): Promise<void> {
+  const run = async () => {
+    const month = monthOf(deps);
+    const used = await readThecarapiMonthlyUsage(month).catch(() => 0);
+    await writeThecarapiMonthlyUsage(month, used + 1).catch(() => undefined);
+  };
+  usageChain = usageChain.then(run, run);
+  return usageChain;
 }
 
 export async function thecarapiGet(
@@ -171,7 +226,9 @@ export async function thecarapiGet(
     const res = await fetchImpl(url, {
       method: "GET",
       cache: "no-store",
-      signal: AbortSignal.timeout(THECARAPI_TIMEOUT_MS),
+      signal: AbortSignal.timeout(
+        Math.max(1_000, Math.min(THECARAPI_TIMEOUT_MS, thecarapiRemainingMs(deps) - 1_000)),
+      ),
       headers,
     });
     const text = await res.text();
@@ -218,7 +275,7 @@ async function thecarapiCall(
   etag?: string,
 ): Promise<{ raw: RawCall; billable: boolean }> {
   let raw = await thecarapiGet(url, deps, etag);
-  if (shouldRetry(raw)) {
+  if (shouldRetry(raw) && thecarapiRemainingMs(deps) > THECARAPI_RETRY_DELAY_MS + THECARAPI_DEADLINE_RESERVE_MS + 2_000) {
     const pendingOnly = !raw.network && raw.status < 500 && thecarapiPayloadPending(raw.status, raw.json, raw.text);
     await sleepMs(pendingOnly ? 0 : THECARAPI_RETRY_DELAY_MS, deps);
     raw = await thecarapiGet(url, deps, etag);
@@ -409,15 +466,26 @@ export async function fetchThecarapiDetails(
   let httpStatus: number | null = null;
   let billable = false;
   let fromCache = true;
-  for (const group of groups) {
-    const r = await fetchThecarapiDetailGroup(base, group, deps, rawByKey);
+  let partial = false;
+  const results = await thecarapiMapLimit(groups, THECARAPI_PARALLEL, async (group) => {
+    if (thecarapiPastDeadline(deps)) return null;
+    return fetchThecarapiDetailGroup(base, group, deps, rawByKey);
+  });
+  for (const [index, r] of results.entries()) {
+    if (!r) {
+      partial = true;
+      for (const ref of groups[index] ?? []) {
+        diag.push({ site: ref.site, id: ref.id, status: null, topKeys: [], path: "", note: "deadline" });
+      }
+      continue;
+    }
     details.push(...r.details);
     diag.push(...r.diag);
     if (httpStatus == null || (r.httpStatus != null && r.httpStatus !== 200 && r.httpStatus !== 304)) httpStatus = r.httpStatus;
     billable = billable || r.billable;
     fromCache = fromCache && r.fromCache;
   }
-  return { details, httpStatus, fromCache, billable, rawByKey, diag };
+  return { details, httpStatus, fromCache: fromCache && !partial, billable, rawByKey, diag, partial };
 }
 
 /** Tikai atslēgu nosaukumi (ne vērtības), lai redzētu nezināmu atbildes formu. */
@@ -547,20 +615,25 @@ function imageUrl(base: string, ref: ThecarapiAuctionRef): string {
 export async function fetchThecarapiAuctionImages(
   refs: readonly ThecarapiAuctionRef[],
   deps: ThecarapiDeps = {},
-): Promise<{ byKey: Record<string, unknown>; billable: boolean }> {
+): Promise<{ byKey: Record<string, unknown>; billable: boolean; partial?: boolean }> {
   const env = envOf(deps);
   const byKey: Record<string, unknown> = {};
   if (!thecarapiCallsAllowed(env) || refs.length === 0) return { byKey, billable: false };
   const base = thecarapiBaseUrl(env);
   let billable = false;
-  for (const ref of refs) {
+  let partial = false;
+  await thecarapiMapLimit(refs, THECARAPI_PARALLEL, async (ref) => {
     const key = thecarapiRecordKey(ref.site, ref.id);
     if (!deps.skipCache) {
       const cached = await readThecarapiImageCache(ref.site, ref.id).catch(() => null);
       if (cached) {
         byKey[key] = cached.json;
-        continue;
+        return;
       }
+    }
+    if (thecarapiPastDeadline(deps)) {
+      partial = true;
+      return;
     }
     const previous = await readThecarapiImageCacheRaw(ref.site, ref.id).catch(() => null);
     const call = await thecarapiCall(imageUrl(base, ref), deps, previous?.etag);
@@ -575,7 +648,7 @@ export async function fetchThecarapiAuctionImages(
         json: previous.json,
         etag: call.raw.etag || previous.etag,
       }).catch(() => undefined);
-      continue;
+      return;
     }
     if (call.raw.status === 200 && call.raw.json != null && !thecarapiPayloadPending(call.raw.status, call.raw.json, call.raw.text)) {
       byKey[key] = call.raw.json;
@@ -588,8 +661,8 @@ export async function fetchThecarapiAuctionImages(
         etag: call.raw.etag || undefined,
       }).catch(() => undefined);
     }
-  }
-  return { byKey, billable };
+  });
+  return { byKey, billable, partial };
 }
 
 function thecarapiDetailAbsent(raw: unknown): boolean {
@@ -622,7 +695,7 @@ function thecarapiDetailStored(
 export async function fetchThecarapiVinWithDetails(
   vin: string,
   deps: ThecarapiDeps = {},
-): Promise<ThecarapiHistoryResult & { detailsBillable: boolean; detailDiag?: ThecarapiDetailDiag[] }> {
+): Promise<ThecarapiHistoryResult & { detailsBillable: boolean; detailDiag?: ThecarapiDetailDiag[]; partial?: boolean }> {
   let history = await fetchThecarapiVinHistory(vin, deps);
   if (history.refs.length === 0 && history.records.length > 0) {
     history = { ...history, refs: thecarapiRefsFromRecords(history.records) };
@@ -641,6 +714,8 @@ export async function fetchThecarapiVinWithDetails(
   }
   const details = await fetchThecarapiDetails(history.refs, deps);
   const images = await fetchThecarapiAuctionImages(history.refs, deps);
+  const partial = details.partial === true || images.partial === true;
+  const recordsComplete = !partial && thecarapiDetailStored(details.rawByKey, history.refs);
   const historyJson =
     history.rawJson ??
     ({
@@ -659,14 +734,15 @@ export async function fetchThecarapiVinWithDetails(
       etag: history.etag || previous?.etag,
       refs: history.refs,
       records,
-      recordsComplete: thecarapiDetailStored(details.rawByKey, history.refs),
+      recordsComplete,
     }).catch(() => undefined);
   }
   return {
     ...history,
     parse: mergeThecarapiDetails(history.parse, details.details),
     records,
-    recordsComplete: thecarapiDetailStored(details.rawByKey, history.refs),
+    recordsComplete,
+    partial,
     billable: history.billable || details.billable || images.billable,
     detailsBillable: details.billable || images.billable,
     detailDiag: details.diag,

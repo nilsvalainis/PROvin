@@ -573,6 +573,58 @@ describe("fetchThecarapiVinWithDetails", () => {
     expect(result.block.hidePhotoWatermarks).toBe(false);
   });
 
+  it("laika budžets: pēc termiņa detaļas un bildes nesauc, atgriež daļēji un kešs nav pilns", async () => {
+    const { deps, calls } = scripted([jsonResponse(200, hit)]);
+    const fixed = new Date("2026-11-22T23:46:00.000Z");
+    const vin = "WBA5R1C00LFH42891";
+    const result = await fetchThecarapiVinWithDetails(vin, {
+      ...deps,
+      skipCache: true,
+      now: () => fixed,
+      deadline: fixed.getTime() + 1_000,
+    });
+    expect(calls.map((call) => call.url)).toEqual([`https://api.thecarapi.com/api/vin/${vin}/history`]);
+    expect(result.partial).toBe(true);
+    expect(result.recordsComplete).toBe(false);
+    expect(result.parse.status).toBe("found");
+    expect(result.detailDiag?.every((row) => row.note === "deadline")).toBe(true);
+    expect(result.records.length).toBeGreaterThan(0);
+  });
+
+  it("cacheOnly: bez neviena TheCarApi izsaukuma uzbūvē bloku no svaiga keša; vecs kešs - no_cache", async () => {
+    const first = scripted([
+      jsonResponse(200, hit),
+      jsonResponse(200, { auctions: [detailAuto1] }),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, imagesAuto1),
+    ]);
+    const vin = "WBA5R1C00LFH42892";
+    const noPhotos = async () => ({ ok: [], failed: [] });
+    const since = new Date(Date.now() - 60_000).toISOString();
+    await fetchThecarapiCcVinMerge({ vin, deps: first.deps, fetchJpegs: noPhotos, writeJpeg: async () => undefined });
+    const again = scripted([]);
+    const restored = await fetchThecarapiCcVinMerge({
+      vin,
+      deps: again.deps,
+      cacheOnly: true,
+      cacheSince: since,
+      fetchJpegs: noPhotos,
+      writeJpeg: async () => undefined,
+    });
+    expect(again.calls).toEqual([]);
+    expect(restored.error).toBeUndefined();
+    expect(restored.parse.status).toBe("found");
+    expect(restored.block.thecarapiRecords?.some((row) => row.id === "A1-100")).toBe(true);
+    const stale = await fetchThecarapiCcVinMerge({
+      vin,
+      deps: again.deps,
+      cacheOnly: true,
+      cacheSince: new Date(Date.now() + 3_600_000).toISOString(),
+    });
+    expect(stale.error).toBe("no_cache");
+    expect(again.calls).toEqual([]);
+  });
+
   it("TheCarApi ielāde neieslēdz slēdzi, saglabāto true atstāj", async () => {
     const unsetScript = scripted([
       jsonResponse(200, hit),

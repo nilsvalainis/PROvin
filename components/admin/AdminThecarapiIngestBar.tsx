@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import { runThecarapiIngest, THECARAPI_RECOVERED_NOTE_LV } from "@/lib/thecarapi-ingest-client";
 
 type Status = {
   enabled: boolean;
@@ -53,6 +54,7 @@ export function AdminThecarapiIngestBar({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(preset ?? null);
   const vin = normalizeVin(orderVin);
 
@@ -97,28 +99,11 @@ export function AdminThecarapiIngestBar({
     if (!editable || busy || !enabled || !vin) return;
     setBusy(true);
     setError(null);
+    setNote(null);
     try {
-      const res = await fetch("/api/admin/sources/thecarapi", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vin,
-          sessionId: sessionId || undefined,
-          block: value,
-          skipCache,
-        }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        summary?: string;
-        block?: CcVinBlockState;
-        used?: number;
-        cap?: number;
-        fromCache?: boolean;
-        cachedAt?: string;
-        cacheHasDetail?: boolean;
-      };
+      const outcome = await runThecarapiIngest({ vin, sessionId, block: value, skipCache });
+      const body = outcome.body;
+      const resOk = outcome.status >= 200 && outcome.status < 300;
       if (typeof body.used === "number" || typeof body.cap === "number") {
         setStatus((prev) => ({
           enabled: prev?.enabled === true && body.error !== "thecarapi_disabled" && body.error !== "missing_thecarapi_credentials",
@@ -129,7 +114,7 @@ export function AdminThecarapiIngestBar({
           cacheHasDetail: body.cacheHasDetail === true,
         }));
       }
-      if (!res.ok || body.error) {
+      if (!resOk || body.error) {
         setError(errorLv(body.error || "upstream_error", body.summary));
         if (body.block) onChange(body.block);
         return;
@@ -143,6 +128,8 @@ export function AdminThecarapiIngestBar({
         cachedAt: body.cachedAt || prev?.cachedAt || "",
         cacheHasDetail: body.cacheHasDetail === true,
       }));
+      if (outcome.recovered) setNote(THECARAPI_RECOVERED_NOTE_LV);
+      else if (body.partial) setNote("Ielādēts daļēji (laika limits) - nospied vēlreiz, lai papildinātu.");
     } catch {
       setError(errorLv("upstream_error"));
     } finally {
@@ -201,6 +188,7 @@ export function AdminThecarapiIngestBar({
           Atjaunot no jauna
         </button>
       ) : null}
+      {note && !error ? <p className="mt-1.5 text-[10px] text-slate-600">{note}</p> : null}
       {error ? <p className="mt-1.5 text-[10px] text-red-700">{error}</p> : null}
     </div>
   );
