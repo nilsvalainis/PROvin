@@ -5,6 +5,7 @@
  * un teksts varētu atsaukties uz konkrētu ierakstu. Tikai deterministiska izvilkšana:
  * nekādu secinājumu, EUR vai intervālu matemātikas.
  */
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import type { OneautoBlockState } from "@/lib/oneauto-block";
 import { oneautoDisplayToServiceWorks, oneautoWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
 import {
@@ -281,7 +282,8 @@ export function extractDealerFactsFromServiceWorks(
   serviceWorks: readonly AutoRecordsServiceWorkRow[] | null | undefined,
   originalTimeline?: readonly OneautoServiceEvent[] | null,
 ): DealerFacts {
-  const works = [...(serviceWorks ?? [])].sort(
+  // Datums nākotnē nav fakts (Nils 23.11.2026) - AI faktos tādu D-ierakstu nav.
+  const works = dropFutureDatedRows([...(serviceWorks ?? [])]).sort(
     (a, b) => dateSortKey(a.date ?? "") - dateSortKey(b.date ?? ""),
   );
   const rows: DealerFact[] = [];

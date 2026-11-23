@@ -3,12 +3,14 @@
  *
  * GET  ?sessionId=cs_…  - statuss dīlera avota blokam.
  * POST { sessionId, vin?, force? } - palaiž ielasi vēlreiz.
+ * POST { sessionId, reparseFromRaw: true, resetAiNotes? } - pārparsē no saglabātā RAW bez maksas
+ *   pieprasījuma (atsaka ar 409, ja kāds OneAuto maksas solis vēl vajadzīgs).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
-import { runDealerDataJob } from "@/lib/dealer-data-job";
+import { reparseDealerDataFromRaw, runDealerDataJob } from "@/lib/dealer-data-job";
 import { readDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   dealerDataJobSuggestsRefund,
@@ -52,6 +54,21 @@ export async function POST(req: Request) {
   const sessionId = String(o.sessionId ?? "").trim();
   if (!isSafeOrderDraftSessionId(sessionId)) {
     return NextResponse.json({ error: "invalid_session" }, { status: 400 });
+  }
+
+  if (o.reparseFromRaw === true) {
+    const reparsed = await reparseDealerDataFromRaw({ sessionId, resetAiNotes: o.resetAiNotes === true });
+    const after = await readDealerDataJob(sessionId);
+    const blocked = String(reparsed.reason ?? "").startsWith("reparse_blocked:");
+    return NextResponse.json(
+      {
+        ...reparsed,
+        job: after,
+        label: describeDealerDataJob(after),
+        suggestsRefund: dealerDataJobSuggestsRefund(after),
+      },
+      { status: reparsed.ok ? 200 : blocked ? 409 : 502 },
+    );
   }
 
   const existing = await readDealerDataJob(sessionId);

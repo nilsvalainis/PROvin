@@ -20,6 +20,7 @@ import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import {
   DEALER_AUTO_PRODUCT_IDS,
   dealerAutoFetchHasTechnicalFail,
+  dealerRawReparseBlocker,
   dealerDecodeResultGaveData,
   dealerOeHistoryIsNoData,
   dealerPaidOutcomeFromResult,
@@ -349,6 +350,30 @@ export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResu
     await runDealerShadowGate(args.sessionId, { trigger: "job" });
   }
   return result;
+}
+
+/**
+ * Pārparsē dīlera datus no saglabātā OneAuto RAW bez jauna maksas pieprasījuma (Nils 23.11.2026:
+ * nākotnes datumu labojums jau ielasītiem pasūtījumiem). Ja kāds maksas solis vēl vajadzīgs - atsaka.
+ * `resetAiNotes` notīra AI laukus („Komentāri”, „Eļļas maiņas intervāli”), lai tos ģenerē no tīrajiem datiem.
+ */
+export async function reparseDealerDataFromRaw(args: {
+  sessionId: string;
+  resetAiNotes?: boolean;
+}): Promise<DealerDataRunResult> {
+  const job = await readDealerDataJob(args.sessionId);
+  const blocker = dealerRawReparseBlocker(job);
+  if (blocker || !job) {
+    return { ok: false, status: "failed", reason: `reparse_blocked:${blocker ?? "no_job"}` };
+  }
+  if (args.resetAiNotes) {
+    const cleared = await writeAutoRecords(args.sessionId, (blocks) => ({
+      ...blocks,
+      auto_records: { ...blocks.auto_records, comments: "", oilChangeIntervalNotes: "" },
+    }));
+    if (!cleared) return { ok: false, status: "failed", reason: "draft_write_failed" };
+  }
+  return runDealerDataJob({ sessionId: args.sessionId, vin: job.vin, trigger: "manual", force: true });
 }
 
 /** Pirms maksas soļa jābūt vismaz tik daudz laika (OneAuto polls līdz ~80 s + ieraksts). */

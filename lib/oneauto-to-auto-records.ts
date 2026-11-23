@@ -3,6 +3,7 @@
  * Ielāde nav atsevišķa klienta sadaļa: darbi, komplektācija un transporta info
  * iekrīt tajā pašā formā kā dīlera PDF / Copilot.
  */
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import {
   extractCountryFromLocation,
   formatAutoRecordsDateForOutput,
@@ -404,9 +405,12 @@ function mergeMileageRows(
   existing: AutoRecordsServiceRow[],
   incoming: AutoRecordsServiceRow[],
 ): AutoRecordsServiceRow[] {
-  const withData = existing.filter((r) => r.date.trim() || r.odometer.trim() || r.country.trim());
+  // Datums nākotnē nav fakts (Nils 23.11.2026): atkārtota ielase no RAW tīra arī jau saglabātās rindas.
+  const withData = dropFutureDatedRows(
+    existing.filter((r) => r.date.trim() || r.odometer.trim() || r.country.trim()),
+  );
   const byKey = new Map(withData.map((r) => [mileageKey(r), r]));
-  for (const row of incoming) {
+  for (const row of dropFutureDatedRows(incoming)) {
     if (!row.date.trim() && !row.odometer.trim()) continue;
     const key = mileageKey(row);
     const cur = byKey.get(key);
@@ -419,7 +423,7 @@ function mergeMileageRows(
     }
   }
   const next = sortAutoRecordsDescending([...byKey.values()]);
-  return next.length > 0 ? next : existing;
+  return next.length > 0 ? next : dropFutureDatedRows(existing);
 }
 
 function countryFromPlace(place: string): string {
@@ -503,8 +507,8 @@ export function applyOneautoToAutoRecords<T extends AutoRecordsOneautoTarget>(
   const equipment =
     incomingEquip.length > 0 ? incomingEquip : report.equipment.filter(outvinEquipmentLineHasData);
 
-  let serviceWorks = current.serviceWorks ?? [];
-  for (const row of oneautoDisplayToServiceWorks(input.display)) {
+  let serviceWorks = dropFutureDatedRows(current.serviceWorks ?? []);
+  for (const row of dropFutureDatedRows(oneautoDisplayToServiceWorks(input.display))) {
     serviceWorks = mergeAutoRecordsServiceWorkRow(serviceWorks, row);
   }
 

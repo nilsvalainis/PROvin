@@ -230,6 +230,29 @@ export function selectDealerAutoProductsToFetch(
   return DEALER_ALWAYS_AUTO_PRODUCT_IDS.filter((id) => !isDealerPaidProductSettled(existing[id] ?? null));
 }
 
+/**
+ * Pārparsēšana no saglabātā RAW (Nils 23.11.2026, nākotnes datumu labojums): drīkst tikai, ja neviens
+ * OneAuto maksas solis vairs nav vajadzīgs. Atgriež iemeslu, kāpēc NEdrīkst, vai null.
+ */
+export function dealerRawReparseBlocker(
+  job: Pick<DealerDataJob, "vin" | "status" | "paidOutcomes" | "oneautoResults" | "serviceEventCount"> | null,
+): "no_job" | "not_finished" | "paid_step_needed" | "no_raw" | null {
+  if (!job || !job.vin.trim()) return "no_job";
+  if (job.status !== "done" && job.status !== "no_data") return "not_finished";
+  const outcomes = job.paidOutcomes ?? {};
+  if (selectDealerAutoProductsToFetch(outcomes).length > 0) return "paid_step_needed";
+  const results = (job.oneautoResults ?? {}) as Record<string, { ok?: boolean; error?: string; payload?: unknown } | undefined>;
+  if (!results.oe_service_history?.payload) return "no_raw";
+  const next = planDealerVinDecodeStep({
+    historyHasEntries: (job.serviceEventCount ?? 0) > 0,
+    lookupOutcome: outcomes.oe_vin_lookup,
+    lookupGaveData: dealerDecodeResultGaveData(results.oe_vin_lookup),
+    decoderOutcome: outcomes.vin_decoder,
+    decoderGaveData: dealerDecodeResultGaveData(results.vin_decoder),
+  });
+  return next ? "paid_step_needed" : null;
+}
+
 export function shouldAutoFetchOeVinLookup(args: {
   historyHasEntries: boolean;
   lookupOutcome?: DealerPaidProductOutcome | null;

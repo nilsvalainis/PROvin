@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import { VENDOR_REGISTERED_RE } from "@/lib/lifecycle-owner-change-text";
 import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
 import { formatAdifyDeltaLabel, formatAdifyPriceLabel } from "@/lib/adify-listing-history";
@@ -2113,7 +2114,8 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
   ) {
     const rowsIn = Array.isArray(raw.serviceHistory) ? raw.serviceHistory : [];
     const serviceWorks = normalizeAutoRecordsServiceWorkRows(raw.serviceWorks);
-    const rawRows = mapUnknownArrayToAutoRecordsRows(rowsIn);
+    // Nobraukuma rindas ar datumu nākotnē nav fakts (Nils 23.11.2026) - izmet jau nolasot.
+    const rawRows = dropFutureDatedRows(mapUnknownArrayToAutoRecordsRows(rowsIn));
     const normalized = normalizeParsedAutoRecordsRows(rawRows);
     const outvinReport = parseOutvinDealerReportRaw(raw.outvinReport);
     const outvin = parseOutvinDataBundleRaw(raw.outvin);

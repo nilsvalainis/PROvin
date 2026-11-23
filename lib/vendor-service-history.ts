@@ -5,6 +5,7 @@
  * Formāts vienā rindā: `DD.MM.YYYY | 47 521 km | Regulārā apkope: eļļas maiņa, filtri`.
  */
 
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import { isRoutineMaintenanceWork } from "@/lib/dealer-major-works";
 import { looksLikeUntranslatedServiceWork } from "@/lib/service-work-term-lv";
 
@@ -162,7 +163,8 @@ export function formatVendorServiceEntryLine(entry: VendorServiceEntry): string 
 
 /** Jaunākais augšā (kā atskaitē un nobraukuma tabulās); vienā datumā — lielāks odometrs augšā. */
 export function sortVendorServiceEntries(entries: VendorServiceEntry[]): VendorServiceEntry[] {
-  return [...entries].sort((a, b) => {
+  // Ieraksts ar datumu nākotnē (AutoDNA / CarVertical / PDF aģents) nav fakts - izmet (Nils 23.11.2026).
+  return dropFutureDatedRows(entries).sort((a, b) => {
     const ta = serviceDateSortKey(a.date);
     const tb = serviceDateSortKey(b.date);
     if (ta !== tb) return tb - ta;

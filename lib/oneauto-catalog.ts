@@ -2,6 +2,7 @@ import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
 import { repairDealerImportText } from "@/lib/dealer-text-repair";
 import { milesToKmRounded } from "@/lib/miles-to-km";
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 
 export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
@@ -250,10 +251,10 @@ export const ONEAUTO_SERVICE_TIMELINE_MAX = 300;
 export function normalizeOneautoDisplay(d: OneautoDisplaySections): OneautoDisplaySections {
   return {
     equipment: filledOneautoKvRows(d.equipment.map(normalizeOneautoKvRow)).slice(0, ONEAUTO_EQUIPMENT_MAX),
-    serviceTimeline: filledOneautoServiceEvents(d.serviceTimeline.map(normalizeOneautoServiceEvent)).slice(
-      0,
-      ONEAUTO_SERVICE_TIMELINE_MAX,
-    ),
+    // Ieraksti ar datumu nākotnē (piem. OneAuto „2028-05-23” 2022. g. auto) nav fakts - izmet (Nils 23.11.2026).
+    serviceTimeline: dropFutureDatedRows(
+      filledOneautoServiceEvents(d.serviceTimeline.map(normalizeOneautoServiceEvent)),
+    ).slice(0, ONEAUTO_SERVICE_TIMELINE_MAX),
     powertrain: filledOneautoKvRows(d.powertrain.map(normalizeOneautoKvRow)).slice(0, ONEAUTO_POWERTRAIN_MAX),
   };
 }
@@ -655,7 +656,10 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
 
   return normalizeOneautoDisplay({
     equipment: equipment.slice(0, ONEAUTO_EQUIPMENT_MAX),
-    serviceTimeline: serviceTimeline.slice(0, ONEAUTO_SERVICE_TIMELINE_MAX),
+    serviceTimeline: dropFutureDatedRows(
+      serviceTimeline,
+      { source: "oneauto_service_history" },
+    ).slice(0, ONEAUTO_SERVICE_TIMELINE_MAX),
     powertrain: powertrain.slice(0, ONEAUTO_POWERTRAIN_MAX),
   });
 }
