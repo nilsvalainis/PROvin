@@ -1,40 +1,77 @@
 /**
- * Ikdienas VIN SCAN kanārijputns: 2-3 zināmi VIN, tikai bezmaksas avoti.
- * Viens no tiem ir stat.vin ieraksta VIN no repo testiem.
+ * Ikdienas VIN SCAN uzraudzība (Nila lēmums 23.11): katram servera pusē palaižamam avotam
+ * viens «zelta» VIN, kuram avotā agrāk bija dati (no 23.11 skeniem).
+ *
+ * `found` = šim VIN avotā jābūt ierakstam (ja pēkšņi nav - aizdomīgi).
+ * `any` = pietiek, ka avots atbild (found vai none); zelta VIN ar datiem šim avotam nav zināms.
+ *
+ * Pārlūka (Tampermonkey) avotus cron nevar pārbaudīt - tos uzrauga pēc faktiskās lietošanas
+ * (`browser-usage.ts`). JoJ, CarVertical, AutoDNA u.c. maksas avoti netiek saukti.
+ * TheCarApi (abonements, 100 000 pieprasījumu/mēn.) - viens VIN 1×/dienā.
+ * mnt.ee, lkf.ee, nummerplade, car.info un epolicija.lt var risināt captcha caur CapSolver (~0,001 $ par reizi).
  */
 
-import { isPaidVinScanSourceId } from "@/lib/vin-scan/free-sources";
+import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
 
-export type VinScanCanaryVin = {
+export type VinScanCanaryExpect = "found" | "any";
+
+export type VinScanCanaryCheck = { id: VinScanSourceId; expect: VinScanCanaryExpect };
+
+export type VinScanCanaryBatch = {
   vin: string;
   note: string;
-  /** Šim VIN repo testos ir stat.vin izsoles lapa. */
-  statVinRecord: boolean;
-  /** Avoti, kam šim VIN vienmēr jāatrod ieraksts (bezmaksas publiski API). */
-  expectFound?: readonly string[];
+  checks: readonly VinScanCanaryCheck[];
 };
 
-export const VIN_SCAN_CANARY_VINS: readonly VinScanCanaryVin[] = [
-  { vin: "WBA5R1C0XLFH42873", note: "BMW, stat.vin ieraksts testos", statVinRecord: true },
-  { vin: "YV1DZ5251B2146640", note: "Volvo XC60, tukšais skenējums", statVinRecord: false },
-  { vin: "TMBJH9NP9N7043581", note: "Škoda, CSDD", statVinRecord: false },
+export const VIN_SCAN_CANARY_BATCHES: readonly VinScanCanaryBatch[] = [
   {
-    vin: "WVWZZZ7NZEV015204",
-    note: "VW Sharan, Dānijas DMR un apskates",
-    statVinRecord: false,
-    expectFound: ["tjekbil", "esyn"],
+    vin: "U5YH6G17GNL050102",
+    note: "Kia ProCeed, Igaunija (mnt.ee 2 nobraukumi, lkf.ee 1 atlīdzība)",
+    checks: [
+      { id: "vin_decode", expect: "found" },
+      { id: "mnt_ee", expect: "found" },
+      { id: "lkf_ee", expect: "found" },
+      { id: "auchistory", expect: "any" },
+    ],
+  },
+  {
+    vin: "WDD2120251A120979",
+    note: "Mercedes E350, Dānija + LV (tjekbil, esyn 9 apskates, DSB 9 servisi, CSDD AP4989)",
+    checks: [
+      { id: "tjekbil", expect: "found" },
+      { id: "esyn", expect: "found" },
+      { id: "dsb", expect: "found" },
+      { id: "nummerplade", expect: "found" },
+      { id: "carinfo", expect: "found" },
+      { id: "csdd", expect: "found" },
+      { id: "eu_safety_gate", expect: "found" },
+      { id: "lt_itpr", expect: "any" },
+    ],
+  },
+  {
+    vin: "WBA7J21040G829261",
+    note: "BMW 740Le (Car-Pass un CZ RSV: pietiek ar atbildi)",
+    checks: [
+      { id: "carpass", expect: "any" },
+      { id: "cz_rsv", expect: "any" },
+    ],
+  },
+  {
+    vin: "WAUZZZF43PA018831",
+    note: "Audi A4, BCA/Openlane 2026-10 (TheCarApi 2 ieraksti)",
+    checks: [{ id: "thecarapi_eu", expect: "found" }],
   },
 ];
 
-/**
- * WMI + stat.vin + Dānijas atvērtie API (tjekbil, esyn). Bez JoJ, Fixie un CAPTCHA.
- * Igaunijas, Zviedrijas un releja kļūmes uztver avotu veselības sērijas (`canary-run.ts`), bez papildu zvaniem.
- */
-export const VIN_SCAN_CANARY_SOURCE_IDS = ["vin_decode", "stat_vin", "tjekbil", "esyn"] as const;
+/** TheCarApi kanārijputns ne biežāk kā reizi ~dienā (arī ja cron palaists ar roku). */
+export const VIN_SCAN_CANARY_THECARAPI_MIN_GAP_MS = 20 * 60 * 60 * 1000;
 
-/** Tik secīgu kļūdu reālos skenējumos (source_health) ir kanārijputna kļūme. */
-export const VIN_SCAN_CANARY_STREAK_MIN = 3;
+/** Vienlaikus partijas (VIN). Ne vairāk par 2, lai relejs un CapSolver netiek noslogoti. */
+export const VIN_SCAN_CANARY_CONCURRENCY = 2;
 
-export function vinScanCanarySourceIds(): string[] {
-  return VIN_SCAN_CANARY_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id));
+/** Laika budžets visam cron (maxDuration 300 s): jaunu partiju nesāk, ja tā var nepaspēt. */
+export const VIN_SCAN_CANARY_BUDGET_MS = 270_000;
+
+export function vinScanCanarySourceIds(): VinScanSourceId[] {
+  return VIN_SCAN_CANARY_BATCHES.flatMap((b) => b.checks.map((c) => c.id));
 }

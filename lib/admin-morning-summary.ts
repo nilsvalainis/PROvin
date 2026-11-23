@@ -87,6 +87,8 @@ export type MorningSummary = {
   costAlerts: CostAlert[];
   /** Dīlera datu ēnu režīma rinda (Nils 22.11); nav, ja vēl nav neviena sprieduma. */
   dealerShadowLine?: string | null;
+  /** «VIN SCAN: N/M avoti strādā; sabrukuši: …» un pārlūka avotu problēmas (7 d). */
+  vinScanLines?: string[];
 };
 
 function peekHost(url: string | undefined): string {

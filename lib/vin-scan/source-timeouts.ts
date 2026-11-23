@@ -39,8 +39,9 @@ const THECARAPI_TIMEOUT_MS = 45_000;
 const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
 
 /**
- * stat_vin, bid_cars, checkcar_vin, plc_auction, bidfax, poctra, nicb un lt_itpr tagad ir tikai
+ * stat_vin, bid_cars, checkcar_vin, plc_auction, bidfax, poctra un nicb tagad ir tikai
  * pārlūka avoti: zonde atgriež `browser_only` uzreiz bez tīkla, tāpēc tiem pietiek ar noklusējumu.
+ * lt_itpr (epolicija.lt) risina reCAPTCHA v2 serverī, tāpēc tam CapSolver limits.
  */
 const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "lkf_ee",
@@ -48,6 +49,7 @@ const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "auchistory",
   "nummerplade",
   "carpass",
+  "lt_itpr",
 ]);
 
 /** AutoDNA priekšskatījums: ~0,5 MB lapa; ar Turnstile (ja ieslēgts) + gaidīšana līdz ~36 s. */

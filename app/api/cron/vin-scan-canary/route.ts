@@ -1,6 +1,7 @@
 /**
- * Ikdienas VIN SCAN kanārijputns: 2-3 zināmi VIN, tikai bezmaksas avoti (vin_decode + stat.vin).
- * Ja kāds avots krīt - push Nilam (dedupe, sk. `lib/vin-scan/canary-alert.ts`).
+ * Ikdienas VIN SCAN uzraudzība: katram servera pusē palaižamam avotam zelta VIN (sk. `lib/vin-scan/canary.ts`),
+ * partijas pa 2, laika budžets 270 s. Rezultāts glabājas Blob; sabrukušam avotam push vienreiz
+ * (sk. `lib/vin-scan/canary-alert.ts`), rīta kopsavilkumā rinda «VIN SCAN: N/M avoti strādā».
  * Auth: `Authorization: Bearer CRON_SECRET`.
  */
 import { NextResponse } from "next/server";

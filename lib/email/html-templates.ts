@@ -1118,7 +1118,12 @@ export function morningSummaryEmailHtml(opts: {
   costAlerts?: MorningSummaryEmailLine[];
   /** Dīlera datu ēnu režīma statistika (viena rinda). */
   dealerShadowLine?: string | null;
+  /** VIN SCAN uzraudzība: «N/M avoti strādā», pārlūka avotu problēmas. */
+  vinScanLines?: readonly string[];
 }): string {
+  const vinScan = (opts.vinScanLines ?? [])
+    .map((line) => `<p style="margin:20px 0 0;font-size:14px;color:${INK};">${esc(line)}</p>`)
+    .join("\n");
   const shadow = opts.dealerShadowLine
     ? `<p style="margin:20px 0 0;font-size:14px;color:${INK};">${esc(opts.dealerShadowLine)}</p>`
     : "";
@@ -1151,6 +1156,7 @@ ${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
 ${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
 ${morningSummaryEmailSection("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)", opts.failingSources ?? [])}
 ${morningSummaryEmailSection("Izmaksas", opts.costAlerts ?? [])}
+${vinScan}
 ${shadow}
 ${empty}
 ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}

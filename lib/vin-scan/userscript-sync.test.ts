@@ -382,7 +382,7 @@ describe("userscript admin lapā: skenēšanas rinda", () => {
       `https://plc.auction/?vin=${vin}`,
     );
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(vin)).toBe(
-      `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vin}`,
+      `https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=${vin}`,
     );
   });
 });

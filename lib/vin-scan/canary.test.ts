@@ -1,33 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import { VIN_SCAN_CANARY_SOURCE_IDS, VIN_SCAN_CANARY_VINS, vinScanCanarySourceIds } from "@/lib/vin-scan/canary";
+import { VIN_SCAN_BROWSER_FETCH_IDS } from "@/lib/vin-scan/browser-fetch";
+import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
+import {
+  VIN_SCAN_CANARY_BATCHES,
+  VIN_SCAN_CANARY_BUDGET_MS,
+  VIN_SCAN_CANARY_CONCURRENCY,
+  vinScanCanarySourceIds,
+} from "@/lib/vin-scan/canary";
 import { isPaidVinScanSourceId } from "@/lib/vin-scan/free-sources";
+import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 
-describe("VIN SCAN kanārijputns", () => {
-  it("2-4 zināmi VIN, viens ar stat.vin ierakstu, tikai bezmaksas avoti", () => {
-    expect(VIN_SCAN_CANARY_VINS.length).toBeGreaterThanOrEqual(2);
-    expect(VIN_SCAN_CANARY_VINS.length).toBeLessThanOrEqual(4);
-    expect(VIN_SCAN_CANARY_VINS.filter((row) => row.statVinRecord)).toHaveLength(1);
-    expect(VIN_SCAN_CANARY_VINS.some((row) => row.vin === "WBA5R1C0XLFH42873")).toBe(true);
-    expect(vinScanCanarySourceIds()).toEqual([...VIN_SCAN_CANARY_SOURCE_IDS]);
-    expect(vinScanCanarySourceIds()).toContain("stat_vin");
-    expect(vinScanCanarySourceIds()).toContain("vin_decode");
+describe("VIN SCAN ikdienas uzraudzība: zelta VIN", () => {
+  it("katrs avots tiek pārbaudīts tieši vienreiz, ar derīgu VIN", () => {
+    const ids = vinScanCanarySourceIds();
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(isVinScanSourceId(id)).toBe(true);
+    for (const b of VIN_SCAN_CANARY_BATCHES) expect(b.vin).toMatch(/^[A-HJ-NPR-Z0-9]{17}$/);
+  });
+
+  it("Nila 23.11 zelta VIN un avoti", () => {
+    const byVin = new Map(VIN_SCAN_CANARY_BATCHES.map((b) => [b.vin, b.checks.map((c) => `${c.id}:${c.expect}`)]));
+    expect(byVin.get("U5YH6G17GNL050102")).toEqual(expect.arrayContaining(["mnt_ee:found", "lkf_ee:found"]));
+    expect(byVin.get("WDD2120251A120979")).toEqual(
+      expect.arrayContaining(["tjekbil:found", "esyn:found", "nummerplade:found", "carinfo:found"]),
+    );
+    expect(byVin.has("WBA7J21040G829261")).toBe(true);
+    expect(byVin.get("WAUZZZF43PA018831")).toEqual(["thecarapi_eu:found"]);
+  });
+
+  it("nesauc maksas pirkuma avotus (izņemot TheCarApi abonementu) un pārlūka avotus", () => {
     for (const id of vinScanCanarySourceIds()) {
-      expect(isPaidVinScanSourceId(id)).toBe(false);
+      if (id !== "thecarapi_eu") expect(isPaidVinScanSourceId(id)).toBe(false);
+      if (id !== "lt_itpr") expect((VIN_SCAN_BROWSER_FETCH_IDS as readonly string[]).includes(id)).toBe(false);
     }
-    expect(vinScanCanarySourceIds()).not.toContain("autodna");
-    expect(vinScanCanarySourceIds()).not.toContain("joj_copart_iaai");
-    expect(vinScanCanarySourceIds()).not.toContain("carvertical");
-    // Fixie / CAPTCHA avotus kanārijputns nesauc: tos uztver avotu veselības sērijas.
-    for (const id of ["mnt_ee", "lkf_ee", "nummerplade", "carpass", "auchistory", "carinfo"]) {
+    for (const id of ["joj_copart_iaai", "carvertical", "autodna", "speckr", "oneauto", "stat_vin", "bid_cars"]) {
       expect(vinScanCanarySourceIds()).not.toContain(id);
     }
   });
 
-  it("katram expectFound avotam ir vieta kanārijputna sarakstā", () => {
-    for (const row of VIN_SCAN_CANARY_VINS) {
-      for (const id of row.expectFound ?? []) expect(vinScanCanarySourceIds()).toContain(id);
-    }
-    expect(VIN_SCAN_CANARY_VINS.some((row) => row.expectFound?.includes("tjekbil"))).toBe(true);
+  it("partijas iekļaujas cron laika budžetā (2 vienlaikus)", () => {
+    const need = VIN_SCAN_CANARY_BATCHES.map((b) => Math.max(...b.checks.map((c) => vinScanSourceTimeoutMs(c.id))) + 10_000);
+    // Sliktākais gadījums: partijas pa pāriem, katrs pāris tik ilgs, cik garākā partija.
+    let total = 0;
+    for (let i = 0; i < need.length; i += VIN_SCAN_CANARY_CONCURRENCY) total += Math.max(...need.slice(i, i + VIN_SCAN_CANARY_CONCURRENCY));
+    expect(total).toBeLessThanOrEqual(VIN_SCAN_CANARY_BUDGET_MS);
   });
 });

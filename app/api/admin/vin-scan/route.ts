@@ -13,7 +13,7 @@ import {
   parseVinScanPlates,
 } from "@/lib/vin-scan/plates";
 import { applyVinScanBrowserResultToSnapshot } from "@/lib/vin-scan/apply-browser-result";
-import { logVinScanBrowserImport } from "@/lib/vin-scan/browser-import-log";
+import { trackVinScanBrowserImport } from "@/lib/vin-scan/monitor-store";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { runVinScan, sanitizeVinScanPaidSourceIds, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
       };
     }
     if (!applied.ok) {
-      logVinScanBrowserImport({
+      trackVinScanBrowserImport({
         route: "vin-scan",
         event: "import_rejected",
         error: applied.error,
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
       await writeVinScanSnapshot(applied.snapshot);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "write_failed";
-      logVinScanBrowserImport({
+      trackVinScanBrowserImport({
         route: "vin-scan",
         event: "snapshot_write_failed",
         error: msg,
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ error: "write_failed" }, { status: 500 });
     }
-    logVinScanBrowserImport({
+    trackVinScanBrowserImport({
       route: "vin-scan",
       event: "import_saved",
       id: sourceId,

@@ -152,4 +152,18 @@ describe("admin-morning-summary-email", () => {
     expectCleanCopy(mail.text);
     expectCleanCopy(mail.html);
   });
+
+  it("ietver VIN SCAN uzraudzības rindas", () => {
+    const summary = buildMorningSummary([{ id: "ok", created: Math.floor((NOW - 8 * 3600_000) / 1000) }], [], NOW);
+    summary.vinScanLines = [
+      "VIN SCAN: 13/14 avoti strādā; sabrukuši: mnt.ee",
+      "VIN SCAN pārlūka avoti ar problēmām (7 d, neviens izsaukums neizdevās): BidFax (4 kļūdas, 4 challenge)",
+    ];
+    const mail = buildMorningSummaryEmail(summary, { pageUrl: PAGE, nowMs: NOW });
+    expect(mail.text).toContain("VIN SCAN: 13/14 avoti strādā; sabrukuši: mnt.ee");
+    expect(mail.text).toContain("BidFax (4 kļūdas, 4 challenge)");
+    expect(mail.html).toContain("VIN SCAN: 13/14 avoti strādā; sabrukuši: mnt.ee");
+    expectCleanCopy(mail.text);
+    expectCleanCopy(mail.html);
+  });
 });
