@@ -235,5 +235,9 @@
  *   nepārraksta, bez lielajiem mezgliem); „Komentāri” bez identifikācijas, vizīšu saraksta
  *   un eļļas tēmas - tikai remonti, kampaņas, km nekonsekvence, ko pārbaudīt. Opus pārbaudē
  *   „atkartojums” starp laukiem.
+ * - 2026-11-23.0 - Faktu lapā „CSDD reģistra signāli” no e.csdd teksta: liegumi (ja sadaļas nav -
+ *   „nav pārbaudīts” un aizliegums rakstīt „liegumu nav”), CSNg, noņemts no uzskaites / atļauja
+ *   beigusies, OCTA nav vai īstermiņa, nodoklis nav samaksāts, tirdzniecības reģistrs, pilnvara,
+ *   atkārtoti TA defekti un apskašu ar vērtējumu 2/3 skaits. Dīlera datu komentāros nav.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-22.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-23.0";

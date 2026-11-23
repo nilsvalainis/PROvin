@@ -1201,6 +1201,15 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
   return [...facts, ...kept];
 }
 
+function isCsddLatviaOwnerChange(e: LifecycleEvent): boolean {
+  return (
+    e.kind === "registration" &&
+    e.title === "Īpašnieka maiņa" &&
+    e.sources.includes("CSDD") &&
+    /īpašnieks Latvijā/.test(e.detail)
+  );
+}
+
 function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
   const byKey = new Map<string, LifecycleEvent>();
   const out: LifecycleEvent[] = [];
@@ -1212,6 +1221,16 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
     }
     const key = `${monthKey(e.time) || e.date}|${e.kind}|${e.title.toLowerCase()}|${e.country.toLowerCase()}`;
     const prev = byKey.get(key);
+    // CSDD īpašnieka maiņas ir ar dienas precizitāti: divas maiņas vienā mēnesī (09.12 un 16.12) ir divi
+    // īpašnieki - citādi numerācija lec no 7. uz 9.
+    if (prev && isCsddLatviaOwnerChange(prev) && isCsddLatviaOwnerChange(e) && eventDayKey(prev) !== eventDayKey(e)) {
+      const dayKey = `${eventDayKey(e)}|${key}`;
+      if (!byKey.has(dayKey)) {
+        byKey.set(dayKey, e);
+        out.push(e);
+      }
+      continue;
+    }
     if (!prev) {
       byKey.set(key, e);
       out.push(e);

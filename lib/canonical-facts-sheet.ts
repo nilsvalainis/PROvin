@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { buildCsddRegistrySignalFactLines, CSDD_SIGNALS_FACTS_TITLE } from "@/lib/csdd-registry-signals";
 import { normalizeSignedEurText } from "@/lib/adify-listing-history";
 import {
   collectRegistryCountryPeriods,
@@ -154,6 +155,8 @@ export type CanonicalFactsInput = {
   internalComment?: string;
   mileageComment?: string;
   sourcesComparisonComment?: string;
+  /** Dīlera datu komentāri: CSDD reģistra signālus (liegumi, OCTA, statuss, TA defekti) faktu lapā nedod. */
+  omitCsddRegistrySignals?: boolean;
 };
 
 export type CanonicalOwnerFacts = {
@@ -218,6 +221,8 @@ export type CanonicalFacts = {
   dealerComponentCounts: DealerComponentCount[];
   /** j26: reģistru statusi (FIN ierobežojumi, izņemšana no uzskaites u.c.). */
   registryStatusLines: string[];
+  /** e.csdd teksta signāli (liegumi, CSNg, statuss, OCTA, nodoklis, TA defektu atkārtošanās) - gatavas rindas. */
+  csddSignalLines: string[];
   /** 21.11: oficiālā reģistra piedziņa (DMR) - prioritāte pār sludinājumu / car.info. */
   drivetrain?: RegistryDrivetrain | null;
   /** Sludinājums / citi avoti min pilnpiedziņu, kamēr reģistrs saka 1 dzenošā ass. */
@@ -521,6 +526,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerRowsLv,
     dealerComponentCounts,
     registryStatusLines,
+    csddSignalLines: input.omitCsddRegistrySignals ? [] : buildCsddRegistrySignalFactLines(csdd),
     drivetrain: extractVehicleDrivetrain(blocks),
     drivetrainOtherSourcesAwd: otherSourcesClaimAwd(haystack),
     dealerCampaigns,
@@ -706,7 +712,10 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   }
 
   const body = lines.join("\n");
-  const closed = `${clipSheet(body)}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
+  // CSDD signāli ir ārpus 4000 zīmju budžeta - garā lapā tie nedrīkst izspiest citus faktus vai pazust paši.
+  const csddSignals =
+    facts.csddSignalLines.length > 0 ? `\n${[CSDD_SIGNALS_FACTS_TITLE, ...facts.csddSignalLines].join("\n")}` : "";
+  const closed = `${clipSheet(body)}${csddSignals}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
   return closed;
 }
 

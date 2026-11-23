@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  CSDD_FOREIGN_PERMIT_NO_LV_INSPECTION_TEXT,
+  csddInspectionHasNoLatvianRating,
+} from "@/lib/csdd-registry-signals";
+import {
   formatParticleNumber,
   groupTechnicalInspectionsByYear,
   isoDateToLvDisplay,
@@ -80,7 +84,8 @@ export function CsddInspectionBlock({
 }) {
   const metaParts = [row.date, row.inspectionType];
   if (odometer?.trim()) metaParts.push(`${odometer.trim()} km`);
-  if (row.ratingLabel) metaParts.push(`Novērtējums ${row.ratingLabel}`);
+  if (csddInspectionHasNoLatvianRating(row)) metaParts.push(CSDD_FOREIGN_PERMIT_NO_LV_INSPECTION_TEXT);
+  else if (row.ratingLabel) metaParts.push(`Novērtējums ${row.ratingLabel}`);
   const meta = metaParts.filter(Boolean).join(" · ");
   const emissions = resolveInspectionEmissions(row);
 

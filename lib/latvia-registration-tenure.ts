@@ -2,6 +2,7 @@
  * Latvijā reģistrācijas ilgums - tikai no reģistra notikumiem (CSDD, LTAB).
  */
 
+import { isCsddNotRegisteredStatus } from "@/lib/csdd-registry-signals";
 import {
   csddMileageRowHasData,
   ltabRowHasData,
@@ -112,6 +113,8 @@ function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCand
 export function computeLatviaRegistrationTenure(
   input: LatviaRegistrationTenureInput,
 ): LatviaRegistrationTenure | null {
+  // „nav reģistrēts” - Latvijā nereģistrētam auto reģistrācijas ilgumu nerēķina (citādi „0 dienas”).
+  if (isCsddNotRegisteredStatus(input.csddForm?.registrationStatus ?? "")) return null;
   const candidates = collectLatviaFixedDates(input);
   if (candidates.length === 0) return null;
 

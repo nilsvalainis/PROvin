@@ -41,10 +41,19 @@ function unstickLabels(text: string): string {
   let out = text;
   const labels = [...GLUED_LABELS].sort((a, b) => b.length - a.length);
   for (const label of labels) {
-    const re = new RegExp(`(${escapeRegExp(label)})(?=[${LV_LETTER}0-9])`, "gi");
+    // „Degvielas veids” / „Degvielas patēriņš” ir citas etiķetes, ne „Degviela” + salipusi vērtība.
+    const guard = label === "Degviela" ? "(?!s(?![A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž]))" : "";
+    // „VIN” tikai ar lielajiem burtiem - citādi „Atsavināt” kļūst par „Atsavin āt”.
+    const flags = label === "VIN" ? "g" : "gi";
+    const re = new RegExp(`(${escapeRegExp(label)})${guard}(?=[${LV_LETTER}0-9])`, flags);
     out = out.replace(re, "$1 ");
   }
   return out;
+}
+
+/** Vecāka normalizācija saglabātajos tekstos sadalīja „Degvielas veids” par „Degviela s veids”. */
+function repairSplitFuelLabels(text: string): string {
+  return text.replace(/\bDegviela s (?=veids|patēriņš)/g, "Degvielas ");
 }
 
 function joinSuperscriptUnits(text: string): string {
@@ -58,7 +67,9 @@ function joinSuperscriptUnits(text: string): string {
 function unstickDefectCodes(text: string): string {
   const dotted = new RegExp(`(\\d+(?:\\.\\d+)+\\.)([123])(?=[${LV_LETTER}]|\\.[${LV_LETTER}])`, "g");
   const oldCode = new RegExp(`(^|\\n)(\\d{3})([123])(?=[${LV_LETTER}])`, "g");
-  return text.replace(dotted, "$1 $2 ").replace(oldCode, "$1$2 $3 ");
+  /** „5.3.3.12. tilts.” = kods 5.3.3., novērtējums 1, apraksts „2. tilts. …” (ass numurs salipis ar novērtējumu). */
+  const dottedAxle = /(\d+(?:\.\d+)+\.)([123])(?=\d\.\s?(?:tilts|ass)(?![A-Za-zĀ-ž]))/g;
+  return text.replace(dotted, "$1 $2 ").replace(dottedAxle, "$1 $2 ").replace(oldCode, "$1$2 $3 ");
 }
 
 function splitGluedMileageAndFooters(text: string): string {
@@ -82,7 +93,7 @@ export function normalizeEcsddPdfText(raw: string): string {
   let t = raw.replace(/\r/g, "");
   t = joinSuperscriptUnits(t);
   t = splitGluedMileageAndFooters(t);
-  t = unstickLabels(t);
+  t = repairSplitFuelLabels(unstickLabels(t));
   t = unstickDefectCodes(t);
   t = spaceAfterColonDigits(t);
   t = tidyHtmlEntities(t);

@@ -71,6 +71,8 @@ export function validityTone(raw: string, now = Date.now()): "ok" | "warn" | "ba
 
 function validityFact(label: string, raw: string, now: number): CardFact | null {
   if (!raw) return null;
+  // Nav datuma (piem. e.csdd „Nav”) - rāda vērtību, kā ir, bez „līdz … ✓”.
+  if (parseDateLoose(raw) == null) return { label, value: raw };
   const tone = validityTone(raw, now);
   const d = formatDateLv(raw);
   const value = tone === "bad" ? `beidzies ${d} ✕` : tone === "warn" ? `līdz ${d} (drīz)` : `līdz ${d} ✓`;

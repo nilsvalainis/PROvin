@@ -2,6 +2,7 @@ import "server-only";
 import { wrapUntrustedData } from "@/lib/ai-untrusted-data";
 
 import { createHash } from "node:crypto";
+import { buildCsddRegistrySignalsBrief } from "@/lib/csdd-registry-signals";
 import {
   autoRecordsBlockToPlainText,
   citiAvotiSectionLabel,
@@ -89,6 +90,8 @@ export type AiOrderContextInput = {
   mileageComment?: string;
   /** AVOTU SALĪDZINĀJUMS — iekšējs, nav PDF. */
   sourcesComparisonComment?: string;
+  /** Dīlera datu komentāri: bez CSDD reģistra signāliem (sk. `canonical-facts-sheet`). */
+  omitCsddRegistrySignals?: boolean;
   operatorNotes?: string;
   existingDraftPlain?: string;
   /** Pro (noklusējums) vai Flash — admin ✨ pogas izvēle. */
@@ -352,6 +355,9 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
   });
   if (taCoverage) parts.push(taCoverage);
 
+  const csddSignals = input.omitCsddRegistrySignals ? "" : buildCsddRegistrySignalsBrief(blocks.csdd);
+  if (csddSignals) parts.push(`### ${csddSignals}`);
+
   const winterSalt = buildWinterSaltRustBrief({
     csdd: blocks.csdd,
     sourceBlocks: blocks,
@@ -399,6 +405,7 @@ function orderContextCacheKey(input: AiOrderContextInput): string {
     internalComment: input.internalComment,
     mileageComment: input.mileageComment,
     sourcesComparisonComment: input.sourcesComparisonComment,
+    omitCsddRegistrySignals: input.omitCsddRegistrySignals,
   };
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
