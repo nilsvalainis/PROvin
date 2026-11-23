@@ -385,9 +385,7 @@ export function AdminVinScanPageClient({
         </AdminMobileTopBar>
         <div className="mx-4 mt-3 overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
           <label className="block border-b border-[var(--am-hair)] px-4 py-3">
-            <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
-              VIN
-            </span>
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">VIN</span>
             <span className="flex items-center gap-2">
             <input
               type="text"
@@ -399,7 +397,6 @@ export function AdminVinScanPageClient({
               value={draft}
               onChange={(e) => setDraft(e.target.value.toUpperCase())}
               aria-label="VIN"
-              placeholder={glass ? "VIN" : undefined}
             />
             {glass ? (
               // Kamera - ikona VIN laukā (tā pati funkcija kā «Ieslēgt kameru»).
@@ -422,9 +419,7 @@ export function AdminVinScanPageClient({
           {vinMode === "listing" ? (
             <>
             <label className="block border-b border-[var(--am-hair)] px-4 py-3">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
-                LV numurs
-              </span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">LV numurs</span>
               <input
                 type="text"
                 inputMode="text"
@@ -435,13 +430,10 @@ export function AdminVinScanPageClient({
                 value={platesDraft.lv}
                 onChange={(e) => setPlatesDraft((prev) => ({ ...prev, lv: e.target.value.toUpperCase() }))}
                 aria-label="LV numurs"
-                placeholder={glass ? "LV numurs" : undefined}
               />
             </label>
             <label className="block px-4 py-3">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]" data-amx-hint>
-                Sludinājums
-              </span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Sludinājums</span>
               <input
                 type="url"
                 inputMode="url"
@@ -451,7 +443,6 @@ export function AdminVinScanPageClient({
                 value={listingDraft}
                 onChange={(e) => setListingDraft(e.target.value)}
                 aria-label="Sludinājums"
-                placeholder={glass ? "Sludinājuma saite" : undefined}
               />
             </label>
             </>
