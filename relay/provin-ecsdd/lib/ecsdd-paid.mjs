@@ -9,7 +9,13 @@
  *  3. Izvēlne -> Maksas Izziņas -> "Apmaksātās izziņas": "Atjaunot sarakstu", tabula Reģistrācijas nr | Statuss | Datums
  *  4. Izziņa: akordeoni (Aizliegumi, Būtiski bojājumi CSNg, Reģistrācijas dati, ..., Tehnisko apskašu vēsture),
  *     poga "Nosūtīt uz reģistrēto epastu" (relejs nespiež).
- * Datorā šīs sadaļas var nebūt redzamas - relejs mēģina arī ar iPhone UA + 390 px skatu (tikai šiem soļiem).
+ * Web e.csdd (dators un iPhone Safari) šīs sadaļas NErāda (debug 23.11.2026 19:17). Tās rāda tikai CSDD lietotnei
+ * (Android lv.csdd.ecsdd 3.9.9 / versionCode 325, iOS id661663816) - WebView uz https://e.csdd.lv, kas identificējas ar:
+ *  - User-Agent = WebView noklusētais UA + " csdd_mob_app_android_v2 uid=<android_id+SERIAL> verCode=<versionCode>";
+ *  - JS interfeiss `window.mobint` (composesms(numurs, teksts) -> smsto: lietotne; callnumber, callemail, openbrowser, ...);
+ *  - startā fona GET `https://e.csdd.lv?AppVers=<versionCode>&ApiLevel=<SDK>&AppOS=Android` ar to pašu PHPSESSID.
+ * Relejs lietotnes identitāti izmanto TIKAI maksas izziņas soļos (sk. APP_* zemāk); "Sagatavot īsziņu" lietotnē var būt
+ * `mobint.composesms('1888','CSDD ...')`, nevis `sms:` saite - abus nolasa findSmsHrefs.
  * Lapas pēc pieteikšanās nav redzētas no servera - atpazīšana pēc teksta, nevis klasēm.
  */
 
@@ -89,7 +95,26 @@ export function parsePaidConfirmText(text) {
   return { price, vehicle: m?.[1]?.trim() ?? "", plate: (m?.[2] ?? "").toUpperCase().replace(/-/g, "") };
 }
 
-/** Visas `sms:` saites lapas HTML/atribūtos (pogai var būt href, onclick vai data-*). */
+/**
+ * Lietotnes JS izsaukumi `mobint.composesms('<numurs>', '<teksts>')` (onclick/HTML) -> `sms:<numurs>?body=<teksts>`.
+ * Pēdiņas: ' " vai HTML entītijas (&quot; &#39; &#039;).
+ */
+export function findComposeSmsCalls(html) {
+  const src = String(html ?? "")
+    .replace(/&quot;|&#0?34;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\\(['"])/g, "$1");
+  const out = [];
+  const re = /composesms\s*\(\s*(['"])([^'"]{3,40})\1\s*,\s*(['"])([^'"]{1,200})\3\s*\)/gi;
+  for (const m of src.matchAll(re)) {
+    const v = `sms:${m[2].trim()}?body=${encodeURIComponent(m[4].replace(/\s+/g, " ").trim())}`;
+    if (!out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
+/** Visas `sms:` saites lapas HTML/atribūtos (pogai var būt href, onclick vai data-*), arī lietotnes `composesms(...)`. */
 export function findSmsHrefs(html) {
   const out = [];
   const re = /sms:(?:\/\/)?\+?[\d\s()-]{3,20}[^"'<>\s]*/gi;
@@ -97,6 +122,7 @@ export function findSmsHrefs(html) {
     const v = m[0].replace(/&amp;/g, "&");
     if (!out.includes(v)) out.push(v);
   }
+  for (const v of findComposeSmsCalls(html)) if (!out.includes(v)) out.push(v);
   return out;
 }
 
@@ -252,3 +278,114 @@ export function findPreparedFooter(text) {
 
 export const IPHONE_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1";
+
+// ---- CSDD lietotnes identitāte (tikai maksas izziņas soļiem) ----
+
+/** Android lietotnes lv.csdd.ecsdd versija, ko relejs uzdod (APK 3.9.9, 23.11.2026). */
+export const APP_VERSION_CODE = 325;
+export const APP_API_LEVEL = 34;
+export const APP_UA_MARKER = "csdd_mob_app_android_v2";
+const APP_DEVICE = { android: "14", model: "SM-S911B", build: "UP1A.231005.007" };
+
+/** Stabils pseido android_id (16 hex) no sēklas + Build.SERIAL ("unknown" Android 10+), kā lietotnē `uid=`. */
+export function appUidFromSeed(seed = "provin-ecsdd") {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193;
+  for (const ch of String(seed)) {
+    const c = ch.codePointAt(0);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
+  }
+  return `${h1.toString(16).padStart(8, "0")}${h2.toString(16).padStart(8, "0")}unknown`;
+}
+
+/**
+ * CSDD Android lietotnes WebView User-Agent:
+ * "<Android WebView UA> csdd_mob_app_android_v2 uid=<uid> verCode=325".
+ * `chromeVersion` - pārlūka īstā versija (lai UA sakrīt ar Sec-CH-UA), piem. "131.0.6778.85".
+ */
+export function buildAppUserAgent({ chromeVersion = "131.0.0.0", uid = appUidFromSeed(), versionCode = APP_VERSION_CODE } = {}) {
+  const v = String(chromeVersion).match(/\d+(?:\.\d+){0,3}/)?.[0] || "131.0.0.0";
+  return (
+    `Mozilla/5.0 (Linux; Android ${APP_DEVICE.android}; ${APP_DEVICE.model} Build/${APP_DEVICE.build}; wv) ` +
+    `AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/${v} Mobile Safari/537.36` +
+    ` ${APP_UA_MARKER} uid=${uid} verCode=${versionCode}`
+  );
+}
+
+/** CDP `Network.setUserAgentOverride` parametri lietotnes režīmam (UA + Android WebView klienta mājieni). */
+export function appUserAgentOverride(opts = {}) {
+  const userAgent = buildAppUserAgent(opts);
+  const full = userAgent.match(/Chrome\/([\d.]+)/)?.[1] ?? "131.0.0.0";
+  const major = full.split(".")[0];
+  return {
+    userAgent,
+    acceptLanguage: "lv-LV,lv",
+    platform: "Linux armv8l",
+    userAgentMetadata: {
+      brands: [
+        { brand: "Android WebView", version: major },
+        { brand: "Chromium", version: major },
+        { brand: "Not_A Brand", version: "24" },
+      ],
+      fullVersion: full,
+      platform: "Android",
+      platformVersion: `${APP_DEVICE.android}.0.0`,
+      architecture: "",
+      model: APP_DEVICE.model,
+      mobile: true,
+    },
+  };
+}
+
+/** Lietotnes starta reģistrācija (tas pats PHPSESSID): `https://e.csdd.lv?AppVers=325&ApiLevel=34&AppOS=Android`. */
+export function appRegisterUrl(versionCode = APP_VERSION_CODE, apiLevel = APP_API_LEVEL) {
+  return `https://e.csdd.lv/?AppVers=${versionCode}&ApiLevel=${apiLevel}&AppOS=Android`;
+}
+
+/** Lietotnes `mobint` JS interfeisa metodes (APK @JavascriptInterface). */
+export const MOBINT_METHODS = [
+  "AddPushDevice",
+  "CheckPushMsg",
+  "ReloadBaseUrl",
+  "RemoveAllPushDevices",
+  "RemovePushDevice",
+  "SyncCalendar",
+  "SyncCompanyCalendar",
+  "UpdEnvVar",
+  "callNavigation",
+  "callemail",
+  "callnumber",
+  "cancelqueuenr",
+  "closequeuenr",
+  "composesms",
+  "openbrowser",
+  "queuenewextnr",
+  "queuenewnr",
+  "savefile",
+  "setperson",
+  "uploadImage",
+];
+
+/**
+ * Init skripts lapai: `window.mobint` aizstājējs, kas NEKO nedara - tikai pieraksta izsaukumus
+ * (`window.__provinMobintCalls`), lai lapas JS nekristu un relejs varētu nolasīt composesms(numurs, teksts).
+ * SMS nekad netiek sūtīta (pārlūkam tādas iespējas nav; relejs pogu nespiež).
+ */
+export const MOBINT_STUB_SCRIPT = `(() => {
+  if (window.mobint) return;
+  const calls = [];
+  const api = {};
+  for (const n of ${JSON.stringify(MOBINT_METHODS)}) {
+    api[n] = (...a) => { calls.push([n, ...a.map((x) => String(x))].slice(0, 6)); return ""; };
+  }
+  Object.defineProperty(window, "__provinMobintCalls", { value: calls });
+  Object.defineProperty(window, "mobint", { value: Object.freeze(api) });
+})();`;
+
+/** `__provinMobintCalls` -> `sms:` saites no composesms izsaukumiem. */
+export function smsHrefsFromMobintCalls(calls) {
+  return (calls ?? [])
+    .filter((c) => Array.isArray(c) && c[0] === "composesms" && c[1] && c[2])
+    .map((c) => `sms:${String(c[1]).trim()}?body=${encodeURIComponent(String(c[2]).replace(/\s+/g, " ").trim())}`);
+}

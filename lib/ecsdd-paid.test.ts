@@ -4,8 +4,17 @@ import { describe, expect, it } from "vitest";
 
 import { buildCsddLocalParseFromText } from "@/lib/csdd-pdf-ingest";
 import {
+  APP_UA_MARKER,
+  appRegisterUrl,
+  appUidFromSeed,
+  appUserAgentOverride,
+  buildAppUserAgent,
   classifyPaidPage,
+  findComposeSmsCalls,
   findSmsHrefs,
+  MOBINT_METHODS,
+  MOBINT_STUB_SCRIPT,
+  smsHrefsFromMobintCalls,
   formatPaidReportPanels,
   paidReportLooksComplete,
   parsePaidConfirmText,
@@ -285,5 +294,54 @@ describe("maksas izziņa: releja kodols (bez rindas, tikai aktīvā sesijā)", (
       throw Object.assign(new Error("x"), { code: "page_changed" });
     });
     expect(err).toEqual({ status: "error", code: "page_changed" });
+  });
+});
+
+describe("maksas izziņa: CSDD lietotnes identitāte (APK lv.csdd.ecsdd 3.9.9)", () => {
+  it("UA kā lietotnes WebView: Android wv + csdd_mob_app_android_v2 uid= verCode=325", () => {
+    const ua = buildAppUserAgent({ chromeVersion: "131.0.6778.85", uid: "0123456789abcdefunknown" });
+    expect(ua).toMatch(/^Mozilla\/5\.0 \(Linux; Android 14; [^)]*; wv\) AppleWebKit\/537\.36 .*Chrome\/131\.0\.6778\.85 Mobile Safari\/537\.36 /);
+    expect(ua.endsWith(" csdd_mob_app_android_v2 uid=0123456789abcdefunknown verCode=325")).toBe(true);
+    expect(APP_UA_MARKER).toBe("csdd_mob_app_android_v2");
+  });
+
+  it("uid stabils un android_id formā; override ar Android klienta mājieniem", () => {
+    expect(appUidFromSeed("x")).toBe(appUidFromSeed("x"));
+    expect(appUidFromSeed("x")).toMatch(/^[0-9a-f]{16}unknown$/);
+    expect(appUidFromSeed("x")).not.toBe(appUidFromSeed("y"));
+    const o = appUserAgentOverride({ chromeVersion: "131.0.6778.85", uid: "u1" });
+    expect(o.userAgent).toContain("csdd_mob_app_android_v2 uid=u1 verCode=325");
+    expect(o.userAgentMetadata).toMatchObject({ platform: "Android", mobile: true, fullVersion: "131.0.6778.85" });
+    expect(buildAppUserAgent({ chromeVersion: "" })).toContain("Chrome/131.0.0.0");
+  });
+
+  it("lietotnes starta reģistrācijas URL", () => {
+    expect(appRegisterUrl()).toBe("https://e.csdd.lv/?AppVers=325&ApiLevel=34&AppOS=Android");
+  });
+
+  it("composesms(...) onclick -> sms: saite (pēdiņas un entītijas)", () => {
+    expect(findComposeSmsCalls(`<a href="javascript:;" onclick="mobint.composesms('1800','CSDD 99999 AB1234');">Sagatavot īsziņu</a>`)).toEqual([
+      "sms:1800?body=CSDD%2099999%20AB1234",
+    ]);
+    expect(findSmsHrefs(`<button onclick="mobint.composesms(&quot;1800&quot;, &quot;CSDD 99999 AB1234&quot;)">`)).toEqual([
+      "sms:1800?body=CSDD%2099999%20AB1234",
+    ]);
+    expect(findSmsHrefs(`onclick="window.mobint.composesms(&#39;1800&#39;,&#39;CSDD 99999 AB1234&#39;)"`)).toHaveLength(1);
+    const sms = parseSmsHref(findSmsHrefs(`mobint.composesms("1800", "CSDD 99999 AB1234")`)[0]);
+    expect(sms).toEqual({ number: "1800", body: "CSDD 99999 AB1234" });
+    expect(smsBodyMatchesPlate(sms?.body, "AB1234")).toBe(true);
+    expect(findComposeSmsCalls("mobint.callnumber('1800')")).toEqual([]);
+  });
+
+  it("mobint aizstājējs tikai pieraksta izsaukumus (nekas netiek sūtīts)", () => {
+    const win: Record<string, unknown> = {};
+    new Function("window", MOBINT_STUB_SCRIPT)(win);
+    const mobint = win.mobint as Record<string, (...a: unknown[]) => unknown>;
+    expect(Object.keys(mobint).sort()).toEqual([...MOBINT_METHODS].sort());
+    expect(mobint.composesms("1800", "CSDD 99999 AB1234")).toBe("");
+    const calls = win.__provinMobintCalls as string[][];
+    expect(calls).toEqual([["composesms", "1800", "CSDD 99999 AB1234"]]);
+    expect(smsHrefsFromMobintCalls(calls).map((h: string) => parseSmsHref(h))).toEqual([{ number: "1800", body: "CSDD 99999 AB1234" }]);
+    expect(smsHrefsFromMobintCalls([["callnumber", "1800"]])).toEqual([]);
   });
 });

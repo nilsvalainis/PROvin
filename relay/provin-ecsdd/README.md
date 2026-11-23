@@ -86,7 +86,10 @@ bez sesijas atbilde `needs_login`, Smart-ID sāk tikai ar `login: true` (admin p
 | `POST /ecsdd/paid/list` | Izvēlne -> Maksas Izziņas -> Apmaksātās izziņas ("Atjaunot sarakstu") -> `{items}` |
 | `POST /ecsdd/paid/report {plate, since}` | jaunākā apmaksātā izziņa pēc `since` -> visi akordeoni -> `rawText` (tāds pats kā e.csdd maksas PDF teksts) |
 
-- Datorā šīs sadaļas var nebūt redzamas: ja pogas/saites nav, solis atkārtojas ar iPhone UA + 390 px skatu (tikai šajā cilnē).
+- Web e.csdd (dators un iPhone Safari) šīs sadaļas nerāda - tikai CSDD lietotne (Android `lv.csdd.ecsdd` 3.9.9, versionCode 325).
+  Relejs maksas soļos (tikai šajā cilnē) uzdodas par lietotnes WebView: UA `... wv) ... Mobile Safari/537.36 csdd_mob_app_android_v2 uid=<id> verCode=325`,
+  `window.mobint` aizstājējs (neko nedara, tikai pieraksta `composesms(numurs, teksts)`), 390 px. Režīmi pēc kārtas: `app` -> `app_reg`
+  (+ lietotnes starta GET `?AppVers=325&ApiLevel=34&AppOS=Android` šai sesijai; izslēdz `ECSDD_PAID_APP_REGISTER=0`) -> `desktop`.
 - Lapas atpazīst pēc teksta; neatpazītā solī `debug/paid-*.json` (tālruņi, ZTI vārdi, SMS konta kods -> `***`).
 - Fiksācijas un testi: `lib/__fixtures__/ecsdd-paid/`, `npx vitest run lib/ecsdd-paid.test.ts lib/ecsdd-paid-logic.test.ts`.
 

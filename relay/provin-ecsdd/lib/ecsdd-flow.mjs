@@ -23,11 +23,13 @@ import {
   redact,
 } from "./ecsdd-page.mjs";
 import {
+  appRegisterUrl,
+  appUserAgentOverride,
   classifyPaidPage,
   findPreparedFooter,
   findSmsHrefs,
   formatPaidReportPanels,
-  IPHONE_UA,
+  MOBINT_STUB_SCRIPT,
   PAID_REPORT_TITLES,
   paidReportLooksComplete,
   PAID_FORBIDDEN_RE,
@@ -41,6 +43,7 @@ import {
   pickPaidReport,
   redactPaidText,
   smsBodyMatchesPlate,
+  smsHrefsFromMobintCalls,
 } from "./ecsdd-paid.mjs";
 import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
 
@@ -243,7 +246,16 @@ const PAID_REPORT_TITLES_FOLDED = PAID_REPORT_TITLES.map((t) =>
   t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(),
 );
 
-export function createEcsddBrowser({ getContext, personalCode, account = "person", log = () => undefined, debugDir = "", smartIdTimeoutMs = 120_000 }) {
+export function createEcsddBrowser({
+  getContext,
+  personalCode,
+  account = "person",
+  log = () => undefined,
+  debugDir = "",
+  smartIdTimeoutMs = 120_000,
+  appUid = "",
+  appRegister = true,
+}) {
   const secrets = [personalCode];
 
   /** Lapa "Izvēlies kontu": izvēlas `account` (noklusējums privātpersona). Kontu nosaukumi žurnālā netiek rakstīti. */
@@ -532,25 +544,40 @@ export function createEcsddBrowser({ getContext, personalCode, account = "person
 
   // ---- Maksas izziņa (1,50 € ar SMS). Relejs tikai lasa: nekad nesūta SMS, nemaksā, nespiež "Nosūtīt uz e-pastu". ----
 
-  /** Pēdējais režīms, kurā maksas izziņu sadaļas bija redzamas ("desktop" | "mobile"). */
-  let paidMode = "desktop";
+  /**
+   * Režīmi: "app" - CSDD Android lietotnes identitāte (UA ar `csdd_mob_app_android_v2`, `window.mobint`, 390 px);
+   * "app_reg" - tas pats + lietotnes starta GET `?AppVers=..&AppOS=Android` šai sesijai; "desktop" - parasts web.
+   * Web (dators un iPhone Safari) maksas sadaļas nerāda (23.11.2026), tāpēc vispirms lietotne.
+   */
+  const PAID_MODES = appRegister ? ["app", "app_reg", "desktop"] : ["app", "desktop"];
+  /** Pēdējais režīms, kurā maksas izziņu sadaļas bija redzamas. */
+  let paidMode = PAID_MODES[0];
 
   async function withModePage(mode, fn) {
     return withPage(async (page) => {
-      if (mode === "mobile") {
-        // Tikai šai cilnei: iPhone UA + 390 px skats (CSDD lietotnes / telefona izkārtojums).
+      if (mode === "app" || mode === "app_reg") {
+        // Tikai šai cilnei (CDP override ir cilnes līmenī; pārējās releja cilnes paliek ar parasto UA).
+        // Īstā Chrome versija (persistentam kontekstam browser() ir null -> no about:blank navigator.userAgent).
+        const version =
+          (await Promise.resolve(page.context().browser()?.version()).catch(() => "")) ||
+          (await page.evaluate(() => navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[1] ?? "").catch(() => ""));
         const cdp = await page.context().newCDPSession(page);
-        await cdp.send("Network.setUserAgentOverride", { userAgent: IPHONE_UA, platform: "iPhone", acceptLanguage: "lv-LV,lv" });
+        await cdp.send("Network.setUserAgentOverride", appUserAgentOverride({ chromeVersion: version, ...(appUid ? { uid: appUid } : {}) }));
         await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
         await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 }).catch(() => undefined);
+        await page.addInitScript(MOBINT_STUB_SCRIPT);
+        if (mode === "app_reg") {
+          await page.goto(appRegisterUrl(), { waitUntil: "domcontentloaded", timeout: 30_000 }).catch(() => undefined);
+          await sleep(800);
+        }
       }
       return fn(page);
     });
   }
 
-  /** Abos režīmos pēc kārtas (vispirms tas, kas strādāja pēdējo reizi); `fn` atgriež {status:"no_button"}, ja sadaļas nav. */
+  /** Visos režīmos pēc kārtas (vispirms tas, kas strādāja pēdējo reizi); `fn` atgriež {status:"no_button"}, ja sadaļas nav. */
   async function inModes(name, fn) {
-    const order = paidMode === "mobile" ? ["mobile", "desktop"] : ["desktop", "mobile"];
+    const order = [paidMode, ...PAID_MODES.filter((m) => m !== paidMode)];
     let last = null;
     for (const mode of order) {
       last = await withModePage(mode, (page) => fn(page, mode));
@@ -656,7 +683,15 @@ export function createEcsddBrowser({ getContext, personalCode, account = "person
       const ctls = await page.evaluate(collectPaidControls);
       const html = await page.content();
       const prep = ctls.find((c) => /sagatavot\s+[iī]szi[ņn]u/i.test(c.text));
-      const candidates = [prep?.href, prep?.onclick, prep?.data, ...ctls.filter((c) => /^sms:/i.test(c.href)).map((c) => c.href), ...findSmsHrefs(html)]
+      const mobintCalls = await page.evaluate(() => window.__provinMobintCalls ?? []).catch(() => []);
+      const candidates = [
+        prep?.href,
+        prep?.onclick,
+        prep?.data,
+        ...ctls.filter((c) => /^sms:/i.test(c.href)).map((c) => c.href),
+        ...findSmsHrefs(html),
+        ...smsHrefsFromMobintCalls(mobintCalls),
+      ]
         .flatMap((v) => (v ? findSmsHrefs(v).concat(/^sms:/i.test(v) ? [v] : []) : []))
         .filter(Boolean);
       const info = parsePaidConfirmText(confirm.text);
