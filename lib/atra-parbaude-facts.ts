@@ -5,6 +5,7 @@
  * Liegumi: CSDD API (`csdd-tech-data`) atgriež tikai tehniskos datus, OCTA un TA termiņu -
  * liegumu/apgrūtinājumu tur nav, tāpēc kartīte rāda saiti uz e.csdd.lv (Smart-ID).
  */
+import { formatDealerGapMonths } from "@/lib/dealer-gap-format";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
@@ -332,7 +333,7 @@ export function atraStoryScore(f: AtraFacts): AtraScore {
   }
   if (f.countries.length >= 3) reasons.push({ points: 1, text: `${f.countries.length} valstis` });
   if (Math.max(f.mileage.maxKm, f.mileage.actualMinKm) > 400_000) reasons.push({ points: 1, text: "Nobraukums virs 400 000 km" });
-  if (f.dealer && f.dealer.longestGapMonths >= 36) reasons.push({ points: 1, text: `Dīlera robs ${f.dealer.longestGapMonths} mēn.` });
+  if (f.dealer && f.dealer.longestGapMonths >= 36) reasons.push({ points: 1, text: `Dīlera periods bez ierakstiem: ${formatDealerGapMonths(f.dealer.longestGapMonths)}` });
   // «Negadījumi nav» / «Nav sludinājuma» netiek rādīti: neviens VIN SCAN avots neapstiprina «negadījumu nav»
   // (rindas `incidents` vienmēr ir masīvs, arī ja avots negadījumus nepārbauda). Nils 23.11 - augšā tikai rezultāti.
   const points = Math.min(ATRA_SCORE_MAX, reasons.reduce((n, r) => n + r.points, 0));

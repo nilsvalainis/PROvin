@@ -312,15 +312,15 @@ function intervalClaims(text: string, code: DealerQualityGateInput["code"]): Num
         out.push({ what: "īsākais intervāls", stated: `${groupDigits(km)} km`, code: `${groupDigits(code.minIntervalKm)} km`, sentence: s });
       }
     }
-    const gap = lower.search(/garāk\p{L}*\s+(?:\p{L}+\s+){0,1}?rob/u);
+    const gap = lower.search(/garāk\p{L}*\s+(?:\p{L}+\s+){0,1}?(?:rob|period\p{L}*\s+bez\s+ierakst)/u);
     if (gap >= 0) {
       const km = kmOf(s, gap);
       if (km != null && code.longestGapKm != null && !kmClose(km, code.longestGapKm)) {
-        out.push({ what: "garākais robs", stated: `${groupDigits(km)} km`, code: `${groupDigits(code.longestGapKm)} km`, sentence: s });
+        out.push({ what: "garākais periods bez ierakstiem", stated: `${groupDigits(km)} km`, code: `${groupDigits(code.longestGapKm)} km`, sentence: s });
       }
       const mm = s.slice(gap).match(MONTHS_IN_TEXT_RE);
       if (mm && code.longestGapMonths != null && Math.abs(Number(mm[1]) - code.longestGapMonths) > 1) {
-        out.push({ what: "garākais robs", stated: `${mm[1]} mēn.`, code: `${code.longestGapMonths} mēn.`, sentence: s });
+        out.push({ what: "garākais periods bez ierakstiem", stated: `${mm[1]} mēn.`, code: `${code.longestGapMonths} mēn.`, sentence: s });
       }
     }
     const since = lower.search(/kopš\s+pēdēj\p{L}*\s+(?:\p{L}+\s+){0,2}?ierakst/u);

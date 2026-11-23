@@ -2005,7 +2005,12 @@ function buildAutoRecordsAvotuSubsection(
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
   const showOilInterval = vis.autoRecordsOilInterval !== false;
   const oilTableHtml = showOilInterval
-    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }))
+    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }), {
+        // Dīlera datu / Business PDF: tikai fakti, bez ieteikumiem (ieteikumi ir AUDITS).
+        omitRecommendation:
+          productScope?.pdfReportKind === "dealer" || productScope?.pdfReportKind === "business",
+        makeModel,
+      })
     : "";
   const oilIntervalBox =
     showOilInterval && oilChangeIntervalNotes
@@ -3327,6 +3332,8 @@ ${sourceDotColorCss()}
       .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
       .pdf-svc-tag--record{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-tag--other{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0;}
+      .pdf-svc-tag-plus{font-size:10px;font-weight:700;color:#94a3b8;margin:0 -2px;}
       .pdf-svc-tag--accessories{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-km--nodata{color:#b91c1c;}
       .pdf-svc-box--hl{

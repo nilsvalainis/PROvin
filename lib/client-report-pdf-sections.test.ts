@@ -1510,7 +1510,7 @@ describe("Vēstures kopsavilkums", () => {
       },
     });
     expect(events.find((e) => e.odometer === "88000")!.title).toBe("Dīlera nolasījums");
-    expect(events.find((e) => e.odometer === "124100")!.title).toBe("Servisa apmeklējums");
+    expect(events.find((e) => e.odometer === "124100")!.title).toBe("Citi darbi");
     expect(events.filter((e) => e.kind === "service").every((e) => e.title !== "Apkope")).toBe(true);
   });
 

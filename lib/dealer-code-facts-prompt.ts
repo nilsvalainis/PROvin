@@ -121,7 +121,7 @@ export function buildDealerCodeFactsForPrompt(
     const g = summary.longestGap;
     if (g) {
       const parts = [g.months != null ? `${g.months} mēn.` : "", g.km != null ? `${groupDigits(g.km)} km` : ""].filter(Boolean);
-      lines.push(`- Garākais robs starp ierakstiem: ${parts.join(" / ")}.`);
+      lines.push(`- Garākais periods bez ierakstiem: ${parts.join(" / ")} (tekstā raksti „periods bez ierakstiem”, nekad „robs”).`);
     }
   }
 
@@ -159,7 +159,7 @@ export function buildDealerCodeFactsForPrompt(
   const outliers = [...findDealerOdometerOutliers(rows)];
   if (outliers.length > 0) {
     lines.push(
-      `- Rādījumi ārpus secības (robu aprēķinā neizmantoti): ${outliers.map((r) => `${r.date} ${kmLabel(r.odometer)}`).join("; ")}.`,
+      `- Rādījumi ārpus secības (periodu bez ierakstiem aprēķinā neizmantoti): ${outliers.map((r) => `${r.date} ${kmLabel(r.odometer)}`).join("; ")}.`,
     );
   }
 

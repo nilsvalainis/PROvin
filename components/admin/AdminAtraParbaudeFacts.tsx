@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDealerGapMonths } from "@/lib/dealer-gap-format";
 import { useState } from "react";
 import { ATRA_POTENTIAL_LABEL } from "@/lib/atra-parbaude";
 import {
@@ -293,7 +294,7 @@ export function AdminAtraFactCards({
           glass={glass}
           k="Dīlera apkopes"
           v={`${d.visits} vizītes`}
-          s={`${d.firstYear}-${d.lastYear} · garākais robs ${d.longestGapMonths} mēn. · pēdējā ${d.lastDate}${d.lastKm ? `, ${d.lastKm} km` : ""}`}
+          s={`${d.firstYear}-${d.lastYear} · garākais periods bez ierakstiem: ${formatDealerGapMonths(d.longestGapMonths)} · pēdējā ${d.lastDate}${d.lastKm ? `, ${d.lastKm} km` : ""}`}
           src="OneAuto"
         />
       ) : null,

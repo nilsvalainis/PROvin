@@ -90,6 +90,7 @@ export const DEALER_MAJOR_ASSEMBLIES_DIRECTIVE =
 export const DEALER_FACTS_ONLY_DIRECTIVE = `TIKAI FAKTI, NEKĀDU IETEIKUMU (Nils 22.11.2026): ieteikumi un „ko pārbaudīt” ir pilnajā audita atskaitē, ne šeit. AIZLIEGTS: „jāpārbauda”, „ieteicams”, „iesakām”, „pārdevējam jālūdz”, „jāprasa dokumenti / rēķini”, „pārbaudīt apskatē”, padomi pircējam, vērtējoši stāsti un minējumi par iemesliem („raksturīga prakse”, „visticamāk apkopts citur”). Īsi, strukturēti, tikai tas, kas ir datos.
 POZĪCIJA NAV DARBĪBA: dīlera rindas bieži ir detaļu / pozīciju saraksts. Rinda tikai ar nosaukumu bez darbības vārda (piem. „Particulate filter.”) = „ierakstā ir pozīcija: kvēpu filtrs (darbība nav norādīta)”. NERAKSTI „pārbaudīts”, „nomainīts”, „uzstādīts”, ja rindā tā nav.
 SERVISA VIETA: vietu sauc par oficiālo dīleri / servisu tikai, ja nosaukumā ir ražotāja zīmols vai dīlera / servisa pazīme. Ja koda faktu sarakstā vieta atzīmēta „nav autoserviss”, to NESAUC par servisu - raksti tikai „ieraksts (vieta: <nosaukums>)” vai vietu neraksti.
+TERMINI: nelieto vārdu „robs” / „robi” (žargons) - raksti „periods bez ierakstiem”.
 SKAITĻI: ierakstu skaitu, eļļas maiņu skaitu, mēnešus kopš pēdējā ieraksta, odometra nesakritības un lielo mezglu reizes ņem TIKAI no „Koda faktu saraksta” - cits skaits aizliegts.`;
 
 /**
@@ -234,7 +235,7 @@ Jāatbild tālāk (tikai secinājumi):
 - pēdējā eļļas maiņa dīlera datos (datums, km) un cik mēneši pagājuši līdz šodienai (no koda faktu saraksta) - kā fakts, bez vērtējuma.
 PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera datos garāks, svītrojums = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Garāks solis NAV apgalvojums, ka eļļa nav mainīta.
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
-Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. To NESAUC par pirkuma risku, NEAPGALVO, ka intervāls ir pārkāpts, un NEDOD ieteikumus (rēķinu prasīšana, pilsētas intervāli u.tml.).
+Ja oficiālajā dīlerī ir periods bez ierakstiem, kas garāks par ražotāja intervālu, vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. To NESAUC par pirkuma risku, NEAPGALVO, ka intervāls ir pārkāpts, un NEDOD ieteikumus (rēķinu prasīšana, pilsētas intervāli u.tml.).
 ${DEALER_FACTS_ONLY_DIRECTIVE}
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
 Lielos mezglus, kārbas eļļu, remontus, kampaņas un citus darbus šeit NERAKSTI (nekādas rindkopas „Lielo mezglu apkopes”) - tie pieder atsevišķajam laukam „Komentāri”.

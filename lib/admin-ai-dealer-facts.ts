@@ -51,6 +51,11 @@ export type DealerFact = {
   worksLv: string;
   /** Oriģinālvalodas darbi (OEM PDF); tikai atpazīšanai, nekopēt izejā. */
   worksOriginal: string;
+  /**
+   * LV darbi ar saglabātām rindām (atpazīšanai). `worksLv` ir saplūdināts vienā rindā, un tad
+   * vienas rindas „maiņa” piekabinās citas rindas mezglam (DPF „pārbaude” + nākamā rinda „maiņa”).
+   */
+  worksLvLines?: string;
   kind: DealerFactKind;
   components: DealerComponentId[];
   /** Kampaņas / atsaukuma kods no oriģinālvalodas teksta, ja ir. */
@@ -271,6 +276,7 @@ function factFromServiceWork(
     works: detection,
     worksLv: customerDealerWorksLv({ worksLvRaw, components, campaignCode, kind }),
     worksOriginal,
+    worksLvLines: keepLines(w.works ?? ""),
     kind,
     components,
     campaignCode,
