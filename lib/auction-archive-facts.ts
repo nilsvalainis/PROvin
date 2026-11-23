@@ -808,7 +808,7 @@ export function auctionArchiveKeyFindings(
     const decreasing = kms.some((k, i) => i > 0 && k < kms[i - 1]!);
     if (new Set(kms).size === 1) out.push({ text: `Nobraukums visās izsolēs vienāds - ${fmtInt(kms[0]!)} km.` });
     else if (decreasing)
-      out.push({ text: `Nobraukums vēlākā izsolē ir MAZĀKS nekā agrākā (${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}) - pārbaudiet odometru.`, alert: true });
+      out.push({ text: `Nobraukums vēlākā izsolē ir MAZĀKS nekā agrākā (${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}).`, alert: true });
     else out.push({ text: `Nobraukums pieaug hronoloģiski: ${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}.` });
   } else if (withKm.length === 1) {
     out.push({ text: `Nobraukums izsolē (${withKm[0]!.platform}, ${archiveDay(withKm[0]!.date)}): ${fmtInt(withKm[0]!.km!)} km.` });
@@ -823,9 +823,10 @@ export function auctionArchiveKeyFindings(
     out.push({ text: `Atslēgu skaits izsolēs atšķiras: ${keyed.map((l) => `${l.platform} - ${l.facts.keys}`).join(", ")}.`, alert: true });
   }
   const dmg = lots.reduce((s, l) => s + l.damageCount, 0);
-  if (dmg > 0) out.push({ text: `Izsolēs norādīti ${dmg} bojājumi - skatīt bojājumu kartītes un bildes.`, alert: true });
+  // Tikai fakti (bez ieteikumiem «vērtējiet / pārbaudiet») - bloks tiek drukāts arī Business / dīlera PDF.
+  if (dmg > 0) out.push({ text: dmg === 1 ? "Izsolēs norādīts 1 bojājums." : `Izsolēs norādīti ${dmg} bojājumi.`, alert: true });
   else if (lots.length && lots.every((l) => l.facts.damagesDeclared !== true))
-    out.push({ text: "Neviena izsole bojājumus nenorādīja. Virsbūves stāvokli vērtējiet pēc bildēm." });
+    out.push({ text: "Izsolēs bojājumi nav norādīti." });
   const svc = lots.find((l) => l.facts.lastServiceKm != null && l.km != null);
   if (svc && svc.km! >= svc.facts.lastServiceKm!) {
     out.push({ text: `Pēdējais serviss (${svc.platform} dati) ${fmtInt(svc.km! - svc.facts.lastServiceKm!)} km pirms izsoles.` });

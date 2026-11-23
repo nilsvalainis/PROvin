@@ -223,8 +223,22 @@ describe("4. tulkojuma kvalitāte (glosārijs + rindu tīrīšana)", () => {
     ]);
     expect(polishDealerWorkLinesLv(STARTER_2025.split("\n"))).not.toContain("Papildu akumulatora pārbaude");
     expect(polishDealerWorkLinesLv(["Würth aprīkojuma iebūvēšana.", "Würth aprīkojuma uzstādīšana."])).toEqual([
-      "Würth aprīkojuma uzstādīšana",
+      "Würth aprīkojuma uzstādīšana (2×)",
     ]);
+    // Vienādi darbi vienā vizītē (dažādi detaļu nr.) nepazūd - viena rinda ar skaitu.
+    expect(
+      polishDealerWorkLinesLv([
+        "Bremžu kluči bez azbesta",
+        "Bremžu kluči bez azbesta",
+        "Bremžu kluču nodiluma sensors",
+        "Bremžu kluču nodiluma sensors",
+        "Bremžu kluču pasta",
+      ]),
+    ).toEqual(["Bremžu kluči bez azbesta (2×)", "Bremžu kluču nodiluma sensors (2×)", "Bremžu kluču pasta"]);
+    // Pārbaude + maiņa tai pašai detaļai → tikai maiņa (arī ja maiņa atkārtojas).
+    expect(
+      polishDealerWorkLinesLv(["Papildu akumulatora pārbaude", "Papildu akumulatora maiņa", "Papildu akumulatora maiņa"]),
+    ).toEqual(["Papildu akumulatora maiņa (2×)"]);
     // Saīsinājums beigās paliek ar punktu.
     expect(polishDealerWorkLineLv("Bremžu kluči, diski u.c.")).toBe("Bremžu kluči, diski u.c.");
   });

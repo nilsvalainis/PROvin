@@ -194,17 +194,25 @@ function checkLineCoveredByChange(line: string, all: readonly string[]): boolean
   });
 }
 
-/** Visas vizītes rindas; vienādas rindas pēc pulēšanas paliek vienreiz, pārbaude + maiņa → maiņa. */
+/**
+ * Visas vizītes rindas; vienādas rindas pēc pulēšanas apvieno vienā ar skaitu «(2×)» (piem. divi bremžu kluči ar
+ * dažādiem detaļu numuriem - nekas nepazūd), pārbaude + maiņa tai pašai detaļai → maiņa.
+ */
 export function polishDealerWorkLinesLv(lines: readonly string[], opts: PolishDealerWorkLineOpts = {}): string[] {
   const polished: string[] = [];
-  const seen = new Set<string>();
+  const counts = new Map<string, number>();
   for (const line of lines) {
     const p = polishDealerWorkLineLv(line, opts);
     if (!p) continue;
     const key = p.toLocaleLowerCase("lv");
-    if (seen.has(key)) continue;
-    seen.add(key);
-    polished.push(p);
+    const n = counts.get(key) ?? 0;
+    counts.set(key, n + 1);
+    if (n === 0) polished.push(p);
   }
-  return polished.filter((line) => !checkLineCoveredByChange(line, polished));
+  return polished
+    .filter((line) => !checkLineCoveredByChange(line, polished))
+    .map((line) => {
+      const n = counts.get(line.toLocaleLowerCase("lv")) ?? 1;
+      return n > 1 ? `${line} (${n}×)` : line;
+    });
 }

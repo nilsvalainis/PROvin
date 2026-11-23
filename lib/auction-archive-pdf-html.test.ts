@@ -216,6 +216,26 @@ describe("izsoļu arhīva fakti (v2)", () => {
     const down = auctionArchiveKeyFindings([lot("A", 150000, 1), { ...lot("B", 120000, 1), date: "2026-11-01" }]);
     expect(down[0]).toMatchObject({ alert: true });
   });
+
+  it("galvenie fakti: tikai fakti, bez ieteikumiem (Business / dīlera PDF)", () => {
+    const lot = (damageCount: number) => ({
+      platform: "Openlane",
+      date: "2026-10-01",
+      km: 210648,
+      damageCount,
+      facts: { ...auctionArchiveLotFacts(openlane), damagesDeclared: damageCount > 0 },
+    });
+    const texts = [
+      ...auctionArchiveKeyFindings([lot(0)]),
+      ...auctionArchiveKeyFindings([lot(1)]),
+      ...auctionArchiveKeyFindings([lot(3)]),
+      ...auctionArchiveKeyFindings([lot(0), { ...lot(0), km: 150000, date: "2026-11-01" }]),
+    ].map((x) => x.text);
+    expect(texts).toContain("Izsolēs bojājumi nav norādīti.");
+    expect(texts).toContain("Izsolēs norādīts 1 bojājums.");
+    expect(texts).toContain("Izsolēs norādīti 3 bojājumi.");
+    for (const t of texts) expect(t).not.toMatch(/vērtējiet|pārbaudiet|iesakām|ieteicam|skatīt/iu);
+  });
 });
 
 describe("izsoļu arhīva PDF HTML (katalogs, PROVIN PDF valoda)", () => {
