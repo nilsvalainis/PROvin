@@ -13,7 +13,18 @@ import {
   type CsddTaAnalysis,
 } from "@/lib/csdd-bloki";
 import type { CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
-import { ECSDD_NEW_FORMAT_DEREGISTERED, ECSDD_OLD_FORMAT_MEASUREMENTS } from "@/lib/csdd-bloki.fixtures";
+import fs from "node:fs";
+import path from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AdminCsddBlokiPanel } from "@/components/admin/AdminCsddBlokiPanel";
+import {
+  ECSDD_NEW_FORMAT_DEREGISTERED,
+  ECSDD_OLD_FORMAT_MEASUREMENTS,
+  ECSDD_TADATI_TOYOTA_LAST_ONLY,
+} from "@/lib/csdd-bloki.fixtures";
+import { buildCsddRegistrySignalFactLines, parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
+import { formatTadatiPanels } from "@/relay/provin-ecsdd/lib/ecsdd-page.mjs";
 import { buildCsddBlokiPdfParts, buildCsddWarningSummaryTiles } from "@/lib/csdd-bloki-pdf-html";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
@@ -337,5 +348,97 @@ describe("e.csdd bloki - klienta PDF", () => {
     const html = doc(payload(ML, { csddPdfWarnings: true, csddPdfTaAnalysis: true }), "en");
     expect(html).toContain("No valid policy");
     expect(html).toContain("Technical inspection defect analysis");
+  });
+});
+
+describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota Auris 23.11.2026)", () => {
+  const AURIS = form(ECSDD_TADATI_TOYOTA_LAST_ONLY);
+
+  it("apdrošinātāju CSNg tukšs -> «nav pārbaudīts», nevis «Nobraukuma vēsture LV»; brīdinājuma «Ir CSNg» nav", () => {
+    const b = buildCsddBloki(AURIS, "lv", NOW)!;
+    const rows = Object.fromEntries(b.restrictions.rows.map((r) => [r.key, r]));
+    expect(rows.csngInsurers).toEqual({ key: "csngInsurers", state: "not_checked", text: "" });
+    expect(rows.csngPolice!.state).toBe("none");
+    expect(rows.restrictions!.state).toBe("not_checked");
+    expect(b.warnings.map((w) => w.id)).not.toContain("csng");
+    const json = JSON.stringify(b);
+    expect(json).not.toContain("Nobraukuma");
+    expect(json).not.toContain("136423 136423");
+    expect(json).not.toContain("**");
+    // AI fakti lieto to pašu parseri.
+    expect(buildCsddRegistrySignalFactLines(AURIS, NOW).join("\n")).not.toContain("Nobraukuma");
+  });
+
+  it("tikai pēdējā apskate ar «Novērtējums: **» -> «Latvijā TA vēl nav veikta», PDF TA bloka nav", () => {
+    const b = buildCsddBloki(AURIS, "lv", NOW)!;
+    expect(b.ta.inspectionCount).toBe(0);
+    expect(b.taHistoryState).toBe("no_lv_rating");
+    const parts = buildCsddBlokiPdfParts(AURIS, { csddPdfWarnings: true, csddPdfRestrictions: true, csddPdfMeasurements: true, csddPdfTaAnalysis: true }, "lv", NOW);
+    expect(parts.beforeInspections).toBe("");
+    expect(parts.afterTable).not.toContain("Nobraukuma");
+    expect(parts.afterTable).toContain("92 g/km");
+    expect(buildCsddWarningSummaryTiles(AURIS, "lv", NOW)).toEqual([]);
+  });
+
+  it("pēdējā apskate ar vērtējumu, bez vēstures -> «TA vēsture nav ielādēta»", () => {
+    const raw = ECSDD_TADATI_TOYOTA_LAST_ONLY.replace("Novērtējums:\t**", "Novērtējums:\t1 - Ar pieļaujamiem defektiem");
+    const b = buildCsddBloki(form(raw), "lv", NOW)!;
+    expect(b.taHistoryState).toBe("last_only");
+    expect(buildCsddBloki(ML, "lv", NOW)!.taHistoryState).toBe("");
+  });
+
+  it("releja tadati fiksācija: pilns CSNg - abi «Nav»; bez vērtības vai sakļauts akordeons - «nav pārbaudīts»", () => {
+    const snaps = JSON.parse(fs.readFileSync(path.join(__dirname, "__fixtures__", "relay-pages", "snapshots.json"), "utf8"));
+    const { panels, footer } = snaps["ecsdd-tadati-result"].tadati as { panels: { title: string; rows: string[][] }[]; footer: string };
+    const sig = (ps: typeof panels) => {
+      const raw = formatTadatiPanels(ps, footer);
+      return parseCsddRegistrySignals({ ...form(raw), rawUnprocessedData: raw }, NOW);
+    };
+    const full = sig(panels);
+    expect([full.csngPolice.state, full.csngInsurers.state]).toEqual(["none", "none"]);
+
+    const withCsng = (rows: string[][]) => panels.map((p) => (/CSNg/.test(p.title) ? { ...p, rows } : p));
+    const emptyInsurer = sig(withCsng([["Informācija no policijas:"], ["Nav"], ["Informācija no apdrošinātājiem:"]]));
+    expect(emptyInsurer.csngPolice.state).toBe("none");
+    expect(emptyInsurer.csngInsurers).toEqual({ state: "not_checked", text: "" });
+
+    const emptyPolice = sig(withCsng([["Informācija no policijas:"], ["Informācija no apdrošinātājiem:"], ["Nav"]]));
+    expect(emptyPolice.csngPolice).toEqual({ state: "not_checked", text: "" });
+    expect(emptyPolice.csngInsurers.state).toBe("none");
+
+    const collapsed = sig(withCsng([]));
+    expect([collapsed.csngPolice.state, collapsed.csngInsurers.state, collapsed.restrictions.state]).toEqual([
+      "not_checked",
+      "not_checked",
+      "not_checked",
+    ]);
+  });
+
+  it("īsta atzīme paliek atzīme; vērtība beidzas pie nākamās sadaļas virsraksta (arī aizliegumi)", () => {
+    const raw =
+      "Aizliegumi\nAizliegums atsavināt (tiesu izpildītājs) 01.02.2026\nNobraukuma vēsture LV\n03.11.2026\t1\t1\n" +
+      "Būtiski bojājumi CSNg\nInformācija no policijas:\nNav\nInformācija no apdrošinātājiem:\nCSNg 12.03.2021\n\nBremžu vērtējums\nAss\tKreisais\tLabais\tBremžu tips\n1\t2.0\t2.0\tD\n";
+    const s = parseCsddRegistrySignals({ ...emptyCsddFields(), rawUnprocessedData: raw }, NOW);
+    expect(s.restrictions).toEqual({ state: "present", text: "Aizliegums atsavināt (tiesu izpildītājs) 01.02.2026" });
+    expect(s.csngInsurers).toEqual({ state: "present", text: "CSNg 12.03.2021" });
+    expect(s.csngPolice.state).toBe("none");
+  });
+
+  it("admin panelis: bez sarkanām fona joslām un bez pasvītrotiem virsrakstiem", () => {
+    const html = renderToStaticMarkup(createElement(AdminCsddBlokiPanel, { value: AURIS }));
+    expect(html).not.toContain("Ir CSNg atzīmes");
+    expect(html).not.toContain("Nobraukuma");
+    expect(html).toContain("Latvijā TA vēl nav veikta");
+    // admin-ios-theme.css `.text-red-700` / `.text-red-600` = sarkans fons ar baltu tekstu.
+    expect(html).not.toMatch(/text-red-(?:600|700)\b/);
+    // admin-pro-order-theme.css: uppercase + tracking-wide + text-[10px]/[11px] virsrakstam liek pasvītrojumu.
+    for (const m of html.matchAll(/<p class="([^"]*)"/g)) {
+      const c = m[1]!.split(/\s+/);
+      const underlined = c.includes("uppercase") && c.includes("tracking-wide") && (c.includes("text-[10px]") || c.includes("text-[11px]"));
+      expect(underlined, m[1]).toBe(false);
+    }
+    const ml = renderToStaticMarkup(createElement(AdminCsddBlokiPanel, { value: ML }));
+    expect(ml).not.toMatch(/text-red-(?:600|700)\b/);
+    expect(ml).toContain("Nav spēkā esošas OCTA");
   });
 });
