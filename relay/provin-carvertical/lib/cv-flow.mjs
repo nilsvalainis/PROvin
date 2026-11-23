@@ -144,11 +144,20 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
   }
 
   /** Bez jaunas pieteikšanās: vai sesija aktīva (atver "Manas atskaites"). Koda gaidīšanas laikā lapu neaiztiek. */
+  /** Gaida kodu: kad pieprasīts + kad sākta pieteikšanās (e-pasta kods drīkst būt tikai pēc tās). */
+  function codeState() {
+    return {
+      state: "awaiting_code",
+      codeRequestedAt: new Date(codeRequestedAt).toISOString(),
+      ...(lastLoginAttempt ? { loginStartedAt: new Date(lastLoginAttempt).toISOString() } : {}),
+    };
+  }
+
   async function peekSession() {
     const p = await getPage();
     if (codeRequestedAt && Date.now() - codeRequestedAt < CODE_TTL_MS) {
       const { kind } = await classifyNow(p);
-      if (kind === "code") return { state: "awaiting_code", codeRequestedAt: new Date(codeRequestedAt).toISOString() };
+      if (kind === "code") return codeState();
     }
     await p.goto(CV_REPORTS_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await p.waitForTimeout(3500);
@@ -186,7 +195,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
     say(`pieteikšanās: ${kind}`);
     if (kind === "code") {
       codeRequestedAt = Date.now();
-      return { state: "awaiting_code", codeRequestedAt: new Date(codeRequestedAt).toISOString() };
+      return codeState();
     }
     if (kind === "logged_in") return { state: "active" };
     if (kind === "captcha") return { state: "needs_human", code: "captcha" };
@@ -220,7 +229,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
     }
     if (k === "code") {
       const s = await snapshot(p);
-      if (/nepareiz|invalid|incorrect|beidzies|expired/i.test(s.text)) return { state: "awaiting_code", code: "wrong_code", codeRequestedAt: new Date(codeRequestedAt).toISOString() };
+      if (/nepareiz|invalid|incorrect|beidzies|expired/i.test(s.text)) return { ...codeState(), code: "wrong_code" };
     }
     const s = await peekSession();
     say(`kods: ${s.state}`);
