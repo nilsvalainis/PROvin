@@ -4,6 +4,23 @@
 
 import { isPartnerHighlightAdminOrder } from "@/lib/b2b-partner-orders";
 
+/** e.csdd papildu bloki klienta PDF (23.11.2026) - pēc noklusējuma izslēgti visos režīmos. */
+export const CSDD_PDF_BLOK_KEYS = [
+  "csddPdfWarnings",
+  "csddPdfRestrictions",
+  "csddPdfMeasurements",
+  "csddPdfTaAnalysis",
+] as const;
+export type CsddPdfBlokKey = (typeof CSDD_PDF_BLOK_KEYS)[number];
+export type CsddPdfBlokiFlags = Record<CsddPdfBlokKey, boolean>;
+
+export const CSDD_PDF_BLOKI_OFF: CsddPdfBlokiFlags = {
+  csddPdfWarnings: false,
+  csddPdfRestrictions: false,
+  csddPdfMeasurements: false,
+  csddPdfTaAnalysis: false,
+};
+
 export type PdfVisibilitySettings = {
   payment: boolean;
   vehicle: boolean;
@@ -49,7 +66,7 @@ export type PdfVisibilitySettings = {
   autoRecordsOilInterval: boolean;
   /** OFICIĀLĀ DĪLERA DATI: aprīkojums / komplektācija. Noklusējums: rādīt. */
   autoRecordsEquipment: boolean;
-};
+} & CsddPdfBlokiFlags;
 
 const IRISS_SUBSECTIONS_ON = {
   irissTechnicalRisks: true,
@@ -100,6 +117,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   incidentPhotos: false,
   autoRecordsOilInterval: true,
   autoRecordsEquipment: true,
+  ...CSDD_PDF_BLOKI_OFF,
 };
 
 /** Tikai ASV vēsture - atsevišķs produkts / PROVIN BUSINESS US atskaite. */
@@ -136,6 +154,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   incidentPhotos: true,
   autoRecordsOilInterval: true,
   autoRecordsEquipment: true,
+  ...CSDD_PDF_BLOKI_OFF,
 };
 
 /**
@@ -172,6 +191,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   ...IRISS_SUBSECTIONS_ON,
   autoRecordsOilInterval: true,
   autoRecordsEquipment: true,
+  ...CSDD_PDF_BLOKI_OFF,
 };
 
 export function isMiniPdfVisibilityOrder(args: {
@@ -248,6 +268,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   ...IRISS_SUBSECTIONS_ON,
   autoRecordsOilInterval: true,
   autoRecordsEquipment: true,
+  ...CSDD_PDF_BLOKI_OFF,
 };
 
 function isBool(v: unknown): v is boolean {
@@ -303,6 +324,10 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     autoRecordsEquipment: isBool(o.autoRecordsEquipment)
       ? o.autoRecordsEquipment
       : d.autoRecordsEquipment,
+    csddPdfWarnings: o.csddPdfWarnings === true,
+    csddPdfRestrictions: o.csddPdfRestrictions === true,
+    csddPdfMeasurements: o.csddPdfMeasurements === true,
+    csddPdfTaAnalysis: o.csddPdfTaAnalysis === true,
   };
 }
 

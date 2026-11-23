@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminCsddBlokiPanel } from "@/components/admin/AdminCsddBlokiPanel";
+import type { CsddPdfBlokKey, CsddPdfBlokiFlags } from "@/lib/pdf-visibility";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { useEffect, useMemo, useRef } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
@@ -206,6 +208,9 @@ type Props = {
   onPdfIncludeBlockChange: (next: boolean) => void;
   pdfIncludeMileageTable: boolean;
   onPdfIncludeMileageTableChange: (next: boolean) => void;
+  /** e.csdd papildu bloku PDF ķekši (noklusējums izslēgts). Bez tiem sadaļa tiek rādīta bez ķekšiem. */
+  pdfBloki?: CsddPdfBlokiFlags;
+  onPdfBlokiChange?: (key: CsddPdfBlokKey, next: boolean) => void;
   sessionId: string;
   /** Pasūtījuma VIN vai numurzīme, ja CSDD bloka reģistrācijas numurs vēl tukšs. */
   orderVin?: string;
@@ -232,6 +237,8 @@ export function AdminCsddSourceBlock({
   onPdfIncludeBlockChange,
   pdfIncludeMileageTable,
   onPdfIncludeMileageTableChange,
+  pdfBloki,
+  onPdfBlokiChange,
   sessionId,
   orderVin = "",
   collapseBlockId = "csdd",
@@ -402,6 +409,10 @@ export function AdminCsddSourceBlock({
           </AdminAiPolishTextareaShell>
         )}
       </div>
+
+      {value.rawUnprocessedData.trim() ? (
+        <AdminCsddBlokiPanel value={value} flags={pdfBloki} onFlagChange={onPdfBlokiChange} />
+      ) : null}
 
       {firstRegWarnings.length > 0 ? (
         <div

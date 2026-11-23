@@ -6017,6 +6017,13 @@ export function OrderDetailWorkspace({
                 onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}
                 pdfIncludeMileageTable={pdfVisibility.csddMileageTable}
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
+                pdfBloki={{
+                  csddPdfWarnings: pdfVisibility.csddPdfWarnings,
+                  csddPdfRestrictions: pdfVisibility.csddPdfRestrictions,
+                  csddPdfMeasurements: pdfVisibility.csddPdfMeasurements,
+                  csddPdfTaAnalysis: pdfVisibility.csddPdfTaAnalysis,
+                }}
+                onPdfBlokiChange={(key, next) => onPdfVisibilityChange({ [key]: next } as Partial<PdfVisibilitySettings>)}
                 sessionId={payload.sessionId}
                 orderVin={payload.vin ?? ""}
                 ecsddAuto
