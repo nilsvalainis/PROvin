@@ -19,6 +19,7 @@ import "./mobile/pro-today.css";
 import "./admin-iriss-theme.css";
 import "./iriss-tokens.css";
 import "./admin-costs-theme.css";
+import "./mobile/pages-glass.css";
 
 export const metadata: Metadata = {
   title: "Administrēšana | PROVIN",

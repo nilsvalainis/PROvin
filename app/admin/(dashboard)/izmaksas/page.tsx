@@ -18,5 +18,10 @@ export default async function AdminIzmaksasPage({
   const q = await searchParams;
   const month = resolveCostMonth(q.m);
   const { dashboard } = await loadCostDashboard(month);
-  return <AdminCostsView dashboard={dashboard} workspace="pro" />;
+  // Telefonā stikla stils (22.11 makets v2); IRISS izmaksu lapa (/admin/iriss/izmaksas) nemainās.
+  return (
+    <div className="amx amx-pg amx-pg--izmaksas">
+      <AdminCostsView dashboard={dashboard} workspace="pro" />
+    </div>
+  );
 }

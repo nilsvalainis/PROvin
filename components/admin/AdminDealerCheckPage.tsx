@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import {
   DEALER_CHECK_DEFAULT_SELECTED,
@@ -126,6 +127,9 @@ export function AdminDealerCheckPage({
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderError, setCreateOrderError] = useState("");
   const router = useRouter();
+  // 3. posms (22.11 makets v2): stikla stils tikai PRO telefonā; IRISS lapa nemainās.
+  const glass = basePath === DEALER_CHECK_PAGE_PATH;
+  const phone = useAdminIsPhone();
   const csddLookupSeq = useRef(0);
   const listSeq = useRef(0);
   const filteredEntries = useMemo(() => filterDealerCheckList(entries, filter), [entries, filter]);
@@ -480,19 +484,25 @@ export function AdminDealerCheckPage({
   );
 
   return (
-    <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-2 sm:px-7 sm:pt-4">
+    <div
+      className={`mx-auto max-w-[1180px] px-4 pb-16 pt-2 sm:px-7 sm:pt-4${glass ? " amx amx-pg amx-pg--dilera" : ""}`}
+      data-amx-page={glass ? "dilera-parbaude" : undefined}
+    >
       <h1 className="text-[23px] font-semibold tracking-tight text-[#111] sm:text-[26px]">Dīlera datu pārbaude</h1>
-      <p className="mb-5 mt-1 text-[13.5px] text-[#6e6e73]">Iekšējā · bez klienta pasūtījuma · ADMIN</p>
+      <p className="mb-5 mt-1 text-[13.5px] text-[#6e6e73]" data-amx-hint>Iekšējā · bez klienta pasūtījuma · ADMIN</p>
 
-      <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5">
-        <h2 className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
+      <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5" data-amx-sec="sablons">
+        <h2 className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]" data-amx-hint>
           Šablons - kam paredzēts
         </h2>
         <div className="flex flex-wrap items-center gap-3">
+          <div className="contents" data-amx-seg role={glass ? "tablist" : undefined}>
           {DEALER_CHECK_TEMPLATES.map((id) => (
             <button
               key={id}
               type="button"
+              role={glass ? "tab" : undefined}
+              aria-selected={glass ? template === id : undefined}
               onClick={() => setTemplate(id)}
               className={`rounded-full border px-3.5 py-2 text-[13.5px] font-semibold ${
                 template === id ? "border-[#2563EB] bg-[#2563EB] text-white" : "border-[#d1d1d6] bg-white text-[#111]"
@@ -501,34 +511,41 @@ export function AdminDealerCheckPage({
               {DEALER_CHECK_TEMPLATE_LABEL[id]}
             </button>
           ))}
-          <div className="w-full rounded-xl bg-[#f2f4f8] px-3.5 py-2.5 text-[13px] text-[#3a3a3c] sm:ml-auto sm:w-auto">
+          </div>
+          <div data-amx-ledger className="w-full rounded-xl bg-[#f2f4f8] px-3.5 py-2.5 text-[13px] text-[#3a3a3c] sm:ml-auto sm:w-auto">
             {ledgerBar || "Dzintarzeme · šis mēnesis 0,00 € · 0 ielādes | Cits · 0,00 € · 0"}
           </div>
         </div>
       </section>
 
       <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5">
-        <h2 className="mb-3 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">Meklēšana</h2>
+        <h2 className="mb-3 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]" data-amx-hint>
+          Meklēšana
+        </h2>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="block min-w-0 flex-[2]">
-            <span className="mb-1.5 block text-[11.5px] font-semibold text-[#6e6e73]">VIN</span>
+            <span className="mb-1.5 block text-[11.5px] font-semibold text-[#6e6e73]" data-amx-hint>
+              VIN
+            </span>
             <input
               className={inp}
               value={vin}
               onChange={(e) => setVin(sanitizeVinInput(e.target.value))}
-              placeholder="17 simboli"
+              placeholder={glass && phone ? "VIN" : "17 simboli"}
               autoComplete="off"
               spellCheck={false}
               data-provin-handoff-vin
             />
           </label>
           <label className="block min-w-0 flex-1">
-            <span className="mb-1.5 block text-[11.5px] font-semibold text-[#6e6e73]">Valsts numurzīme (v/n)</span>
+            <span className="mb-1.5 block text-[11.5px] font-semibold text-[#6e6e73]" data-amx-hint>
+              Valsts numurzīme (v/n)
+            </span>
             <input
               className={inp}
               value={plate}
               onChange={(e) => setPlate(e.target.value.toUpperCase())}
-              placeholder="piem. AB-1234"
+              placeholder={glass && phone ? "Valsts numurzīme" : "piem. AB-1234"}
               autoComplete="off"
               spellCheck={false}
               aria-label="Valsts numurzīme"
@@ -548,11 +565,11 @@ export function AdminDealerCheckPage({
 
         <h2 className="mb-3 mt-[18px] flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
           OneAuto avoti
-          <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10.5px] font-bold normal-case tracking-normal text-[#2563EB]">
+          <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10.5px] font-bold normal-case tracking-normal text-[#2563EB]" data-amx-hint>
             noklusējumā visi izslēgti
           </span>
         </h2>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4" data-amx-sources>
           {DEALER_CHECK_SOURCES.map((src) => {
             const on = selected.includes(src.id);
             return (
@@ -560,6 +577,8 @@ export function AdminDealerCheckPage({
                 key={src.id}
                 type="button"
                 onClick={() => toggle(src.id)}
+                data-amx-on={on || undefined}
+                data-amx-keep
                 className={`flex items-start gap-2.5 rounded-xl border p-3 text-left ${
                   on ? "border-[#2563EB] bg-[#f3f7ff]" : "border-[#e5e5ea] bg-white"
                 }`}
@@ -571,18 +590,22 @@ export function AdminDealerCheckPage({
                 >
                   {on ? "✓" : ""}
                 </span>
-                <span>
+                <span className="min-w-0 flex-1">
                   <b className="block text-[13px] font-semibold text-[#111]">{src.label}</b>
-                  <span className="text-[12px] text-[#6e6e73]">
+                  <span className="text-[12px] text-[#6e6e73]" data-amx-hint>
                     {src.hint} · {formatDealerCheckEur(src.priceCents)}
                   </span>
+                </span>
+                {/* Telefonā avota cena labajā pusē (22.11 makets v2). */}
+                <span className="hidden" data-amx-price>
+                  {formatDealerCheckEur(src.priceCents)}
                 </span>
               </button>
             );
           })}
         </div>
-        <div className="mt-3.5 flex flex-wrap items-center gap-3">
-          <span className="text-[13.5px] text-[#6e6e73]">
+        <div className="mt-3.5 flex flex-wrap items-center gap-3" data-amx-load>
+          <span className="text-[13.5px] text-[#6e6e73]" data-amx-hint>
             Atzīmēti: {pick.count} · kopā <b className="text-[#111]">{formatDealerCheckEur(pick.cents)}</b>
           </span>
           <button
@@ -614,7 +637,7 @@ export function AdminDealerCheckPage({
           >
             {creatingOrder ? "Veido…" : DEALER_CHECK_MANUAL_ORDER_LABEL}
           </button>
-          <span className="text-[12.5px] text-[#6e6e73]">
+          <span className="text-[12.5px] text-[#6e6e73]" data-amx-hint>
             Jauns manuāls pasūtījums ar šiem datiem. Klientu un apmaksu papildini pēc tam.
           </span>
         </div>
@@ -913,7 +936,7 @@ export function AdminDealerCheckCsddPreview({ data }: { data: CsddTechData }) {
           Pirms OneAuto · iekšēji
         </span>
       </h2>
-      <p className="mb-3 text-[12.5px] text-[#6e6e73]">
+      <p className="mb-3 text-[12.5px] text-[#6e6e73]" data-amx-hint>
         Pilni CSDD reģistra tehniskie dati. OneAuto avoti paliek izslēgti, līdz nospied Ielādēt.
       </p>
       <div className="grid grid-cols-2 gap-x-[18px] gap-y-3 lg:grid-cols-4">

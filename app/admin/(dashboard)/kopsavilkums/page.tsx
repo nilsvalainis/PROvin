@@ -14,12 +14,12 @@ export default async function AdminMorningSummaryPage() {
   const { summary, stripeError } = await loadMorningSummary();
 
   return (
-    <div className="w-full max-w-none">
+    <div className="amx amx-pg amx-pg--rits w-full max-w-none">
       <AdminDashboardHeaderWithMenu mobileTitle="Rīta kopsavilkums">
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Rīta kopsavilkums
         </h1>
-        <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]">
+        <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]" data-amx-hint>
           48 h audita SLA un neatbildētie ātrie vērtējumi.
         </p>
       </AdminDashboardHeaderWithMenu>
