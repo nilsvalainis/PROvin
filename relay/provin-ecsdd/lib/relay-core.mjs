@@ -7,6 +7,7 @@
  *   ping() -> "ok" | "logged_out"
  *   lookup(query) -> { status: "found", rawText } | { status: "not_found" } | { status: "logged_out" }
  *   logout() -> void
+ *   paidSmsLink(query) / paidList() / paidReport(plate, since)   - maksas izziņa (sk. ecsdd-flow.mjs), caur `direct`
  *
  * Atzvani (`notify`):
  *   { kind: "session", session }                                        - sesijas stāvoklis (ar kodu, ja gaida Smart-ID)
@@ -213,5 +214,47 @@ export function createRelayCore({ queue, browser, notify, cfg, now = () => new D
     return view();
   }
 
-  return { load, tick, keepAliveTick, enqueue, requestLogin, release, session: view, stats: () => queue.stats(), getJob: queue.get };
+  /**
+   * Maksas izziņas darbības (sms-link / paid-list / paid-report): tūlītējs pārlūka solis bez rindas, tikai aktīvā sesijā.
+   * Nav sesijas -> { status: "needs_login" } (Smart-ID sāk tikai `login: true`, ko sūta Nila poga adminā).
+   * `fn` atgriež { status: "logged_out" } -> sesija atzīmēta kā beigusies.
+   */
+  async function direct(fn, { login = false } = {}) {
+    if (session.state !== "active") {
+      let loginStarted = false;
+      if (login && session.state !== "logging_in" && session.state !== "awaiting_smartid") {
+        pendingManualLogin = true;
+        loginStarted = true;
+      }
+      return { status: "needs_login", loginStarted, session: view() };
+    }
+    return exclusive(async () => {
+      let r;
+      try {
+        r = await fn();
+      } catch (e) {
+        return { status: "error", code: (e && e.code) || "error" };
+      }
+      if (r?.status === "logged_out") {
+        await setSession(onLoggedOutDetected(session, now(), cfg));
+        if (login) pendingManualLogin = true;
+        return { status: "needs_login", loginStarted: Boolean(login), session: view() };
+      }
+      await setSession(onSessionOk(session, now(), { lookup: true }));
+      return { ...r, session: view() };
+    });
+  }
+
+  return {
+    load,
+    tick,
+    keepAliveTick,
+    enqueue,
+    requestLogin,
+    release,
+    direct,
+    session: view,
+    stats: () => queue.stats(),
+    getJob: queue.get,
+  };
 }

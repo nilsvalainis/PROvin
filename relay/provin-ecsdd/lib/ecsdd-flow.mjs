@@ -22,6 +22,26 @@ import {
   pickAccountIndex,
   redact,
 } from "./ecsdd-page.mjs";
+import {
+  classifyPaidPage,
+  findPreparedFooter,
+  findSmsHrefs,
+  formatPaidReportPanels,
+  IPHONE_UA,
+  PAID_REPORT_TITLES,
+  paidReportLooksComplete,
+  PAID_FORBIDDEN_RE,
+  PAID_LIST_LINK_RE,
+  PAID_MENU_RE,
+  PAID_REFRESH_RE,
+  PAID_REQUEST_RE,
+  parsePaidConfirmText,
+  parsePaidListRows,
+  parseSmsHref,
+  pickPaidReport,
+  redactPaidText,
+  smsBodyMatchesPlate,
+} from "./ecsdd-paid.mjs";
 import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
 
 export class EcsddFlowError extends Error {
@@ -110,6 +130,118 @@ export function collectTadatiPanels() {
   const foot = document.querySelector("tr.tr-basedata");
   return { panels, footer: foot ? cell(foot) : "" };
 }
+
+/**
+ * Pārlūkā: visas klikšķināmās vadīklas (arī paslēptās izvēlnē) ar marķieri `data-provin-ctl`, lai tās var atrast vēlreiz.
+ * Tikai lasa un iezīmē - neko nespiež.
+ */
+export function collectPaidControls() {
+  const vis = (el) => {
+    const r = el.getBoundingClientRect();
+    const st = window.getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && st.visibility !== "hidden" && st.display !== "none";
+  };
+  const els = [...document.querySelectorAll('a, button, input[type="submit"], input[type="button"], [role="button"], [onclick]')];
+  return els.map((el, i) => {
+    el.setAttribute("data-provin-ctl", String(i));
+    return {
+      i,
+      tag: el.tagName.toLowerCase(),
+      text: (el.textContent || el.getAttribute("value") || el.getAttribute("title") || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 160),
+      href: el.getAttribute("href") || "",
+      onclick: (el.getAttribute("onclick") || "").slice(0, 400),
+      data: [...el.attributes].filter((a) => /^data-/.test(a.name)).map((a) => a.value).join(" ").slice(0, 400),
+      visible: vis(el),
+    };
+  });
+}
+
+/** Pārlūkā: tabulu rindas (šūnu teksti), rinda iezīmēta ar `data-provin-row`; vai rindā ir saite. */
+export function collectPaidTableRows() {
+  return [...document.querySelectorAll("tr")].map((tr, i) => {
+    tr.setAttribute("data-provin-row", String(i));
+    // innerText: <br> starp datumu un laiku -> atstarpe (textContent tos salīmētu).
+    const cells = [...tr.children].filter((c) => /^(TD|TH)$/.test(c.tagName)).map((c) => (c.innerText || c.textContent || "").replace(/\s+/g, " ").trim());
+    const a = tr.querySelector("a[href]");
+    return { cells, href: a ? a.getAttribute("href") || "" : "", clickable: Boolean(a || tr.getAttribute("onclick") || tr.querySelector("button, [onclick]") || tr.dataset.href) };
+  });
+}
+
+/**
+ * Pārlūkā: maksas izziņas akordeoni ar visām rindām (arī aizvērtie). `titles` - zināmie virsraksti (salocīti).
+ * 1) tāda pati struktūra kā tadati (section > input[name=panels]); 2) elements ar virsraksta tekstu + tuvākais konteiners.
+ */
+export function collectPaidPanels(titles) {
+  const fold = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim().replace(/:$/, "");
+  const want = new Set(titles);
+  const cell = (el) => {
+    const c = el.cloneNode(true);
+    for (const x of c.querySelectorAll("style, svg, script")) x.remove();
+    return (c.textContent || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  };
+  const rowsOf = (root) => {
+    const rows = [...root.querySelectorAll("tr")].map((tr) => [...tr.children].filter((c) => /^(TD|TH)$/.test(c.tagName)).map(cell));
+    for (const dl of root.querySelectorAll("dl")) {
+      const dts = [...dl.querySelectorAll("dt")];
+      for (const dt of dts) rows.push([cell(dt), dt.nextElementSibling ? cell(dt.nextElementSibling) : ""]);
+    }
+    return rows.filter((r) => r.some(Boolean));
+  };
+  const linesOf = (root, titleEl) => {
+    const c = root.cloneNode(true);
+    for (const x of c.querySelectorAll("style, svg, script, table, dl, button")) x.remove();
+    const t = titleEl ? cell(titleEl) : "";
+    return (c.innerText || c.textContent || "")
+      .split(/\n+/)
+      .map((l) => l.replace(/\s+/g, " ").trim())
+      .filter((l) => l && l !== t);
+  };
+  const sections = [...document.querySelectorAll("section")].filter((s) => s.querySelector(':scope > input[name="panels"]'));
+  if (sections.length >= 3) {
+    return sections.map((s) => {
+      const lab = s.querySelector(":scope > label");
+      const rows = rowsOf(s);
+      return { title: lab ? cell(lab) : "", rows, lines: rows.length ? [] : linesOf(s, lab) };
+    });
+  }
+  const heads = [...document.querySelectorAll("label, h1, h2, h3, h4, h5, button, a, summary, span, div, p, dt")].filter((el) => {
+    if (!want.has(fold(el.textContent))) return false;
+    // tikai iekšējākais elements ar šo tekstu
+    return ![...el.children].some((c) => fold(c.textContent) === fold(el.textContent));
+  });
+  const seen = new Set();
+  const out = [];
+  for (const h of heads) {
+    const key = fold(h.textContent);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    // Konteiners: augšup, kamēr tajā ir tikai šis virsraksts un parādās saturs.
+    let box = h.parentElement;
+    for (let up = 0; box && up < 6; up++) {
+      const others = heads.filter((x) => x !== h && box.contains(x));
+      if (others.length) {
+        box = null;
+        break;
+      }
+      const hasContent = box.querySelector("table, dl, p, li, div") && (box.textContent || "").replace(/\s+/g, " ").trim().length > (h.textContent || "").trim().length + 2;
+      if (hasContent) break;
+      box = box.parentElement;
+    }
+    // Saturs var būt nākamais brālis (akordeona virsraksts + panelis).
+    if (!box) {
+      const sib = h.closest("label, button, a, summary, div, h1, h2, h3, h4, h5")?.nextElementSibling;
+      out.push({ title: cell(h), rows: sib ? rowsOf(sib) : [], lines: sib && !sib.querySelector("table, dl") ? linesOf(sib, null) : [] });
+      continue;
+    }
+    const rows = rowsOf(box);
+    out.push({ title: cell(h), rows, lines: rows.length ? [] : linesOf(box, h) });
+  }
+  return out;
+}
+
+const PAID_REPORT_TITLES_FOLDED = PAID_REPORT_TITLES.map((t) =>
+  t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(),
+);
 
 export function createEcsddBrowser({ getContext, personalCode, account = "person", log = () => undefined, debugDir = "", smartIdTimeoutMs = 120_000 }) {
   const secrets = [personalCode];
@@ -398,5 +530,258 @@ export function createEcsddBrowser({ getContext, personalCode, account = "person
     }
   }
 
-  return { login, ping, lookup, logout };
+  // ---- Maksas izziņa (1,50 € ar SMS). Relejs tikai lasa: nekad nesūta SMS, nemaksā, nespiež "Nosūtīt uz e-pastu". ----
+
+  /** Pēdējais režīms, kurā maksas izziņu sadaļas bija redzamas ("desktop" | "mobile"). */
+  let paidMode = "desktop";
+
+  async function withModePage(mode, fn) {
+    return withPage(async (page) => {
+      if (mode === "mobile") {
+        // Tikai šai cilnei: iPhone UA + 390 px skats (CSDD lietotnes / telefona izkārtojums).
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send("Network.setUserAgentOverride", { userAgent: IPHONE_UA, platform: "iPhone", acceptLanguage: "lv-LV,lv" });
+        await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+        await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 }).catch(() => undefined);
+      }
+      return fn(page);
+    });
+  }
+
+  /** Abos režīmos pēc kārtas (vispirms tas, kas strādāja pēdējo reizi); `fn` atgriež {status:"no_button"}, ja sadaļas nav. */
+  async function inModes(name, fn) {
+    const order = paidMode === "mobile" ? ["mobile", "desktop"] : ["desktop", "mobile"];
+    let last = null;
+    for (const mode of order) {
+      last = await withModePage(mode, (page) => fn(page, mode));
+      if (last?.status !== "no_button") {
+        if (last?.status !== "logged_out") paidMode = mode;
+        return { ...last, mode };
+      }
+      log(`${name}: ${mode} režīmā sadaļa nav redzama`);
+    }
+    return { ...last, mode: order[order.length - 1] };
+  }
+
+  async function saveDebugPaid(name, page) {
+    const snap = await snapshot(page).catch(() => null);
+    if (!snap) return;
+    await saveDebug(name, {
+      ...snap,
+      text: redactPaidText(snap.text),
+      links: (snap.links ?? []).map((l) => ({ text: redactPaidText(l.text), href: redactPaidText(l.href) })),
+      buttons: (snap.buttons ?? []).map((b) => ({ ...b, text: redactPaidText(b.text) })),
+    });
+  }
+
+  /** Sākumlapa ielogotā kontā: "ok" | "logged_out". */
+  async function openHome(page) {
+    await page.goto(ECSDD_HOME_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    let snap = await snapshot(page);
+    let kind = classifySnapshot(snap);
+    if (kind === "ecsdd_account_choose") {
+      await chooseAccount(page, snap);
+      snap = await snapshot(page);
+      kind = classifySnapshot(snap);
+    }
+    if (kind === "captcha") throw new EcsddFlowError("captcha");
+    if (kind === "ecsdd_logged_out") return "logged_out";
+    return "ok";
+  }
+
+  /** Atver vadīklu: saite ar e.csdd href -> goto; citādi klikšķis. Nekad - aizliegtās pogas un sms:. */
+  async function openControl(page, ctl) {
+    if (PAID_FORBIDDEN_RE.test(ctl.text) || /^sms:/i.test(ctl.href)) throw new EcsddFlowError("page_changed", "aizliegta vadīkla");
+    const href = ctl.href && !/^(javascript:|#|mailto:|tel:)/i.test(ctl.href) ? new URL(ctl.href, page.url()).toString() : "";
+    if (href && isEcsddHost(new URL(href).hostname)) {
+      await page.goto(href, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    } else {
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 20_000 }).catch(() => undefined),
+        page.locator(`[data-provin-ctl="${ctl.i}"]`).first().click({ force: true, timeout: 10_000 }),
+      ]);
+    }
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+    await sleep(800);
+  }
+
+  async function findControl(page, re) {
+    const ctls = await page.evaluate(collectPaidControls);
+    return ctls.filter((c) => re.test(c.text)).sort((a, b) => Number(b.visible) - Number(a.visible))[0] ?? null;
+  }
+
+  async function submitTadati(page, query) {
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => undefined),
+      page.evaluate(
+        ({ action, rn }) => {
+          const f = document.createElement("form");
+          f.method = "post";
+          f.action = action;
+          const i = document.createElement("input");
+          i.type = "hidden";
+          i.name = "rn";
+          i.value = rn;
+          f.appendChild(i);
+          document.body.appendChild(f);
+          f.submit();
+        },
+        { action: ECSDD_TADATI_URL, rn: query },
+      ),
+    ]);
+    await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => undefined);
+  }
+
+  /**
+   * `tadati` -> "Pieprasīt maksas izziņu" -> NOLASA "Sagatavot īsziņu" saiti (nespiež).
+   * -> { status: "ok", number, body, price, vehicle, plate } | logged_out | not_found | no_button
+   */
+  async function paidSmsLink(query) {
+    return inModes("sms-link", async (page, mode) => {
+      if ((await openHome(page)) === "logged_out") return { status: "logged_out" };
+      await pause();
+      await submitTadati(page, query);
+      const snap = await snapshot(page);
+      const kind = classifySnapshot(snap, { submitted: true });
+      if (kind === "ecsdd_logged_out") return { status: "logged_out" };
+      if (kind === "captcha") throw new EcsddFlowError("captcha");
+      if (kind === "tadati_not_found") return { status: "not_found" };
+      const req = await findControl(page, PAID_REQUEST_RE);
+      if (!req) {
+        await saveDebugPaid(`paid-no-request-${mode}`, page);
+        return { status: "no_button" };
+      }
+      await openControl(page, req);
+      const confirm = await snapshot(page);
+      const ctls = await page.evaluate(collectPaidControls);
+      const html = await page.content();
+      const prep = ctls.find((c) => /sagatavot\s+[iī]szi[ņn]u/i.test(c.text));
+      const candidates = [prep?.href, prep?.onclick, prep?.data, ...ctls.filter((c) => /^sms:/i.test(c.href)).map((c) => c.href), ...findSmsHrefs(html)]
+        .flatMap((v) => (v ? findSmsHrefs(v).concat(/^sms:/i.test(v) ? [v] : []) : []))
+        .filter(Boolean);
+      const info = parsePaidConfirmText(confirm.text);
+      for (const href of candidates) {
+        const sms = parseSmsHref(href);
+        if (!sms) continue;
+        const plate = info.plate || (/^[A-Z0-9]{2,8}$/.test(query) && /[A-Z]/.test(query) ? query : "");
+        if (plate && !smsBodyMatchesPlate(sms.body, plate)) {
+          log("sms-link: SMS teksts neatbilst numuram");
+          continue;
+        }
+        log(`sms-link: saite nolasīta (${mode})`);
+        return { status: "ok", number: sms.number, body: sms.body, price: info.price, vehicle: info.vehicle, plate: plate || sms.body.split(/\s+/).pop() };
+      }
+      await saveDebugPaid(`paid-confirm-unknown-${mode}`, page);
+      if (classifyPaidPage(confirm) !== "paid_confirm") return { status: "no_button" };
+      throw new EcsddFlowError("page_changed", "maksas izziņa: nav sms saites");
+    });
+  }
+
+  /** Izvēlne -> Maksas Izziņas -> Apmaksātās izziņas (+ "Atjaunot sarakstu"). Atgriež true, ja saraksta lapa atvērta. */
+  async function openPaidList(page) {
+    let ctl = await findControl(page, PAID_LIST_LINK_RE);
+    if (!ctl) {
+      const menu = await findControl(page, PAID_MENU_RE);
+      if (menu) {
+        await openControl(page, menu);
+        ctl = await findControl(page, PAID_LIST_LINK_RE);
+      }
+    }
+    if (!ctl) return false;
+    await openControl(page, ctl);
+    const refresh = await findControl(page, PAID_REFRESH_RE);
+    if (refresh) await openControl(page, refresh);
+    return classifyPaidPage(await snapshot(page)) === "paid_list";
+  }
+
+  async function readPaidList(page) {
+    const rows = await page.evaluate(collectPaidTableRows);
+    return { rows, list: parsePaidListRows(rows.map((r) => r.cells)) };
+  }
+
+  /** -> { status: "ok", items: [{plate, status, paidAt, dateText}] } | logged_out | no_button */
+  async function paidList() {
+    return inModes("paid-list", async (page, mode) => {
+      if ((await openHome(page)) === "logged_out") return { status: "logged_out" };
+      if (!(await openPaidList(page))) {
+        await saveDebugPaid(`paid-list-missing-${mode}`, page);
+        return { status: "no_button" };
+      }
+      const { list } = await readPaidList(page);
+      return { status: "ok", items: list.map((r) => ({ plate: r.plate, status: r.status, paidAt: r.paidAt, dateText: r.dateText })) };
+    });
+  }
+
+  /**
+   * Jaunākā apmaksātā izziņa numuram `plate` (ne vecāka par `sinceIso`) -> pilns teksts CSDD blokam.
+   * -> { status: "found", rawText, plate, paidAt } | pending | logged_out | no_button
+   */
+  async function paidReport(plate, sinceIso = "") {
+    return inModes("paid-report", async (page, mode) => {
+      if ((await openHome(page)) === "logged_out") return { status: "logged_out" };
+      if (!(await openPaidList(page))) {
+        await saveDebugPaid(`paid-list-missing-${mode}`, page);
+        return { status: "no_button" };
+      }
+      const { rows, list } = await readPaidList(page);
+      const hit = pickPaidReport(list, plate, sinceIso);
+      if (!hit) return { status: "pending", listed: list.length };
+      const row = rows[hit.index];
+      if (row?.href && !/^(javascript:|#)/i.test(row.href)) {
+        await page.goto(new URL(row.href, page.url()).toString(), { waitUntil: "domcontentloaded", timeout: 45_000 });
+      } else {
+        const tr = page.locator(`[data-provin-row="${hit.index}"]`).first();
+        const inner = tr.locator("a, button, [onclick]").first();
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 20_000 }).catch(() => undefined),
+          ((await inner.count()) ? inner : tr.locator("td").first()).click({ force: true, timeout: 10_000 }),
+        ]);
+      }
+      await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+      await sleep(800);
+      const titles = PAID_REPORT_TITLES_FOLDED;
+      let panels = await page.evaluate(collectPaidPanels, titles);
+      let footer = findPreparedFooter(await page.evaluate(() => document.body?.textContent || ""));
+      let rawText = formatPaidReportPanels(panels, footer, (t) => redact(t, secrets));
+      if (!paidReportLooksComplete(rawText)) {
+        // Akordeoni ielādē saturu tikai atverot: atveram katru virsrakstu vienreiz (nekad "Nosūtīt uz e-pastu").
+        const heads = await page.evaluate((t) => {
+          const fold = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim().replace(/:$/, "");
+          const want = new Set(t);
+          return [...document.querySelectorAll("label, summary, h2, h3, h4, [aria-expanded], .accordion-title, .uk-accordion-title")]
+            .map((el, i) => {
+              el.setAttribute("data-provin-head", String(i));
+              return { i, ok: want.has(fold(el.textContent)) };
+            })
+            .filter((h) => h.ok)
+            .map((h) => h.i);
+        }, titles);
+        for (const i of heads) {
+          await page.locator(`[data-provin-head="${i}"]`).first().click({ timeout: 5000 }).catch(() => undefined);
+          await sleep(400);
+        }
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
+        panels = await page.evaluate(collectPaidPanels, titles);
+        footer = findPreparedFooter(await page.evaluate(() => document.body?.textContent || "")) || footer;
+        rawText = formatPaidReportPanels(panels, footer, (t) => redact(t, secrets));
+      }
+      if (!paidReportLooksComplete(rawText)) {
+        // Pēdējā iespēja: visa lapas teksta daļa starp pirmo virsrakstu un pogām.
+        const body = await page.evaluate(() => document.body?.innerText || "");
+        const start = body.search(/Aizliegumi|B[uū]tiski\s+boj[aā]jumi|Re[gģ]istr[aā]cijas\s+dati/i);
+        const end = body.search(/Nos[uū]t[iī]t\s+uz\s+re[gģ]istr[eē]to|Atgriezties\s+uz\s+izzi/i);
+        const slice = start >= 0 ? body.slice(start, end > start ? end : undefined) : "";
+        const alt = formatPaidReportPanels([{ title: "", lines: slice.split("\n") }], footer, (t) => redact(t, secrets));
+        if (paidReportLooksComplete(alt)) rawText = alt;
+      }
+      if (!paidReportLooksComplete(rawText)) {
+        await saveDebugPaid(`paid-report-unknown-${mode}`, page);
+        throw new EcsddFlowError("page_changed", "maksas izziņa: neatpazīts saturs");
+      }
+      log(`paid-report: izziņa nolasīta (${mode}, ${rawText.length} zīmes)`);
+      return { status: "found", rawText, plate: hit.plate, paidAt: hit.paidAt };
+    });
+  }
+
+  return { login, ping, lookup, logout, paidSmsLink, paidList, paidReport };
 }

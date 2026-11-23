@@ -55,19 +55,23 @@ async function saveStatus(sessionId: string, status: EcsddAutoStatus): Promise<E
   return status;
 }
 
-async function relayFetch(config: EcsddRelayConfig, path: string, init?: { method?: string; body?: unknown }) {
+export async function relayFetch(
+  config: EcsddRelayConfig,
+  path: string,
+  init?: { method?: string; body?: unknown; timeoutMs?: number },
+) {
   const res = await fetch(`${config.baseUrl}${path}`, {
     method: init?.method ?? "GET",
     headers: { Authorization: `Bearer ${config.token}`, "Content-Type": "application/json" },
     ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(init?.timeoutMs ?? 10_000),
     cache: "no-store",
   });
   const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   return { res, json };
 }
 
-function parseSession(raw: unknown): EcsddRelaySession | null {
+export function parseSession(raw: unknown): EcsddRelaySession | null {
   if (!raw || typeof raw !== "object") return null;
   const s = raw as Record<string, unknown>;
   if (typeof s.state !== "string") return null;
