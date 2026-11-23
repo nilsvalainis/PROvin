@@ -11,6 +11,8 @@ import { isGearboxOilChangeWork } from "@/lib/dealer-major-works";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { buildDealerVisitSummary } from "@/lib/pdf-dealer-timeline";
+import { extractVehicleDrivetrain, formatRegistryDrivetrainFactLine } from "@/lib/registry-drivetrain";
+import { resolveVehicleDisplayName } from "@/lib/vehicle-display-name";
 
 function groupDigits(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -67,6 +69,11 @@ export function buildDealerCodeFactsForPrompt(
   const lines: string[] = [
     "=== Koda faktu saraksts (deterministisks; skaitļi tie paši, ko PDF - cits skaits aizliegts) ===",
   ];
+  const name = resolveVehicleDisplayName(blocks);
+  if (name) lines.push(`- Modelis (tas pats nosaukums, ko PDF): ${name}.`);
+  // 23.11.2026 (W1K2132161A909201): AI rakstīja „4MATIC ar pilnpiedziņu”, lai gan ražotāja dati 4x2 (RWD).
+  const drivetrain = extractVehicleDrivetrain(blocks);
+  if (drivetrain) lines.push(`- ${formatRegistryDrivetrainFactLine(drivetrain, false)}.`);
   if (summary) {
     lines.push(
       `- Dīlera ieraksti: ${rows.length}; pirmais ${summary.firstDate || "datums nav"}, pēdējais ${summary.lastDate || "datums nav"} (${summary.lastKm || "km nav"}).`,

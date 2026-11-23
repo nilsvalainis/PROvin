@@ -17,6 +17,7 @@ import {
 import { aiSourceBlockLabel, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildEngineOilChangeListForPrompt } from "@/lib/engine-oil-prompt-list";
 import { buildDealerCodeFactsForPrompt } from "@/lib/dealer-code-facts-prompt";
+import { extractVehicleDrivetrain, stripAwdClaimsForTwoWheelDrive } from "@/lib/registry-drivetrain";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import {
@@ -114,6 +115,13 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     input.citiAvotiSectionIndex,
   );
   const isOilInterval = isOfficialDealerBlock(input.blockKey) && targetField === "oilChangeIntervalNotes";
+  /**
+   * 23.11.2026 (W1K2132161A909201): FLASH MAX / ✨ padeva esošo lauka tekstu kā „Esošais melnraksts
+   * (operators jau uzrakstījis - NEĪSINĀT, saglabā visus faktus)”. Dīlera laukos tas bija 21.11 vecā prompta
+   * teksts (identifikācija, vizīšu uzskaite, 4MATIC), un jaunais prompts to tikai pārkārtoja. Dīlera laukus
+   * vienmēr raksta no jauna no datiem; operatora norādes paliek („Papildu piezīmes AI”).
+   */
+  const draftForPrompt = isOfficialDealerBlock(input.blockKey) ? null : input.existingDraftPlain;
   const isolateDealer =
     isOfficialDealerBlock(input.blockKey) &&
     shouldIsolateDealerComments({
@@ -233,7 +241,7 @@ Garums: 2–3 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sāka
         }${input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""}`,
         {
           operatorNotes: input.operatorNotes,
-          existingDraftPlain: input.existingDraftPlain,
+          existingDraftPlain: draftForPrompt,
         },
       )
     : isServiceHistory
@@ -259,7 +267,7 @@ Formāts: katra rinda „DD.MM.YYYY | XXXXX km | darbi / komentārs” (ja km na
 Tikai fakti no konteksta; neizdomā apkopes. Bez ievada, bez kopsavilkuma, bez bold virsrakstiem.`,
         {
           operatorNotes: input.operatorNotes,
-          existingDraftPlain: input.existingDraftPlain,
+          existingDraftPlain: draftForPrompt,
         },
       )
     : appendAiOperatorNotesSection(
@@ -320,7 +328,7 @@ ${
         }`,
         {
           operatorNotes: input.operatorNotes,
-          existingDraftPlain: input.existingDraftPlain,
+          existingDraftPlain: draftForPrompt,
         },
       );
 
@@ -338,8 +346,11 @@ ${
     qualityField: isDealerComments ? "source_dealer" : "source",
     temperature: 0.25,
   });
-  if (isOilInterval || isServiceHistory) return generated;
-  const cleaned = keepSourceCommentAfterExpansionStrip(generated);
+  // Drošības tīkls (Nils 23.11.2026): dati saka 4x2 / RWD / FWD - pilnpiedziņas vārdus izmet.
+  const drivetrain = isOfficialDealerBlock(input.blockKey) ? extractVehicleDrivetrain(input.sourceBlocks) : null;
+  const dropAwd = (text: string) => stripAwdClaimsForTwoWheelDrive(text, drivetrain);
+  if (isOilInterval || isServiceHistory) return dropAwd(generated);
+  const cleaned = dropAwd(keepSourceCommentAfterExpansionStrip(generated));
   if (!commentContradictsPowertrain(cleaned, powertrainIdentity)) return cleaned;
   const retryPrompt = `${userPrompt}\n\n${powertrainBlock}\nVALIDATOR: iepriekšējā izeja runāja pretī ielādētajai degvielai vai dzinēja kodam. Pārraksti bez pretrunas.`;
   const retried = keepSourceCommentAfterExpansionStrip(
@@ -357,7 +368,7 @@ ${
   if (commentContradictsPowertrain(retried, powertrainIdentity)) {
     throw new Error("powertrain_contradiction");
   }
-  return retried;
+  return dropAwd(retried);
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";

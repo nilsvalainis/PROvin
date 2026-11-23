@@ -10,6 +10,11 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
+
+/** „1950 cc” - capitalize padarīja par „1950 Cc” (23.11.2026); tilpuma vienība paliek ar mazo burtu. */
+export function keepVolumeUnitLowercase(v: string): string {
+  return v.replace(/^(\d[\d\s.,]*)Cc(m)?(?![\p{L}])/u, "$1cc$2");
+}
 import { translateDealerVehicleCodeLv } from "@/lib/dealer-vehicle-code-lv";
 import { maskVinForDemo } from "@/lib/demo-vin-mask";
 
@@ -41,7 +46,7 @@ function vehicleInfoTable(
     }
     const label = translateClientReportStatic(labelLv || labelEn, lang);
     // Jaudai vienība „kW” paliek ar mazo burtu (capitalize to padarītu par „KW”).
-    rows.push({ k: label, v: key === "power" ? v : capitalizeFactValue(v) });
+    rows.push({ k: label, v: key === "power" ? v : keepVolumeUnitLowercase(capitalizeFactValue(v)) });
   }
   const table = buildPdfKvPairHtml(rows);
   if (!table) return "";

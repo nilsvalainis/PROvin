@@ -13,6 +13,7 @@ import {
 export type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   autoRecordsBlockHasContent,
+  createDefaultSourceBlocks,
   emptyAutoRecordsBlock,
   CSDD_FORM_STRUCTURED_FIELDS,
   CSDD_PREVIOUS_INSPECTION_TITLE,
@@ -103,6 +104,7 @@ import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows }
 import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import { stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
+import { dealerVehicleInfoForDisplay, resolveVehicleDisplayName } from "@/lib/vehicle-display-name";
 import {
   buildDealerSectionCoverHtml,
   resolveDealerCoverVehicle,
@@ -1031,15 +1033,25 @@ function reportVehicleMakeHint(p: ClientReportPayload): string {
   return resolvePdfReportMakeModelFromPayload(p);
 }
 
+/**
+ * Viena modeļa nosaukuma kārtība (`lib/vehicle-display-name.ts`, Nils 23.11.2026): operatora labojums,
+ * CSDD, citi reģistri, OneAuto; nekad tikai marka, ja modelis kaut kur ir. Galvene, kopsavilkuma karte,
+ * dīlera vāks un tabula lasa šo pašu vērtību.
+ */
 function resolvePdfReportMakeModelFromPayload(p: ClientReportPayload): string {
-  return resolvePdfReportMakeModel({
-    csddMakeModel: p.csddForm?.makeModel,
-    csddRaw: [p.csddForm?.rawUnprocessedData ?? "", p.csdd].filter(Boolean).join("\n"),
-    dealerModel: p.autoRecordsBlock?.outvinReport?.vehicleInfo.model,
-    listingUrl: p.listingUrl,
-    listingText: p.listingAnalysis?.sellerPortrait ?? "",
-    ltabMakeModel: p.manualLtabBlock?.certificate?.makeModel,
-  });
+  const fallbacks = [
+    resolvePdfReportMakeModel({
+      csddRaw: [p.csddForm?.rawUnprocessedData ?? "", p.csdd].filter(Boolean).join("\n"),
+      listingUrl: p.listingUrl,
+      listingText: p.listingAnalysis?.sellerPortrait ?? "",
+      ltabMakeModel: p.manualLtabBlock?.certificate?.makeModel,
+    }),
+  ];
+  const blocks = {
+    ...createDefaultSourceBlocks(),
+    auto_records: p.autoRecordsBlock ?? resolvedDealerBlock(p),
+  };
+  return resolveVehicleDisplayName(blocks, { csddMakeModel: p.csddForm?.makeModel, fallbacks });
 }
 
 function pdfFieldLabelWithIcon(iconHtml: string, label: string): string {
@@ -1916,12 +1928,17 @@ function buildAutoRecordsAvotuSubsection(
     return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${sparkHtml}</div></div>`;
   }
 
-  const bundle = getAutoRecordsOutvinBundle(b);
+  const rawBundle = getAutoRecordsOutvinBundle(b);
+  // Vienotais modeļa nosaukums (`resolveVehicleDisplayName`) arī tabulā un vākā; pretrunīgā sērija netiek rādīta.
+  const bundle = { ...rawBundle, vehicleInfo: dealerVehicleInfoForDisplay(rawBundle.vehicleInfo, makeModel) };
   const hasBundleStructured = outvinBundleHasStructuredContent(bundle);
   const bundleInner = hasBundleStructured
     ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true, maskDemoVin, lang })
     : "";
-  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, {
+  const displayReport = b.outvinReport
+    ? { ...b.outvinReport, vehicleInfo: dealerVehicleInfoForDisplay(b.outvinReport.vehicleInfo, makeModel) }
+    : b.outvinReport;
+  const legacyInner = buildOutvinDealerReportPdfInnerHtml(displayReport, {
     omitEquipment: true,
     maskDemoVin,
     lang,
@@ -1933,7 +1950,7 @@ function buildAutoRecordsAvotuSubsection(
       buildOutvinDealerEquipmentPdfHtml(b.outvinReport, { lang }).trim()
     : "";
   const coverHtml = buildDealerSectionCoverHtml({
-    vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
+    vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, displayReport?.vehicleInfo),
     makeModel,
     serviceWorks: b.serviceWorks ?? [],
     mileageRows: b.serviceHistory ?? [],
