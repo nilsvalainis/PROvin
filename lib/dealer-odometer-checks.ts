@@ -5,6 +5,7 @@
  */
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { isImpossibleFutureDate } from "@/lib/future-date-guard";
 
 /** Kritums līdz šim km skaitam ir pielaide (noapaļots / ar roku ievadīts rādījums). */
 export const DEALER_ODOMETER_DROP_TOLERANCE_KM = 500;
@@ -30,6 +31,11 @@ export function chronoDealerRows<T extends OdoRow>(rows: readonly T[]): T[] {
     }
     return (parseKm(a.odometer) ?? 0) - (parseKm(b.odometer) ?? 0);
   });
+}
+
+/** Datēts un ne nākotnē: rindas ar neiespējamu datumu nekad nav krituma / izlecēja punkts. */
+function datedFactRow(r: OdoRow): boolean {
+  return Boolean(parseDotOrIsoDateToMs(r.date)) && !isImpossibleFutureDate(r.date);
 }
 
 /** Mazāks kritums par šo (km vai daļa no iepriekšējā rādījuma) ir sīka nobīde - visticamāk ievades kļūda. */
@@ -61,7 +67,7 @@ export type DealerOdometerDrop<T extends OdoRow = OdoRow> = {
  */
 export function findDealerOdometerDrops<T extends OdoRow>(rows: readonly T[]): DealerOdometerDrop<T>[] {
   const seq = chronoDealerRows(rows)
-    .filter((r) => parseDotOrIsoDateToMs(r.date))
+    .filter(datedFactRow)
     .map((row) => ({ row, km: parseKm(row.odometer) }))
     .filter((x): x is { row: T; km: number } => x.km != null);
   const out: DealerOdometerDrop<T>[] = [];
@@ -97,7 +103,7 @@ export function findDealerOdometerDrops<T extends OdoRow>(rows: readonly T[]): D
  */
 export function findDealerOdometerOutliers<T extends OdoRow>(rows: readonly T[]): Set<T> {
   const withKm = chronoDealerRows(rows)
-    .filter((r) => parseDotOrIsoDateToMs(r.date))
+    .filter(datedFactRow)
     .map((row) => ({ row, km: parseKm(row.odometer) }))
     .filter((x): x is { row: T; km: number } => x.km != null);
   const n = withKm.length;
@@ -140,6 +146,7 @@ export function monthsSinceLastDealerRecord(
 ): number | null {
   let last = 0;
   for (const r of rows) {
+    if (isImpossibleFutureDate(r.date, nowMs)) continue;
     const ms = parseDotOrIsoDateToMs(r.date);
     if (ms && ms > last) last = ms;
   }

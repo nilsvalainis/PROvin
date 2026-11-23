@@ -1,6 +1,7 @@
 /**
  * Eļļas intervālu grafiks: strukturēti dati adminā + tā pati sērija kā PDF.
  */
+import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
   collectEngineOilChangeRows,
@@ -122,7 +123,8 @@ export function oilRowsFromServiceWorks(block: AutoRecordsBlockState): OilInterv
 }
 
 export function chartRowsToServiceWorks(rows: OilIntervalChartRow[]): AutoRecordsServiceWorkRow[] {
-  return rows
+  // Saglabātās eļļas rindas ar datumu nākotnē nav fakts (Nils 23.11.2026).
+  return dropFutureDatedRows(rows)
     .filter((r) => r.date.trim() || r.odometer.trim())
     .map((r) => ({
       date: r.date.trim(),

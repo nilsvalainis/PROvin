@@ -18,6 +18,7 @@ import {
 } from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 import { oneautoWorksNeedLvTranslation } from "@/lib/dealer-works-language";
+import { dropFutureDatedRows, isImpossibleFutureDate } from "@/lib/future-date-guard";
 
 export type AutoRecordsServiceWorkRow = {
   /** DD.MM.YYYY (ja zināms tikai mēnesis — diena „01”). */
@@ -377,7 +378,8 @@ export function mergeAutoRecordsServiceWorksByOdometer(
 ): AutoRecordsServiceWorkRow[] {
   const emptyKm: AutoRecordsServiceWorkRow[] = [];
   const byKm = new Map<string, AutoRecordsServiceWorkRow[]>();
-  for (const r of rows) {
+  // Datums nākotnē nav fakts (Nils 23.11.2026): šādu vizīti neglabā, nerāda un nerēķina.
+  for (const r of dropFutureDatedRows(rows)) {
     const km = serviceWorkOdometerDigits(r);
     if (!km) {
       emptyKm.push(r);
@@ -417,8 +419,9 @@ export function mergeAutoRecordsServiceWorkRow(
 ): AutoRecordsServiceWorkRow[] {
   const row = normalizeAutoRecordsServiceWorkRow(incoming);
   if (!autoRecordsServiceWorkRowHasData(row)) return existing;
+  if (isImpossibleFutureDate(row.date)) return dropFutureDatedRows(existing);
 
-  let withData = existing.filter(autoRecordsServiceWorkRowHasData);
+  let withData = dropFutureDatedRows(existing.filter(autoRecordsServiceWorkRowHasData));
   const key = rowKey(row);
   const km = serviceWorkOdometerDigits(row);
   if (!oneautoWorksNeedLvTranslation(row.works)) {

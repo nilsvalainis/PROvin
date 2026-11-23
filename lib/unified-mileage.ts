@@ -2,6 +2,7 @@
  * Vienots nobraukums no visiem avotiem (CSDD, AUTO RECORDS, AutoDNA, CarVertical) + anomāliju noteikšana.
  */
 
+import { isImpossibleFutureDate } from "@/lib/future-date-guard";
 import {
   CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
   csddMileageRowHasData,
@@ -1173,6 +1174,7 @@ export function collectUnifiedMileageRows(
   const rows: UnifiedMileageRow[] = [];
   let sourceOrder = 0;
   let pendingVisitOdometers: { date: string; odometer: string; country: string; unit: string }[] = [];
+  let futureDropped = 0;
   const pushRow = (
     dateRaw: string,
     odometerRaw: string,
@@ -1190,6 +1192,11 @@ export function collectUnifiedMileageRows(
     const unit = parseMileageUnit(unitRaw) ?? parseMileageUnit(odometerRaw);
     const odometer = odometerToKmDisplay(odometerRaw.trim(), unit);
     if (!date || !odometer) return;
+    // Jebkura avota rādījums ar datumu nākotnē nav fakts (Nils 23.11.2026) - netiek ne tabulā, ne PDF, ne AI.
+    if (isImpossibleFutureDate(date)) {
+      futureDropped += 1;
+      return;
+    }
     const countryNorm = normalizeCountryNameLv(countryRaw ?? "");
     rows.push({
       date,
@@ -1336,6 +1343,9 @@ export function collectUnifiedMileageRows(
     if (dedup.has(k)) continue;
     dedup.add(k);
     out.push(r);
+  }
+  if (futureDropped > 0 && typeof window === "undefined") {
+    console.warn("[future-date-guard] izmesti ieraksti ar datumu nākotnē", { source: "unified_mileage", count: futureDropped });
   }
   if (options?.includeImplausible) return out;
   const implausible = new Set(
