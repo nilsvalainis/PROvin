@@ -24,7 +24,7 @@ export default async function AdminBlogsPage() {
   const commentCounts = Object.fromEntries(commentCountEntries) as Record<string, number>;
 
   return (
-    <div className="w-full max-w-none max-md:px-4">
+    <div className="amx amx-pg amx-pg--blogs w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           PRO
@@ -32,7 +32,7 @@ export default async function AdminBlogsPage() {
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Blogs
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
           Manuāli pārvaldi IRISS ierakstus: teksti, kategorijas, birkas un komentāri. Sarakstā - skatījumi
           un komentāru skaits.
         </p>
@@ -51,7 +51,7 @@ export default async function AdminBlogsPage() {
         </div>
       ) : (
         <>
-        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden">
+        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden" data-amx-list>
           {posts.map((post) => (
             <li key={post.slug} className="border-b border-[#e5e5ea] last:border-b-0">
               <Link
@@ -66,7 +66,9 @@ export default async function AdminBlogsPage() {
                     {post.publishedAt} · {viewCounts[post.slug] ?? 0} skat. · {commentCounts[post.slug] ?? 0} kom.
                   </span>
                 </span>
-                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]">Rediģēt</span>
+                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]" data-amx-open>
+                  Rediģēt
+                </span>
               </Link>
             </li>
           ))}

@@ -131,12 +131,12 @@ export default async function AdminStatistikaPage({
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-4xl max-md:px-4">
+    <div className="amx amx-pg amx-pg--statistika mx-auto w-full max-w-4xl max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Statistika
         </h1>
-        <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]">
+        <p className="mt-1.5 text-[13px] text-[var(--color-provin-muted)]" data-amx-hint>
           Konversija no visiem ātrajiem vērtējumiem un īss vietnes kopsavilkums.
         </p>
       </AdminDashboardHeaderWithMenu>
@@ -173,7 +173,7 @@ export default async function AdminStatistikaPage({
         <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-[var(--color-apple-text)]">Atskaites piemērs</h2>
-            <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]">
+            <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]" data-amx-hint>
               Klikšķi uz „Skatīt atskaites piemēru” hero AUDITS cilnē.
             </p>
           </div>

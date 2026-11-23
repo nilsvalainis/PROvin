@@ -18,6 +18,7 @@ import "./mobile/order-colors.css";
 import "./mobile/pro-today.css";
 import "./admin-iriss-theme.css";
 import "./iriss-tokens.css";
+import "./mobile/pages-glass-2.css";
 import "./admin-costs-theme.css";
 import "./mobile/pages-glass.css";
 

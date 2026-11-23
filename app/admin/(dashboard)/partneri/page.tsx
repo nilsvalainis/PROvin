@@ -22,7 +22,7 @@ export default async function AdminPartnersPage() {
     countUnhandledB2bPartnerLeads().catch(() => 0),
   ]);
   return (
-    <div className="w-full max-w-none max-md:px-4">
+    <div className="amx amx-pg amx-pg--partneri w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           B2B
@@ -33,7 +33,16 @@ export default async function AdminPartnersPage() {
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)] max-md:hidden">
           Reģistrē dīleri pats vai izveido unikālu ielūguma saiti, lai partneris reģistrētos pats. Publiska reģistrācija paliek slēgta.
         </p>
-        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+        {/* Telefonā saites - cilnes (22.11 makets v2); datorā saites paliek kā bija. */}
+        <nav className="amx-seg mt-2 hidden max-md:flex" aria-label="Partneri" data-amx-tabs>
+          <span aria-current="page">Partneri</span>
+          <Link href="/admin/partneri/pieteikumi">
+            Pieteikumi
+            {unhandledLeads > 0 ? <em>{unhandledLeads}</em> : null}
+          </Link>
+          <Link href="/admin/partneri/statistika">B2B statistika</Link>
+        </nav>
+        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] max-md:hidden">
           {/* Krāsa inline: .admin-ios-theme pārraksta saišu krāsu uz melnu, tad tās neizskatās pēc saitēm. */}
           <Link href="/admin/partneri/statistika" style={{ color: "var(--color-provin-accent)" }} className="font-medium text-[var(--color-provin-accent)] hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">
             B2B statistika
@@ -65,7 +74,7 @@ export default async function AdminPartnersPage() {
         </div>
       ) : (
         <>
-        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden">
+        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden" data-amx-list>
           {partners.map((row) => (
             <li key={row.id} className="border-b border-[#e5e5ea] last:border-b-0">
               <Link
@@ -87,7 +96,9 @@ export default async function AdminPartnersPage() {
                     {" · "}Business {creditsById[row.id]?.business ?? 0}
                   </span>
                 </span>
-                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]">Atvērt</span>
+                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]" data-amx-open>
+                  Atvērt
+                </span>
               </Link>
             </li>
           ))}

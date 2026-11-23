@@ -13,18 +13,18 @@ export default async function AdminAgregatuZinasanasPage() {
   await requireAdminPage();
   const trainingV2 = isTrainingV2Enabled();
   return (
-    <div className={`w-full space-y-4 max-md:px-4 ${trainingV2 ? "max-w-5xl" : "max-w-3xl"}`}>
+    <div className={`amx amx-pg amx-pg--agregati w-full space-y-4 max-md:px-4 ${trainingV2 ? "max-w-5xl" : "max-w-3xl"}`}>
       <div>
         <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-apple-text)] max-md:text-[34px] max-md:font-bold max-md:leading-none">
           Agregātu zināšanas
         </h1>
         {trainingV2 ? (
           <>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
               Apstiprinātās zināšanas AI lieto kā faktus. Kandidāti no nosūtītām atskaitēm gaida tavu
               apstiprinājumu. Noraidītie kļūst par sarakstu „Nepareizi apgalvojumi”.
             </p>
-            <ol className="mt-3 list-decimal space-y-1 pl-5 text-[13px] text-[var(--color-apple-text)]">
+            <ol className="mt-3 list-decimal space-y-1 pl-5 text-[13px] text-[var(--color-apple-text)]" data-amx-hint>
               <li>
                 <strong className="font-semibold">Nolasīt vecās atskaites</strong> - iziet cauri nosūtītajām
                 atskaitēm un sagatavo mācību teikumus (kandidātus).
@@ -40,11 +40,11 @@ export default async function AdminAgregatuZinasanasPage() {
           </>
         ) : (
           <>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
               Šeit aģents iemācās no jau saglabātajiem auditiem (motori, kārbas, tipiskās kaites) un saglabā
               iekšējo atmiņu nākamajiem ✨. Nav jāraksta koda vai konzoles komandas - nospied pogas zemāk.
             </p>
-            <ol className="mt-3 list-decimal space-y-1 pl-5 text-[13px] text-[var(--color-apple-text)]">
+            <ol className="mt-3 list-decimal space-y-1 pl-5 text-[13px] text-[var(--color-apple-text)]" data-amx-hint>
               <li>
                 <strong className="font-semibold">Iemācīties no vēstures</strong> - iziet cauri līdz ~120
                 pasūtījumiem un pieraksta anonimizētus fragmentus.

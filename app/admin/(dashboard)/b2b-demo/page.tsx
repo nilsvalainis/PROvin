@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminB2bDemoTenantsPage() {
   await requireAdminPage();
   return (
-    <div className="w-full max-w-none max-md:px-4">
+    <div className="amx amx-pg amx-pg--demo w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           B2B
@@ -19,7 +19,7 @@ export default async function AdminB2bDemoTenantsPage() {
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Demo dīleri
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
           IRISS B2B demo tenanti (demo.provin.lv). Nav PROVIN atskaišu un nav ĪRISS noklusējuma komisijas.
         </p>
       </AdminDashboardHeaderWithMenu>
