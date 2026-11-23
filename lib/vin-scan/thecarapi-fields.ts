@@ -490,5 +490,9 @@ export function thecarapiGalleryTitle(venue: string, date: string): string {
 
 /** Klienta PDF neredz ārējā pakalpojuma nosaukumu. Admin paraksts paliek. */
 export function thecarapiPdfGroupTitle(title: string): string {
-  return title.replace(/^TheCarApi\s*·\s*/, "").trim();
+  // «TheCarApi · Openlane · 2026-10-01» → «Openlane · 01.10.2026» (PDF datumi vienmēr DD.MM.YYYY).
+  return title
+    .replace(/^TheCarApi\s*·\s*/, "")
+    .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$3.$2.$1")
+    .trim();
 }

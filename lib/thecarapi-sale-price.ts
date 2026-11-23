@@ -98,6 +98,33 @@ export function salesWithAuctionFinalPrice<T extends SaleRowLike>(sales: readonl
     const rec = records.find((r) => r.id && row.status.split(" · ").map((x) => x.trim()).includes(r.id));
     if (!rec) return row;
     const sp = thecarapiSalePriceFromFields(rec.fields);
-    return sp.eur != null ? { ...row, price: `${groupInt(sp.eur)} EUR`, priceLabel: sp.label } : row;
+    // «Statuss» - īsts rezultāts, nevis «Openlane · ID» (audits 23.11, p. 31).
+    const status = thecarapiSaleStatus(rec.fields);
+    return sp.eur != null ? { ...row, price: `${groupInt(sp.eur)} EUR`, priceLabel: sp.label, status } : { ...row, status };
   });
+}
+
+/**
+ * Izsoles rezultāts tikai no skaidra avota lauka: «Pārdots» / «Nav pārdots»; citādi «Izsole noslēgusies»
+ * (neaktīva) vai «Izsole». Pēdējais solījums pats par sevi nepierāda pārdošanu.
+ */
+export function thecarapiSaleStatus(fields: readonly { key: string; value: string }[]): string {
+  const tail = (k: string) => k.split(".").pop()!.replace(/\[\d+\]$/, "").toLowerCase().replace(/[^a-z]/g, "");
+  let active: boolean | null = null;
+  for (const f of fields) {
+    if (/price_history\[/.test(f.key)) continue;
+    const t = tail(f.key);
+    const v = f.value.trim().toLowerCase();
+    if (!v) continue;
+    if (t === "issold" || t === "sold") {
+      if (/^(jā|yes|true|1)$/.test(v)) return "Pārdots";
+      if (/^(nē|no|false|0)$/.test(v)) return "Nav pārdots";
+    }
+    if (t === "salestatus" || t === "salestatusname" || t === "lotstatus" || t === "auctionstatus") {
+      if (/not\s*sold|unsold|no\s*sale|nav\s+pārdots/.test(v)) return "Nav pārdots";
+      if (/(^|[^a-z])(sold|pārdots|verkauft|vendu)([^a-z]|$)/.test(v)) return "Pārdots";
+    }
+    if ((t === "isactive" || t === "active") && active == null) active = /^(jā|yes|true|1)$/.test(v) ? true : /^(nē|no|false|0)$/.test(v) ? false : null;
+  }
+  return active === false ? "Izsole noslēgusies" : "Izsole";
 }

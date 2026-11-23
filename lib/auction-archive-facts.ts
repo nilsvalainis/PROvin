@@ -118,11 +118,30 @@ const RIGA = new Intl.DateTimeFormat("lv-LV", {
   hourCycle: "h23",
 });
 
-/** Izsoles laiks Rīgas laikā. Avota laiks bez zonas TheCarApi ir UTC. */
-export function archiveDateTime(raw: string): string {
+/** Laika joslas nobīde ms konkrētā brīdī (piem. Europe/Berlin vasarā = +2 h). */
+function zoneOffsetMs(utcMs: number, timeZone: string): number {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date(utcMs))
+      .map((x) => [x.type, x.value]),
+  );
+  return Date.UTC(+p.year!, +p.month! - 1, +p.day!, +p.hour!, +p.minute!, +p.second!) - utcMs;
+}
+
+/**
+ * Izsoles laiks Rīgas laikā. Avota laiks bez zonas TheCarApi ir UTC, ja vien nav norādīta portāla vietējā josla
+ * (`localZone`). «…T00:00:00» bez zonas ir tikai datums - laiku nerāda.
+ */
+export function archiveDateTime(raw: string, localZone?: string): string {
   const s = raw.trim();
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return archiveDay(s);
-  const iso = /(Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`;
+  const zoned = /(Z|[+-]\d{2}:?\d{2})$/.test(s);
+  if (!zoned && /T00:00(:00(\.0+)?)?$/.test(s)) return archiveDay(s);
+  let iso = zoned ? s : `${s}Z`;
+  if (!zoned && localZone) {
+    const asUtc = new Date(iso).getTime();
+    if (Number.isFinite(asUtc)) iso = new Date(asUtc - zoneOffsetMs(asUtc, localZone)).toISOString();
+  }
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return archiveDay(s);
   const p = Object.fromEntries(RIGA.formatToParts(d).map((x) => [x.type, x.value]));
@@ -633,10 +652,13 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   const lotNo = g.exact("auction_id", "source_auction_id", "vehicle_id");
 
   const sale: ArchiveKv[] = [];
-  const start = g.exact("batch_start_date", "car_identification.BCAListing.start_at") || g.tail("startat");
-  const end = g.exact("auction_end_at", "car_identification.BCAListing.end_at", "batch_end_date") || g.tail("endat", "lotendat");
-  const startS = start ? archiveDateTime(start) : "";
-  const endS = end ? archiveDateTime(end) : "";
+  // Openlane `batch_*` laiki ir bez zonas, bet portāla vietējā laikā (Vācija): `batch_end_date` 12:51 = `auction_end_at` 10:51Z.
+  const batchStart = g.exact("batch_start_date");
+  const start = g.exact("car_identification.BCAListing.start_at") || g.tail("startat");
+  const end = g.exact("auction_end_at", "car_identification.BCAListing.end_at") || g.tail("endat", "lotendat");
+  const batchEnd = g.exact("batch_end_date");
+  const startS = start ? archiveDateTime(start) : batchStart ? archiveDateTime(batchStart, "Europe/Berlin") : "";
+  const endS = end ? archiveDateTime(end) : batchEnd ? archiveDateTime(batchEnd, "Europe/Berlin") : "";
   if (startS && endS && startS !== endS) sale.push({ k: "Izsoles laiks", v: `${startS} - ${endS}` });
   else if (endS) sale.push({ k: "Izsoles beigas", v: endS });
   // Valsts ir izsoles virsrakstā - rindu rāda tikai ar konkrētu vietu.
@@ -702,9 +724,10 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   const svcKm = num(g.tail("lasthistoryserviceodometer", "lastservicemileage", "lastserviceodometer"));
   const svcAny = svcPresent ?? maint;
   if (svcAny != null || logBook != null) {
+    // Attiecas tikai uz izsoles pārdevēja dokumentiem - ne uz dīlera vēsturi (audits 23.11, p. 30).
     const parts = [svcAny === true || logBook === true ? "ir" : "nav norādīta"];
     if (logBook === true) parts.push("servisa grāmata ir");
-    condition.push({ k: "Servisa vēsture", v: cap(parts.join(", ")) });
+    condition.push({ k: "Servisa vēsture izsolē", v: cap(parts.join(", ")) });
   }
   if (svcDate || svcKm) condition.push({ k: "Pēdējais serviss", v: [svcDate, svcKm ? `${fmtInt(svcKm)} km` : ""].filter(Boolean).join(", ") });
   const mot = archiveDay(g.tail("motdate", "nextinspection", "inspectiondue"));

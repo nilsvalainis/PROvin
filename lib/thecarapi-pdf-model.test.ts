@@ -94,7 +94,9 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
     expect(model.mileage).toContainEqual({ label: "Servisa grāmatā pēdējais", value: "214 257 km, 27.03.2026" });
     expect(model.dates.length).toBeGreaterThan(0);
     for (const row of model.dates) expect(row.value).toMatch(/^\d{2}\.\d{2}\.\d{4}( \d{2}:\d{2})?$/);
-    expect(model.dates).toContainEqual({ label: "Izsoles beigas / pēdējo reizi redzēta", value: "09.10.2026 16:00" });
+    // Audits 23.11: katrai nozīmei sava rinda (nesapludina vienāda laika etiķetes).
+    expect(model.dates).toContainEqual({ label: "Izsoles beigas", value: "09.10.2026 16:00" });
+    expect(model.dates).toContainEqual({ label: "Pēdējo reizi redzēta", value: "09.10.2026 16:00" });
     expect(text).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
   });
 

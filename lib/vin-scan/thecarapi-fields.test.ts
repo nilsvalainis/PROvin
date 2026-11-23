@@ -162,7 +162,7 @@ describe("TheCarApi lauki", () => {
   });
 
   it("klienta PDF virsrakstā nav TheCarApi", () => {
-    expect(thecarapiPdfGroupTitle("TheCarApi · AUTO1 · 2024-03-12")).toBe("AUTO1 · 2024-03-12");
-    expect(thecarapiPdfGroupTitle("Openlane · 2024-06-02")).toBe("Openlane · 2024-06-02");
+    expect(thecarapiPdfGroupTitle("TheCarApi · AUTO1 · 2024-03-12")).toBe("AUTO1 · 12.03.2024");
+    expect(thecarapiPdfGroupTitle("Openlane · 2024-06-02")).toBe("Openlane · 02.06.2024");
   });
 });

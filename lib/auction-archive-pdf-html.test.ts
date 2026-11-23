@@ -174,7 +174,8 @@ describe("izsoļu arhīva fakti (v2)", () => {
   it("izsoles fakti: serviss, apskate, izcelsme, dokumenti; cenas tikai ar ķeksi", () => {
     const b = auctionArchiveLotFacts(bca);
     const kv = Object.fromEntries([...b.sale, ...b.condition].map((r) => [r.k, r.v]));
-    expect(kv["Izsoles laiks"]).toBe("19.10.2026 19:30 - 21.10.2026 12:00");
+    // batch_start_date bez zonas = portāla vietējais laiks (Vācija, +2 h oktobrī) → Rīgā 17:30.
+    expect(kv["Izsoles laiks"]).toBe("19.10.2026 17:30 - 21.10.2026 12:00");
     expect(kv["Pārdevējs"]).toBe("Alphabet");
     expect(kv["Auto izcelsme"]).toBe("Līzinga auto");
     expect(kv["Atslēgas"]).toBe("2");

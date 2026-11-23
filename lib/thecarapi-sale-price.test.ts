@@ -131,3 +131,26 @@ describe("laika līnija: «Pārdots» tikai ar avota statusu", () => {
     expect(lifecycleSaleTitle(lifecycleSaleOutcome(""), "Mobile.de")).toBe("Pārdošanas ieraksts · Mobile.de");
   });
 });
+
+describe("audits 23.11 (Business PDF): statuss, laiki, valsts, numura zīme", () => {
+  it("statuss - nevis «Openlane · ID»; «Pārdots» tikai ar avota lauku", async () => {
+    const { thecarapiSaleStatus } = await import("@/lib/thecarapi-sale-price");
+    expect(thecarapiSaleStatus([{ key: "is_active", value: "nē" }])).toBe("Izsole noslēgusies");
+    expect(thecarapiSaleStatus([{ key: "sale_status", value: "SOLD" }])).toBe("Pārdots");
+    expect(thecarapiSaleStatus([])).toBe("Izsole");
+  });
+
+  it("laiki vienā joslā: batch_* ir portāla vietējais laiks; tikai-datuma laukiem laiku nerāda", async () => {
+    const { archiveDateTime } = await import("@/lib/auction-archive-facts");
+    const { thecarapiPdfDate } = await import("@/lib/thecarapi-pdf-model");
+    expect(archiveDateTime("2026-10-01T12:51:13.719063", "Europe/Berlin")).toBe(archiveDateTime("2026-10-01T10:51:13.719063Z"));
+    expect(archiveDateTime("2026-10-01T10:51:13Z")).toBe("01.10.2026 13:51");
+    expect(archiveDateTime("2020-12-09T00:00:00")).toBe("09.12.2020");
+    expect(thecarapiPdfDate("2020-12-09T00:00:00")).toBe("09.12.2020");
+  });
+
+  it("bilžu grupas virsraksts DD.MM.YYYY", async () => {
+    const { thecarapiPdfGroupTitle } = await import("@/lib/vin-scan/thecarapi-fields");
+    expect(thecarapiPdfGroupTitle("TheCarApi · Openlane · 2026-10-01")).toBe("Openlane · 01.10.2026");
+  });
+});
