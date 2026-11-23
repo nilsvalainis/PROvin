@@ -20,7 +20,8 @@ import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan
 import { fetchThecarapiVinWithDetails } from "@/lib/vin-scan/thecarapi-api";
 import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-scan/thecarapi-flags";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
-import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
+import { currentVinScanDeadlineMs, scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
+import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
   oemBrandForVin,
@@ -362,14 +363,26 @@ export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIn
   }
 }
 
+/** TheCarApi API izsaukumiem: tik ms pirms avota termiņa vairs nesāk jaunus (galerija + ieraksti). */
+export const THECARAPI_SCAN_RESERVE_MS = 12_000;
+/** Bilžu lejupielāde beidzas tik ms pirms termiņa (arhīva un keša ieraksti). */
+export const THECARAPI_GALLERY_RESERVE_MS = 5_000;
+
 export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndicator> {
   if (!thecarapiVinScanEnabled()) {
     return done("thecarapi_eu", ctx, { status: "skipped", summary: THECARAPI_DISABLED_SUMMARY });
   }
   try {
-    const result = await fetchThecarapiVinWithDetails(ctx.vin);
+    // Termiņš no VIN SCAN avota limita: API izsaukumi beidzas ar rezervi galerijai un ierakstiem,
+    // lai rinda atgriež iegūto (partial), nevis noildzi.
+    const outer = currentVinScanDeadlineMs() ?? Date.now() + vinScanSourceTimeoutMs("thecarapi_eu");
+    const result = await fetchThecarapiVinWithDetails(ctx.vin, { deadline: outer - THECARAPI_SCAN_RESERVE_MS });
     if (result.records.length > 0) {
-      const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
+      const gallery = await storeThecarapiGallery({
+        vin: ctx.vin,
+        records: result.records,
+        deadline: outer - THECARAPI_GALLERY_RESERVE_MS,
+      });
       let records = gallery.records;
       const marked = markThecarapiArchived(records, new Date().toISOString());
       const inputs = thecarapiArchiveInputs(ctx.vin, marked);

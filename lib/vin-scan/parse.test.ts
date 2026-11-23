@@ -396,7 +396,7 @@ describe("vinScanSourceTimeoutMs", () => {
       expect(vinScanSourceTimeoutMs(id)).toBe(14_000);
     }
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
-    expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(15_000);
+    expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(45_000);
   });
 
   it("esyn un dsb (2-3 secīgi pieprasījumi) saņem 25 s", () => {

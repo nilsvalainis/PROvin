@@ -144,6 +144,43 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(applied).toEqual({ ok: false, error: "vin_mismatch" });
   });
 
+  it("2026-11 heša fragments skriptā nav VIN (nav vin_mismatch)", () => {
+    const applied = applyBrowserArchiveHtml({
+      record: record([blockedStat]),
+      id: "stat_vin",
+      html: `${STAT_HTML}<script src="main.c968a041fe49804bed66.js"></script><script src="runtime.05f815d1e0d5dc5061df.js"></script>`,
+      pageUrl: `https://stat.vin/cars/${VIN}`,
+      vin: VIN,
+    });
+    expect(applied.ok).toBe(true);
+  });
+
+  it("2026-11 biluppgifter.se 404 ar citu auto saitēm = nav reģistrā, nevis vin_mismatch", () => {
+    const applied = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "biluppgifter",
+      html: `<html><body><h1>Sidan kunde inte hittas</h1><a href="/fordon/${OTHER}/">${OTHER}</a></body></html>`,
+      pageUrl: `https://biluppgifter.se/${VIN}/`,
+      vin: VIN,
+      httpStatus: 404,
+    });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.record.indicators.find((row) => row.id === "biluppgifter")?.status).toBe("none");
+  });
+
+  it("biluppgifter.se 200 ar citu VIN joprojām ir vin_mismatch", () => {
+    const applied = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "biluppgifter",
+      html: `<html><body><h1>Volkswagen Golf</h1><p>Chassinummer: ${OTHER}</p></body></html>`,
+      pageUrl: `https://biluppgifter.se/${VIN}/`,
+      vin: VIN,
+      httpStatus: 200,
+    });
+    expect(applied).toEqual({ ok: false, error: "vin_mismatch" });
+  });
+
   it("pārāk gara lapa tiek noraidīta", () => {
     const applied = applyBrowserArchiveHtml({
       record: record([blockedStat]),

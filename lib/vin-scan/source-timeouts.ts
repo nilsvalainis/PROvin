@@ -31,7 +31,11 @@ const MULTI_STEP_SOURCES = new Set<VinScanSourceId>(["esyn", "dsb"]);
  */
 const MNT_EE_TIMEOUT_MS = 105_000;
 
-const THECARAPI_TIMEOUT_MS = 15_000;
+/**
+ * TheCarApi: vēsture + detaļas + bildes + galerija. Ar 15 s VIN ar izsolēm vienmēr beidzās ar
+ * „Avots neatbildēja laikā” (tieši tie, kuros ir dati). Zonde pati apstājas pirms šī termiņa.
+ */
+const THECARAPI_TIMEOUT_MS = 45_000;
 const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
 
 /**

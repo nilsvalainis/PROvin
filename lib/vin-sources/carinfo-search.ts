@@ -79,4 +79,5 @@ export function carinfoSuperSearchUrl(locale: string, vin: string, timeMs: numbe
   return `${CARINFO_ORIGIN}/${locale}/search/super/${encodeURIComponent(vin.trim().toUpperCase())}?time=${timeMs}`;
 }
 
-export const CARINFO_SEARCH_LOCALES = ["en-se", "sv-se", "en-dk", "da-dk", "en-no", "nb-no", "en-fi"] as const;
+/** nb-no atgriež 404 (pārbaudīts 23.11.2026), Norvēģiju sedz en-no. */
+export const CARINFO_SEARCH_LOCALES = ["en-se", "sv-se", "en-dk", "da-dk", "en-no", "en-fi"] as const;
