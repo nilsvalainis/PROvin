@@ -8,6 +8,8 @@ vi.mock("next/navigation", () => ({
 import { AdminAtraParbaudePage } from "@/components/admin/AdminAtraParbaudePage";
 import { AdminDealerCheckPage } from "@/components/admin/AdminDealerCheckPage";
 import { renderHtml } from "@/lib/test-render";
+import { AdminAtraFactCards, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import { atraStoryScore, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 
 const VIN = "WBANP71040CY09201";
 
@@ -59,5 +61,44 @@ describe("Ātrā pārbaude (dators)", () => {
     expect(html).toContain("Šablons - kam paredzēts");
     expect(html).toContain("Valsts numurzīme (v/n)");
     expect(html).toContain("Saglabātās pārbaudes");
+  });
+
+  it("faktu kartītes: liegumi ar e.csdd.lv saiti, potenciāls ar iemesliem; telefonā stikla krāsas", () => {
+    const facts = buildAtraFacts({
+      vin: VIN,
+      plate: "",
+      title: "BMW 530",
+      year: "2006",
+      rows: [
+        {
+          id: "csdd",
+          label: "CSDD",
+          country: "LV",
+          status: "found",
+          summary: "",
+          mileage: [
+            { date: "2015-04-29", odometer: "362320" },
+            { date: "2017-05-13", odometer: "254471" },
+          ],
+        },
+      ],
+      dealer: null,
+      csdd: null,
+      hasListing: false,
+    });
+    const score = atraStoryScore(facts);
+    const desk = renderHtml(
+      <>
+        <AdminAtraPotential score={score} />
+        <AdminAtraFactCards facts={facts} vin={VIN} />
+      </>,
+    );
+    expect(desk).toContain("Stāsta potenciāls");
+    expect(desk).toContain("Notīts nobraukums ≥ 107 849 km");
+    expect(desk).toContain("Kritums ≥ 107 849 km");
+    expect(desk).toContain('href="https://e.csdd.lv/"');
+    expect(desk).toContain("Pārbaudīt e.csdd.lv");
+    const phone = renderHtml(<AdminAtraFactCards facts={facts} vin={VIN} glass />);
+    expect(phone).toContain("var(--am-s1)");
   });
 });

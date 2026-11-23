@@ -10,6 +10,8 @@ import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobile
 import { AdminDealerCheckPage, type DealerCheckEmbedState } from "@/components/admin/AdminDealerCheckPage";
 import { AdminAtraFreeSources, AdminAtraPaidSources, RunButton } from "@/components/admin/AdminAtraParbaudeSources";
 import { AdminAtraParbaudeHistory } from "@/components/admin/AdminAtraParbaudeHistory";
+import { AdminAtraCopyButton, AdminAtraFactCards, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
 import { AdminMobileSegments } from "@/components/admin/mobile/AdminMobileChrome";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
@@ -168,6 +170,23 @@ export function AdminAtraParbaudePage({
     return pickVinScanVehicle(rows);
   }, [plateInfo, csdd, rows]);
   const title = vehicleTitle(vehicle);
+  const dealerRecordForFacts = dealerState?.record ?? null;
+  const facts = useMemo(
+    () =>
+      buildAtraFacts({
+        vin,
+        plate,
+        title,
+        year: vehicle?.year ?? "",
+        rows,
+        dealer: dealerRecordForFacts && normalizeVin(dealerRecordForFacts.vin) === vin ? dealerRecordForFacts : null,
+        csdd,
+        hasListing: isPlausibleListingUrl(listingUrl),
+      }),
+    [vin, plate, title, vehicle, rows, dealerRecordForFacts, csdd, listingUrl],
+  );
+  const score = useMemo(() => atraStoryScore(facts), [facts]);
+  const summary = useMemo(() => atraSummaryText({ vin, title, year: vehicle?.year ?? "" }, facts, score), [vin, title, vehicle, facts, score]);
 
   /* ---------- vēsture: abas krātuves ---------- */
   useEffect(() => {
@@ -364,6 +383,18 @@ export function AdminAtraParbaudePage({
     }
     if (isValidVin(rv) && dealerRecord.fetchedAt) remember(rv, { dealerCheckId: dealerRecord.id });
   }, [dealerRecord, vin, remember]);
+
+  // Pēc pārbaudes: potenciāls un auto nosaukums vēsturē (vienreiz katrai skenēšanai).
+  const savedPotential = useRef("");
+  const scannedAt = snapshot?.scannedAt ?? "";
+  useEffect(() => {
+    // Tikai pēc šajā lapā palaistas pārbaudes (kešā atvērts auto vēsturē laiku nemaina).
+    if (!scanNonce || !valid || scanBusy || !scannedAt || !hasScanResult) return;
+    const key = `${vin}|${scannedAt}|${score.level}`;
+    if (savedPotential.current === key) return;
+    savedPotential.current = key;
+    remember(vin, { potential: score.level, ...(title ? { title } : {}) });
+  }, [scanNonce, valid, scanBusy, scannedAt, hasScanResult, vin, score.level, title, remember]);
 
   /* ---------- manuālais pasūtījums (viens ceļš) ---------- */
   const dealerCsdd = dealerState?.csdd ?? csdd;
@@ -599,6 +630,7 @@ export function AdminAtraParbaudePage({
                 {creating ? "Veido…" : ATRA_MANUAL_ORDER_LABEL}
               </button>
             ) : null}
+            <AdminAtraCopyButton text={summary} className={btn} />
             <button type="button" disabled={!canRun || busy} onClick={() => void runCheck(true)} className={btn}>
               Skenēt no jauna
             </button>
@@ -621,6 +653,13 @@ export function AdminAtraParbaudePage({
             <p className="mt-3 text-[13px] text-[#8e8e93]">Speckr…</p>
           ) : null}
         </section>
+      ) : null}
+
+      {showResult && valid ? (
+        <>
+          <AdminAtraPotential score={score} />
+          <AdminAtraFactCards facts={facts} vin={vin} />
+        </>
       ) : null}
 
       <AdminVinScanPanel
