@@ -3,6 +3,8 @@ import {
   atraSortableDate,
   atraStoryScore,
   atraSummaryText,
+  atraVisibleFacts,
+  atraVisiblePreviews,
   buildAtraFacts,
   formatKm,
   type AtraFactRow,
@@ -82,7 +84,8 @@ describe("Ātrā pārbaude - fakti", () => {
     // +3 kritums, +2 izsoles bildes, +1 >400k, +1 dīlera robs = 7
     expect(score.points).toBe(7);
     expect(score.level).toBe("augsts");
-    expect(score.reasons.map((r) => r.points)).toEqual([3, 2, 1, 1, 0, 0]);
+    // «Negadījumi nav» un «Nav sludinājuma» bez avota atbildes netiek rādīti.
+    expect(score.reasons.map((r) => r.points)).toEqual([3, 2, 1, 1]);
     const empty = atraStoryScore(buildAtraFacts({ ...bmw(), rows: [], dealer: null, csdd: null, hasListing: true }));
     expect(empty).toMatchObject({ points: 0, level: "zems" });
   });
@@ -103,11 +106,56 @@ describe("Ātrā pārbaude - fakti", () => {
     expect(text.split("\n")).toEqual([
       `BMW 530 · 2006 · ${VIN}`,
       "Nobraukums: 2015 362 320 km → LV 2017 254 471 km (kritums ≥ 107 849 km), faktiski ≥ 501 734 km",
-      "Negadījumi: nav fiksēti",
       "Izsoles: 2017 Itālija 18 bildes",
       "Valstis: LV · dīlera apkopes 3",
       "TA līdz 02.12.2026",
       "Stāsta potenciāls: augsts (7/10)",
     ]);
+  });
+
+  it("augšā tikai kartītes ar rezultātu", () => {
+    const f = buildAtraFacts(bmw());
+    // Liegumi «Jāpārbauda», Negadījumi bez avota, Cena «Nav sludinājuma» - augšā nerāda.
+    expect(atraVisibleFacts(f)).toEqual(["mileage", "auctions", "countries", "dealer", "inspection"]);
+    const empty = buildAtraFacts({ ...bmw(), rows: [], dealer: null, csdd: null, hasListing: true });
+    expect(atraVisibleFacts(empty)).toEqual([]);
+  });
+
+  it("negadījumi augšā tikai, ja avots tiešām atrada negadījumu (bez «nav fiksēti» minējuma)", () => {
+    const input = bmw();
+    // VIN SCAN rindām `incidents` vienmēr ir masīvs - tukšs masīvs nav «negadījumu nav».
+    const empty: AtraFactRow = { id: "lt_itpr", label: "LT policija", country: "LT", status: "found", summary: "Nav", incidents: [] };
+    const f0 = buildAtraFacts({ ...input, rows: [...input.rows, empty] });
+    expect(atraVisibleFacts(f0)).not.toContain("incidents");
+    expect(atraSummaryText(input, f0, atraStoryScore(f0))).not.toContain("Negadījumi");
+    const hit = { ...empty, incidents: [{ date: "2024-05-01", summary: "Sadursme" }] };
+    const f1 = buildAtraFacts({ ...input, rows: [...input.rows, hit] });
+    expect(atraVisibleFacts(f1)).toContain("incidents");
+    expect(atraSummaryText(input, f1, atraStoryScore(f1))).toContain("Negadījumi: 1");
+  });
+
+  it("sludinājums augšā tikai ar datiem, ne tikai ar saiti", () => {
+    const input = bmw();
+    expect(atraVisibleFacts(buildAtraFacts({ ...input, hasListing: true }))).not.toContain("listing");
+    const listing: AtraFactRow = {
+      id: "listing_history",
+      label: "Sludinājuma vēsture",
+      country: "LV",
+      status: "found",
+      summary: "1",
+      listings: [{ date: "2026-11-01", price: "4 500 €", odometer: "390 000" }],
+    };
+    expect(atraVisibleFacts(buildAtraFacts({ ...input, rows: [...input.rows, listing] }))).toContain("listing");
+  });
+
+  it("priekšskatījumi augšā tikai ar datiem", () => {
+    const rows: AtraFactRow[] = [
+      { id: "checkcar_vin", label: "CheckCar.vin", country: "EU", status: "browser_only", summary: "" },
+      { id: "carfax_eu", label: "CARFAX.eu", country: "EU", status: "found", summary: "10 ieraksti" },
+      { id: "autodna_precheck", label: "AutoDNA", country: "EU", status: "none", summary: "Nav" },
+    ];
+    const f = buildAtraFacts({ ...bmw(), rows });
+    expect(f.previews.map((p) => p.id)).toEqual(["autodna_precheck", "checkcar_vin", "carfax_eu"]);
+    expect(atraVisiblePreviews(f.previews).map((p) => p.id)).toEqual(["carfax_eu"]);
   });
 });

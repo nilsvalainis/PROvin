@@ -79,7 +79,8 @@ export type AtraFacts = {
   auctions: AtraAuctionFact;
   countries: string[];
   dealer: AtraDealerFact | null;
-  listing: { has: boolean; price: string; km: number; kmDeviates: boolean; priceDeviates: boolean } ;
+  /** `found`: sludinājuma vēstures avots atgrieza ierakstu (nevis tikai ielikta saite). */
+  listing: { has: boolean; found: boolean; price: string; km: number; kmDeviates: boolean; priceDeviates: boolean };
   inspection: { until: string; count: number; last: string };
   flags: { totalLoss: boolean; commercial: boolean };
   /** Maksas atskaišu bezmaksas priekšskatījums (AutoDNA, CheckCar.vin, CARFAX.eu). */
@@ -263,6 +264,7 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
     dealer: dealerFact(input.dealer),
     listing: {
       has: input.hasListing || Boolean(lastListing),
+      found: Boolean(lastListing),
       price: lastListing?.price ?? "",
       km: listingKm,
       kmDeviates,
@@ -276,6 +278,32 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
     flags: { totalLoss: TOTAL_LOSS_RE.test(text), commercial: COMMERCIAL_RE.test(text) },
     previews: buildAtraPreviews(input.vin, input.rows),
   };
+}
+
+/* ---------------- Kuras kartītes rādīt augšā ---------------- */
+
+export type AtraFactKey = "mileage" | "wanted" | "incidents" | "auctions" | "countries" | "dealer" | "listing" | "inspection";
+
+/**
+ * Augšā tikai kartītes ar reālu rezultātu (Nils 23.11: «tukšos logus nevajag»).
+ * «Nav datu», «Jāpārbauda», «Nav ielādētas», «Nav sludinājuma» paliek avotu sarakstā zemāk.
+ */
+export function atraVisibleFacts(f: AtraFacts): AtraFactKey[] {
+  const out: AtraFactKey[] = [];
+  if (f.mileage.points.length) out.push("mileage");
+  if (f.wanted.length) out.push("wanted");
+  if (f.incidents.count > 0) out.push("incidents");
+  if (f.auctions.count > 0 || f.auctions.photoCount > 0 || f.auctions.photos.length > 0) out.push("auctions");
+  if (f.countries.length) out.push("countries");
+  if (f.dealer) out.push("dealer");
+  if (f.listing.found || f.listing.price) out.push("listing");
+  if (f.inspection.until || f.inspection.count > 0) out.push("inspection");
+  return out;
+}
+
+/** Priekšskatījumi augšā tikai ar datiem («Gaida pārlūku», «Pārbauda…», «Datu nav» - zemāk avotu sarakstā). */
+export function atraVisiblePreviews(previews: readonly AtraPreview[]): AtraPreview[] {
+  return previews.filter((p) => p.tone === "ok");
 }
 
 /* ---------------- Stāsta potenciāls ---------------- */
@@ -305,8 +333,8 @@ export function atraStoryScore(f: AtraFacts): AtraScore {
   if (f.countries.length >= 3) reasons.push({ points: 1, text: `${f.countries.length} valstis` });
   if (Math.max(f.mileage.maxKm, f.mileage.actualMinKm) > 400_000) reasons.push({ points: 1, text: "Nobraukums virs 400 000 km" });
   if (f.dealer && f.dealer.longestGapMonths >= 36) reasons.push({ points: 1, text: `Dīlera robs ${f.dealer.longestGapMonths} mēn.` });
-  if (f.incidents.count === 0) reasons.push({ points: 0, text: "Negadījumi nav" });
-  if (!f.listing.has) reasons.push({ points: 0, text: "Nav sludinājuma" });
+  // «Negadījumi nav» / «Nav sludinājuma» netiek rādīti: neviens VIN SCAN avots neapstiprina «negadījumu nav»
+  // (rindas `incidents` vienmēr ir masīvs, arī ja avots negadījumus nepārbauda). Nils 23.11 - augšā tikai rezultāti.
   const points = Math.min(ATRA_SCORE_MAX, reasons.reduce((n, r) => n + r.points, 0));
   const level: AtraPotential = points >= 6 ? "augsts" : points >= 3 ? "videjs" : "zems";
   return { points, level, reasons };
@@ -328,7 +356,7 @@ export function atraSummaryText(input: Pick<AtraFactsInput, "vin" | "title" | "y
     lines.push(`Nobraukums: ${formatKm(m.last.km)} km (${atraLvDate(m.last.date)})`);
   }
   if (f.wanted.length) lines.push(`Meklēšanā: ${f.wanted.join(", ")}`);
-  lines.push(f.incidents.count ? `Negadījumi: ${f.incidents.count}` : "Negadījumi: nav fiksēti");
+  if (f.incidents.count) lines.push(`Negadījumi: ${f.incidents.count}`);
   if (f.auctions.count || f.auctions.photoCount) {
     const parts = [f.auctions.years.join(", "), f.auctions.venues.join(", "), f.auctions.photoCount ? `${f.auctions.photoCount} bildes` : ""];
     lines.push(`Izsoles: ${parts.filter(Boolean).join(" ")}`.trim());
