@@ -293,7 +293,7 @@ export function buildAuctionArchiveSummary(args: {
       key: `${(r.site || "thecarapi").toLowerCase()}:${r.id}`.slice(0, 120),
       date: isoDay(r.photoDate || r.date || fieldValue(r, ["auction_date", "sale_date", "end_date", "last_seen_at"])),
       platform: auctionPlatformName(r.site, r.venue),
-      country: cleanCountry(fieldValue(r, ["country"]), args.countryName),
+      country: cleanCountry(fieldValue(r, ["country", "country_code", "car_country_extended"]), args.countryName),
       km: parseIntLoose(fieldValue(r, ["mileage", "odometer"]), 5_000_000),
       priceEur: parseIntLoose(fieldValue(r, ["public_price_eur", "final_price", "current_final", "current_price", "start_price"]), 10_000_000),
       photos,
