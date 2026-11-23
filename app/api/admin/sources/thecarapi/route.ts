@@ -20,7 +20,7 @@ export const maxDuration = 300;
  * Kopējais laika budžets TheCarApi + bildēm. Krietni zem maxDuration, lai paspētu saglabāt kešu
  * un atbildēt ar daļējiem datiem, nevis Vercel 504.
  */
-export const THECARAPI_ROUTE_BUDGET_MS = 240_000;
+const THECARAPI_ROUTE_BUDGET_MS = 240_000;
 
 export async function GET(req: Request) {
   if (!(await getAdminSession())) {
