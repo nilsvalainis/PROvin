@@ -1,12 +1,15 @@
 /**
- * «Izsoļu arhīvs» PDF v2 (Nils 23.11: «ļoti zaļš, slikti noformēts, neiztulkots, dati dublējas, vairāk kartītes»).
- * PROVIN PDF valoda kā «Oficiālā dīlera dati»: Inter, baltas kartītes ar apmali un vieglu ēnu, PROVIN zils akcentiem,
- * sarkans tikai bojājumiem / trūkstošiem svarīgiem datiem. Katrs fakts vienreiz:
- *   1. Vāks - auto, VIN, 4 skaitļu kartītes, izsoļu hronoloģija (kartīšu laika līnija), galvenie fakti.
- *   2. Transportlīdzekļa dati + aprīkojums (apvienots no visām izsolēm, tulkots, bez sīkumiem).
- *   3. Katra izsole - izsoles dati, stāvoklis un dokumenti, cenas (tikai ar «Rādīt izsoļu cenas»), bojājumi
- *      (shēma + saraksts), apraksts latviski (oriģināls mazāk).
- *   4. Bilžu galerija - 3 kolonnas, 15 lapā, paraksta josla (nr., datums, portāls); kartītes netiek pārgrieztas.
+ * «Izsoļu arhīvs» PDF (Nils 23.11: variants C «katalogs», pievilkts PROVIN atskaišu kopējam dizainam).
+ * Tās pašas PROVIN PDF klases kā «Oficiālā dīlera dati»: sadaļas kartīte ar `pdf-sec-head` (ikona aplī + virsraksts
+ * lielajiem burtiem + skaita nozīmīte), vāks `pdf-dealer-cover`, skaitļu josla `pdf-svc-summary`, apakšvirsraksti
+ * `pdf-subhead`, tie paši rādiusi/apmales/tipogrāfijas mērogs (`--pdf-*`).
+ * Simetrija: viens 12 kolonnu režģis visā dokumentā (5/7 izsoles bilde + datu josla, 6/6 datu pāri, 4/4/4 galerija),
+ * vienādas iekšējās atkāpes, etiķete/vērtība vienādos platumos, nekādu pus-tukšu rindu (nepāra pēdējā rinda stiepjas).
+ * Katrs fakts vienreiz:
+ *   1. Vāks - auto, VIN, 4 skaitļi. 2. Izsoļu hronoloģija - katrai izsolei liela bilde + datu josla vienā augstumā
+ *      (bez bildēm - kompakta datu kartīte pilnā platumā). 3. Galvenie fakti. 4. Transportlīdzekļa dati.
+ *   5. Katra izsole - izsoles dati, cenas (tikai ar «Rādīt izsoļu cenas»), stāvoklis un dokumenti, bojājumi, apraksts.
+ *   6. Galerija 3 kolonnās (15 lapā). 7. Aprīkojums - pēdējā sadaļa.
  * Tīrs modulis - bildes nāk kā data: URI no servera; tulkojumi - `translations` karte (avota teksts → LV).
  */
 import {
@@ -35,7 +38,7 @@ import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { buildPdfRunningFooterLine, buildPdfRunningHeaderLine, clientReportRunningPageCss } from "@/lib/pdf-running-page";
-import { sectionIconPdfHtmlSized, type SectionIconId } from "@/lib/section-icons";
+import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage } from "@/lib/thecarapi-pdf-model";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -43,20 +46,41 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/* ---------- Kartīšu primitīvi ---------- */
+/* ---------- Kartīšu primitīvi (PROVIN PDF valoda) ---------- */
 
-function card(title: string, body: string, opts: { cls?: string; aside?: string; icon?: SectionIconId } = {}): string {
-  if (!body) return "";
-  const ico = opts.icon ? `<i class="aa-ico">${sectionIconPdfHtmlSized(opts.icon, 13)}</i>` : "";
-  return `<section class="aa-card${opts.cls ? ` ${opts.cls}` : ""}"><h3 class="aa-card__title"><span>${ico}${esc(title)}</span>${
-    opts.aside ? `<em>${esc(opts.aside)}</em>` : ""
-  }</h3>${body}</section>`;
+type CardOpts = { icon?: SectionIconId; num?: number; badge?: string; alert?: boolean };
+
+/** Sadaļas galvene kā dīlera PDF: ikona (vai izsoles numurs) aplī + virsraksts + skaita nozīmīte. */
+function secHead(title: string, opts: CardOpts = {}): string {
+  const mark =
+    opts.num != null
+      ? `<span class="pdf-sec-ico-wrap aa-num" aria-hidden="true">${opts.num}</span>`
+      : `<span class="pdf-sec-ico-wrap${opts.alert ? " aa-ico--alert" : ""}" aria-hidden="true">${sectionIconPdfHtml(opts.icon ?? "layers")}</span>`;
+  return `<div class="pdf-sec-head pdf-sec-head--brand">${mark}<h2 class="pdf-sec pdf-sec--nobar">${esc(title)}</h2>${
+    opts.badge ? `<span class="pdf-src-count-badge">${esc(opts.badge)}</span>` : ""
+  }</div>`;
 }
 
+function card(title: string, body: string, opts: CardOpts = {}): string {
+  if (!body) return "";
+  return `<section class="aa-card">${secHead(title, opts)}${body}</section>`;
+}
+
+function subhead(title: string): string {
+  return `<p class="pdf-subhead">${esc(title)}</p>`;
+}
+
+/** Datu pāri: etiķete/vērtība vienādos platumos. 2 kolonnās nepāra pēdējā rinda stiepjas pa visu platumu. */
 function kvGrid(rows: readonly ArchiveKv[], cols: 1 | 2 = 2): string {
   if (rows.length === 0) return "";
+  const wideLast = cols === 2 && rows.length % 2 === 1;
   return `<dl class="aa-kv aa-kv--${cols}">${rows
-    .map((r) => `<div class="aa-kv__row"><dt>${esc(r.k)}</dt><dd${r.missing || r.alert ? ' class="aa-red"' : ""}>${esc(r.v)}</dd></div>`)
+    .map(
+      (r, i) =>
+        `<div class="aa-kv__row${wideLast && i === rows.length - 1 ? " aa-kv__row--wide" : ""}"><dt>${esc(r.k)}</dt><dd${
+          r.missing || r.alert ? ' class="aa-red"' : ""
+        }>${esc(r.v)}</dd></div>`,
+    )
     .join("")}</dl>`;
 }
 
@@ -86,8 +110,8 @@ const ZONE_LABEL: Record<string, string> = {
   roof: "Jumts",
 };
 
-/** Bojājumu kartīte: shēma + saraksts. Bez bojājumiem un atzīmēm - tukšs (stāvokli rāda stāvokļa kartīte). */
-export function auctionArchiveDamageCardHtml(
+/** Bojājumu bloks izsoles kartītē: shēma (6/12) + saraksts (6/12). Bez bojājumiem un atzīmēm - tukšs. */
+export function auctionArchiveDamageBlockHtml(
   damages: readonly ThecarapiPdfDamage[],
   marks: readonly AuctionArchiveOperatorMark[],
 ): string {
@@ -128,8 +152,8 @@ export function auctionArchiveDamageCardHtml(
         }</span></li>`,
     ),
   ].join("");
-  const aside = damages.length ? lvCount(damages.length, "bojājums", "bojājumi") : "";
-  return card("Bojājumi", `<div class="aa-dmg">${svg}<ul class="aa-dmg__list">${rows}</ul></div>`, { cls: "aa-card--alert", aside, icon: "shield" });
+  const count = damages.length ? ` · ${lvCount(damages.length, "bojājums", "bojājumi")}` : "";
+  return `<div class="aa-block aa-block--alert">${subhead(`Bojājumi${count}`)}<div class="aa-dmg${svg ? "" : " aa-dmg--list"}">${svg}<ul class="aa-dmg__list">${rows}</ul></div></div>`;
 }
 
 /* ---------- Apraksts ---------- */
@@ -152,7 +176,7 @@ export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
   return out;
 }
 
-function descriptionCard(texts: readonly string[], translations: ReadonlyMap<string, string>): string {
+function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<string, string>): string {
   if (texts.length === 0) return "";
   const items = texts
     .map((t) => {
@@ -163,13 +187,27 @@ function descriptionCard(texts: readonly string[], translations: ReadonlyMap<str
       }</div>`;
     })
     .join("");
-  return card("Izsoles apraksts", items, { icon: "fileText" });
+  return `<div class="aa-block">${subhead("Izsoles apraksts")}${items}</div>`;
 }
 
 /* ---------- Galerija ---------- */
 
 /** 3 kolonnas × 5 rindas - viena A4 lapa bez pārgriešanas. */
 export const AUCTION_ARCHIVE_PHOTOS_PER_PAGE = 15;
+
+/**
+ * Stingrs režģis bez pus-tukšām rindām: lapā `n` bildes pa 3 rindā; ja pēdējā rindā paliktu 2 - tās ir pusplatuma,
+ * ja 1 - pēdējās četras ir 2 + 2 pusplatumā; viena pati bilde - pilnā platumā. Atgriež katras bildes platumu (12 kolonnās).
+ */
+export function auctionArchiveGallerySpans(n: number): number[] {
+  if (n <= 0) return [];
+  if (n === 1) return [12];
+  const spans = Array.from({ length: n }, () => 4);
+  const rem = n % 3;
+  if (rem === 2) spans.splice(n - 2, 2, 6, 6);
+  else if (rem === 1) spans.splice(n - 4, 4, 6, 6, 6, 6);
+  return spans;
+}
 
 /** Paraksts bez dublikātiem: avota paraksts tikai, ja tas nav «portāls · datums». */
 function photoNote(p: AuctionArchivePhoto, platform: string): string {
@@ -181,28 +219,32 @@ function photoNote(p: AuctionArchivePhoto, platform: string): string {
     .join(" · ");
 }
 
-function galleryHtml(title: string, platform: string, photos: readonly AuctionArchivePhoto[], dataUrls: ReadonlyMap<string, string>): string {
+function galleryHtml(
+  title: string,
+  platform: string,
+  photos: readonly AuctionArchivePhoto[],
+  dataUrls: ReadonlyMap<string, string>,
+  num?: number,
+): string {
   const list = photos.filter((p) => dataUrls.get(p.id));
   if (list.length === 0) return "";
   const pages: string[] = [];
   const pageCount = Math.ceil(list.length / AUCTION_ARCHIVE_PHOTOS_PER_PAGE);
   for (let i = 0; i < list.length; i += AUCTION_ARCHIVE_PHOTOS_PER_PAGE) {
     const chunk = list.slice(i, i + AUCTION_ARCHIVE_PHOTOS_PER_PAGE);
+    const spans = auctionArchiveGallerySpans(chunk.length);
     const pageNo = i / AUCTION_ARCHIVE_PHOTOS_PER_PAGE + 1;
     const figs = chunk
       .map((p, j) => {
         const date = formatIsoDayLv(p.date) || p.date;
         const note = photoNote(p, platform);
-        return `<figure class="aa-fig"><img src="${dataUrls.get(p.id)!}" alt=""/><figcaption><b>${i + j + 1}/${list.length}</b><span>${esc(
+        return `<figure class="aa-fig aa-fig--${spans[j]}"><img src="${dataUrls.get(p.id)!}" alt=""/><figcaption><b>${i + j + 1}/${list.length}</b><span>${esc(
           [note, date, platform].filter(Boolean).join(" · "),
         )}</span></figcaption></figure>`;
       })
       .join("");
-    pages.push(
-      `<section class="aa-gallery"><div class="aa-gallery__head"><h3>${esc(title)}</h3><span>${esc(lvCount(list.length, "bilde", "bildes"))}${
-        pageCount > 1 ? ` · ${pageNo}/${pageCount}. lapa` : ""
-      }</span></div><div class="aa-grid">${figs}</div></section>`,
-    );
+    const badge = `${lvCount(list.length, "bilde", "bildes")}${pageCount > 1 ? ` · ${pageNo}/${pageCount}` : ""}`;
+    pages.push(`<section class="aa-gallery">${secHead(title, num != null ? { num, badge } : { icon: "camera", badge })}<div class="aa-grid">${figs}</div></section>`);
   }
   return pages.join("\n");
 }
@@ -222,11 +264,7 @@ export type AuctionArchivePdfInput = {
   preparedFor?: string;
   /** «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): noklusējumā cenas PDF NErāda. */
   showPrices?: boolean;
-  /** PAGAIDU (makets Nilam 23.11): A - tīras kartītes ar ikonām, B - laika līnija, C - katalogs. Pēc izvēles paliks viens. */
-  theme?: AuctionArchivePdfTheme;
 };
-
-export type AuctionArchivePdfTheme = "A" | "B" | "C";
 
 function recordKey(r: ThecarapiAdminRecord): string {
   return `${(r.site || "thecarapi").toLowerCase()}:${r.id}`.slice(0, 120);
@@ -250,125 +288,85 @@ function fmtDateTime(d: Date): string {
 /** Dokumenta nosaukums vākā, galvenē un kolofonā (kā «OFICIĀLĀ DĪLERA DATI»). */
 export const AUCTION_ARCHIVE_PDF_TITLE = "IZSOĻU ARHĪVS";
 
+/**
+ * Režģis: 12 kolonnas, sprauga 12px. Kartītes atkāpes un rādiusi - PROVIN PDF mainīgie (`--pdf-pad-outer`,
+ * `--pdf-radius-outer/inner`, `--pdf-line`). Bez ēnām un krāsainām malām (Nila gaume).
+ */
 const ARCHIVE_CSS = `
-.provin-report-doc{--aa-blue:#0061D2;--aa-ink:#0f172a;--aa-mute:#64748b;--aa-line:#E9EDF3;--aa-red:#B91C1C}
-.aa-card{border:1px solid var(--aa-line);border-radius:12px;background:#fff;padding:12px 14px;margin:0 0 9px;break-inside:avoid;page-break-inside:avoid}
-.aa-card__title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 9px;font:700 9px/1.2 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#475569}
-.aa-card__title span{display:flex;align-items:center;gap:7px}
-.aa-ico{display:inline-flex;color:var(--aa-blue)}.aa-ico svg{width:13px;height:13px}
-.aa-card__title em{font-style:normal;font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--aa-mute);font-size:9.5px}
-.aa-card--alert .aa-ico{color:var(--aa-red)}
-.aa-red{color:var(--aa-red)!important;font-weight:650}
-.aa-hero{border:1px solid var(--aa-line);border-radius:12px;padding:16px 18px;margin:0 0 9px;background:#fff;break-inside:avoid}
-.aa-hero__kicker{margin:0;font:700 9px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--aa-blue)}
-.aa-hero__model{margin:4px 0 0;font:800 21px/1.15 Inter,sans-serif;color:var(--aa-ink)}
-.aa-hero__ver{margin:3px 0 0;font:500 11.5px Inter,sans-serif;color:#334155}
-.aa-hero__vin{margin:8px 0 0;font:600 10.5px Inter,sans-serif;color:var(--aa-mute);letter-spacing:.04em}
-.aa-hero__vin b{color:var(--aa-ink)}
-.aa-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:0 0 9px}
-.aa-stat{border:1px solid var(--aa-line);border-radius:10px;background:#fff;padding:9px 11px}
-.aa-stat span{display:block;font:600 8.5px Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--aa-mute)}
-.aa-stat b{display:block;margin-top:3px;font:750 15px Inter,sans-serif;color:var(--aa-ink);font-variant-numeric:tabular-nums}
-.aa-timeline{display:grid;gap:7px}
-.aa-timeline--1{grid-template-columns:1fr}.aa-timeline--2{grid-template-columns:1fr 1fr}.aa-timeline--3{grid-template-columns:1fr 1fr 1fr}
-.aa-tl{position:relative;border:1px solid var(--aa-line);border-radius:10px;padding:9px 11px 10px;background:#fff;break-inside:avoid}
-.aa-tl__n{position:absolute;top:8px;right:10px;font:700 8.5px Inter,sans-serif;color:var(--aa-mute)}
-.aa-tl__date{margin:0;font:750 13px Inter,sans-serif;color:var(--aa-ink)}
-.aa-tl__where{margin:1px 0 7px;font:600 10.5px Inter,sans-serif;color:#334155}
-.aa-tl__facts{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font:500 9.5px Inter,sans-serif}
-.aa-tl__facts dt{color:var(--aa-mute)}.aa-tl__facts dd{margin:0;color:var(--aa-ink);font-weight:650;font-variant-numeric:tabular-nums}
+.provin-report-doc{--aa-ink:#0f172a;--aa-mute:#64748b;--aa-red:#B91C1C;--aa-gap:12px}
+.aa-card{border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);background:#fff;padding:var(--pdf-pad-outer);margin:0 0 var(--aa-gap);break-inside:avoid;page-break-inside:avoid}
+.aa-card .pdf-sec-head--brand{margin:0 0 12px;padding-bottom:10px}
+.aa-card > :last-child{margin-bottom:0}
+.aa-num{font:700 12px/1 Inter,sans-serif;font-variant-numeric:tabular-nums}
+.aa-ico--alert{color:var(--aa-red)!important;background:rgba(185,28,28,.08)!important}
+.aa-ico--alert .pdf-ico{color:var(--aa-red)!important}
+.aa-red{color:var(--aa-red)!important}
+.aa-card .pdf-subhead{margin:0 0 4px}
+.aa-card .pdf-dealer-cover__model{margin-top:4px}
+.aa-card .pdf-dealer-cover__meta b{color:var(--aa-ink);font-weight:650;letter-spacing:.02em}
+.aa-card .pdf-svc-summary{margin:var(--aa-gap) 0 0;padding:10px 0;gap:0}
+.aa-card .pdf-svc-summary__cell{padding:0 14px;border-left:1px solid var(--pdf-line)}
+.aa-card .pdf-svc-summary__cell:first-child{border-left:none}
+.aa-card .pdf-svc-summary__cell b{font-size:13px;font-variant-numeric:tabular-nums}
+.aa-cat{display:grid;gap:var(--aa-gap)}
+.aa-cat__item{display:grid;grid-template-columns:5fr 7fr;gap:var(--aa-gap);align-items:stretch;break-inside:avoid;page-break-inside:avoid}
+.aa-cat__img{display:block;width:100%;height:46mm;object-fit:cover;border-radius:var(--pdf-radius-inner);background:var(--pdf-line-soft)}
+.aa-cat__panel{display:flex;flex-direction:column;justify-content:space-between;height:46mm;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);padding:12px 14px;background:#FCFDFF}
+.aa-cat__item--plain{border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);padding:12px 14px;background:#FCFDFF;align-items:end}
+.aa-cat__item--plain .aa-cat__cells{padding-left:calc(30px * 5 / 12)}
+.aa-cat__n{margin:0;font:600 var(--pdf-fs-label)/1.3 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#86868b}
+.aa-cat__date{margin:3px 0 0;font:750 18px/1.15 Inter,sans-serif;letter-spacing:-.02em;color:var(--aa-ink);font-variant-numeric:tabular-nums}
+.aa-cat__where{margin:3px 0 0;font:500 var(--pdf-fs-base)/1.3 Inter,sans-serif;color:#475569}
+.aa-cat__where b{font-weight:650;color:var(--aa-ink)}
+.aa-cat__cells{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;margin:0}
+.aa-cat__cells div{padding:0 12px;border-left:1px solid var(--pdf-line)}
+.aa-cat__cells div:first-child{padding-left:0;border-left:none}
+.aa-cat__cells dt{font:600 9px/1.3 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--aa-mute)}
+.aa-cat__cells dd{margin:2px 0 0;font:750 12px/1.3 Inter,sans-serif;color:var(--aa-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .aa-findings{margin:0;padding:0;list-style:none}
-.aa-findings li{position:relative;padding:0 0 5px 14px;font:500 10.5px/1.45 Inter,sans-serif;color:#1e293b}
-.aa-findings li::before{content:"";position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:#94A3B8}
+.aa-findings li{position:relative;padding:5px 0 5px 14px;border-bottom:1px solid var(--pdf-line-soft);font:500 var(--pdf-fs-table)/1.45 Inter,sans-serif;color:#1e293b}
+.aa-findings li:last-child{border-bottom:none;padding-bottom:0}
+.aa-findings li:first-child{padding-top:0}
+.aa-findings li::before{content:"";position:absolute;left:2px;top:11px;width:5px;height:5px;border-radius:50%;background:#94A3B8}
+.aa-findings li:first-child::before{top:6px}
 .aa-findings li.aa-red::before{background:var(--aa-red)}
-.aa-kv{display:grid;gap:0 18px;margin:0}
+.aa-kv{display:grid;gap:0 24px;margin:0}
 .aa-kv--2{grid-template-columns:1fr 1fr}.aa-kv--1{grid-template-columns:1fr}
-.aa-kv__row{display:grid;grid-template-columns:42% 1fr;gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9;break-inside:avoid}
-.aa-kv__row dt{font:500 9.5px/1.35 Inter,sans-serif;color:var(--aa-mute)}
-.aa-kv__row dd{margin:0;font:600 10.5px/1.35 Inter,sans-serif;color:var(--aa-ink)}
-.aa-equip{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
-.aa-equip__g h4{margin:0 0 4px;font:650 9.5px Inter,sans-serif;color:#334155}
-.aa-chips{display:flex;flex-wrap:wrap;gap:4px}
-.aa-chip{display:inline-block;padding:3px 8px;border:1px solid #E2E8F0;border-radius:999px;background:#F8FAFC;font:500 9.5px Inter,sans-serif;color:#1e293b}
-.aa-lot{margin-top:4px}
-.aa-lot__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 0 8px;padding:0 0 6px;border-bottom:1px solid #E2E8F0;break-after:avoid}
-.aa-lot__head h2{margin:0;font:800 15px Inter,sans-serif;color:var(--aa-ink)}
-.aa-lot__head h2{display:flex;align-items:center;gap:8px}
-.aa-lot__head h2 small{font-weight:600;color:var(--aa-mute);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
-.aa-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid #CBD5E1;font:700 9.5px Inter,sans-serif;color:var(--aa-ink)}
-.aa-lot__head span{font:500 10px Inter,sans-serif;color:var(--aa-mute)}
-.aa-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;align-items:start}
-.aa-dmg{display:grid;grid-template-columns:44% 1fr;gap:12px;align-items:center}
+.aa-kv__row{display:grid;grid-template-columns:44% 1fr;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);break-inside:avoid}
+.aa-kv__row--wide{grid-column:1 / -1;grid-template-columns:calc((100% - 24px) * .22) 1fr}
+.aa-kv__row dt{font:500 var(--pdf-fs-table)/1.45 Inter,sans-serif;color:#86868b}
+.aa-kv__row dd{margin:0;font:550 var(--pdf-fs-table)/1.45 Inter,sans-serif;color:var(--aa-ink)}
+.aa-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start}
+.aa-cols > div > .pdf-subhead + .aa-kv + .pdf-subhead{margin-top:14px}
+.aa-block{margin-top:14px}
+.aa-card > .pdf-sec-head + .aa-block{margin-top:0}
+.aa-dmg{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:center}
+.aa-dmg--list{grid-template-columns:1fr}
 .aa-scheme svg{display:block;width:100%;height:auto}
 .aa-dmg__list{margin:0;padding:0;list-style:none}
-.aa-dmg__list li{display:grid;gap:1px;padding:5px 0;border-bottom:1px solid #F1F5F9;font:500 9.5px/1.35 Inter,sans-serif}
+.aa-dmg__list li{display:grid;gap:1px;padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);font:500 var(--pdf-fs-table)/1.4 Inter,sans-serif}
 .aa-dmg__list b{color:var(--aa-red);font-weight:650}.aa-dmg__list span{color:#334155}
 .aa-dmg__list .aa-dmg--seen b{color:#B45309}
-.aa-desc{margin:0 0 6px}.aa-desc__lv{margin:0;font:500 10.5px/1.5 Inter,sans-serif;color:var(--aa-ink)}
-.aa-desc__orig{margin:3px 0 0;font:400 8.5px/1.45 Inter,sans-serif;color:#94a3b8}.aa-desc__orig span{font-weight:600}
+.aa-desc{margin:0 0 6px}.aa-desc__lv{margin:0;font:500 var(--pdf-fs-table)/1.5 Inter,sans-serif;color:var(--aa-ink)}
+.aa-desc__orig{margin:3px 0 0;font:400 var(--pdf-fs-fine)/1.45 Inter,sans-serif;color:#94a3b8}.aa-desc__orig span{font-weight:600}
 .aa-gallery{break-before:page;page-break-before:always}
-.aa-gallery__head{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 7px;padding:0 0 5px;border-bottom:1px solid #E2E8F0}
-.aa-gallery__head h3{margin:0;font:800 13px Inter,sans-serif;color:var(--aa-ink)}
-.aa-gallery__head span{font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
-.aa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 7px}
-.aa-fig{margin:0;border:1px solid var(--aa-line);border-radius:9px;overflow:hidden;background:#fff;break-inside:avoid;page-break-inside:avoid}
-.aa-fig img{display:block;width:100%;height:40mm;object-fit:cover;background:#F1F5F9}
-.aa-fig figcaption{display:flex;gap:6px;align-items:baseline;padding:4px 7px 5px;font:500 8px Inter,sans-serif;color:#475569;border-top:1px solid #F1F5F9}
+.aa-gallery .pdf-sec-head--brand{margin:0 0 10px;padding-bottom:8px}
+.aa-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:8px var(--aa-gap)}
+.aa-fig{margin:0;border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-inner);overflow:hidden;background:#fff;break-inside:avoid;page-break-inside:avoid}
+.aa-fig--4{grid-column:span 4}.aa-fig--6{grid-column:span 6}.aa-fig--12{grid-column:span 12}
+.aa-fig img{display:block;width:100%;height:39mm;object-fit:cover;background:var(--pdf-line-soft)}
+.aa-fig--12 img{height:78mm}
+.aa-fig figcaption{display:flex;justify-content:space-between;gap:6px;align-items:baseline;padding:4px 8px 5px;font:500 8px/1.3 Inter,sans-serif;color:var(--aa-mute)}
 .aa-fig figcaption b{color:var(--aa-ink);font-weight:700;font-variant-numeric:tabular-nums}
-.aa-sources{margin:0;padding:0 0 0 14px;font:500 10px Inter,sans-serif;color:#334155}
-.aa-foot{font:500 8.5px/1.5 Inter,sans-serif;color:var(--aa-mute);margin:10px 0 0}
+.aa-tail{margin-top:var(--aa-gap)}
+.aa-equip{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px}
+.aa-equip__g--wide{grid-column:1 / -1}
+.aa-equip__g .pdf-subhead{margin:0 0 6px}
+.aa-chips{display:flex;flex-wrap:wrap;gap:5px}
+.aa-chip{display:inline-block;padding:3px 9px;border:1px solid var(--pdf-line);border-radius:999px;background:#fff;font:500 var(--pdf-fs-label)/1.3 Inter,sans-serif;color:#1e293b}
+.aa-sources{margin:0;padding:0 0 0 14px;font:500 var(--pdf-fs-table) Inter,sans-serif;color:#334155}
+.aa-foot{font:500 var(--pdf-fs-fine)/1.5 Inter,sans-serif;color:var(--aa-mute);margin:10px 0 0}
 `;
-
-/** Pagaidu dizaina varianti (Nils 23.11 - «izstrādā vairākus variantus»). */
-const THEME_CSS: Record<AuctionArchivePdfTheme, string> = {
-  // A - tīras kartītes: plāna pelēka apmale, maza līniju ikona virsrakstā, bez krāsainām svītrām.
-  A: `
-.aa-theme-a .aa-hero{background:#F8FAFC}
-.aa-theme-a .aa-tl__n{top:9px;right:10px}
-`,
-  // B - laika līnija: izsoles kā rindas ar punktiem un vertikālu līniju; kartītes pārējam, virsraksti bez ikonām.
-  B: `
-.aa-theme-b .aa-ico{display:none}
-.aa-tlist{position:relative;margin:2px 0 0;padding:0;list-style:none}
-.aa-trow{position:relative;display:grid;grid-template-columns:20mm 16px 1fr auto;gap:0 10px;align-items:start;padding:0 0 12px}
-.aa-trow:last-child{padding-bottom:2px}
-.aa-trow__date{font:750 11.5px Inter,sans-serif;color:var(--aa-ink);padding-top:1px}
-.aa-trow__axis{position:relative;height:100%}
-.aa-trow__axis::before{content:"";position:absolute;left:7px;top:4px;bottom:-14px;width:1px;background:#CBD5E1}
-.aa-trow:last-child .aa-trow__axis::before{display:none}
-.aa-trow__axis::after{content:"";position:absolute;left:3px;top:4px;width:7px;height:7px;border-radius:50%;background:#fff;border:1.5px solid var(--aa-blue)}
-.aa-trow__main b{display:block;font:700 11px Inter,sans-serif;color:var(--aa-ink)}
-.aa-trow__main span{display:block;margin-top:1px;font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
-.aa-trow__data{display:flex;gap:16px;text-align:right}
-.aa-trow__data div span{display:block;font:600 8px Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--aa-mute)}
-.aa-trow__data div b{display:block;font:650 10.5px Inter,sans-serif;color:var(--aa-ink);font-variant-numeric:tabular-nums}
-.aa-theme-b .aa-num{border-color:var(--aa-blue);color:var(--aa-blue)}
-`,
-  // C - katalogs: liela bilde katrai izsolei + datu josla blakus; minimāli rāmji (sadaļas atdala plāna līnija).
-  C: `
-.aa-theme-c .aa-ico{display:none}
-.aa-theme-c .aa-card{border:none;border-top:1px solid #E2E8F0;border-radius:0;padding:10px 0 4px;margin:0 0 6px}
-.aa-theme-c .aa-hero{border:none;padding:4px 0 10px;border-bottom:1px solid #E2E8F0;border-radius:0;margin-bottom:10px}
-.aa-theme-c .aa-hero__model{font-size:24px}
-.aa-theme-c .aa-stats{gap:0;margin-bottom:12px}
-.aa-theme-c .aa-stat{border:none;border-left:1px solid #E2E8F0;border-radius:0;padding:2px 12px}
-.aa-theme-c .aa-stat:first-child{border-left:none;padding-left:0}
-.aa-cat{display:grid;gap:10px}
-.aa-cat__item{display:grid;grid-template-columns:64mm 1fr;gap:14px;align-items:stretch;break-inside:avoid}
-.aa-cat__img{display:block;width:100%;height:42mm;object-fit:cover;border-radius:8px;background:#F1F5F9}
-.aa-cat__noimg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:42mm;border-radius:8px;background:#F8FAFC;border:1px dashed #CBD5E1;font:500 9.5px Inter,sans-serif;color:var(--aa-mute)}
-.aa-cat__noimg svg{width:18px;height:18px;color:#94A3B8}
-.aa-cat__n{font:600 9px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--aa-mute);margin:2px 0 0}
-.aa-cat__date{margin:2px 0 0;font:800 16px Inter,sans-serif;color:var(--aa-ink)}
-.aa-cat__where{margin:1px 0 8px;font:600 11px Inter,sans-serif;color:#334155}
-.aa-cat__facts{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0;font:500 10px Inter,sans-serif}
-.aa-cat__facts dt{color:var(--aa-mute)}.aa-cat__facts dd{margin:0;font-weight:650;color:var(--aa-ink);font-variant-numeric:tabular-nums}
-.aa-theme-c .aa-fig{border:none;border-radius:0}
-.aa-theme-c .aa-fig img{border-radius:6px}
-.aa-theme-c .aa-fig figcaption{border-top:none;padding:3px 1px 0}
-.aa-theme-c .aa-chip{background:#fff}
-`,
-};
 
 type Lot = {
   key: string;
@@ -386,7 +384,6 @@ type Lot = {
 export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): string {
   const s = input.summary;
   const showPrices = input.showPrices === true;
-  const theme: AuctionArchivePdfTheme = input.theme ?? "A";
   const now = input.generatedAt ?? new Date();
   const translations = input.translations ?? new Map<string, string>();
   const marks = input.marks ?? [];
@@ -414,7 +411,7 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
       km: a?.km ?? null,
       facts: auctionArchiveLotFacts(r, { showPrices }),
       damages,
-      photos: input.photos.filter((p) => p.auctionKey === key),
+      photos: input.photos.filter((p) => p.auctionKey === key && input.dataUrls.has(p.id)),
     };
   });
 
@@ -427,70 +424,45 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   /* --- 1. Vāks --- */
   const hero = `<header class="pdf-v1-hero"><div class="pdf-v1-hero-inner">${provincLogoSvg({ includeLvSuffix: true })}<div class="pdf-v1-hero-text"><h1 class="pdf-v1-doc-title">${esc(
     AUCTION_ARCHIVE_PDF_TITLE,
-  )}</h1><p class="pdf-v1-meta">Ģenerēts: ${esc(fmtDateTime(now))}</p></div></div></header>
-<div class="aa-hero"><p class="aa-hero__kicker">Eiropas izsoļu arhīvs</p><h2 class="aa-hero__model">${esc(title)}</h2>${
-    version ? `<p class="aa-hero__ver">${esc(version)}</p>` : ""
-  }<p class="aa-hero__vin">VIN <b class="pdf-vin">${esc(s.vin)}</b></p></div>`;
+  )}</h1><p class="pdf-v1-meta">Ģenerēts: ${esc(fmtDateTime(now))} · VIN <span class="pdf-vin">${esc(s.vin)}</span></p></div></div></header>`;
   const stats = [
     { k: "Izsoles", v: String(s.auctions.length) },
     { k: "Bildes", v: String(photoTotal) },
     { k: "Pēdējā izsole", v: formatIsoDayLv(lastDate) || "-" },
     { k: "Nobraukums", v: km != null ? formatKm(km) : "-" },
   ];
-  const statsHtml = `<div class="aa-stats">${stats.map((x) => `<div class="aa-stat"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div>`;
+  const cover = card(
+    AUCTION_ARCHIVE_PDF_TITLE,
+    `<div class="pdf-dealer-cover"><p class="pdf-dealer-cover__kicker">Eiropas izsoļu arhīvs</p><h3 class="pdf-dealer-cover__model">${esc(
+      title,
+    )}</h3><p class="pdf-dealer-cover__meta">${version ? `${esc(version)} · ` : ""}VIN <b class="pdf-vin">${esc(s.vin)}</b></p></div>
+<div class="pdf-svc-summary">${stats.map((x) => `<div class="pdf-svc-summary__cell"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div>`,
+    { icon: "globe", badge: s.auctions.length ? lvCount(s.auctions.length, "izsole", "izsoles") : undefined },
+  );
 
-  const tlFacts = (l: Lot): [string, string][] => {
-    const out: [string, string][] = [
-      ["Valsts", l.facts.country || l.auction?.country || ""],
-      ["Nobraukums", formatKm(l.km)],
-      ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
-    ];
-    if (showPrices && l.auction?.priceEur != null) out.push(["Cena", formatEurWhole(l.auction.priceEur)]);
-    return out.filter(([, v]) => v);
-  };
-  const tlDate = (l: Lot) => esc(formatIsoDayLv(l.date) || "Datums nav zināms");
-  let tlBody = "";
-  if (theme === "B") {
-    tlBody = `<ol class="aa-tlist">${lots
-      .map((l) => {
-        const data = tlFacts(l).filter(([k]) => k !== "Valsts");
-        return `<li class="aa-trow"><div class="aa-trow__date">${tlDate(l)}</div><div class="aa-trow__axis"></div><div class="aa-trow__main"><b>${l.n}. ${esc(
-          l.platform,
-        )}</b><span>${esc(l.facts.country || l.auction?.country || "")}</span></div><div class="aa-trow__data">${data
-          .map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`)
-          .join("")}</div></li>`;
-      })
-      .join("")}</ol>`;
-  } else if (theme === "C") {
-    tlBody = `<div class="aa-cat">${lots
-      .map((l) => {
-        const cover = l.photos.find((p) => input.dataUrls.has(p.id));
-        const img = cover
-          ? `<img class="aa-cat__img" src="${input.dataUrls.get(cover.id)!}" alt=""/>`
-          : `<div class="aa-cat__noimg">${sectionIconPdfHtmlSized("camera", 18)}<span>Izsolē bilžu nav</span></div>`;
-        const facts = [...tlFacts(l), ...(l.facts.lotNo ? ([["Izsoles Nr.", l.facts.lotNo]] as [string, string][]) : [])];
-        return `<article class="aa-cat__item"><div>${img}</div><div><p class="aa-cat__n">${l.n}. izsole</p><p class="aa-cat__date">${tlDate(
-          l,
-        )}</p><p class="aa-cat__where">${esc(l.platform)}</p><dl class="aa-cat__facts">${facts
-          .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
-          .join("")}</dl></div></article>`;
-      })
-      .join("")}</div>`;
-  } else {
-    tlBody = `<div class="aa-timeline aa-timeline--${Math.min(lots.length, 3)}">${lots
-      .map(
-        (l) =>
-          `<article class="aa-tl"><span class="aa-tl__n aa-num">${l.n}</span><p class="aa-tl__date">${tlDate(l)}</p><p class="aa-tl__where">${esc(
-            l.platform,
-          )}</p><dl class="aa-tl__facts">${tlFacts(l)
-            .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`)
-            .join("")}</dl></article>`,
-      )
-      .join("")}</div>`;
-  }
-  const timeline = lots.length
-    ? card("Izsoļu hronoloģija", tlBody, { aside: lvCount(lots.length, "izsole", "izsoles"), icon: "history" })
-    : "";
+  /* --- 2. Hronoloģija («katalogs») --- */
+  const catalog = lots
+    .map((l) => {
+      const cells: [string, string][] = [
+        ["Nobraukums", formatKm(l.km) || "-"],
+        ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
+      ];
+      if (showPrices && l.auction?.priceEur != null) cells.push(["Cena", formatEurWhole(l.auction.priceEur)]);
+      if (l.facts.lotNo) cells.push(["Izsoles Nr.", l.facts.lotNo]);
+      const country = l.facts.country || l.auction?.country || "";
+      const headTxt = `<div class="aa-cat__head"><p class="aa-cat__n">${l.n}. izsole</p><p class="aa-cat__date">${esc(
+        formatIsoDayLv(l.date) || "Datums nav zināms",
+      )}</p><p class="aa-cat__where"><b>${esc(l.platform)}</b>${country ? ` · ${esc(country)}` : ""}</p></div>`;
+      const cellsHtml = `<dl class="aa-cat__cells">${cells.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
+      const coverPhoto = l.photos[0];
+      // Bez bildēm - kompakta datu kartīte pilnā platumā (tas pats 5/7 režģis, lai šūnas sakrīt ar pārējām izsolēm).
+      if (!coverPhoto) return `<article class="aa-cat__item aa-cat__item--plain">${headTxt}${cellsHtml}</article>`;
+      return `<article class="aa-cat__item"><img class="aa-cat__img" src="${input.dataUrls.get(coverPhoto.id)!}" alt=""/><div class="aa-cat__panel">${headTxt}${cellsHtml}</div></article>`;
+    })
+    .join("");
+  const timeline = lots.length ? card("Izsoļu hronoloģija", `<div class="aa-cat">${catalog}</div>`, { icon: "history" }) : "";
+
+  /* --- 3. Galvenie fakti --- */
   const findings = auctionArchiveKeyFindings(
     lots.map((l) => ({
       platform: l.platform,
@@ -501,53 +473,62 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     })),
   );
   const findingsHtml = findings.length
-    ? card("Galvenie fakti", `<ul class="aa-findings">${findings.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`, { icon: "listChecks" })
+    ? card("Galvenie fakti", `<ul class="aa-findings">${findings.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`, {
+        icon: "listChecks",
+      })
     : "";
 
-  /* --- 2. Transportlīdzeklis --- */
+  /* --- 4. Transportlīdzeklis --- */
   const vehicle = records.length ? card("Transportlīdzekļa dati", kvGrid(auctionArchiveVehicleRows(records)), { icon: "car" }) : "";
-  const equipment = auctionArchiveEquipment(records, translations);
-  const equipHtml = equipment.groups.length
-    ? card(
-        "Aprīkojums",
-        `<div class="aa-equip">${equipment.groups
-          .map(
-            (g) =>
-              `<div class="aa-equip__g"><h4>${esc(g.group)}</h4><div class="aa-chips">${g.items.map((i) => `<span class="aa-chip">${esc(i)}</span>`).join("")}</div></div>`,
-          )
-          .join("")}</div>`,
-        { aside: "pēc izsoļu datiem", icon: "layers" },
-      )
-    : "";
   const sources = s.manualSources.length
-    ? card("Citi avoti", `<ul class="aa-sources">${s.manualSources.map((m) => `<li>${esc(m.label)}${m.kind === "pdf" ? " (PDF)" : ""}</li>`).join("")}</ul>`)
+    ? card("Citi avoti", `<ul class="aa-sources">${s.manualSources.map((m) => `<li>${esc(m.label)}${m.kind === "pdf" ? " (PDF)" : ""}</li>`).join("")}</ul>`, {
+        icon: "search",
+      })
     : "";
 
-  /* --- 3. Izsoles --- */
+  /* --- 5. Izsoles --- */
   const lotHtml = lots.map((l) => {
-    const sub = [formatIsoDayLv(l.date), l.facts.country].filter(Boolean).join(" · ");
-    const head = `<div class="aa-lot__head"><h2><span class="aa-num">${l.n}</span>${esc(l.platform)}<small>izsole</small></h2><span>${esc(sub)}</span></div>`;
-    const saleCard = card("Izsoles dati", kvGrid(l.facts.sale, 1), { icon: "clipboard" });
-    const condCard = card("Stāvoklis un dokumenti", kvGrid(l.facts.condition, 1), { icon: "shieldCheck" });
-    const priceCard = showPrices ? card("Cenas", kvGrid(l.facts.prices, 1), { aside: "avota dati", icon: "wallet" }) : "";
-    const left = [saleCard, priceCard].filter(Boolean).join("");
-    const cols = left && condCard ? `<div class="aa-cols"><div>${left}</div><div>${condCard}</div></div>` : left + condCard;
-    const dmg = auctionArchiveDamageCardHtml(l.damages, marks.filter((m) => m.auctionKey === l.key));
-    const desc = descriptionCard(auctionArchiveDescriptions(l.record), translations);
-    return `<section class="aa-lot">${head}${cols}${dmg}${desc}</section>`;
+    const badge = [formatIsoDayLv(l.date), l.facts.country].filter(Boolean).join(" · ");
+    // Izsoles Nr. ir hronoloģijā - šeit neatkārto.
+    const sale = l.facts.sale.filter((r) => r.k !== "Izsoles Nr.");
+    const left = [
+      sale.length ? subhead("Izsoles dati") + kvGrid(sale, 1) : "",
+      showPrices && l.facts.prices.length ? subhead("Cenas (avota dati)") + kvGrid(l.facts.prices, 1) : "",
+    ].join("");
+    const right = l.facts.condition.length ? subhead("Stāvoklis un dokumenti") + kvGrid(l.facts.condition, 1) : "";
+    const cols = left && right ? `<div class="aa-cols"><div>${left}</div><div>${right}</div></div>` : left || right ? `<div>${left}${right}</div>` : "";
+    const dmg = auctionArchiveDamageBlockHtml(l.damages, marks.filter((m) => m.auctionKey === l.key));
+    const desc = descriptionBlock(auctionArchiveDescriptions(l.record), translations);
+    return card(`${l.platform} izsole`, `${cols}${dmg}${desc}`, { num: l.n, badge });
   });
 
-  /* --- 4. Galerijas --- */
-  const galleries = lots
-    .map((l) => galleryHtml(`Bildes · ${l.n}. izsole · ${l.platform} · ${formatIsoDayLv(l.date)}`, l.platform, l.photos, input.dataUrls))
-    .join("\n");
+  /* --- 6. Galerijas --- */
+  const galleries = lots.map((l) => galleryHtml(`Bildes · ${l.platform}`, l.platform, l.photos, input.dataUrls, l.n)).join("\n");
   const knownKeys = new Set(lots.map((l) => l.key));
   const manualPhotos = input.photos.filter((p) => !knownKeys.has(p.auctionKey));
   const manual = galleryHtml("Bildes · citi izsoļu avoti", "", manualPhotos, input.dataUrls);
 
+  /* --- 7. Aprīkojums (Nils 23.11: pēdējā sadaļa) --- */
+  const equipment = auctionArchiveEquipment(records, translations);
+  const eqGroups = equipment.groups;
+  const equipHtml = eqGroups.length
+    ? `<div class="aa-tail">${card(
+        "Aprīkojums",
+        `<div class="aa-equip">${eqGroups
+          .map(
+            (g, i) =>
+              `<div class="aa-equip__g${eqGroups.length % 2 === 1 && i === eqGroups.length - 1 ? " aa-equip__g--wide" : ""}">${subhead(g.group)}<div class="aa-chips">${g.items
+                .map((x) => `<span class="aa-chip">${esc(x)}</span>`)
+                .join("")}</div></div>`,
+          )
+          .join("")}</div>`,
+        { icon: "layers", badge: "pēc izsoļu datiem" },
+      )}</div>`
+    : "";
+
   const header = buildPdfRunningHeaderLine(title, s.vin, `PROVIN.LV · ${AUCTION_ARCHIVE_PDF_TITLE}`);
   const footer = buildPdfRunningFooterLine({ vin: s.vin, dateLabel: fmtDateTime(now), preparedBy: input.preparedFor ?? "" });
-  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${ARCHIVE_CSS}${THEME_CSS[theme]}`;
+  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${ARCHIVE_CSS}`;
   const note = `<p class="aa-foot">Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, ${
     showPrices ? "cenas, " : ""
   }nobraukums un apraksti ir avota dati; tulkojums un apkopojums - PROVIN.${
@@ -561,9 +542,9 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   })}${note}`;
   return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="color-scheme" content="light"/><title>${esc(
     `Izsolu_arhivs_${s.vin}.pdf`,
-  )}</title><style>${css}</style></head><body class="provin-report-doc aa-theme-${theme.toLowerCase()}"><div class="sheet">${hero}${statsHtml}${timeline}${findingsHtml}${vehicle}${sources}${lotHtml.join(
+  )}</title><style>${css}</style></head><body class="provin-report-doc"><div class="sheet">${hero}${cover}${timeline}${findingsHtml}${vehicle}${sources}${lotHtml.join(
     "\n",
-  )}${galleries}${manual}${equipHtml ? `<div class="aa-tail">${equipHtml}</div>` : ""}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
+  )}${galleries}${manual}${equipHtml}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
 }
 
 /** Servera renderis gaida `data-provin-fonts="ready"` (kā klienta atskaitē). */
