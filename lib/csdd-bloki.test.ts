@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
-import { buildCsddBloki, buildCsddWarnings, parseCsddMeasurements } from "@/lib/csdd-bloki";
+import {
+  buildCsddBloki,
+  buildCsddTaAnalysis,
+  buildCsddTaRepeatSentence,
+  buildCsddWarnings,
+  csddDefectGroupKey,
+  csddDefectNodeLabel,
+  csddTaCodesLabel,
+  csddTaInspectionsCount,
+  parseCsddMeasurements,
+  type CsddTaAnalysis,
+} from "@/lib/csdd-bloki";
+import type { CsddTechnicalInspectionRow } from "@/lib/csdd-extended-parse";
 import { ECSDD_NEW_FORMAT_DEREGISTERED, ECSDD_OLD_FORMAT_MEASUREMENTS } from "@/lib/csdd-bloki.fixtures";
 import { buildCsddBlokiPdfParts, buildCsddWarningSummaryTiles } from "@/lib/csdd-bloki-pdf-html";
 import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
@@ -56,17 +68,32 @@ describe("e.csdd bloki - parsēšana", () => {
     expect(ta.reinspectionCount).toBe(4);
     expect(ta.years[0]).toBe(2019);
     expect(ta.years[ta.years.length - 1]).toBe(2026);
-    expect(ta.repeated.map((r) => [r.node, r.yearCount])).toEqual([
-      ["5.3", 5],
-      ["8.4", 4],
+    expect(ta.repeated.map((r) => [r.key, r.yearCount])).toEqual([
+      ["5.3:front", 5],
+      ["8.4:oil", 4],
       ["1.4", 2],
+    ]);
+    expect(ta.repeated.map((r) => csddDefectNodeLabel(r.key, "lv"))).toEqual([
+      "Priekšējā balstiekārta un tilts",
+      "Eļļas noplūde (motors, transmisija)",
+      "Stāvbremze",
+    ]);
+    expect(ta.repeated.map((r) => csddTaCodesLabel(r.codes, "lv"))).toEqual([
+      "CSDD kodi 5.3.1, 5.3.4",
+      "CSDD kods 8.4.1",
+      "CSDD kodi 1.4.1, 1.4.2",
     ]);
     const susp = ta.repeated[0]!;
     expect(susp.codes).toEqual(["5.3.1", "5.3.4"]);
     expect(susp.byYear[2026]).toBe(2);
     expect(susp.byYear[2021]).toBe(0);
     expect(susp.latestDate).toBe("17.07.2026");
-    expect(ta.notes[0]!.dates).toEqual(["12.04.2022", "08.04.2021", "04.03.2020"]);
+    // Vienāds piezīmes teksts - viena rinda, datumi hronoloģiski.
+    expect(ta.notes).toHaveLength(1);
+    expect(ta.notes[0]!.dates).toEqual(["04.03.2020", "08.04.2021", "12.04.2022"]);
+    expect(buildCsddTaRepeatSentence(ta, "lv")).toBe(
+      "Trīs defekti konstatēti vairāku gadu tehniskajās apskatēs: priekšējā balstiekārta un tilts - 5 gados, eļļas noplūde - 4 gados, stāvbremze - 2 gados.",
+    );
   });
 
   it("vecais formāts: mērījumi un bremzes no e.csdd teksta", () => {
@@ -124,6 +151,77 @@ describe("e.csdd bloki - parsēšana", () => {
     }
     expect(buildCsddWarningSummaryTiles(ML, "en", NOW)[1]!.value).toBe("No valid policy");
     expect(buildCsddWarningSummaryTiles(ML, "de", NOW)[0]!.label).toBe("Zulassung");
+  });
+});
+
+function taRow(date: string, defects: [string, string, string][], notes = ""): CsddTechnicalInspectionRow {
+  return {
+    date,
+    inspectionType: "pamatpārbaude",
+    ratingLabel: "",
+    notes,
+    smokeCoefficient: "",
+    defects: defects.map(([code, rating, description]) => ({ code, rating, description })),
+  } as unknown as CsddTechnicalInspectionRow;
+}
+
+function taOf(rows: CsddTechnicalInspectionRow[]): CsddTaAnalysis {
+  return buildCsddTaAnalysis({ technicalInspectionHistory: rows, prevInspectionBlock: null } as never);
+}
+
+describe("e.csdd bloki - TA defektu nosaukumi un teikums", () => {
+  it("8.4.1 eļļa un dzesēšanas šķidrums - atsevišķas rindas", () => {
+    expect(csddDefectGroupKey("8.4.1.", "Neveidojot piles, sūcas eļļa no motora (transmisijas).")).toBe("8.4:oil");
+    expect(csddDefectGroupKey("8.4.1.", "Sūcas dzesēšanas šķidrums.")).toBe("8.4:coolant");
+    expect(csddDefectGroupKey("5.3.4.", "Priekšējais tilts. Palielināta brīvkustība.")).toBe("5.3:front");
+    expect(csddDefectGroupKey("1.4.2.", "Nav sasniegta efektivitāte.")).toBe("1.4");
+    const ta = taOf([
+      taRow("10.07.2025", [["8.4.1.", "1", "Sūcas eļļa no motora."], ["8.4.1.", "1", "Sūcas dzesēšanas šķidrums."]]),
+      taRow("10.07.2024", [["8.4.1.", "1", "Sūcas eļļa no motora."], ["8.4.1.", "2", "Sūcas dzesēšanas šķidrums no radiatora."]]),
+      taRow("10.07.2023", []),
+    ]);
+    expect(ta.repeated.map((r) => [r.key, r.yearCount, r.byYear[2024], r.byYear[2023]])).toEqual([
+      ["8.4:coolant", 2, 2, 0],
+      ["8.4:oil", 2, 1, 0],
+    ]);
+    expect(csddDefectNodeLabel("8.4:coolant", "lv")).toBe("Dzesēšanas šķidruma noplūde");
+    expect(ta.repeated[0]!.latestText).toBe("Sūcas dzesēšanas šķidrums.");
+    expect(buildCsddTaRepeatSentence(ta, "lv")).toBe(
+      "Divi defekti konstatēti vairāku gadu tehniskajās apskatēs: dzesēšanas šķidruma noplūde - 2 gados, eļļas noplūde - 2 gados.",
+    );
+  });
+
+  it("piezīmes: vienāds teksts apvienots, datumi hronoloģiski", () => {
+    const ta = taOf([
+      taRow("12.04.2022", [], "Stāvbremze  pietiekoša."),
+      taRow("08.04.2021", [], "Cita piezīme."),
+      taRow("04.03.2020", [], "Stāvbremze pietiekoša."),
+    ]);
+    expect(ta.notes).toEqual([
+      { text: "Stāvbremze pietiekoša.", dates: ["04.03.2020", "12.04.2022"] },
+      { text: "Cita piezīme.", dates: ["08.04.2021"] },
+    ]);
+  });
+
+  it("teikuma locījumi: viens/divi defekti, 0 - teikuma nav; 4 valodas", () => {
+    const one = taOf([taRow("01.01.2025", [["1.4.1.", "2", "Stāvbremze."]]), taRow("01.01.2024", [["1.4.1.", "2", "Stāvbremze."]])]);
+    expect(buildCsddTaRepeatSentence(one, "lv")).toBe("Viens defekts konstatēts vairāku gadu tehniskajās apskatēs: stāvbremze - 2 gados.");
+    expect(buildCsddTaRepeatSentence(one, "en")).toBe("One defect was recorded at technical inspections in several years: parking brake - 2 years.");
+    expect(buildCsddTaRepeatSentence(one, "ru")).toBe("Один дефект выявлен на техосмотрах нескольких лет: стояночный тормоз - 2 года.");
+    expect(buildCsddTaRepeatSentence(one, "de")).toBe("Ein Mangel wurde bei Hauptuntersuchungen in mehreren Jahren festgestellt: Feststellbremse - 2 Jahre.");
+    expect(buildCsddTaRepeatSentence(taOf([taRow("01.01.2025", [["1.4.1.", "2", "x"]])]), "lv")).toBe("");
+    const ml = buildCsddBloki(ML, "lv", NOW)!.ta;
+    expect(buildCsddTaRepeatSentence(ml, "ru")).toMatch(/^Три дефекта выявлены .*передняя подвеска и мост - 5 лет/);
+    expect(buildCsddTaRepeatSentence(ml, "en")).toMatch(/^Three defects were recorded .*front suspension and axle - 5 years, oil leak - 4 years/);
+    expect(buildCsddTaRepeatSentence(ml, "de")).toMatch(/^Drei Mängel wurden .*Vorderachse und Radaufhängung - 5 Jahre/);
+    expect([0, 1, 2, 11, 21].map((n) => csddTaInspectionsCount(n, "lv"))).toEqual([
+      "0 apskates",
+      "1 apskate",
+      "2 apskates",
+      "11 apskates",
+      "21 apskate",
+    ]);
+    expect([1, 3, 5, 22].map((n) => csddTaInspectionsCount(n, "ru"))).toEqual(["1 техосмотр", "3 техосмотра", "5 техосмотров", "22 техосмотра"]);
   });
 });
 
@@ -187,7 +285,7 @@ describe("e.csdd bloki - klienta PDF", () => {
     const html = doc(payload(ML));
     expect(html).not.toContain("data-csdd-bloks=");
     expect(html).not.toContain("Nav spēkā esošas OCTA");
-    expect(html).not.toContain("TA defektu analīze");
+    expect(html).not.toContain("Tehnisko apskašu defektu analīze");
   });
 
   it("ar ķekšiem: kartītes kopsavilkumā pirmās, bloki CSDD sadaļā", () => {
@@ -203,6 +301,21 @@ describe("e.csdd bloki - klienta PDF", () => {
     expect(html).not.toContain('data-csdd-bloks="measurements"');
     expect(html).toContain('data-csdd-bloks="ta"');
     expect(html).toContain("e.csdd, 19.11.2026");
+    // Maketa tabula: kolonnas, kartītes, teikums, leģenda, piezīmes.
+    const ta = html.slice(html.indexOf('data-csdd-bloks="ta"'));
+    expect(ta).toContain("Tehnisko apskašu defektu analīze");
+    expect(ta).toContain(">Vērtējums 2<");
+    expect(ta).toContain(">6 apskates<");
+    expect(ta).toContain(">0 apskates<");
+    expect(ta).toContain("Gadi ar defektu");
+    expect(ta).toContain("5 <span>no 8</span>");
+    expect(ta).toContain("Priekšējā balstiekārta un tilts");
+    expect(ta).toContain("CSDD kods 8.4.1");
+    expect(ta).toContain("Pēdējo reizi 17.07.2026:");
+    expect(ta).toContain("Trīs defekti konstatēti vairāku gadu tehniskajās apskatēs");
+    expect(ta).toContain("bīstami defekti, braukt aizliegts");
+    expect(ta).toContain("Tehniskās apskates piezīmes");
+    expect(ta).toContain("04.03.2020, 08.04.2021, 12.04.2022</span> - Stāvbremzes");
     // Analīze pirms esošās TA vēstures tabulas.
     expect(html.indexOf('data-csdd-bloks="ta"')).toBeLessThan(html.indexOf("Tehnisko apskašu vēsture"));
   });
@@ -223,6 +336,6 @@ describe("e.csdd bloki - klienta PDF", () => {
   it("EN PDF: bloku teksti angliski", () => {
     const html = doc(payload(ML, { csddPdfWarnings: true, csddPdfTaAnalysis: true }), "en");
     expect(html).toContain("No valid policy");
-    expect(html).toContain("Inspection defect analysis");
+    expect(html).toContain("Technical inspection defect analysis");
   });
 });

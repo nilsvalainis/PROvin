@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
@@ -8,8 +8,11 @@ import {
   buildCsddBloki,
   CSDD_BRAKE_DIFF_WARN_PCT,
   csddBlokiT,
+  buildCsddTaRepeatSentence,
   csddDefectNodeLabel,
   csddSourceRef,
+  csddTaCodesLabel,
+  csddTaInspectionsCount,
   formatNum,
   type CsddPdfBlokKey,
   type CsddPdfBlokiFlags,
@@ -18,12 +21,11 @@ import {
 const RED = "text-red-700";
 const MUTED = "text-slate-400";
 
-const DOT: Record<string, string> = {
-  none: "bg-transparent",
-  "0": "bg-slate-200",
-  "1": "bg-green-600",
-  "2": "bg-amber-600",
-  "3": "bg-red-600",
+/** Tās pašas krāsas kā PDF (#16a34a/#d97706/#dc2626 uz #F5FBF7/#FFFBEB/#FEF2F2). */
+const CHIP: Record<1 | 2 | 3, string> = {
+  1: "bg-[#F5FBF7] text-[#16a34a]",
+  2: "bg-[#FFFBEB] text-[#d97706]",
+  3: "bg-[#FEF2F2] text-[#dc2626]",
 };
 
 function Section({
@@ -148,54 +150,95 @@ export function AdminCsddBlokiPanel({
               <>
                 <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
                   <Cell k={csddBlokiT("taCount", lv)} v={String(b.ta.inspectionCount)} />
-                  <Cell k={csddBlokiT("taFailed", lv)} v={`${b.ta.rating2Count} / ${b.ta.rating3Count}`} tone={b.ta.rating3Count > 0 ? "red" : undefined} />
+                  <Cell k={csddBlokiT("taRating2", lv)} v={csddTaInspectionsCount(b.ta.rating2Count, lv)} />
+                  <Cell k={csddBlokiT("taRating3", lv)} v={csddTaInspectionsCount(b.ta.rating3Count, lv)} tone={b.ta.rating3Count > 0 ? "red" : undefined} />
                   <Cell k={csddBlokiT("taReinspections", lv)} v={String(b.ta.reinspectionCount)} />
-                  <Cell
-                    k={csddBlokiT("taRepeated", lv)}
-                    v={b.ta.repeated.length === 0 ? csddBlokiT("none", lv) : b.ta.repeated.length === 1 ? csddBlokiT("taNode1", lv) : csddBlokiT("taNodes", lv, { n: b.ta.repeated.length })}
-                  />
                 </div>
                 {b.ta.repeated.length > 0 ? (
-                  <div className="mt-1 overflow-x-auto">
-                    <table className="w-full min-w-[280px] border-collapse text-[10px] tabular-nums">
-                      <thead>
-                        <tr className="text-left text-[9px] text-slate-500">
-                          <th className="py-0.5 pr-1 font-medium">{csddBlokiT("taNodeCol", lv)}</th>
-                          {b.ta.years.map((y) => (
-                            <th key={y} className="w-5 py-0.5 text-center font-medium">
-                              {String(y).slice(2)}
-                            </th>
-                          ))}
-                          <th className="w-8 py-0.5 text-right font-medium">{csddBlokiT("taYearsCol", lv)}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {b.ta.repeated.map((r) => (
-                          <tr key={r.node} className="border-t border-slate-200/70 align-top" title={r.latestText ? `${r.latestDate}: ${r.latestText}` : undefined}>
-                            <td className="py-0.5 pr-1">
-                              <span className="font-semibold text-slate-800">{csddDefectNodeLabel(r.node, lv)}</span>{" "}
-                              <span className="text-slate-400">{r.codes.join(" · ")}</span>
-                            </td>
+                  <>
+                    <p className="mt-1.5 text-[11px] leading-snug text-slate-900" data-csdd-ta-sentence="">
+                      {buildCsddTaRepeatSentence(b.ta, lv)}
+                    </p>
+                    <div className="mt-1 overflow-x-auto">
+                      <table className="w-full min-w-[420px] table-fixed border-collapse tabular-nums">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-slate-500">
+                            <th className="w-[30%] pb-1 text-left text-[9px] font-semibold uppercase tracking-wide">{csddBlokiT("taDefectCol", lv)}</th>
                             {b.ta.years.map((y) => (
-                              <td key={y} className="py-0.5 text-center">
-                                <span className={`inline-block h-2.5 w-2.5 rounded-[3px] ${DOT[r.byYear[y] == null ? "none" : String(r.byYear[y])]}`} />
-                              </td>
+                              <th key={y} className="pb-1 text-center text-[10px] font-bold text-slate-900">
+                                {y}
+                              </th>
                             ))}
-                            <td className="py-0.5 text-right font-semibold">{r.yearCount}</td>
+                            <th className="w-[66px] pb-1 text-right text-[9px] font-semibold uppercase leading-tight tracking-wide">
+                              {csddBlokiT("taYearsCol", lv)}
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {b.ta.repeated.map((r) => {
+                            const codes = csddTaCodesLabel(r.codes, lv);
+                            return (
+                              <Fragment key={r.key}>
+                                <tr>
+                                  <td className="pr-1.5 pt-1.5 align-middle">
+                                    <span className="block text-[11px] font-bold leading-tight text-slate-900">{csddDefectNodeLabel(r.key, lv)}</span>
+                                    {codes ? <span className="block text-[9px] text-slate-400">{codes}</span> : null}
+                                  </td>
+                                  {b.ta.years.map((y) => {
+                                    const v = r.byYear[y];
+                                    return (
+                                      <td key={y} className="pt-1.5 text-center align-middle">
+                                        {v ? (
+                                          <span className={`inline-flex h-5 w-[26px] items-center justify-center rounded-md text-[11px] font-bold ${CHIP[v]}`}>{v}</span>
+                                        ) : (
+                                          <span className="text-[18px] font-bold leading-none text-slate-300">·</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="whitespace-nowrap pt-1.5 text-right align-middle text-[11px] font-bold text-slate-900">
+                                    {r.yearCount} <span className="text-[9px] font-medium text-slate-400">{csddBlokiT("taYearsOf", lv, { m: b.ta.years.length })}</span>
+                                  </td>
+                                </tr>
+                                {r.latestText ? (
+                                  <tr className="border-b border-slate-100">
+                                    <td colSpan={b.ta.years.length + 2} className="pb-1.5 pt-0.5 text-[10px] leading-snug text-slate-500">
+                                      <span className="font-semibold text-slate-500">{csddBlokiT("taLatest", lv, { d: r.latestDate })}</span> «{r.latestText}»
+                                    </td>
+                                  </tr>
+                                ) : null}
+                              </Fragment>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-slate-500">
+                      <span className="font-semibold">{csddBlokiT("legendTitle", lv)}</span>
+                      {([1, 2, 3] as const).map((v) => (
+                        <span key={v} className="inline-flex items-center gap-1">
+                          <span className={`inline-flex h-4 w-5 items-center justify-center rounded-[5px] text-[10px] font-bold ${CHIP[v]}`}>{v}</span>
+                          {csddBlokiT(`legend${v}`, lv)}
+                        </span>
+                      ))}
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[16px] font-bold leading-none text-slate-300">·</span>
+                        {csddBlokiT("legend0", lv)}
+                      </span>
+                    </p>
+                  </>
                 ) : null}
                 {b.ta.notes.length > 0 ? (
-                  <ul className="mt-1 space-y-0.5 text-[10px]">
-                    {b.ta.notes.map((n) => (
-                      <li key={n.text}>
-                        <span className="text-slate-400">{n.dates.join(", ")}</span> {n.text}
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <p className="mb-0.5 mt-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">{csddBlokiT("taNotes", lv)}</p>
+                    <ul className="divide-y divide-slate-100 text-[10.5px] text-slate-900">
+                      {b.ta.notes.map((n) => (
+                        <li key={n.text} className="py-1 leading-snug">
+                          <span className="font-semibold text-slate-500">{n.dates.join(", ")}</span> - {n.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
                 ) : null}
               </>
             )}

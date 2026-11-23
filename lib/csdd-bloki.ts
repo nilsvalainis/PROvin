@@ -86,30 +86,42 @@ export const CSDD_BLOKI_TX = {
   particles: { lv: "Daļiņas", en: "Particle number", ru: "Число частиц", de: "Partikelanzahl" },
   ta: { lv: "TA", en: "Inspection", ru: "Техосмотр", de: "HU" },
   taTitle: {
-    lv: "TA defektu analīze",
-    en: "Inspection defect analysis",
-    ru: "Анализ дефектов техосмотра",
-    de: "HU-Mängelanalyse",
+    lv: "Tehnisko apskašu defektu analīze",
+    en: "Technical inspection defect analysis",
+    ru: "Анализ дефектов техосмотров",
+    de: "Mängelanalyse der Hauptuntersuchungen",
   },
-  taCount: { lv: "Apskates LV", en: "Inspections in Latvia", ru: "Техосмотры в Латвии", de: "Prüfungen in Lettland" },
-  taFailed: { lv: "Ar vērtējumu 2 / 3", en: "Rated 2 / 3", ru: "С оценкой 2 / 3", de: "Bewertung 2 / 3" },
+  taCount: { lv: "Tehniskās apskates", en: "Technical inspections", ru: "Техосмотры", de: "Hauptuntersuchungen" },
+  taRating2: { lv: "Vērtējums 2", en: "Rating 2", ru: "Оценка 2", de: "Bewertung 2" },
+  taRating3: { lv: "Vērtējums 3", en: "Rating 3", ru: "Оценка 3", de: "Bewertung 3" },
   taReinspections: { lv: "Atkārtotās pārbaudes", en: "Re-inspections", ru: "Повторные проверки", de: "Nachprüfungen" },
-  taRepeated: { lv: "Atkārtoti defekti", en: "Repeated defects", ru: "Повторяющиеся дефекты", de: "Wiederkehrende Mängel" },
-  taNodes: { lv: "{n} mezgli", en: "{n} areas", ru: "узлов: {n}", de: "{n} Baugruppen" },
-  taNode1: { lv: "1 mezgls", en: "1 area", ru: "узлов: 1", de: "1 Baugruppe" },
-  taNodeCol: { lv: "Mezgls (kodi)", en: "Area (codes)", ru: "Узел (коды)", de: "Baugruppe (Codes)" },
-  taYearsCol: { lv: "Gadi", en: "Years", ru: "Лет", de: "Jahre" },
-  taLatest: { lv: "Pēdējais {d}", en: "Latest {d}", ru: "Последний {d}", de: "Zuletzt {d}" },
-  taNotes: { lv: "TA piezīmes", en: "Inspection notes", ru: "Примечания техосмотра", de: "HU-Bemerkungen" },
-  legend1: { lv: "pieļaujams", en: "minor", ru: "допустимый", de: "geringfügig" },
-  legend2: {
-    lv: "labojams mēneša laikā",
-    en: "to be fixed within a month",
-    ru: "устранить в течение месяца",
-    de: "binnen eines Monats zu beheben",
+  taDefectCol: { lv: "Defekts", en: "Defect", ru: "Дефект", de: "Mangel" },
+  taYearsCol: { lv: "Gadi ar defektu", en: "Years with defect", ru: "Лет с дефектом", de: "Jahre mit Mangel" },
+  taYearsOf: { lv: "no {m}", en: "of {m}", ru: "из {m}", de: "von {m}" },
+  taCode1: { lv: "CSDD kods {c}", en: "CSDD code {c}", ru: "Код CSDD {c}", de: "CSDD-Code {c}" },
+  taCodes: { lv: "CSDD kodi {c}", en: "CSDD codes {c}", ru: "Коды CSDD {c}", de: "CSDD-Codes {c}" },
+  taLatest: { lv: "Pēdējo reizi {d}:", en: "Last recorded {d}:", ru: "Последний раз {d}:", de: "Zuletzt am {d}:" },
+  taNotes: {
+    lv: "Tehniskās apskates piezīmes",
+    en: "Technical inspection notes",
+    ru: "Примечания техосмотров",
+    de: "Bemerkungen der Hauptuntersuchungen",
   },
-  legend3: { lv: "braukšanai nederīgs", en: "not roadworthy", ru: "эксплуатация запрещена", de: "nicht verkehrssicher" },
-  legend0: { lv: "nav defekta", en: "no defect", ru: "нет дефекта", de: "kein Mangel" },
+  legendTitle: { lv: "Vērtējums:", en: "Rating:", ru: "Оценка:", de: "Bewertung:" },
+  legend1: { lv: "pieļaujami defekti", en: "minor defects", ru: "допустимые дефекты", de: "geringe Mängel" },
+  legend2: {
+    lv: "defekti jānovērš mēneša laikā",
+    en: "defects to be fixed within a month",
+    ru: "дефекты устранить в течение месяца",
+    de: "Mängel binnen eines Monats zu beheben",
+  },
+  legend3: {
+    lv: "bīstami defekti, braukt aizliegts",
+    en: "dangerous defects, driving prohibited",
+    ru: "опасные дефекты, движение запрещено",
+    de: "gefährliche Mängel, Fahrverbot",
+  },
+  legend0: { lv: "defekts nav konstatēts", en: "no defect found", ru: "дефект не выявлен", de: "kein Mangel festgestellt" },
 } satisfies Record<string, Tx>;
 
 export function csddBlokiT(key: keyof typeof CSDD_BLOKI_TX, lang: ClientReportLang, vars: Record<string, string | number> = {}): string {
@@ -485,7 +497,7 @@ export function formatNum(raw: string, lang: ClientReportLang): string {
 const NODE_LABELS: Record<string, Tx> = {
   "0.1": { lv: "Numura zīmes", en: "Number plates", ru: "Номерные знаки", de: "Kennzeichen" },
   "0.2": { lv: "VIN", en: "VIN", ru: "VIN", de: "FIN" },
-  "1.1": { lv: "Bremžu mehānisms", en: "Brake components", ru: "Тормозные механизмы", de: "Bremsanlage, Bauteile" },
+  "1.1": { lv: "Bremžu sistēmas detaļas", en: "Brake system components", ru: "Детали тормозной системы", de: "Bremsanlage, Bauteile" },
   "1.2": { lv: "Darba bremze", en: "Service brake", ru: "Рабочий тормоз", de: "Betriebsbremse" },
   "1.3": { lv: "Rezerves bremze", en: "Secondary brake", ru: "Запасной тормоз", de: "Hilfsbremse" },
   "1.4": { lv: "Stāvbremze", en: "Parking brake", ru: "Стояночный тормоз", de: "Feststellbremse" },
@@ -503,7 +515,7 @@ const NODE_LABELS: Record<string, Tx> = {
   "3.3": { lv: "Spoguļi", en: "Mirrors", ru: "Зеркала", de: "Spiegel" },
   "3.4": { lv: "Stikla tīrītāji", en: "Wipers", ru: "Стеклоочистители", de: "Scheibenwischer" },
   "3.5": { lv: "Stikla mazgātāji", en: "Washers", ru: "Омыватели", de: "Scheibenwaschanlage" },
-  "4.1": { lv: "Tuvās/tālās gaismas", en: "Headlamps", ru: "Фары", de: "Scheinwerfer" },
+  "4.1": { lv: "Priekšējie lukturi", en: "Headlamps", ru: "Фары", de: "Scheinwerfer" },
   "4.2": { lv: "Gabarītlukturi", en: "Position lamps", ru: "Габаритные огни", de: "Begrenzungsleuchten" },
   "4.3": { lv: "Bremžu signāli", en: "Stop lamps", ru: "Стоп-сигналы", de: "Bremsleuchten" },
   "4.4": { lv: "Pagrieziena rādītāji", en: "Direction indicators", ru: "Указатели поворота", de: "Fahrtrichtungsanzeiger" },
@@ -530,9 +542,74 @@ const NODE_LABELS: Record<string, Tx> = {
   "8.4": { lv: "Šķidrumu noplūde", en: "Fluid leaks", ru: "Утечки жидкостей", de: "Flüssigkeitsverluste" },
 };
 
-export function csddDefectNodeLabel(node: string, lang: ClientReportLang): string {
-  const e = NODE_LABELS[node];
-  return e ? e[lang] || e.lv : node;
+/**
+ * Precizētas grupas pēc defekta TEKSTA (Nila maketa apstiprinājums 23.11.2026): viens CSDD kods var nozīmēt
+ * dažādus defektus (8.4.1 - eļļa vai dzesēšanas šķidrums), tāpēc tie ir atsevišķas rindas.
+ */
+const GROUP_LABELS: Record<string, Tx> = {
+  "8.4:oil": {
+    lv: "Eļļas noplūde (motors, transmisija)",
+    en: "Oil leak (engine, transmission)",
+    ru: "Утечка масла (двигатель, трансмиссия)",
+    de: "Ölverlust (Motor, Getriebe)",
+  },
+  "8.4:coolant": {
+    lv: "Dzesēšanas šķidruma noplūde",
+    en: "Coolant leak",
+    ru: "Утечка охлаждающей жидкости",
+    de: "Kühlmittelverlust",
+  },
+  "8.4:fuel": { lv: "Degvielas noplūde", en: "Fuel leak", ru: "Утечка топлива", de: "Kraftstoffverlust" },
+  "8.4:brake": { lv: "Bremžu šķidruma noplūde", en: "Brake fluid leak", ru: "Утечка тормозной жидкости", de: "Bremsflüssigkeitsverlust" },
+  "5.3:front": {
+    lv: "Priekšējā balstiekārta un tilts",
+    en: "Front suspension and axle",
+    ru: "Передняя подвеска и мост",
+    de: "Vorderachse und Radaufhängung",
+  },
+  "5.3:rear": {
+    lv: "Aizmugurējā balstiekārta un tilts",
+    en: "Rear suspension and axle",
+    ru: "Задняя подвеска и мост",
+    de: "Hinterachse und Radaufhängung",
+  },
+};
+
+/** Defekta grupas atslēga: koda mezgls (piem. «1.4») vai mezgls + teksta precizējums (piem. «8.4:oil»). */
+export function csddDefectGroupKey(code: string, text: string): string {
+  const node = nodeOf(code);
+  if (!node) return "";
+  const t = text.toLowerCase();
+  if (node === "8.4") {
+    if (/eļļ/.test(t)) return "8.4:oil";
+    if (/dzesēš|antifrīz/.test(t)) return "8.4:coolant";
+    if (/degviel/.test(t)) return "8.4:fuel";
+    if (/bremžu\s+šķidr/.test(t)) return "8.4:brake";
+  }
+  if (node === "5.3") {
+    if (/priekšēj/.test(t)) return "5.3:front";
+    if (/aizmugur/.test(t)) return "5.3:rear";
+  }
+  return node;
+}
+
+/** Cilvēku valodā: grupas atslēga («8.4:oil») vai koda mezgls («1.4»). */
+export function csddDefectNodeLabel(key: string, lang: ClientReportLang): string {
+  const e = GROUP_LABELS[key] ?? NODE_LABELS[key] ?? NODE_LABELS[key.split(":")[0] ?? ""];
+  return e ? e[lang] || e.lv : key.split(":")[0] ?? key;
+}
+
+/** Īsais nosaukums teikumam: bez iekavām, ar mazo burtu (izņemot DE lietvārdus un saīsinājumus). */
+export function csddDefectShortLabel(key: string, lang: ClientReportLang): string {
+  const full = csddDefectNodeLabel(key, lang).replace(/\s*\([^)]*\)\s*$/, "").trim();
+  if (lang === "de" || /^[A-Z0-9]{2,}\b/.test(full)) return full;
+  return full.charAt(0).toLocaleLowerCase(lang) + full.slice(1);
+}
+
+/** «CSDD kods 8.4.1» / «CSDD kodi 5.3.1, 5.3.4». */
+export function csddTaCodesLabel(codes: readonly string[], lang: ClientReportLang): string {
+  if (codes.length === 0) return "";
+  return csddBlokiT(codes.length === 1 ? "taCode1" : "taCodes", lang, { c: codes.join(", ") });
 }
 
 function nodeOf(code: string): string {
@@ -547,6 +624,9 @@ function yearOf(date: string): number | null {
 }
 
 export type CsddTaNodeRow = {
+  /** Grupas atslēga (csddDefectGroupKey) - nosaukumam csddDefectNodeLabel(key). */
+  key: string;
+  /** Koda mezgls (piem. «8.4»). */
   node: string;
   codes: string[];
   /** Gads -> sliktākais vērtējums šajā mezglā (0 = apskate bija, defekta mezglā nav). */
@@ -616,11 +696,12 @@ export function buildCsddTaAnalysis(
     if (y == null) continue;
     yearsSet.add(y);
     for (const d of r.defects ?? []) {
+      const key = csddDefectGroupKey(d.code, d.description);
+      if (!key) continue;
       const node = nodeOf(d.code);
-      if (!node) continue;
       const lvl = Number.parseInt(d.rating, 10);
       const level = (lvl === 1 || lvl === 2 || lvl === 3 ? lvl : 0) as 0 | 1 | 2 | 3;
-      const e = nodes.get(node) ?? { node, codes: [], byYear: {}, yearCount: 0, latestDate: "", latestText: "" };
+      const e = nodes.get(key) ?? { key, node, codes: [], byYear: {}, yearCount: 0, latestDate: "", latestText: "" };
       const code = d.code.trim().replace(/\.+$/, "");
       if (code && !e.codes.includes(code)) e.codes.push(code);
       e.byYear[y] = Math.max(e.byYear[y] ?? 0, level) as 0 | 1 | 2 | 3;
@@ -629,7 +710,7 @@ export function buildCsddTaAnalysis(
         e.latestDate = r.date.trim();
         e.latestText = d.description.replace(/\s+/g, " ").trim();
       }
-      nodes.set(node, e);
+      nodes.set(key, e);
     }
   }
   // Iepriekšējās apskates piezīmes (vecais formāts tās dod tikai šeit).
@@ -642,10 +723,10 @@ export function buildCsddTaAnalysis(
       for (const y of years) if (e.byYear[y] == null && rowsHaveYear(rows, y)) e.byYear[y] = 0;
       const yearCount = Object.values(e.byYear).filter((v) => v > 0).length;
 
-      return { ...e, codes: [...e.codes].sort(), yearCount };
+      return { ...e, codes: [...e.codes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), yearCount };
     })
     .filter((e) => e.yearCount >= CSDD_TA_REPEAT_MIN_YEARS)
-    .sort((a, b) => b.yearCount - a.yearCount || a.node.localeCompare(b.node, undefined, { numeric: true }));
+    .sort((a, b) => b.yearCount - a.yearCount || a.key.localeCompare(b.key, undefined, { numeric: true }));
 
   return {
     inspectionCount: rows.length,
@@ -655,8 +736,78 @@ export function buildCsddTaAnalysis(
     reinspectionCount,
     years,
     repeated,
-    notes: [...notes.entries()].map(([text, dates]) => ({ text, dates })).slice(0, 5),
+    // Vienāds teksts = viena rinda; datumi hronoloģiski (vecākais pirmais).
+    notes: [...notes.entries()]
+      .map(([text, dates]) => ({ text, dates: [...dates].sort((a, b) => dateKey(a).localeCompare(dateKey(b))) }))
+      .sort((a, b) => dateKey(a.dates[0] ?? "").localeCompare(dateKey(b.dates[0] ?? "")))
+      .slice(0, 5),
   };
+}
+
+function dateKey(d: string): string {
+  const m = d.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m ? `${m[3]}${m[2]}${m[1]}` : d.trim();
+}
+
+/* ---- Teikums par atkārtotajiem defektiem (maketa «teikums B») ---- */
+
+const NUM_WORDS: Record<ClientReportLang, string[]> = {
+  lv: ["", "Viens", "Divi", "Trīs", "Četri", "Pieci", "Seši", "Septiņi", "Astoņi", "Deviņi", "Desmit"],
+  en: ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"],
+  ru: ["", "Один", "Два", "Три", "Четыре", "Пять", "Шесть", "Семь", "Восемь", "Девять", "Десять"],
+  de: ["", "Ein", "Zwei", "Drei", "Vier", "Fünf", "Sechs", "Sieben", "Acht", "Neun", "Zehn"],
+};
+
+function numWord(n: number, lang: ClientReportLang): string {
+  return NUM_WORDS[lang][n] ?? String(n);
+}
+
+/** LV: vienskaitlis skaitļiem, kas beidzas ar 1 (izņemot 11). */
+function lvOne(n: number): boolean {
+  return n % 10 === 1 && n % 100 !== 11;
+}
+
+/** RU: 0 - one, 1 - few (2-4), 2 - many. */
+function ruForm(n: number): 0 | 1 | 2 {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 0;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 1;
+  return 2;
+}
+
+/** «N apskates» kartītēs (pareizā skaitļa formā). */
+export function csddTaInspectionsCount(n: number, lang: ClientReportLang): string {
+  if (lang === "lv") return `${n} ${lvOne(n) ? "apskate" : "apskates"}`;
+  if (lang === "en") return `${n} ${n === 1 ? "inspection" : "inspections"}`;
+  if (lang === "ru") return `${n} ${["техосмотр", "техосмотра", "техосмотров"][ruForm(n)]}`;
+  return `${n} ${n === 1 ? "Prüfung" : "Prüfungen"}`;
+}
+
+function yearsPhrase(n: number, lang: ClientReportLang): string {
+  if (lang === "lv") return `${n} ${lvOne(n) ? "gadā" : "gados"}`;
+  if (lang === "en") return `${n} ${n === 1 ? "year" : "years"}`;
+  if (lang === "ru") return `${n} ${["год", "года", "лет"][ruForm(n)]}`;
+  return `${n} ${n === 1 ? "Jahr" : "Jahre"}`;
+}
+
+/**
+ * «Trīs defekti konstatēti vairāku gadu tehniskajās apskatēs: priekšējā balstiekārta un tilts - 5 gados, …»
+ * Tukšs, ja atkārtotu defektu nav.
+ */
+export function buildCsddTaRepeatSentence(ta: Pick<CsddTaAnalysis, "repeated">, lang: ClientReportLang): string {
+  const n = ta.repeated.length;
+  if (n === 0) return "";
+  const list = ta.repeated.map((r) => `${csddDefectShortLabel(r.key, lang)} - ${yearsPhrase(r.yearCount, lang)}`).join(", ");
+  const w = numWord(n, lang);
+  let lead: string;
+  if (lang === "lv") lead = `${w} ${lvOne(n) ? "defekts konstatēts" : "defekti konstatēti"} vairāku gadu tehniskajās apskatēs`;
+  else if (lang === "en") lead = `${w} ${n === 1 ? "defect was" : "defects were"} recorded at technical inspections in several years`;
+  else if (lang === "ru") {
+    const f = ruForm(n);
+    lead = `${w} ${["дефект выявлен", "дефекта выявлены", "дефектов выявлено"][f]} на техосмотрах нескольких лет`;
+  } else lead = `${w} ${n === 1 ? "Mangel wurde" : "Mängel wurden"} bei Hauptuntersuchungen in mehreren Jahren festgestellt`;
+  return `${lead}: ${list}.`;
 }
 
 function rowsHaveYear(rows: readonly CsddTechnicalInspectionRow[], y: number): boolean {

@@ -13,6 +13,9 @@ import {
   csddDefectNodeLabel,
   csddMeasurementsHasData,
   csddSourceRef,
+  csddTaCodesLabel,
+  csddTaInspectionsCount,
+  buildCsddTaRepeatSentence,
   formatNum,
   type CsddBloki,
   type CsddMeasurements,
@@ -102,54 +105,50 @@ export function buildCsddMeasurementsPdfHtml(m: CsddMeasurements, infoDate: stri
   return `<div class="pdf-csdd-ta-section pdf-csddx" data-csdd-bloks="measurements">${head(csddBlokiT("measurementsTitle", lang), src)}${grid}${brakes}</div>`;
 }
 
-function yearShort(y: number): string {
-  return String(y).slice(2);
-}
-
 export function buildCsddTaAnalysisPdfHtml(ta: CsddTaAnalysis, infoDate: string, lang: ClientReportLang): string {
   if (ta.inspectionCount === 0) return "";
   const range = ta.years.length ? (ta.years.length > 1 ? `${ta.years[0]}-${ta.years[ta.years.length - 1]}` : String(ta.years[0])) : "";
   const src = [csddSourceRef(infoDate), range].filter(Boolean).join(" · ");
-  const repeatedVal =
-    ta.repeated.length === 0
-      ? csddBlokiT("none", lang)
-      : ta.repeated.length === 1
-        ? csddBlokiT("taNode1", lang)
-        : csddBlokiT("taNodes", lang, { n: ta.repeated.length });
   const stats = [
     [csddBlokiT("taCount", lang), String(ta.inspectionCount), ""],
-    [csddBlokiT("taFailed", lang), `${ta.rating2Count} / ${ta.rating3Count}`, ta.rating3Count > 0 ? "bad" : ""],
+    [csddBlokiT("taRating2", lang), csddTaInspectionsCount(ta.rating2Count, lang), ""],
+    [csddBlokiT("taRating3", lang), csddTaInspectionsCount(ta.rating3Count, lang), ta.rating3Count > 0 ? "bad" : ""],
     [csddBlokiT("taReinspections", lang), String(ta.reinspectionCount), ""],
-    [csddBlokiT("taRepeated", lang), repeatedVal, ""],
   ]
     .map(([k, v, tone]) => `<li><span class="pdf-csddx-gk">${esc(k!)}</span><span class="pdf-csddx-gv${tone ? ` pdf-csddx-${tone}` : ""}">${esc(v!)}</span></li>`)
     .join("");
+  const sentence = buildCsddTaRepeatSentence(ta, lang);
+  const fact = sentence ? `<p class="pdf-csddx-fact">${esc(sentence)}</p>` : "";
   let table = "";
   if (ta.repeated.length > 0) {
-    const th = ta.years.map((y) => `<th class="pdf-csddx-y">${yearShort(y)}</th>`).join("");
+    const cols = ta.years.length + 2;
+    const th = ta.years.map((y) => `<th class="pdf-csddx-ty"><span class="pdf-csddx-yy">${y}</span></th>`).join("");
     const body = ta.repeated
       .map((r) => {
         const cells = ta.years
           .map((y) => {
             const v = r.byYear[y];
-            return `<td class="pdf-csddx-y"><span class="pdf-csddx-dot pdf-csddx-dot--${v == null ? "none" : v}"></span></td>`;
+            return v ? `<td class="pdf-csddx-c"><span class="pdf-csddx-chip pdf-csddx-r${v}">${v}</span></td>` : `<td class="pdf-csddx-c"><span class="pdf-csddx-nodot">·</span></td>`;
           })
           .join("");
+        const codes = csddTaCodesLabel(r.codes, lang);
         const latest = r.latestText
-          ? `<tr class="pdf-csddx-latest"><td colspan="${ta.years.length + 2}">${esc(csddBlokiT("taLatest", lang, { d: r.latestDate }))}: «${esc(r.latestText)}»</td></tr>`
+          ? `<tr class="pdf-csddx-q"><td colspan="${cols}"><span class="pdf-csddx-qd">${esc(csddBlokiT("taLatest", lang, { d: r.latestDate }))}</span> «${esc(r.latestText)}»</td></tr>`
           : "";
-        return `<tr><td class="pdf-csddx-node"><b>${esc(csddDefectNodeLabel(r.node, lang))}</b> <span class="pdf-csddx-muted">${esc(r.codes.join(" · "))}</span></td>${cells}<td class="pdf-csddx-n">${r.yearCount}</td></tr>${latest}`;
+        return `<tr class="pdf-csddx-row"><td class="pdf-csddx-nd"><span class="pdf-csddx-nn">${esc(csddDefectNodeLabel(r.key, lang))}</span>${codes ? `<span class="pdf-csddx-code">${esc(codes)}</span>` : ""}</td>${cells}<td class="pdf-csddx-cnt">${r.yearCount} <span>${esc(csddBlokiT("taYearsOf", lang, { m: ta.years.length }))}</span></td></tr>${latest}`;
       })
       .join("");
-    const legend = `<p class="pdf-csddx-legend"><span><span class="pdf-csddx-dot pdf-csddx-dot--1"></span>1 ${esc(csddBlokiT("legend1", lang))}</span><span><span class="pdf-csddx-dot pdf-csddx-dot--2"></span>2 ${esc(csddBlokiT("legend2", lang))}</span><span><span class="pdf-csddx-dot pdf-csddx-dot--3"></span>3 ${esc(csddBlokiT("legend3", lang))}</span><span><span class="pdf-csddx-dot pdf-csddx-dot--0"></span>${esc(csddBlokiT("legend0", lang))}</span></p>`;
-    table = `<table class="pdf-csddx-tbl pdf-csddx-years"><thead><tr><th>${esc(csddBlokiT("taNodeCol", lang))}</th>${th}<th class="pdf-csddx-n">${esc(csddBlokiT("taYearsCol", lang))}</th></tr></thead><tbody>${body}</tbody></table>${legend}`;
+    const legend = `<p class="pdf-csddx-legend"><span class="pdf-csddx-lh">${esc(csddBlokiT("legendTitle", lang))}</span>${([1, 2, 3] as const)
+      .map((v) => `<span><span class="pdf-csddx-chip pdf-csddx-r${v}">${v}</span> ${esc(csddBlokiT(`legend${v}`, lang))}</span>`)
+      .join("")}<span><span class="pdf-csddx-nodot">·</span> ${esc(csddBlokiT("legend0", lang))}</span></p>`;
+    table = `<table class="pdf-csddx-m"><thead><tr><th class="pdf-csddx-nh">${esc(csddBlokiT("taDefectCol", lang))}</th>${th}<th class="pdf-csddx-cnth">${esc(csddBlokiT("taYearsCol", lang))}</th></tr></thead><tbody>${body}</tbody></table>${legend}`;
   }
   const notes = ta.notes.length
-    ? `<p class="pdf-csddx-minihead">${esc(csddBlokiT("taNotes", lang))}</p><ul class="pdf-csddx-notes">${ta.notes
-        .map((n) => `<li><span class="pdf-csddx-muted">${esc(n.dates.join(", "))}</span> ${esc(n.text)}</li>`)
-        .join("")}</ul>`
+    ? `<p class="pdf-csddx-minihead">${esc(csddBlokiT("taNotes", lang))}</p><table class="pdf-csddx-notes"><tbody>${ta.notes
+        .map((n) => `<tr><td><span class="pdf-csddx-ndt">${esc(n.dates.join(", "))}</span> - ${esc(n.text)}</td></tr>`)
+        .join("")}</tbody></table>`
     : "";
-  return `<div class="pdf-csdd-ta-section pdf-csddx" data-csdd-bloks="ta">${head(csddBlokiT("taTitle", lang), src)}<ul class="pdf-csddx-grid pdf-csddx-grid--4">${stats}</ul>${table}${notes}</div>`;
+  return `<div class="pdf-csdd-ta-section pdf-csddx" data-csdd-bloks="ta">${head(csddBlokiT("taTitle", lang), src)}<ul class="pdf-csddx-grid pdf-csddx-grid--4">${stats}</ul>${fact}${table}${notes}</div>`;
 }
 
 export type CsddBlokiPdfParts = {
@@ -197,19 +196,33 @@ export const CSDD_BLOKI_PDF_CSS = `
 .pdf-csddx-tbl{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table,10.5px);margin-top:8px;font-variant-numeric:tabular-nums;}
 .pdf-csddx-tbl th{font-size:9px;font-weight:600;color:#86868b;text-align:left;padding:3px 4px;border-bottom:1px solid #E9EDF3;}
 .pdf-csddx-tbl td{padding:4px;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
-.pdf-csddx-y{text-align:center;width:24px;}
-.pdf-csddx-n{text-align:right;width:36px;font-weight:700;}
-.pdf-csddx-node{min-width:0;}
-.pdf-csddx-latest td{border-bottom:1px solid #E9EDF3;padding:0 4px 6px;font-size:9.5px;color:#64748b;}
-.pdf-csddx-dot{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;}
-.pdf-csddx-dot--none{background:transparent;}
-.pdf-csddx-dot--0{background:#EEF2F6;}
-.pdf-csddx-dot--1{background:#16a34a;}
-.pdf-csddx-dot--2{background:#d97706;}
-.pdf-csddx-dot--3{background:#dc2626;}
-.pdf-csddx-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font-size:9px;color:#64748b;}
-.pdf-csddx-legend .pdf-csddx-dot{width:8px;height:8px;margin-right:4px;}
-.pdf-csddx-notes{list-style:none;margin:0;padding:0;font-size:var(--pdf-fs-table,10.5px);}
-.pdf-csddx-notes li{padding:3px 0;border-bottom:1px solid #F1F5F9;line-height:1.45;}
+.pdf-csddx-fact{margin:12px 0 2px;font-size:11.5px;line-height:1.5;color:#0f172a;}
+.pdf-csddx-m{width:100%;border-collapse:collapse;margin-top:8px;font-variant-numeric:tabular-nums;table-layout:fixed;}
+.pdf-csddx-m th{font-weight:600;color:#86868b;text-align:center;padding:4px 2px 6px;border-bottom:1px solid #E9EDF3;vertical-align:bottom;}
+.pdf-csddx-m th.pdf-csddx-nh{text-align:left;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;width:30%;padding-left:0;}
+.pdf-csddx-yy{display:block;font-size:10.5px;font-weight:700;color:#0f172a;}
+.pdf-csddx-m th.pdf-csddx-cnth{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;width:66px;line-height:1.25;white-space:normal;text-align:right;padding-right:0;}
+.pdf-csddx-nd{padding:8px 6px 2px 0;vertical-align:middle;}
+.pdf-csddx-nn{display:block;font-size:11px;font-weight:700;color:#0f172a;line-height:1.3;}
+.pdf-csddx-code{display:block;font-size:8.5px;color:#94a3b8;font-weight:500;margin-top:1px;}
+.pdf-csddx-c{text-align:center;vertical-align:middle;padding:8px 2px 2px;}
+.pdf-csddx-nodot{color:#CBD5E1;font-weight:700;font-size:18px;line-height:1;}
+.pdf-csddx-cnt{text-align:right;font-size:11px;font-weight:700;color:#0f172a;padding:8px 0 2px;vertical-align:middle;white-space:nowrap;}
+.pdf-csddx-cnt span{font-weight:500;color:#94a3b8;font-size:9px;}
+.pdf-csddx-q td{padding:2px 0 8px;font-size:9.5px;color:#64748b;line-height:1.4;border-bottom:1px solid #F1F5F9;}
+.pdf-csddx-qd{color:#86868b;font-weight:600;}
+.pdf-csddx-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:20px;border-radius:6px;font-size:11px;font-weight:700;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.pdf-csddx-r1{background:#F5FBF7;color:#16a34a;}
+.pdf-csddx-r2{background:#FFFBEB;color:#d97706;}
+.pdf-csddx-r3{background:#FEF2F2;color:#dc2626;}
+.pdf-csddx-legend{display:flex;flex-wrap:wrap;gap:4px 11px;margin:8px 0 0;font-size:9.5px;color:#64748b;align-items:center;}
+.pdf-csddx-legend > span{display:inline-flex;align-items:center;gap:5px;}
+.pdf-csddx-legend .pdf-csddx-chip{width:20px;height:16px;font-size:10px;border-radius:5px;}
+.pdf-csddx-lh{font-weight:600;color:#64748b;}
+.pdf-csddx-notes{width:100%;border-collapse:collapse;font-size:10.5px;}
+.pdf-csddx-notes td{padding:5px 0;border-bottom:1px solid #F1F5F9;vertical-align:top;line-height:1.45;color:#0f172a;}
+.pdf-csddx-notes tr:last-child td{border-bottom:none;}
+.pdf-csddx-ndt{color:#86868b;font-weight:600;}
 .pdf-csddx{break-inside:avoid;page-break-inside:avoid;}
 `;
