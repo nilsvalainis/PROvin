@@ -111,3 +111,16 @@ describe("CSDD maksas izziņa: \"Sūtīt automātiski\" (viena SMS uz pieprasīj
     expect(autoSmsTakeable(null, at(0))).toBe(false);
   });
 });
+
+describe("CSDD maksas izziņa: \"Sūtīt automātiski\" tikai ar iestatītu env (adrese nav kodā)", () => {
+  it("email needs ECSDD_SMS_TRIGGER_EMAIL + SMTP; pull needs the API token; otherwise the button is hidden", async () => {
+    const { ecsddAutoSmsMode } = await import("@/lib/ecsdd-paid");
+    const smtp = { SMTP_USER: "u", SMTP_PASS: "p" };
+    expect(ecsddAutoSmsMode({ ...smtp })).toBeNull();
+    expect(ecsddAutoSmsMode({ ECSDD_SMS_TRIGGER_EMAIL: "a@example.com" })).toBeNull();
+    expect(ecsddAutoSmsMode({ ...smtp, ECSDD_SMS_TRIGGER_EMAIL: "nav-adrese" })).toBeNull();
+    expect(ecsddAutoSmsMode({ ...smtp, ECSDD_SMS_TRIGGER_EMAIL: "a@example.com" })).toBe("email");
+    expect(ecsddAutoSmsMode({ ECSDD_SMS_TRIGGER_MODE: "pull" })).toBeNull();
+    expect(ecsddAutoSmsMode({ ECSDD_SMS_TRIGGER_MODE: "pull", ECSDD_PAID_API_TOKEN: "x".repeat(24) })).toBe("pull");
+  });
+});

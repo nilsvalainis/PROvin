@@ -92,7 +92,7 @@ bez sesijas atbilde `needs_login`, Smart-ID sāk tikai ar `login: true` (admin p
 
 PROVIN (Vercel) puse: `/api/admin/ecsdd/paid/sms-link`, `/api/admin/ecsdd/paid/report`, `/api/admin/ecsdd/paid/auto-send`
 ("Sūtīt automātiski": e-pasts no info@provin.lv, temats `PROVIN CSDD SMS`, 1. rinda numurs, 2. rinda teksts; adresāts
-`ECSDD_SMS_TRIGGER_EMAIL`, noklusējums Nila Gmail; `ECSDD_SMS_TRIGGER_MODE=pull` - bez e-pasta) un Īsceļiem
+`ECSDD_SMS_TRIGGER_EMAIL` (bez tā poga nav redzama); `ECSDD_SMS_TRIGGER_MODE=pull` - bez e-pasta) un Īsceļiem
 `GET /api/ecsdd/paid-sms` ar `Authorization: Bearer <ECSDD_PAID_API_TOKEN>` (bez env izslēgts).
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)

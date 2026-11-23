@@ -18,7 +18,7 @@ import { encodeQr, qrSvgPath } from "@/lib/qr-code";
 const btn =
   "inline-flex h-7 items-center rounded-md border border-slate-300 bg-white px-2.5 text-[11px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
 
-type Pending = { plate: string; since: string; href: string; hrefOther: string; number: string; body: string; price?: string; autoSent?: boolean };
+type Pending = { plate: string; since: string; href: string; hrefOther: string; number: string; body: string; price?: string; autoSend?: boolean; autoSent?: boolean };
 
 type Phase =
   | { kind: "idle" }
@@ -146,6 +146,7 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
             number: typeof data.number === "string" ? data.number : "",
             body: typeof data.body === "string" ? data.body : "",
             price: typeof data.price === "string" ? data.price : undefined,
+            autoSend: data.autoSend === true,
           };
           writePending(sessionId, pending);
           setPhase({ kind: "sms", pending });
@@ -262,7 +263,7 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
     }
   };
 
-  const autoButton = pending ? (
+  const autoButton = pending?.autoSend ? (
     <button
       type="button"
       className={btn}

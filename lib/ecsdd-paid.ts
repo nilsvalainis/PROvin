@@ -102,3 +102,16 @@ export function verifyEcsddPaidApiToken(header: string | null, env: Record<strin
   const b = Buffer.from(secret, "utf8");
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
+/**
+ * "Sūtīt automātiski" režīms: "email" (vajag `ECSDD_SMS_TRIGGER_EMAIL` + SMTP), "pull" (`ECSDD_SMS_TRIGGER_MODE=pull`
+ * + `ECSDD_PAID_API_TOKEN`) vai null - poga nav redzama. Adrese nekad nav kodā (publisks repo).
+ */
+export function ecsddAutoSmsMode(env: Record<string, string | undefined> = process.env): "email" | "pull" | null {
+  if ((env.ECSDD_SMS_TRIGGER_MODE ?? "").trim().toLowerCase() === "pull") {
+    return (env.ECSDD_PAID_API_TOKEN ?? "").trim().length >= 24 ? "pull" : null;
+  }
+  const to = (env.ECSDD_SMS_TRIGGER_EMAIL ?? "").trim();
+  const smtp = Boolean(env.SMTP_USER?.trim() && env.SMTP_PASS?.trim());
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) && smtp ? "email" : null;
+}

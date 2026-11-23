@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { requestEcsddPaidSmsLink } from "@/lib/ecsdd-paid";
+import { ecsddAutoSmsMode, requestEcsddPaidSmsLink } from "@/lib/ecsdd-paid";
 import { buildSmsHref } from "@/lib/ecsdd-paid-logic";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ async function handle(query: string, login: boolean) {
   if (!/^[A-Za-z0-9 -]{2,20}$/.test(query.trim())) return NextResponse.json({ status: "error", code: "invalid_query" }, { status: 400 });
   const out = await requestEcsddPaidSmsLink(query, { login });
   if (out.status === "ok") {
-    return NextResponse.json({ ...out, href: buildSmsHref(out, "apple"), hrefOther: buildSmsHref(out, "other") });
+    return NextResponse.json({ ...out, href: buildSmsHref(out, "apple"), hrefOther: buildSmsHref(out, "other"), autoSend: ecsddAutoSmsMode() !== null });
   }
   return NextResponse.json(out, { status: out.status === "error" || out.status === "unreachable" ? 502 : 200 });
 }

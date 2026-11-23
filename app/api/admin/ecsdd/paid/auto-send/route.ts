@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSmtpConfigured, sendCsddSmsTriggerEmail } from "@/lib/email/send-transactional";
+import { ecsddAutoSmsMode } from "@/lib/ecsdd-paid";
+import { sendCsddSmsTriggerEmail } from "@/lib/email/send-transactional";
 import { autoSmsDecision, isValidAutoSms, type EcsddAutoSmsRecord } from "@/lib/ecsdd-paid-logic";
 import { readAutoSms, writeAutoSms } from "@/lib/ecsdd-paid-store";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * Admin poga "Sūtīt automātiski": e-pasts no info@provin.lv uz Nila Gmail ar tematu "PROVIN CSDD SMS"
+ * Admin poga "Sūtīt automātiski": e-pasts no info@provin.lv uz `ECSDD_SMS_TRIGGER_EMAIL` ar tematu "PROVIN CSDD SMS"
  * (1. rinda numurs, 2. rinda SMS teksts) - uz to reaģē Nila iPhone Īsceļu automatizācija un nosūta SMS no viņa numura.
  * Viens pieprasījums = viens e-pasts (dubultklikšķis / atkārtojums -> `duplicate`). Tikai pēc admina klikšķa.
  */
@@ -24,9 +25,12 @@ export async function POST(req: Request) {
   }
   const id = typeof body.id === "string" ? body.id.trim().slice(0, 80) : "";
   if (!/^[A-Za-z0-9:._-]{8,80}$/.test(id) || !isValidAutoSms(body)) return NextResponse.json({ error: "invalid_sms" }, { status: 400 });
-  // ECSDD_SMS_TRIGGER_MODE=pull: e-pastu nesūta, Īsceļš paņem ar "Iegūt URL saturu" (/api/ecsdd/paid-sms). Noklusējums: e-pasts.
-  const pull = (process.env.ECSDD_SMS_TRIGGER_MODE ?? "").trim().toLowerCase() === "pull";
-  if (!pull && !isSmtpConfigured()) return NextResponse.json({ error: "smtp_not_configured" }, { status: 503 });
+  // ECSDD_SMS_TRIGGER_MODE=pull: e-pastu nesūta, Īsceļš paņem ar "Iegūt URL saturu" (/api/ecsdd/paid-sms).
+  // Bez ECSDD_SMS_TRIGGER_EMAIL (e-pasta režīmā) poga nav redzama un galapunkts atsaka.
+  const mode = ecsddAutoSmsMode();
+  if (!mode) return NextResponse.json({ error: "trigger_not_configured" }, { status: 503 });
+  const pull = mode === "pull";
+  const to = (process.env.ECSDD_SMS_TRIGGER_EMAIL ?? "").trim();
   const now = new Date();
   const rec: EcsddAutoSmsRecord = {
     id,
@@ -42,7 +46,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "store_failed" }, { status: 503 });
   }
   if (pull) return NextResponse.json({ ok: true, duplicate: false, mode: "pull" });
-  const to = (process.env.ECSDD_SMS_TRIGGER_EMAIL ?? "").trim() || "nils.valainis@gmail.com";
   try {
     await sendCsddSmsTriggerEmail({ to, number: rec.number, body: rec.body });
   } catch (e) {
