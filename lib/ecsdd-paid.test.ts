@@ -341,7 +341,7 @@ describe("maksas izziņa: CSDD lietotnes identitāte (APK lv.csdd.ecsdd 3.9.9)",
     expect(mobint.composesms("1800", "CSDD 99999 AB1234")).toBe("");
     const calls = win.__provinMobintCalls as string[][];
     expect(calls).toEqual([["composesms", "1800", "CSDD 99999 AB1234"]]);
-    expect(smsHrefsFromMobintCalls(calls).map((h) => parseSmsHref(h))).toEqual([{ number: "1800", body: "CSDD 99999 AB1234" }]);
+    expect(smsHrefsFromMobintCalls(calls).map((h: string) => parseSmsHref(h))).toEqual([{ number: "1800", body: "CSDD 99999 AB1234" }]);
     expect(smsHrefsFromMobintCalls([["callnumber", "1800"]])).toEqual([]);
   });
 });
