@@ -23,17 +23,7 @@ import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVi
 import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 import { headers } from "next/headers";
-import { readDealerDataJobs } from "@/lib/dealer-data-job-store";
-import {
-  dealerDataJobHistoryReady,
-  dealerDataJobReadyAt,
-  dealerDataListAlertLabel,
-  isDealerDataAutoFetchOrder,
-  type DealerDataJob,
-} from "@/lib/dealer-data-job-types";
-import { dealerNotSentAlert, type OrderClientMarks } from "@/lib/order-client-marks";
-import { adminIngestFromDealerJob, adminIngestFromVinScan } from "@/lib/admin-mobile-ingest";
-import { readOrderClientMarks } from "@/lib/order-client-marks-store";
+import { loadAdminOrderIngests } from "@/lib/admin-orders-ingest-load";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -154,57 +144,12 @@ export default async function AdminOrdersPage({
       ...(notes && !isPack ? { notes } : {}),
     };
   });
-  // Dīlera datu ielases problēmas sarakstā (Nils 20.11): «Nav VIN», kļūda, rezultāts nav melnrakstā, datu nav.
-  // Tikai neizpildītiem dīlera pasūtījumiem pēdējās 60 dienās (Blob lasījumi uz rindu).
-  const dealerAlertSince = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
-  const dealerIdsForAlerts = ordersWithInvoice
-    .filter(
-      (o) =>
-        !o.isB2bPack &&
-        !o.auditComplete &&
-        o.created >= dealerAlertSince &&
-        isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal }),
-    )
-    .map((o) => o.id);
-  const dealerJobs: Map<string, DealerDataJob> =
-    dealerIdsForAlerts.length > 0
-      ? await readDealerDataJobs(dealerIdsForAlerts).catch(() => new Map<string, never>())
-      : new Map<string, never>();
-  // Klienta saziņas atzīmes: visiem darbiem, kur dati gatavi vai «datu nav» (telefonā «Nosūtīts / Nav nosūtīts»).
-  const dealerMarks = new Map<string, OrderClientMarks>();
-  await Promise.all(
-    [...dealerJobs.entries()]
-      .filter(([, job]) => dealerDataJobHistoryReady(job) || job.status === "no_data")
-      .map(async ([id]) => {
-        const marks = await readOrderClientMarks(id).catch(() => null);
-        if (marks) dealerMarks.set(id, marks);
-      }),
-  );
-  // «Nav nosūtīts»: dati gatavi > 2 h, klientam nekas nav sūtīts.
-  const notSentNowMs = Date.now();
-  const dealerNotSent = new Set<string>();
-  for (const [id, job] of dealerJobs) {
-    if (dealerDataListAlertLabel(job)) continue;
-    const marks = dealerMarks.get(id);
-    if (marks && dealerNotSentAlert({ readyAt: dealerDataJobReadyAt(job), marks, nowMs: notSentNowMs })) {
-      dealerNotSent.add(id);
-    }
-  }
-  const dealerIdSet = new Set(dealerIdsForAlerts);
+  // Dīlera datu ielases problēmas sarakstā (Nils 20.11) + telefona ielases indikācija (22.11 makets v3).
+  const ingestInfo = await loadAdminOrderIngests(ordersWithInvoice, draftSummaries);
   const ordersWithDealerAlert = ordersWithInvoice.map((o) => {
-    const label = dealerDataListAlertLabel(dealerJobs.get(o.id) ?? null) ?? (dealerNotSent.has(o.id) ? "Nav nosūtīts" : null);
-    // Telefona saraksts: ielases indikācija (22.11 makets v3, variants 3).
-    const marks = dealerMarks.get(o.id);
-    const ingest = dealerIdSet.has(o.id)
-      ? adminIngestFromDealerJob(dealerJobs.get(o.id) ?? null, marks ? (marks.dealerSends ?? []).length > 0 : null)
-      : o.isB2bPack ||
-          o.checkoutLine === "provin_select" ||
-          o.checkoutLine === "consultation" ||
-          isDealerDataAutoFetchOrder({ checkoutLine: o.checkoutLine, amountTotalCents: o.amountTotal })
-        ? null
-        : adminIngestFromVinScan(draftSummaries.get(o.id)?.vinScan ?? null, {
-            complete: Boolean(o.auditComplete) || adminOrderFullyReversed(o),
-          });
+    const info = ingestInfo.get(o.id);
+    const label = info?.dealerJobAlert ?? null;
+    const ingest = info?.ingest ?? null;
     return {
       ...o,
       ...(label ? { dealerJobAlert: label } : {}),

@@ -6,7 +6,7 @@ import { adminOrderFullyReversed, listAdminOrders } from "@/lib/admin-orders";
 import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { countUnseenB2bPartners } from "@/lib/b2b-partner-account";
 import { listB2bPartners } from "@/lib/b2b-partner-store";
-import { countOpenListingPeeks } from "@/lib/listing-peek-queue";
+import { countOpenListingPeeks, oldestOpenListingPeekAt } from "@/lib/listing-peek-queue";
 import { readListingPeekDocForAdminRead } from "@/lib/listing-peek-store";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { upsellListOverlay } from "@/lib/order-upsell";
@@ -14,6 +14,8 @@ import { summarizeProHome, type ProHomeSummary } from "@/lib/admin-pro-home";
 
 export type AdminBadgeCounts = {
   openCount: number;
+  /** Vecākā neatbildētā ātrā vērtējuma pieteikuma laiks (ISO) - telefona «Šodien». */
+  openOldestAt: string | null;
   unseenCount: number;
   activeCount: number;
   overdueCount: number;
@@ -37,6 +39,7 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
   ]);
 
   const openCount = countOpenListingPeeks(peekDoc.entries);
+  const openOldestAt = oldestOpenListingPeekAt(peekDoc.entries);
   const unseenCount = countUnseenB2bPartners(partners);
 
   const orders = filterAdminOrdersForDashboard(orderLoad.rows, false);
@@ -71,5 +74,5 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
     irissLogisticsCount = 0;
   }
 
-  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount, irissLogisticsCount, proHome };
+  return { openCount, openOldestAt, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount, irissLogisticsCount, proHome };
 }

@@ -38,6 +38,7 @@ import {
   type AdminIngestFilter,
   type AdminOrderIngest,
 } from "@/lib/admin-mobile-ingest";
+import { ADMIN_ORDERS_INGEST_PARAM, parseAdminOrdersIngestParam } from "@/lib/admin-pro-today";
 import {
   AdminMobileChips,
   AdminMobileRoundBtn,
@@ -768,11 +769,14 @@ export function AdminOrdersTable({
   const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
   const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");
   /** Telefons: ielases filtri «Nav nosūtīti / Kļūdas / Ielasa» (22.11 makets v3). */
-  const [ingestFilter, setIngestFilter] = useState<AdminIngestFilter>("all");
+  const searchParams = useSearchParams();
+  // «Šodien» sākums atver sarakstu ar `?ielase=nav-nosutiti|kludas|ielasa`.
+  const [ingestFilter, setIngestFilter] = useState<AdminIngestFilter>(() =>
+    parseAdminOrdersIngestParam(searchParams?.get(ADMIN_ORDERS_INGEST_PARAM)),
+  );
   const [cardMenuId, setCardMenuId] = useState<string | null>(null);
   const swipeRef = useRef<{ id: string; x: number; dx: number } | null>(null);
   const lastSwipeDx = useRef(0);
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const deadlineFilter = parseAdminOrdersDeadlineFilter(searchParams?.get(ADMIN_ORDERS_DEADLINE_PARAM));
   // Laiks tikai pēc ielādes, lai serveris un pārlūks renderē vienu un to pašu.
