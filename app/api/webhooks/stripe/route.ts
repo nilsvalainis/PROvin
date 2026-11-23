@@ -26,6 +26,10 @@ import { invalidateUnpaidCheckoutListCache } from "@/lib/admin-unpaid-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
+import { enqueueCsddPaidAutoForOrder } from "@/lib/csdd-paid-auto";
+import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
+import { orderDropboxCategory } from "@/lib/order-dropbox-folder";
+import { isTelegramGroupPayment } from "@/lib/admin-customer-identity";
 import {
   ensureOrderDraftEditsFromCheckoutFields,
   resolveOrderVinFromPlate,
@@ -341,6 +345,25 @@ async function startPaidOrderDownstream(
     }
   }
 
+  // Dropbox pasūtījuma mape uzreiz (Nils 23.11): dīlera dati / AUDITI / MINI / BUSINESS atsevišķās virsmapēs.
+  const isDealerData =
+    fulfillment !== "b2b_pack" && isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total });
+  const dropboxCategory = orderDropboxCategory({
+    checkoutLine,
+    fulfillment,
+    isDealerData,
+    amountTotalCents: session.amount_total,
+  });
+  if (dropboxCategory) {
+    after(() =>
+      ensureOrderDropboxFolderSafe(session.id, {
+        category: dropboxCategory,
+        createdMs: (session.created ?? Math.floor(Date.now() / 1000)) * 1000,
+        vin: order.vin,
+      }),
+    );
+  }
+
   if (checkoutLine === "provin_select") {
     void ensureConsultationDraftSeed(session.id).catch((err) => {
       console.error("[stripe webhook] consultation draft seed:", err);
@@ -449,6 +472,20 @@ async function startPaidOrderDownstream(
         console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
       }
       await dealerPlateRun;
+      // Pēc CSDD sēklas: mapes nosaukums ar marku/modeli + automātiskā CSDD maksas izziņa (tikai AUDITS ar LV numuru).
+      if (dropboxCategory) await ensureOrderDropboxFolderSafe(session.id, { vin: order.vin });
+      try {
+        const paidJob = await enqueueCsddPaidAutoForOrder(session.id, {
+          checkoutLine,
+          fulfillment,
+          isDealerData,
+          isTelegram: isTelegramGroupPayment(session.amount_total),
+          orderVinOrPlate: order.vin,
+        });
+        if (paidJob) console.info("[stripe webhook] csdd paid auto queued", { sessionId: session.id, state: paidJob.state });
+      } catch (err) {
+        console.error("[stripe webhook] csdd paid auto:", err);
+      }
     });
   }
 }

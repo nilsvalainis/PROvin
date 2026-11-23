@@ -202,6 +202,13 @@ const SHAFT_SEAL_RE = /dicht|seal|simmerring|sealing\s+ring/u;
 const INTERIOR_TRIM_RE =
   /door\s+trim|trim\s+panel|interior\s+trim|durvju\s+apdar|apdares\s+panel|sitzkissen|upholstery|roktur\p{L}*|\bhandle\b|turgriff\p{L}*|innengriff\p{L}*|turoffner\p{L}*/u;
 
+/**
+ * Durvju / virsbūves elektrika un mehānisms (vadu kūlis, slēdzene, stikla pacēlājs, blīvējums, sensors)
+ * nav virsbūves panelis vai stikls (Nils 23.11: „durvju vadu kūļa maiņa” rādīja „Virsbūve / stikls”).
+ */
+const BODY_ELECTRICAL_NOT_PANEL_RE =
+  /vadu\s+kul\p{L}*|vadojum\p{L}*|kabelbaum\p{L}*|kabelsatz|leitungssatz|wiring|harness|\bkabel\p{L}*|\bcable\p{L}*|sledzen\p{L}*|turschloss|schloss|\block\p{L}*|fensterheber\p{L}*|window\s+regulator|(?:stikla|logu)\s+pacelaj\p{L}*|blivej\p{L}*|dichtung\p{L}*|\bseal\p{L}*|sensor\p{L}*|devej\p{L}*|schalter|\bswitch\p{L}*|sledz\p{L}*|stellmotor|aktuator\p{L}*|actuator\p{L}*|lautsprecher|speaker|skalrun\p{L}*/u;
+
 const WASHER_FLUID_RE =
   /scheibenklar|scheibenwasch|washer\s+fluid|windscreen\s+washer|windshield\s+washer|stiklu\s+mazg/u;
 
@@ -297,7 +304,10 @@ const ADBLUE_REFILL_RE = /nachfull\p{L}*|auffull\p{L}*|befull\p{L}*|top[-\s]?up|
 const AC_COMPRESSOR_ANCILLARY_RE =
   /schlauch|\bhose\b|leitung|\bline\b|riemen|\bbelt\b|siksn\p{L}*|caurul\p{L}*|slauten\p{L}*|magnetkupplung|\bclutch\b|lubricant|smerviel\p{L}*|kompressorol|compressor\s+oil/u;
 
-const DPF_CLEAN_RE = /reinig\p{L}*|gereinigt|clean\p{L}*|tiris\p{L}*|iztir\p{L}*|skalos\p{L}*/u;
+const DPF_CLEAN_RE = /reinig\p{L}*|gereinigt|clean\p{L}*|tiris\p{L}*|iztir\p{L}*|skalos\p{L}*|regener\p{L}*|регенерац\p{L}*/u;
+
+/** FAP piedevas (Eolys) bāka / uzpilde - DPF sistēmas apkope, ne paša filtra nomaiņa. */
+const DPF_ADDITIVE_RE = /eolys|additiv\p{L}*|piedev\p{L}*|\badditive\b|additivtank/u;
 
 /** Kārbas eļļas līmeņa pārbaude / noplūde nav maiņa. */
 const GEARBOX_OIL_NOT_CHANGE_RE =
@@ -382,6 +392,21 @@ function isInteriorTrim(folded: string): boolean {
 function isWasherFluid(folded: string): boolean {
   WASHER_FLUID_RE.lastIndex = 0;
   return WASHER_FLUID_RE.test(folded);
+}
+
+/** Dzinēja dekoratīvais / apakšējais vāks (Motorabdeckung) nav virsbūves panelis. */
+const ENGINE_COVER_NOT_BODY_RE =
+  /motorabdeckung|motorraumabdeckung|unterfahrschutz|engine\s+(?:cover|undertray|under\s*tray)|(?:dzineja|motora)\s+(?:dekorativ\p{L}*\s+)?(?:parseg\p{L}*|vak\p{L}*)\s+(?:papildu\s+)?(?:nonems\p{L}*|demontaz\p{L}*)|dekorativ\p{L}*\s+(?:parseg|vak)\p{L}*|apaksej\p{L}*\s+aizsarg\p{L}*/u;
+
+function isBodyElectricalNotPanel(folded: string): boolean {
+  ENGINE_COVER_NOT_BODY_RE.lastIndex = 0;
+  if (ENGINE_COVER_NOT_BODY_RE.test(folded)) return true;
+  BODY_ELECTRICAL_NOT_PANEL_RE.lastIndex = 0;
+  if (!BODY_ELECTRICAL_NOT_PANEL_RE.test(folded)) return false;
+  // Krāsošana vai pašas stikla vienības nomaiņa tajā pašā klauzulā paliek virsbūves darbs.
+  if (isPaintWork(folded)) return false;
+  GLASS_UNIT_REPLACE_RE.lastIndex = 0;
+  return !GLASS_UNIT_REPLACE_RE.test(folded);
 }
 
 function isWiperNotGlass(folded: string): boolean {
@@ -473,7 +498,8 @@ function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): bool
       isInteriorTrim(folded) ||
       isWiperNotGlass(folded) ||
       isGlassChipCheckNotReplacement(folded) ||
-      isHoodGasSpringWork(folded))
+      isHoodGasSpringWork(folded) ||
+      isBodyElectricalNotPanel(folded))
   ) {
     return false;
   }
@@ -810,6 +836,7 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   // Filtra / dzesēšanas vārds šiem mezgliem ir paša mezgla nosaukumā, tāpēc „palīgmateriāla” filtrs neder.
   if (assembly === "dpf" || assembly === "water_pump") {
     if (!mentionsAssembly(foldedClause, assembly)) return false;
+    if (assembly === "dpf" && DPF_ADDITIVE_RE.test(foldedClause)) return false;
     if (isOverhaul(foldedClause) || isRemanOrExchange(foldedClause) || hasDealerPartNumber(foldedClause)) {
       return true;
     }

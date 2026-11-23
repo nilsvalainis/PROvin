@@ -60,10 +60,13 @@ describe("dealer visit kind and gaps", () => {
       row("01.01.2018", "40000", "Eļļa"),
       row("01.08.2021", "95000", "Eļļa"),
     ]);
-    expect(summaryHtml).toContain("Garākais robs");
+    expect(summaryHtml).toContain("Garākais periods bez ierakstiem");
+    expect(summaryHtml).not.toMatch(/robs/i);
     expect(summaryHtml).not.toMatch(/izlaist|kavēt|risk/i);
     const gapHtml = buildDealerGapMarkerHtml(gap!);
-    expect(gapHtml).toContain("Robs datos");
+    expect(gapHtml).toContain("Periods bez ierakstiem:");
+    expect(gapHtml).toContain("3 gadi 7 mēneši, 55 000 km");
+    expect(gapHtml).not.toMatch(/robs|mēn\./i);
     expect(gapHtml).not.toMatch(/verdikts|žurnāla|verdict|dealer log|Händlerprotokoll|журнала дилера/i);
   });
 });

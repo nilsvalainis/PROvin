@@ -219,6 +219,11 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
       en: "The PROVIN.LV service is advisory: we assess the available information about the vehicle and provide recommendations. The report is a digital compilation of data, not a technical diagnosis. It in no way replaces a thorough in-person check and inspection of the vehicle. The report is not an official extract from a state authority, an independent technical appraisal or a legal opinion. The final decision to purchase the vehicle rests with the client.",
       ru: "Услуга PROVIN.LV носит консультационный характер: мы оцениваем доступную информацию о транспортном средстве и даём рекомендации. Отчёт является цифровой подборкой данных, а не технической диагностикой. Он ни в коем случае не заменяет полноценную проверку и осмотр автомобиля на месте. Отчёт не является выпиской государственного органа, независимой технической экспертизой или юридическим заключением. Окончательное решение о покупке транспортного средства принимает клиент.",
     },
+  "PROVIN.LV Business atskaite ir digitāls pieejamās informācijas par transportlīdzekli apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.":
+    {
+      en: "The PROVIN.LV Business report is a digital compilation of the available information about the vehicle, not a technical diagnosis. It in no way replaces a thorough in-person check and inspection of the vehicle. The report is not an official extract from a state authority, an independent technical appraisal or a legal opinion. The final decision to purchase the vehicle rests with the client.",
+      ru: "Отчёт PROVIN.LV Business является цифровой подборкой доступной информации о транспортном средстве, а не технической диагностикой. Он ни в коем случае не заменяет полноценную проверку и осмотр автомобиля на месте. Отчёт не является выпиской государственного органа, независимой технической экспертизой или юридическим заключением. Окончательное решение о покупке транспортного средства принимает клиент.",
+    },
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.":
     {
       en: "This report has been prepared exclusively for the customer who ordered it and is for personal use only. Copying, publicly reproducing, passing on or otherwise making this report or the information in it available to third parties (including the seller of the vehicle) without the prior consent of PROVIN.LV is strictly prohibited.",
@@ -247,6 +252,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Ražošanas datums": { en: "Production date", ru: "Дата производства" },
   "Garantijas sākums": { en: "Warranty start date", ru: "Начало гарантии" },
   "Valsts / reģions": { en: "Country / region", ru: "Страна / регион" },
+  "Ražošanas valsts": { en: "Country of manufacture", ru: "Страна производства" },
   Krāsa: { en: "Colour", ru: "Цвет" },
   "Krāsas kods": { en: "Colour code", ru: "Код краски" },
   Interjers: { en: "Upholstery", ru: "Салон" },
@@ -275,11 +281,12 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Pirmā vizīte": { en: "First visit", ru: "Первый визит" },
   "Pēdējā vizīte": { en: "Last visit", ru: "Последний визит" },
   "Pēdējais dīlera km": { en: "Latest dealer km", ru: "Последний пробег у дилера" },
-  "Garākais robs": { en: "Longest gap", ru: "Самый длинный пробел" },
+  "Garākais periods bez ierakstiem": { en: "Longest period without records", ru: "Самый долгий период без записей" },
   "Kampaņas veiktas": { en: "Campaigns completed", ru: "Кампании выполнены" },
   "Lielie mezgli": { en: "Major assemblies", ru: "Крупные узлы" },
   "Nav fiksēts": { en: "None recorded", ru: "Не зафиксировано" },
-  "Robs datos": { en: "Gap in records", ru: "Пробел в данных" },
+  "Citi darbi": { en: "Other work", ru: "Прочие работы" },
+  "Periods bez ierakstiem": { en: "Period without records", ru: "Период без записей" },
   "Detalizēts darbu saraksts atskaitē nav pieejams.": {
     en: "A detailed list of work is not available in this report.",
     ru: "Подробный перечень работ в отчёте недоступен.",
@@ -413,6 +420,10 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "1 precīzs ieraksts": { en: "1 precise record", ru: "1 точная запись" },
   "{n} precīzi ieraksti": { en: "{n} precise records", ru: "{n} точных записей" },
   "1 ieraksts": { en: "1 record", ru: "1 запись" },
+  "1 rādījums": { en: "1 reading", ru: "1 показание" },
+  "{n} rādījumi": { en: "{n} readings", ru: "{n} показаний" },
+  "1 precīzs rādījums": { en: "1 precise reading", ru: "1 точное показание" },
+  "{n} precīzi rādījumi": { en: "{n} precise readings", ru: "{n} точных показаний" },
   "{n} ieraksti": { en: "{n} records", ru: "{n} записей" },
   "NOBRAUKUMS PA GADIEM": { en: "MILEAGE BY YEAR", ru: "ПРОБЕГ ПО ГОДАМ" },
   "tūkst. km": { en: "thous. km", ru: "тыс. км" },
@@ -608,6 +619,8 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   Konfidencialitāte: "Vertraulichkeit",
   "PROVIN.LV pakalpojums ir konsultatīvs: mēs izvērtējam pieejamo informāciju par transportlīdzekli un sniedzam ieteikumus. Atskaite ir digitāls datu apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.":
     "Der Dienst von PROVIN.LV ist beratend: Wir bewerten die verfügbaren Informationen zum Fahrzeug und geben Empfehlungen. Der Bericht ist eine digitale Datenzusammenstellung, keine technische Diagnose. Er ersetzt in keinem Fall eine vollständige Prüfung und Besichtigung des Fahrzeugs vor Ort. Der Bericht ist kein Auszug einer staatlichen Stelle, kein unabhängiges technisches Gutachten und kein Rechtsgutachten. Die Kaufentscheidung trifft der Kunde.",
+  "PROVIN.LV Business atskaite ir digitāls pieejamās informācijas par transportlīdzekli apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.":
+    "Der PROVIN.LV Business-Bericht ist eine digitale Zusammenstellung der verfügbaren Informationen zum Fahrzeug, keine technische Diagnose. Er ersetzt in keinem Fall eine vollständige Prüfung und Besichtigung des Fahrzeugs vor Ort. Der Bericht ist kein Auszug einer staatlichen Stelle, kein unabhängiges technisches Gutachten und kein Rechtsgutachten. Die Kaufentscheidung trifft der Kunde.",
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.":
     "Dieser Bericht wurde ausschließlich für den Auftraggeber erstellt und darf nur für private Zwecke verwendet werden. Den Bericht und die darin enthaltenen Informationen zu vervielfältigen, öffentlich wiederzugeben, weiterzugeben oder Dritten (einschließlich des Fahrzeugverkäufers) ohne Abstimmung mit PROVIN.LV zugänglich zu machen, ist untersagt.",
   "Transportlīdzekļa informācija": "Fahrzeuginformationen",
@@ -631,6 +644,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Ražošanas datums": "Produktionsdatum",
   "Garantijas sākums": "Garantiebeginn",
   "Valsts / reģions": "Land / Region",
+  "Ražošanas valsts": "Herstellungsland",
   Krāsa: "Farbe",
   "Krāsas kods": "Farbcode",
   Interjers: "Interieur",
@@ -657,11 +671,12 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Pirmā vizīte": "Erster Besuch",
   "Pēdējā vizīte": "Letzter Besuch",
   "Pēdējais dīlera km": "Letzter Händler-km",
-  "Garākais robs": "Längste Lücke",
+  "Garākais periods bez ierakstiem": "Längster Zeitraum ohne Einträge",
   "Kampaņas veiktas": "Aktionen durchgeführt",
   "Lielie mezgli": "Große Baugruppen",
   "Nav fiksēts": "Nicht erfasst",
-  "Robs datos": "Lücke in den Daten",
+  "Citi darbi": "Sonstige Arbeiten",
+  "Periods bez ierakstiem": "Zeitraum ohne Einträge",
   "Detalizēts darbu saraksts atskaitē nav pieejams.":
     "Eine detaillierte Arbeitsliste liegt in diesem Bericht nicht vor.",
   "Pirmais ieraksts": "Erster Eintrag",
@@ -760,6 +775,10 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "1 precīzs ieraksts": "1 präziser Eintrag",
   "{n} precīzi ieraksti": "{n} präzise Einträge",
   "1 ieraksts": "1 Eintrag",
+  "1 rādījums": "1 Ablesung",
+  "{n} rādījumi": "{n} Ablesungen",
+  "1 precīzs rādījums": "1 präzise Ablesung",
+  "{n} precīzi rādījumi": "{n} präzise Ablesungen",
   "{n} ieraksti": "{n} Einträge",
   "NOBRAUKUMS PA GADIEM": "LAUFLEISTUNG NACH JAHR",
   "tūkst. km": "Tsd. km",

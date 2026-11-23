@@ -75,6 +75,8 @@ export type CcVinSaleRow = {
   odometer: string;
   price: string;
   status: string;
+  /** Cenas nozīme (piem. «Pēdējais solījums») - tikai PDF renderī no izsoles ieraksta, netiek glabāts. */
+  priceLabel?: string;
 };
 
 /** Strukturāli identisks `SourcePdfChecklist` (bez importa, lai nav cikliskas atkarības). */

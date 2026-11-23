@@ -290,7 +290,7 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    // Maksas izziņa (1,50 € ar SMS). Relejs tikai nolasa: SMS nesūta, nemaksā, e-pastu nesūta.
+    // Maksas izziņa (1,50 € ar SMS). Relejs tikai nolasa: SMS nesūta, nemaksā; e-pastu tikai ar /paid/report sendEmail.
     if (req.method === "POST" && p === "/paid/sms-link") {
       const body = await readJson(req);
       const query = normalizeQuery(body.query);
@@ -312,8 +312,10 @@ const server = createServer(async (req, res) => {
       const plate = normalizeQuery(body.plate ?? body.query);
       if (queryKind(plate) !== "plate") return sendJson(res, 400, { error: "invalid_plate" });
       const since = typeof body.since === "string" && !Number.isNaN(Date.parse(body.since)) ? body.since : "";
-      const out = await core.direct(() => browser.paidReport(plate, since));
-      log(`paid report: ${out.status}${out.code ? ` ${out.code}` : ""}`);
+      // sendEmail: pēc nolasītas izziņas nospiež tikai "Nosūtīt uz reģistrēto epastu" (bez maksas, PDF arhīvam).
+      const sendEmail = body.sendEmail === true;
+      const out = await core.direct(() => browser.paidReport(plate, since, { sendEmail }));
+      log(`paid report: ${out.status}${out.code ? ` ${out.code}` : ""}${out.emailSent ? " (e-pasts)" : ""}`);
       return sendJson(res, 200, out);
     }
 

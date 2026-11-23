@@ -2,6 +2,7 @@
  * PDF - PROVIN „clean & compact” paneļu izkārtojums (Inter, gaišas līnijas, zīmola akcenti).
  */
 
+import { formatPdfCustomerFullName } from "@/lib/pdf-prepared-by-name";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 
@@ -265,14 +266,21 @@ export function buildPdfAboutReportBlock(args: {
 
   if (show.payment) {
     const rows: Row[] = [];
-    if (money !== "-") rows.push({ k: "Summa", v: money });
-    rows.push({ k: "Pasūtījums", v: dateFmt.format(new Date(o.created * 1000)) });
-    groups.push({ title: "Maksājums", rows });
+    const ordered = dateFmt.format(new Date(o.created * 1000));
+    if (money !== "-") {
+      rows.push({ k: "Summa", v: money });
+      rows.push({ k: "Pasūtījums", v: ordered });
+      groups.push({ title: "Maksājums", rows });
+    } else {
+      // D44: bez summas (manuāls / Business pasūtījums) nav «Maksājums» virsraksta bez satura.
+      rows.push({ k: "Datums", v: ordered });
+      groups.push({ title: "Pasūtījums", rows });
+    }
   }
 
   if (show.client) {
     const rows: Row[] = [];
-    if (o.customerName?.trim()) rows.push({ k: "Vārds, uzvārds", v: o.customerName.trim() });
+    if (o.customerName?.trim()) rows.push({ k: "Vārds, uzvārds", v: formatPdfCustomerFullName(o.customerName) });
     if (rows.length > 0) groups.push({ title: "Klients", rows });
   }
 

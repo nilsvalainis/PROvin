@@ -347,6 +347,8 @@ export function thecarapiPdfDate(raw: string, withTime = true): string {
   if (hh == null || !withTime) {
     if (hh == null || zone == null) return `${d}.${mo}.${y}`;
   }
+  // Tikai-datuma lauks («2020-12-09T00:00:00» bez zonas) - laiku nerāda (citādi Rīgā «02:00»).
+  if (zone == null && hh === "00" && (mi ?? "00") === "00" && /^0*$/.test(ss ?? "00")) return `${d}.${mo}.${y}`;
   let z = zone ?? "Z";
   if (/^[+-]\d{4}$/.test(z)) z = `${z.slice(0, 3)}:${z.slice(3)}`;
   const date = new Date(`${y}-${mo}-${d}T${hh ?? "00"}:${mi ?? "00"}:${ss ?? "00"}${z}`);
@@ -356,7 +358,7 @@ export function thecarapiPdfDate(raw: string, withTime = true): string {
   return withTime ? `${day} ${parts.hour}:${parts.minute}` : day;
 }
 
-const PLAIN_NUMBER_KEY = /(year|id$|code|nr$|number|zip|postal|count$|count[A-Z_]|doors?$|seats?$|kw$|hp$|ps$|cylinders|gears|owners|quantity|dot)/i;
+const PLAIN_NUMBER_KEY = /(year|id$|code|nr$|number|zip|postal|count$|count[A-Z_]|doors?$|seats?$|kw$|hp$|ps$|cylinders|gears|owners|quantity|dot|plate)/i;
 
 function formatScalar(key: string, raw: unknown): string {
   if (raw == null) return "";
@@ -370,7 +372,8 @@ function formatScalar(key: string, raw: unknown): string {
   if (!s) return "";
   if (isI18nKey(s)) return translateI18n(s);
   if (isIsoDate(s)) return thecarapiPdfDate(s);
-  if (/country/i.test(key) && /^[A-Za-z]{2}$/.test(s)) return countryName(s);
+  // Tikai valstu kodu lauki - ne «CountryMessages» atbildes («NO» = nē, nevis Norvēģija).
+  if (/country/i.test(key) && !/message|value$/i.test(key) && /^[A-Za-z]{2}$/.test(s)) return countryName(s);
   const n = toNumber(s);
   if (n != null && !PLAIN_NUMBER_KEY.test(key) && !/^0\d/.test(s)) return numberText(n);
   if (/damage/i.test(key)) {
@@ -1068,7 +1071,7 @@ function extractDocuments(ctx: Ctx, root: unknown): { names: string[]; urlNames:
     cocavailable: "COC",
     registrationdocsavailable: "Reģistrācijas dokumenti",
     isv5present: "V5 dokuments",
-    licenseplate: "Numurzīmes",
+    licenseplate: "Numura zīme",
   };
   for (const node of findNodes(root, (key, value) => normKey(key) === "paperwork" && asRecord(value) != null)) {
     for (const [k, v] of Object.entries(node.value as Record<string, unknown>)) {
@@ -1142,7 +1145,10 @@ const BASIC_MEANINGS: Meaning[] = [
 const PRICE_MEANINGS: Meaning[] = [
   { label: "Sākuma cena", keys: ["start_price", "start", "startPrice", "starting_price"] },
   { label: "Pēdējā cena", keys: ["current_price", "current_bid", "highest_bid", "currentPrice", "currentBid"] },
-  { label: "Noslēguma cena", keys: ["final_price", "current_final", "public_price_eur", "sold_price", "sale_price", "finalPrice"] },
+  // `final_price` = uzvarējušais solījums; `current_final`/`public_price_eur` - portāla publiskā cena ar papildu
+  // izmaksām (Openlane: mainās neatkarīgi no solījumiem), sk. `thecarapi-sale-price.ts`.
+  { label: "Noslēguma cena", keys: ["final_price", "sold_price", "sale_price", "finalPrice"] },
+  { label: "Publiskā cena", keys: ["current_final", "public_price_eur"] },
   { label: "Pirkt tūlīt cena", keys: ["buy_now_price", "buyNowPrice"] },
   { label: "Mazumtirdzniecības cena", keys: ["consumer_price", "consumerPrice", "retail_price"] },
   { label: "Īpašā cena", keys: ["special_price", "specialPrice"] },
@@ -1289,9 +1295,12 @@ function extractPrices(ctx: Ctx, root: Record<string, unknown>): ThecarapiPdfKv[
   };
   const v1 = v1PriceRows(ctx, root);
   const rows = [...v1, ...meaningRows(ctx, PRICE_MEANINGS, fmt).filter((r) => !v1.some((v) => v.label === r.label && v.value === r.value))];
-  // Pēdējā cena = noslēguma cena -> viena rinda.
-  const finals = new Set(rows.filter((r) => r.label.startsWith("Noslēguma")).map((r) => r.value));
-  const out = rows.filter((r) => !(r.label.startsWith("Pēdējā cena") && finals.has(r.value)));
+  // Bez `final_price` publiskā cena ir vienīgā noslēguma cena (kā līdz šim); ar to - atsevišķa «Publiskā cena».
+  const hasFinal = rows.some((r) => r.label.startsWith("Noslēguma"));
+  const relabeled = hasFinal ? rows : rows.map((r) => (r.label.startsWith("Publiskā cena") ? { ...r, label: r.label.replace("Publiskā cena", "Noslēguma cena") } : r));
+  // Pēdējā cena / publiskā cena = noslēguma cena -> viena rinda.
+  const finals = new Set(relabeled.filter((r) => r.label.startsWith("Noslēguma")).map((r) => r.value));
+  const out = relabeled.filter((r) => !((r.label.startsWith("Pēdējā cena") || r.label.startsWith("Publiskā cena")) && finals.has(r.value)));
   for (const node of findNodes(root, (key, value) => /^(marketpricesbycountry|marketprices)$/.test(normKey(key)) && asRecord(value) != null)) {
     for (const [code, v] of Object.entries(node.value as Record<string, unknown>)) {
       const text = priceText(asRecord(v)?.value ?? v, ctx.currency);
@@ -1341,14 +1350,8 @@ function extractDates(ctx: Ctx): ThecarapiPdfKv[] {
     firstOf.add(base(row.label));
     row.label = base(row.label);
   }
-  // Vienāds laiks ar līdzīgu nozīmi -> viena rinda.
-  const out: ThecarapiPdfKv[] = [];
-  for (const row of rows) {
-    const same = out.find((r) => r.value === row.value);
-    if (same) same.label = `${same.label} / ${row.label.charAt(0).toLowerCase()}${row.label.slice(1)}`;
-    else out.push({ ...row });
-  }
-  return out;
+  // Katrai nozīmei sava rinda (audits 23.11: saplūdušas «Pirmoreiz / pēdējo reizi redzēta / pēdējās izmaiņas» maldina).
+  return rows.map((row) => ({ ...row }));
 }
 
 // --- Citi dati ---

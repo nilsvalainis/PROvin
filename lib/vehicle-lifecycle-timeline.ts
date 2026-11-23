@@ -41,7 +41,7 @@ import {
   iso2ToLvDisplayName,
   normalizeCountryNameLv,
 } from "@/lib/country-names-lv";
-import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
+import { dealerVisitTimelineTitle } from "@/lib/dealer-visit-kind";
 import { capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import {
   aggregateUnifiedIncidents,
@@ -52,6 +52,7 @@ import {
 import {
   analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
+  isVerifiedMileageSource,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
 import {
@@ -292,9 +293,9 @@ function makeEvent(args: {
     time: ms > 0 ? ms : 0,
     year: yearOf(args.rawDate, ms),
     title: args.title,
-    detail: lifecyclePublicCaption(args.detail ?? ""),
+    detail: lifecyclePublicCaption(stripEuSuffix(args.detail ?? "")),
     ...(args.body?.trim() ? { body: lifecyclePublicCaption(args.body) } : null),
-    country: normalizeCountryNameLv(args.country ?? "") || (args.country ?? "").trim(),
+    country: normalizeCountryNameLv(stripEuSuffix(args.country ?? "")) || stripEuSuffix(args.country ?? ""),
     odometer: args.odometer?.trim() ?? "",
     sources: args.source?.trim() ? [args.source.trim()] : [],
     tone: args.tone ?? "info",
@@ -304,6 +305,19 @@ function makeEvent(args: {
   };
   collapseCountryOnlyDetail(ev);
   return ev;
+}
+
+/** „Vācija / Eiropas Savienība”, „Germany, EU” → „Vācija” (ES piebilde aiz valsts ir lieka). */
+const EU_SUFFIX_RE = /\s*(?:\/|,|·|-)\s*(?:eiropas\s+savien[īi]ba|european\s+union|europ(?:ä|a)ische\s+union|\beu\b|\bes\b)\s*$/iu;
+
+/** Tikai „Eiropas Savienība” / „EU” nav valsts (izsoles reģions) - valsts lauks paliek tukšs. */
+const EU_ONLY_RE = /^(?:eiropas\s+savien[īi]ba|european\s+union|europ(?:ä|a)ische\s+union|eu|es|europe|eiropa)$/iu;
+
+export function stripEuSuffix(raw: string): string {
+  const t = (raw ?? "").trim();
+  if (EU_ONLY_RE.test(t)) return "";
+  const cut = t.replace(EU_SUFFIX_RE, "").trim();
+  return cut && cut !== t ? cut : t;
 }
 
 function pushCcVinStyleHistory(
@@ -368,27 +382,39 @@ function pushCcVinStyleHistory(
   }
   for (const s of ccVin?.sales ?? []) {
     if (!ccVinSaleRowHasData(s) || !s.date.trim()) continue;
-    const sold = !/nav\s+pārdots/i.test(s.status);
+    // «Pārdots» tikai, ja avots to tieši norāda (Nils 23.11); citādi neitrāls «Izsole» / «Pārdošanas ieraksts».
+    const sale = lifecycleSaleOutcome(s.status);
     const priceText = ccVinAmountToEurDisplay(s.price) || s.price.trim();
     const venueText = lifecyclePublicCaption(s.venue);
     out.push(
       makeEvent({
         kind: "sale",
         rawDate: s.date,
-        title: sold
-          ? venueText
-            ? `Pārdots · ${venueText}`
-            : "Pārdots izsolē"
-          : venueText
-            ? `Nav pārdots · ${venueText}`
-            : "Nepārdota izsole",
-        detail: priceText,
+        title: lifecycleSaleTitle(sale, venueText),
+        detail: priceText && s.priceLabel ? `${s.priceLabel} ${priceText}` : priceText,
         odometer: s.odometer,
         source,
         tone: "info",
       }),
     );
   }
+}
+
+const AUCTION_VENUE_RE = /\b(openlane|adesa|bca|auto1|autobid|copart|iaai|iaa|manheim|ecarstrade|caronsale|vwfs|ayvens|izsol)/i;
+
+/** Pārdošanas rezultāts tikai no skaidra avota statusa. */
+export function lifecycleSaleOutcome(status: string): "sold" | "unsold" | "unknown" {
+  const t = status.toLowerCase();
+  if (/nav\s+pārdots|nepārdots|not\s+sold|unsold|no\s+sale|nicht\s+verkauft|invendu/.test(t)) return "unsold";
+  if (/(^|[^\p{L}])(pārdots|sold|verkauft|vendu|venduto|vendido)([^\p{L}]|$)/u.test(t)) return "sold";
+  return "unknown";
+}
+
+export function lifecycleSaleTitle(outcome: "sold" | "unsold" | "unknown", venue: string): string {
+  if (outcome === "sold") return venue ? `Pārdots · ${venue}` : "Pārdots izsolē";
+  if (outcome === "unsold") return venue ? `Nav pārdots · ${venue}` : "Nepārdota izsole";
+  if (!venue) return "Izsole";
+  return AUCTION_VENUE_RE.test(venue) ? `Izsole · ${venue}` : `Pārdošanas ieraksts · ${venue}`;
 }
 
 /**
@@ -690,12 +716,14 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       makeEvent({
         kind: "service",
         rawDate: w.date,
-        title: lifecycleDealerVisitTitle(w.works),
+        // Tas pats veids kā dīlera sadaļā (`classifyDealerVisitKinds`) - viena vizīte, viens nosaukums.
+        title: dealerVisitTimelineTitle(w.works),
         // Darbu saraksts paliek dīlera sadaļā; kopsavilkumā - tikai vieta (ne valsts dublikāts).
         detail: locIsCountry ? "" : loc,
         country: locIsCountry ? loc : "",
         odometer: w.odometer,
-        source: "Dīleris",
+        // Tas pats avota nosaukums kā nobraukuma rindām → PDF „Dīlera dati” (ne pelēkais „Citi avoti”).
+        source: SOURCE_BLOCK_LABELS.auto_records,
       }),
     );
   }
@@ -1100,7 +1128,10 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     const anomaly = anomalyBySourceOrder.get(r.sourceOrder) === true;
     // 17.11 (Nils B2): sludinājumā mazāk nekā iepriekš fiksēts - atsevišķs brīdinājums, ne odometra pretruna.
     const listingBelow = listingBelowRecordedSourceOrders.has(r.sourceOrder);
-    const listingCountry = odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
+    // A8 (Business audits 23.11): ja to pašu km apstiprina dīleris / CSDD, tas nav «pēc sludinājuma» rādījums -
+    // citādi tas paliek atsevišķs «Odometra ieraksts» blakus tās pašas dienas dīlera vizītei.
+    const listingCountry =
+      !isVerifiedMileageSource(r) && odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
     const vendorCaDisputed = vendorCanadaDisputedAgainstUs(
       r.country,
       r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel],

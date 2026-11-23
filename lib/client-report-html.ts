@@ -125,6 +125,8 @@ import {
   normalizeSourceBlockPhotoGroups,
 } from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
+import { salesWithAuctionFinalPrice } from "@/lib/thecarapi-sale-price";
+import { auctionArchiveModelTitle } from "@/lib/auction-archive-facts";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -135,10 +137,8 @@ import {
 } from "@/lib/cc-vin-report";
 import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
 import {
-  buildThecarapiPdfGalleryHtml,
   collectPdfPhotoKeys,
   selectThecarapiPdfPhotos,
-  thecarapiPdfPhotoCategories,
   THECARAPI_PDF_GALLERY_MAX,
 } from "@/lib/thecarapi-pdf";
 import {
@@ -230,6 +230,7 @@ import {
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
+  formatMileageRowDateLabel,
 } from "@/lib/unified-mileage";
 import { countryEvidenceFromRows } from "@/lib/service-works-country";
 import {
@@ -493,9 +494,20 @@ function getVendorPdfBlock(p: ClientReportPayload, title: string): ClientManualV
   return (p.manualVendorBlocks ?? []).find((x) => x.title === title);
 }
 
+/**
+ * A10 / D35 / D41 (Business audits 23.11): CSDD forma, kurā ir tikai VIN un no VIN atšifrētais modeļa gads
+ * (auto LV nav reģistrēts), nav CSDD dati - nerāda tukšu kartīti un neskaita kā avotu.
+ */
+export function csddFormHasRegistryContent(f: CsddFormFields): boolean {
+  return csddFormHasContent({ ...f, vin: "", modelYear: "" });
+}
+
 function payloadCsddHasData(p: ClientReportPayload, vis: PdfVisibilitySettings): boolean {
   if (!vis.csdd) return false;
-  if (p.csddForm && csddFormHasContent(p.csddForm)) return true;
+  // Ja ir strukturētā forma, `p.csdd` ir tās teksta kopija (`csddFormToPlainText`) - lemj tikai forma.
+  if (p.csddForm) {
+    return csddFormHasRegistryContent(p.csddForm) || (p.csddForm.rawUnprocessedData ?? "").trim().length > 0;
+  }
   return p.csdd.trim().length > 0;
 }
 
@@ -1057,6 +1069,8 @@ function resolvePdfReportMakeModelFromPayload(p: ClientReportPayload): string {
       listingText: p.listingAnalysis?.sellerPortrait ?? "",
       ltabMakeModel: p.manualLtabBlock?.certificate?.makeModel,
     }),
+    // Izsoļu portālu arhīvs (TheCarApi): «Opel Vivaro 2.0» - kad nekā cita nav (piem. auto nav LV reģistrā).
+    auctionArchiveModelTitle(p.ccVinBlock?.thecarapiRecords ?? []),
   ];
   const blocks = {
     ...createDefaultSourceBlocks(),
@@ -1253,7 +1267,7 @@ function buildUnifiedMileageTableRowHtml(
       ? `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--yellow"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span><span class="tabular pdf-num-warn-digits">${odoEscaped}</span></span></td>`
       : `<td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>`;
   const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${stripeSpan}</span></td>`;
-  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
+  return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(formatMileageRowDateLabel(r))}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
 /** Zemsvītras piezīme CSDD rādījumam bez datuma (BMW makets, Nils apstiprināja 24.10). */
@@ -1366,7 +1380,10 @@ export function buildUnifiedMileageTableHtml(
         ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder, staleOrEntryError)
         : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder, staleOrEntryError)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder, staleOrEntryError)}</div></div>`;
 
-  const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
+  // A17: skaits = leģendas avoti (AutoDNA un «AutoDNA (sludinājums)» ir viens avots).
+  const sourceCount = mileagePdfLegendKeysInOrder(
+    collectMileagePdfSourceKeysFromLabels(mileageRows.flatMap((r) => (r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel]))),
+  ).length;
   const legend = buildPdfMileageSourceLegendHtml(mileageRows);
   const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
   const yellowNote = (text: string) =>
@@ -1677,8 +1694,10 @@ function buildCsddAvotuSubsection(
   if (!vis.csdd) return "";
   const form = p.csddForm;
   const bloki = buildCsddBlokiPdfParts(form, vis, lang);
-  const hasStruct = Boolean(form && csddFormHasContent(form));
-  const hasRaw = p.csdd.trim().length > 0;
+  const hasStruct = Boolean(
+    form && (csddFormHasRegistryContent(form) || (bloki?.afterTable ?? "").trim() || (bloki?.beforeInspections ?? "").trim()),
+  );
+  const hasRaw = form ? (form.rawUnprocessedData ?? "").trim().length > 0 : p.csdd.trim().length > 0;
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
@@ -2003,7 +2022,12 @@ function buildAutoRecordsAvotuSubsection(
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
   const showOilInterval = vis.autoRecordsOilInterval !== false;
   const oilTableHtml = showOilInterval
-    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }))
+    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }), {
+        // Dīlera datu / Business PDF: tikai fakti, bez ieteikumiem (ieteikumi ir AUDITS).
+        omitRecommendation:
+          productScope?.pdfReportKind === "dealer" || productScope?.pdfReportKind === "business",
+        makeModel,
+      })
     : "";
   const oilIntervalBox =
     showOilInterval && oilChangeIntervalNotes
@@ -2075,27 +2099,39 @@ function buildCcVinAvotuSubsection(
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
-  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b) : "";
   const tcIds = new Set((b?.thecarapiRecords ?? []).flatMap((record) => record.photos.map((photo) => photo.id)));
+  // Izsoles bildes, kas pasūtījuma bilžu grupā saglabātas ar citu id (tā pati saite / saturs), arī pieder izsoles
+  // kartītei - citādi tās drukājas vecajā grupas galerijā ārpus kopīgā dizaina.
+  const tcKeys = collectPdfPhotoKeys((b?.thecarapiRecords ?? []).map((record) => ({ photos: record.photos })));
+  const isTcPhoto = (photo: { id?: string; sourceUrl?: string; contentHash?: string }): boolean =>
+    tcIds.has(photo.id ?? "") || [...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && tcKeys.has(k));
+  const groupTcPhotos = (b?.photoGroups ?? []).flatMap((group) =>
+    group.photos
+      .filter((photo) => !tcIds.has(photo.id) && isTcPhoto(photo))
+      .map((photo) => ({ id: photo.id, sourceUrl: photo.sourceUrl ?? "", contentHash: photo.contentHash ?? "", date: "", venue: "", caption: "" })),
+  );
   const otherGroups = (b?.photoGroups ?? []).map((group) => ({
     ...group,
     title: thecarapiPdfGroupTitle(group.title),
-    photos: group.photos.filter((photo) => !tcIds.has(photo.id)),
+    photos: group.photos.filter((photo) => !isTcPhoto(photo)),
   }));
   const usedKeys = collectPdfPhotoKeys(otherGroups);
   for (const key of externalPhotoKeys ?? []) usedKeys.add(key);
-  const tcPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
+  const recordPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
     usedKeys,
     max: THECARAPI_PDF_GALLERY_MAX,
-  });
-  const photosHtml = b
-    ? [
-        buildSourcePhotoGroupsPdfHtml(otherGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups),
-        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls, thecarapiPdfPhotoCategories(b.thecarapiRecords)),
-      ]
-        .filter(Boolean)
-        .join("")
-    : "";
+  }).filter((photo) => photoDataUrls?.has(photo.id));
+  // Ierakstā esošā bilde bez datiem → tās pašas bildes kopija no bilžu grupas (ja tai ir dati).
+  const haveKeys = collectPdfPhotoKeys([{ photos: recordPhotos }]);
+  const tcPhotos = [
+    ...recordPhotos,
+    ...groupTcPhotos.filter((photo) => photoDataUrls?.has(photo.id) && ![...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && haveKeys.has(k))),
+  ].slice(0, THECARAPI_PDF_GALLERY_MAX);
+  // Izsoļu bildes - kopīgās izsoles kartītes galerijā (tas pats dizains kā «Izsoļu arhīva» PDF).
+  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "" }) : "";
+  const tcPhotoIds = new Set([...tcIds, ...groupTcPhotos.map((photo) => photo.id)]);
+  const legacyPhotos = (b?.photos ?? []).filter((photo) => !tcPhotoIds.has(photo.id));
+  const photosHtml = b ? buildSourcePhotoGroupsPdfHtml(otherGroups, legacyPhotos, photoDataUrls, normalizeCcVinPhotoGroups) : "";
   const comments = (b?.comments ?? "").trim();
   if (!inner && !photosHtml && !comments && !sparkHtml) return "";
   const head = sectionHeadBrand(
@@ -2468,7 +2504,11 @@ function buildExpertPdfSectionHtml(icon: string, title: string, html: string): s
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const techHtml = vis.irissTechnicalRisks ? (p.tehniskoRiskuAnalize ?? "").trim() : "";
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
-  const planHtml = vis.irissInspection ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
+  // C33 (Business audits 23.11): Business / dīlera datu atskaitē nav ieteikumu - «Ieteikumi klātienes apskatei»
+  // (arī statiskais krāsas biezuma bloks) tur nedrukājas.
+  const dataOnly = isBusinessBrandReport(p) || isDealerOnlyReport(p);
+  const planHtml =
+    vis.irissInspection && !dataOnly ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
   return [
     techHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS, techHtml) : "",
     planHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION, planHtml) : "",
@@ -3049,6 +3089,8 @@ ${clientReportPageChromeCss(running)}
         color:#0f172a;
         font-weight:700;
       }
+      /* D41: «KAS TIKA PĀRBAUDĪTS» nepielīp «Kopā» rindai (.pdf-subhead pārrakstīja atstarpi). */
+      .pdf-provin-sources-wrap .pdf-sources-checked-label{margin:22px 0 8px;}
       .pdf-listing-analysis-root.pdf-surface-card{
         border:1px solid var(--pdf-line);border-radius:var(--pdf-radius-outer);
         box-shadow:var(--pdf-shadow);
@@ -3252,6 +3294,10 @@ ${sourceDotColorCss()}
       }
       .pdf-svc-year:first-child,
       .pdf-svc-span + .pdf-svc-year{margin-top:0;}
+      /* D36 (Business audits 23.11): dīlera vāks (SVG grafiks nedalās), kopsavilkuma režģis un grafiki nepārlūzt pāri lapām. */
+      .pdf-dealer-cover,.pdf-svc-summary,.pdf-mileage-chart-wrap,.pdf-src-mileage-spark,.pdf-dealer-vehicle-kv{
+        break-inside:avoid;page-break-inside:avoid;
+      }
       .pdf-svc-summary{
         display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
         margin:10px 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
@@ -3313,6 +3359,8 @@ ${sourceDotColorCss()}
       .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
       .pdf-svc-tag--record{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-tag--other{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0;}
+      .pdf-svc-tag-plus{font-size:10px;font-weight:700;color:#94a3b8;margin:0 -2px;}
       .pdf-svc-tag--accessories{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-km--nodata{color:#b91c1c;}
       .pdf-svc-box--hl{
@@ -3449,6 +3497,7 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-src-mileage-spark-svg{display:block;width:100%;max-width:none;height:auto;margin:0;}
+      .pdf-src-mileage-spark-svg .pdf-src-mileage-spark-year{font-size:6px;}
       .pdf-src-mileage-spark-ghost{
         stroke:#94A3B8;stroke-width:1.6;opacity:0.28;fill:none;stroke-linecap:round;stroke-linejoin:round;
       }
@@ -3776,7 +3825,7 @@ export function buildClientReportDocumentHtml(args: {
   lang?: ClientReportLang;
 }): string {
   const {
-    payload: p,
+    payload: rawPayload,
     dateFmt,
     lang = "lv",
     listingAnalysisPhotoDataUrls,
@@ -3787,6 +3836,16 @@ export function buildClientReportDocumentHtml(args: {
     sourceBlockPhotoDataUrls,
     printInk = false,
   } = args;
+  // Izsoļu pārdošanas rindām - noslēguma cena no izsoles ieraksta (nevis publiskā cena ar maksām).
+  const p: ClientReportPayload = rawPayload.ccVinBlock?.thecarapiRecords?.length
+    ? {
+        ...rawPayload,
+        ccVinBlock: {
+          ...rawPayload.ccVinBlock,
+          sales: salesWithAuctionFinalPrice(rawPayload.ccVinBlock.sales ?? [], rawPayload.ccVinBlock.thecarapiRecords),
+        },
+      }
+    : rawPayload;
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);

@@ -57,14 +57,17 @@ export async function requestEcsddPaidSmsLink(query: string, opts: { login?: boo
   }
 }
 
-/** Apmaksātā izziņa (jaunākā šim numuram, ne vecāka par `since`) -> teksts + CSDD lauki caur esošo CSDD parseri. */
-export async function fetchEcsddPaidReport(plate: string, since?: string): Promise<EcsddPaidReportResult> {
+/**
+ * Apmaksātā izziņa (jaunākā šim numuram, ne vecāka par `since`) -> teksts + CSDD lauki caur esošo CSDD parseri.
+ * `sendEmail`: pēc nolasīšanas relejs nospiež "Nosūtīt uz reģistrēto epastu" (bez maksas) - PDF nonāk info@provin.lv.
+ */
+export async function fetchEcsddPaidReport(plate: string, since?: string, opts: { sendEmail?: boolean } = {}): Promise<EcsddPaidReportResult> {
   const config = readEcsddRelayConfig();
   if (!config) return { status: "not_configured" };
   try {
     const { res, json } = await relayFetch(config, "/paid/report", {
       method: "POST",
-      body: { plate: normalizePlateNumber(plate), since: since ?? "" },
+      body: { plate: normalizePlateNumber(plate), since: since ?? "", ...(opts.sendEmail ? { sendEmail: true } : {}) },
       timeoutMs: RELAY_TIMEOUT_MS,
     });
     if (!res.ok) return { status: "error", code: str(json.error, 60) || `relay_${res.status}` };
@@ -79,6 +82,7 @@ export async function fetchEcsddPaidReport(plate: string, since?: string): Promi
         fields: parsed.fields,
         paidAt: str(json.paidAt, 40),
         plate: str(json.plate, 12),
+        ...(typeof json.emailSent === "boolean" ? { emailSent: json.emailSent } : {}),
       };
     }
     if (status === "needs_login") return { status: "needs_login", sessionState: parseSession(json.session)?.state };

@@ -174,7 +174,8 @@ describe("izsoļu arhīva fakti (v2)", () => {
   it("izsoles fakti: serviss, apskate, izcelsme, dokumenti; cenas tikai ar ķeksi", () => {
     const b = auctionArchiveLotFacts(bca);
     const kv = Object.fromEntries([...b.sale, ...b.condition].map((r) => [r.k, r.v]));
-    expect(kv["Izsoles laiks"]).toBe("19.10.2026 19:30 - 21.10.2026 12:00");
+    // batch_start_date bez zonas = portāla vietējais laiks (Vācija, +2 h oktobrī) → Rīgā 17:30.
+    expect(kv["Izsoles laiks"]).toBe("19.10.2026 17:30 - 21.10.2026 12:00");
     expect(kv["Pārdevējs"]).toBe("Alphabet");
     expect(kv["Auto izcelsme"]).toBe("Līzinga auto");
     expect(kv["Atslēgas"]).toBe("2");
@@ -184,7 +185,9 @@ describe("izsoļu arhīva fakti (v2)", () => {
     expect(kv["Auto atrašanās vieta"]).toBeUndefined();
     expect(b.prices).toEqual([]);
     const p = Object.fromEntries(auctionArchiveLotFacts(bca, { showPrices: true }).prices.map((r) => [r.k, r.v]));
-    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", "Noslēguma cena": "12 409,96 €", PVN: "Atskaitāms (22 %)" });
+    // current_final (publiskā cena) nozīme nav dokumentēta - klientam nerāda (Nils 23.11).
+    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", PVN: "Atskaitāms (22 %)" });
+    expect(p["Noslēguma cena"]).toBeUndefined();
     const o = auctionArchiveLotFacts(openlane);
     const okv = Object.fromEntries([...o.sale, ...o.condition].map((r) => [r.k, r.v]));
     expect(okv["Auto atrašanās vieta"]).toBe("Drizzona");
@@ -212,6 +215,26 @@ describe("izsoļu arhīva fakti (v2)", () => {
     expect(out.find((x) => x.text.startsWith("Atslēgu"))?.alert).toBe(true);
     const down = auctionArchiveKeyFindings([lot("A", 150000, 1), { ...lot("B", 120000, 1), date: "2026-11-01" }]);
     expect(down[0]).toMatchObject({ alert: true });
+  });
+
+  it("galvenie fakti: tikai fakti, bez ieteikumiem (Business / dīlera PDF)", () => {
+    const lot = (damageCount: number) => ({
+      platform: "Openlane",
+      date: "2026-10-01",
+      km: 210648,
+      damageCount,
+      facts: { ...auctionArchiveLotFacts(openlane), damagesDeclared: damageCount > 0 },
+    });
+    const texts = [
+      ...auctionArchiveKeyFindings([lot(0)]),
+      ...auctionArchiveKeyFindings([lot(1)]),
+      ...auctionArchiveKeyFindings([lot(3)]),
+      ...auctionArchiveKeyFindings([lot(0), { ...lot(0), km: 150000, date: "2026-11-01" }]),
+    ].map((x) => x.text);
+    expect(texts).toContain("Izsolēs bojājumi nav norādīti.");
+    expect(texts).toContain("Izsolēs norādīts 1 bojājums.");
+    expect(texts).toContain("Izsolēs norādīti 3 bojājumi.");
+    for (const t of texts) expect(t).not.toMatch(/vērtējiet|pārbaudiet|iesakām|ieteicam|skatīt/iu);
   });
 });
 
@@ -311,7 +334,7 @@ describe("izsoļu arhīva PDF HTML (katalogs, PROVIN PDF valoda)", () => {
       [{ zone: "Aizmugure", part: "Buferis", type: "Skrāpējums", size: "20-50 mm", quantity: "1", repair: "", notes: "" }],
       [{ auctionKey: "openlane:1", zone: "right", note: "pēdas durvīs" }],
     );
-    expect(html).toContain('<p class="pdf-subhead">Bojājumi · 1 bojājums</p>');
+    expect(html).toContain('<p class="pdf-subhead">Bojājumi un defekti · 1 bojājums</p>');
     expect(html).toContain("Skrāpējums · 20-50 mm");
     expect(html).toContain("Redzams bildē (PROVIN atzīme) · pēdas durvīs");
     expect(html).toContain("<svg");

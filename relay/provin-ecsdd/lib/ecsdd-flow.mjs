@@ -29,6 +29,7 @@ import {
   findPreparedFooter,
   findSmsHrefs,
   formatPaidReportPanels,
+  isPaidSendEmailControl,
   MOBINT_STUB_SCRIPT,
   PAID_REPORT_TITLES,
   paidReportLooksComplete,
@@ -751,7 +752,27 @@ export function createEcsddBrowser({
    * Jaunākā apmaksātā izziņa numuram `plate` (ne vecāka par `sinceIso`) -> pilns teksts CSDD blokam.
    * -> { status: "found", rawText, plate, paidAt } | pending | logged_out | no_button
    */
-  async function paidReport(plate, sinceIso = "") {
+  /**
+   * Izziņas lapā nospiež TIKAI "Nosūtīt uz reģistrēto epastu" (bez maksas, vienreiz). -> true, ja nospiests.
+   * Kļūda neietekmē izziņas teksta rezultātu.
+   */
+  async function pressSendToRegisteredEmail(page) {
+    const ctls = await page.evaluate(collectPaidControls);
+    const hits = ctls.filter((c) => isPaidSendEmailControl(c) && c.visible !== false);
+    if (hits.length !== 1) {
+      log(`paid-report: e-pasta poga ${hits.length ? "nav viennozīmīga" : "nav atrasta"}`);
+      return false;
+    }
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 20_000 }).catch(() => undefined),
+      page.locator(`[data-provin-ctl="${hits[0].i}"]`).first().click({ timeout: 10_000 }),
+    ]);
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+    log("paid-report: nospiests \"Nosūtīt uz reģistrēto epastu\"");
+    return true;
+  }
+
+  async function paidReport(plate, sinceIso = "", opts = {}) {
     return inModes("paid-report", async (page, mode) => {
       if ((await openHome(page)) === "logged_out") return { status: "logged_out" };
       if (!(await openPaidList(page))) {
@@ -814,7 +835,14 @@ export function createEcsddBrowser({
         throw new EcsddFlowError("page_changed", "maksas izziņa: neatpazīts saturs");
       }
       log(`paid-report: izziņa nolasīta (${mode}, ${rawText.length} zīmes)`);
-      return { status: "found", rawText, plate: hit.plate, paidAt: hit.paidAt };
+      let emailSent = false;
+      if (opts.sendEmail === true) {
+        emailSent = await pressSendToRegisteredEmail(page).catch((e) => {
+          log(`paid-report: e-pasta poga neizdevās (${e instanceof Error ? e.message.slice(0, 80) : "?"})`);
+          return false;
+        });
+      }
+      return { status: "found", rawText, plate: hit.plate, paidAt: hit.paidAt, ...(opts.sendEmail === true ? { emailSent } : {}) };
     });
   }
 

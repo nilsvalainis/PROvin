@@ -20,13 +20,16 @@ import { countryFromDealerName } from "@/lib/dealer-report-extract";
 import {
   buildDealerGapMarkerHtml,
   classifyDealerVisitKind,
+  classifyDealerVisitKinds,
   dealerPdfWorkLines,
   dealerVisitGapResolver,
   dealerVisitKindLabel,
   filterDealerPdfVisitRows,
   isDealerServiceGap,
+  type DealerVisitKind,
   type DealerVisitMajorMark,
 } from "@/lib/pdf-dealer-timeline";
+import { polishDealerWorkLinesLv } from "@/lib/dealer-work-lv-polish";
 import { inferServiceWorkCountries } from "@/lib/service-works-country";
 import { formatServiceWorksLines } from "@/lib/service-works-lines";
 import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
@@ -74,8 +77,22 @@ export function formatDealerServicePlace(
       place = raw.slice(0, lastComma).replace(/[,\s]+$/g, "").trim();
     }
   }
+  // Vieta ir tikai valsts nosaukums citā valodā („Germany” + „Vācija”) - dublēšana, rāda tikai valsti.
+  if (country && place && placeIsSameCountry(place, country, lang)) place = "";
   return { place, country };
 }
+
+/** Vai vietas teksts ir tikai tās pašas valsts nosaukums (jebkurā valodā), ne pilsēta / reģions / dīleris. */
+function placeIsSameCountry(place: string, country: string, lang: ClientReportLang): boolean {
+  const iso = countryLabelToIso2(place);
+  if (!iso || iso !== countryLabelToIso2(country)) return false;
+  // ASV štats / Kanādas province ir precīzāka vieta par valsti - to nenoņem.
+  if ((iso === "US" || iso === "CA") && !US_CA_COUNTRY_NAME_RE.test(place.trim())) return false;
+  return normalizeCountryName(place, lang).toLowerCase() === country.toLowerCase();
+}
+
+const US_CA_COUNTRY_NAME_RE =
+  /^(?:usa|us|u\.s\.a?\.?|united\s+states(?:\s+of\s+america)?|amerika|asv|canada|kan[āa]da)$/i;
 
 function workLines(raw: string, hideKeyReadLines: boolean): string[] {
   return dealerPdfWorkLines(formatServiceWorksLines(raw), { hideKeyReadLines })
@@ -84,7 +101,9 @@ function workLines(raw: string, hideKeyReadLines: boolean): string[] {
 }
 
 function visitWorksHtml(raw: string, hideKeyReadLines: boolean, lang: ClientReportLang): string {
-  const lines = workLines(raw, hideKeyReadLines);
+  const lines = polishDealerWorkLinesLv(workLines(raw, hideKeyReadLines), {
+    maintenanceVisit: classifyDealerVisitKind(raw) === "maintenance",
+  });
   if (lines.length === 0) {
     return `<p class="pdf-svc-empty">${escapeHtml(translateClientReportStatic(EMPTY_WORKS_NOTE, lang))}</p>`;
   }
@@ -108,8 +127,10 @@ function visitPlaceHtml(location: string, lang: ClientReportLang, inferredCountr
 }
 
 function visitKindTagHtml(works: string, lang: ClientReportLang): string {
-  const kind = classifyDealerVisitKind(works);
-  return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
+  const { primary, secondary } = classifyDealerVisitKinds(works);
+  const tag = (kind: DealerVisitKind) =>
+    `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
+  return secondary ? `${tag(primary)}<span class="pdf-svc-tag-plus">+</span>${tag(secondary)}` : tag(primary);
 }
 
 /** Lucide „triangle-alert” - bojājuma remonts. Inline SVG, lai PDF drukā vienādi (arī melnbaltā). */

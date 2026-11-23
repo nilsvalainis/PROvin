@@ -41,10 +41,37 @@ export const PDF_OIL_HATCH_CSS =
 
 export const OIL_CLAIM_CAUTION_TITLE = "Svarīga piezīme par apkopes datu interpretāciju";
 
-export function oilClaimCautionHtml(): string {
+export type OilClaimCautionOpts = {
+  /** Dīlera datu / Business PDF: bez ieteikumiem (Nils 22.11 - ieteikumi ir tikai AUDITS). */
+  omitRecommendation?: boolean;
+  /** Marka/modelis: Mercedes-Benz piemēru („Apkope A/B”) rāda tikai Mercedes auto. */
+  makeModel?: string;
+};
+
+const MERCEDES_MAKE_RE = /mercedes|\bbenz\b|\bmb\b/i;
+
+export function oilClaimCautionHtml(opts: OilClaimCautionOpts = {}): string {
   const p = (html: string) => `<p>${html}</p>`;
   const b = (label: string, body: string) =>
     p(`<b>${escapeHtml(label)}</b> ${escapeHtml(body)}`);
+  const mercedes = MERCEDES_MAKE_RE.test(opts.makeModel ?? "");
+  const generalVisits =
+    "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Ja ražotāja servisa veids pēc plāna neietver eļļas maiņu vai tas nav zināms, tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu - tas nav apgalvojums, ka eļļa nav mainīta. " +
+    (mercedes
+      ? "Ražotāja apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), tabulā skaitām."
+      : "Ražotāja plānotās apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu, tabulā skaitām.");
+  const recommendation = opts.omitRecommendation
+    ? ""
+    : `${p(escapeHtml("Rekomendācija pilnīgai pārbaudei."))}
+    ${p(
+      escapeHtml(
+        "Lai gūtu objektīvu priekšstatu par automašīnas faktisko tehnisko stāvokli un apkopes vēsturi, elektronisko atskaiti ieteicams kombinēt ar:",
+      ),
+    )}
+    <ul>
+      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čekiem no servisiem.")}</li>
+      <li>${escapeHtml("Pirmspirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
+    </ul>`;
   return `<aside class="pdf-oil-int__caution">
     <p class="pdf-oil-int__caution-title">${escapeHtml(OIL_CLAIM_CAUTION_TITLE)}</p>
     ${p(
@@ -61,24 +88,12 @@ export function oilClaimCautionHtml(): string {
       "Iztrūkstošas apkopes.",
       "Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.",
     )}
-    ${b(
-      "Vispārīgi apmeklējumi.",
-      "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Ja ražotāja servisa veids pēc plāna neietver eļļas maiņu vai tas nav zināms, tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu - tas nav apgalvojums, ka eļļa nav mainīta. Ražotāja apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), tabulā skaitām.",
-    )}
+    ${b("Vispārīgi apmeklējumi.", generalVisits)}
     ${b(
       "Secinājums.",
       "Ieraksta trūkums atskaitē norāda tikai uz oficiālu datu neesamību konkrētajā datubāzē, nevis uz faktisko servisa kavējumu.",
     )}
-    ${p(escapeHtml("Rekomendācija pilnīgai pārbaudei."))}
-    ${p(
-      escapeHtml(
-        "Lai gūtu objektīvu priekšstatu par spēkrata faktisko tehnisko stāvokli un apkopes vēsturi, elektronisko atskaiti ieteicams kombinēt ar:",
-      ),
-    )}
-    <ul>
-      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čekiem no servisiem.")}</li>
-      <li>${escapeHtml("Pirmspirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
-    </ul>
+    ${recommendation}
   </aside>`;
 }
 
@@ -271,8 +286,17 @@ export function isManufacturerOilServiceWork(works: string): boolean {
   return Boolean(folded) && MANUFACTURER_AB_OIL_SERVICE_RE.test(folded);
 }
 
+/**
+ * Stellantis (Peugeot / Citroën / Opel / Fiat) plānotā apkope „Travaux systématiques d'entretien” /
+ * „Systematische Wartungsarbeiten” / LV „Sistemātiskie apkopes darbi” pēc ražotāja plāna ietver
+ * dzinēja eļļas un eļļas filtra maiņu - skaitām kā eļļas maiņu (kā Mercedes „Apkope A/B”; audits 23.11).
+ */
+const STELLANTIS_SYSTEMATIC_SERVICE_RE =
+  /travaux\s+systematiques?|systematische\s+wartungsarbeit\w*|sistematisk\w*\s+(?:tehniskas\s+)?apkopes\s+darb\w*|systematic\s+maintenance\s+work\w*/u;
+
 function engineOilSignalInFolded(folded: string): boolean {
   if (!folded) return false;
+  if (STELLANTIS_SYSTEMATIC_SERVICE_RE.test(folded)) return true;
   if (ENGINE_OIL_NAME_RE.test(folded)) return true;
   if (MANUFACTURER_AB_OIL_SERVICE_RE.test(folded)) return true;
   if (ENGINE_OIL_FILTER_RE.test(folded)) return true;
@@ -726,7 +750,10 @@ function kpiValue(raw: string): string {
 }
 
 /** PDF: KPI, nobraukuma segums, tabula ar joslām pret OEM. */
-export function buildOilChangeIntervalPdfHtml(series: OilChangeIntervalSeries): string {
+export function buildOilChangeIntervalPdfHtml(
+  series: OilChangeIntervalSeries,
+  cautionOpts: OilClaimCautionOpts = {},
+): string {
   if (series.points.length === 0) return "";
   const avgKm =
     series.ringIntervalKm != null ? `${groupDigits(series.ringIntervalKm)} km` : "Nav";
@@ -758,6 +785,6 @@ export function buildOilChangeIntervalPdfHtml(series: OilChangeIntervalSeries): 
       <thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th>Periods</th><th>Pret ražotāja intervālu</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${oilClaimCautionHtml()}
+    ${oilClaimCautionHtml(cautionOpts)}
   </div>`;
 }

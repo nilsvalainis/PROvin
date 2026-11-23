@@ -9,6 +9,7 @@ import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AI_ADMIN_MODEL_TIER_DEFAULT } from "@/lib/ai-admin-model-tier";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { repairDealerImportText } from "@/lib/dealer-text-repair";
+import { DEALER_WORK_LV_STYLE_RULES } from "@/lib/dealer-work-lv-polish";
 import {
   countUntranslatedDealerWorkRows,
   dealerWorkRowNeedsLvTranslation,
@@ -47,6 +48,7 @@ RULES:
   „Keilrippenriemen” = „Ķīļrievu siksna”; „Exhaust gas radiator / exhaust cooler / AGR-Kühler” = „EGR dzesētājs”; „Grundierfüller / primer / primed” = „Grunts pildviela / gruntēts” (paint material).
 - Keep one item per line exactly as in the source: never split one item at a comma inside parentheses or inside the item name (e.g. „Brake fluid DOT4, low viscosity” is ONE item: „Bremžu šķidrums DOT4, zemas viskozitātes”).
 - A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
+${DEALER_WORK_LV_STYLE_RULES}
 - Dates and odometer values stay exactly as given.
 - No markdown. No em dash. No EUR repair estimates.
 - Latvian, client-readable, compact.
@@ -165,6 +167,7 @@ RULES:
   „Keilrippenriemen” = „Ķīļrievu siksna”; „Exhaust gas radiator / exhaust cooler / AGR-Kühler” = „EGR dzesētājs”; „Grundierfüller / primer / primed” = „Grunts pildviela / gruntēts” (paint material).
 - Keep one item per line exactly as in the source: never split one item at a comma inside parentheses or inside the item name (e.g. „Brake fluid DOT4, low viscosity” is ONE item: „Bremžu šķidrums DOT4, zemas viskozitātes”).
 - A part / position name without an action verb stays a name (no „nomainīts”, „pārbaudīts”).
+${DEALER_WORK_LV_STYLE_RULES}
 - No markdown. No em dash. No EUR.
 - Latvian, client-readable, compact.
 - ${UNTRUSTED_DATA_RULE}`;

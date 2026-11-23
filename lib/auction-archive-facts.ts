@@ -10,6 +10,7 @@
  * skaita pārbaude) un padod atpakaļ `translations` kartē.
  */
 import { countryName, equipmentCategory, EQUIPMENT_CATEGORY_ORDER, normKey, translateEquipment } from "@/lib/thecarapi-i18n-lv";
+import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export type ArchiveKv = { k: string; v: string; missing?: boolean; alert?: boolean };
@@ -117,11 +118,30 @@ const RIGA = new Intl.DateTimeFormat("lv-LV", {
   hourCycle: "h23",
 });
 
-/** Izsoles laiks Rīgas laikā. Avota laiks bez zonas TheCarApi ir UTC. */
-export function archiveDateTime(raw: string): string {
+/** Laika joslas nobīde ms konkrētā brīdī (piem. Europe/Berlin vasarā = +2 h). */
+function zoneOffsetMs(utcMs: number, timeZone: string): number {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date(utcMs))
+      .map((x) => [x.type, x.value]),
+  );
+  return Date.UTC(+p.year!, +p.month! - 1, +p.day!, +p.hour!, +p.minute!, +p.second!) - utcMs;
+}
+
+/**
+ * Izsoles laiks Rīgas laikā. Avota laiks bez zonas TheCarApi ir UTC, ja vien nav norādīta portāla vietējā josla
+ * (`localZone`). «…T00:00:00» bez zonas ir tikai datums - laiku nerāda.
+ */
+export function archiveDateTime(raw: string, localZone?: string): string {
   const s = raw.trim();
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return archiveDay(s);
-  const iso = /(Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`;
+  const zoned = /(Z|[+-]\d{2}:?\d{2})$/.test(s);
+  if (!zoned && /T00:00(:00(\.0+)?)?$/.test(s)) return archiveDay(s);
+  let iso = zoned ? s : `${s}Z`;
+  if (!zoned && localZone) {
+    const asUtc = new Date(iso).getTime();
+    if (Number.isFinite(asUtc)) iso = new Date(asUtc - zoneOffsetMs(asUtc, localZone)).toISOString();
+  }
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return archiveDay(s);
   const p = Object.fromEntries(RIGA.formatToParts(d).map((x) => [x.type, x.value]));
@@ -156,6 +176,9 @@ const BODY_LV: Record<string, string> = {
   minivan: "Minivens",
   van: "Furgons",
   pickup: "Pikaps",
+  lighttruck: "Vieglais kravas furgons",
+  lightcommercial: "Vieglais kravas furgons",
+  lcv: "Vieglais kravas furgons",
 };
 
 const COLOR_LV: Record<string, string> = {
@@ -502,10 +525,12 @@ export function auctionArchiveVehicleRows(records: readonly ThecarapiAdminRecord
   const fuelRaw = pickNewest(records, (g) => g.exact("fuel_group", "car_identification.FuelTypeEn") || g.tail("fuel", "fueltype", "fuelraw"));
   const fuel = lookup(FUEL_LV, fuelRaw) || "";
   const engineType = pickNewest(records, (g) => g.exact("clean_type", "car_identification.EngineDescription"));
+  // «2.0» u.tml. ir tikai tilpums - jau parādīts litros; dublikātu nerāda.
+  const engineTypeShown = engineType && !/^\d[.,]\d$/.test(engineType.trim()) ? engineType : "";
   const engine = [
     cc && cc > 400 ? `${(cc / 1000).toFixed(1).replace(".", ",")} l (${fmtInt(cc)} cm³)` : "",
     fuel,
-    engineType ? engineType : "",
+    engineTypeShown,
   ].filter(Boolean);
   push("Dzinējs", engine.join(", "));
   const kw = num(pickNewest(records, (g) => g.exact("kw") || g.tail("kw", "powerkw")));
@@ -514,13 +539,19 @@ export function auctionArchiveVehicleRows(records: readonly ThecarapiAdminRecord
   const gears = pickNewest(records, (g) => g.tail("numberofgears", "gears"));
   const gbRaw = pickNewest(records, (g) => g.exact("gearbox_group") || g.tail("transmissionen", "gearbox", "transmission"));
   push("Ātrumkārba", gearboxLv(gbRaw, `${version} ${allVersions}`, gears));
-  push("Piedziņa", cap(pickNewest(records, (g) => lookup(DRIVE_LV, g.tail("drive", "drivetrain", "drivetype")))));
+  const drive = cap(pickNewest(records, (g) => lookup(DRIVE_LV, g.tail("drive", "drivetrain", "drivetype"))));
+  const awd = yesNo(pickNewest(records, (g) => g.tail("isfourwheeldrive")));
+  push("Piedziņa", drive || (awd === true ? "Pilnpiedziņa" : awd === false ? "Viena ass (nav pilnpiedziņas)" : ""));
   const colorRaw = pickNewest(records, (g) => g.tail("coloren", "color", "bodycolor", "colour"));
   const colorType = pickNewest(records, (g) => g.tail("colortype", "painttype"));
   const color = lookup(COLOR_LV, colorRaw);
   push("Krāsa", color ? cap([color, /metal/i.test(colorType) ? "metālika" : /pearl|perl/i.test(colorType) ? "pērļu" : ""].filter(Boolean).join(", ")) : "");
   const co2 = num(pickNewest(records, (g) => g.exact("co2") || g.tail("co2")) || (/(\d{2,3})/.exec(pickNewest(records, (g) => g.tail("emissionclass")))?.[1] ?? ""));
   push("CO₂ izmeši", co2 ? `${fmtInt(co2)} g/km` : "");
+  const euro = /(?:EU|Euro)\s*-?\s*(\d)\s*([a-z]{0,4})/i.exec(pickNewest(records, (g) => g.exact("effluent_standard_group_search") || g.tail("effluentstandard", "euronorm", "emissionstandard")));
+  push("Emisiju standarts", euro ? `Euro ${euro[1]}${euro[2] ? euro[2].toUpperCase() : ""}` : "");
+  const steering = pickNewest(records, (g) => g.exact("steering") || g.tail("steeringside"));
+  push("Stūre", /^l(eft|hd)?$/i.test(steering) ? "Kreisajā pusē" : /^r(ight|hd)?$/i.test(steering) ? "Labajā pusē" : "");
   const regCountry = pickNewest(records, (g) => g.exact("country_code", "car_country_extended") || g.tail("registrationcountry"));
   push("Reģistrācijas valsts", archiveCountry(regCountry));
   return rows;
@@ -588,6 +619,31 @@ function reportLv(raw: string): string {
   return "";
 }
 
+/**
+ * Openlane «CountryMessages» - anketas jautājums (`description`) + atbilde (`value`) ar mašīnlasāmu `name`.
+ * PDF rāda tikai atbildi kā datu rindu; jautājumu bez atbildes nerāda (Nils 23.11).
+ */
+export function archiveCountryMessages(r: ThecarapiAdminRecord): Map<string, string> {
+  const names = new Map<string, string>();
+  const values = new Map<string, string>();
+  for (const f of r.fields) {
+    const m = /CountryMessages\[(\d+)\]\.(name|value)$/.exec(f.key);
+    if (!m) continue;
+    const v = clean(f.value);
+    if (!v) continue;
+    (m[2] === "name" ? names : values).set(m[1]!, v);
+  }
+  const out = new Map<string, string>();
+  for (const [i, name] of names) {
+    const v = values.get(i);
+    const k = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (v && !out.has(k)) out.set(k, v);
+  }
+  return out;
+}
+
+const DAMAGE_STATE_LV: Record<string, string> = { normal: "Normāls", good: "Labs", damaged: "Bojāts", heavydamage: "Smagi bojāts" };
+
 export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPrices?: boolean } = {}): ArchiveLotFacts {
   const g = archiveFieldGetter(r);
   const country = archiveCountry(g.exact("country_code", "car_country_extended", "car_identification.BCAListing.country") || g.tail("locationcountry", "country"));
@@ -596,10 +652,13 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   const lotNo = g.exact("auction_id", "source_auction_id", "vehicle_id");
 
   const sale: ArchiveKv[] = [];
-  const start = g.exact("batch_start_date", "car_identification.BCAListing.start_at") || g.tail("startat");
-  const end = g.exact("auction_end_at", "car_identification.BCAListing.end_at", "batch_end_date") || g.tail("endat", "lotendat");
-  const startS = start ? archiveDateTime(start) : "";
-  const endS = end ? archiveDateTime(end) : "";
+  // Openlane `batch_*` laiki ir bez zonas, bet portāla vietējā laikā (Vācija): `batch_end_date` 12:51 = `auction_end_at` 10:51Z.
+  const batchStart = g.exact("batch_start_date");
+  const start = g.exact("car_identification.BCAListing.start_at") || g.tail("startat");
+  const end = g.exact("auction_end_at", "car_identification.BCAListing.end_at") || g.tail("endat", "lotendat");
+  const batchEnd = g.exact("batch_end_date");
+  const startS = start ? archiveDateTime(start) : batchStart ? archiveDateTime(batchStart, "Europe/Berlin") : "";
+  const endS = end ? archiveDateTime(end) : batchEnd ? archiveDateTime(batchEnd, "Europe/Berlin") : "";
   if (startS && endS && startS !== endS) sale.push({ k: "Izsoles laiks", v: `${startS} - ${endS}` });
   else if (endS) sale.push({ k: "Izsoles beigas", v: endS });
   // Valsts ir izsoles virsrakstā - rindu rāda tikai ar konkrētu vietu.
@@ -608,11 +667,56 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   if (seller && !/^\d+$/.test(seller)) sale.push({ k: "Pārdevējs", v: seller });
   const origin = lookup(ORIGIN_LV, g.tail("vehiclesource", "origin", "sellertype"));
   if (origin) sale.push({ k: "Auto izcelsme", v: cap(origin) });
+  const sellerCity = g.tail("sellermainaddressmunicipality");
+  if (sellerCity && sellerCity.toLowerCase() !== location.toLowerCase()) sale.push({ k: "Pārdevēja atrašanās vieta", v: [sellerCity, country].filter(Boolean).join(", ") });
+  const score = num(g.tail("globalscore") || g.exact("seller_score"));
+  if (score != null && score > 0 && score <= 5) sale.push({ k: "Pārdevēja vērtējums", v: `${String(score).replace(".", ",")} no 5` });
+  const asDescribed = num(g.tail("vehicleasdescribed"));
+  if (asDescribed != null && asDescribed > 0 && asDescribed <= 5) sale.push({ k: "Auto atbilst aprakstam (pircēju vērtējums)", v: `${asDescribed} no 5` });
+  const msgs = archiveCountryMessages(r);
+  const delay = msgs.get("deliverydelay");
+  if (delay && /^\d{1,3}(\s*-\s*\d{1,3})?$/.test(delay)) sale.push({ k: "Piegādes laiks pēc izsoles", v: `${delay.replace(/\s+/g, "")} dienas` });
+  const firstSeen = g.exact("first_seen_at");
+  if (firstSeen) sale.push({ k: "Pirmoreiz fiksēts arhīvā", v: archiveDateTime(firstSeen) });
+  const lastAvail = g.exact("last_available_at", "last_seen_at");
+  if (lastAvail && archiveDateTime(lastAvail) !== archiveDateTime(firstSeen)) sale.push({ k: "Pēdējoreiz redzēts portālā", v: archiveDateTime(lastAvail) });
+  const views = num(g.tail("nbrviews"));
+  if (views != null && views > 0) sale.push({ k: "Skatījumi izsolē", v: fmtInt(views) });
   if (lotNo) sale.push({ k: "Izsoles Nr.", v: lotNo });
 
   const condition: ArchiveKv[] = [];
   const keys = num(g.tail("numberofkeys", "keys"));
   if (keys != null) condition.push({ k: "Atslēgas", v: String(keys) });
+  const driving = yesNo(g.tail("isdriving"));
+  if (driving != null) condition.push({ k: "Auto brauc", v: driving ? "Jā" : "Nē", alert: !driving });
+  const dmgState = DAMAGE_STATE_LV[g.exact("public_damage_state").toLowerCase().replace(/[^a-z]/g, "")];
+  if (dmgState) condition.push({ k: "Virsbūves stāvoklis (izsoles vērtējums)", v: dmgState, alert: /Bojāts/.test(dmgState) });
+  const dmgFlag = yesNo(g.tail("hasdamages"));
+  if (dmgFlag != null) condition.push({ k: "Bojājumi izsoles datos", v: dmgFlag ? "Norādīti" : "Nav norādīti", alert: dmgFlag });
+  // Citu platformu stāvokļa lauki (Copart, BCA, Openlane v1, AUTO1) - avota teksts, bez interpretācijas.
+  const primaryDmg = g.tail("primarydamage");
+  if (primaryDmg) condition.push({ k: "Galvenais bojājums", v: cap(primaryDmg.toLowerCase()), alert: true });
+  const secondaryDmg = g.tail("secondarydamage");
+  if (secondaryDmg) condition.push({ k: "Papildu bojājums", v: cap(secondaryDmg.toLowerCase()), alert: true });
+  const runDrive = yesNo(g.tail("runanddrive", "rundrive"));
+  if (runDrive != null) condition.push({ k: "Iedarbojas un brauc", v: runDrive ? "Jā" : "Nē", alert: !runDrive });
+  const title = g.tail("titletype", "saletitle");
+  if (title) condition.push({ k: "Dokumentu statuss (izsoles dati)", v: title, alert: /salvage|avārij|damage|parts/i.test(title) });
+  const isDamaged = yesNo(g.tail("isdamaged"));
+  if (isDamaged === true && dmgFlag !== true) condition.push({ k: "Bojājumi izsoles datos", v: "Norādīti", alert: true });
+  const techIssues = yesNo(g.tail("hastechnicalissues"));
+  const techText = g.tail("technicalissues");
+  if (techText && !/^(jā|nē|yes|no|true|false)$/i.test(techText)) condition.push({ k: "Tehniskas problēmas", v: techText, alert: true });
+  else if (techIssues != null) condition.push({ k: "Tehniskas problēmas", v: techIssues ? "Norādītas" : "Nav norādītas", alert: techIssues });
+  const grade = g.tail("conditiongrade");
+  if (grade) condition.push({ k: "Stāvokļa vērtējums (izsoles skala)", v: grade });
+  const accidents = g.tail("accidents", "hadaccident");
+  const accYn = yesNo(accidents);
+  if (accYn != null) condition.push({ k: "Negadījumi (pārdevēja dati)", v: accYn ? "Bija" : "Nav norādīti", alert: accYn });
+  const nonSmoker = yesNo(g.tail("nonsmoker"));
+  if (nonSmoker != null) condition.push({ k: "Nesmēķētāja auto", v: nonSmoker ? "Jā" : "Nē" });
+  const extraWheels = yesNo(g.tail("hasextrawheelsset"));
+  if (extraWheels != null) condition.push({ k: "Otrs riepu komplekts", v: extraWheels ? "Ir" : "Nav" });
   const svcPresent = yesNo(g.tail("servicehistorypresent"));
   const maint = yesNo(g.tail("hasmaintenancerecord"));
   const logBook = yesNo(g.tail("logbookpresent", "servicebook"));
@@ -620,9 +724,10 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   const svcKm = num(g.tail("lasthistoryserviceodometer", "lastservicemileage", "lastserviceodometer"));
   const svcAny = svcPresent ?? maint;
   if (svcAny != null || logBook != null) {
+    // Attiecas tikai uz izsoles pārdevēja dokumentiem - ne uz dīlera vēsturi (audits 23.11, p. 30).
     const parts = [svcAny === true || logBook === true ? "ir" : "nav norādīta"];
     if (logBook === true) parts.push("servisa grāmata ir");
-    condition.push({ k: "Servisa vēsture", v: cap(parts.join(", ")) });
+    condition.push({ k: "Servisa vēsture izsolē", v: cap(parts.join(", ")) });
   }
   if (svcDate || svcKm) condition.push({ k: "Pēdējais serviss", v: [svcDate, svcKm ? `${fmtInt(svcKm)} km` : ""].filter(Boolean).join(", ") });
   const mot = archiveDay(g.tail("motdate", "nextinspection", "inspectiondue"));
@@ -638,10 +743,16 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
   if (broken === true) condition.push({ k: "Nav braucams", v: "Jā (pēc izsoles datiem)", alert: true });
   const reimp = yesNo(g.tail("iscarreimported", "imported"));
   if (reimp != null) condition.push({ k: "Ievests no citas valsts", v: reimp ? "Jā" : "Nē" });
-  const regDocs = num(g.tail("registrationdocsavailable"));
-  if (regDocs != null) condition.push({ k: "Reģistrācijas dokumenti", v: regDocs > 0 ? "Ir" : "Nav", alert: regDocs === 0 });
-  const coc = num(g.tail("cocavailable"));
-  if (coc != null) condition.push({ k: "COC atbilstības sertifikāts", v: coc > 0 ? "Ir" : "Nav" });
+  // Dokumenti: tikai skaidra anketas atbilde (Openlane skaitliskie kodi «2» ir pretrunīgi - COC «2» ar atbildi «NO»,
+  // reģ. dokumenti «2» ar atbildi «Yes»), tāpēc kodus neinterpretē.
+  // Kods «0» = nav (vienīgais viennozīmīgais); citus kodus neinterpretē.
+  const zeroCode = (raw: string): boolean | null => (num(raw) === 0 ? false : null);
+  const regDocs = yesNo(msgs.get("isregdocavailable") ?? "") ?? zeroCode(g.tail("registrationdocsavailable"));
+  if (regDocs != null) condition.push({ k: "Reģistrācijas dokumenti", v: regDocs ? "Ir" : "Nav", alert: !regDocs });
+  const coc = yesNo(msgs.get("iscocavailable") ?? "") ?? zeroCode(g.tail("cocavailable"));
+  if (coc != null) condition.push({ k: "COC atbilstības sertifikāts", v: coc ? "Ir" : "Nav" });
+  const docsWithCar = yesNo(msgs.get("isdocdeliverywithcar") ?? "");
+  if (docsWithCar != null) condition.push({ k: "Dokumenti tiek nodoti kopā ar auto", v: docsWithCar ? "Jā" : "Nē" });
   const reports = new Set<string>();
   for (const f of r.fields) {
     if (/(reports|inspection_?reports|InspectionReports|Documents|documents)\[\d+\]\.(title|type|label)$/.test(f.key)) {
@@ -659,12 +770,16 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
     };
     const startP = eur("start_price", "car_identification.BCAListing.starting_bid");
     const reserve = eur("car_identification.BCAListing.reserve_price", "reserve_price");
+    const sp = thecarapiSalePriceFromFields(r.fields);
     const lastBid = eur("current_price");
-    const final = eur("current_final", "final_price", "public_price_eur");
     if (startP) prices.push({ k: "Sākuma cena", v: fmtEur(startP) });
     if (reserve) prices.push({ k: "Minimālā (rezerves) cena", v: fmtEur(reserve) });
-    if (lastBid) prices.push({ k: "Pēdējais solījums", v: fmtEur(lastBid) });
-    if (final) prices.push({ k: "Noslēguma cena", v: fmtEur(final) });
+    // Pēdējais solījums tikai, ja tas atšķiras no noslēguma cenas (citādi tas pats skaitlis divreiz).
+    if (lastBid && (sp.eur == null || Math.round(lastBid) !== Math.round(sp.eur))) prices.push({ k: "Pēdējais solījums", v: fmtEur(lastBid) });
+    // Etiķete pēc lauka nozīmes (final_price = pēdējais solījums → «Pēdējais solījums»), sk. thecarapi-sale-price.ts.
+    if (sp.eur != null) prices.push({ k: sp.label, v: fmtEur(sp.eur) });
+    const estimate = eur("estimated_value_eur");
+    if (estimate) prices.push({ k: "Portāla aplēstā vērtība (nav pirkšanas cena)", v: fmtEur(estimate) });
     const buyerFee = num(g.tail("buyerfeenet"));
     if (buyerFee) prices.push({ k: "Pircēja komisija", v: `${fmtEur(buyerFee)} + PVN` });
     const exportFee = num(g.tail("exportfeenet"));
@@ -693,7 +808,7 @@ export function auctionArchiveKeyFindings(
     const decreasing = kms.some((k, i) => i > 0 && k < kms[i - 1]!);
     if (new Set(kms).size === 1) out.push({ text: `Nobraukums visās izsolēs vienāds - ${fmtInt(kms[0]!)} km.` });
     else if (decreasing)
-      out.push({ text: `Nobraukums vēlākā izsolē ir MAZĀKS nekā agrākā (${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}) - pārbaudiet odometru.`, alert: true });
+      out.push({ text: `Nobraukums vēlākā izsolē ir MAZĀKS nekā agrākā (${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}).`, alert: true });
     else out.push({ text: `Nobraukums pieaug hronoloģiski: ${kms.map((k) => `${fmtInt(k)} km`).join(" → ")}.` });
   } else if (withKm.length === 1) {
     out.push({ text: `Nobraukums izsolē (${withKm[0]!.platform}, ${archiveDay(withKm[0]!.date)}): ${fmtInt(withKm[0]!.km!)} km.` });
@@ -708,9 +823,10 @@ export function auctionArchiveKeyFindings(
     out.push({ text: `Atslēgu skaits izsolēs atšķiras: ${keyed.map((l) => `${l.platform} - ${l.facts.keys}`).join(", ")}.`, alert: true });
   }
   const dmg = lots.reduce((s, l) => s + l.damageCount, 0);
-  if (dmg > 0) out.push({ text: `Izsolēs norādīti ${dmg} bojājumi - skatīt bojājumu kartītes un bildes.`, alert: true });
+  // Tikai fakti (bez ieteikumiem «vērtējiet / pārbaudiet») - bloks tiek drukāts arī Business / dīlera PDF.
+  if (dmg > 0) out.push({ text: dmg === 1 ? "Izsolēs norādīts 1 bojājums." : `Izsolēs norādīti ${dmg} bojājumi.`, alert: true });
   else if (lots.length && lots.every((l) => l.facts.damagesDeclared !== true))
-    out.push({ text: "Neviena izsole bojājumus nenorādīja. Virsbūves stāvokli vērtējiet pēc bildēm." });
+    out.push({ text: "Izsolēs bojājumi nav norādīti." });
   const svc = lots.find((l) => l.facts.lastServiceKm != null && l.km != null);
   if (svc && svc.km! >= svc.facts.lastServiceKm!) {
     out.push({ text: `Pēdējais serviss (${svc.platform} dati) ${fmtInt(svc.km! - svc.facts.lastServiceKm!)} km pirms izsoles.` });

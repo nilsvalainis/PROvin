@@ -62,6 +62,22 @@ export function purchaseCarVerticalReport(req: CarVerticalPurchaseRequest): CarV
   return { ok: true, mode: "manual_browser", href, vin };
 }
 
+export type CarVerticalBackgroundPurchaseAuth =
+  | { ok: true; vin: string }
+  | { ok: false; code: "invalid_vin" | "missing_confirm" };
+
+/**
+ * Fona pirkums (Hetzner relejs, ar kredītu): tā pati aizsardzība kā `purchaseCarVerticalReport` -
+ * bez `explicitOperatorConfirm: true` (admin poga + apstiprinājuma dialogs) pirkums netiek sākts.
+ * Automātiskās plūsmas (CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES) šo funkciju nedrīkst sasniegt.
+ */
+export function authorizeCarVerticalBackgroundPurchase(req: CarVerticalPurchaseRequest): CarVerticalBackgroundPurchaseAuth {
+  if (req.explicitOperatorConfirm !== true) return { ok: false, code: "missing_confirm" };
+  const vin = normalizeVin(req.vin);
+  if (!isValidVin(vin)) return { ok: false, code: "invalid_vin" };
+  return { ok: true, vin };
+}
+
 /** Jauna karte / abonements: nekad nespied, arī pēc apstiprinājuma. */
 export const CARVERTICAL_NEVER_CLICK_RE =
   /pievienot kart|add (a )?(new )?card|card number|kartes numur|new payment method|jaunu kart|enter card|\bcvv\b|\bcvc\b|subscribe|abon[eē]t|newsletter/i;

@@ -112,7 +112,7 @@ describe("PDF dīlera servisa vizītes", () => {
       },
     ]);
     expect(html).toContain("Eļļas filtru maiņa");
-    expect(html).toContain("Aizmugurējo bremžu nomaiņa");
+    expect(html).toContain("Aizmugurējo bremžu maiņa");
     expect(html).not.toMatch(/eVHCE|1820000 Km|Eļļas un eļļas filtra maiņa/);
   });
 

@@ -171,8 +171,8 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
 export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: string; abbrev: string }> = {
   csdd: { full: "CSDD", abbrev: "CSDD" },
   autodna: { full: "AutoDNA", abbrev: "DNA" },
-  carvertical: { full: "carVertical", abbrev: "CV" },
-  dealer: { full: "DĪLERA DATI", abbrev: "DEALER" },
+  carvertical: { full: "CarVertical", abbrev: "CV" },
+  dealer: { full: SOURCE_BLOCK_LABELS.auto_records, abbrev: "DEALER" },
   tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
   finnik: { full: SOURCE_BLOCK_LABELS.finnik, abbrev: "NL" },
   ee: { full: "Igaunijas reģistri", abbrev: "EE" },

@@ -22,13 +22,38 @@ export function pdfCustomerNameLooksLikeCompany(name: string): boolean {
   return false;
 }
 
+function titleCaseWord(w: string): string {
+  if (w.length < 2 || w !== w.toLocaleUpperCase("lv") || !/\p{L}{2}/u.test(w)) return w;
+  return w
+    .split("-")
+    .map((part) => part.charAt(0).toLocaleUpperCase("lv") + part.slice(1).toLocaleLowerCase("lv"))
+    .join("-");
+}
+
+/**
+ * D44 (Business audits 23.11): privātpersonas vārds PDF - «J.KALNIŅŠ» -> «J. Kalniņš» (atstarpe pēc iniciāļa,
+ * lielie burti tikai sākumā). Uzņēmumu nosaukumus nemaina.
+ */
+export function formatPdfCustomerFullName(name: string): string {
+  const t = name.replace(/\s+/g, " ").trim();
+  if (!t || pdfCustomerNameLooksLikeCompany(t)) return t;
+  return t
+    .replace(/^(\p{L})\.(?=\p{L})/u, "$1. ")
+    .split(" ")
+    .map(titleCaseWord)
+    .join(" ");
+}
+
 /** Privātpersona: pirmais vārds + uzvārda iniciālis. Uzņēmums: pilns nosaukums. */
 export function formatPdfPreparedByName(name: string): string {
-  const t = name.replace(/\s+/g, " ").trim();
-  if (!t) return "";
-  if (pdfCustomerNameLooksLikeCompany(t)) return t;
+  const raw = name.replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  if (pdfCustomerNameLooksLikeCompany(raw)) return raw;
+  const t = formatPdfCustomerFullName(raw);
   const parts = t.split(" ").filter(Boolean);
   if (parts.length === 1) return parts[0]!;
+  // Vārds jau ir tikai iniciālis («J. Kalniņš») - uzvārda iniciālis neko neizsaka, rāda abus.
+  if (/^\p{L}\.$/u.test(parts[0]!)) return t;
   const first = parts[0]!;
   const last = parts[parts.length - 1]!;
   const initial = last.charAt(0).toLocaleUpperCase("lv");

@@ -10,7 +10,8 @@ export const maxDuration = 60;
 
 /**
  * Admin: apmaksātā CSDD maksas izziņa (e.csdd "Apmaksātās izziņas") -> teksts + CSDD lauki (esošais CSDD parsers).
- * `{ plate, since }`: jaunākā izziņa šim numuram, kas apmaksāta pēc `since`. Relejs nespiež "Nosūtīt uz e-pastu".
+ * `{ plate, since }`: jaunākā izziņa šim numuram, kas apmaksāta pēc `since`. Kad atrasta, relejs nospiež
+ * "Nosūtīt uz reģistrēto epastu" (bez maksas; PDF arhīvam info@provin.lv -> Apps Script -> pasūtījuma Dropbox mape).
  */
 export async function POST(req: Request) {
   if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -23,6 +24,6 @@ export async function POST(req: Request) {
   const plate = typeof body.plate === "string" ? body.plate : "";
   if (!isEcsddPlate(plate)) return NextResponse.json({ status: "error", code: "invalid_plate" }, { status: 400 });
   const since = typeof body.since === "string" && !Number.isNaN(Date.parse(body.since)) ? body.since : undefined;
-  const out = await fetchEcsddPaidReport(plate, since);
+  const out = await fetchEcsddPaidReport(plate, since, { sendEmail: true });
   return NextResponse.json(out, { status: out.status === "error" || out.status === "unreachable" ? 502 : 200 });
 }

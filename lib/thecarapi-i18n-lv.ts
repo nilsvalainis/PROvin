@@ -683,7 +683,7 @@ const KEY_LABELS: Record<string, string> = {
   cocavailable: "COC dokuments",
   registrationdocsavailable: "Reģistrācijas dokumenti",
   isv5present: "V5 dokuments",
-  licenseplate: "Numurzīmes",
+  licenseplate: "Numura zīme",
   paperwork: "Dokumenti",
   inspectionreports: "Pārbaudes atskaites",
   carreports: "Auto atskaites",

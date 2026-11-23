@@ -25,6 +25,12 @@ import {
   parseAtraManualOrderBody,
 } from "@/lib/atra-parbaude-manual-order";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
+import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
+
+/** Dropbox pasūtījuma mape (AUDITI) uzreiz pēc izveides; kļūda pasūtījumu neaptur. */
+function dropboxFolderAfter(orderId: string, vin: string | null | undefined) {
+  after(() => ensureOrderDropboxFolderSafe(orderId, { category: "audits", createdMs: Date.now(), vin: vin ?? null }));
+}
 
 export const runtime = "nodejs";
 
@@ -73,6 +79,7 @@ export async function POST(req: Request) {
         });
       }
       const vin = parsed.input.vinScan.vin;
+      dropboxFolderAfter(orderId, vin);
       after(() =>
         runOrderFreeVinScan(orderId, { vin, listingUrl: null }).then(
           (r) => console.info("[manual-orders] free VIN SCAN", { orderId, ...r }),
@@ -100,6 +107,7 @@ export async function POST(req: Request) {
           console.error("[dealer-check] convert", err);
         });
       }
+      dropboxFolderAfter(created.orderId, parsed.input.vin);
       return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
     if (body && typeof body === "object" && "vin" in (body as Record<string, unknown>)) {
@@ -111,6 +119,7 @@ export async function POST(req: Request) {
       if (!created.ok) {
         return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
       }
+      dropboxFolderAfter(created.orderId, input.vin);
       after(() =>
         runOrderFreeVinScan(created.orderId, { vin: input.vin, listingUrl: null }).then(
           (r) => console.info("[manual-orders] free VIN SCAN", { orderId: created.orderId, ...r }),

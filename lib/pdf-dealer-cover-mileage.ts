@@ -258,16 +258,17 @@ function formatKmPlain(km: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+/** A15: grafika punkti ir nobraukuma «rādījumi», nevis avota «ieraksti» (tie skaitās virsrakstā). */
 function readingCountLabel(n: number, lang: ClientReportLang): string {
   return n === 1
-    ? t("1 ieraksts", lang)
-    : t("{n} ieraksti", lang).replace("{n}", String(n));
+    ? t("1 rādījums", lang)
+    : t("{n} rādījumi", lang).replace("{n}", String(n));
 }
 
 function preciseCountLabel(n: number, lang: ClientReportLang): string {
   return n === 1
-    ? t("1 precīzs ieraksts", lang)
-    : t("{n} precīzi ieraksti", lang).replace("{n}", String(n));
+    ? t("1 precīzs rādījums", lang)
+    : t("{n} precīzi rādījumi", lang).replace("{n}", String(n));
 }
 
 function xOf(day: number, d0: number, d1: number): number {

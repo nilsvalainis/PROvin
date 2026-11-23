@@ -10,6 +10,7 @@ import {
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import {
   buildPdfDocFooterMetaLine,
+  CLIENT_REPORT_FOOTER_DISCLAIMER_BUSINESS,
   formatPdfDocFooterProductLabel,
   getClientReportLegalFooterBlocks,
   PDF_DOC_FOOTER_CONFIDENTIALITY_TITLE,
@@ -57,7 +58,7 @@ ${meta ? `<p class="pdf-doc-footer__meta">${escapeHtml(meta)}</p>` : ""}
 <div class="pdf-doc-footer__legal">
 <div class="pdf-doc-footer__col">
 <h3 class="pdf-doc-footer__heading">${escapeHtml(PDF_DOC_FOOTER_DISCLAIMER_TITLE)}</h3>
-<p class="pdf-doc-footer__text">${escapeHtml(b.disclaimer)}</p>
+<p class="pdf-doc-footer__text">${escapeHtml(args.productBrand === "PROVIN_BUSINESS" ? CLIENT_REPORT_FOOTER_DISCLAIMER_BUSINESS : b.disclaimer)}</p>
 </div>
 <div class="pdf-doc-footer__col pdf-doc-footer__col--confidential">
 <h3 class="pdf-doc-footer__heading">${escapeHtml(PDF_DOC_FOOTER_CONFIDENTIALITY_TITLE)}</h3>

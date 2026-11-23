@@ -1,10 +1,9 @@
 /**
- * OFICIĀLĀ DĪLERA DATI PDF: kopsavilkuma josla, vizīšu birkas, robu marķieri
+ * OFICIĀLĀ DĪLERA DATI PDF: kopsavilkuma josla, vizīšu birkas, „Periods bez ierakstiem” marķieri
  * un lielo darbu karte. Tikai fakti, bez verdikta un bez EUR.
  */
 import {
   extractDealerFactsFromServiceWorks,
-  isDealerCampaignText,
   type DealerFact,
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
@@ -12,13 +11,7 @@ import {
   dealerAccidentZoneDetail,
   dealerAssemblyReplacedDetail,
   dealerMajorWorkCategory,
-  hasAnyMajorAssemblyRepair,
-  hasNonCampaignRepairAction,
-  isCheckNoFaultWork,
-  isCourtesyCarWork,
-  isDealerSoftwareWork,
   isMajorAssemblyRepairWork,
-  isRoutineMaintenanceWork,
   MAJOR_ASSEMBLY_SPECS,
   majorAssemblyLabel,
   type DealerMajorWorkCategory,
@@ -44,30 +37,29 @@ import {
   monthsSinceLastDealerRecord,
 } from "@/lib/dealer-odometer-checks";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { formatDealerGapMonths } from "@/lib/dealer-gap-format";
 import { OIL_DEALER_GAP_KM, OIL_DEALER_GAP_MONTHS } from "@/lib/oil-change-intervals";
 import { stripPartNumbersFromWorkLine } from "@/lib/service-works-lines";
 import {
-  isVendorServiceCategoryLine,
   KEY_READ_HISTORY_LABEL,
   looksLikeCbsKeyReadWorks,
-  looksLikeIntervalMaintenanceWorks,
 } from "@/lib/vendor-service-history";
+
+export {
+  classifyDealerVisitKind,
+  classifyDealerVisitKinds,
+  classifyDealerWorkLine,
+  dealerVisitKindLabel,
+  isDealerVisitWithoutDetails,
+  type DealerVisitKind,
+  type DealerVisitKinds,
+} from "@/lib/dealer-visit-kind";
+
+export { formatDealerGapMonths } from "@/lib/dealer-gap-format";
 
 export const DEALER_PDF_GAP_KM = OIL_DEALER_GAP_KM;
 export const DEALER_PDF_GAP_MONTHS = OIL_DEALER_GAP_MONTHS;
 
-/**
- * `record` = ieraksts bez darbu atšifrējuma (tukša vizīte vai pozīcija bez darbības),
- * `accessories` = piederumi / riepas. „Remonts” tikai reālam remontam - noklusējums NAV remonts.
- */
-export type DealerVisitKind =
-  | "maintenance"
-  | "repair"
-  | "campaign"
-  | "warranty"
-  | "key_read"
-  | "record"
-  | "accessories";
 
 export type DealerVisitGap = {
   months: number | null;
@@ -88,7 +80,6 @@ export type DealerVisitSummary = {
   majorWorks: DealerMajorWorkHit[];
 };
 
-const WARRANTY_RE = /garantij|warranty|garantie|warrenty|kulanc/i;
 
 function escapeHtml(s: string): string {
   return s
@@ -125,73 +116,6 @@ function chronoRows(rows: readonly AutoRecordsServiceWorkRow[]): AutoRecordsServ
   });
 }
 
-const PLACEHOLDER_WORKS_RE = /detaliz[ēe]ts\s+darbu\s+saraksts/i;
-
-/** Tukša vizīte: nav darbu, tikai vietturis vai tikai kategorijas vārds („Apkope”, „Service”). */
-export function isDealerVisitWithoutDetails(works: string): boolean {
-  const lines = (works ?? "")
-    .split(/[\n;]+/)
-    .map((l) => l.replace(/\s+/g, " ").trim().replace(/[.:]+$/, ""))
-    .filter(Boolean);
-  return lines.every(
-    (l) =>
-      PLACEHOLDER_WORKS_RE.test(l) ||
-      isVendorServiceCategoryLine(l) ||
-      /^(service|serviss|wartung|maintenance)$/i.test(l),
-  );
-}
-
-/** Ražotāja plānotā apkope bez atšifrējuma („Nissan Customer Maintenance Plan”, „Inspektion nach 30.000 km”). */
-const PLANNED_MAINTENANCE_RE =
-  /maintenance\s+plan|customer\s+maintenance|scheduled\s+(?:maintenance|service)|service\s+plan|pl[āa]not\p{L}*\s+apkop\p{L}*|k[āa]rt[ēe]j\p{L}*\s+apkop\p{L}*|apkope\s+(?:pie|p[ēe]c)\s+\d|inspektion\s+nach|standard\s+scope|standardumfang|standarta\s+apkop\p{L}*|ecoservice|jahresinspektion|gada\s+apkop\p{L}*/iu;
-
-/** Riepas / riteņi / sezonas uzglabāšana un piederumi (atslēgu piekariņš, emblēma, paklājiņi). */
-const TYRES_ACCESSORIES_RE =
-  /riep\p{L}*|rite[ņn]\p{L}*|disk\p{L}*\s+komplekt|balans[ēe]\p{L}*|\btyres?\b|\btires?\b|\bwheels?\b|reifen\p{L}*|r(?:ä|ae|a)der\p{L}*|radwechsel|\bwkr\b|\bskr\b|einlagerung|uzglab[āa]\p{L}*|piekari[ņn]\p{L}*|key\s*(?:ring|fob)|schl(?:ü|ue|u)sselanh(?:ä|ae|a)nger|embl[ēe]m\p{L}*|\bemblem\p{L}*|\bplaque\b|\bbadge\b|pakl[āa]ji[ņn]\p{L}*|floor\s+mats?|fu(?:ß|ss)matten|lietussarg\p{L}*|umbrella|regenschirm|piederum\p{L}*|accessor\p{L}*|zubeh(?:ö|oe|o)r|merchandise|lifestyle/iu;
-
-/** Riepu / piederumu vizītē nedrīkst būt cita mehāniska darba (bremzes, piekare u.c.). */
-const MECHANICAL_PART_RE =
-  /brem[zž]\p{L}*|brake\p{L}*|brems\p{L}*|amortiz\p{L}*|shock\s+absorb|sto(?:ß|ss)d(?:ä|ae|a)mpfer|pneimo\p{L}*|pneimatisk\p{L}*|pneumatic|luftfeder|atsper\p{L}*|\bspring\b|\bfeder\b|spol\p{L}*|\bcoil\b|z(?:ü|ue|u)ndspule|s[ūu]k[nņ]\p{L}*|\bpump\p{L}*|pumpe|radiator\p{L}*|k(?:ü|ue|u)hler|dzes[ēe]t[āa]j\p{L}*|\begr\b|\bagr\b|turbo\p{L}*|saj[ūu]g\p{L}*|clutch|kupplung|spararat\p{L}*|flywheel|schwungrad|siksn\p{L}*|\bbelt\b|riemen|[ķk][ēe]d\p{L}*|\bchain\b|kette|gult[nņ]\p{L}*|bearing|\blager\b|svir\p{L}*|control\s+arm|querlenker|[šs]arn[īi]r\p{L}*|ball\s+joint|kugelgelenk|buks\p{L}*|bushing|buchse|bl[īi]v\p{L}*|gasket|dichtung|sprausl\p{L}*|iesmidzin\p{L}*|injector|injektor|kompresor\p{L}*|compressor|kompressor|[ģg]enerator\p{L}*|alternator|lichtmaschine|starter\p{L}*|anlasser|akumulator\p{L}*|battery|batterie|sensor\p{L}*|dev[ēe]j\p{L}*|izpl[ūu]d\p{L}*|exhaust|auspuff|katalizator\p{L}*|kv[ēe]pu|sodr[ēe]ju|particulate|partikelfilter|st[ūu]res|steering|lenk\p{L}*|pusass|drive\s*shaft|antriebswelle|termostat\p{L}*|thermostat|sv[ēe]tspuldz\p{L}*|lukt\p{L}*|headlight|scheinwerfer/iu;
-
-export function classifyDealerVisitKind(works: string): DealerVisitKind {
-  const text = works ?? "";
-  if (looksLikeCbsKeyReadWorks(text)) return "key_read";
-  if (isDealerVisitWithoutDetails(text)) return "record";
-  if (WARRANTY_RE.test(text)) return "warranty";
-  if (hasAnyMajorAssemblyRepair(text)) return "repair";
-  const independentRepair = hasNonCampaignRepairAction(text);
-  if (isDealerCampaignText(text) && !independentRepair) return "campaign";
-  if (isDealerSoftwareWork(text) && !independentRepair) return "campaign";
-  if (looksLikeIntervalMaintenanceWorks(text) || isRoutineMaintenanceWork(text)) return "maintenance";
-  if (PLANNED_MAINTENANCE_RE.test(text)) return "maintenance";
-  if (isCheckNoFaultWork(text) && !independentRepair) return "maintenance";
-  if (isCourtesyCarWork(text) && !independentRepair) return "warranty";
-  const mechanical = MECHANICAL_PART_RE.test(text);
-  if (TYRES_ACCESSORIES_RE.test(text) && !mechanical) return "accessories";
-  if (independentRepair || mechanical) return "repair";
-  if (isDealerCampaignText(text)) return "campaign";
-  // Pozīcija bez darbības vai neatpazīts teksts: fakts ir tikai „ieraksts”, ne remonts.
-  return "record";
-}
-
-export function dealerVisitKindLabel(kind: DealerVisitKind): string {
-  switch (kind) {
-    case "maintenance":
-      return "Apkope";
-    case "repair":
-      return "Remonts";
-    case "campaign":
-      return "Kampaņa";
-    case "warranty":
-      return "Garantija";
-    case "key_read":
-      return "Nolasījums";
-    case "record":
-      return "Ieraksts bez detaļām";
-    case "accessories":
-      return "Piederumi / riepas";
-  }
-}
 
 export function isDealerPdfKeyReadRow(row: AutoRecordsServiceWorkRow): boolean {
   return looksLikeCbsKeyReadWorks(row.works ?? "") || /^key\s*read(\s*history)?$/i.test(row.works.trim());
@@ -284,7 +208,14 @@ function factKmLabel(fact: DealerFact): string {
   return `${groupDigits(fact.odometerKm)} km`;
 }
 
+/**
+ * Atpazīšanas teksts ar saglabātām rindām: oriģināls (`works`) + LV rindas. Saplūdinātos
+ * `worksOriginal` / `worksLv` lieto tikai, ja rindu versijas nav (vecie fakti).
+ */
 function factSearchText(fact: DealerFact): string {
+  if (fact.worksLvLines != null) {
+    return [...new Set([fact.works, fact.worksLvLines].filter(Boolean))].join("\n");
+  }
   return [fact.works, fact.worksOriginal, fact.worksLv].filter(Boolean).join("\n");
 }
 
@@ -378,12 +309,17 @@ export function buildDealerVisitSummary(
   };
 }
 
-function gapLabel(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {
+/** „15 mēneši, 51 933 km” - periods bez ierakstiem. */
+export function formatDealerGapValue(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {
   const parts: string[] = [];
-  if (gap.months != null) parts.push(`${gap.months} ${translateClientReportStatic("mēn.", lang)}`);
+  if (gap.months != null) parts.push(formatDealerGapMonths(gap.months, lang));
   if (gap.km != null) parts.push(`${groupDigits(gap.km)} km`);
-  return parts.join(" / ");
+  return parts.join(", ");
 }
+
+/** Etiķete laika joslā un kopsavilkumā („robs” ir žargons - Nils 23.11). */
+export const DEALER_GAP_LABEL = "Periods bez ierakstiem";
+export const DEALER_LONGEST_GAP_LABEL = "Garākais periods bez ierakstiem";
 
 export function buildDealerVisitSummaryHtml(
   rows: readonly AutoRecordsServiceWorkRow[],
@@ -397,7 +333,7 @@ export function buildDealerVisitSummaryHtml(
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   const none = translateClientReportNone(lang);
   const gap = summary.longestGap;
-  const gapText = gap ? gapLabel(gap, lang) : none;
+  const gapText = gap ? formatDealerGapValue(gap, lang) : none;
   // Kampaņas: „Jā” tikai, ja dīlera ierakstos ir kampaņa. Ja nav - tas ir datu trūkums, nevis
   // apliecinājums, ka kampaņu nav bijis (Nils 22.11: nemelot „Nē”), tāpēc „Nav datu” sarkanā.
   const campaigns = summary.campaignsDone
@@ -412,7 +348,7 @@ export function buildDealerVisitSummaryHtml(
     { k: t("Pirmā vizīte"), v: summary.firstDate || none },
     { k: t("Pēdējā vizīte"), v: summary.lastDate || none },
     { k: t("Pēdējais dīlera km"), v: summary.lastKm || none },
-    { k: t("Garākais robs"), v: gapText },
+    { k: t(DEALER_LONGEST_GAP_LABEL), v: gapText },
     {
       k: t("Kopš pēdējā ieraksta"),
       v: summary.monthsSinceLast != null ? `${summary.monthsSinceLast} ${t("mēn.")}` : none,
@@ -536,8 +472,8 @@ export function dealerVisitMajorMarker(
 export function buildDealerGapMarkerHtml(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   return `<div class="pdf-svc-gap" role="note">
-    <span class="pdf-svc-gap__tag">${escapeHtml(t("Robs datos"))}</span>
-    <span class="pdf-svc-gap__val">${escapeHtml(gapLabel(gap, lang))}</span>
+    <span class="pdf-svc-gap__tag">${escapeHtml(t(DEALER_GAP_LABEL))}:</span>
+    <span class="pdf-svc-gap__val">${escapeHtml(formatDealerGapValue(gap, lang))}</span>
   </div>`;
 }
 

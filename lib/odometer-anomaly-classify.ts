@@ -10,6 +10,7 @@ import {
   isListingMileageSource,
   isMileageCountryChange,
   isTrailingSameDaySourcePair,
+  parseChartOdometerKm,
   parseOdometerKm,
   sortMileageChronological,
   type UnifiedMileageRow,
@@ -231,7 +232,7 @@ export function countChartMileageReadings(rows: UnifiedMileageRow[]): number {
   let n = 0;
   for (const r of sortMileageChronological(rows)) {
     if (exclude.has(r.sourceOrder)) continue;
-    if (parseOdometerKm(r.odometer) == null) continue;
+    if (parseChartOdometerKm(r.odometer) == null) continue;
     if (r.sortableTime === Number.NEGATIVE_INFINITY) continue;
     n += 1;
   }

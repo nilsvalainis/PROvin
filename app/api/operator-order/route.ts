@@ -1,3 +1,4 @@
+import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
 import { NextResponse, after } from "next/server";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
   }
 
+  after(() => ensureOrderDropboxFolderSafe(created.orderId, { category: "audits", createdMs: Date.now(), vin }));
   after(async () => {
     try {
       const resolved = await resolveOrderVinFromPlate(created.orderId, {
