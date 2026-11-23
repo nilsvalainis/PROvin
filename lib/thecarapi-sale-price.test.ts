@@ -120,3 +120,14 @@ describe("izsoles kartīte: tulkoti fakti, nevis tehnisks izmetiens", () => {
     expect(html).not.toMatch(/Citi dati|Is visible|Ecadis|Location id|Is the COC available/i);
   });
 });
+
+describe("laika līnija: «Pārdots» tikai ar avota statusu", () => {
+  it("bez statusa - «Izsole · Openlane»; ar sold - «Pārdots»; ar not sold - «Nav pārdots»", async () => {
+    const { lifecycleSaleOutcome, lifecycleSaleTitle } = await import("@/lib/vehicle-lifecycle-timeline");
+    expect(lifecycleSaleTitle(lifecycleSaleOutcome("Openlane · 11628722"), "Openlane")).toBe("Izsole · Openlane");
+    expect(lifecycleSaleTitle(lifecycleSaleOutcome("Sold"), "Copart")).toBe("Pārdots · Copart");
+    expect(lifecycleSaleTitle(lifecycleSaleOutcome("Statuss: Pārdots"), "IAA")).toBe("Pārdots · IAA");
+    expect(lifecycleSaleTitle(lifecycleSaleOutcome("Nav pārdots"), "BCA")).toBe("Nav pārdots · BCA");
+    expect(lifecycleSaleTitle(lifecycleSaleOutcome(""), "Mobile.de")).toBe("Pārdošanas ieraksts · Mobile.de");
+  });
+});
