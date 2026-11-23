@@ -124,13 +124,39 @@ function checkcarPreview(vin: string, row: AtraPreviewRow | undefined): AtraPrev
   return { ...base, tone, headline: notReadyHeadline(tone, row), photos: 0 };
 }
 
+/** Releja CARFAX.eu rindas detaļas («Valstis: SE 10», «Nobraukuma rādījumi: 3») -> banera punkti. */
+const CARFAX_DETAIL_ITEMS: readonly { prefix: string; label: string; key: boolean }[] = [
+  { prefix: "Valstis", label: "Valstis", key: true },
+  { prefix: "Nobraukuma rādījumi", label: "Nobraukums", key: true },
+  { prefix: "Tehniskās apskates", label: "Apskates", key: true },
+  { prefix: "Serviss un remonti", label: "Serviss", key: false },
+  { prefix: "ASV vēsture", label: "ASV", key: false },
+  { prefix: "Auto", label: "Auto", key: false },
+];
+
+function carfaxItems(detail: string | undefined): AtraPreviewItem[] {
+  const lines = String(detail ?? "").split("\n");
+  const out: AtraPreviewItem[] = [];
+  for (const d of CARFAX_DETAIL_ITEMS) {
+    const line = lines.find((l) => l.startsWith(`${d.prefix}: `));
+    const value = line?.slice(d.prefix.length + 2).trim();
+    if (value) out.push({ label: d.label, value, key: d.key, tone: "ok" });
+  }
+  return out;
+}
+
 function carfaxPreview(vin: string, row: AtraPreviewRow | undefined): AtraPreview {
   const openUrl = row?.openUrl || FALLBACK_URL.carfax_eu(vin);
   const tone = baseTone(row);
   const base = { id: "carfax_eu" as const, label: LABEL.carfax_eu, openUrl, items: [] as AtraPreviewItem[], photos: 0 };
   if (row?.status === "found") {
     const n = Number(/(\d+)\s*ierakst/i.exec(row.summary)?.[1] ?? NaN);
-    return { ...base, tone: "ok", headline: Number.isFinite(n) && n > 0 ? `Dati ir: ${n} ${ierakstiWord(n)}` : "Dati ir" };
+    return {
+      ...base,
+      tone: "ok",
+      headline: Number.isFinite(n) && n > 0 ? `Dati ir: ${n} ${ierakstiWord(n)}` : "Dati ir",
+      items: carfaxItems(row.detail),
+    };
   }
   if (row?.status === "none") return { ...base, tone: "none", headline: "Datu nav" };
   return { ...base, tone, headline: notReadyHeadline(tone, row) };

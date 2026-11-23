@@ -30,6 +30,12 @@ import {
   ltPoliceRequestBody,
   parseLtPoliceResponse,
 } from "@/lib/vin-scan/lt-police";
+import {
+  fetchVinSourceViaRelay,
+  vinScanParseFromVinSource,
+  vinSourceRelayConfigured,
+  type VinSourceRelayId,
+} from "@/lib/vin-scan/vinsource-relay";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
   oemBrandForVin,
@@ -459,8 +465,24 @@ export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicato
   return done("stat_vin", ctx, { ...statVinBrowserLane(), openUrl: url });
 }
 
+/**
+ * bid.cars / CARFAX.eu: vispirms releja Chrome (lapu veido JS). Ja relejs nav vai neizdevās,
+ * rinda paliek pārlūka joslā (Tampermonkey), un iemesls redzams kopsavilkumā.
+ */
+async function fromRelayOrBrowser(id: VinSourceRelayId, ctx: VinScanContext): Promise<VinScanIndicator> {
+  const lane = fromBrowser(id, ctx);
+  if (!vinSourceRelayConfigured()) return lane;
+  const got = await fetchVinSourceViaRelay(id, ctx.vin);
+  if (got.ok) {
+    const parsed = vinScanParseFromVinSource(id, ctx.vin, got, lane.openUrl ?? "");
+    if (parsed) return done(id, ctx, parsed);
+    return { ...lane, summary: `${lane.summary} · relejs: lapa bez šī VIN` };
+  }
+  return { ...lane, summary: `${lane.summary} · relejs: ${got.reason}` };
+}
+
 export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return fromBrowser("bid_cars", ctx);
+  return fromRelayOrBrowser("bid_cars", ctx);
 }
 
 export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndicator> {
@@ -499,7 +521,7 @@ export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndic
 }
 
 export async function probeCarfaxEu(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return fromBrowser("carfax_eu", ctx);
+  return fromRelayOrBrowser("carfax_eu", ctx);
 }
 
 export async function probeCheckcarVin(ctx: VinScanContext): Promise<VinScanIndicator> {
