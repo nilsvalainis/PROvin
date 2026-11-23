@@ -361,6 +361,16 @@ describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota
     expect(rows.csngPolice!.state).toBe("none");
     expect(rows.restrictions!.state).toBe("not_checked");
     expect(b.warnings.map((w) => w.id)).not.toContain("csng");
+    // Reģistrācijas brīdinājums (atļauja beigusies) paliek.
+    expect(b.warnings).toEqual([
+      {
+        id: "registration",
+        tone: "alert",
+        label: "Reģistrācija",
+        value: "Atļauja beigusies 11.11.2026",
+        note: "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 11.11.2026",
+      },
+    ]);
     const json = JSON.stringify(b);
     expect(json).not.toContain("Nobraukuma");
     expect(json).not.toContain("136423 136423");
@@ -377,7 +387,9 @@ describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota
     expect(parts.beforeInspections).toBe("");
     expect(parts.afterTable).not.toContain("Nobraukuma");
     expect(parts.afterTable).toContain("92 g/km");
-    expect(buildCsddWarningSummaryTiles(AURIS, "lv", NOW)).toEqual([]);
+    expect(buildCsddWarningSummaryTiles(AURIS, "lv", NOW).map((t) => [t.id, t.value])).toEqual([
+      ["csdd-registration", "Atļauja beigusies 11.11.2026"],
+    ]);
   });
 
   it("pēdējā apskate ar vērtējumu, bez vēstures -> «TA vēsture nav ielādēta»", () => {
@@ -429,6 +441,7 @@ describe("e.csdd bloki - tukša sadaļa neņem nākamās sadaļas tekstu (Toyota
     expect(html).not.toContain("Ir CSNg atzīmes");
     expect(html).not.toContain("Nobraukuma");
     expect(html).toContain("Latvijā TA vēl nav veikta");
+    expect(html).toContain("Atļauja beigusies 11.11.2026");
     // admin-ios-theme.css `.text-red-700` / `.text-red-600` = sarkans fons ar baltu tekstu.
     expect(html).not.toMatch(/text-red-(?:600|700)\b/);
     // admin-pro-order-theme.css: uppercase + tracking-wide + text-[10px]/[11px] virsrakstam liek pasvītrojumu.
