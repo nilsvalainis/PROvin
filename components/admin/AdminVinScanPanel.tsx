@@ -37,7 +37,7 @@ import {
   type VinScanStatus,
 } from "@/lib/vin-scan/types";
 import {
-  browserImportErrorLv,
+  browserImportRowNote,
   parseVinScanBrowserEventDetail,
 } from "@/lib/vin-scan/browser-fetch";
 import {
@@ -305,14 +305,7 @@ function vinScanRowHasCard(row: ScanRow): boolean {
   return vinScanResultCards([row]).length > 0;
 }
 
-/**
- * Pārlūka (userscript) importa kļūda paliek pie sava avota rindas. «page_not_ready» nāk atkārtoti, kamēr
- * lapa ielādējas - globāls paziņojums tad parādījās/pazuda katrā ciklā un raustīja lapu.
- */
-export function browserImportRowNote(code: string | undefined): string {
-  if (code === "page_not_ready") return "Gaida lapu pārlūkā";
-  return browserImportErrorLv(code);
-}
+export { browserImportRowNote };
 
 export function AdminVinScanPanel({
   vin,

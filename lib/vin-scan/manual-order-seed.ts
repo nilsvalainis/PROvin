@@ -235,6 +235,7 @@ function statusLabel(status: string): string {
   return SOURCE_STATUS_LV[status] || status || "Gaida";
 }
 
+/** Teksta kopsavilkums (tikai priekšskatam/eksportam) - pasūtījuma laukos to neliek. */
 export function buildVinScanManualOrderNotes(input: VinScanManualOrderInput): string {
   const vin = normalizeVin(input.vin);
   const plate = input.plate ? normalizePlateNumber(input.plate) : "";
@@ -348,16 +349,18 @@ export function buildVinScanManualOrderSeed(input: VinScanManualOrderInput): Vin
     vin,
     ...(plate ? { plate } : {}),
   };
-  const notes = buildVinScanManualOrderNotes(normalized);
   const mileageComment = buildVinScanMileageComment(normalized);
   const blocks = createDefaultSourceBlocks();
   blocks.csdd = seedCsddBlock(normalized);
   blocks.carvertical = seedCarverticalBlock(normalized);
   blocks.traficom_fi = seedTraficomFiBlock(normalized);
 
-  const orderEdits: OrderDraftOrderEdits = { vin, notes };
+  // «Klienta komentārs» (notes) ir klienta teksts un iet PDF; «internalComment» ir negadījumu
+  // kopsavilkums PDF. VIN SCAN avotu rezultāti tur nedrīkst nonākt - tos pasūtījumā rāda
+  // VIN SCAN kartīte (bezmaksas skenēšana pēc izveides), CSDD/CarVertical/Traficom bloki.
+  const orderEdits: OrderDraftOrderEdits = { vin };
+  if (plate) orderEdits.licensePlate = plate;
   if (mileageComment) orderEdits.mileageComment = mileageComment;
-  if (notes) orderEdits.internalComment = notes;
 
   const workspace: OrderDraftWorkspaceBody = {
     sourceBlocks: blocks,

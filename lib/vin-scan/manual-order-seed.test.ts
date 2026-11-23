@@ -84,14 +84,13 @@ describe("vin scan manual order seed", () => {
     });
 
     expect(seed.orderEdits.vin).toBe(VIN);
-    expect(seed.orderEdits.notes).toContain(VIN);
-    expect(seed.orderEdits.notes).toContain("NG8493");
-    expect(seed.orderEdits.notes).toContain("SKODA SUPERB");
-    expect(seed.orderEdits.notes).toContain("https://www.tjekbil.dk/?vin=");
-    expect(seed.orderEdits.notes).toContain("https://www.autodna.lv/vin/");
-    expect(seed.orderEdits.notes).toContain("AutoDNA");
+    // Klienta komentārs un negadījumu kopsavilkums (abi PDF) paliek tukši - VIN SCAN dati iet VIN SCAN kartītē.
+    expect(seed.orderEdits.notes).toBeUndefined();
+    expect(seed.orderEdits.internalComment).toBeUndefined();
+    expect(JSON.stringify(seed.orderEdits)).not.toContain("VIN SCAN manuālais pasūtījums");
+    expect(JSON.stringify(seed.orderEdits)).not.toContain("tjekbil");
+    expect(seed.orderEdits.licensePlate).toBe("NG8493");
     expect(seed.orderEdits.mileageComment).toContain("385 537 km");
-    expect(seed.orderEdits.internalComment).toContain("Avoti:");
 
     const block = seed.workspace.sourceBlocks as { csdd: { vin: string; makeModel: string; registrationNumber: string; modelYear: string } };
     expect(block.csdd.vin).toBe(VIN);
@@ -119,7 +118,7 @@ describe("vin scan manual order seed", () => {
     expect(block.csdd.vin).toBe(VIN);
     expect(block.csdd.makeModel).toBe("Volkswagen Golf");
     expect(block.csdd.modelYear).toBe("2012");
-    expect(seed.orderEdits.notes).toContain("Volkswagen Golf");
+    expect(seed.orderEdits.notes).toBeUndefined();
   });
 
   it("noraida nederīgu VIN un pieņem CSDD JSON", () => {
