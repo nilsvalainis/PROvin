@@ -16,7 +16,7 @@ import { applyVinScanBrowserResultToSnapshot } from "@/lib/vin-scan/apply-browse
 import { logVinScanBrowserImport } from "@/lib/vin-scan/browser-import-log";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
-import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
+import { runVinScan, sanitizeVinScanPaidSourceIds, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { overlayVinScanBrowserImports } from "@/lib/vin-scan/browser-import-overlay";
@@ -161,10 +161,25 @@ export async function POST(req: Request) {
   }
 
   const force = body.force === true;
+  // Maksas avots (JoJ) tikai adminam un tikai tad, ja «Ātrā pārbaude» lapā tas ieķeksēts.
+  const paidAllowed = gate.actor?.kind === "admin" ? sanitizeVinScanPaidSourceIds(body.paidSources) : [];
+  const requestedExplicit = sanitizeVinScanSourceIds(body.sources, paidAllowed);
   if (isValidVin(vin) && !force) {
     const cached = await readVinScanSnapshot(vin).catch(() => null);
+    const cachedIds = new Set(
+      (cached && Array.isArray(cached.indicators) ? cached.indicators : [])
+        .map((row) => (row && typeof row === "object" ? (row as { id?: unknown }).id : null))
+        .filter((id): id is string => typeof id === "string"),
+    );
+    // Ja prasīts avots, kura kešā nav (piem. TheCarApi vai JoJ), ejam uz skenēšanu zemāk (tur svaigās rindas paliek).
+    const cacheCoversRequest = !requestedExplicit || requestedExplicit.every((id) => cachedIds.has(id));
     // Jauns vai cits numurs (NL/LT/UK/SE) -> numura avotu kešs neder, ejam uz skenēšanu zemāk.
-    if (cached && vinScanSnapshotFresh(cached) && vinScanPlateStaleSourceIds(cached.plates, plates).size === 0) {
+    if (
+      cached &&
+      cacheCoversRequest &&
+      vinScanSnapshotFresh(cached) &&
+      vinScanPlateStaleSourceIds(cached.plates, plates).size === 0
+    ) {
       if (isPlausibleListingUrl(listingUrl)) {
         const listing = await runVinScan({ vin, plates, listingUrl, sourceIds: ["listing_history"] });
         const rest = (Array.isArray(cached.indicators) ? cached.indicators : []).filter(
@@ -203,7 +218,7 @@ export async function POST(req: Request) {
     if (csdd?.found && isValidVin(csdd.data.vin)) vin = normalizeVin(csdd.data.vin);
   }
 
-  const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
+  const requested = requestedExplicit ?? defaultVinScanSourceIds();
   const prevRaw = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
   const prev = prevRaw && prevRaw.vin === vin ? prevRaw : null;
   const nowMs = Date.now();
@@ -217,7 +232,9 @@ export async function POST(req: Request) {
   const cachedIds = new Set(reusable.map((row) => row.id));
   const toScan = requested.filter((id) => !cachedIds.has(id));
   const scanned = stampVinScanRows(
-    toScan.length ? await runVinScan({ vin, plates: scanPlates, listingUrl, sourceIds: toScan, ignoreBreaker: force }) : [],
+    toScan.length
+      ? await runVinScan({ vin, plates: scanPlates, listingUrl, sourceIds: toScan, ignoreBreaker: force, allowPaid: paidAllowed })
+      : [],
     new Date(nowMs).toISOString(),
     true,
   );

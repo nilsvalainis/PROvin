@@ -39,6 +39,8 @@ import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
 import { vinScanCountBreakdown } from "@/lib/vin-scan/types";
+import { AdminAtraCopyButton, AdminAtraFactCards, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import { atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 max-md:h-12 max-md:rounded-[10px] max-md:text-[17px]";
@@ -163,6 +165,25 @@ export function AdminVinScanPageClient({
     scanSnapshot?.scannedAt && scanSnapshot.rows.some((row) => row.status !== "idle"),
   );
   const scanBusy = Boolean(scanSnapshot?.busy);
+  // «Ātrā pārbaude» telefonā: stāsta potenciāls, faktu kartītes un kopsavilkums (kods, tie paši fakti kā datorā).
+  const atra = useMemo(() => {
+    if (!glass || !valid || !hasScanResult || !scanSnapshot) return null;
+    const v = plate?.ok ? { make: plate.make, model: plate.model, year: plate.year } : pickVinScanVehicle(scanSnapshot.rows);
+    const title = [v?.make, v?.model].filter(Boolean).join(" ");
+    const year = v?.year ?? "";
+    const facts = buildAtraFacts({
+      vin,
+      plate: plates.lv,
+      title,
+      year,
+      rows: scanSnapshot.rows,
+      dealer: null,
+      csdd: csddData,
+      hasListing: isPlausibleListingUrl(listingUrl),
+    });
+    const score = atraStoryScore(facts);
+    return { facts, score, text: atraSummaryText({ vin, title, year }, facts, score) };
+  }, [glass, valid, hasScanResult, scanSnapshot, plate, vin, plates.lv, csddData, listingUrl]);
   const onSnapshot = useCallback((snapshot: VinScanPanelSnapshot) => {
     setScanSnapshot(snapshot);
   }, []);
@@ -563,6 +584,16 @@ export function AdminVinScanPageClient({
         </div>
       ) : null}
       {createError ? <p className="text-[10px] text-rose-600 dark:text-rose-300">{createError}</p> : null}
+      {atra ? (
+        <div className="space-y-2.5 px-4 md:hidden" data-atra-phone>
+          <AdminAtraPotential score={atra.score} glass />
+          <AdminAtraFactCards facts={atra.facts} vin={vin} glass />
+          <AdminAtraCopyButton
+            text={atra.text}
+            className="h-11 w-full rounded-full bg-[var(--am-s1)] text-[15px] font-semibold text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+          />
+        </div>
+      ) : null}
       <AdminVinScanPanel
         vin={vin}
         plates={plates}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
@@ -58,6 +59,33 @@ import {
 const inp =
   "w-full min-w-0 rounded-[10px] border border-[#d1d1d6] bg-white px-3 py-[10px] font-mono text-[14px] text-[#111] placeholder:text-[#8e8e93] focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/25";
 
+/** Stāvoklis, ko iegultā (Ātrā pārbaude) lapa nodod vecākam: kopsumma, manuālais pasūtījums, vēsture. */
+export type DealerCheckEmbedState = {
+  record: DealerCheckRecord | null;
+  comments: DealerCheckComments | null;
+  csdd: CsddTechData | null;
+  busy: boolean;
+  ledgerBar: string;
+  entries: DealerCheckHistoryEntry[];
+};
+
+/**
+ * «Ātrā pārbaude» (/admin/vin-scan): ievadi, šablonu un OneAuto ķekšus vada vecāks.
+ * Šeit paliek rezultāts, Gemini komentāri, PDF, piegāde, Saglabāt/Dzēst un saraksts ar filtriem.
+ */
+export type DealerCheckEmbed = {
+  vin: string;
+  plate: string;
+  template: DealerCheckTemplateId;
+  selected: OneautoProductId[];
+  csdd: CsddTechData | null;
+  /** Katrs pieaugums = viena OneAuto ielāde (maksas) ar pašreizējiem ķekšiem. */
+  loadNonce: number;
+  onState?: (state: DealerCheckEmbedState) => void;
+  /** Kur zīmēt «Saglabātās pārbaudes» sarakstu (lapas apakšā). */
+  historyTarget?: HTMLElement | null;
+};
+
 function createOrderErrorLv(status: number, code: string): string {
   if (status === 401 || code === "unauthorized") return "Nav admin sesijas. Ielādē lapu no jauna.";
   if (code === "invalid_vin") return "Ievadi derīgu VIN.";
@@ -91,6 +119,7 @@ export function AdminDealerCheckPage({
   initialRecord = null,
   initialEntries = [],
   basePath = DEALER_CHECK_PAGE_PATH,
+  embed,
 }: {
   initialVin: string;
   initialPlate?: string;
@@ -101,6 +130,7 @@ export function AdminDealerCheckPage({
   initialEntries?: DealerCheckHistoryEntry[];
   /** PRO: /admin/dilera-dati, IRISS: /admin/iriss/dilera-dati (tā pati lapa). */
   basePath?: string;
+  embed?: DealerCheckEmbed;
 }) {
   const [template, setTemplate] = useState<DealerCheckTemplateId>(initialRecord?.template ?? DEALER_CHECK_DEFAULT_TEMPLATE);
   const [vin, setVin] = useState(initialRecord?.vin || initialVin);
@@ -222,7 +252,30 @@ export function AdminDealerCheckPage({
     }
   }, []);
 
+  // Iegultā režīmā ievadi vada vecāks.
+  const embedded = Boolean(embed);
+  const embedVin = embed?.vin ?? "";
+  const embedPlate = embed?.plate ?? "";
+  const embedTemplate = embed?.template;
+  const embedSelectedKey = embed ? embed.selected.join(",") : "";
+  const embedCsdd = embed?.csdd ?? null;
   useEffect(() => {
+    if (!embedded) return;
+    if (embedVin) setVin(embedVin);
+    if (embedPlate) setPlate(embedPlate);
+  }, [embedded, embedVin, embedPlate]);
+  useEffect(() => {
+    if (embedded && embedTemplate) setTemplate(embedTemplate);
+  }, [embedded, embedTemplate]);
+  useEffect(() => {
+    if (embedded) setSelected(embedSelectedKey ? (embedSelectedKey.split(",") as OneautoProductId[]) : []);
+  }, [embedded, embedSelectedKey]);
+  useEffect(() => {
+    if (embedded && embedCsdd) setCsddPreview(embedCsdd);
+  }, [embedded, embedCsdd]);
+
+  useEffect(() => {
+    if (embedded) return;
     const query = dealerCheckCsddLookupQuery(plate, vin);
     if (!query) {
       if (csddPreview) setCsddPreview(null);
@@ -233,7 +286,7 @@ export function AdminDealerCheckPage({
       void lookupCsdd(query, { vin, plate });
     }, 450);
     return () => window.clearTimeout(t);
-  }, [plate, vin, csddPreview, lookupCsdd]);
+  }, [embedded, plate, vin, csddPreview, lookupCsdd]);
 
   function toggle(id: OneautoProductId) {
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -285,17 +338,29 @@ export function AdminDealerCheckPage({
     }
   }
 
-  async function onLoad() {
+  async function onLoad(
+    over?: { vin: string; plate: string; template: DealerCheckTemplateId; selected: OneautoProductId[]; csdd: CsddTechData | null },
+  ) {
     setError("");
     setNotice("");
-    if (!canLoad) return;
+    const args = over ?? { vin, plate, template, selected, csdd: csddPreview };
+    const allowed = over
+      ? dealerCheckCanLoad(args.selected) && !busy && (Boolean(normalizeVin(args.vin)) || Boolean(args.plate.trim()))
+      : canLoad;
+    if (!allowed) return;
     setBusy(true);
     try {
       const res = await fetch("/api/admin/dealer-check", {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vin, plate, template, products: selected, csdd: csddPreview }),
+        body: JSON.stringify({
+          vin: args.vin,
+          plate: args.plate,
+          template: args.template,
+          products: args.selected,
+          csdd: args.csdd,
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -466,6 +531,34 @@ export function AdminDealerCheckPage({
     if (html) openGeneratedHtmlDocument(html, `${record.vin}-${kind}.html`);
   }
 
+  const embedNonce = embed?.loadNonce ?? 0;
+  const lastNonce = useRef(embedNonce);
+  useEffect(() => {
+    if (!embed || embedNonce === lastNonce.current) return;
+    lastNonce.current = embedNonce;
+    void onLoad({
+      vin: embed.vin,
+      plate: embed.plate,
+      template: embed.template,
+      selected: [...embed.selected],
+      csdd: embed.csdd ?? csddPreview,
+    });
+    // Tikai nonce palaiž maksas ielādi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedNonce]);
+
+  const onEmbedState = embed?.onState;
+  useEffect(() => {
+    onEmbedState?.({
+      record,
+      comments: record ? (editing ? draftComments : record.comments) : null,
+      csdd: csddPreview,
+      busy,
+      ledgerBar,
+      entries,
+    });
+  }, [onEmbedState, record, editing, draftComments, csddPreview, busy, ledgerBar, entries]);
+
   const http206 = record ? dealerCheckServiceHistoryHttp206(record.results) : false;
   const stored = Boolean(record && dealerCheckHasResult(record) && entries.some((row) => row.id === record.id));
   const log = useMemo(
@@ -485,9 +578,16 @@ export function AdminDealerCheckPage({
 
   return (
     <div
-      className={`mx-auto max-w-[1180px] px-4 pb-16 pt-2 sm:px-7 sm:pt-4${glass ? " amx amx-pg amx-pg--dilera" : ""}`}
-      data-amx-page={glass ? "dilera-parbaude" : undefined}
+      className={
+        embedded
+          ? ""
+          : `mx-auto max-w-[1180px] px-4 pb-16 pt-2 sm:px-7 sm:pt-4${glass ? " amx amx-pg amx-pg--dilera" : ""}`
+      }
+      data-amx-page={glass && !embedded ? "dilera-parbaude" : undefined}
+      data-dealer-check-embedded={embedded || undefined}
     >
+      {embedded ? null : (
+      <>
       <h1 className="text-[23px] font-semibold tracking-tight text-[#111] sm:text-[26px]">Dīlera datu pārbaude</h1>
       <p className="mb-5 mt-1 text-[13.5px] text-[#6e6e73]" data-amx-hint>Iekšējā · bez klienta pasūtījuma · ADMIN</p>
 
@@ -618,6 +718,13 @@ export function AdminDealerCheckPage({
           </button>
         </div>
       </section>
+      </>
+      )}
+      {embedded && busy ? (
+        <p className="mb-3.5 text-[13px] text-[#6e6e73]" role="status">
+          Dīlera dati: ielādē OneAuto…
+        </p>
+      ) : null}
 
       {error ? (
         <p className="mb-3.5 rounded-xl border border-[#f3c2c7] bg-[#fff5f5] px-3.5 py-3 text-[13px] text-[#d70015]">{error}</p>
@@ -626,7 +733,7 @@ export function AdminDealerCheckPage({
         <p className="mb-3.5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-3 text-[13px] text-[#166534]">{notice}</p>
       ) : null}
 
-      {canCreateOrder || creatingOrder ? (
+      {!embedded && (canCreateOrder || creatingOrder) ? (
         <div className="mb-3.5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <button
             type="button"
@@ -649,13 +756,26 @@ export function AdminDealerCheckPage({
       ) : null}
 
       {dealerCheckHasCsddPreview(csddPreview) ? (
-        <AdminDealerCheckCsddPreview data={csddPreview!} />
+        embedded ? (
+          <details className="mb-3.5">
+            <summary className="cursor-pointer text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
+              {DEALER_CHECK_CSDD_TITLE}
+            </summary>
+            <div className="mt-2">
+              <AdminDealerCheckCsddPreview data={csddPreview!} />
+            </div>
+          </details>
+        ) : (
+          <AdminDealerCheckCsddPreview data={csddPreview!} />
+        )
       ) : null}
 
       {!dealerCheckHasResult(record) ? (
+        embedded ? null : (
         <div className="rounded-[14px] border-[1.5px] border-dashed border-[#d1d1d6] bg-white px-6 py-10 text-center text-[13.5px] leading-6 text-[#8e8e93]">
           {dealerCheckEmptyStateText()}
         </div>
+        )
       ) : (
         <DealerCheckResult
           record={{ ...record!, comments: editing ? draftComments : record!.comments }}
@@ -683,16 +803,22 @@ export function AdminDealerCheckPage({
         />
       ) : null}
 
-      <AdminDealerCheckHistory
-        entries={filteredEntries}
-        total={entries.length}
-        filter={filter}
-        onFilter={setFilter}
-        onOpen={(id) => void onOpen(id)}
-        onDelete={(id) => void onDelete(id)}
-        onExport={onExport}
-        busy={busy}
-      />
+      {(() => {
+        const history = (
+          <AdminDealerCheckHistory
+            entries={filteredEntries}
+            total={entries.length}
+            filter={filter}
+            onFilter={setFilter}
+            onOpen={(id) => void onOpen(id)}
+            onDelete={(id) => void onDelete(id)}
+            onExport={onExport}
+            busy={busy}
+          />
+        );
+        if (!embedded) return history;
+        return embed?.historyTarget ? createPortal(history, embed.historyTarget) : null;
+      })()}
     </div>
   );
 }

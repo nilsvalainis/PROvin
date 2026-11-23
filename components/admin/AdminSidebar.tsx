@@ -75,6 +75,7 @@ export const ADMIN_NAV_LABELS = {
   orders: "Pasūtījumi",
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
+  atra: "Ātrā pārbaude",
   auctionArchive: "Izsoļu portālu arhīvs",
   dealerCheck: "Dīlera dati",
   fast: "Ātrie vērtējumi",
@@ -112,19 +113,13 @@ const SAKUMS: Item = {
 const PRO_MENU: Item = { href: "/admin/pro", label: "Sākums", icon: Home, match: (p) => p === "/admin/pro" || p === "/admin/pro/" };
 const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
-const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
+const VIN: Item = { href: "/admin/vin-scan", label: L.atra, icon: ScanLine, match: starts("/admin/vin-scan") };
 /** Tikai PRO administratora izvēlne. IRISS darbinieku sarakstā šīs lapas nav. */
 const AUCTION_ARCHIVE: Item = {
   href: "/admin/izsolu-arhivs",
   label: L.auctionArchive,
   icon: Archive,
   match: starts("/admin/izsolu-arhivs"),
-};
-const DEALER_CHECK: Item = {
-  href: "/admin/dilera-dati",
-  label: L.dealerCheck,
-  icon: Factory,
-  match: starts("/admin/dilera-dati"),
 };
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
@@ -164,7 +159,7 @@ const I_DEALER_CHECK: Item = {
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
-  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, AUCTION_ARCHIVE, DEALER_CHECK, FAST] },
+  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, AUCTION_ARCHIVE, FAST] },
   { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_DEALER_CHECK, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,

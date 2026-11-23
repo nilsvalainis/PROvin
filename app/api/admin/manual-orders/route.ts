@@ -19,6 +19,12 @@ import {
 } from "@/lib/dealer-check-manual-order";
 import { createVinScanManualOrder } from "@/lib/vin-scan/create-manual-order";
 import { parseVinScanManualOrderInput } from "@/lib/vin-scan/manual-order-seed";
+import {
+  ATRA_MANUAL_ORDER_ORIGIN,
+  buildAtraManualOrderSeed,
+  parseAtraManualOrderBody,
+} from "@/lib/atra-parbaude-manual-order";
+import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 
 export const runtime = "nodejs";
 
@@ -42,6 +48,38 @@ export async function POST(req: Request) {
       } catch {
         return NextResponse.json({ error: "invalid_json" }, { status: 400 });
       }
+    }
+    if (body && typeof body === "object" && (body as Record<string, unknown>).origin === ATRA_MANUAL_ORDER_ORIGIN) {
+      // Ātrā pārbaude: viens pasūtījums ar VIN SCAN + dīlera datiem (+ Speckr). Neko maksas neizsauc.
+      const parsed = parseAtraManualOrderBody(body);
+      if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
+      }
+      const created = await createManualOrder({ amountTotal: null });
+      if (!created.ok) {
+        return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
+      }
+      const orderId = created.record.id;
+      const patched = await patchOrderDraft(orderId, buildAtraManualOrderSeed(parsed.input), { force: true });
+      if (!patched.ok) {
+        console.warn("[atra-parbaude] manual order seed failed", { orderId, error: patched.error });
+        return NextResponse.json({ error: patched.error }, { status: storeErrorStatus(patched.error) });
+      }
+      const checkId = parsed.input.dealer?.checkId;
+      if (checkId) {
+        const creator = await currentDealerCheckCreatorId();
+        await convertDealerCheckToOrder(checkId, orderId, creator).catch((err) => {
+          console.error("[atra-parbaude] dealer convert", err);
+        });
+      }
+      const vin = parsed.input.vinScan.vin;
+      after(() =>
+        runOrderFreeVinScan(orderId, { vin, listingUrl: null }).then(
+          (r) => console.info("[manual-orders] free VIN SCAN", { orderId, ...r }),
+          (err) => console.error("[manual-orders] free VIN SCAN:", err),
+        ),
+      );
+      return NextResponse.json({ ok: true, orderId, record: { id: orderId } });
     }
     if (
       body &&
