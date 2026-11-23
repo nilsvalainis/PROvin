@@ -19,17 +19,20 @@ function Kv({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function AdminVinScanResultCards({ rows }: { rows: readonly VinScanResultRow[] }) {
+/** `bare`: viena avota detaļas tabulas rindā («Ātrā pārbaude» datorā) - bez rāmja un režģa. */
+export function AdminVinScanResultCards({ rows, bare = false }: { rows: readonly VinScanResultRow[]; bare?: boolean }) {
   const cards = vinScanResultCards(rows);
   if (cards.length === 0) return null;
   return (
-    <ul className="grid grid-cols-1 gap-2 px-2 pb-20 sm:grid-cols-2 sm:pb-2">
+    <ul className={bare ? "space-y-2" : "grid grid-cols-1 gap-2 px-2 pb-20 sm:grid-cols-2 sm:pb-2"}>
       {cards.map((card) => (
         <li
           key={card.id}
-          className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 py-2"
+          className={
+            bare ? "max-w-[640px]" : "rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2.5 py-2"
+          }
         >
-          <div className="mb-1.5 flex items-center justify-between gap-2">
+          <div className={bare ? "hidden" : "mb-1.5 flex items-center justify-between gap-2"}>
             <p className="truncate text-[11px] font-semibold text-[var(--color-apple-text)]">{card.label}</p>
             {card.href ? (
               <a
