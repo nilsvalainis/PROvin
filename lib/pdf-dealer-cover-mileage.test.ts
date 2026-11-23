@@ -12,7 +12,7 @@ import {
 import { buildDealerSectionCoverHtml } from "@/lib/pdf-dealer-section-cover";
 import { emptyOutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 
-/** BMW 525d kanona punkti (91 precīzs ieraksts; 4 mākslīgie kritumi jau izņemti). */
+/** BMW 525d kanona punkti (91 precīzs rādījums; 4 mākslīgie kritumi jau izņemti). */
 const BMW525_TSV = `
 01.06.2008	15
 12.01.2009	19565
@@ -253,7 +253,7 @@ describe("buildDealerCoverMileageChartHtml", () => {
     const points = bmwPoints();
     const html = buildDealerCoverMileageChartHtml({ precise: points, excludedCount: 4 });
     expect(html).toContain("pdf-dealer-cover-curve");
-    expect(html).toContain("91 precīzi ieraksti");
+    expect(html).toContain("91 precīzi rādījumi");
     expect(html).toContain('stroke-width="2.05"');
     expect(html).toContain('stroke-linecap="round"');
     expect(html).not.toMatch(/pdf-dealer-cover-curve-path[^>]*stroke-dasharray/);
@@ -267,7 +267,7 @@ describe("buildDealerCoverMileageChartHtml", () => {
     expect(html).toContain("aptuveni (nav precīzu datu)");
     expect(html).toContain("15 km");
     expect(html).toContain("305 048 km");
-    expect(html).toContain("91 ieraksti");
+    expect(html).toContain("91 rādījumi");
     expect(html).not.toMatch(/vidēji/i);
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
@@ -281,7 +281,7 @@ describe("buildDealerCoverMileageChartHtml", () => {
       precise: bmwPoints().slice(0, 1),
       excludedCount: 0,
     });
-    expect(html).toContain("1 precīzs ieraksts");
+    expect(html).toContain("1 precīzs rādījums");
     expect(html).toContain("pdf-dealer-cover-curve");
     expect(html).not.toContain("pdf-dealer-cover-curve-path");
     expect(html).not.toContain("NOBRAUKUMS PA GADIEM");
@@ -297,8 +297,8 @@ describe("buildDealerCoverMileageChartHtml", () => {
     });
     expect(html).toContain("pdf-dealer-cover-curve-path");
     expect(html).toContain("NOBRAUKUMS PA GADIEM");
-    expect(html).toContain("2 precīzi ieraksti");
-    expect(html).toContain("2 ieraksti");
+    expect(html).toContain("2 precīzi rādījumi");
+    expect(html).toContain("2 rādījumi");
     expect(html).not.toMatch(/vidēji/i);
   });
 });
@@ -325,8 +325,8 @@ describe("buildDealerSectionCoverHtml mileage chart", () => {
         },
       ],
     });
-    expect(html).toContain("2 precīzi ieraksti");
-    expect(html).toContain("2 ieraksti");
+    expect(html).toContain("2 precīzi rādījumi");
+    expect(html).toContain("2 rādījumi");
     expect(html).not.toContain("vizītes");
     expect(html).not.toMatch(/vidēji/i);
     expect(html).toContain("pdf-dealer-cover-curve-path");
