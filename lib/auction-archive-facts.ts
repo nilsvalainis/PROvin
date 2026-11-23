@@ -753,7 +753,8 @@ export function auctionArchiveLotFacts(r: ThecarapiAdminRecord, opts: { showPric
     if (reserve) prices.push({ k: "Minimālā (rezerves) cena", v: fmtEur(reserve) });
     // Pēdējais solījums tikai, ja tas atšķiras no noslēguma cenas (citādi tas pats skaitlis divreiz).
     if (lastBid && (sp.eur == null || Math.round(lastBid) !== Math.round(sp.eur))) prices.push({ k: "Pēdējais solījums", v: fmtEur(lastBid) });
-    if (sp.eur != null) prices.push({ k: "Noslēguma cena", v: fmtEur(sp.eur) });
+    // Etiķete pēc lauka nozīmes (final_price = pēdējais solījums → «Pēdējais solījums»), sk. thecarapi-sale-price.ts.
+    if (sp.eur != null) prices.push({ k: sp.label, v: fmtEur(sp.eur) });
     const estimate = eur("estimated_value_eur");
     if (estimate) prices.push({ k: "Portāla aplēstā vērtība (nav pirkšanas cena)", v: fmtEur(estimate) });
     const buyerFee = num(g.tail("buyerfeenet"));

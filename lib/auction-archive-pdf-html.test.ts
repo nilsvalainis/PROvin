@@ -184,7 +184,9 @@ describe("izsoļu arhīva fakti (v2)", () => {
     expect(kv["Auto atrašanās vieta"]).toBeUndefined();
     expect(b.prices).toEqual([]);
     const p = Object.fromEntries(auctionArchiveLotFacts(bca, { showPrices: true }).prices.map((r) => [r.k, r.v]));
-    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", "Noslēguma cena": "12 409,96 €", PVN: "Atskaitāms (22 %)" });
+    // current_final (publiskā cena) nozīme nav dokumentēta - klientam nerāda (Nils 23.11).
+    expect(p).toMatchObject({ "Sākuma cena": "9 900 €", "Pēdējais solījums": "10 100 €", PVN: "Atskaitāms (22 %)" });
+    expect(p["Noslēguma cena"]).toBeUndefined();
     const o = auctionArchiveLotFacts(openlane);
     const okv = Object.fromEntries([...o.sale, ...o.condition].map((r) => [r.k, r.v]));
     expect(okv["Auto atrašanās vieta"]).toBe("Drizzona");

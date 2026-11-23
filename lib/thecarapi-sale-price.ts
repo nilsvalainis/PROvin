@@ -10,8 +10,10 @@
  */
 
 export type ThecarapiSalePrice = {
-  /** Noslēguma cena EUR (vai null). */
+  /** Klientam rādāmā cena EUR (vai null). */
   eur: number | null;
+  /** Etiķete pēc lauka nozīmes: «Pēdējais solījums», «Noslēguma cena» vai «Portāla publiskā cena». */
+  label: string;
   /** Avota lauks, no kura ņemta `eur`. */
   source: string;
   /** Publiskā cena EUR, ja tā atšķiras no `eur` (tikai adminam). */
@@ -23,7 +25,7 @@ export type ThecarapiSalePrice = {
 function toNum(raw: unknown): number | null {
   if (typeof raw === "number") return Number.isFinite(raw) && raw > 0 ? raw : null;
   if (typeof raw !== "string") return null;
-  const s = raw.replace(/[\s  ]/g, "").replace(/EUR|€/gi, "").replace(",", ".");
+  const s = raw.replace(/[\s\u00a0\u202f]/g, "").replace(/EUR|€/gi, "").replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(s)) return null;
   const n = Number(s);
   return Number.isFinite(n) && n > 0 ? n : null;
@@ -33,31 +35,45 @@ function groupInt(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-/** `get(key)` - lauka vērtība (raw rinda vai admin lauku saraksts). */
+export const THECARAPI_LAST_BID_LABEL = "Pēdējais solījums";
+
+/**
+ * `get(key)` - lauka vērtība (raw rinda vai admin lauku saraksts).
+ * Kārtība: `final_price` (ja = `current_price` → «Pēdējais solījums», citādi «Noslēguma cena») > `current_price`
+ * («Pēdējais solījums») > publiskā cena (tikai, ja nekā cita nav). Publisko cenu, kas atšķiras no solījuma, klientam
+ * nerāda: tās nozīmi (maksas/PVN/transports) avots nedokumentē - 2 Openlane loti arhīvā 23.11 dod dažādu attiecību
+ * (7 300 → 11 168, 8 700 → 13 070), tāpēc tā paliek tikai adminā kā pretruna.
+ */
 export function thecarapiSalePrice(get: (key: string) => unknown): ThecarapiSalePrice {
   const currency = String(get("currency_code_id") ?? "").trim().toUpperCase();
   const nativeOk = !currency || currency === "EUR";
   const finalP = nativeOk ? toNum(get("final_price")) : null;
-  const publicP = toNum(get("public_price_eur"));
-  const currentFinal = nativeOk ? toNum(get("current_final")) : null;
-  const order: [string, number | null][] = [
-    ["final_price", finalP],
-    ["public_price_eur", publicP],
-    ["current_final", currentFinal],
-    ["current_price", nativeOk ? toNum(get("current_price")) : null],
-    ["start_price", nativeOk ? toNum(get("start_price")) : null],
-  ];
-  const hit = order.find(([, n]) => n != null);
-  const eur = hit?.[1] ?? null;
-  const source = hit?.[0] ?? "";
-  const pub = publicP ?? currentFinal;
-  const differs = eur != null && pub != null && source === "final_price" && Math.round(pub) !== Math.round(eur);
+  const current = nativeOk ? toNum(get("current_price")) : null;
+  const pub = toNum(get("public_price_eur")) ?? (nativeOk ? toNum(get("current_final")) : null);
+  let eur: number | null = null;
+  let source = "";
+  let label = "";
+  if (finalP != null) {
+    eur = finalP;
+    source = "final_price";
+    label = current != null && Math.round(current) === Math.round(finalP) ? THECARAPI_LAST_BID_LABEL : "Noslēguma cena";
+  } else if (current != null) {
+    eur = current;
+    source = "current_price";
+    label = THECARAPI_LAST_BID_LABEL;
+  } else if (pub != null) {
+    eur = pub;
+    source = "public_price_eur";
+    label = "Portāla publiskā cena";
+  }
+  const differs = eur != null && pub != null && source !== "public_price_eur" && Math.round(pub) !== Math.round(eur);
   return {
     eur,
+    label,
     source,
     publicEur: differs ? pub : null,
     conflict: differs
-      ? `Publiskā cena ${groupInt(pub!)} € (public_price_eur/current_final) atšķiras no noslēguma cenas ${groupInt(eur!)} € (final_price, pēdējais solījums). Klienta PDF rāda tikai noslēguma cenu.`
+      ? `Publiskā cena ${groupInt(pub!)} € (public_price_eur/current_final) atšķiras no ${label.toLowerCase()} ${groupInt(eur!)} € (${source}). Nozīme nav dokumentēta - klienta PDF to nerāda.`
       : "",
   };
 }
@@ -69,7 +85,7 @@ export function thecarapiSalePriceFromFields(fields: readonly { key: string; val
   return thecarapiSalePrice((k) => map.get(k));
 }
 
-type SaleRowLike = { venue: string; price: string; status: string };
+type SaleRowLike = { venue: string; price: string; status: string; priceLabel?: string };
 type RecordLike = { site: string; id: string; venue: string; fields: readonly { key: string; value: string }[] };
 
 /**
@@ -81,7 +97,7 @@ export function salesWithAuctionFinalPrice<T extends SaleRowLike>(sales: readonl
   return sales.map((row) => {
     const rec = records.find((r) => r.id && row.status.split(" · ").map((x) => x.trim()).includes(r.id));
     if (!rec) return row;
-    const eur = thecarapiSalePriceFromFields(rec.fields).eur;
-    return eur != null ? { ...row, price: `${groupInt(eur)} EUR` } : row;
+    const sp = thecarapiSalePriceFromFields(rec.fields);
+    return sp.eur != null ? { ...row, price: `${groupInt(sp.eur)} EUR`, priceLabel: sp.label } : row;
   });
 }

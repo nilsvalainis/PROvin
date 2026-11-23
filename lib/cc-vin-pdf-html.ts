@@ -186,10 +186,17 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
   const sales = (b.sales ?? []).filter(ccVinSaleRowHasData);
   if (sales.length > 0) {
     parts.push(subhead(CC_VIN_SUBTITLES.sales));
+    // Cenas kolonna ar nozīmes etiķeti: visām rindām viena (piem. «Pēdējais solījums») → virsrakstā, citādi pie vērtības.
+    const priced = sales.filter((r) => r.price.trim());
+    const labels = new Set(priced.map((r) => r.priceLabel ?? ""));
+    const sharedLabel = labels.size === 1 ? [...labels][0]! : "";
     parts.push(
       logTable(
-        ["Datums", "Vieta", "Odometrs, km", "Cena", "Statuss"],
-        sales.map((r) => [r.date, r.venue, kmDisplay(r.odometer), ccVinAmountToEurDisplay(r.price) || r.price, r.status]),
+        ["Datums", "Vieta", "Odometrs, km", sharedLabel || "Cena", "Statuss"],
+        sales.map((r) => {
+          const price = ccVinAmountToEurDisplay(r.price) || r.price;
+          return [r.date, r.venue, kmDisplay(r.odometer), price && r.priceLabel && !sharedLabel ? `${price} (${r.priceLabel.toLowerCase()})` : price, r.status];
+        }),
       ),
     );
   }

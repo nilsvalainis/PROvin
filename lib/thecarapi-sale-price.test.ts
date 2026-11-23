@@ -57,19 +57,22 @@ function openlane(): ThecarapiAdminRecord {
   } as unknown as ThecarapiAdminRecord;
 }
 
-describe("noslēguma cena (Nils 23.11: divas cenas vienai izsolei)", () => {
-  it("final_price uzvar publisko cenu; pretruna tikai adminam", () => {
+describe("izsoles cena (Nils 23.11: divas cenas vienai izsolei)", () => {
+  it("final_price = pēdējais solījums → etiķete «Pēdējais solījums»; publiskā cena tikai adminam", () => {
     const sp = thecarapiSalePriceFromFields(openlane().fields);
     expect(sp.eur).toBe(7300);
     expect(sp.source).toBe("final_price");
+    expect(sp.label).toBe("Pēdējais solījums");
     expect(sp.publicEur).toBe(11168);
     expect(sp.conflict).toContain("11 168");
   });
 
-  it("bez final_price - publiskā cena; citā valūtā - EUR publiskā", () => {
-    expect(thecarapiSalePrice((k) => ({ public_price_eur: 9000, current_price: 8000 })[k as "public_price_eur"]).eur).toBe(9000);
-    const gbp = { currency_code_id: "GBP", final_price: 8000, public_price_eur: 9300 } as Record<string, unknown>;
-    expect(thecarapiSalePrice((k) => gbp[k]).eur).toBe(9300);
+  it("bez final_price - pēdējais solījums; final_price ≠ solījums - «Noslēguma cena»; tikai publiskā - tā ar savu etiķeti", () => {
+    const row = (o: Record<string, unknown>) => thecarapiSalePrice((k) => o[k]);
+    expect(row({ public_price_eur: 13070, current_price: 8700 })).toMatchObject({ eur: 8700, label: "Pēdējais solījums" });
+    expect(row({ final_price: 9000, current_price: 8000 })).toMatchObject({ eur: 9000, label: "Noslēguma cena" });
+    expect(row({ public_price_eur: 9300 })).toMatchObject({ eur: 9300, label: "Portāla publiskā cena", conflict: "" });
+    expect(row({ currency_code_id: "GBP", final_price: 8000, public_price_eur: 9300 })).toMatchObject({ eur: 9300 });
   });
 
   it("vecā pārdošanas rinda ar publisko cenu PDF renderī saņem noslēguma cenu", () => {
@@ -78,6 +81,7 @@ describe("noslēguma cena (Nils 23.11: divas cenas vienai izsolei)", () => {
       [openlane()],
     );
     expect(rows[0]!.price).toBe("7 300 EUR");
+    expect(rows[0]!.priceLabel).toBe("Pēdējais solījums");
   });
 });
 
@@ -85,9 +89,10 @@ describe("izsoles kartīte: tulkoti fakti, nevis tehnisks izmetiens", () => {
   it("klienta faktos viena cena, anketas atbildes kā rindas, bez jautājumiem aprakstā", () => {
     const facts = auctionArchiveLotFacts(openlane(), { showPrices: true });
     const kv = Object.fromEntries([...facts.sale, ...facts.condition, ...facts.prices].map((r) => [r.k, r.v]));
-    expect(kv["Noslēguma cena"]).toBe("7 300 €");
+    expect(kv["Pēdējais solījums"]).toBe("7 300 €");
+    expect(kv["Noslēguma cena"]).toBeUndefined();
     expect(Object.values(kv)).not.toContain("11 168 €");
-    expect(kv["Pēdējais solījums"]).toBeUndefined();
+    expect(facts.prices).toHaveLength(2);
     expect(kv["COC atbilstības sertifikāts"]).toBe("Nav");
     expect(kv["Reģistrācijas dokumenti"]).toBe("Ir");
     expect(kv["Piegādes laiks pēc izsoles"]).toBe("7-10 dienas");
@@ -108,7 +113,9 @@ describe("izsoles kartīte: tulkoti fakti, nevis tehnisks izmetiens", () => {
     const html = buildCcVinPdfInnerHtml(block);
     expect(html).toContain('class="aa-embed"');
     expect(html).toContain("Openlane izsole");
+    expect(html).toContain("Pēdējais solījums");
     expect(html).toContain("7 300 €");
+    expect(html).not.toContain("Noslēguma cena");
     expect(html).not.toContain("11 168");
     expect(html).not.toMatch(/Citi dati|Is visible|Ecadis|Location id|Is the COC available/i);
   });

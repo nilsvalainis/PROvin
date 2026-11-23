@@ -382,7 +382,7 @@ function pushCcVinStyleHistory(
           : venueText
             ? `Nav pārdots · ${venueText}`
             : "Nepārdota izsole",
-        detail: priceText,
+        detail: priceText && s.priceLabel ? `${s.priceLabel} ${priceText}` : priceText,
         odometer: s.odometer,
         source,
         tone: "info",

@@ -27,6 +27,7 @@ import {
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
+import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export function esc(s: string): string {
@@ -432,7 +433,7 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
         ["Nobraukums", formatKm(l.km) || "-"],
         ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
       ];
-      if (showPrices && l.auction?.priceEur != null) cells.push(["Cena", formatEurWhole(l.auction.priceEur)]);
+      if (showPrices && l.auction?.priceEur != null) cells.push([thecarapiSalePriceFromFields(l.record.fields).label || "Cena", formatEurWhole(l.auction.priceEur)]);
       if (l.facts.lotNo) cells.push(["Izsoles Nr.", l.facts.lotNo]);
       const country = l.facts.country || l.auction?.country || "";
       const headTxt = `<div class="aa-cat__head"><p class="aa-cat__n">${l.n}. izsole</p><p class="aa-cat__date">${esc(
