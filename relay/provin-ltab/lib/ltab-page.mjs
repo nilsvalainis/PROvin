@@ -7,6 +7,10 @@ export { extractVerificationCode, looksLikeSsoFailure as looksLikeSmartIdFailure
  * Pārlūks (`ltab-flow.mjs`) savāc lapas kopsavilkumu (`snapshot`), šeit izlemj, kas tā ir un ko darīt.
  * Selektori ir teksta bāzēti, jo lapu pēc pieteikšanās vēl neesam redzējuši (Posms 0 ar Nilu).
  * 23.11.2026: LTAB pieteikšanās tagad ved uz vpm.viss.gov.lv (sk. `viss-sso.mjs`).
+ * 23.11.2026 (redzēts ielogots): forma `form.form-ins` ar #regNumber ("Reģistrācijas numurs") un #chassisNumber
+ *   (izslēgts; nelietojam - LTAB tikai pēc LV numura), poga "Meklēt", "Beigt darbu" (/VehicleInsAndAcc/VpSignout).
+ *   Rezultāts tajā pašā lapā: "Negadījumu skaits N", "... nav reģistrēts neviens negadījums", poga `.print`
+ *   "Lejupielādēt izziņu" -> window.open("/VehicleInsAndAcc/Print") = oriģinālais PDF.
  */
 
 export const LTAB_START_URL = "https://services.ltab.lv/VehicleInsAndAcc";
@@ -78,12 +82,21 @@ export function isNightInRiga(date = new Date(), fromHour = 22, toHour = 7) {
 
 const CONSENT_RE = /inform[eē]t|piekr[iī]t|apliecin|apstiprin|personas\s+dat|noteikum|datu\s+apstr|esmu\s+iepazin/i;
 const PAY_RE = /apmaks|samaks|maks[aā]jum|pirkt|iegād/i;
-const SEARCH_FIELD_RE = /re[gģ]istr|numur|nr\.?|vin|šasij|sasij|plate/i;
+const SEARCH_FIELD_RE = /re[gģ]istr|numur|reg\s*number|nr\.?|vin|šasij|sasij|chassis|plate/i;
 const SEARCH_BUTTON_RE = /mekl[eē]t|atlas[iī]t|p[aā]rbaud[iī]t|iesniegt\s+piepras|search/i;
 const PDF_RE = /\bpdf\b|izzi[nņ]|lejupiel|druk[aā]t|download/i;
 const NO_RESULT_RE =
-  /nav\s+(atrast|re[gģ]istr|ierakst|zaud[eē]jum|negad[iī]jum)|netika\s+atrast|ieraksti\s+nav|nav\s+datu|0\s+negad[iī]jum|negad[iī]jumu\s+skaits\s*:\s*0\b/i;
-const RESULT_RE = /negad[iī]jumu\s+skaits\s*:\s*[1-9]|CSNg|cietu[sš]ais|atbild[iī]gs|norakst[aā]m/i;
+  /nav\s+(atrast|re[gģ]istr|ierakst|zaud[eē]jum|negad[iī]jum)|netika\s+atrast|ieraksti\s+nav|nav\s+datu|0\s+negad[iī]jum|negad[iī]jumu\s+skaits\s*:?\s*0\b/i;
+const RESULT_RE = /negad[iī]jumu\s+skaits\s*:?\s*[1-9]|CSNg|cietu[sš]ais|atbild[iī]gs|norakst[aā]m/i;
+const ACCIDENT_COUNT_RE = /negad[iī]jumu\s+skaits\s*:?\s*(\d{1,3})(?!\d)/i;
+
+/**
+ * Negadījumu skaits no rezultāta lapas ("Negadījumu skaits 0" - LTAB 23.11.2026 izkārtojums) vai `null`.
+ */
+export function extractAccidentCount(text) {
+  const m = String(text ?? "").replace(/\s+/g, " ").match(ACCIDENT_COUNT_RE);
+  return m ? Number(m[1]) : null;
+}
 const CAPTCHA_RE = /captcha|recaptcha|hcaptcha|neesmu\s+robots|i'?m\s+not\s+a\s+robot/i;
 
 export function isConsentLabel(label) {
@@ -128,10 +141,14 @@ export function classifySnapshot(snap, opts = {}) {
   if (isLtabHost(host)) {
     if (snap?.hasVdar) return "ltab_login";
     const hasSearch =
-      inputs.some((i) => /text|search|^$/.test(String(i.type ?? "")) && isSearchFieldLabel(i.label)) &&
+      inputs.some((i) => i.id === "regNumber" || (/text|search|^$/.test(String(i.type ?? "")) && isSearchFieldLabel(i.label))) &&
       buttons.some((b) => isSearchButtonText(b.text));
     // Pirms "Meklēt" lapas virsrakstā jau ir "zaudējumu dati", tāpēc rezultātu vērtē tikai pēc meklēšanas.
     if (!opts.submitted) return hasSearch ? "ltab_search" : "unknown";
+    // Rezultāts paliek tajā pašā lapā zem meklēšanas formas; skaits ir drošākais signāls.
+    const count = extractAccidentCount(text);
+    if (count === 0) return "ltab_result_none";
+    if (count !== null && count > 0) return "ltab_result_found";
     if (NO_RESULT_RE.test(text)) return "ltab_result_none";
     if (RESULT_RE.test(text) || buttons.some((b) => isPdfControlText(b.text))) return "ltab_result_found";
     return hasSearch ? "ltab_search" : "unknown";

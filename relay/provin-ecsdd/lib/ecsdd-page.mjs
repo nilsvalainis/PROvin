@@ -93,7 +93,8 @@ export function isPayText(text) {
  * snapshot: { host, path, text, inputs:[{label,type,visible,id}], buttons:[{text,visible}], links:[{text,href}],
  *             codeCandidates, digitCandidates, hasAgree, smartIdChoice, smartIdAdapter, hasCaptchaFrame }
  * opts.submitted: vai tadati meklēšana jau iesniegta šajā lapā.
- * Atgriež: captcha | ecsdd_logged_out | ecsdd_logged_in | tadati_result | tadati_not_found |
+ * snap.accounts: [{id, name}] no "Izvēlies kontu"; snap.hasLogout: #logout ("Iziet") ir lapā (arī paslēpts izvēlnē).
+ * Atgriež: captcha | ecsdd_logged_out | ecsdd_logged_in | ecsdd_account_choose | tadati_result | tadati_not_found |
  *          sso_choose | sso_code_input | sso_wait | sso_failed | unknown
  */
 export function classifySnapshot(snap, opts = {}) {
@@ -106,7 +107,10 @@ export function classifySnapshot(snap, opts = {}) {
   if (isSsoHost(host)) return classifySso(snap);
 
   if (isEcsddHost(host)) {
+    // Pēc pieteikšanās (vai /?userlist=true): "Izvēlies kontu" - privātpersona + juridiskās personas.
+    if ((snap?.accounts ?? []).length > 0 && (snap?.accountSwitch || /izv[eē]lies\s+kontu/i.test(text))) return "ecsdd_account_choose";
     const hasLogout =
+      Boolean(snap?.hasLogout) ||
       buttons.some((b) => LOGOUT_CONTROL_RE.test(b.text)) ||
       links.some((l) => LOGOUT_CONTROL_RE.test(String(l.text ?? "")) || /logout|action=exit|iziet/i.test(String(l.href ?? "")));
     if (!hasLogout && LOGGED_OUT_RE.test(text)) return "ecsdd_logged_out";
@@ -118,6 +122,59 @@ export function classifySnapshot(snap, opts = {}) {
     return "unknown";
   }
   return "unknown";
+}
+
+const fold = (t) =>
+  String(t ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+const COMPANY_RE = /sabiedr[iī]ba|\bSIA\b|\bAS\b|akciju|"|„|biedr[iī]ba|nodibin[aā]jums|kooperat|\bIK\b|\bZS\b|komersant/i;
+
+/**
+ * Kuru kontu izvēlēties lapā "Izvēlies kontu". pref: "person" (noklusējums; privātpersonas konts = id "1" vai
+ * pirmais, kas nav uzņēmums) vai nosaukuma fragments (piem. "ĪRISS"; bez garumzīmju/reģistra atšķirības).
+ * Atgriež indeksu `accounts` masīvā vai -1 (prasītais konts nav sarakstā - nekad neizvēlamies citu).
+ */
+export function pickAccountIndex(accounts, pref = "person") {
+  const list = accounts ?? [];
+  const want = fold(pref) || "person";
+  if (want === "person" || want === "privatpersona") {
+    const byId = list.findIndex((a) => String(a.id) === "1" && !COMPANY_RE.test(String(a.name ?? "")));
+    if (byId >= 0) return byId;
+    return list.findIndex((a) => !COMPANY_RE.test(String(a.name ?? "")));
+  }
+  const hits = list.map((a, i) => (fold(a.name).includes(want) ? i : -1)).filter((i) => i >= 0);
+  return hits.length === 1 ? hits[0] : -1;
+}
+
+/**
+ * `tadati` akordeona paneļi (pārlūkā savākti: [{title, rows: [[šūna, ...]]}], arī aizvērtie) -> raw teksts
+ * tādā pašā formā kā Nila ielīmējums: "Tehniskie dati\nPārbaudes veids:\tPamatpārbaude\n...".
+ */
+export function formatTadatiPanels(panels, footer = "", secrets = []) {
+  const out = [];
+  for (const p of panels ?? []) {
+    const title = String(p?.title ?? "").replace(/\s+/g, " ").trim();
+    const rows = (p?.rows ?? [])
+      .map((r) => (r ?? []).map((c) => String(c ?? "").replace(/\s+/g, " ").trim()))
+      .filter((r) => r.some(Boolean))
+      .map((r) => r.join("\t").replace(/\t+$/, ""));
+    if (!title && !rows.length) continue;
+    if (out.length) out.push("");
+    if (title) out.push(title);
+    out.push(...rows);
+  }
+  if (!out.length) return "";
+  const foot = String(footer ?? "").replace(/\s+/g, " ").trim();
+  if (foot) out.push("", foot);
+  const lines = out.map((l) => {
+    const m = l.match(PERSON_LINE_RE);
+    return m && m[4].trim() ? `${m[1]}${m[2]} ***` : l;
+  });
+  return redact(lines.join("\n"), secrets).slice(0, 60_000);
 }
 
 /** Rindas ar personas datiem (vārds, adrese) tadati tekstā aizvieto ar `Etiķete ***`. */

@@ -62,6 +62,12 @@ sesija:  logged_out -> logging_in -> awaiting_smartid -> active -> (kicked + yie
 - `SMARTID_PERSONAL_CODE` tikai `/etc/provin-ecsdd.env` (root 600). Ieraksta **Nils pats** no 1Password. Nav Vercel, nav repo.
 - Žurnālā personas kodi (arī bez defises) un tokeni aizvietoti ar `***`. SSO / Smart-ID lapām nav ekrānuzņēmumu/HTML;
   tikai neatpazītos soļos `debug/` - pogas/lauku etiķetes un teksts, kurā visi cipari aizvietoti ar `#`.
+- Pēc pieteikšanās e.csdd rāda "Izvēlies kontu" (privātpersona + juridiskās personas). Relejs izvēlas privātpersonu;
+  cits konts: `ECSDD_ACCOUNT=<nosaukuma fragments>` (`/etc/provin-ecsdd.env`). Ja prasītā konta nav - kļūda, citu neizvēlas.
+- `tadati` teksts tiek savākts no visiem akordeona paneļiem (Tehniskie dati, Detalizētais vērtējums, Bremžu vērtējums,
+  Būtiski bojājumi CSNg, Nobraukuma vēsture LV, nodoklis) - arī aizvērtajiem; šūnas atdalītas ar tabulatoru.
+- Releja restarts (deploy) vairs neizmet sesiju: Chrome profilā ieslēgts "turpināt, kur beidzu", tāpēc sesijas sīkdatnes
+  paliek. Jaunu Smart-ID vajag tikai tad, ja sesija beigusies e.csdd pusē.
 - Vienotās pieteikšanās + Smart-ID soļi: `lib/viss-sso.mjs` (IDENTISKS fails LTAB relejā; tests pārbauda, ka sakrīt).
 - `tadati` tekstā rindas ar īpašnieka / turētāja vārdu, adresi, personas kodu tiek aizvietotas ar `***` pirms nosūtīšanas.
 - `debug/` (700, tikai servisa lietotājs): neatpazītu e.csdd lapu teksts bez personas kodiem. Ielogotā lapā var būt

@@ -37,6 +37,11 @@ relejs  -> PROVIN /api/ltab/relay-callback:
 - Relejs nekad neapmaksā (maksājuma poga -> `paid`, stop) un nerisina captcha (`captcha`, stop).
 - Galvenā loga navigācija tikai uz `services.ltab.lv`, `*.viss.gov.lv` un latvija.lv; viss cits tiek bloķēts.
 
+- Releja restarts (deploy) neizdzēš pieteikšanos: Chrome profilā ieslēgts "turpināt, kur beidzu", tāpēc sesijas
+  sīkdatnes paliek. Jaunu Smart-ID vajag tikai tad, ja sesija beigusies LTAB / VISS pusē.
+- Ielogota lapa (23.11.2026): `#regNumber` + "Meklēt"; rezultāts tajā pašā lapā ("Negadījumu skaits N"); PDF =
+  `/VehicleInsAndAcc/Print` (poga "Lejupielādēt izziņu"). Šasijas numura lauku relejs nelieto.
+
 ## Drošība
 
 - `SMARTID_PERSONAL_CODE` tikai `/etc/provin-ltab.env` (root 600). Ieraksta **Nils pats** no 1Password. Nav Vercel, nav repo.

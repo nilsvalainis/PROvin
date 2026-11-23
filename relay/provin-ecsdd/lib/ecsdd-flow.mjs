@@ -15,9 +15,11 @@ import {
   ECSDD_SSO_URL,
   ECSDD_TADATI_URL,
   extractTadatiText,
+  formatTadatiPanels,
   isEcsddHost,
   isPayText,
   isSsoHost,
+  pickAccountIndex,
   redact,
 } from "./ecsdd-page.mjs";
 import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
@@ -32,7 +34,7 @@ export class EcsddFlowError extends Error {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const pause = () => sleep(2000 + Math.round(Math.random() * 3000));
 
-async function snapshot(page) {
+export async function snapshot(page) {
   const host = new URL(page.url()).hostname;
   const data = await page.evaluate(() => {
     const vis = (el) => {
@@ -63,7 +65,22 @@ async function snapshot(page) {
       .filter(vis)
       .map((el) => ({ text: (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80), href: (el.getAttribute("href") || "").slice(0, 200) }))
       .slice(0, 200);
+    const accounts = [...document.querySelectorAll("li.account-item")].map((li) => ({
+      id: li.getAttribute("id") || "",
+      name: (li.querySelector("a > p")?.textContent || li.textContent || "").replace(/\s+/g, " ").trim().slice(0, 160),
+    }));
+    // Ielogotā cilvēka vārds (galvene, profils, privātpersonas konts) - tikai, lai to izņemtu no atkļūdošanas failiem.
+    const personNames = [
+      ...[...document.querySelectorAll(".profile-select nav header h4, .profile-select > a > p, #page-e-csdd-profile .group-right h1")].map((el) => el.textContent || ""),
+      ...accounts.filter((a) => a.id === "1").map((a) => a.name),
+    ]
+      .map((t) => t.replace(/\s+/g, " ").trim())
+      .filter((t) => t.length >= 3);
     return {
+      accounts,
+      personNames,
+      accountSwitch: Boolean(document.querySelector("#page-e-csdd-account-switch, .account-switch")),
+      hasLogout: Boolean(document.querySelector('#logout, a[href="/login/"] .icon-exit')),
       path: location.pathname,
       text: (document.body?.innerText || "").replace(/\s+/g, " ").slice(0, 20000),
       inputs,
@@ -76,8 +93,42 @@ async function snapshot(page) {
   return { host, ...data, ...sso };
 }
 
-export function createEcsddBrowser({ getContext, personalCode, log = () => undefined, debugDir = "", smartIdTimeoutMs = 120_000 }) {
+/** Pārlūkā: `tadati` akordeona paneļi ar VISĀM tabulu rindām (arī aizvērtajiem paneļiem, ko innerText nerāda). */
+export function collectTadatiPanels() {
+  const cell = (el) => {
+    // Ikonu <svg>/<style> saturs nav teksts.
+    const c = el.cloneNode(true);
+    for (const x of c.querySelectorAll("style, svg, script")) x.remove();
+    return (c.textContent || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  };
+  const panels = [...document.querySelectorAll("section")]
+    .filter((s) => s.querySelector(':scope > input[name="panels"]'))
+    .map((s) => ({
+      title: s.querySelector(":scope > label") ? cell(s.querySelector(":scope > label")) : "",
+      rows: [...s.querySelectorAll("tr")].map((tr) => [...tr.children].filter((c) => /^(TD|TH)$/.test(c.tagName)).map(cell)),
+    }));
+  const foot = document.querySelector("tr.tr-basedata");
+  return { panels, footer: foot ? cell(foot) : "" };
+}
+
+export function createEcsddBrowser({ getContext, personalCode, account = "person", log = () => undefined, debugDir = "", smartIdTimeoutMs = 120_000 }) {
   const secrets = [personalCode];
+
+  /** Lapa "Izvēlies kontu": izvēlas `account` (noklusējums privātpersona). Kontu nosaukumi žurnālā netiek rakstīti. */
+  async function chooseAccount(page, snap) {
+    const idx = pickAccountIndex(snap.accounts, account);
+    if (idx < 0) {
+      await saveDebug("account-not-found", snap);
+      throw new EcsddFlowError("page_changed", "e.csdd: prasītais konts nav sarakstā");
+    }
+    log(`konta izvēle: ${idx + 1}. no ${snap.accounts.length} (${/^person$/i.test(account) ? "privātpersona" : "pēc nosaukuma"})`);
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 30_000 }).catch(() => undefined),
+      page.locator("li.account-item").nth(idx).locator("a").first().click(),
+    ]);
+    await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+    await sleep(1500);
+  }
 
   async function saveDebug(name, snap) {
     // e.csdd lapas: teksts bez personas kodiem. SSO lapas: tikai neatpazītos soļos, visi cipari aizvietoti ar `#`.
@@ -100,11 +151,16 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
               codeCandidates: (snap.codeCandidates ?? []).length,
               digitCandidates: (snap.digitCandidates ?? []).length,
             }
-          : { host: snap.host, path: snap.path, text: text.slice(0, 8000), buttons: snap.buttons, links: snap.links },
+          : { host: snap.host, path: snap.path, text: text.slice(0, 8000), buttons: snap.buttons, links: snap.links, accounts: (snap.accounts ?? []).length },
         null,
         1,
       );
-      await fs.writeFile(path.join(debugDir, `${new Date().toISOString().replace(/[:.]/g, "-")}-${name}.json`), redact(body, secrets), { mode: 0o600 });
+      // Vārds/uzvārds nekad failā (garākie vispirms, bez reģistra atšķirības).
+      let safe = redact(body, secrets);
+      for (const n of [...new Set(snap.personNames ?? [])].sort((a, b) => b.length - a.length)) {
+        safe = safe.replace(new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu"), "***");
+      }
+      await fs.writeFile(path.join(debugDir, `${new Date().toISOString().replace(/[:.]/g, "-")}-${name}.json`), safe, { mode: 0o600 });
     } catch {
       /* atkļūdošana nav obligāta */
     }
@@ -141,8 +197,13 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
   /** Sākumlapa: vai sesija ir ielogota. */
   async function homeState(page) {
     await page.goto(ECSDD_HOME_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
-    const snap = await snapshot(page);
-    const kind = classifySnapshot(snap);
+    let snap = await snapshot(page);
+    let kind = classifySnapshot(snap);
+    if (kind === "ecsdd_account_choose") {
+      await chooseAccount(page, snap);
+      snap = await snapshot(page);
+      kind = classifySnapshot(snap);
+    }
     if (kind === "ecsdd_logged_in") return "ok";
     if (kind === "ecsdd_logged_out") return "logged_out";
     if (kind === "captcha") throw new EcsddFlowError("captcha");
@@ -154,6 +215,7 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
     return withPage(async (page) => {
       let codeFilled = false;
       let codeSent = false;
+      let accountChosen = false;
       let ssoVisits = 0;
       await page.goto(ECSDD_SSO_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
       for (let step = 0; step < 25; step++) {
@@ -168,7 +230,31 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
         log(`pieteikšanās solis ${step}: ${kind} (${snap.host})`);
 
         if (kind === "captcha") throw new EcsddFlowError("captcha");
-        if (kind === "ecsdd_logged_in") return;
+        if (kind === "ecsdd_logged_in") {
+          // Cits konts nekā privātpersona: e.csdd pēc noklusējuma atver privātpersonu, tāpēc izvēlamies sarakstā.
+          if (!/^person$/i.test(account) && !accountChosen) {
+            await page.goto(`${ECSDD_HOME_URL}?userlist=true`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+            const list = await snapshot(page);
+            if (classifySnapshot(list) !== "ecsdd_account_choose") {
+              await saveDebug("account-list-unknown", list);
+              throw new EcsddFlowError("page_changed", "e.csdd: kontu saraksts neatpazīts");
+            }
+            await chooseAccount(page, list);
+            accountChosen = true;
+            continue;
+          }
+          return;
+        }
+
+        if (kind === "ecsdd_account_choose") {
+          if (accountChosen) {
+            await saveDebug(`account-repeat-${step}`, snap);
+            throw new EcsddFlowError("page_changed", "e.csdd: konta izvēle atkārtojas");
+          }
+          await chooseAccount(page, snap);
+          accountChosen = true;
+          continue;
+        }
 
         if (kind === "ecsdd_logged_out") {
           if (codeSent) throw new EcsddFlowError("login_not_kept", "pēc Smart-ID e.csdd joprojām nav ielogots");
@@ -238,8 +324,13 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
   async function lookup(query) {
     return withPage(async (page) => {
       await page.goto(ECSDD_HOME_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
-      const home = await snapshot(page);
-      const homeKind = classifySnapshot(home);
+      let home = await snapshot(page);
+      let homeKind = classifySnapshot(home);
+      if (homeKind === "ecsdd_account_choose") {
+        await chooseAccount(page, home);
+        home = await snapshot(page);
+        homeKind = classifySnapshot(home);
+      }
       if (homeKind === "ecsdd_logged_out") return { status: "logged_out" };
       if (homeKind === "captcha") throw new EcsddFlowError("captcha");
       await pause();
@@ -273,9 +364,17 @@ export function createEcsddBrowser({ getContext, personalCode, log = () => undef
         return { status: "not_found" };
       }
       if (kind === "tadati_result") {
-        const full = await page.evaluate(() => document.body?.innerText || "");
-        const rawText = extractTadatiText(full, secrets);
-        if (!rawText) throw new EcsddFlowError("page_changed", "tadati: tukšs teksts");
+        // Akordeona paneļi (Tehniskie dati, Detalizētais vērtējums, Nobraukuma vēsture LV ...) - arī aizvērtie.
+        const { panels, footer } = await page.evaluate(collectTadatiPanels).catch(() => ({ panels: [], footer: "" }));
+        let rawText = formatTadatiPanels(panels, footer, secrets);
+        if (!rawText) {
+          const full = await page.evaluate(() => document.body?.innerText || "");
+          rawText = extractTadatiText(full, secrets);
+        }
+        if (!rawText) {
+          await saveDebug("tadati-empty", snap);
+          throw new EcsddFlowError("page_changed", "tadati: tukšs teksts");
+        }
         return { status: "found", rawText };
       }
       if (snap.buttons.some((b) => b.visible !== false && isPayText(b.text))) throw new EcsddFlowError("paid");

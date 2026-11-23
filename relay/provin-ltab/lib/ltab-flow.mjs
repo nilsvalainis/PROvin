@@ -22,6 +22,8 @@ import {
 } from "./ltab-page.mjs";
 import { chooseSmartId, collectSsoExtras, submitPersonalCode, waitForSmartId } from "./viss-sso.mjs";
 
+const LTAB_PRINT_PATH = "/VehicleInsAndAcc/Print";
+
 export class LtabFlowError extends Error {
   constructor(code, message) {
     super(message || code);
@@ -70,8 +72,17 @@ export async function snapshot(page) {
         .slice(0, 160),
       visible: vis(el),
     }));
+    // Ielogotā lietotāja vārds un personas kods (LTAB galvenē) nekad neatstāj lapu.
+    const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+    let text = norm(document.body?.innerText);
+    for (const el of document.querySelectorAll(".auth-signed-as, .user-info")) {
+      const who = norm(el.innerText || el.textContent);
+      if (who.length >= 3) text = text.split(who).join("***");
+    }
     return {
-      text: (document.body?.innerText || "").replace(/\s+/g, " ").slice(0, 20000),
+      text: text.slice(0, 20000),
+      loggedIn: Boolean(document.querySelector('a[href*="VpSignout" i], .log-off-lnk')),
+      hasPrint: Boolean(document.querySelector("button.print, a.print, .print")),
       checkboxes,
       inputs,
       buttons,
@@ -158,6 +169,13 @@ async function checkConsentBoxes(page) {
 }
 
 async function fillSearch(page, plate) {
+  // LTAB 23.11.2026: #regNumber ("Reģistrācijas numurs"). Šasijas lauku (#chassisNumber) nekad nelietojam.
+  const reg = page.locator("#regNumber");
+  if (await reg.isVisible().catch(() => false)) {
+    if (await reg.isDisabled().catch(() => false)) await page.locator("#regRadio").check({ force: true }).catch(() => undefined);
+    await reg.fill(plate);
+    return true;
+  }
   // Ja ir izvēle "reģistrācijas numurs / VIN", izvēlas numuru.
   const radios = page.locator('input[type="radio"]');
   const rn = await radios.count();
@@ -185,7 +203,7 @@ async function fillSearch(page, plate) {
         .filter(Boolean)
         .join(" ");
     });
-    if (!isSearchFieldLabel(label) || (/vin|šasij|sasij/i.test(label) && !/numur|reg/i.test(label))) continue;
+    if (!isSearchFieldLabel(label) || /vin|šasij|sasij|chassis/i.test(label)) continue;
     await f.fill(plate);
     return true;
   }
@@ -207,6 +225,20 @@ async function downloadPdf(page, maxBytes) {
       /* atbilde aizvērta */
     }
   };
+  // LTAB 23.11.2026: poga `.print` tikai atver /VehicleInsAndAcc/Print jaunā cilnē - paņemam to pašu URL tieši
+  // (tās pašas sīkdatnes), bez cilnes un PDF skatītāja.
+  if (await page.locator(".print").count().catch(() => 0)) {
+    try {
+      const res = await context.request.get(new URL(LTAB_PRINT_PATH, page.url()).toString(), { timeout: 30_000 });
+      const body = await res.body();
+      if (res.ok() && body.byteLength <= maxBytes && body.subarray(0, 4).toString("latin1") === "%PDF") return body;
+    } catch {
+      /* mēģinām ar pogu */
+    }
+  }
+  const popups = [];
+  const onPage = (p) => popups.push(p);
+  context.on("page", onPage);
   context.on("response", onResponse);
   try {
     const download = page.waitForEvent("download", { timeout: 30_000 }).catch(() => null);
@@ -224,6 +256,8 @@ async function downloadPdf(page, maxBytes) {
     return captured && captured.subarray(0, 4).toString("latin1") === "%PDF" ? captured : null;
   } finally {
     context.off("response", onResponse);
+    context.off("page", onPage);
+    for (const p of popups) await p.close().catch(() => undefined);
   }
 }
 
@@ -311,7 +345,10 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
     }
 
     if (kind === "ltab_search") {
-      if (submitted) throw new LtabFlowError("page_changed", "LTAB: meklēšana nedeva rezultātu lapu");
+      if (submitted) {
+        await saveDebug(debugDir, "result-missing", snap, secrets);
+        throw new LtabFlowError("page_changed", "LTAB: meklēšana nedeva rezultātu lapu");
+      }
       await checkConsentBoxes(page);
       if (!(await fillSearch(page, plate))) {
         await saveDebug(debugDir, "search-no-field", snap, secrets);
@@ -319,7 +356,14 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
       }
       await onProgress("searching", {});
       await pause();
-      const clicked = await clickByText(page, /mekl[eē]t|atlas[iī]t|p[aā]rbaud[iī]t|search/i);
+      const submitBtn = page.locator('form.form-ins button[type="submit"]').first();
+      let clicked = false;
+      if (await submitBtn.isVisible().catch(() => false)) {
+        await submitBtn.click();
+        clicked = true;
+      } else {
+        clicked = await clickByText(page, /mekl[eē]t|atlas[iī]t|p[aā]rbaud[iī]t|search/i);
+      }
       if (!clicked) {
         await saveDebug(debugDir, "search-no-button", snap, secrets);
         throw new LtabFlowError("page_changed", "LTAB: nav pogas Meklēt");
@@ -329,10 +373,19 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
       continue;
     }
 
+    if (kind === "ltab_result_none" || kind === "ltab_result_found") {
+      // Rezultātam jābūt par mūsu numuru (ne vecs rezultāts no iepriekšējā vaicājuma).
+      const shown = snap.text.match(/numura\s+z[iī]m\p{L}*\s*:?\s*([A-Z0-9][A-Z0-9 -]{1,11}?)(?=\s|$)/u);
+      if (shown && !String(plate).replace(/[\s-]/g, "").toUpperCase().startsWith(shown[1].replace(/[\s-]/g, "").toUpperCase())) {
+        await saveDebug(debugDir, "result-other-plate", snap, secrets);
+        throw new LtabFlowError("page_changed", "LTAB: rezultāts par citu numuru");
+      }
+    }
+
     if (kind === "ltab_result_none") {
       await saveDebug(debugDir, "result-none", snap, secrets);
       // Ja LTAB tomēr dod izziņas PDF arī bez negadījumiem, paņemam to (Vercel izlemj pēc PDF satura).
-      const hasPdf = snap.buttons.some((b) => b.visible !== false && isPdfControlText(b.text));
+      const hasPdf = snap.hasPrint || snap.buttons.some((b) => b.visible !== false && isPdfControlText(b.text));
       const pdf = hasPdf ? await downloadPdf(page, maxPdfBytes).catch(() => null) : null;
       return { found: false, pdf };
     }
@@ -340,7 +393,10 @@ export async function runLtabLookup({ page, plate, personalCode, onProgress, log
     if (kind === "ltab_result_found") {
       await saveDebug(debugDir, "result-found", snap, secrets);
       const pdf = await downloadPdf(page, maxPdfBytes);
-      if (!pdf) throw new LtabFlowError("pdf_missing");
+      if (!pdf) {
+        await saveDebug(debugDir, "result-found-no-pdf", snap, secrets);
+        throw new LtabFlowError("pdf_missing");
+      }
       return { found: true, pdf };
     }
 

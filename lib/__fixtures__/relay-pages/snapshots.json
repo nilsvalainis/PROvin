@@ -1,0 +1,684 @@
+{
+ "ltab-search-form": {
+  "host": "services.ltab.lv",
+  "text": "LV EN RU LTAB Mobilā Lietotne Piekļūstamība Fonta izmērs 100% 150% 200% Kontrasts Transportlīdzekļa zaudējumu dati *** Beigt darbu Reģistrācijas numurs vai Šasijas numurs Meklēt Kontakti Sīkdatņu izmantošanas politika Datu apstrādes politika © Latvijas Transportlīdzekļu apdrošinātāju birojs.",
+  "loggedIn": true,
+  "hasPrint": false,
+  "checkboxes": [],
+  "inputs": [
+   {
+    "label": "regNumber regNumber ",
+    "type": "text",
+    "id": "regNumber",
+    "visible": true
+   },
+   {
+    "label": "chassisNumber chassisNumber ",
+    "type": "text",
+    "id": "chassisNumber",
+    "visible": true
+   }
+  ],
+  "buttons": [
+   {
+    "text": "LV",
+    "visible": true
+   },
+   {
+    "text": "100%",
+    "visible": true
+   },
+   {
+    "text": "150%",
+    "visible": true
+   },
+   {
+    "text": "200%",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "Nē",
+    "visible": false
+   },
+   {
+    "text": "Jā",
+    "visible": false
+   },
+   {
+    "text": "Meklēt",
+    "visible": true
+   },
+   {
+    "text": "×",
+    "visible": false
+   },
+   {
+    "text": "Jā",
+    "visible": false
+   },
+   {
+    "text": "Nē",
+    "visible": false
+   },
+   {
+    "text": "×",
+    "visible": false
+   },
+   {
+    "text": "Aizvērt",
+    "visible": false
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false
+ },
+ "ltab-result-none": {
+  "host": "services.ltab.lv",
+  "text": "LV EN RU LTAB Mobilā Lietotne Piekļūstamība Fonta izmērs 100% 150% 200% Kontrasts Transportlīdzekļa zaudējumu dati *** Beigt darbu Reģistrācijas numurs vai Šasijas numurs Meklēt Informācijas sagatavošanas laiks 23.11.2026 14:02:48 Transportlīdzeklis BMW X5, izlaiduma gads 2004 Valsts numura zīme AB1234 Negadījumu skaits 0 Apdrošināšanas ilguma periods 26.11.2021 - 11.05.2027 apdrošināts 1993 dienas Uz 23.11.2026 14:02:48 automašīnai ar valsts numura zīmi AB1234 nav reģistrēts neviens negadījums Transportlīdzekļa zaudējumu vēstures izziņa Lejupielādēt izziņu Kontakti Sīkdatņu izmantošanas politika Datu apstrādes politika © Latvijas Transportlīdzekļu apdrošinātāju birojs.",
+  "loggedIn": true,
+  "hasPrint": true,
+  "checkboxes": [],
+  "inputs": [
+   {
+    "label": "regNumber regNumber ",
+    "type": "text",
+    "id": "regNumber",
+    "visible": true
+   },
+   {
+    "label": "chassisNumber chassisNumber ",
+    "type": "text",
+    "id": "chassisNumber",
+    "visible": true
+   }
+  ],
+  "buttons": [
+   {
+    "text": "LV",
+    "visible": true
+   },
+   {
+    "text": "100%",
+    "visible": true
+   },
+   {
+    "text": "150%",
+    "visible": true
+   },
+   {
+    "text": "200%",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "Nē",
+    "visible": false
+   },
+   {
+    "text": "Jā",
+    "visible": false
+   },
+   {
+    "text": "Meklēt",
+    "visible": true
+   },
+   {
+    "text": "Lejupielādēt izziņu",
+    "visible": true
+   },
+   {
+    "text": "×",
+    "visible": false
+   },
+   {
+    "text": "Jā",
+    "visible": false
+   },
+   {
+    "text": "Nē",
+    "visible": false
+   },
+   {
+    "text": "×",
+    "visible": false
+   },
+   {
+    "text": "Aizvērt",
+    "visible": false
+   }
+  ],
+  "hasVdar": false,
+  "hasCaptchaFrame": false
+ },
+ "ecsdd-account-choose": {
+  "host": "e.csdd.lv",
+  "accounts": [
+   {
+    "id": "1",
+    "name": "JĀNIS BĒRZIŅŠ"
+   },
+   {
+    "id": "20001",
+    "name": "SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PIEMĒRS AUTO\""
+   },
+   {
+    "id": "20002",
+    "name": "SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PARAUGS\""
+   }
+  ],
+  "personNames": [
+   "JĀNIS BĒRZIŅŠ"
+  ],
+  "accountSwitch": true,
+  "hasLogout": false,
+  "path": "/",
+  "text": "e-CSDD Atgriezties csdd.lv LV Izvēlies kontu N JĀNIS BĒRZIŅŠ 1 SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PIEMĒRS AUTO\" 2 SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PARAUGS\" Pievienot jaunu juridisko personu Tehniskais atbalsts Darbadienās 8.30 – 17.00 palidziba@csdd.gov.lv Par e-CSDD maksājumiem Darbadienās 8.30 – 17.00 emaksajumi@csdd.gov.lv Kontakti un darba laiki CSDD KAC darba laiki Kontakti saziņai + 371 670 257 77 e-CSDD pieejami arī © CSDD 2026 Lietošanas noteikumi Privātuma politika Sīkdatņu paziņojums e-pakalpojumu darbība tiek atbalstīta, izmantojot šādas interneta pārlūkprogrammas Microsoft Edge, Google Chrome, Mozilla Firefox, Apple Safari MAC OSS",
+  "inputs": [],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": false
+   },
+   {
+    "text": "LV",
+    "visible": false
+   }
+  ],
+  "links": [
+   {
+    "text": "Atgriezties csdd.lv",
+    "href": "javascript:;"
+   },
+   {
+    "text": "LV",
+    "href": "javascript:void(0);"
+   },
+   {
+    "text": "N JĀNIS BĒRZIŅŠ",
+    "href": "javascript:;"
+   },
+   {
+    "text": "1 SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PIEMĒRS AUTO\"",
+    "href": "javascript:;"
+   },
+   {
+    "text": "2 SABIEDRĪBA AR IEROBEŽOTU ATBILDĪBU \"PARAUGS\"",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Pievienot jaunu juridisko personu",
+    "href": "/jpmanage/?cmd=newAccount"
+   },
+   {
+    "text": "palidziba@csdd.gov.lv",
+    "href": "mailto:palidziba@csdd.gov.lv"
+   },
+   {
+    "text": "emaksajumi@csdd.gov.lv",
+    "href": "mailto:emaksajumi@csdd.gov.lv"
+   },
+   {
+    "text": "CSDD KAC darba laiki",
+    "href": "https://www.csdd.lv/par-csdd/kontakti-un-darba-laiki/"
+   },
+   {
+    "text": "+ 371 670 257 77",
+    "href": "tel:+010101-12345"
+   },
+   {
+    "text": "Lietošanas noteikumi",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Privātuma politika",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Sīkdatņu paziņojums",
+    "href": "javascript:;"
+   }
+  ],
+  "hasCaptchaFrame": false
+ },
+ "ecsdd-home-logged-in": {
+  "host": "e.csdd.lv",
+  "accounts": [],
+  "personNames": [
+   "JĀNIS",
+   "JĀNIS BĒRZIŅŠ",
+   "JĀNIS BĒRZIŅŠ"
+  ],
+  "accountSwitch": false,
+  "hasLogout": true,
+  "path": "/",
+  "text": "Reģistrācijas vai VIN numurs: e-CSDD LV JĀNIS N JĀNIS BĒRZIŅŠ Tehniskais atbalsts Darbadienās 8.30 – 17.00 palidziba@csdd.gov.lv Par e-CSDD maksājumiem Darbadienās 8.30 – 17.00 emaksajumi@csdd.gov.lv Kontakti un darba laiki CSDD KAC darba laiki Kontakti saziņai + 371 670 257 77 e-CSDD pieejami arī © CSDD 2026 Lietošanas noteikumi Privātuma politika Sīkdatņu paziņojums e-pakalpojumu darbība tiek atbalstīta, izmantojot šādas interneta pārlūkprogrammas Microsoft Edge, Google Chrome, Mozilla Firefox, Apple Safari MAC OSS",
+  "inputs": [
+   {
+    "label": "Reģistrācijas vai VIN numurs: rn search-input",
+    "type": "search",
+    "id": "search-input",
+    "visible": true
+   },
+   {
+    "label": "",
+    "type": "submit",
+    "id": "",
+    "visible": true
+   },
+   {
+    "label": "Reģistrācijas vai VIN numurs: rn search-input",
+    "type": "search",
+    "id": "search-input",
+    "visible": false
+   },
+   {
+    "label": "",
+    "type": "submit",
+    "id": "",
+    "visible": false
+   }
+  ],
+  "buttons": [
+   {
+    "text": "",
+    "visible": true
+   },
+   {
+    "text": "EN",
+    "visible": false
+   },
+   {
+    "text": "LV",
+    "visible": false
+   },
+   {
+    "text": "",
+    "visible": false
+   }
+  ],
+  "links": [
+   {
+    "text": "LV",
+    "href": "javascript:void(0);"
+   },
+   {
+    "text": "JĀNIS N",
+    "href": "javascript:;"
+   },
+   {
+    "text": "palidziba@csdd.gov.lv",
+    "href": "mailto:palidziba@csdd.gov.lv"
+   },
+   {
+    "text": "emaksajumi@csdd.gov.lv",
+    "href": "mailto:emaksajumi@csdd.gov.lv"
+   },
+   {
+    "text": "CSDD KAC darba laiki",
+    "href": "https://www.csdd.lv/par-csdd/kontakti-un-darba-laiki/"
+   },
+   {
+    "text": "+ 371 670 257 77",
+    "href": "tel:+010101-12345"
+   },
+   {
+    "text": "Lietošanas noteikumi",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Privātuma politika",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Sīkdatņu paziņojums",
+    "href": "javascript:;"
+   }
+  ],
+  "hasCaptchaFrame": false
+ },
+ "ecsdd-tadati-result": {
+  "host": "e.csdd.lv",
+  "accounts": [],
+  "personNames": [
+   "JĀNIS",
+   "JĀNIS BĒRZIŅŠ"
+  ],
+  "accountSwitch": false,
+  "hasLogout": true,
+  "path": "/tadati/",
+  "text": "e-CSDD LV JĀNIS N Sākums Tehniskā apskate Tehniskās apskates dati Informācija Noteikumi Pakalpojuma apraksts Jautājumiem/Atsauksmēm Latvijā reģistrēto transportlīdzekļu pēdējās tehniskās apskates rezultāti Tehniskie dati Pārbaudes veids: Pamatpārbaude Reģistrācijas statuss: Uzskaitē Marka, modelis: BMW X5 Reģistrācijas numurs: AB1234 Pirmās reģistrācijas datums: 20.08.2004 Emisiju standarts: Euro 3 Nākamās apskates datums: 12.02.2027 Odometra rādījums: 317679 Novērtējums: 1 - Ar pieļaujamiem defektiem CO2: 250 Dūmainības koeficients (m-1): 0.35 Degvielas veids: Dīzeļdegviela Motora maksimālā jauda (kW): 160 Motora tilpums (cm3): 2993 Pilna masa (kg): 2695 Pašmasa (kg): 2180 Detalizētais vērtējums Bremžu vērtējums Būtiski bojājumi CSNg Nobraukuma vēsture LV Transportlīdzekļa ekspluatācijas nodoklis Informācija sagatavota elektroniski 23.11.2026 14:04:25 no CSDD transportlīdzekļu un to vadītāju valsts nozīmes reģistra. Atgriezties Tehniskais atbalsts Darbadienās 8.30 – 17.00 palidziba@csdd.gov.lv Par e-CSDD maksājumiem Darbadienās 8.30 – 17.00 emaksajumi@csdd.gov.lv Kontakti un darba laiki CSDD KAC darba laiki Kontakti saziņai + 371 670 257 77 e-CSDD pieejami arī © CSDD 2026 Lietošanas noteikumi Privātuma politika Sīkdatņu paziņojums e-pakalpojumu darbība tiek atbalstīta, izmantojot šādas interneta pārlūkprogrammas Microsoft Edge, Google Chrome, Mozilla Firefox, Apple Safari MAC OSS",
+  "inputs": [
+   {
+    "label": "Reģistrācijas vai VIN numurs: rn search-input",
+    "type": "search",
+    "id": "search-input",
+    "visible": false
+   },
+   {
+    "label": "",
+    "type": "submit",
+    "id": "",
+    "visible": false
+   }
+  ],
+  "buttons": [
+   {
+    "text": "EN",
+    "visible": false
+   },
+   {
+    "text": "LV",
+    "visible": false
+   },
+   {
+    "text": "",
+    "visible": false
+   }
+  ],
+  "links": [
+   {
+    "text": "LV",
+    "href": "javascript:void(0);"
+   },
+   {
+    "text": "JĀNIS N",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Sākums",
+    "href": "/"
+   },
+   {
+    "text": "Tehniskā apskate",
+    "href": "/?menu=2"
+   },
+   {
+    "text": "Tehniskās apskates dati",
+    "href": "/tadati/"
+   },
+   {
+    "text": "Atgriezties",
+    "href": "javascript:;"
+   },
+   {
+    "text": "palidziba@csdd.gov.lv",
+    "href": "mailto:palidziba@csdd.gov.lv"
+   },
+   {
+    "text": "emaksajumi@csdd.gov.lv",
+    "href": "mailto:emaksajumi@csdd.gov.lv"
+   },
+   {
+    "text": "CSDD KAC darba laiki",
+    "href": "https://www.csdd.lv/par-csdd/kontakti-un-darba-laiki/"
+   },
+   {
+    "text": "+ 371 670 257 77",
+    "href": "tel:+010101-12345"
+   },
+   {
+    "text": "Lietošanas noteikumi",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Privātuma politika",
+    "href": "javascript:;"
+   },
+   {
+    "text": "Sīkdatņu paziņojums",
+    "href": "javascript:;"
+   }
+  ],
+  "hasCaptchaFrame": false,
+  "tadati": {
+   "panels": [
+    {
+     "title": "Tehniskie dati",
+     "rows": [
+      [
+       "Pārbaudes veids:",
+       "Pamatpārbaude"
+      ],
+      [
+       "Reģistrācijas statuss:",
+       "Uzskaitē"
+      ],
+      [
+       "Marka, modelis:",
+       "BMW X5"
+      ],
+      [
+       "Reģistrācijas numurs:",
+       "AB1234"
+      ],
+      [
+       "Pirmās reģistrācijas datums:",
+       "20.08.2004"
+      ],
+      [
+       "Emisiju standarts:",
+       "Euro 3"
+      ],
+      [
+       "Nākamās apskates datums:",
+       "12.02.2027"
+      ],
+      [
+       "Odometra rādījums:",
+       "317679"
+      ],
+      [
+       "Novērtējums:",
+       "1 - Ar pieļaujamiem defektiem"
+      ],
+      [
+       "CO2:",
+       "250"
+      ],
+      [
+       "Dūmainības koeficients (m-1):",
+       "0.35"
+      ],
+      [
+       "Degvielas veids:",
+       "Dīzeļdegviela"
+      ],
+      [
+       "Motora maksimālā jauda (kW):",
+       "160"
+      ],
+      [
+       "Motora tilpums (cm3):",
+       "2993"
+      ],
+      [
+       "Pilna masa (kg):",
+       "2695"
+      ],
+      [
+       "Pašmasa (kg):",
+       "2180"
+      ]
+     ]
+    },
+    {
+     "title": "Detalizētais vērtējums",
+     "rows": [
+      [
+       "Kods",
+       "Novērtējums:",
+       "Trūkumi vai bojājumi"
+      ],
+      [
+       "4.4.3.",
+       "1",
+       "Virzienrādītāja luktura vai gaismas avota nolietojums nebūtiski ietekmē izstarotās gaismas krāsu."
+      ]
+     ]
+    },
+    {
+     "title": "Bremžu vērtējums",
+     "rows": [
+      [
+       "Ass",
+       "Kreisais",
+       "Labais",
+       "Bremžu tips"
+      ],
+      [
+       "1",
+       "2.88",
+       "2.77",
+       "D"
+      ],
+      [
+       "2",
+       "2.99",
+       "2.86",
+       "D"
+      ],
+      [
+       "2",
+       "2.94",
+       "2.32",
+       "S"
+      ],
+      [
+       "D - Darba bremzes; S - Stāvbremzes",
+       ""
+      ],
+      []
+     ]
+    },
+    {
+     "title": "Būtiski bojājumi CSNg",
+     "rows": [
+      [
+       "Informācija no policijas:"
+      ],
+      [
+       "Nav"
+      ],
+      [
+       "Informācija no apdrošinātājiem:"
+      ],
+      [
+       "Nav"
+      ]
+     ]
+    },
+    {
+     "title": "Nobraukuma vēsture LV",
+     "rows": [
+      [
+       ""
+      ],
+      [
+       "Datums:",
+       "Odometrs",
+       "Nobraukums"
+      ],
+      [
+       "12.02.2026",
+       "317679",
+       "6705"
+      ],
+      [
+       "20.02.2025",
+       "310974",
+       "186"
+      ],
+      [
+       "11.02.2025",
+       "310788",
+       "6311"
+      ],
+      [
+       "02.02.2024",
+       "304477",
+       "5004"
+      ],
+      [
+       "24.01.2023",
+       "299473",
+       "69"
+      ],
+      [
+       "03.01.2023",
+       "299404",
+       "8224"
+      ],
+      [
+       "17.12.2021",
+       "291180",
+       "291180"
+      ]
+     ]
+    },
+    {
+     "title": "Transportlīdzekļa ekspluatācijas nodoklis",
+     "rows": [
+      [
+       "231,00 EUR",
+       "- uz gadu (pilnā apmērā)"
+      ],
+      [
+       "211,75 EUR",
+       "- noņemšanai no uzskaites"
+      ],
+      [
+       "38,50 EUR",
+       "- līdz gada beigām, ja nodoklis par esošo mēnesi nav samaksāts"
+      ],
+      [
+       "19,25 EUR",
+       "- līdz gada beigām, ja nodoklis par esošo mēnesi ir samaksāts"
+      ],
+      [
+       ""
+      ],
+      [
+       "Uzņēmuma vieglo transportlīdzekļu nodokļa likme (īpašniekam nav jāmaksā):"
+      ],
+      [
+       "60 EUR",
+       "- mēnesī"
+      ]
+     ]
+    }
+   ],
+   "footer": "Informācija sagatavota elektroniski 23.11.2026 14:04:25 no CSDD transportlīdzekļu un to vadītāju valsts nozīmes reģistra."
+  }
+ }
+}
