@@ -4,6 +4,11 @@
  */
 
 import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
+import {
+  activeListingBelowAnomalies,
+  formatListingBelowFactLv,
+  type OdometerAnomalyOverride,
+} from "@/lib/odometer-anomaly-classify";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   applyClientReportStaticTranslations,
@@ -1311,7 +1316,11 @@ function buildMileageHistoryTableHtml(
 }
 
 export function buildUnifiedMileageTableHtml(
-  p: UnifiedMileageSourcePayload & { mileageComment?: string | null },
+  p: UnifiedMileageSourcePayload & {
+    mileageComment?: string | null;
+    /** 24.11 (Nils A): operatora atceltais „sludinājumā mazāk” karogs - rinda paliek dzeltena, grafikā nav. */
+    odometerAnomalyOverrides?: OdometerAnomalyOverride[] | null;
+  },
   mileageOpts?: CollectUnifiedMileageOptions,
 ): string {
   const collectPayload: UnifiedMileageSourcePayload = {
@@ -1343,10 +1352,17 @@ export function buildUnifiedMileageTableHtml(
     dataEntryErrorSourceOrders,
     listingBelowRecordedSourceOrders,
   } = analyzeUnifiedMileageAnomalies(mileageRows);
+  // 24.11 (Nils A): „sludinājumā mazāk” (> 1 000 km un > 2 %) - sarkana rinda, sarkans marķieris grafikā un
+  // piezīme ar abiem skaitļiem. Ja operators karogu atcēlis - kā līdz šim (dzeltena rinda, grafikā nav).
+  const activeListingBelow = activeListingBelowAnomalies(mileageRows, p.odometerAnomalyOverrides ?? null);
+  const activeListingOrders = new Set(activeListingBelow.map((a) => a.sourceOrder));
+  const dismissedListingOrders = [...listingBelowRecordedSourceOrders].filter((so) => !activeListingOrders.has(so));
+  const tableAnomalyBySourceOrder = new Map(anomalyBySourceOrder);
+  for (const so of activeListingOrders) tableAnomalyBySourceOrder.set(so, true);
   const staleOrEntryError = new Set([
     ...staleDocumentSourceOrders,
     ...dataEntryErrorSourceOrders,
-    ...listingBelowRecordedSourceOrders,
+    ...dismissedListingOrders,
   ]);
   const staleOrEntryOnly = staleDocumentSourceOrders.size + dataEntryErrorSourceOrders.size > 0;
 
@@ -1369,6 +1385,7 @@ export function buildUnifiedMileageTableHtml(
   const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, {
     compact: true,
     chartExcludeSourceOrders,
+    markerSourceOrders: activeListingOrders,
   });
 
   const mid = Math.ceil(display.length / 2) || 0;
@@ -1378,8 +1395,8 @@ export function buildUnifiedMileageTableHtml(
     display.length === 0
       ? ""
       : display.length <= 4
-        ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder, staleOrEntryError)
-        : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder, staleOrEntryError)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder, staleOrEntryError)}</div></div>`;
+        ? buildMileageHistoryTableHtml(display, tableAnomalyBySourceOrder, staleOrEntryError)
+        : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, tableAnomalyBySourceOrder, staleOrEntryError)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, tableAnomalyBySourceOrder, staleOrEntryError)}</div></div>`;
 
   // A17: skaits = leģendas avoti (AutoDNA un «AutoDNA (sludinājums)» ir viens avots).
   const sourceCount = mileagePdfLegendKeysInOrder(
@@ -1389,9 +1406,12 @@ export function buildUnifiedMileageTableHtml(
   const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
   const yellowNote = (text: string) =>
     `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(text)}</p>`;
+  const redNote = (text: string) =>
+    `<p class="pdf-mileage-smart-note pdf-mileage-smart-note--alert"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>${escapeHtml(text)}</p>`;
   const staleNoteHtml =
+    activeListingBelow.map((a) => redNote(formatListingBelowFactLv(a))).join("") +
     (staleOrEntryOnly ? yellowNote(PDF_MILEAGE_STALE_DOCUMENT_NOTE) : "") +
-    (listingBelowRecordedSourceOrders.size > 0 ? yellowNote(PDF_MILEAGE_LISTING_BELOW_NOTE) : "");
+    (dismissedListingOrders.length > 0 ? yellowNote(PDF_MILEAGE_LISTING_BELOW_NOTE) : "");
 
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
@@ -3527,6 +3547,10 @@ ${sourceDotColorCss()}
       .pdf-mileage-chart-wrap--has-anomaly .pdf-mileage-chart-path{stroke-width:2.6;}
       .pdf-mileage-chart-legend-anomaly{
         display:inline-flex;align-items:center;gap:5px;margin-left:14px;
+      }
+      .pdf-mileage-chart-marker{
+        fill:#ef4444;stroke:#fff;stroke-width:1.2;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-mileage-chart-legend-rollback{
         display:inline-block;width:14px;height:3px;border-radius:2px;background:#ef4444;

@@ -6,6 +6,7 @@ import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
 import { csddMileageRowHasData, type CsddFormFields } from "@/lib/admin-source-blocks";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
+  activeListingBelowAnomalies,
   applyOdometerAnomalyOverrides,
   classifyOdometerAnomalies,
   countChartMileageReadings,
@@ -146,6 +147,18 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
     );
   }
 
+  // 24.11 (Nils A): sludinājumā mazāk nekā fiksēts (operators nav atcēlis) - galvenē nedrīkst „bez pretrunām”.
+  const activeListingBelow = activeListingBelowAnomalies(rows, input.overrides);
+  if (mileageTile && /bez pretrunām/i.test(mileageTile.note) && activeListingBelow.length > 0) {
+    flags.push(
+      flag(
+        "c2_listing_below_clean_header",
+        "Galvenē ir „bez pretrunām”, bet sludinājumā norādīts mazāks nobraukums nekā agrāk fiksēts.",
+        mileageTile.note,
+      ),
+    );
+  }
+
   const newest = selectNewestChartMileageRow(rows);
   const headerKm = mileageTile ? parseKmFromDisplay(mileageTile.value) : null;
   const lastKm = newest ? parseOdometerKm(newest.odometer) : null;
@@ -195,7 +208,10 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
       id: `odo_${a.class}_${a.sourceOrder}`,
       kind: "contradiction",
       level,
-      message: `${a.labelLv}: ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → ${formatForensicsInt(a.toKm)} km (${a.toDate}), kritums ${formatForensicsInt(a.dropKm)} km.`,
+      message:
+        a.class === "listing_below"
+          ? `${a.labelLv}: fiksēts ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → sludinājumā ${formatForensicsInt(a.toKm)} km (${a.toDate}), par ${formatForensicsInt(a.dropKm)} km mazāk. Ja tā nav pretruna - atcel karogu nobraukuma anomāliju panelī.`
+          : `${a.labelLv}: ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → ${formatForensicsInt(a.toKm)} km (${a.toDate}), kritums ${formatForensicsInt(a.dropKm)} km.`,
       sentence: `${a.toDate} ${formatForensicsInt(a.toKm)} km`,
     });
   }

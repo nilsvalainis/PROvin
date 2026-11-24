@@ -59,7 +59,9 @@
   "03.08.2026 | 335 000 | Latvija | ss.lv"
  ],
  "sarkanaJosla": false,
- "klases": [],
+ "klases": [
+  "listing_below: 18.08.2015 103880 -> 27.09.2015 90000 (kritums 13880) [27.09.2015 | 90000 | AutoDNA (sludinājums)]"
+ ],
  "kritumsBezNilaLemumiem": false,
  "nilaLemumi": [
   {
@@ -79,7 +81,9 @@
    "action": "dismiss"
   }
  ],
- "klasesPecNilaLemumiem": [],
+ "klasesPecNilaLemumiem": [
+  "listing_below: 27.09.2015 90000"
+ ],
  "faktuLapa": {
   "odometerAnomaly": false,
   "carverticalMileageWarning": false,
