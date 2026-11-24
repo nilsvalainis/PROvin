@@ -32,7 +32,7 @@ import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/vi
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
-import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsSearchOn, isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 export async function loadIrissListingMatchState(): Promise<IrissListingMatchState> {
   const storage = getIrissListingsStorageState();
@@ -62,6 +62,7 @@ export async function refreshIrissListingMatches(input?: {
     id: row.id,
     brandModel: row.brandModel,
     listStatus: row.listStatus,
+    searchOverride: row.searchOverride,
     deletedAt: row.deletedAt,
     clientFirstName: row.clientFirstName,
     clientLastName: row.clientLastName,
@@ -79,10 +80,14 @@ export async function refreshIrissListingMatches(input?: {
   }));
   const found = discoverListingOrderMatches(vehicles, matchOrders);
   const live = new Set(vehicles.filter((v) => v.id && v.change !== "gone").map((v) => v.id));
-  /** Neskatīto skaitam apzināti «working»: rezervēta pasūtījuma jau atrastie auto paliek redzami. */
+  /** Neskatīto skaitam «working» vai ieslēgts slēdzis: rezervēta pasūtījuma jau atrastie auto paliek redzami. */
   const active = new Set(
     matchOrders
-      .filter((o) => isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus) && !(o.deletedAt ?? "").trim())
+      .filter(
+        (o) =>
+          !(o.deletedAt ?? "").trim() &&
+          (isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus) || isIrissPasutijumsSearchOn(o)),
+      )
       .map((o) => o.id),
   );
   const next = mergeListingOrderMatches(previous, found, now, live, active);

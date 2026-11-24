@@ -76,6 +76,7 @@ import {
   formatIrissOverviewSavedCapsule,
 } from "@/lib/iriss-order-overview-view";
 import { IrissOrderStagePath, IrissOrderStageSelect } from "@/components/admin/IrissOrderStagePath";
+import { IrissSearchSwitch } from "@/components/admin/IrissSearchSwitch";
 import { irissOrderStage } from "@/lib/iriss-order-stage";
 import {
   newIrissCommunicationEvent,
@@ -136,6 +137,7 @@ import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_ORDER_STAGE_LV,
+  isIrissPasutijumsSearchOn,
   defaultIrissDzintarzemeTameDraft,
   type IrissGeneratedDocument,
   type IrissOfferRecord,
@@ -914,6 +916,7 @@ export function IrissOrderRoom({
   onPatchRecord,
   onInactiveReason,
   onSetStage,
+  onSetSearch,
   stageSignals = null,
   onSave,
   onSaveCriteria,
@@ -972,6 +975,8 @@ export function IrissOrderRoom({
   onInactiveReason: (value: string) => void;
   /** P5: posma maiņa ar roku (raksta listStatus + dealWorkflowStatus). */
   onSetStage: (stage: IrissOrderStage) => void;
+  /** Meklēšanas slēdzis (makets A): saglabājas ar to pašu autosaglabāšanu kā statuss. */
+  onSetSearch: (on: boolean) => void;
   /** P5: PD/Autoparka signāli no servera. */
   stageSignals?: IrissOrderStageSignals | null;
   onSave: () => Promise<IrissOrderSaveResult>;
@@ -1355,6 +1360,7 @@ export function IrissOrderRoom({
               <span className="sr-only">Statuss</span>
               <IrissOrderStageSelect stage={orderStage} onChange={onSetStage} />
             </label>
+            <IrissSearchSwitch on={isIrissPasutijumsSearchOn(rec)} onChange={onSetSearch} className="!min-h-8" />
             <span className="min-w-0 truncate text-[13px] text-[var(--am-ink2)]">{clientName || refLabel}</span>
             <div className="ml-auto flex shrink-0 items-center gap-1">
               <button
@@ -1417,6 +1423,7 @@ export function IrissOrderRoom({
                     <span className="sr-only">Statuss</span>
                     <IrissOrderStageSelect stage={orderStage} onChange={onSetStage} />
                   </label>
+                  <IrissSearchSwitch on={isIrissPasutijumsSearchOn(rec)} onChange={onSetSearch} className="max-md:hidden" />
                   {financingChip ? (
                     <span className="iriss-deal-pill hidden h-8 items-center rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] md:inline-flex">
                       {financingChip}

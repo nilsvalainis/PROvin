@@ -7,6 +7,9 @@ import { parseClearedFields } from "@/lib/admin-cleared-fields";
 import {
   isIrissOrderStage,
   isIrissPasutijumsListStatus,
+  isIrissPasutijumsSearchOn,
+  irissSearchOverrideFor,
+  parseIrissSearchOverride,
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
   type IrissStatusHistoryEntry,
@@ -113,7 +116,7 @@ export function isIrissRecordDeleted(rec: { deletedAt?: string } | null | undefi
 
 export function pickIrissPasutijumsAuditFields(o: Record<string, unknown>): Pick<
   IrissPasutijumsRecord,
-  "clearedFields" | "fieldUpdatedAt" | "statusChangedAt" | "statusHistory" | "deletedAt" | "inactiveReason"
+  "clearedFields" | "fieldUpdatedAt" | "statusChangedAt" | "statusHistory" | "deletedAt" | "inactiveReason" | "searchOverride"
 > {
   const cleared = parseMsMap(o.clearedFields);
   const fieldUpdatedAt = parseMsMap(o.fieldUpdatedAt);
@@ -121,6 +124,7 @@ export function pickIrissPasutijumsAuditFields(o: Record<string, unknown>): Pick
   const deletedAt = parseOptionalIso(o.deletedAt);
   const statusChangedAt = parseOptionalIso(o.statusChangedAt);
   const inactiveReason = typeof o.inactiveReason === "string" ? o.inactiveReason.slice(0, 240) : "";
+  const searchOverride = parseIrissSearchOverride(o.searchOverride);
   return {
     ...(Object.keys(cleared).length ? { clearedFields: cleared } : {}),
     ...(Object.keys(fieldUpdatedAt).length ? { fieldUpdatedAt } : {}),
@@ -128,6 +132,7 @@ export function pickIrissPasutijumsAuditFields(o: Record<string, unknown>): Pick
     ...(statusHistory.length ? { statusHistory } : {}),
     ...(deletedAt ? { deletedAt } : {}),
     ...(inactiveReason ? { inactiveReason } : {}),
+    ...(searchOverride ? { searchOverride } : {}),
   };
 }
 
@@ -191,10 +196,25 @@ export function appendIrissStatusHistory(
   const statusHistory = [...(prev.statusHistory ?? []), entry].slice(-80);
   return {
     ...prev,
+    // Jauns statuss atkal dod savu meklēšanas noklusējumu (citādi «Pārdots» ar aizmirstu slēdzi lasītu avotus).
+    searchOverride: undefined,
     listStatus: nextStatus,
     statusChangedAt: opts.at,
     statusHistory,
     inactiveReason: nextStatus === "inactive" ? (opts.reason ?? prev.inactiveReason ?? "") : "",
+  };
+}
+
+/**
+ * Meklēšanas slēdzis ar roku. Glabā tikai atšķirību no statusa noklusējuma.
+ * Atjauno `statusChangedAt`, lai slēdzis sapludināšanā ceļo kopā ar statusu (jaunākais uzvar).
+ */
+export function setIrissSearchOn(prev: IrissPasutijumsRecord, on: boolean, opts: { at: string }): IrissPasutijumsRecord {
+  if (isIrissPasutijumsSearchOn({ ...prev, deletedAt: "" }) === on) return prev;
+  return {
+    ...prev,
+    searchOverride: irissSearchOverrideFor(prev.listStatus ?? "active", on),
+    statusChangedAt: opts.at,
   };
 }
 

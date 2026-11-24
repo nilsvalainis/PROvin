@@ -46,7 +46,8 @@ import {
   type MarketplaceOrderCriteria,
 } from "@/lib/marketplace/query-from-order";
 import {
-  isIrissPasutijumsSearchingStatus,
+  isIrissPasutijumsSearchOn,
+  type IrissSearchOverride,
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
 
@@ -64,6 +65,8 @@ export type MarketplaceAutoOrderBrief = {
   updatedAt: string;
   pinnedAt?: string;
   listStatus: IrissPasutijumsListStatus;
+  searchOverride?: IrissSearchOverride;
+  deletedAt?: string;
 };
 
 export type MarketplaceAutoReady = {
@@ -116,9 +119,9 @@ export function marketplaceAutoProvidersReady(): MarketplaceAutoReady {
   return { ok: true, reason: "" };
 }
 
-/** Automātiskā ielāde tikai meklēšanas statusos; rezervēts, pārdots un neaktīvs to aptur. */
+/** Automātiskā ielāde tikai, kamēr meklēšana ieslēgta (slēdzis, citādi statusa noklusējums); izdzēstam nekad. */
 export function isMarketplaceAutoOrderActive(row: MarketplaceAutoOrderBrief): boolean {
-  return isIrissPasutijumsSearchingStatus(row.listStatus);
+  return isIrissPasutijumsSearchOn(row);
 }
 
 /** Piespraustie vispirms, tad jaunākie pēc updatedAt. */
@@ -460,6 +463,8 @@ export async function runMarketplaceAutoLoadNow(now = new Date()): Promise<Marke
         updatedAt: row.updatedAt,
         pinnedAt: row.pinnedAt,
         listStatus: row.listStatus,
+        searchOverride: row.searchOverride,
+        deletedAt: row.deletedAt,
       }));
     },
     async readOrder(id) {

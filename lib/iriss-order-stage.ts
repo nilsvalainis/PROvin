@@ -205,6 +205,8 @@ export function applyIrissOrderStage(
   };
   const next: IrissPasutijumsRecord = {
     ...rec,
+    // Statusa maiņa notīra meklēšanas slēdzi - jaunais statuss dod savu noklusējumu.
+    searchOverride: undefined,
     listStatus: to,
     statusChangedAt: opts.at,
     statusHistory: [...(rec.statusHistory ?? []), entry].slice(-80),
