@@ -186,6 +186,12 @@ export default async function AdminStatistikaPage({
         </p>
       </section>
 
+      <p className="mt-5 text-[13px]">
+        <Link href="/admin/pretrunu-statistika" className="font-medium text-[var(--color-provin-accent)] hover:underline">
+          Pretrunu statistika
+        </Link>
+      </p>
+
       <section className="mt-5">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
           Ārējie rīki

@@ -91,7 +91,14 @@ export type UnitFact = {
   addedAt: string;
 };
 
-export type FactCheckLevel = "E" | "W";
+/** E = kļūda, W = jāpārbauda, I = informācija (24.11: nebloķē, neskaita). */
+export type FactCheckLevel = "E" | "W" | "I";
+
+const LEVEL_ORDER: Record<FactCheckLevel, number> = { E: 0, W: 1, I: 2 };
+/** Kārtošana: E, tad W, tad I. */
+export function compareFactCheckLevel(a: { level: FactCheckLevel }, b: { level: FactCheckLevel }): number {
+  return (LEVEL_ORDER[a.level] ?? 1) - (LEVEL_ORDER[b.level] ?? 1);
+}
 
 export type FactCheckFlag = {
   id: string;

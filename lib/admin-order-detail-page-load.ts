@@ -71,6 +71,7 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.contradictionFeedback != null ? { contradictionFeedback: w.contradictionFeedback } : {}),
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
@@ -99,6 +100,7 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(hydrated.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: hydrated.odometerAnomalyOverrides }
       : {}),
+    ...(hydrated.contradictionFeedback != null ? { contradictionFeedback: hydrated.contradictionFeedback } : {}),
     ...(hydrated.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: hydrated.dealerMajorWorkOverrides }
       : {}),

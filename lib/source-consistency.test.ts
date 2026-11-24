@@ -65,12 +65,45 @@ describe("checkSourceConsistency - nobraukums", () => {
           { date: "10.05.2019", odometer: "120000", country: "Latvija" },
         ],
       }),
-      carvertical: { serviceHistory: [{ date: "01.09.2022", odometer: "150000", country: "Latvija" }] },
+      autodna: { serviceHistory: [{ date: "14.09.2022", odometer: "150321", country: "Latvija" }] },
     });
     const drop = issues.find((i) => i.kind === "mileage_drop");
     expect(drop?.severity).toBe("critical");
     expect(formatSourceIssueLine(drop!)).toContain("180 000 km");
-    expect(formatSourceIssueLine(drop!)).toContain("150 000 km");
+    expect(formatSourceIssueLine(drop!)).toContain("150 321 km");
+  });
+
+  it("24.11 audits: vendora apaļi km (sludinājuma km pārkopēti) - tikai brīdinājums", () => {
+    const issues = run({
+      csdd: csdd({
+        mileageHistory: [
+          { date: "15.06.2021", odometer: "180000", country: "Latvija" },
+          { date: "10.05.2019", odometer: "120000", country: "Latvija" },
+        ],
+      }),
+      carvertical: { serviceHistory: [{ date: "01.09.2022", odometer: "150000", country: "Latvija" }] },
+    });
+    const drop = issues.find((i) => i.kind === "mileage_drop");
+    expect(drop?.severity).toBe("warn");
+    expect(drop?.title).toContain("noapaļots");
+  });
+
+  it("24.11 audits: jūdzes kā km (attiecība ≈ 1,609) - info; 999 999 un «01.00.2018» izlaisti", () => {
+    const miles = run({
+      csdd: csdd({ mileageHistory: [{ date: "15.06.2021", odometer: "160934", country: "Latvija" }] }),
+      carvertical: { serviceHistory: [{ date: "01.09.2022", odometer: "100013", country: "ASV" }] },
+    });
+    expect(miles.find((i) => i.kind === "mileage_drop")?.severity).toBe("info");
+    const sentinel = run({
+      csdd: csdd({ mileageHistory: [{ date: "15.06.2021", odometer: "999999", country: "Latvija" }] }),
+      carvertical: {
+        serviceHistory: [
+          { date: "01.09.2022", odometer: "150321", country: "Latvija" },
+          { date: "01.00.2018", odometer: "190321", country: "Latvija" },
+        ],
+      },
+    });
+    expect(sentinel.find((i) => i.kind === "mileage_drop")).toBeUndefined();
   });
 
   it("kritums, kas jau ir viena avota iekšienē (pārkopēts citos), nav avotu pretruna", () => {
@@ -144,7 +177,8 @@ describe("checkSourceConsistency - īpašnieki, valsts, datumi", () => {
       },
     });
     const o = issues.find((i) => i.kind === "owners");
-    expect(o?.severity).toBe("warn");
+    // 24.11 audits: CarVertical «maiņu» skaits ietver reģ. apliecības maiņas - info.
+    expect(o?.severity).toBe("info");
     expect(formatSourceIssueLine(o!)).toContain("05.2026");
   });
 

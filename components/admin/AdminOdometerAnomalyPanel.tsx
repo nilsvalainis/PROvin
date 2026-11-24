@@ -4,6 +4,7 @@ import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
 import {
   applyOdometerAnomalyOverrides,
   classifyOdometerAnomalies,
+  findOdometerAnomalyOverride,
   type ClassifiedOdometerAnomaly,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
@@ -16,11 +17,10 @@ export function AdminOdometerAnomalyPanel({
 }: {
   rows: UnifiedMileageRow[];
   overrides: OdometerAnomalyOverride[];
-  onOverride: (next: OdometerAnomalyOverride) => void;
+  onOverride: (next: OdometerAnomalyOverride, anomaly: ClassifiedOdometerAnomaly) => void;
 }) {
   const classified = classifyOdometerAnomalies(rows);
   if (classified.length === 0) return null;
-  const overrideByKey = new Map(overrides.map((o) => [o.key, o]));
   const active = applyOdometerAnomalyOverrides(classified, overrides);
 
   return (
@@ -30,10 +30,10 @@ export function AdminOdometerAnomalyPanel({
     >
       <p className="text-[11px] font-semibold">Nobraukuma anomālijas</p>
       <p className="text-[10px] leading-snug text-amber-900/80">
-        Tikai admin brīdinājumi. Grafiku un datumu attēlojumu nemaina. Vienu klikšķi apstiprina vai atceļ karogu.
+        Tikai admin brīdinājumi. Grafiku un datumu attēlojumu nemaina.
       </p>
       {classified.map((a) => {
-        const ov = overrideByKey.get(a.key);
+        const ov = findOdometerAnomalyOverride(a, overrides);
         const dismissed = ov?.action === "dismiss";
         const confirmed = ov?.action === "confirm";
         return (
@@ -42,8 +42,8 @@ export function AdminOdometerAnomalyPanel({
             anomaly={a}
             dismissed={dismissed}
             confirmed={confirmed}
-            onConfirm={() => onOverride({ key: a.key, action: "confirm" })}
-            onDismiss={() => onOverride({ key: a.key, action: "dismiss" })}
+            onConfirm={() => onOverride({ key: a.key, action: "confirm" }, a)}
+            onDismiss={() => onOverride({ key: a.key, action: "dismiss" }, a)}
           />
         );
       })}
@@ -95,7 +95,7 @@ function AnomalyRow({
           }`}
           onClick={onConfirm}
         >
-          Apstiprināt
+          Pareizi
         </button>
         <button
           type="button"
@@ -104,7 +104,7 @@ function AnomalyRow({
           }`}
           onClick={onDismiss}
         >
-          Atcelt karogu
+          Nav pretruna
         </button>
       </div>
     </div>

@@ -38,6 +38,7 @@ import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import {
+  analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
   looksLikeExtraDigitOdometerTypo,
   parseOdometerKm,
@@ -238,6 +239,8 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
   if (csddCount != null) values.push({ source: "CSDD", value: `${csddCount}` });
 
   const vendorCounts: SourceIssueValue[] = [];
+  let changeCountOnly = false;
+  let explicitMismatch = false;
   for (const key of ["carvertical", "autodna"] as const) {
     const b = blocks[key];
     const text = adminRichHtmlToPlainText(b.comments ?? "");
@@ -256,7 +259,10 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
       if (k) lvMonths.add(k);
     }
     if (explicit != null) {
-      if (csddCount != null && explicit !== csddCount) vendorCounts.push({ source: SOURCE_BLOCK_LABELS[key], value: `${explicit}` });
+      if (csddCount != null && explicit !== csddCount) {
+        explicitMismatch = true;
+        vendorCounts.push({ source: SOURCE_BLOCK_LABELS[key], value: `${explicit}` });
+      }
       continue;
     }
     if (lvMonths.size === 0) continue;
@@ -282,6 +288,8 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
     }
     if (afterStatement.length > 0 && csddCount != null && lvMonths.size > csddCount) {
       // Vairāk maiņu Latvijā nekā CSDD īpašnieku un CSDD izziņa nav jaunāka par notikumu - pārbaudīt.
+      // 24.11 audits: CarVertical / AutoDNA «maiņu» skaits ietver reģ. apliecības maiņas - tikai info.
+      changeCountOnly = true;
       vendorCounts.push({
         source: label,
         value: `${lvMonths.size} maiņas Latvijā (${afterStatement.map(monthLabel).join(", ")} CSDD nav)`,
@@ -301,8 +309,11 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
   push(out, {
     id: "owners_lv",
     kind: "owners",
-    severity: "warn",
-    title: "Īpašnieku skaits Latvijā nesakrīt",
+    severity: changeCountOnly && !explicitMismatch ? "info" : "warn",
+    title:
+      changeCountOnly && !explicitMismatch
+        ? "Īpašnieku maiņu skaits avotā atšķiras no CSDD (avots ietver reģ. apliecības maiņas)"
+        : "Īpašnieku skaits Latvijā nesakrīt",
     values: [...values, ...vendorCounts],
   });
 }
@@ -358,14 +369,80 @@ function sourceFamily(label: string): string {
     .toUpperCase();
 }
 
-function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[]): void {
-  type R = { row: UnifiedMileageRow; km: number; t: number; fam: string; month: boolean };
+/**
+ * 24.11 audits (4.1): nobraukuma avotu ticamība.
+ * 1 - valsts reģistri ar datumu; 2 - oficiālā dīlera vizīte; 3 - CarVertical / AutoDNA / citi ar pilnu datumu un
+ * ne-apaļu km; 4 - apaļi km, mēneša precizitāte, izsoļu arhīvs, sludinājums (pārdevēja apgalvojums).
+ */
+export type MileageTrust = 1 | 2 | 3 | 4;
+
+const REGISTRY_LABEL_RE = /\bcsdd\b|reģistr|mnt\.ee|traficom|car\.info|tjekbil|rdw|finnik|bilprovning|dmr/i;
+const DEALER_LABEL_RE = /dīler|dealer|oneauto/i;
+const LOW_TRUST_LABEL_RE = /sludinājum|izsol|arhīv|auction|tirgus/i;
+
+export function mileageRowTrust(row: Pick<UnifiedMileageRow, "sourceLabel" | "datePrecision" | "countryUnverified">, km: number): MileageTrust {
+  const label = row.sourceLabel ?? "";
+  if (row.countryUnverified || LOW_TRUST_LABEL_RE.test(label)) return 4;
+  if (row.datePrecision === "month") return 4;
+  if (REGISTRY_LABEL_RE.test(label)) return 1;
+  if (DEALER_LABEL_RE.test(label)) return 2;
+  // Vendoru apaļi km (207 000, 214 500) parasti ir pārkopēti sludinājuma km.
+  if (km >= 10_000 && km % 500 === 0) return 4;
+  return 3;
+}
+
+/** 999 999, 0, 1 km un nereālas vērtības - nav rādījums. */
+export function isSentinelOdometerKm(km: number): boolean {
+  if (km <= 1) return true;
+  if (km >= 1_500_000) return true;
+  return /^9{5,}$/.test(String(Math.round(km)));
+}
+
+/** «01.00.2018», «00.05.2019» - nederīgs datums. */
+export function isInvalidMileageDate(raw: string): boolean {
+  const t = (raw ?? "").trim();
+  return /(?:^|[./-])00(?:[./-]|$)/.test(t.replace(/^(\d{4})-/, "$1."));
+}
+
+/** Kritums ≈ jūdzes rakstītas kā km (a / b ≈ 1,609 ±3 %). */
+export function looksLikeMilesAsKm(hiKm: number, loKm: number): boolean {
+  if (loKm <= 0) return false;
+  const r = hiKm / loKm;
+  return Math.abs(r - 1.609344) / 1.609344 <= 0.03;
+}
+
+/** Ziemeļamerikas VIN (1-5 pirmais simbols) - odometrs avotā bieži jūdzēs. */
+export function isNorthAmericanVin(vin: string | null | undefined): boolean {
+  return /^[1-5][A-HJ-NPR-Z0-9]{16}$/i.test((vin ?? "").trim());
+}
+
+function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[], opts: { vin?: string | null; nowMs: number }): void {
+  type R = { row: UnifiedMileageRow; km: number; t: number; fam: string; month: boolean; trust: MileageTrust };
   const list: R[] = [];
+  const usVin = isNorthAmericanVin(opts.vin);
+  // 24.11 audits: viena avota ievades kļūdas / izlēcēji (dīlera vienas dienas 121 100 pie 91 794) nav salīdzināšanas punkts.
+  let typoOrders = new Set<number>();
+  try {
+    const an = analyzeUnifiedMileageAnomalies(rows);
+    typoOrders = new Set([...an.dataEntryErrorSourceOrders, ...(an.typoSpikeSourceOrders ?? [])]);
+  } catch {
+    /* analīze nav obligāta */
+  }
   for (const row of rows) {
     if ((row as { visitOdometer?: boolean }).visitOdometer) continue;
+    if (typoOrders.has(row.sourceOrder)) continue;
     const km = parseOdometerKm(row.odometer);
     if (km == null || km <= 0 || !(row.sortableTime > 0)) continue;
-    list.push({ row, km, t: row.sortableTime, fam: sourceFamily(row.sourceLabel), month: row.datePrecision === "month" });
+    if (isSentinelOdometerKm(km) || isInvalidMileageDate(row.date)) continue;
+    if (row.sortableTime > opts.nowMs + DAY_MS) continue;
+    list.push({
+      row,
+      km,
+      t: row.sortableTime,
+      fam: sourceFamily(row.sourceLabel),
+      month: row.datePrecision === "month",
+      trust: mileageRowTrust(row, km),
+    });
   }
   list.sort((a, b) => a.t - b.t || a.km - b.km);
 
@@ -391,11 +468,12 @@ function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[]): void {
       seen.add(key);
       values.push({ source: g.row.sourceLabel, value: fmtKm(g.km) });
     }
+    const miles = looksLikeMilesAsKm(hi, lo);
     push(out, {
       id: `mileage_same_day_${day}`,
       kind: "mileage_same_day",
-      severity: "warn",
-      title: `${day} dažādi rādījumi`,
+      severity: miles ? "info" : "warn",
+      title: miles ? `${day} dažādi rādījumi (iespējamas jūdzes)` : `${day} dažādi rādījumi`,
       values,
     });
   }
@@ -423,26 +501,36 @@ function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[]): void {
       if (!prev || drop > prev.drop) best.set(key, { a, b, drop });
     }
   }
-  // Viena kritums, ko vairāki avoti pārkopējuši, ir viens punkts (pēc vēlākā rādījuma km un mēneša).
-  const byLater = new Map<string, { a: R; b: R; drop: number }>();
-  for (const hit of best.values()) {
-    const key = `${Math.round(hit.b.km / 500)}|${dayLabel(hit.b.t).slice(3)}`;
-    const prev = byLater.get(key);
-    if (!prev || hit.drop > prev.drop) byLater.set(key, hit);
+  // 24.11 audits: viens kritums, ko vairāki avoti pārkopējuši (vēlākais km ±500, jebkurš datums) = viens punkts.
+  // Paliek ticamākais pāris (reģistrs pirms vendora), tad lielākais kritums.
+  const groups: { a: R; b: R; drop: number }[] = [];
+  const pairTrust = (h: { a: R; b: R }) => Math.max(h.a.trust, h.b.trust) * 10 + Math.min(h.a.trust, h.b.trust);
+  for (const hit of [...best.values()].sort((x, y) => pairTrust(x) - pairTrust(y) || y.drop - x.drop)) {
+    if (groups.some((g) => Math.abs(g.b.km - hit.b.km) <= 500)) continue;
+    groups.push(hit);
   }
-  for (const { a, b, drop } of byLater.values()) {
+  for (const { a, b, drop } of groups) {
     const typo = looksLikeExtraDigitOdometerTypo(Math.max(a.km, b.km), Math.min(a.km, b.km));
+    const milesCountry = (r: R) => /^(?:us|usa|ca|gb|uk|asv|kanād|lielbritān|amerik)/i.test((r.row.country ?? "").trim());
+    const miles = looksLikeMilesAsKm(a.km, b.km) || usVin || milesCountry(a) || milesCountry(b);
     // Sludinājuma km ir pārdevēja apgalvojums (bieži noapaļots) - nav kritisks fakts.
     const listing = /sludinājum/i.test(b.row.sourceLabel) || /sludinājum/i.test(a.row.sourceLabel) || Boolean(b.row.countryUnverified);
-    const critical =
-      !typo && !listing && (drop >= CROSS_SOURCE_DROP_CRITICAL_KM || drop >= a.km * CROSS_SOURCE_DROP_CRITICAL_RATIO);
+    const big = drop >= CROSS_SOURCE_DROP_CRITICAL_KM || drop >= a.km * CROSS_SOURCE_DROP_CRITICAL_RATIO;
+    // Kritisks tikai, ja vismaz viena puse ir valsts reģistrs un otra nav zemas ticamības (4.1).
+    const trusted = Math.min(a.trust, b.trust) === 1 && Math.max(a.trust, b.trust) <= 3;
+    const severity: SourceIssueSeverity = miles ? "info" : !typo && !listing && big && trusted ? "critical" : "warn";
+    const lowTrust = Math.max(a.trust, b.trust) === 4;
     push(out, {
       id: `mileage_drop_${a.fam}_${b.fam}_${a.row.date}_${b.row.date}`,
       kind: "mileage_drop",
-      severity: critical ? "critical" : "warn",
-      title: typo
-        ? `Nobraukums samazinās starp avotiem (iespējama ievades kļūda), −${fmtKm(drop)}`
-        : `Nobraukums samazinās starp avotiem, −${fmtKm(drop)}`,
+      severity,
+      title: miles
+        ? `Nobraukums samazinās starp avotiem (iespējamas jūdzes kā km), −${fmtKm(drop)}`
+        : typo
+          ? `Nobraukums samazinās starp avotiem (iespējama ievades kļūda), −${fmtKm(drop)}`
+          : lowTrust
+            ? `Nobraukums samazinās starp avotiem (pārdevēja / noapaļots rādījums), −${fmtKm(drop)}`
+            : `Nobraukums samazinās starp avotiem, −${fmtKm(drop)}`,
       values: [
         { source: a.row.sourceLabel, value: `${fmtKm(a.km)} (${a.row.date})` },
         { source: b.row.sourceLabel, value: `${fmtKm(b.km)} (${b.row.date})` },
@@ -452,6 +540,11 @@ function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[]): void {
 }
 
 /* ---------- 2b. Datumi nākotnē (drukājamajā laika joslā / tabulās nedrīkst palikt) ---------- */
+
+/** «01.01.10500» - nolasīšanas kļūda (gads > 2100), nav «nākotnes» fakts. */
+function isGarbageYearDate(raw: string): boolean {
+  return /\d{5,}/.test(raw) || /\b(2[1-9]\d{2}|[3-9]\d{3})\b/.test(raw);
+}
 
 function checkFutureDates(blocks: WorkspaceSourceBlocks, nowMs: number, listingUrl: string | null | undefined, out: SourceIssue[]): void {
   const values: SourceIssueValue[] = [];
@@ -470,8 +563,10 @@ function checkFutureDates(blocks: WorkspaceSourceBlocks, nowMs: number, listingU
       listingUrl: listingUrl ?? null,
     });
     for (const e of events) {
-      if (e.date && isImpossibleFutureDate(e.date, nowMs)) {
-        inTimeline = true;
+      if (e.date && isImpossibleFutureDate(e.date, nowMs) && !isGarbageYearDate(e.date)) {
+        // 24.11 audits: sludinājuma datums (parsēšana «05.12.2026» / «01.01.10500») nav kritisks fakts.
+        const listingOnly = e.sources.length > 0 && e.sources.every((x) => /sludinājum|tirgus|listing/i.test(x));
+        if (!listingOnly) inTimeline = true;
         values.push({ source: `Laika josla (${e.sources.join(", ") || e.title})`, value: e.date });
       }
     }
@@ -512,7 +607,8 @@ function checkCountry(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIss
   // Valstis, kur auto bijis pēc vēstures avotiem. Dīlera «Valsts / reģions» (ražotāja tirgus) apzināti NEŅEM.
   const seen = new Map<string, Set<string>>();
   const add = (code: string, source: string) => {
-    if (!code || code === "LV") return;
+    // 24.11 audits: tranzīts (LT, PL) nav iepriekšējās valsts liecība.
+    if (!code || code === "LV" || code === "LT" || code === "PL") return;
     seen.set(code, (seen.get(code) ?? new Set()).add(source));
   };
   for (const w of blocks.auto_records.serviceWorks ?? []) add(iso2(extractCountryFromLocation(w.location ?? "")), "Dīlera vizītes");
@@ -566,14 +662,34 @@ function checkFirstRegistration(blocks: WorkspaceSourceBlocks, lots: Lot[], out:
     add(l.label, l.get.exact("date_first_registration") || l.get.tail("firstregistration", "datefirstregistration"));
   }
   if (cands.length >= 2) {
-    const sorted = [...cands].sort((a, b) => a.ms - b.ms);
-    const span = sorted[sorted.length - 1]!.ms - sorted[0]!.ms;
-    if (span > FIRST_REG_TOLERANCE_MS) {
+    // 24.11 audits: importētam auto CSDD «pirmā reģistrācija» bieži ir LV reģistrācijas datums.
+    const prevCountry = iso2(blocks.csdd.previousRegistrationCountry);
+    const imported = Boolean(prevCountry) && prevCountry !== "LV";
+    const others = cands.filter((c) => c.source !== "CSDD");
+    const csddCand = cands.find((c) => c.source === "CSDD");
+    const csddIsLvReg = imported && csddCand != null && others.length > 0 && others.every((o) => csddCand.ms > o.ms + FIRST_REG_TOLERANCE_MS);
+    // Dīlera 01.01.GGGG = gada precizitāte; dīlerim pielaide 92 d (piegāde pret reģistrāciju).
+    const tolFor = (c: { source: string; raw: string }) =>
+      c.source === "Dīlera dati" ? (/^(?:01[./]01[./]\d{4}|\d{4}-01-01)$/.test(c.raw) ? 366 * DAY_MS : 92 * DAY_MS) : FIRST_REG_TOLERANCE_MS;
+    const cmp = csddIsLvReg ? others : cands;
+    let bad = false;
+    for (let i = 0; i < cmp.length && !bad; i++) {
+      for (let j = i + 1; j < cmp.length; j++) {
+        const tol = Math.max(tolFor(cmp[i]!), tolFor(cmp[j]!));
+        if (Math.abs(cmp[i]!.ms - cmp[j]!.ms) > tol) {
+          bad = true;
+          break;
+        }
+      }
+    }
+    if (bad || csddIsLvReg) {
       push(out, {
         id: "first_registration",
         kind: "first_registration",
-        severity: "warn",
-        title: "Pirmās reģistrācijas datums atšķiras",
+        severity: bad ? "warn" : "info",
+        title: bad
+          ? "Pirmās reģistrācijas datums atšķiras"
+          : "CSDD datums ir reģistrācija Latvijā (auto ievests) - pirmā reģistrācija ārvalstīs agrāk",
         values: cands.map((c) => ({ source: c.source, value: dayLabel(c.ms) })),
       });
     }
@@ -875,7 +991,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
   const out: SourceIssue[] = [];
   const steps: (() => void)[] = [
     () => checkOwners(blocks, out),
-    () => checkMileage(mileageRows(blocks, input.listingUrl), out),
+    () => checkMileage(mileageRows(blocks, input.listingUrl), out, { vin: input.vin, nowMs }),
     () => checkFutureDates(blocks, nowMs, input.listingUrl, out),
     () => checkCountry(blocks, lots, out),
     () => checkFirstRegistration(blocks, lots, out),

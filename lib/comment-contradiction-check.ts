@@ -14,7 +14,7 @@ import {
 import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
 import { CSDD_RESTRICTIONS_NOT_CHECKED_LINE } from "@/lib/csdd-registry-signals";
 import { extractCampaignCodes, splitSentences } from "@/lib/unit-facts/check";
-import type { FactCheckFlag, FactCheckLevel } from "@/lib/unit-facts/types";
+import { compareFactCheckLevel, type FactCheckFlag, type FactCheckLevel } from "@/lib/unit-facts/types";
 import {
   extractLoadedPowertrainIdentity,
   findPowertrainContradictions,
@@ -96,7 +96,11 @@ const DAMAGE_POSITIVE_RE =
   /bojājum\w*\s+(?:ir\s+)?(?:fiksēt|reģistrēt|konstatēt|norādīt)|(?<!nav\s)(?<!nav\s\S{1,12}\s)(?:fiksēt|reģistrēt|konstatēt|norādīt)\w*\s+(?:\S+\s+)?bojāj|bojājuma\s+dēļ/i;
 /** j26: dīlera skaitu etiķete -> teksta atpazīšana (LV). */
 const DEALER_COUNT_TEXT_RE: Array<{ label: RegExp; re: string }> = [
-  { label: /^dzinēja eļļas maiņas$/i, re: "(?:dzinēja|motor)\\p{L}*\\s+eļļ\\p{L}*|eļļas\\s+maiņ\\p{L}*" },
+  {
+    label: /^dzinēja eļļas maiņas$/i,
+    // 24.11 audits: «kārbas eļļa» / «sadales kārbas eļļa» nav dzinēja eļļa.
+    re: "(?:dzinēja|motor)\\p{L}*\\s+eļļ\\p{L}*|(?<!(?:kārb|dsg|pārnesum|sadales|diferenciāļ|reduktor|stūres|haldex)\\p{L}*\\s+)eļļas\\s+maiņ\\p{L}*",
+  },
   { label: /^kārbas eļļas maiņas$/i, re: "(?:kārb|dsg|pārnesumkārb)\\p{L}*\\s+(?:eļļ|apkop|šķidr)\\p{L}*" },
 ];
 
@@ -272,6 +276,110 @@ function isForeignOwnerShareMention(
 
 function firstMatchingSentence(sentences: string[], re: RegExp): string {
   return sentences.find((s) => re.test(s)) ?? sentences[0] ?? "";
+}
+
+/* ---------- 24.11 audits: negāciju tvērums ---------- */
+
+/** Avota nosaukumi teikumā → avota etiķetes atpazīšana rindās (sourceLabel). */
+const NAMED_SOURCE_SCOPES: Array<{ re: RegExp; label: RegExp }> = [
+  { re: /\bautodna\b/i, label: /autodna/i },
+  { re: /\bcarvertical\b|\bcar\s*vertical\b/i, label: /carvertical|car\s*vertical/i },
+  { re: /\bltab\b|\bocta\b/i, label: /ltab|octa/i },
+  { re: /\bcsdd\b/i, label: /csdd/i },
+  // CSNg (ceļu satiksmes negadījumi) Latvijā = CSDD / LTAB / OCTA ieraksti.
+  { re: /\bcsng\b/i, label: /csdd|csng|ltab|octa/i },
+  { re: /dīler/i, label: /dīler|dealer|oneauto|serviss/i },
+  { re: /izsol/i, label: /izsol|auction|copart|iaai|autobid|openlane|bca|thecarapi/i },
+  { re: /\bcarfax\b/i, label: /carfax/i },
+  { re: /car\.info/i, label: /car\.info/i },
+];
+const THIS_SOURCE_RE = /šajā\s+avotā|šis\s+avots|šī\s+avota|avotā\s+nav|šajā\s+(?:pārskatā|izziņā|atskaitē)/i;
+
+/** Rindas avots, ko teikums nosauc (vai fokusa avots), - null, ja teikums avotu nenosauc. */
+function sentenceSourceScope(sentence: string, focusSourceLabel?: string | null): RegExp[] | null {
+  // «visos avotos», «nevienā avotā» - teikums attiecas uz visiem avotiem.
+  if (ALL_SOURCES_SCOPE_RE.test(sentence)) return null;
+  // Avoti, kas nosaukti līdz negācijai («CSDD un AutoDNA reģistros nav ..., CarVertical uzrāda ...»).
+  const neg = sentence.search(/\bnav\b|\bnetika\b|\bbez\b/i);
+  const head = neg >= 0 ? sentence.slice(0, neg + 40) : sentence;
+  const headHits = NAMED_SOURCE_SCOPES.filter((x) => x.re.test(head)).map((x) => x.label);
+  if (headHits.length > 0) return headHits;
+  const hits = NAMED_SOURCE_SCOPES.filter((x) => x.re.test(sentence)).map((x) => x.label);
+  if (hits.length > 0) return hits;
+  const focus = (focusSourceLabel ?? "").trim();
+  if (focus && THIS_SOURCE_RE.test(sentence)) {
+    return [new RegExp(focus.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").split(/\s+/)[0]!, "i")];
+  }
+  return null;
+}
+
+/** Negācija attiecas uz īpašību, ne uz bojājuma esamību («nav kosmētisks», «summa nav zināma»). */
+const PROPERTY_NEGATION_RE =
+  /\bnav\s+(?:tikai\s+|vien\s+)?(?:kosmētisk|kritisk|būtisk|nopietn|strukturāl|smag|liel|maz|pieejam|precizēt|detalizēt|aprakstīt|zinām\p{L}*\s+(?:summ|apmēr|apjom|cēlon|detaļ)|skaidr|norādīt\p{L}*\s+(?:summ|apmēr|apjom|cēlon|apraksts))|(?:summ|apmēr|apjom|apraksts|cēlon|detaļ)\p{L}*\s+(?:\S+\s+)?nav\b/iu;
+/** Nosacījums («ja ... nav», «ja apstiprinās, ka ... nav») - nav apgalvojums. */
+const CONDITIONAL_RE = /(?:^|[,;:(]\s*|\s)(?:ja|ja\s+tiek|ja\s+apstiprin\p{L}*|gadījumā,?\s+ja)\s/iu;
+
+/** «nav bijis kritisks», «konstruktīvu bojājumu pazīmju nav», «nav zināms ...» - īpašība / neziņa. */
+const PROPERTY_NEGATION_EXTRA_RE =
+  /\bnav\s+(?:bijis|bijusi|bija|ir)\s+(?:kritisk|būtisk|nopietn|smag|liel|strukturāl)|(?:konstruktīv|strukturāl|kritisk|būtisk|nopietn|smag)\p{L}*\s+(?:\S+\s+){0,2}bojājum|\bnav\s+zinām/iu;
+/** Pārbaudes norādes («pārliecināties, vai nav noplūdes») - nav apgalvojums par datiem. */
+const INSTRUCTION_RE = /\b(?:vai|lai)\s+(?:\S+\s+){0,3}nav\b|jāpārbauda|pārliecin|ieteicam|pārbaudīt\b|novērtē/iu;
+
+function isNegationExempt(sentence: string): boolean {
+  return (
+    PROPERTY_NEGATION_RE.test(sentence) ||
+    PROPERTY_NEGATION_EXTRA_RE.test(sentence) ||
+    CONDITIONAL_RE.test(sentence) ||
+    INSTRUCTION_RE.test(sentence)
+  );
+}
+
+/** Virsraksts (rinda bez darbības vārda, < 8 vārdi) - nav apgalvojums. */
+export function looksLikeHeading(sentence: string): boolean {
+  const t = sentence.trim();
+  if (/[.!?]$/.test(t)) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length >= 8) return false;
+  return !/\b(?:ir|bija|nav|tika|tiek|bijis|bijusi|reģistrēt\p{L}*|iegādāt\p{L}*|ievest\p{L}*|pārdot\p{L}*)\b/iu.test(t);
+}
+
+/** «pēc 2019. gada», «kopš 2020», «līdz 2018» → filtrs gadiem. */
+function sentenceYearFilter(sentence: string): ((year: number) => boolean) | null {
+  const after = sentence.match(/\bpēc\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/i);
+  if (after) return (y) => y > Number(after[1]);
+  const since = sentence.match(/\b(?:kopš|no)\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/i);
+  if (since) return (y) => y >= Number(since[1]);
+  const until = sentence.match(/\b(?:līdz|pirms)\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/i);
+  if (until) return (y) => y <= Number(until[1]);
+  return null;
+}
+
+function yearOfLoose(date: string): number | null {
+  const m = (date ?? "").match(/\b((?:19|20)\d{2})\b/);
+  return m ? Number(m[1]) : null;
+}
+
+/* ---------- 24.11 audits: km tekstā ---------- */
+
+/** «km gadā», «km/gadā», «vidēji», intervāli, diapazoni - nav odometra rādījums. */
+const KM_RATE_OR_RANGE_RE =
+  /km\s*(?:\/\s*(?:gad|g\.|mēn|year)|gadā|mēnesī|per\s+year|a\s+year)|gada\s+laikā|vidēj\p{L}*|ik\s+pēc|intervāl|\d\s*(?:–|-|līdz)\s*\d{1,3}(?:[\s\u00a0]\d{3})*\s*km|starp\s+\d|robež|diapazon/iu;
+const KM_CURRENT_CLAIM_RE = /pašreiz|šobrīd|aktuāl|jaunāk|pēdēj\p{L}*\s+(?:fiksēt|rādījum)|odometrā\s+(?:ir|rāda)/iu;
+
+function kmClose(a: number, km: number): boolean {
+  return Math.abs(a - km) <= Math.max(1500, a * 0.02);
+}
+
+function sentenceHasRowDate(sentence: string, rowDates: readonly string[]): boolean {
+  for (const d of rowDates) {
+    const t = d.trim();
+    if (!t) continue;
+    const n = normalizeDateToken(t);
+    const [y, m, dd] = n.split("-");
+    if (sentence.includes(t)) return true;
+    if (y && m && dd && (sentence.includes(`${dd}.${m}.${y}`) || sentence.includes(`${m}.${y}`))) return true;
+  }
+  return false;
 }
 
 export function checkCommentContradictions(input: ContradictionCheckInput): FactCheckFlag[] {
@@ -464,13 +572,17 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   const originDe = countryLv.includes("vācij") || iso === "DE";
   const originLv = countryLv.includes("latvij") || iso === "LV";
   const originForeign = originDe || (Boolean(iso) && iso !== "LV");
-  if (originForeign && FIRST_REG_LV_RE.test(text)) {
+  // 24.11 audits: sadaļu virsraksti («Pirmā reģistrācija Latvijā un TA») nav apgalvojumi.
+  const firstRegLvSentence = sentences.find(
+    (s) => FIRST_REG_LV_RE.test(s) && !looksLikeHeading(s) && !CONDITIONAL_RE.test(s),
+  );
+  if (originForeign && firstRegLvSentence) {
     push({
       id: "first_reg_country",
       kind: "first_reg_country",
       level: "E",
       message: `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || iso || "DE"}, teksts saka Latviju.`,
-      sentence: firstMatchingSentence(sentences, FIRST_REG_LV_RE),
+      sentence: firstRegLvSentence,
     });
   }
   if (originLv && !originDe && FIRST_REG_DE_RE.test(text) && !/pēc\s+importa|latvijā\s+reģistrēta/i.test(text)) {
@@ -489,8 +601,21 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     facts.incidents.filter((r) => isLocalIncidentSource(r.sourceLabel, r.country)).length +
     (facts.damageEvidence?.rows ?? []).filter((r) => isLocalIncidentSource(r.sourceLabel, "")).length;
   const trueLocalClaim = (s: string) => localIncidentRows === 0 && isLocalRegistryScopedSentence(s);
-  const noAccidentSentence = sentences.find((s) => NO_ACCIDENT_RE.test(s) && !trueLocalClaim(s));
-  if (facts.incidents.length > 0 && noAccidentSentence && !/neizslēdz|bez\s+fizisk/i.test(text)) {
+  // 24.11 audits: ja teikums nosauc avotu («AutoDNA», «LTAB», «šajā avotā»), pārbauda tikai pret šī avota rindām.
+  const scopedRowCount = (s: string): number | null => {
+    const scope = sentenceSourceScope(s, input.focusSourceLabel);
+    if (!scope) return null;
+    const labels = [
+      ...facts.incidents.map((r) => r.sourceLabel),
+      ...(facts.damageEvidence?.rows ?? []).map((r) => r.sourceLabel),
+    ];
+    return labels.filter((l) => scope.some((re) => re.test(l))).length;
+  };
+  const scopeClean = (s: string) => scopedRowCount(s) === 0;
+  const noAccidentSentence = sentences.find(
+    (s) => NO_ACCIDENT_RE.test(s) && !trueLocalClaim(s) && !scopeClean(s) && !isNegationExempt(s) && !looksLikeHeading(s),
+  );
+  if (facts.incidents.length > 0 && noAccidentSentence && !/neizslēdz|bez\s+fizisk/i.test(noAccidentSentence)) {
     push({
       id: "no_accidents_claim",
       kind: "no_accidents_claim",
@@ -507,6 +632,9 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
         // „Zādzības vai pilnīga zaudējuma ierakstu nav” runā par statusu, ne par bojājumiem.
         NO_DAMAGE_RE.test(s.replace(TOTAL_LOSS_STATUS_RE, " ")) &&
         !trueLocalClaim(s) &&
+        !scopeClean(s) &&
+        !isNegationExempt(s) &&
+        !looksLikeHeading(s) &&
         !AMOUNT_ONLY_RE.test(s) &&
         !DAMAGE_UNCERTAIN_RE.test(s) &&
         !DAMAGE_POSITIVE_RE.test(s),
@@ -539,9 +667,19 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   for (const c of facts.dealerComponentCounts ?? []) {
     if (c.dates.length === 0) continue;
     const mention = dealerCountMentionSource(c.label);
-    const bad = sentences.find(
-      (s) => negatesDealerComponent(s, mention) && !DAMAGE_UNCERTAIN_RE.test(s),
-    );
+    const bad = sentences.find((s) => {
+      if (!negatesDealerComponent(s, mention) || DAMAGE_UNCERTAIN_RE.test(s) || isNegationExempt(s)) return false;
+      // 24.11 audits: teikums par periodu - pretruna tikai, ja dīlera datumi šajā periodā ir.
+      const yf = sentenceYearFilter(s);
+      if (yf && !c.dates.some((d) => {
+        const y = yearOfLoose(d);
+        return y != null && yf(y);
+      })) return false;
+      // Teikums nosauc citu avotu (ne dīleri) - dīlera skaiti uz to neattiecas.
+      const scope = sentenceSourceScope(s, null);
+      if (scope && !scope.some((re) => re.test("dīleris"))) return false;
+      return true;
+    });
     if (!bad) continue;
     // Teikums ar periodu („pēc 2021”) var būt patiess - tikai karodziņš.
     const periodScoped = /\b(?:pēc|kopš|līdz|no)\s+(?:\d{1,2}\.\d{1,2}\.)?(?:19|20)\d{2}/i.test(bad);
@@ -649,27 +787,31 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     });
   }
 
-  // 8) Km pret lapu (liels delta pret jaunāko / krituma punktiem).
+  // 8) Km pret lapu. 24.11 audits: salīdzina ar VISĀM nobraukuma rindām (±1 500 km vai ±2 %), ne tikai jaunāko;
+  // «km gadā», intervāli, diapazoni un datēti vēsturiski rādījumi nav pretruna. Paliek info, ja nav skaidras pretrunas.
   if (facts.latestKm != null) {
-    const allowed = new Set<number>([
+    const allowed = [
       facts.latestKm,
+      ...(facts.mileageKms ?? []),
       ...facts.rollbacks.flatMap((r) => [r.fromKm, r.toKm, r.minDropKm]),
       ...facts.incidents
         .map((r) => Number.parseInt(r.lossAmount.replace(/\s/g, ""), 10))
         .filter((n) => Number.isFinite(n)),
-    ]);
-    for (const km of kmNumbers(text)) {
-      const close = [...allowed].some((a) => Math.abs(a - km) <= 1500);
-      if (close) continue;
-      if (km === facts.owners.totalCount) continue;
-      // Gadījuma km (intervāli u.c.) paliek W, ne E.
-      if (Math.abs(km - facts.latestKm) > 25_000 && km > 10_000) {
+    ];
+    for (const sentence of sentences) {
+      if (KM_RATE_OR_RANGE_RE.test(sentence)) continue;
+      for (const km of kmNumbers(sentence)) {
+        if (allowed.some((a) => kmClose(a, km))) continue;
+        if (km === facts.owners.totalCount) continue;
+        if (Math.abs(km - facts.latestKm) <= 25_000 || km <= 10_000) continue;
+        const current = KM_CURRENT_CLAIM_RE.test(sentence);
+        if (!current && sentenceHasRowDate(sentence, facts.mileageDates ?? [])) continue;
         push({
           id: "km_mismatch",
           kind: "contradiction",
-          level: "W",
-          message: `Nobraukums ${formatForensicsInt(km)} km tālu no lapas jaunākā (${formatForensicsInt(facts.latestKm)} km).`,
-          sentence: sentences.find((s) => s.includes(String(km)) || s.includes(formatForensicsInt(km))) ?? sentences[0]!,
+          level: current ? "W" : "I",
+          message: `Nobraukums ${formatForensicsInt(km)} km neatbilst nevienam avota rādījumam (jaunākais ${formatForensicsInt(facts.latestKm)} km).`,
+          sentence,
         });
       }
     }
@@ -695,7 +837,7 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     }
   }
 
-  flags.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
+  flags.sort(compareFactCheckLevel);
   return flags;
 }
 
@@ -708,7 +850,7 @@ export function mergeFactCheckFlags(primary: FactCheckFlag[], extra: FactCheckFl
     seen.add(k);
     out.push(f);
   }
-  out.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
+  out.sort(compareFactCheckLevel);
   return out;
 }
 
@@ -818,6 +960,8 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       countryIso,
     },
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
+    // Promptā ir visi avotu dati - visi km lieluma skaitļi ir „avota rādījumi”.
+    mileageKms: extractKmLikeNumbers(t).filter((n) => n >= 1000 && n < 2_000_000),
     rollbacks,
     suspectedEntryErrors,
     csddUndatedOdometer: null,

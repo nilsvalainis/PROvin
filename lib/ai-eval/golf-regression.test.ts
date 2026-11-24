@@ -132,8 +132,15 @@ describe("Golf GTE - PR2 strukturētie fakti (3, daļēji 7)", () => {
       facts,
     });
     expect(ok.filter((f) => f.kind === "negated_fact")).toEqual([]);
-    const period = checkCommentContradictions({
+    // 24.11 audits: «pēc 2023 nav» ir patiess (maiņas 2019 un 2022) - nav karodziņa.
+    const periodTrue = checkCommentContradictions({
       text: "Pēc 2023 nav fiksētas kārbas eļļas maiņas.",
+      field: "summary",
+      facts,
+    });
+    expect(periodTrue.find((f) => f.kind === "negated_fact")).toBeUndefined();
+    const period = checkCommentContradictions({
+      text: "Pēc 2020 nav fiksētas kārbas eļļas maiņas.",
       field: "summary",
       facts,
     });
