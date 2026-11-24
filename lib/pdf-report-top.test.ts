@@ -72,11 +72,12 @@ describe("foto prioritāte", () => {
     expect(p).toMatchObject({ src: TIRGUS, kind: "listingHistory" });
   });
 
-  it("4) bez foto - null, PDF rāda gaišu laukumu ar auto kontūru", () => {
+  it("4) bez foto - null, foto bloka nav vispār (Nils 24.11), divu kolonnu izkārtojums", () => {
     expect(resolvePdfTopPhoto({ ccVinBlock: null, listingAnalysis: null, tirgusForm: null })).toBeNull();
     const html = doc({}, "lv");
-    expect(html).toContain("pdf-top6__ph--empty");
-    expect(html).toContain("Foto nav pieejams");
+    expect(html).not.toContain(`class="pdf-top6__ph`);
+    expect(html).not.toContain("Foto nav pieejams");
+    expect(html).toContain("pdf-top6__hero--nophoto");
   });
 });
 
