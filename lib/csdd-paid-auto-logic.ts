@@ -19,14 +19,19 @@ export type CsddPaidAutoState =
   /** 30 min pagāja bez izziņas: "gaida apmaksu" (SMS otrreiz nesūta). */
   | "awaiting_payment"
   /** Gala kļūda (numurs e.csdd nav atrasts, nav pogas, nav konfigurēts u.c.). */
-  | "error";
+  | "error"
+  /** Pasūtījumam nav LV numura - izziņu neprasa (adminā "nav LV numura"). Ja numurs parādās vēlāk, rinda to pārņem. */
+  | "no_plate";
 
 export type CsddPaidAutoDefer = "night" | "daily_cap" | "login" | "retry";
 
 export type CsddPaidAutoJob = {
   sessionId: string;
+  /** Tukšs tikai stāvoklī "no_plate". */
   plate: string;
   state: CsddPaidAutoState;
+  /** Produkts (adminam / uzskaitei): AUDITS vai B2B (PROVIN Business). Vecajiem darbiem nav = audit. */
+  product?: CsddPaidAutoProductKind;
   createdAt: string;
   updatedAt: string;
   /** Agrākais brīdis nākamajam solim (queued). */
@@ -81,20 +86,54 @@ export function csddPaidAutoDailyMax(env: Record<string, string | undefined> = p
 }
 
 /**
- * Tikai PROVIN AUDITS (`checkout_line` audit/premium; vecās sesijas bez lauka = audit). NE dīlera dati, NE MINI,
- * NE Business, NE SELECT, NE B2B paka / maks / Telegram / augšpārdošana.
+ * `CSDD_PAID_AUTO_B2B_ENABLED=0` - B2B (PROVIN Business) izslēgts, AUDITS paliek. Noklusējums: B2B iet kopā ar
+ * `CSDD_PAID_AUTO_ENABLED` (Nils 24.11: "A + B2B atskaitēm arī" - viens slēdzis), šis ir tikai avārijas izslēdzējs.
  */
-export function csddPaidAutoProductEligible(args: {
+export function csddPaidAutoB2bEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return !/^(0|false|no|off)$/i.test((env.CSDD_PAID_AUTO_B2B_ENABLED ?? "").trim());
+}
+
+/** "audit" - PROVIN AUDITS; "b2b" - PROVIN Business (privātā saite 69,99 € vai B2B partnera konts). */
+export type CsddPaidAutoProductKind = "audit" | "b2b";
+
+/**
+ * Kuriem pasūtījumiem automātiskā izziņa:
+ *  - Stripe AUDITS (`checkout_line` audit/premium; vecās sesijas bez lauka = audit), arī klienta saite;
+ *  - Stripe PROVIN Business (`checkout_line=business`, privātā saite / bez fulfillment) - B2B;
+ *  - B2B partnera konta pasūtījums (`channel: "b2b_partner"`, kredīts vai maks) ar plānu `business` - B2B.
+ * NE dīlera dati (arī partneru RAW/PRO - dīlera PDF CSDD sadaļas nav), NE MINI, NE SELECT, NE B2B paka / maka
+ * papildinājums / Telegram / augšpārdošana.
+ */
+export function csddPaidAutoProductKind(args: {
   checkoutLine?: string | null;
   fulfillment?: string | null;
   isDealerData?: boolean;
   isTelegram?: boolean;
-}): boolean {
-  // Parasts pasūtījums vai klienta saite; B2B paka / maks / augšpārdošana / manuālā maksājuma saite - nē.
-  if (!["", "client_link", "business_link"].includes((args.fulfillment ?? "").trim().toLowerCase())) return false;
-  if (args.isDealerData || args.isTelegram) return false;
+  channel?: "stripe" | "b2b_partner";
+}): CsddPaidAutoProductKind | null {
   const line = (args.checkoutLine ?? "").trim().toLowerCase();
-  return line === "audit" || line === "premium" || line === "audits";
+  if (args.isDealerData || args.isTelegram) return null;
+  if (args.channel === "b2b_partner") return line === "business" ? "b2b" : null;
+  // Parasts pasūtījums vai klienta / Business saite; B2B paka / maks / augšpārdošana / manuālā maksājuma saite - nē.
+  if (!["", "client_link", "business_link"].includes((args.fulfillment ?? "").trim().toLowerCase())) return null;
+  if (line === "audit" || line === "premium" || line === "audits") return "audit";
+  if (line === "business") return "b2b";
+  return null;
+}
+
+export function csddPaidAutoProductEligible(args: Parameters<typeof csddPaidAutoProductKind>[0]): boolean {
+  return csddPaidAutoProductKind(args) !== null;
+}
+
+/**
+ * Demo / testa pasūtījumi naudu netērē. Atļauti tikai īsti PROVIN pasūtījumi: Stripe `cs_*` (livemode) un
+ * `manual_order_*` (B2B partnera konts). Viss pārējais - admin paraugi (`demo_order_*`), IRISS B2B demo
+ * (demo.provin.lv `ord_*`, atsevišķa krātuve), Stripe testa režīms (`livemode=false`) vai `isDemo` - nē.
+ */
+export function csddPaidAutoIsDemo(sessionId: string, args: { isDemo?: boolean; livemode?: boolean | null } = {}): boolean {
+  if (args.isDemo === true || args.livemode === false) return true;
+  const id = sessionId.trim();
+  return !(id.startsWith("cs_") || id.startsWith("manual_order_"));
 }
 
 /**
@@ -193,6 +232,7 @@ export function decideCsddPaidAutoAction(job: CsddPaidAutoJob, now: number, opts
 
 /** Vai darbs vēl jātur cron indeksā. */
 export function csddPaidAutoJobOpen(job: CsddPaidAutoJob): boolean {
+  if (job.state === "no_plate") return false;
   if (job.state === "queued" || job.state === "sms_sent") return true;
   return job.state === "found" && !job.appliedAt && Boolean(job.rawText);
 }
@@ -203,6 +243,7 @@ const STATE_LV: Record<CsddPaidAutoState, string> = {
   found: "izziņa saņemta",
   awaiting_payment: "gaida apmaksu",
   error: "kļūda",
+  no_plate: "nav LV numura",
 };
 
 const DEFER_LV: Record<CsddPaidAutoDefer, string> = {
@@ -223,10 +264,11 @@ export function csddPaidAutoStatusLv(job: CsddPaidAutoJob): string {
 export function normalizeCsddPaidAutoJob(raw: unknown, sessionId: string): CsddPaidAutoJob | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  const states: CsddPaidAutoState[] = ["queued", "sms_sent", "found", "awaiting_payment", "error"];
+  const states: CsddPaidAutoState[] = ["queued", "sms_sent", "found", "awaiting_payment", "error", "no_plate"];
   const state = states.includes(o.state as CsddPaidAutoState) ? (o.state as CsddPaidAutoState) : null;
   const plate = typeof o.plate === "string" ? normalizePlateNumber(o.plate) : "";
-  if (!state || !plate) return null;
+  // Bez numura drīkst būt tikai "no_plate" (tas nekad nesūta SMS).
+  if (!state || (!plate && state !== "no_plate")) return null;
   const out: CsddPaidAutoJob = {
     sessionId,
     plate,
@@ -254,6 +296,7 @@ export function normalizeCsddPaidAutoJob(raw: unknown, sessionId: string): CsddP
   for (const k of strKeys) if (typeof o[k] === "string" && o[k]) (out as Record<string, unknown>)[k] = String(o[k]).slice(0, 200);
   if (typeof o.rawText === "string" && o.rawText) out.rawText = o.rawText.slice(0, 80_000);
   if (o.deferReason === "night" || o.deferReason === "daily_cap" || o.deferReason === "login" || o.deferReason === "retry") out.deferReason = o.deferReason;
+  if (o.product === "audit" || o.product === "b2b") out.product = o.product;
   if (typeof o.polls === "number" && Number.isFinite(o.polls)) out.polls = o.polls;
   if (typeof o.attempts === "number" && Number.isFinite(o.attempts)) out.attempts = o.attempts;
   return out;

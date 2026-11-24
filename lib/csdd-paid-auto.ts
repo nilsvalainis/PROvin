@@ -11,10 +11,12 @@ import {
   CSDD_PAID_MAX_ATTEMPTS,
   CSDD_PAID_POLL_INTERVAL_MS,
   CSDD_PAID_RETRY_MS,
+  csddPaidAutoB2bEnabled,
   csddPaidAutoDailyMax,
   csddPaidAutoEnabled,
+  csddPaidAutoIsDemo,
   csddPaidAutoPlate,
-  csddPaidAutoProductEligible,
+  csddPaidAutoProductKind,
   decideCsddPaidAutoAction,
   rigaDayKey,
   type CsddPaidAutoJob,
@@ -43,24 +45,42 @@ import { ensureOrderDropboxFolder } from "@/lib/order-dropbox";
 const LOG = "[csdd-paid-auto]";
 const iso = (ms = Date.now()) => new Date(ms).toISOString();
 
-/** Pēc apmaksas (webhook, pēc CSDD API sēklas): izveido darbu, ja produkts un numurs der. Idempotenti. */
-export async function enqueueCsddPaidAutoForOrder(
-  sessionId: string,
-  args: { checkoutLine?: string | null; fulfillment?: string | null; isDealerData?: boolean; isTelegram?: boolean; orderVinOrPlate?: string | null },
-): Promise<CsddPaidAutoJob | null> {
+export type CsddPaidAutoEnqueueArgs = {
+  checkoutLine?: string | null;
+  fulfillment?: string | null;
+  isDealerData?: boolean;
+  isTelegram?: boolean;
+  orderVinOrPlate?: string | null;
+  /** "b2b_partner" - B2B partnera konta pasūtījums (kredīts / maks, jau apmaksāts no konta). */
+  channel?: "stripe" | "b2b_partner";
+  isDemo?: boolean;
+  /** Stripe `session.livemode` (false = testa režīms -> naudu netērē). */
+  livemode?: boolean | null;
+};
+
+/**
+ * Pēc apmaksas (Stripe webhook vai B2B partnera pasūtījums, pēc CSDD API sēklas): izveido darbu, ja produkts un
+ * numurs der. Idempotenti - viens darbs uz pasūtījumu. Bez LV numura: ieraksts "no_plate" (adminā "nav LV numura"),
+ * SMS nekad; ja numurs parādās vēlāk (atkārtots izsaukums), "no_plate" pārvēršas par "queued".
+ */
+export async function enqueueCsddPaidAutoForOrder(sessionId: string, args: CsddPaidAutoEnqueueArgs): Promise<CsddPaidAutoJob | null> {
   if (!csddPaidAutoEnabled()) return null;
-  if (!csddPaidAutoProductEligible(args)) return null;
+  if (csddPaidAutoIsDemo(sessionId, args)) return null;
+  const product = csddPaidAutoProductKind(args);
+  if (!product) return null;
+  if (product === "b2b" && !csddPaidAutoB2bEnabled()) return null;
   const draft = await readOrderDraft(sessionId).catch(() => null);
   const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
   const plate = csddPaidAutoPlate({
     registryPlate: csdd.registry?.data?.registrationNumber,
     enteredPlates: [draft?.orderEdits?.licensePlate, args.orderVinOrPlate],
   });
-  if (!plate) return null;
   const { job } = await updateCsddPaidAutoJob(sessionId, (cur) => {
-    if (cur) return null; // viens darbs uz pasūtījumu (arī pēc atkārtota webhook)
     const now = iso();
-    return { sessionId, plate, state: "queued", createdAt: now, updatedAt: now };
+    if (!plate) return cur ? null : { sessionId, plate: "", state: "no_plate", product, createdAt: now, updatedAt: now };
+    // Viens darbs uz pasūtījumu (arī pēc atkārtota webhook); "no_plate" nekad nav sūtījis SMS.
+    if (cur && cur.state !== "no_plate") return null;
+    return { sessionId, plate, state: "queued", product, createdAt: now, updatedAt: now };
   });
   return job;
 }

@@ -116,6 +116,7 @@ export async function purchaseB2bWalletProduct(args: {
   schedulePartnerCreditVinOrderFollowups([
     {
       orderId: created.orderId,
+      plan: spec.plan,
       vin: args.vin,
       listingUrl: args.listingUrl,
       dealerQueued: created.dealerQueued,

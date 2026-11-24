@@ -599,8 +599,6 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-const CAR_SVG =
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>';
 
 /** «330 000 km» nelūst pa vidu: atstarpes skaitļos un pirms mērvienības - nedalāmas. */
 function keepNumbers(html: string): string {
@@ -675,22 +673,26 @@ function sourcesHtml(m: PdfTopModel): string {
 /** Visa 1. lapas augšdaļa vienā blokā, kas lapu pārrāvumā nepārtrūkst. */
 export function buildPdfTopSectionHtml(m: PdfTopModel): string {
   const { lang } = m;
+  /** Nils 24.11: bez foto bloku neliek vispār - identitāte un odometrs divās kolonnās. */
+  const hasPhoto = Boolean(m.photo);
+  const W = hasPhoto ? 246 : 330;
   const photo = m.photo
     ? `<div class="pdf-top6__ph"><img src="${m.photo.src}" alt=""/></div><p class="pdf-top6__cap">${esc(pdfTopPhotoCaption(m.photo, lang))}</p>`
-    : `<div class="pdf-top6__ph pdf-top6__ph--empty">${CAR_SVG}<span>${esc(pdfTopText("photoNone", lang))}</span></div><p class="pdf-top6__cap">&nbsp;</p>`;
+    : "";
   const model = m.makeModel.trim();
-  const one = model ? pdfTopFitPx(model, 246, 32, 22) : 32;
-  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${Math.max(18, Math.min(26, Math.floor((2 * 246) / Math.max(1, pdfTopTextEm(model)))))}px`;
+  const maxTitle = hasPhoto ? 32 : 40;
+  const one = model ? pdfTopFitPx(model, W, maxTitle, 22) : maxTitle;
+  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${Math.max(18, Math.min(hasPhoto ? 26 : 32, Math.floor((2 * W) / Math.max(1, pdfTopTextEm(model)))))}px`;
   const vin = m.vin.trim() ? `<p class="pdf-top6__vin"><b>VIN</b>${esc(m.vin.trim())}</p>` : "";
   const spec = m.specLine.trim()
-    ? `<p class="pdf-top6__spec" style="${fitStyle(pdfTopFitPx(m.specLine, 246, 9, 7), 7)}">${esc(m.specLine)}</p>`
+    ? `<p class="pdf-top6__spec" style="${fitStyle(pdfTopFitPx(m.specLine, W, 9, 7), 7)}">${esc(m.specLine)}</p>`
     : "";
   let odo = "";
   if (m.odometer) {
     const mm = /^(.*?)\s*(km|mi|км)$/i.exec(m.odometer.value.trim());
     const num = mm ? mm[1]! : m.odometer.value.trim();
     const unit = mm ? mm[2]! : "";
-    const px = pdfTopFitPx(num, 246 - (unit ? 34 : 0), 46, 24) ?? 24;
+    const px = pdfTopFitPx(num, W - (unit ? 28 : 0), 34, 22) ?? 22;
     odo = `<div class="pdf-top6__odo"><p class="pdf-top6__lab">${esc(pdfTopText("odometer", lang))}</p><p class="pdf-top6__big" style="font-size:${px}px">${esc(num)}${unit ? `<small>${esc(unit)}</small>` : ""}</p>${m.odometer.sub ? `<p class="pdf-top6__sub">${esc(m.odometer.sub)}</p>` : ""}</div>`;
   }
   const pair = [
@@ -700,7 +702,11 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
       : "",
   ].filter(Boolean);
   const pairHtml = pair.length ? `<div class="pdf-top6__pair">${pair.join("")}</div>` : "";
-  return `<section class="pdf-top6" role="region" aria-label="${esc(pdfTopText("keyInfo", lang))}">${buildPdfTopBarHtml(m)}<div class="pdf-top6__hero"><div class="pdf-top6__photo">${photo}</div><div class="pdf-top6__id"><p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}${odo}${pairHtml}</div></div>${cardsHtml(m.cards, lang)}${sourcesHtml(m)}</section>`;
+  const ident = `<p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}`;
+  const hero = hasPhoto
+    ? `<div class="pdf-top6__hero"><div class="pdf-top6__photo">${photo}</div><div class="pdf-top6__id">${ident}${odo}${pairHtml}</div></div>`
+    : `<div class="pdf-top6__hero pdf-top6__hero--nophoto"><div class="pdf-top6__id">${ident}</div><div class="pdf-top6__id">${odo}${pairHtml}</div></div>`;
+  return `<section class="pdf-top6" role="region" aria-label="${esc(pdfTopText("keyInfo", lang))}">${buildPdfTopBarHtml(m)}${hero}${cardsHtml(m.cards, lang)}${sourcesHtml(m)}</section>`;
 }
 
 /** Atsevišķa josla dīlera atskaitei (tai nav 1. lapas kopsavilkuma). */
@@ -717,17 +723,16 @@ export const PDF_TOP6_CSS = `
 .pdf-top6--bar-only{margin-bottom:18px;}
 .pdf-top6__bar{display:flex;justify-content:space-between;align-items:center;gap:16px;}
 .pdf-top6__logo{display:inline-flex;align-items:center;}
-.pdf-top6__logo svg{height:19px;width:auto;display:block;}
+.pdf-top6__logo svg{height:26px;width:auto;display:block;}
 .pdf-top6__kind{font-size:9px;color:var(--t6-mute);white-space:nowrap;}
 .pdf-top6__kind b{color:var(--t6-ink);font-weight:600;}
 .pdf-top6__lab{font-size:7.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t6-mute);line-height:1.3;white-space:nowrap;}
 .pdf-top6__hd{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t6-ink);}
 .pdf-top6__hero{display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:26px;}
+.pdf-top6__hero--nophoto{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;}
+.pdf-top6__hero--nophoto .pdf-top6__odo{margin-top:0;}
 .pdf-top6__ph{position:relative;overflow:hidden;background:var(--t6-soft);height:272px;}
 .pdf-top6__ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%;transform:scale(1.06);transform-origin:50% 100%;}
-.pdf-top6__ph--empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
-.pdf-top6__ph--empty svg{width:64px;height:64px;color:#c7c7cc;}
-.pdf-top6__ph--empty span{font-size:8.5px;font-weight:500;letter-spacing:.06em;color:var(--t6-mute);}
 .pdf-top6__cap{margin-top:7px!important;font-size:8px;color:var(--t6-mute);letter-spacing:.02em;}
 .pdf-top6__model{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1.02;color:var(--t6-ink);}
 .pdf-top6__vin{margin-top:10px!important;font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--t6-ink);white-space:nowrap;}
@@ -743,7 +748,7 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__kc{margin-top:28px;}
 .pdf-top6__kc>.pdf-top6__hd{margin-bottom:12px;}
 .pdf-top6__grid{display:grid;gap:10px;grid-auto-rows:1fr;}
-.pdf-top6-card{border:1px solid #E5E7EB;border-radius:6px;padding:13px 14px 12px;background:#fff;min-width:0;min-height:82px;display:flex;flex-direction:column;}
+.pdf-top6-card{border:1px solid #D2D2D7;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.07);padding:13px 14px 12px;background:#fff;min-width:0;min-height:82px;display:flex;flex-direction:column;}
 .pdf-top6-card__v{margin-top:7px!important;font-weight:700;letter-spacing:-0.015em;line-height:1.15;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6-card__sub{margin-top:auto!important;padding-top:6px;font-size:8.5px;color:var(--t6-mute);line-height:1.35;}
 .pdf-top6 .s-alert{color:var(--t6-risk)!important;font-weight:800!important;}

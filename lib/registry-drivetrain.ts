@@ -73,6 +73,14 @@ export function extractRegistryDrivetrain(sourceBlocks: WorkspaceSourceBlocks): 
 export const OEM_DRIVETRAIN_SOURCE_LABEL = "ražotāja katalogs (OneAuto)";
 /** OneAuto aprīkojuma produkts (build sheet) - nopirkts šim pasūtījumam, rūpnīcas dati par ŠO VIN. */
 export const ONEAUTO_BUILD_SHEET_LABEL = "OneAuto aprīkojums (build sheet)";
+/** Rūpnīcas kārbas kods ar piedziņu (dīlera dati: Outvin vai OneAuto -> dīlera lauki). */
+export const TRANSMISSION_CODE_DEALER_LABEL = "dīlera dati (kārbas rūpnīcas kods)";
+/** Rūpnīcas kārbas kods ar piedziņu tieši no OneAuto atbildes. */
+export const TRANSMISSION_CODE_ONEAUTO_LABEL = "OneAuto (kārbas rūpnīcas kods)";
+/** CSDD reģistra modelis / komercnosaukums ar pilnpiedziņas marķieri. */
+export const CSDD_MODEL_DRIVETRAIN_LABEL = "CSDD modelis";
+/** BMW servisa ierakstā oriģinālā priekšējās ass pusass detaļa (grupa 31 60). */
+export const BMW_FRONT_AXLE_PART_LABEL = "BMW servisa detaļa (priekšējā pusass)";
 
 const TWO_WD_TEXT_RE =
   /\b4\s?x\s?2\b|\b2wd\b|\brwd\b|\bfwd\b|rear[\s-]?wheel|front[\s-]?wheel|hinterrad|frontantrieb|vorderrad|aizmugur\p{L}*\s+(?:riteņu\s+)?piedziņ|priekšēj\p{L}*\s+(?:riteņu\s+)?piedziņ|baghjul|forhjul|sdrive/iu;
@@ -99,9 +107,10 @@ function oneautoPayloadDrive(payload: unknown): string {
 /* ---------- 24.11: piedziņa no VISIEM avotiem ar ticamības līmeņiem ---------- */
 
 /**
- * Ticamība (augstākā pirmā): rūpnīcas opciju kodi (CarVertical / AutoDNA / dīlera aprīkojuma kodi) >
- * oficiālais reģistrs (CSDD piedziņas lauka nav; Dānijas DMR) > CarVertical / AutoDNA specifikācija >
- * izsoles > ražotāja katalogs (OneAuto OE VIN Lookup / Outvin `drive`).
+ * Ticamība (augstākā pirmā): rūpnīcas opciju kodi (CarVertical / AutoDNA / dīlera aprīkojuma kodi, kārbas
+ * rūpnīcas kods ar piedziņu) > oficiālais reģistrs (CSDD piedziņas lauka nav; Dānijas DMR) > specifikācija
+ * (CarVertical / AutoDNA, CSDD modelis „XDRIVE” / „4MATIC”, BMW servisa detaļa 31 60) > izsoles >
+ * ražotāja katalogs (OneAuto OE VIN Lookup / Outvin `drive`).
  */
 export type DrivetrainTier = "factory_codes" | "registry" | "vendor_spec" | "auction" | "oem_catalog";
 
@@ -218,6 +227,108 @@ export function auctionLotDrivetrain(get: { tail: (...names: string[]) => string
   return null;
 }
 
+/* ---------- 24.11 (2): bezmaksas VIN-specifiski pierādījumi jau ielādētajos datos ---------- */
+
+/**
+ * Rūpnīcas kārbas kods ar aprakstu: „G1G: 8-speed automatic transmission for four-wheel drive vehicle”,
+ * „PUZ (G1D : 7-speed automatic transmission)”, „8-speed automatic transmission for four-wheel drive (G1G)”.
+ * Kods - 3-4 lielie burti / cipari ar vismaz vienu ciparu (Audi / VW PR kods), aiz tā „:” vai iekavās.
+ */
+const TRANSMISSION_FACTORY_CODE_RE =
+  /(?:^|[\s(])(?!(?:4WD|2WD|4X4|4X2)\b)(?=[A-Z]*\d)[A-Z0-9]{3,4}\s*:|\(\s*(?!(?:4WD|2WD|4X4|4X2)\b)(?=[A-Z]*\d)[A-Z0-9]{3,4}\s*\)/;
+const TRANSMISSION_AWD_RE =
+  /four[\s-]?wheel[\s-]?drive|all[\s-]?wheel[\s-]?drive|\b4wd\b|\bawd\b|\bquattro\b|\b4x4\b|allrad|\bx\s?drive|\b4[\s-]?matic|\b4\s?motion/i;
+/** Viennozīmīga viena ass - tikai pilns formulējums (ne saīsinājums). */
+const TRANSMISSION_2WD_RE = /front[\s-]?wheel[\s-]?drive|rear[\s-]?wheel[\s-]?drive|frontantrieb|hinterradantrieb/i;
+/** „2WD/4WD”, „FWD and AWD” - nav viennozīmīgs. */
+const TRANSMISSION_2WD_ABBR_RE = /\b(?:2wd|fwd|rwd|4x2)\b/i;
+
+/**
+ * Kārbas lauka spriedums: true = pilnpiedziņa, false = viena ass, null = nav rūpnīcas koda vai nav viennozīmīgs.
+ * Bez rūpnīcas koda kārbas apraksts var būt kataloga tips (sk. XC90) - tad null.
+ */
+export function drivetrainFromTransmissionCode(raw: string | null | undefined): boolean | null {
+  const t = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!t || t.length > 300 || !TRANSMISSION_FACTORY_CODE_RE.test(t)) return null;
+  const awd = TRANSMISSION_AWD_RE.test(t);
+  const twoWd = TRANSMISSION_2WD_RE.test(t);
+  if (awd && (twoWd || TRANSMISSION_2WD_ABBR_RE.test(t))) return null;
+  if (awd) return true;
+  if (twoWd) return false;
+  return null;
+}
+
+/** OneAuto produktu atbilžu kārbas lauki (`oem_transmission_type_desc` u.c.). */
+function oneautoPayloadTransmissions(payload: unknown): string[] {
+  if (!payload || typeof payload !== "object") return [];
+  const result = (payload as { result?: unknown }).result;
+  if (!result || typeof result !== "object") return [];
+  return Object.entries(result as Record<string, unknown>)
+    .filter(([k, v]) => /transmission|gearbox/i.test(k) && typeof v === "string")
+    .map(([, v]) => v as string);
+}
+
+/**
+ * CSDD reģistra modelis / komercnosaukums ar pilnpiedziņas marķieri. Tikai pozitīvs signāls (AWD).
+ * „SDRIVE”, „QUATTROPORTE”, „X4X40” u.tml. neskaitās - marķierim jābūt atsevišķam vārdam.
+ */
+const CSDD_MODEL_AWD_RE =
+  /(?<![A-Z0-9])X\s?DRIVE(?:\d{2}[A-Z]{0,2})?(?![A-Z])|(?<![A-Z0-9])4[\s-]?MATIC(?![A-Z])|(?<![A-Z0-9])QUATTRO(?![A-Z])|(?<![A-Z0-9])4X4(?![A-Z0-9])|(?<![A-Z0-9])AWD(?![A-Z0-9])|(?<![A-Z0-9])4\s?MOTION(?![A-Z])|(?<![A-Z0-9])ALL4(?![A-Z0-9])/i;
+
+export function csddModelClaimsAwd(model: string | null | undefined): boolean {
+  return CSDD_MODEL_AWD_RE.test((model ?? "").trim());
+}
+
+/** BMW oriģinālā detaļa grupā 31 60 (priekšējās ass pusass / šarnīrs): „31607606091”, „31 60 7 606 091”. */
+const BMW_FRONT_DRIVESHAFT_PART_RE = /(?<![\d])31[ .]?60[ .]?\d[ .]?\d{3}[ .]?\d{3}(?![\d])/;
+/** BMW VIN WMI (bez motocikliem WB1 / WB3 un MINI WMW). */
+const BMW_CAR_WMI_RE = /^(?:WBA|WBS|WBX|WBY|4US|5UX|5UM|5YM|X4X)/i;
+/**
+ * Modeļi ar šķērsenisku dzinēju (UKL / FAAR - priekšpiedziņa ar priekšējām pusasīm) un MINI: tur 31 60
+ * detaļa nenozīmē pilnpiedziņu. X1 / X2 / 1. / 2. sērija - tikai, ja izstrādes kods skaidri garenisks.
+ */
+const BMW_TRANSVERSE_FAMILY_RE =
+  /\bmini\b|active\s*tourer|gran\s*tourer|gran\s*coup|\bi?x[12]\b|\b[12]\d{2}(?:[a-z]{1,2})?\b|\b[12]\s*(?:er|series|sērij)|\b(?:F39|F40|F44|F45|F46|F48|F49|F52|F5[4-7]|F60|F70|U06|U10|U11|U25)\b/i;
+const BMW_LONGITUDINAL_SMALL_RE = /\b(?:E8[1-8]|F2[0-3]|F87|G42|G87)\b/i;
+
+function bmwPartEvidenceAllowed(blocks: WorkspaceSourceBlocks): boolean {
+  const ar = blocks.auto_records;
+  const csdd = blocks.csdd;
+  const makeText = [csdd?.registry?.data?.make, csdd?.makeModel].filter(Boolean).join(" ");
+  const vins = [csdd?.registry?.data?.vin, ar.outvinReport?.vehicleInfo?.vinCode, ar.outvin?.vehicleInfo?.vinCode]
+    .map((v) => (v ?? "").trim())
+    .filter(Boolean);
+  const isBmw = (/\bbmw\b/i.test(makeText) && !/\bmini\b/i.test(makeText)) || (!makeText.trim() && vins.some((v) => BMW_CAR_WMI_RE.test(v)));
+  if (!isBmw || vins.some((v) => /^WMW/i.test(v))) return false;
+  const modelText = [
+    csdd?.makeModel,
+    csdd?.registry?.data?.model,
+    ar.outvinReport?.vehicleInfo?.model,
+    ar.outvinReport?.vehicleInfo?.modelSeries,
+    ar.outvinReport?.vehicleInfo?.developmentCode,
+    ar.outvin?.vehicleInfo?.model,
+    ar.outvin?.vehicleInfo?.modelSeries,
+    ar.outvin?.vehicleInfo?.developmentCode,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\bbmw\b/gi, " ");
+  // Modelis nezināms - nevar izslēgt šķērsenisko platformu.
+  if (!modelText.trim()) return false;
+  if (BMW_TRANSVERSE_FAMILY_RE.test(modelText) && !BMW_LONGITUDINAL_SMALL_RE.test(modelText)) return false;
+  return true;
+}
+
+/** Dīlera servisa darbu teksti (PROVIN tabula, OneAuto oriģinālais laika grafiks, OneAuto bloks). */
+function dealerServiceTexts(blocks: WorkspaceSourceBlocks): string[] {
+  const ar = blocks.auto_records;
+  return [
+    ...(ar.serviceWorks ?? []).map((w) => w?.works ?? ""),
+    ...(ar.oneautoIngest?.serviceTimelineOriginal ?? []).map((e) => e?.works ?? ""),
+    ...(blocks.oneauto?.display?.serviceTimeline ?? []).map((e) => e?.works ?? ""),
+  ].filter((t) => t.trim());
+}
+
 /** Visi piedziņas pierādījumi no ielādētajiem avotiem (bez AI komentāriem un operatora piezīmēm). */
 export function collectDrivetrainEvidence(sourceBlocks: WorkspaceSourceBlocks): DrivetrainEvidence[] {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
@@ -233,9 +344,34 @@ export function collectDrivetrainEvidence(sourceBlocks: WorkspaceSourceBlocks): 
     .filter((l) => l.trim());
   pushTextEvidence(out, equipLines.join("\n"), "Dīlera aprīkojuma", { codeLinesOnly: true });
 
-  // 2) Oficiālais reģistrs (Dānijas DMR). CSDD piedziņas lauku nedod; modeļa nosaukumu („4MATIC”) neņem.
+  // Rūpnīcas kārbas kods ar piedziņu (Outvin / OneAuto, piem. Audi „G1G: ... for four-wheel drive vehicle”).
+  const transmissionCands: { source: string; raw: string }[] = [
+    { source: TRANSMISSION_CODE_DEALER_LABEL, raw: ar.outvinReport?.vehicleInfo?.transmission ?? "" },
+    { source: TRANSMISSION_CODE_DEALER_LABEL, raw: ar.outvin?.vehicleInfo?.transmission ?? "" },
+    ...Object.values((ar.oneautoIngest?.results ?? {}) as Record<string, { payload?: unknown } | undefined>).flatMap((r) =>
+      oneautoPayloadTransmissions(r?.payload).map((raw) => ({ source: TRANSMISSION_CODE_ONEAUTO_LABEL, raw })),
+    ),
+  ];
+  for (const c of transmissionCands) {
+    const v = drivetrainFromTransmissionCode(c.raw);
+    if (v != null) out.push({ tier: "factory_codes", source: c.source, awd: v, detail: c.raw.trim().slice(0, 120) });
+  }
+
+  // 2) Oficiālais reģistrs (Dānijas DMR). CSDD piedziņas lauku nedod.
   const reg = extractRegistryDrivetrain(blocks);
   if (reg) out.push({ tier: "registry", source: reg.sourceLabel, awd: reg.awd, detail: `${reg.drivenAxles} dzenošās asis` });
+
+  // 3) CSDD modelis ar „XDRIVE” / „4MATIC” / „QUATTRO” - specifikācijas līmenis: reģistra ieraksts ir par ŠO VIN,
+  // bet nosaukums ir brīvs teksts (23.11 E 300 de: CSDD „4MATIC”, DMR - aizmugurējo riteņu piedziņa).
+  const csddModels = [blocks.csdd?.makeModel ?? "", blocks.csdd?.registry?.data?.model ?? ""];
+  const csddHit = csddModels.find((m) => csddModelClaimsAwd(m));
+  if (csddHit) out.push({ tier: "vendor_spec", source: CSDD_MODEL_DRIVETRAIN_LABEL, awd: true, detail: csddHit.trim().slice(0, 80) });
+
+  // 3b) BMW servisa detaļa 31 60 (priekšējā pusass) - garenisko BMW priekšējās pusasis ir tikai xDrive.
+  if (bmwPartEvidenceAllowed(blocks)) {
+    const hit = dealerServiceTexts(blocks).map((t) => t.match(BMW_FRONT_DRIVESHAFT_PART_RE)?.[0]).find(Boolean);
+    if (hit) out.push({ tier: "vendor_spec", source: BMW_FRONT_AXLE_PART_LABEL, awd: true, detail: hit });
+  }
 
   // 4) Izsoles (TheCarApi).
   for (const r of blocks.cc_vin?.thecarapiRecords ?? []) {

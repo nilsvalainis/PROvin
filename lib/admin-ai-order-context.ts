@@ -58,6 +58,7 @@ import {
   buildWinterSaltRustBrief,
 } from "@/lib/admin-ai-winter-salt-rust";
 import { buildDealerIncidentLinkBrief } from "@/lib/admin-ai-dealer-incident-link";
+import { buildLandRoverV6DieselBrief } from "@/lib/admin-ai-land-rover-v6-diesel";
 import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
 import { buildListingNotCountryChangeBrief } from "@/lib/admin-ai-listing-country";
@@ -372,6 +373,9 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
   });
   if (southernVisual) parts.push(southernVisual);
 
+  const lrV6Diesel = buildLandRoverV6DieselBrief(blocks, { vin: input.vin });
+  if (lrV6Diesel) parts.push(lrV6Diesel);
+
   const dealerIncidents = buildDealerIncidentLinkBrief(blocks);
   if (dealerIncidents) parts.push(dealerIncidents);
 
@@ -451,6 +455,7 @@ function instructionBriefs(input: AiOrderContextInput): string {
       sourceBlocks: blocks,
       extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
     }),
+    buildLandRoverV6DieselBrief(blocks, { vin: input.vin }),
     buildDealerIncidentLinkBrief(blocks),
     buildListingNotCountryChangeBrief(blocks),
     buildCommentLengthBudgetBrief(blocks, { breadth: input.commentBreadth }),

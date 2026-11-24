@@ -3,6 +3,11 @@
  * Dinamiskie mācījumi no saglabātajām atskaitēm: `lib/admin-audit-learnings-store.ts`.
  */
 import type { VehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
+import {
+  detectLandRoverV6Diesel,
+  LR_V6_DIESEL_INSPECTION_STEPS,
+  LR_V6_DIESEL_TYPICAL_FAULTS,
+} from "@/lib/land-rover-v6-diesel";
 
 export type AggregateCasePack = {
   id: string;
@@ -102,7 +107,38 @@ Katrā atbilstošā laukā (īpaši **1. Tehnisko risku analīze**, **2. Ieteiku
 - EUR skaitļi klientam drīkst parādīties tikai cenas vērtējumā/tirgus laukā. **3. Kopsavilkumā** un **1. sadaļā** cenas un EUR summas neraksta — pat ne no šīs pakas.
 - Aizliegts sākt ar slavinošu „veiksmīgākā / izturīgākā konstrukcija” eseju — pirmā sadaļa = risks.`;
 
+/** Land Rover / Jaguar «Lion» V6 dīzelis pēc pirkstu nospieduma (bez VIN). */
+export function fingerprintIsLandRoverV6Diesel(fp: VehicleReportFingerprint): boolean {
+  const cm3 = parseDisplacementCm3(fp);
+  return (
+    detectLandRoverV6Diesel({
+      makeModel: [fp.makeModel, ...fp.makeTokens, ...fp.modelTokens].join(" "),
+      engineCode: fp.engineCode,
+      fuel: fp.fuelType,
+      displacementCm3: cm3,
+      year: fp.year,
+    }) != null
+  );
+}
+
 export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
+  {
+    id: "land_rover_v6_diesel_lion",
+    minScore: 14,
+    title: "Land Rover / Range Rover - 3.0 V6 dīzelis (306DT, TDV6 / SDV6) un 2.7 TDV6 - PROVIN nostāja: riskants dzinējs",
+    score: (fp) => (fingerprintIsLandRoverV6Diesel(fp) ? 60 : 0),
+    body: `${PACK_BODY_HEADER}
+
+**PROVIN NOSTĀJA (likums visiem šī dzinēja auto):** Ford/PSA «Lion» V6 dīzelis (3.0 - 306DT, TDV6 / SDV6; agrākais 2.7 TDV6 - 276DT) mūsu vērtējumā ir **riskants dzinējs**. Šo viedokli skaidri pasaki **1. Tehnisko risku analīzē**, **2. Ieteikumos** un **3. Kopsavilkumā** - dzinējs ir **galvenais pirkuma risks**, ne tikai „pārbaudāms klātienē”. Tonis atturīgs; bez EUR summām.
+
+**Tipiskās kaites:** ${LR_V6_DIESEL_TYPICAL_FAULTS}
+
+**Nav šis dzinējs (šo paku NELIETO):** 2.0 Ingenium (204DT*), 3.0 I6 Ingenium MHEV (D250 / D300 / D350, ~2997 cm³, no ~2020), 4.4 SDV8, 3.6 TDV8, 2.2 TD4 / SD4, benzīna 3.0 V6 S/C.
+
+**Rāmja modeļi (Discovery 3/4, Range Rover Sport L320):** daudzi dzinēja darbi prasa virsbūves nocelšanu no rāmja - remonts darbietilpīgs. Discovery 5, Range Rover Sport L494, Range Rover L405, Velar - nesošā virsbūve, šo nemini.
+
+**Klātienē:** ${LR_V6_DIESEL_INSPECTION_STEPS}`,
+  },
   {
     id: "vag_audi_v6_tdi",
     minScore: 14,

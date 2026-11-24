@@ -217,6 +217,7 @@ export async function purchaseB2bWalletBulk(args: {
     });
     followups.push({
       orderId: created.orderId,
+      plan: spec.plan,
       vin,
       listingUrl,
       dealerQueued: created.dealerQueued,

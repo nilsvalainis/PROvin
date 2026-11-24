@@ -786,6 +786,8 @@ describe("PROVIN AI prompt invariants", () => {
       "lib/admin-ai-aggregate-identification.ts",
       "lib/admin-ai-aggregate-knowledge.ts",
       "lib/provin-aggregate-case-rules.ts",
+      "lib/land-rover-v6-diesel.ts",
+      "lib/admin-ai-land-rover-v6-diesel.ts",
     ];
     for (const file of filesToScan) {
       const src = readRepo(file);
