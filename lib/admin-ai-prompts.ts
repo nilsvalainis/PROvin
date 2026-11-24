@@ -125,7 +125,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow web search to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and already generated comments; state conflicts clearly for the client.
-- SELLER CLAIMS: „Pārdevēja apgalvojumi sludinājumā” in KANONISKIE FAKTI are what the seller wrote in the listing — NOT verified facts. Compare them with the data (mileage, accidents/damage, service history, owners, colour, equipment). If the data contradict a claim, state it in one factual sentence naming the claim and the source (e.g. sludinājumā „nav sists”, bet AutoDNA fiksē negadījumu 2021. gadā). If the data agree, do not repeat the claim. Never present a seller claim as a fact. Dealer/Business variant: fact only, no advice.
+- SELLER CLAIMS („Pārdevēja apgalvojumi sludinājumā”) are unverified. Compare with data (km, accidents, service, owners, colour, equipment); state a contradiction in one factual sentence with the source; never present a claim as fact. Dealer/Business: fact only.
 - FIRST REGISTRATION: „Pirmā reģistrācija” = earliest in ANY country (date/country only from KANONISKIE FAKTI). Later national ones („Pirmā reģistrācija Latvijā/Somijā”) are not the car's first registration; never mix dates; never „pasaulē”.
 
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
