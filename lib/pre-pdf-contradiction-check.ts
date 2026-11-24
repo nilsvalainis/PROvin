@@ -210,7 +210,7 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
       level,
       message:
         a.class === "listing_below"
-          ? `${a.labelLv}: fiksēts ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → sludinājumā ${formatForensicsInt(a.toKm)} km (${a.toDate}), par ${formatForensicsInt(a.dropKm)} km mazāk. Ja tā nav pretruna - atcel karogu nobraukuma anomāliju panelī.`
+          ? `${a.labelLv}: fiksēts ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → sludinājumā ${formatForensicsInt(a.toKm)} km (${a.toDate}), par ${formatForensicsInt(a.dropKm)} km mazāk. Ja tā nav pretruna - nobraukuma anomāliju panelī spied «Nav pretruna».`
           : `${a.labelLv}: ${formatForensicsInt(a.fromKm)} km (${a.fromDate}) → ${formatForensicsInt(a.toKm)} km (${a.toDate}), kritums ${formatForensicsInt(a.dropKm)} km.`,
       sentence: `${a.toDate} ${formatForensicsInt(a.toKm)} km`,
     });

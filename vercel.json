@@ -181,6 +181,10 @@
       "schedule": "40 4 * * *"
     },
     {
+      "path": "/api/cron/contradiction-feedback-weekly",
+      "schedule": "37 5 * * 1"
+    },
+    {
       "path": "/api/cron/termini-atgadinajumi",
       "schedule": "0 6 * * *"
     },

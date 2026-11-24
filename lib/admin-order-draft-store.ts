@@ -1,5 +1,6 @@
 import "server-only";
 
+import { contradictionFeedbackSnapshotField } from "@/lib/contradiction-feedback";
 import { createHash } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "fs/promises";
@@ -324,6 +325,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         incidentPhotos: w.incidentPhotos,
         technicalRiskMap: w.technicalRiskMap,
         odometerAnomalyOverrides: w.odometerAnomalyOverrides,
+        contradictionFeedback: w.contradictionFeedback,
         dealerMajorWorkOverrides: w.dealerMajorWorkOverrides,
       });
     } catch {
@@ -347,6 +349,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         incidentPhotos: h.incidentPhotos,
         ...technicalRiskMapSnapshotField(h.technicalRiskMap),
         ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
+        ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
         ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
       };
     }
@@ -718,6 +721,7 @@ async function patchOrderDraftUnlocked(
       ...clearedFieldsSnapshotField(workspacePatch.clearedFields),
       ...technicalRiskMapSnapshotField(workspacePatch.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(workspacePatch.odometerAnomalyOverrides),
+      ...contradictionFeedbackSnapshotField(workspacePatch.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(workspacePatch.dealerMajorWorkOverrides),
     });
     const h = hydrateWorkspaceFromStorage(json);
@@ -741,6 +745,7 @@ async function patchOrderDraftUnlocked(
       ...clearedFieldsSnapshotField(h.clearedFields),
       ...technicalRiskMapSnapshotField(h.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
+      ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
     };
   }

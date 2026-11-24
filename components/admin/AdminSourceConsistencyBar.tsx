@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ContradictionVerdictButtons } from "@/components/admin/ContradictionFeedbackContext";
+import { feedbackDateLabel, type ContradictionVerdict } from "@/lib/contradiction-feedback";
 import { countSourceIssues, type SourceIssue, type SourceIssueSeverity } from "@/lib/source-consistency";
+
+/** Brīdinājums ar operatora lēmumu (24.11 mācīšanās). */
+type IssueWithVerdict = SourceIssue & { verdict?: ContradictionVerdict; verdictAt?: string; autoDowngraded?: boolean };
 
 const DOT: Record<SourceIssueSeverity, string> = {
   critical: "bg-[#d70015]",
@@ -24,38 +29,48 @@ function topSeverity(issues: readonly SourceIssue[]): SourceIssueSeverity | "non
 }
 
 /** Saraksts: punkts + avoti ar vērtībām (kopīgs joslai un sūtīšanas dialogam). */
-export function SourceIssueList({
+export function SourceIssueList<T extends IssueWithVerdict>({
   issues,
   className = "",
+  onVerdict,
   tone = "theme",
 }: {
-  issues: readonly SourceIssue[];
+  issues: readonly T[];
   className?: string;
+  /** Ja dots - pie katra punkta «Nav pretruna» / «Pareizi». */
+  onVerdict?: (issue: T, verdict: ContradictionVerdict) => void;
   /** «light» - skaidras krāsas (gaišs fons) neatkarīgi no admin tēmas. */
   tone?: "theme" | "light";
 }) {
   const light = tone === "light";
   return (
     <ul className={`space-y-1.5 ${className}`} style={light ? { color: "#1f2937" } : undefined}>
-      {issues.map((i) => (
-        <li key={i.id} className="flex gap-2 text-[12px] leading-snug">
-          <span className={`mt-[5px] h-2 w-2 shrink-0 rounded-full ${DOT[i.severity]}`} aria-hidden />
-          <span
-            className={`min-w-0 ${i.severity === "info" && !light ? "text-[var(--color-apple-text-secondary,#6e6e73)]" : ""}`}
-            style={light ? { color: i.severity === "info" ? "#6b7280" : "#1f2937" } : undefined}
-          >
-            <span className="font-semibold">{i.title}</span>
-            <span className="block break-words">
-              {i.values.map((v, n) => (
-                <span key={`${v.source}-${n}`}>
-                  {n > 0 ? " · " : ""}
-                  {v.source}: <span className="font-medium">{v.value}</span>
-                </span>
-              ))}
+      {issues.map((i) => {
+        const dismissed = i.verdict === "dismiss";
+        return (
+          <li key={i.id} className="flex gap-2 text-[12px] leading-snug">
+            <span className={`mt-[5px] h-2 w-2 shrink-0 rounded-full ${DOT[i.severity]}`} aria-hidden />
+            <span
+              className={`min-w-0 flex-1 ${i.severity === "info" && !light ? "text-[var(--color-apple-text-secondary,#6e6e73)]" : ""}`}
+              style={light ? { color: i.severity === "info" ? "#6b7280" : "#1f2937" } : undefined}
+            >
+              <span className="font-semibold">{i.title}</span>
+              {dismissed ? <span className="ml-1 text-[11px]">(noraidīts {feedbackDateLabel(i.verdictAt)})</span> : null}
+              <span className="block break-words">
+                {i.values.map((v, n) => (
+                  <span key={`${v.source}-${n}`}>
+                    {n > 0 ? " · " : ""}
+                    {v.source}: <span className="font-medium">{v.value}</span>
+                  </span>
+                ))}
+              </span>
+              {onVerdict ? (
+                <ContradictionVerdictButtons className="mt-0.5" verdict={i.verdict} onVerdict={(v) => onVerdict(i, v)} />
+              ) : null}
             </span>
-          </span>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -80,7 +95,13 @@ export function CriticalSourceIssuesAlert({ issues }: { issues: readonly SourceI
 }
 
 /** «Pretrunas: N» pie «Ģenerēt PDF»: klikšķis atver sarakstu (punkts, avoti, vērtības). */
-export function AdminSourceConsistencyBar({ issues }: { issues: readonly SourceIssue[] }) {
+export function AdminSourceConsistencyBar<T extends IssueWithVerdict>({
+  issues,
+  onVerdict,
+}: {
+  issues: readonly T[];
+  onVerdict?: (issue: T, verdict: ContradictionVerdict) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const n = countSourceIssues(issues);
@@ -119,7 +140,7 @@ export function AdminSourceConsistencyBar({ issues }: { issues: readonly SourceI
           className="absolute bottom-full left-0 z-50 mb-2 max-h-[60vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#e5e7eb] p-3 shadow-[0_8px_32px_rgba(15,23,42,0.18)]"
           style={{ backgroundColor: "#ffffff", color: "#1f2937" }}
         >
-          <SourceIssueList issues={issues} tone="light" />
+          <SourceIssueList issues={issues} onVerdict={onVerdict} tone="light" />
         </div>
       ) : null}
     </div>
