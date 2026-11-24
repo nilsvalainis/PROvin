@@ -4,6 +4,7 @@ import { FakeElement, runUserscriptAt as runAt } from "@/lib/vin-scan/test-helpe
 
 const BRIDGE_EVENTS = [
   "provin-listing-history-request",
+  "provin-listing-page-request",
   "provin-browser-fetch",
   "provin-stat-vin-fetch",
   "provin-vin-scan-browser",
@@ -75,5 +76,33 @@ describe("userscript admin tilts tikai PROVIN hostos", () => {
     for (const fn of run.listeners.get("click") ?? []) fn({ target, isTrusted: true, preventDefault() {} });
     expect(run.gm.set.has("provin_cv_purchase")).toBe(false);
     expect(run.gm.set.has("provin_cv_purchase_vin")).toBe(false);
+  });
+});
+
+describe("sludinājuma lapas tilts (apraksta rezerve)", () => {
+  const fire = (run: ReturnType<typeof runAt>, fetchUrl: string) =>
+    run.listeners.get("provin-listing-page-request")!.forEach((fn) => fn({ detail: { requestId: "p1", fetchUrl } }));
+
+  it("mobile.de, http un sveši saimnieki netiek ielasīti", () => {
+    const run = runAt("https://www.provin.lv/admin/orders/x");
+    fire(run, "https://suchen.mobile.de/fahrzeuge/details.html?id=1");
+    fire(run, "https://m.mobile.de/x");
+    fire(run, "http://www.ss.com/msg/lv/x.html");
+    fire(run, "https://evil.com/x");
+    fire(run, "https://ss.com.evil.com/x");
+    expect(run.gm.xhr).toHaveLength(0);
+  });
+
+  it("ss.com / auto24 / autoplius / reklama.lv tiek ielasīti", () => {
+    const run = runAt("https://www.provin.lv/admin/orders/x");
+    fire(run, "https://m.ss.com/msg/lv/transport/cars/audi/a4/x.html");
+    fire(run, "https://www.auto24.lv/lietoti/1");
+    fire(run, "https://lv.autoplius.lt/sludinajumi/x-1.html");
+    fire(run, "https://reklama.lv/riga/transport/x-1.html");
+    expect(run.gm.xhr).toHaveLength(4);
+  });
+
+  it("svešā lapā tilta nav", () => {
+    expect(runAt("https://evil.vercel.app/admin").listeners.has("provin-listing-page-request")).toBe(false);
   });
 });

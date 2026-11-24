@@ -3,6 +3,7 @@
  * tikai validācija + `patchOrderDraft` (`orderEdits` merge ar iepriekšējo JSON, ne pilna aizvietošana).
  * 503 parasti nozīmē `store_disabled` vai rakstīšanas kļūdu (skat. `ADMIN_ORDER_DRAFT_DIR`).
  */
+import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
 import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
@@ -183,6 +184,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     ...clearedFieldsSnapshotField(o.clearedFields),
     ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(o.technicalRiskMap)),
     ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(o.odometerAnomalyOverrides)),
+    ...contradictionFeedbackSnapshotField(parseContradictionFeedback(o.contradictionFeedback)),
     ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(o.dealerMajorWorkOverrides)),
   };
 }

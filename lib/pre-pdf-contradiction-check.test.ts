@@ -64,8 +64,10 @@ describe("checkPrePdfContradictions", () => {
       ],
     });
     expect(flags.map((f) => f.id)).toEqual(
-      expect.arrayContaining(["c2_rollback_clean_header", "c3_header_km", "odo_rollback_1"]),
+      expect.arrayContaining(["c2_rollback_clean_header", "c3_header_km"]),
     );
+    // 24.11: id ar stabilo atslēgu (bez sourceOrder).
+    expect(flags.some((f) => f.id.startsWith("odo_rollback_v2|rollback|"))).toBe(true);
     expect(flags.every((f) => !/[\u2013\u2014]/.test(f.message))).toBe(true);
   });
 

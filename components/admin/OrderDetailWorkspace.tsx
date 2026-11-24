@@ -1,5 +1,20 @@
 "use client";
 
+import {
+  applyFeedbackToFactFlags,
+  applyFeedbackToSourceIssues,
+  contradictionFeedbackSnapshotField,
+  feedbackFor,
+  odometerFingerprint,
+  upsertContradictionFeedback,
+  type ContradictionFeedbackEntry,
+  type ContradictionVerdict,
+} from "@/lib/contradiction-feedback";
+import {
+  ContradictionFeedbackContext,
+  type ContradictionFeedbackContextValue,
+  type ContradictionFeedbackTarget,
+} from "@/components/admin/ContradictionFeedbackContext";
 import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
@@ -235,7 +250,11 @@ import {
   vinRegistryTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingAiSnapshot, ListingMarketSnapshot } from "@/lib/listing-scrape";
-import { formatListingSnapshotForPasteField } from "@/lib/listing-scrape";
+import {
+  formatListingSnapshotForPasteField,
+  parseListingHtmlForUrl,
+  unwrapListingHistoryLink,
+} from "@/lib/listing-scrape";
 import {
   CarFront,
   Check,
@@ -398,7 +417,10 @@ import {
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
 import { isListingAutofillUrl } from "@/lib/listing-host";
-import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
+import {
+  fetchListingPageHtmlViaUserscript,
+  loadListingPriceHistorySnapshot,
+} from "@/lib/admin-listing-history-client";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -480,6 +502,7 @@ type WorkspacePersist = {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
@@ -630,6 +653,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...clearedFieldsSnapshotField(ws.clearedFields),
   ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
   ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
+  ...contradictionFeedbackSnapshotField(ws.contradictionFeedback),
   ...dealerMajorWorkOverridesSnapshotField(ws.dealerMajorWorkOverrides),
   };
 }
@@ -1054,6 +1078,38 @@ export function OrderDetailWorkspace({
   }, [factCheckDismissed, payload.sessionId]);
 
   const odometerAnomalyOverrides = ws.odometerAnomalyOverrides ?? [];
+  // 24.11 mācīšanās: šī VIN lēmumi citos pasūtījumos + automātiski pazeminātie noteikumi (Blob žurnāls).
+  const [vinFeedback, setVinFeedback] = useState<{ entries: ContradictionFeedbackEntry[]; downgraded: string[] }>({
+    entries: [],
+    downgraded: [],
+  });
+  useEffect(() => {
+    const vin = (payload.vin ?? "").trim();
+    if (!vin) return;
+    let cancelled = false;
+    void fetch(`/api/admin/contradiction-feedback?vin=${encodeURIComponent(vin)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { entries?: ContradictionFeedbackEntry[]; downgraded?: string[] } | null) => {
+        if (cancelled || !j) return;
+        setVinFeedback({ entries: Array.isArray(j.entries) ? j.entries : [], downgraded: Array.isArray(j.downgraded) ? j.downgraded : [] });
+      })
+      .catch(() => {
+        /* mācīšanās nav obligāta */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [payload.vin]);
+  const feedbackEntries = useMemo(
+    () => [...(ws.contradictionFeedback ?? []), ...vinFeedback.entries],
+    [ws.contradictionFeedback, vinFeedback.entries],
+  );
+  const feedbackOpts = useMemo(
+    () => ({ vin: payload.vin ?? null, entries: feedbackEntries, downgraded: vinFeedback.downgraded }),
+    [payload.vin, feedbackEntries, vinFeedback.downgraded],
+  );
+  const feedbackOptsRef = useRef(feedbackOpts);
+  feedbackOptsRef.current = feedbackOpts;
   const dealerMajorWorkOverrides = ws.dealerMajorWorkOverrides ?? [];
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
@@ -1101,13 +1157,16 @@ export function OrderDetailWorkspace({
       sourcesComparisonComment: dComparison,
       sourceBlocks: blocks,
     });
-    return checkSourceConsistency({
-      vin: payload.vin,
-      sourceBlocks: blocks,
-      texts,
-      listingUrl: payload.listingUrl ?? null,
-    });
-  }, [dSourceBlocks, dRisks, dSummary, dInspection, dInternal, dMileage, dComparison, payload.vin, payload.listingUrl]);
+    return applyFeedbackToSourceIssues(
+      checkSourceConsistency({
+        vin: payload.vin,
+        sourceBlocks: blocks,
+        texts,
+        listingUrl: payload.listingUrl ?? null,
+      }),
+      feedbackOpts,
+    );
+  }, [dSourceBlocks, dRisks, dSummary, dInspection, dInternal, dMileage, dComparison, payload.vin, payload.listingUrl, feedbackOpts]);
   const criticalIssues = useMemo(() => criticalSourceIssues(sourceIssues), [sourceIssues]);
   /** Citu avotu valstu laika josla - dīlera vizītēm bez valsts (tikai attēlošana). */
   const workspaceCountryEvidence = useMemo(
@@ -1264,6 +1323,7 @@ export function OrderDetailWorkspace({
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(normalized.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
     };
     wsPersistRef.current = next;
@@ -1339,6 +1399,7 @@ export function OrderDetailWorkspace({
         ...clearedFieldsSnapshotField(body.clearedFields),
         ...technicalRiskMapSnapshotField(body.technicalRiskMap),
         ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
+        ...contradictionFeedbackSnapshotField(body.contradictionFeedback),
         ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
         };
         wsStateRef.current = wsPersistRef.current;
@@ -1560,6 +1621,42 @@ export function OrderDetailWorkspace({
     const key = factCheckDismissKey(flag);
     setFactCheckDismissed((prev) => (prev.includes(key) ? prev : [...prev, key]));
   }, []);
+
+  /** 24.11: «Nav pretruna» / «Pareizi» - pasūtījumā (serverī) + kopējā žurnālā (bez personas datiem). */
+  const recordContradictionVerdict = useCallback(
+    (target: ContradictionFeedbackTarget, verdict: ContradictionVerdict) => {
+      const current = wsStateRef.current.contradictionFeedback ?? [];
+      const prev = feedbackFor(target.fp, current);
+      const entry: ContradictionFeedbackEntry = {
+        fp: target.fp,
+        rule: target.rule,
+        origin: target.origin,
+        verdict,
+        at: new Date().toISOString(),
+        ...(target.pair ? { pair: target.pair } : {}),
+      };
+      updateWs({ contradictionFeedback: upsertContradictionFeedback(current, entry) });
+      // Atkārtots tas pats lēmums = atsaukšana - žurnālā neraksta.
+      if (prev?.verdict === verdict) return;
+      void fetch("/api/admin/contradiction-feedback", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId: payload.sessionId, vin: payload.vin ?? "", entry, severity: target.severity ?? "" }),
+      }).catch(() => {
+        /* žurnāls nav obligāts */
+      });
+    },
+    [payload.sessionId, payload.vin, updateWs],
+  );
+  const contradictionFeedbackCtx = useMemo<ContradictionFeedbackContextValue>(
+    () => ({
+      vin: payload.vin ?? null,
+      entries: feedbackEntries,
+      downgraded: vinFeedback.downgraded,
+      onVerdict: recordContradictionVerdict,
+    }),
+    [payload.vin, feedbackEntries, vinFeedback.downgraded, recordContradictionVerdict],
+  );
 
   const factCheckSlotFor = useCallback(
     (field: string, text: string, applyHtml?: (next: string) => void) => ({
@@ -2813,6 +2910,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...contradictionFeedbackSnapshotField(chosen.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
 
@@ -2846,6 +2944,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...contradictionFeedbackSnapshotField(chosen.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
       wsPersistRef.current = hydratedWs;
@@ -2921,7 +3020,7 @@ export function OrderDetailWorkspace({
 
   useEffect(() => {
     if (!workspaceHydrated || adifyAutofillAttemptedRef.current) return;
-    const url = payload.listingUrl?.trim() ?? "";
+    const url = unwrapListingHistoryLink(payload.listingUrl?.trim() ?? "");
     const tirgus = wsPersistRef.current.sourceBlocks.tirgus;
     const listingPasteEmpty = !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim();
     if (!shouldAutofillSsLvListing(url, tirgus) && !(listingPasteEmpty && isListingAutofillUrl(url))) return;
@@ -2937,9 +3036,17 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({ url }),
           }).catch(() => null),
         ]);
-        const scrape = scrapeRes?.ok
+        let scrape = scrapeRes?.ok
           ? ((await scrapeRes.json().catch(() => null)) as ListingAiSnapshot | null)
           : null;
+        // Serveris bloķēts / bez apraksta -> operatora pārlūks (Tampermonkey), tikai atļautie portāli, ne mobile.de.
+        if (!scrape?.description && !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim()) {
+          const viaBrowser = await fetchListingPageHtmlViaUserscript(url).catch(() => null);
+          if (viaBrowser?.html) {
+            const parsed = parseListingHtmlForUrl(viaBrowser.html, url);
+            if (parsed.ok && parsed.description) scrape = parsed;
+          }
+        }
         const latest = wsPersistRef.current.sourceBlocks.tirgus;
         const tirgusShouldFill = shouldAutofillSsLvListing(url, latest);
         const next = tirgusShouldFill
@@ -3856,7 +3963,7 @@ export function OrderDetailWorkspace({
       await Promise.all(
         fields.map(async (f) => {
           const result = await runFactCheck(f.field, f.text);
-          for (const flag of openErrorFactCheckFlags(result.flags, factCheckDismissed)) {
+          for (const flag of openErrorFactCheckFlags(applyFeedbackToFactFlags(result.flags, feedbackOptsRef.current), factCheckDismissed)) {
             errorItems.push({ label: f.label, sentence: flag.sentence, message: flag.message });
           }
         }),
@@ -3888,7 +3995,7 @@ export function OrderDetailWorkspace({
           sourceBlocks: cur.sourceBlocks,
         }),
       });
-      for (const flag of openErrorFactCheckFlags(prePdfFlags, factCheckDismissed)) {
+      for (const flag of openErrorFactCheckFlags(applyFeedbackToFactFlags(prePdfFlags, feedbackOptsRef.current), factCheckDismissed)) {
         errorItems.push({
           label: "Pirms PDF",
           sentence: flag.sentence,
@@ -5226,6 +5333,7 @@ export function OrderDetailWorkspace({
   );
 
   return (
+    <ContradictionFeedbackContext.Provider value={contradictionFeedbackCtx}>
     <AdminAutoIngestChipProvider chips={autoIngestChips}>
     <div className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]">
       {previewBody}
@@ -6602,14 +6710,22 @@ export function OrderDetailWorkspace({
                   <AdminOdometerAnomalyPanel
                     rows={unifiedMileageDisplayRows}
                     overrides={odometerAnomalyOverrides}
-                    onOverride={(next) =>
+                    onOverride={(next, anomaly) => {
+                      const prevOv = odometerAnomalyOverrides.find((o) => o.key === next.key);
+                      // Atkārtots klikšķis uz to pašu - atsauc lēmumu.
+                      const undo = prevOv?.action === next.action;
                       updateWs({
                         odometerAnomalyOverrides: [
-                          ...odometerAnomalyOverrides.filter((o) => o.key !== next.key),
-                          next,
+                          ...odometerAnomalyOverrides.filter((o) => o.key !== next.key && o.key !== anomaly.legacyKey),
+                          ...(undo ? [] : [next]),
                         ],
-                      })
-                    }
+                      });
+                      const { fp, rule, pair } = odometerFingerprint(anomaly, payload.vin);
+                      recordContradictionVerdict(
+                        { origin: "odometer", fp, rule, pair, severity: anomaly.class === "rollback" ? "E" : "W" },
+                        next.action === "dismiss" ? "dismiss" : "confirm",
+                      );
+                    }}
                   />
                 </div>
                 </div>
@@ -6851,7 +6967,15 @@ export function OrderDetailWorkspace({
         }`}
       >
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
-          <AdminSourceConsistencyBar issues={sourceIssues} />
+          <AdminSourceConsistencyBar
+            issues={sourceIssues}
+            onVerdict={(issue, verdict) =>
+              recordContradictionVerdict(
+                { origin: "source", fp: issue.fp, rule: issue.rule, pair: issue.pair, severity: issue.originalSeverity },
+                verdict,
+              )
+            }
+          />
           <AdminPdfLangSplitButton
             label="Ģenerēt PDF"
             busyLabel={pdfFamilyBusy("pdf")}
@@ -6937,5 +7061,6 @@ export function OrderDetailWorkspace({
         : null}
     </div>
     </AdminAutoIngestChipProvider>
+    </ContradictionFeedbackContext.Provider>
   );
 }

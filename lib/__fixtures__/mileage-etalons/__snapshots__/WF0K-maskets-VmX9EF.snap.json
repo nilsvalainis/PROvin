@@ -51,13 +51,11 @@
  ],
  "sarkanaJosla": true,
  "klases": [
-  "typo_outlier: 01.02.2017 91794 -> 01.02.2017 121100 (kritums 29306) [01.02.2017 | 121100 | OFICIĀLĀ DĪLERA DATI]",
   "rollback: 20.04.2022 529000 -> 01.09.2024 195623 (kritums 333377) [01.09.2024 | 195623 | CarVertical]"
  ],
  "kritumsBezNilaLemumiem": true,
  "nilaLemumi": [],
  "klasesPecNilaLemumiem": [
-  "typo_outlier: 01.02.2017 121100",
   "rollback: 01.09.2024 195623"
  ],
  "faktuLapa": {

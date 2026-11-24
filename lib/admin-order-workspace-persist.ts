@@ -1,6 +1,7 @@
 /**
  * Pasūtījuma darba zonas serializācija un hidratācijas izvēle (jaunākais `savedAt` uzvar).
  */
+import { contradictionFeedbackSnapshotField } from "@/lib/contradiction-feedback";
 import type { ProvinBannerPdfInclude, ProvinManualBanner } from "@/lib/provin-alert-banners";
 import { mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import type { PdfVisibilitySettings } from "@/lib/pdf-visibility";
@@ -87,6 +88,7 @@ export type OrderWorkspacePersistBody = {
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
   /** Operatora odometra karodziņu apstiprinājums / atcelšana. Nav vecos pasūtījumos. */
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   /** Operatora Lielie darbi labojumi. Nav vecos pasūtījumos. */
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
@@ -473,6 +475,7 @@ export function coalesceOrderWorkspacePersistBody(
     ...odometerAnomalyOverridesSnapshotField(
       incoming.odometerAnomalyOverrides ?? baseline.odometerAnomalyOverrides,
     ),
+    ...contradictionFeedbackSnapshotField(incoming.contradictionFeedback ?? baseline.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(
       incoming.dealerMajorWorkOverrides ?? baseline.dealerMajorWorkOverrides,
     ),
@@ -525,6 +528,7 @@ export function buildOrderDraftWorkspaceBody(
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
   };
 }
@@ -576,6 +580,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     ...clearedFieldsSnapshotField(body.clearedFields),
     ...technicalRiskMapSnapshotField(body.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(body.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
   };
 }
@@ -609,6 +614,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(normalized.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
     savedAt,
     ...(typeof workspaceRevision === "number" && workspaceRevision > 0
@@ -645,6 +651,7 @@ export function serializeOrderWorkspaceSnapshot(
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
     savedAt,
   });
@@ -804,6 +811,7 @@ type HydratedWorkspaceShape = {
   incidentPhotos?: IncidentPhotoMeta[];
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
@@ -822,6 +830,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     incidentPhotos: incident.incidentPhotos,
     ...technicalRiskMapSnapshotField(h.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
   };
 }
@@ -922,6 +931,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     incidentPhotos: merged.incidentPhotos,
     ...technicalRiskMapSnapshotField(merged.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(merged.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(merged.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(merged.dealerMajorWorkOverrides),
   } as T;
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.26.2
+// @version      1.26.3
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -104,6 +104,14 @@
 // @connect      www.biluppgifter.se
 // @connect      www.nicb.org
 // @connect      nicb.org
+// @connect      ss.lv
+// @connect      ss.com
+// @connect      auto24.lv
+// @connect      auto24.ee
+// @connect      autoplius.lt
+// @connect      reklama.lv
+// @connect      andele.lv
+// @connect      andelemandele.lv
 // @run-at       document-idle
 // @sandbox      raw
 // ==/UserScript==
@@ -111,7 +119,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.26.2";
+  const SCRIPT_VERSION = "1.26.3";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -373,6 +381,81 @@
             ok: res.status >= 200 && res.status < 300,
             status: res.status,
             html: String(res.responseText || ""),
+          });
+        },
+        onerror: function () {
+          reply({ ok: false, error: "network" });
+        },
+        ontimeout: function () {
+          reply({ ok: false, error: "timeout" });
+        },
+      });
+    });
+
+    /* Sludinājuma apraksta rezerve (1.26.3): serveris bloķēts -> lapa no operatora pārlūka.
+       Tikai šie portāli (sk. lib/listing-page-browser-fetch.ts). mobile.de NEKAD - Akamai bloķē. */
+    const LISTING_PAGE_HOSTS = [
+      "ss.lv",
+      "ss.com",
+      "auto24.lv",
+      "auto24.ee",
+      "autoplius.lt",
+      "reklama.lv",
+      "andele.lv",
+      "andelemandele.lv",
+    ];
+    function listingPageHostAllowed(hostname) {
+      const h = String(hostname || "").toLowerCase().replace(/\.$/, "");
+      if (h === "mobile.de" || /\.mobile\.de$/.test(h)) return false;
+      return LISTING_PAGE_HOSTS.some(function (d) {
+        return h === d || h.slice(-(d.length + 1)) === "." + d;
+      });
+    }
+    document.addEventListener("provin-listing-page-request", function (ev) {
+      const detail = ev && ev.detail ? ev.detail : {};
+      const requestId = String(detail.requestId || "");
+      const fetchUrl = String(detail.fetchUrl || "").trim();
+      function reply(payload) {
+        document.dispatchEvent(
+          new CustomEvent("provin-listing-page-result", {
+            detail: Object.assign({ requestId: requestId }, payload),
+          }),
+        );
+      }
+      if (!requestId || !fetchUrl) {
+        reply({ ok: false, error: "bad_request" });
+        return;
+      }
+      let parsed;
+      try {
+        parsed = new URL(fetchUrl);
+      } catch {
+        reply({ ok: false, error: "bad_url" });
+        return;
+      }
+      if (parsed.protocol !== "https:" || !listingPageHostAllowed(parsed.hostname)) {
+        reply({ ok: false, error: "host_not_allowed" });
+        return;
+      }
+      const xhr = gmXhr();
+      if (!xhr) {
+        reply({ ok: false, error: "no_gm_xhr" });
+        return;
+      }
+      xhr({
+        method: "GET",
+        url: parsed.toString(),
+        timeout: 18000,
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "lv-LV,lv;q=0.9,en;q=0.7",
+        },
+        onload: function (res) {
+          const html = String(res.responseText || "");
+          reply({
+            ok: res.status >= 200 && res.status < 300,
+            status: res.status,
+            html: html.length > 2500000 ? "" : html,
           });
         },
         onerror: function () {

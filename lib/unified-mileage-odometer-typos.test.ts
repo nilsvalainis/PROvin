@@ -192,7 +192,9 @@ describe("viena avota divi rādījumi vienā dienā ar starpību > 1000 km", () 
     expect(a.chartExcludeSourceOrders.has(bad)).toBe(true);
     expect(a.chartExcludeSourceOrders.has(rows[1]!.sourceOrder)).toBe(false);
     expect(redRows(rows)).toEqual([]);
-    expect(classes(rows)).toEqual(["typo_outlier:16.03.2018:99044"]);
+    // 24.11 audits: dīlera vienas dienas rindas bez krituma (vizītes atvēršana / aizvēršana) nav anomālija adminā;
+    // līknē 99 044 joprojām izslēgts (augstāk).
+    expect(classes(rows)).toEqual([]);
   });
 
   it("zemākais vienas dienas rādījums ir kļūda, ja tas neiekļaujas līknē", () => {
