@@ -439,6 +439,7 @@ export async function runIrissListingsDailySync(
   const [orderRows, scanRows] = await Promise.all([listIrissPasutijumi(), listIrissScan().catch(() => [])]);
   /** SCAN ieraksti = papildu avoti ar `scan:` id; LIST tos rāda atsevišķā „SCAN” skatā. */
   const rows = [...orderRows, ...irissScanSourceRows(scanRows)];
+  /** Apzināti «working» (ar rezervētu): rezervētam avotus vairs nelasa, bet jau atrastie auto paliek piesaistīti. */
   const activeOrderIds = new Set(rows.filter((r) => isIrissPasutijumsWorkingStatus(r.listStatus ?? "active")).map((r) => r.id));
   /** Saišu cenas robežas no LIST izmaksu iestatījumiem (servera kopija), ne noklusējumiem. */
   await primeListingSearchCostsFromStore();

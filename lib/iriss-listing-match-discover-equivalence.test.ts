@@ -9,7 +9,7 @@ import {
 import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
 import { isIrissScanOrderId } from "@/lib/iriss-scan-listings";
-import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsSearchingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 const ingestCalls = vi.hoisted(() => ({ n: 0 }));
 
@@ -33,7 +33,7 @@ function referenceDiscover(
     const id = (o.id ?? "").trim();
     if (!id || isIrissScanOrderId(id)) return false;
     if ((o.deletedAt ?? "").trim()) return false;
-    return isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus);
+    return isIrissPasutijumsSearchingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus);
   });
   const sources = buildIrissListingSources(
     active.map((o) => ({
@@ -166,7 +166,7 @@ describe("discoverListingOrderMatches equivalence", () => {
     ingestCalls.n = 0;
     discoverListingOrderMatches(vehicles, orders);
     const after = ingestCalls.n;
-    const activeOrders = orders.filter((o) => o.id && !o.deletedAt && isIrissPasutijumsWorkingStatus(o.listStatus as IrissPasutijumsListStatus));
+    const activeOrders = orders.filter((o) => o.id && !o.deletedAt && isIrissPasutijumsSearchingStatus(o.listStatus as IrissPasutijumsListStatus));
     const sourceCount = buildIrissListingSources(activeOrders as never).length;
     expect(after).toBeLessThanOrEqual(sourceCount);
     expect(before).toBeGreaterThan(after * 20);

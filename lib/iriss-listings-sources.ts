@@ -7,7 +7,7 @@ import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
 import { listingUrlWithSearchPriceBounds } from "@/lib/iriss-listings-fresh-price";
 import { orderSearchPriceBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
 import { isIrissMarketplaceListingPlatform, type IrissListingPlatform } from "@/lib/iriss-listings-types";
-import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsSearchingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissListingSource = {
   id: string;
@@ -94,7 +94,7 @@ type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"
 };
 
 /**
- * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1 / eCarsTrade
+ * Avoti tikai no meklēšanas statusiem (aktīvs, meklē, piedāvāts); rezervēts, pārdots un neaktīvs meklēšanu aptur. Ņem visas Autobid / Openlane / Auto1 / eCarsTrade
  * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
  * mobile.de / AutoScout24 šeit neiekļaujam: maksas avoti tikai ar pogu Ielādēt.
  * Cenas parametrus saitē aizstāj ar svaigām robežām no budžeta (`orderSearchPriceBounds`).
@@ -138,7 +138,7 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
   };
   for (const row of rows) {
     if (row.deletedAt?.trim()) continue;
-    if (!isIrissPasutijumsWorkingStatus(row.listStatus ?? "active")) continue;
+    if (!isIrissPasutijumsSearchingStatus(row.listStatus ?? "active")) continue;
     pushAll(row, "autobid", row.listingLinkAutobid);
     pushAll(row, "openline", row.listingLinkOpenline);
     pushAll(row, "auto1", row.listingLinkAuto1);

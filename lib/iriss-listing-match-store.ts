@@ -79,6 +79,7 @@ export async function refreshIrissListingMatches(input?: {
   }));
   const found = discoverListingOrderMatches(vehicles, matchOrders);
   const live = new Set(vehicles.filter((v) => v.id && v.change !== "gone").map((v) => v.id));
+  /** Neskatīto skaitam apzināti «working»: rezervēta pasūtījuma jau atrastie auto paliek redzami. */
   const active = new Set(
     matchOrders
       .filter((o) => isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus) && !(o.deletedAt ?? "").trim())

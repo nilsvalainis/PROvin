@@ -28,6 +28,7 @@ import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "
 import {
   IRISS_ORDER_STAGES,
   IRISS_ORDER_STAGE_LV,
+  IRISS_ORDER_STAGE_SEARCH_LV,
   type IrissOrderStage,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
@@ -785,9 +786,10 @@ export function IrissPasutijumiListClient({
                 if (statusSheetId) onSetStatus(statusSheetId, s);
                 setStatusSheetId(null);
               }}
-              className="flex min-h-12 w-full items-center border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
+              className="flex min-h-12 w-full items-center justify-between gap-3 border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
             >
-              {IRISS_ORDER_STAGE_LV[s]}
+              <span>{IRISS_ORDER_STAGE_LV[s]}</span>
+              <span className="text-[13px] text-[var(--ink3)]">{IRISS_ORDER_STAGE_SEARCH_LV[s]}</span>
             </button>
           ))}
         </div>
