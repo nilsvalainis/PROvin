@@ -213,6 +213,10 @@ export type CanonicalFacts = {
   owners: CanonicalOwnerFacts;
   firstReg: CanonicalFirstReg;
   latestKm: number | null;
+  /** 24.11 audits: visu nobraukuma rindu km (teksta km salīdzina ar visiem, ne tikai jaunāko). */
+  mileageKms?: number[];
+  /** 24.11 audits: nobraukuma rindu datumi (datēts vēsturisks rādījums tekstā nav pretruna). */
+  mileageDates?: string[];
   /** Tikai reāli kritumi (iespējama korekcija). Izolētas ievades kļūdas - `suspectedEntryErrors`. */
   rollbacks: OdometerRollbackBound[];
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
@@ -560,6 +564,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     owners,
     firstReg,
     latestKm,
+    mileageKms: mileageRows.map((r) => parseOdometerKm(r.odometer)).filter((n): n is number => n != null && n > 0),
+    mileageDates: mileageRows.map((r) => r.date).filter(Boolean),
     rollbacks,
     suspectedEntryErrors,
     listingBelowRecorded,

@@ -205,7 +205,7 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
   for (const a of classified) {
     const level: FactCheckFlag["level"] = a.class === "rollback" ? "E" : "W";
     flags.push({
-      id: `odo_${a.class}_${a.sourceOrder}`,
+      id: `odo_${a.class}_${a.key}`,
       kind: "contradiction",
       level,
       message:

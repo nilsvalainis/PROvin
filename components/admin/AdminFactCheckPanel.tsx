@@ -67,17 +67,20 @@ function FlagCard({
 }) {
   const [showFix, setShowFix] = useState(false);
   const isError = flag.level === "E";
+  const isInfo = flag.level === "I";
   const suggestion = suggestFactCheckFix(flag);
   return (
     <div
       className={`rounded-lg border px-2.5 py-2 ${
         isError
           ? "border-red-200/90 bg-red-50 text-red-950"
-          : "border-amber-200/80 bg-amber-50/80 text-amber-950"
+          : isInfo
+            ? "border-slate-200 bg-white/70 text-slate-600"
+            : "border-amber-200/80 bg-amber-50/80 text-amber-950"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className={`text-[10px] font-bold tracking-wide ${isError ? "text-red-800" : "text-amber-800"}`}>
+        <p className={`text-[10px] font-bold tracking-wide ${isError ? "text-red-800" : isInfo ? "text-slate-500" : "text-amber-800"}`}>
           {factCheckLevelLabel(flag.level)}
         </p>
         <span className="inline-flex shrink-0 flex-wrap items-center justify-end gap-1">

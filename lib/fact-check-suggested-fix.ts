@@ -152,8 +152,8 @@ export function applyFactCheckFixToField(html: string, flag: FactCheckFlag): str
   return appendFactCheckSentence(raw, fix.preview);
 }
 
-export function factCheckLevelLabel(level: FactCheckFlag["level"]): "Kļūda" | "Jāpārbauda" {
-  return level === "E" ? "Kļūda" : "Jāpārbauda";
+export function factCheckLevelLabel(level: FactCheckFlag["level"]): "Kļūda" | "Jāpārbauda" | "Info" {
+  return level === "E" ? "Kļūda" : level === "I" ? "Info" : "Jāpārbauda";
 }
 
 export function factCheckActionLine(flag: FactCheckFlag): string {

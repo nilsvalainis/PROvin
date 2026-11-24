@@ -4,6 +4,7 @@ import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
 import {
   applyOdometerAnomalyOverrides,
   classifyOdometerAnomalies,
+  findOdometerAnomalyOverride,
   type ClassifiedOdometerAnomaly,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
@@ -20,7 +21,6 @@ export function AdminOdometerAnomalyPanel({
 }) {
   const classified = classifyOdometerAnomalies(rows);
   if (classified.length === 0) return null;
-  const overrideByKey = new Map(overrides.map((o) => [o.key, o]));
   const active = applyOdometerAnomalyOverrides(classified, overrides);
 
   return (
@@ -33,7 +33,7 @@ export function AdminOdometerAnomalyPanel({
         Tikai admin brīdinājumi. Grafiku un datumu attēlojumu nemaina. Vienu klikšķi apstiprina vai atceļ karogu.
       </p>
       {classified.map((a) => {
-        const ov = overrideByKey.get(a.key);
+        const ov = findOdometerAnomalyOverride(a, overrides);
         const dismissed = ov?.action === "dismiss";
         const confirmed = ov?.action === "confirm";
         return (
