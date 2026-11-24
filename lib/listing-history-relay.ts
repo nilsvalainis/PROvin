@@ -3,7 +3,9 @@
  * no Vercel funkcijas abi avoti atbild HTTP 403, no operatora tīkla 200.
  * Jina Reader (`r.jina.ai`) Adify arī neredz (atgriež to pašu Just a moment).
  * Tāpēc pēc HTTP relejiem lapu ielasa caur Hetzner Chrome (`POST /listings/page`),
- * kas jau strādā VIN SCAN (stat.vin, eCarsTrade) un live arī tirgusdati.lv.
+ * kas jau strādā VIN SCAN (stat.vin, eCarsTrade). tirgusdati.lv Chrome 11.2026
+ * vairs neiziet (403 pēc ~53 s), tāpēc tirgusdati to lieto tikai ar
+ * `TIRGUSDATI_CHROME_RELAY=1` (`tirgusdati-listing-history-server.ts`).
  * Adify.lv Chrome paliek CF managed challenge; Adify iet CapSolver + Fixie
  * (`adify-listing-history-bypass.ts`) un Chrome rindu neatņem.
  */
