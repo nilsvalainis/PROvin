@@ -692,7 +692,7 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
     const mm = /^(.*?)\s*(km|mi|км)$/i.exec(m.odometer.value.trim());
     const num = mm ? mm[1]! : m.odometer.value.trim();
     const unit = mm ? mm[2]! : "";
-    const px = pdfTopFitPx(num, W - (unit ? 34 : 0), 46, 24) ?? 24;
+    const px = pdfTopFitPx(num, W - (unit ? 28 : 0), 34, 22) ?? 22;
     odo = `<div class="pdf-top6__odo"><p class="pdf-top6__lab">${esc(pdfTopText("odometer", lang))}</p><p class="pdf-top6__big" style="font-size:${px}px">${esc(num)}${unit ? `<small>${esc(unit)}</small>` : ""}</p>${m.odometer.sub ? `<p class="pdf-top6__sub">${esc(m.odometer.sub)}</p>` : ""}</div>`;
   }
   const pair = [
