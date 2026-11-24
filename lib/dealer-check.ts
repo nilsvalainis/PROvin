@@ -338,7 +338,8 @@ export function dealerCheckVehicleFromDisplay(
     model: modelWithoutMake || model,
     body: (mapped.body ?? "").trim() || pickPowertrain(rows, /body|virsbūv|body.?style/i),
     engine: engineParts.join(" · ") || (mapped.engineCode ?? "").trim(),
-    firstReg: formatDealerCheckDateLv((mapped.firstRegistration ?? mapped.productionDate ?? "").trim()),
+    // 24.11: ražošanas datums (bieži VIN Decoder minējums) nav pirmā reģistrācija.
+    firstReg: formatDealerCheckDateLv((mapped.firstRegistration ?? "").trim()),
     color: (mapped.color ?? "").trim(),
     gearbox: (mapped.transmission ?? "").trim() || pickPowertrain(rows, /transmission|pārnesum|gearbox/i),
     manufacturer: pickPowertrain(rows, /manufacturer|ražotāj|oem/i),

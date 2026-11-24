@@ -9,6 +9,7 @@
  *
  * NETULKO: oriģinālie API dati. „factory code/desc” nav Vehicle sadaļā - tikai Equipment.
  */
+import { productionDateContradictsRecords } from "@/lib/production-date-guard";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import { PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 import { autoRecordsServiceWorkRowHasData } from "@/lib/auto-records-service-works";
@@ -332,7 +333,6 @@ export function isOemEquipmentLeftoverLabel(label: string): boolean {
 const LEFTOVER_PROMOTE: { re: RegExp; key: keyof OutvinVehicleInfo }[] = [
   { re: /^manufactured(\s*date)?$/i, key: "productionDate" },
   { re: /^build(\s*date)?$/i, key: "productionDate" },
-  { re: /^model\s*year$/i, key: "productionDate" },
 ];
 
 function promoteLeftoversToVehicle(
@@ -691,6 +691,14 @@ export function buildOemDealerDocumentHtml(args: {
   const logoIsWide = logoResolved?.layout === "wide";
 
   const visits = collectOemDealerVisits(args.autoRecords, bundle, oneautoDisplay);
+  // 24.11: ražošanas datums vēlāks par pirmo reģistrāciju / agrāko dīlera ierakstu - nerāda.
+  const prodRefs = [
+    vi.firstRegistration,
+    vi.warrantyStartDate,
+    ...visits.map((v) => v.date),
+    ...(args.autoRecords.serviceWorks ?? []).map((r) => r.date),
+  ];
+  if (productionDateContradictsRecords(vi.productionDate, prodRefs)) vi = { ...vi, productionDate: "" };
 
   const equipmentFromBundle = bundle.equipment.filter((l) => l.code.trim() || l.description.trim());
   const equipmentFromDisplay = oneautoDisplayToEquipment(oneautoDisplay);

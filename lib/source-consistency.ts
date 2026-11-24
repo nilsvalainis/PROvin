@@ -33,8 +33,9 @@ import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-
 import { parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
 import { isImpossibleFutureDate } from "@/lib/future-date-guard";
 import { csddHasLatvianRegistryRecord, extractExplicitOwnerCount, ownerEventMonthKey } from "@/lib/owner-count-synthesis";
+import { findOwnerClaimIssues } from "@/lib/owner-claims-check";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
-import { extractVehicleDrivetrain, findDrivetrainContradictions } from "@/lib/registry-drivetrain";
+import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import {
   collectUnifiedMileageRows,
@@ -62,6 +63,7 @@ export type SourceIssueKind =
   | "drivetrain"
   | "ai_powertrain"
   | "ai_drivetrain"
+  | "ai_owners"
   | "damage"
   | "csng"
   | "auction_price";
@@ -230,6 +232,7 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
   const csddCount = extractExplicitOwnerCount(csdd.ownerCountLatvia ?? "");
   const events = (csdd.ownerRegistrationEvents ?? []).filter((e) => e.date.trim() || e.label.trim());
   const csddMonths = new Set(events.map((e) => ownerEventMonthKey(e.date)).filter((x): x is string => Boolean(x)));
+  const statementMonth = csddStatementMonth(csdd);
 
   const values: SourceIssueValue[] = [];
   if (csddCount != null) values.push({ source: "CSDD", value: `${csddCount}` });
@@ -254,12 +257,43 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
     }
     if (explicit != null) {
       if (csddCount != null && explicit !== csddCount) vendorCounts.push({ source: SOURCE_BLOCK_LABELS[key], value: `${explicit}` });
-    } else if (lvMonths.size > 0 && csddCount != null && lvMonths.size > csddCount) {
-      // Vairāk maiņu Latvijā nekā CSDD īpašnieku - nav iespējams, ja abi pareizi.
-      const extra = [...lvMonths].filter((m) => !csddMonths.has(m)).sort();
+      continue;
+    }
+    if (lvMonths.size === 0) continue;
+    // 24.11: notikumu salīdzinājums abos virzienos (±1 mēnesis - CarVertical datums ir mēneša precizitātē).
+    const vendorOnly = [...lvMonths].filter((m) => !monthNear(m, csddMonths)).sort();
+    const csddOnly = [...csddMonths].filter((m) => !monthNear(m, lvMonths)).sort();
+    const label = SOURCE_BLOCK_LABELS[key];
+    // Bez CSDD notikumu saraksta nevar teikt, ka CSDD maiņas nav - tad tikai skaita salīdzinājums.
+    const beforeStatement = statementMonth && csddMonths.size > 0 ? vendorOnly.filter((m) => m <= statementMonth) : [];
+    const afterStatement = vendorOnly.filter((m) => !beforeStatement.includes(m));
+    if (beforeStatement.length > 0) {
+      // CSDD izziņa ir vēlāka par notikumu, bet maiņas CSDD nav - visticamāk reģistrācijas apliecības izmaiņa.
+      push(out, {
+        id: `owners_lv_cert_${key}`,
+        kind: "owners",
+        severity: "info",
+        title: `${label} notikums var būt reģistrācijas apliecības izmaiņa (CSDD izziņā īpašnieka maiņas nav)`,
+        values: [
+          ...values,
+          { source: label, value: beforeStatement.map(monthLabel).join(", ") },
+        ],
+      });
+    }
+    if (afterStatement.length > 0 && csddCount != null && lvMonths.size > csddCount) {
+      // Vairāk maiņu Latvijā nekā CSDD īpašnieku un CSDD izziņa nav jaunāka par notikumu - pārbaudīt.
       vendorCounts.push({
-        source: SOURCE_BLOCK_LABELS[key],
-        value: `${lvMonths.size} maiņas Latvijā${extra.length ? ` (${extra.map((m) => m.split("-").reverse().join(".")).join(", ")} CSDD nav)` : ""}`,
+        source: label,
+        value: `${lvMonths.size} maiņas Latvijā (${afterStatement.map(monthLabel).join(", ")} CSDD nav)`,
+      });
+    }
+    if (csddOnly.length > 0) {
+      push(out, {
+        id: `owners_lv_csdd_only_${key}`,
+        kind: "owners",
+        severity: "info",
+        title: `CSDD īpašnieka maiņa, kuras nav ${label}`,
+        values: [{ source: "CSDD", value: csddOnly.map(monthLabel).join(", ") }],
       });
     }
   }
@@ -271,6 +305,32 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
     title: "Īpašnieku skaits Latvijā nesakrīt",
     values: [...values, ...vendorCounts],
   });
+}
+
+function monthLabel(m: string): string {
+  return m.split("-").reverse().join(".");
+}
+
+function monthIndex(m: string): number {
+  const [y, mo] = m.split("-").map(Number);
+  return (y ?? 0) * 12 + (mo ?? 0);
+}
+
+function monthNear(m: string, set: ReadonlySet<string>): boolean {
+  const i = monthIndex(m);
+  for (const x of set) if (Math.abs(monthIndex(x) - i) <= 1) return true;
+  return false;
+}
+
+/** CSDD izziņas mēnesis: reģistra ielases laiks vai „Informācija sagatavota elektroniski DD.MM.YYYY”. */
+function csddStatementMonth(csdd: WorkspaceSourceBlocks["csdd"]): string | null {
+  const cands: string[] = [];
+  const fetched = (csdd.registry as { fetchedAt?: string } | undefined)?.fetchedAt ?? "";
+  if (/^\d{4}-\d{2}/.test(fetched)) cands.push(fetched.slice(0, 7));
+  for (const m of (csdd.rawUnprocessedData ?? "").matchAll(/sagatavota\s+elektroniski\s+(\d{2})\.(\d{2})\.(\d{4})/gi)) {
+    cands.push(`${m[3]}-${m[2]}`);
+  }
+  return cands.length ? cands.sort().at(-1)! : null;
 }
 
 /* ---------- 2. Nobraukums ---------- */
@@ -651,33 +711,30 @@ function checkVehicleIdentity(blocks: WorkspaceSourceBlocks, lots: Lot[], out: S
     }
   }
 
-  // Piedziņa: reģistrs / ražotājs pret izsoli.
-  const dt = extractVehicleDrivetrain(blocks);
-  if (dt) {
-    const bad: SourceIssueValue[] = [];
-    for (const l of lots) {
-      const awdRaw = l.get.tail("isfourwheeldrive");
-      const driveRaw = l.get.tail("drive", "drivetrain", "drivetype");
-      const awd = /^(yes|true|1|jā)$/i.test(awdRaw)
-        ? true
-        : /^(no|false|0|nē)$/i.test(awdRaw)
-          ? false
-          : /4x4|awd|4wd|all|allrad|quattro|xdrive|4matic|4motion/i.test(driveRaw)
-            ? true
-            : /front|rear|fwd|rwd|2wd|4x2|vorder|hinter/i.test(driveRaw)
-              ? false
-              : null;
-      if (awd != null && awd !== dt.awd) bad.push({ source: l.label, value: awd ? "pilnpiedziņa" : "viena ass" });
+  // Piedziņa (24.11): visi avoti (rūpnīcas kodi, reģistrs, specifikācija, izsoles, katalogs). Nesakrīt -
+  // brīdinājums ar visām vērtībām; AI teksta kritiskā pretruna tikai tad, ja piedziņa noteikta (checkAiTexts).
+  const res = resolveVehicleDrivetrain(blocks);
+  if (res.conflict) {
+    const values: SourceIssueValue[] = [];
+    const seen = new Set<string>();
+    const order = [...res.evidence].sort((a, b) => Number(a.tier === "oem_catalog") - Number(b.tier === "oem_catalog"));
+    for (const e of order) {
+      const value = e.awd ? "pilnpiedziņa" : "viena ass";
+      const k = `${e.source}|${value}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      values.push({ source: e.source, value });
     }
-    if (bad.length) {
-      push(out, {
-        id: "drivetrain",
-        kind: "drivetrain",
-        severity: "warn",
-        title: "Piedziņa nesakrīt",
-        values: [{ source: dt.sourceLabel, value: dt.awd ? "pilnpiedziņa" : "viena ass" }, ...bad],
-      });
-    }
+    push(out, {
+      id: "drivetrain",
+      kind: "drivetrain",
+      // Tikai OneAuto katalogs (bez nopirkta aprīkojuma) runā pretī - dabiska atšķirība, ne kļūda.
+      severity: res.conflictOnlyCatalog ? "info" : "warn",
+      title: res.drivetrain
+        ? `Piedziņa: avoti nesakrīt (noteikta pēc ${res.drivetrain.sourceLabel} - ${res.drivetrain.awd ? "pilnpiedziņa" : "viena ass"})`
+        : "Piedziņa: avoti nesakrīt - piedziņa nav noteikta",
+      values,
+    });
   }
 }
 
@@ -702,6 +759,13 @@ function checkAiTexts(
     if (!plain.trim()) continue;
     for (const hit of findPowertrainContradictions(plain, identity)) add(`ai_${hit.id}`, "ai_powertrain", hit.message, t.label, hit.sentence);
     for (const hit of findDrivetrainContradictions(plain, dt)) add("ai_drivetrain", "ai_drivetrain", hit.message, t.label, hit.sentence);
+    // 24.11: īpašnieku skaits / „ārvalstīs pirms Latvijas” bez avota - brīdinājums (ne kritisks).
+    for (const hit of findOwnerClaimIssues(plain, blocks)) {
+      const id = `ai_${hit.id}`;
+      const issue = merged.get(id) ?? { id, kind: "ai_owners" as const, severity: "warn" as const, title: hit.message, values: [] };
+      if (!issue.values.some((v) => v.source === t.label)) issue.values.push({ source: t.label, value: `«${hit.sentence.slice(0, 160)}»` });
+      merged.set(id, issue);
+    }
   }
   for (const issue of merged.values()) push(out, issue);
 }

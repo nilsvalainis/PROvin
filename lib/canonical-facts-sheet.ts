@@ -71,8 +71,10 @@ import {
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { formatVendorOwnerEventFactLines } from "@/lib/owner-claims-check";
 import {
-  extractVehicleDrivetrain,
+  formatCatalogDrivetrainHintLine,
+  resolveVehicleDrivetrain,
   formatRegistryDrivetrainFactLine,
   otherSourcesClaimAwd,
   type RegistryDrivetrain,
@@ -229,12 +231,16 @@ export type CanonicalFacts = {
   registryStatusLines: string[];
   /** 24.11: bloks «Īpašnieki un nobraukums» - periodi un fakti, ko blokā neraksta (samazinājums, trūkstoši rādījumi u.c.). */
   ownerMileageLines?: string[];
+  /** 24.11: CarVertical / AutoDNA īpašumtiesību notikumi ar valsti un datumu (nav īpašnieku skaits). */
+  vendorOwnerEventLines?: string[];
   /** e.csdd teksta signāli (liegumi, CSNg, statuss, OCTA, nodoklis, TA defektu atkārtošanās) - gatavas rindas. */
   csddSignalLines: string[];
   /** 21.11: oficiālā reģistra piedziņa (DMR) - prioritāte pār sludinājumu / car.info. */
   drivetrain?: RegistryDrivetrain | null;
   /** Sludinājums / citi avoti min pilnpiedziņu, kamēr reģistrs saka 1 dzenošā ass. */
   drivetrainOtherSourcesAwd?: boolean;
+  /** 24.11: piedziņa tikai no kataloga (OneAuto bez aprīkojuma) - nav apstiprināta, bez aizlieguma. */
+  drivetrainCatalogHint?: { awd: boolean; source: string } | null;
   dealerCampaigns: DealerFact[];
   recallCodes: string[];
   listingSummary: string;
@@ -460,6 +466,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const lastWithKm = [...chrono].reverse().find((r) => parseOdometerKm(r.odometer) != null);
   const latestKm = lastWithKm ? parseOdometerKm(lastWithKm.odometer) : null;
 
+  const drivetrainRes = resolveVehicleDrivetrain(blocks);
   const synth = synthesizeOwnerCountsFromBlocks(blocks);
   const latviaEvents = (csdd.ownerRegistrationEvents ?? []).filter((r) => r.date.trim() || r.label.trim()).length;
   const owners = ownersFromSynthesis(synth, latviaEvents);
@@ -549,7 +556,9 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     registryStatusLines,
     csddSignalLines: input.omitCsddRegistrySignals ? [] : buildCsddRegistrySignalFactLines(csdd),
     ownerMileageLines: buildOwnerMileageFactLinesFromRows(csdd, mileageRows),
-    drivetrain: extractVehicleDrivetrain(blocks),
+    vendorOwnerEventLines: formatVendorOwnerEventFactLines(blocks),
+    drivetrain: drivetrainRes.drivetrain,
+    drivetrainCatalogHint: drivetrainRes.catalogHint,
     drivetrainOtherSourcesAwd: otherSourcesClaimAwd(haystack),
     dealerCampaigns,
     recallCodes,
@@ -612,6 +621,8 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     if (ctx) lines.push(clip(ctx.replace(/^/gm, "  "), 500));
   }
 
+  for (const l of facts.vendorOwnerEventLines ?? []) lines.push(clip(l, 700));
+
   if ((facts.ownerMileageLines ?? []).length > 0) {
     lines.push(
       "Īpašnieku periodi (PDF bloks «Īpašnieki un nobraukums» rāda tikai ilgumu un km; samazinājumu, trūkstošus rādījumus, īsus periodus un ārvalstu km robežu blokā NERAKSTA - komentārā pieminēt faktiski):",
@@ -636,6 +647,8 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
 
   if (facts.drivetrain) {
     lines.push(formatRegistryDrivetrainFactLine(facts.drivetrain, facts.drivetrainOtherSourcesAwd === true));
+  } else if (facts.drivetrainCatalogHint) {
+    lines.push(formatCatalogDrivetrainHintLine(facts.drivetrainCatalogHint));
   }
 
   lines.push("Nobraukums:");

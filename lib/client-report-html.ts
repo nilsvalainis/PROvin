@@ -1999,13 +1999,15 @@ function buildAutoRecordsAvotuSubsection(
 
   const rawBundle = getAutoRecordsOutvinBundle(b);
   // Vienotais modeļa nosaukums (`resolveVehicleDisplayName`) arī tabulā un vākā; pretrunīgā sērija netiek rādīta.
-  const bundle = { ...rawBundle, vehicleInfo: dealerVehicleInfoForDisplay(rawBundle.vehicleInfo, makeModel) };
+  // 24.11: ražošanas datums nevar būt vēlāks par agrāko dīlera / servisa ierakstu.
+  const prodRefs = [...(b.serviceWorks ?? []).map((r) => r.date), ...(b.serviceHistory ?? []).map((r) => r.date)];
+  const bundle = { ...rawBundle, vehicleInfo: dealerVehicleInfoForDisplay(rawBundle.vehicleInfo, makeModel, prodRefs) };
   const hasBundleStructured = outvinBundleHasStructuredContent(bundle);
   const bundleInner = hasBundleStructured
     ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true, maskDemoVin, lang })
     : "";
   const displayReport = b.outvinReport
-    ? { ...b.outvinReport, vehicleInfo: dealerVehicleInfoForDisplay(b.outvinReport.vehicleInfo, makeModel) }
+    ? { ...b.outvinReport, vehicleInfo: dealerVehicleInfoForDisplay(b.outvinReport.vehicleInfo, makeModel, prodRefs) }
     : b.outvinReport;
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(displayReport, {
     omitEquipment: true,

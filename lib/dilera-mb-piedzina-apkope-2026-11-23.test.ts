@@ -168,7 +168,8 @@ describe("1. piedziņa: ražotāja komplektācija 4x2 pret CSDD «4MATIC» un DM
   it("koda faktu sarakstā: modelis un piedziņa ar aizliegumu", () => {
     const facts = buildDealerCodeFactsForPrompt(blocks({ manualModel: "Mercedes-Benz E 300 de" }), NOW);
     expect(facts).toContain("Modelis (tas pats nosaukums, ko PDF): Mercedes-Benz E 300 de.");
-    expect(facts).toMatch(/Piedziņa \(oficiālais avots ražotāja komplektācija.*NAV pilnpiedziņa; aizliegts rakstīt 4MATIC/);
+    // 24.11: DMR (oficiālais reģistrs) ir augstāka ticamība nekā ražotāja katalogs - abi saka RWD.
+    expect(facts).toMatch(/Piedziņa \(oficiālais reģistrs .*NAV pilnpiedziņa; aizliegts rakstīt .*4MATIC/);
     expect(facts).toContain("Dzinēja eļļas maiņas (tā pati tabula kā PDF): 10");
   });
 
