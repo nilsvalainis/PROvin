@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
+import { adminUiOpenKey, readAdminUiOpen, writeAdminUiOpen } from "@/lib/admin-ui-open-memory";
 
 /**
  * Telefonā arī lielās pasūtījuma sadaļas (Sludinājuma analīze, Kopsavilkums) var saklāt kā avotu kartītes.
@@ -19,15 +20,19 @@ export function AdminPhoneSectionCollapse({
   children: ReactNode;
 }) {
   const phone = useAdminIsPhone();
-  const [collapsed, setCollapsed] = useState(true);
+  const memKey = adminUiOpenKey(sessionId, `phone-section:${sectionId}`);
+  const [collapsed, setCollapsed] = useState(() => readAdminUiOpen(memKey) ?? true);
 
-  // Cits pasūtījums tajā pašā lapā - atkal sakļauts.
+  // Cits pasūtījums tajā pašā lapā - tā paša pasūtījuma atmiņa vai sakļauts (24.11: pēc FLASH MAX nesakļaut).
   useEffect(() => {
-    setCollapsed(true);
-  }, [sessionId, sectionId]);
+    setCollapsed(readAdminUiOpen(memKey) ?? true);
+  }, [memKey]);
 
   function toggle() {
-    setCollapsed((c) => !c);
+    setCollapsed((c) => {
+      writeAdminUiOpen(memKey, !c);
+      return !c;
+    });
   }
 
   if (!phone) {

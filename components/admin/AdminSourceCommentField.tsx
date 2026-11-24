@@ -5,6 +5,7 @@ import { AdminFactCheckButton, AdminFactCheckPanel } from "@/components/admin/Ad
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import { aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
 import { applyFactCheckFixToField } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
@@ -19,6 +20,8 @@ export type AdminFactCheckSlot = {
   onCheck: () => void;
   onDismiss: (flag: FactCheckFlag) => void;
   onApplyFix?: (flag: FactCheckFlag) => void;
+  /** «Labot» ar AI (diff skatā). */
+  aiFix?: { allowed: boolean; buildPayload: () => Record<string, unknown> } | null;
 };
 
 export type AdminAiSourceCommentSlot = {
@@ -125,6 +128,17 @@ export function AdminSourceCommentField({
               onChange(applyFactCheckFixToField(value, flag));
               ai.factCheck?.onDismiss(flag);
             })
+          }
+          aiFix={
+            ai.factCheck.aiFix && !readOnly && !disabled
+              ? {
+                  allowed: ai.factCheck.aiFix.allowed,
+                  fieldLabel: title || ariaLabel,
+                  text: value,
+                  buildPayload: ai.factCheck.aiFix.buildPayload,
+                  onApplyText: (plain) => onChange(aiExpertSourceCommentToRichHtml(plain)),
+                }
+              : null
           }
         />
       ) : null}
