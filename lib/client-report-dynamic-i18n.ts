@@ -29,11 +29,11 @@ const RULES: Rule[] = [
   },
   {
     // 24.11 (Nils A): kopsavilkuma kartīte.
-    re: /sludinājumā par ([\d\s]+?) km mazāk nekā fiksēts/g,
+    re: /sludinājumā(?: \((\d{2}\.\d{2}\.\d{4})\))? par ([\d\s]+?) km mazāk nekā fiksēts/g,
     to: {
-      en: (m) => `listing shows ${m[1]} km less than recorded`,
-      ru: (m) => `в объявлении на ${m[1]} км меньше, чем зафиксировано`,
-      de: (m) => `im Inserat ${m[1]} km weniger als erfasst`,
+      en: (m) => `listing${m[1] ? ` (${m[1]})` : ""} shows ${m[2]} km less than recorded`,
+      ru: (m) => `в объявлении${m[1] ? ` (${m[1]})` : ""} на ${m[2]} км меньше, чем зафиксировано`,
+      de: (m) => `im Inserat${m[1] ? ` (${m[1]})` : ""} ${m[2]} km weniger als erfasst`,
     },
   },
   {

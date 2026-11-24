@@ -91,9 +91,35 @@ describe("24.11 (Nils A): sludinājumā mazāks nobraukums nekā agrāk fiksēts
 
   it("kopsavilkums: nav „bez pretrunām”, bet fakts brīdinājuma tonī", () => {
     const tile = buildPdfReportSummaryTiles(payload()).find((t) => t.id === "mileage")!;
-    expect(tile.note).toBe("sludinājumā par 13 880 km mazāk nekā fiksēts");
+    expect(tile.note).toBe("sludinājumā (27.09.2015) par 13 880 km mazāk nekā fiksēts");
     expect(tile.note).not.toMatch(/bez pretrunām/);
     expect(tile.tone).toBe("warn");
+    expect(tile.noteLead).toBeUndefined();
+  });
+
+  it("kopsavilkums: pašreizējā sludinājuma km nepazūd - rinda virs brīdinājuma", () => {
+    const p = payload() as unknown as { manualVendorBlocks: Array<Record<string, unknown>> };
+    const withCurrent = {
+      ...p,
+      manualVendorBlocks: [
+        {
+          ...p.manualVendorBlocks[0],
+          mileageRows: [
+            ...(p.manualVendorBlocks[0]!.mileageRows as object[]),
+            { date: "03.08.2026", odometer: "334193", country: "Latvija" },
+            { date: "08.09.2026", odometer: "335000", country: "Latvija" },
+          ],
+          listingCountryHints: [
+            { date: "27.09.2015", country: "Vācija", odometer: "90000" },
+            { date: "08.09.2026", country: "Latvija", odometer: "335000" },
+          ],
+        },
+      ],
+    } as never;
+    const tile = buildPdfReportSummaryTiles(withCurrent).find((t) => t.id === "mileage")!;
+    expect(tile.tone).toBe("warn");
+    expect(tile.note).toBe("sludinājumā (27.09.2015) par 13 880 km mazāk nekā fiksēts");
+    expect(tile.noteLead).toMatch(/^sludinājumā 335.000 km$/);
   });
 
   it("pre-PDF pārbaude rāda sludinājuma karogu", () => {
@@ -157,11 +183,13 @@ describe("24.11 (Nils A): sludinājumā mazāks nobraukums nekā agrāk fiksēts
   it("4 valodas: piezīme un kopsavilkuma teksts tulkoti", () => {
     const note =
       "Sludinājumā (27.09.2015) norādīts 90 000 km - par 13 880 km mazāk nekā iepriekš fiksētais 103 880 km (18.08.2015).";
-    const html = `<html><body><p>${note}</p><p>sludinājumā par 13 880 km mazāk nekā fiksēts</p></body></html>`;
+    const html = `<html><body><p>${note}</p><p>sludinājumā par 13 880 km mazāk nekā fiksēts</p><p>sludinājumā (27.09.2015) par 13 880 km mazāk nekā fiksēts</p></body></html>`;
     expect(applyClientReportDynamicTranslations(html, "lv")).toBe(html);
     const en = applyClientReportDynamicTranslations(html, "en");
     expect(en).toContain("The listing (27.09.2015) states 90 000 km - 13 880 km less than the previously recorded 103 880 km (18.08.2015).");
     expect(en).toContain("listing shows 13 880 km less than recorded");
+    expect(en).toContain("listing (27.09.2015) shows 13 880 km less than recorded");
+    expect(applyClientReportDynamicTranslations(html, "de")).toContain("im Inserat (27.09.2015) 13 880 km weniger als erfasst");
     expect(applyClientReportDynamicTranslations(html, "ru")).toContain("на 13 880 км меньше, чем зафиксировано");
     expect(applyClientReportDynamicTranslations(html, "de")).toContain("im Inserat 13 880 km weniger als erfasst");
   });

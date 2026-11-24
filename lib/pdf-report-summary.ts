@@ -80,6 +80,8 @@ export type PdfSummaryTile = {
   note: string;
   /** Ja ir, piezīmi drukā ar cap-height strīpiņu starp daļām (ne „+”). */
   noteSegments?: string[];
+  /** Atsevišķa rinda virs `note` (piem. pašreizējā sludinājuma km virs brīdinājuma). */
+  noteLead?: string;
   tone: PdfSummaryTileTone;
   /** Gara teksta kartīte - režģī aizņem abas kolonnas. */
   wide?: boolean;
@@ -200,7 +202,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   const note = rollback
     ? pluralLv(1, "nobraukuma kritums", "nobraukuma kritumi")
     : listingBelow.length > 0
-      ? formatListingBelowShortLv(listingBelow[0]!.dropKm)
+      ? formatListingBelowShortLv(listingBelow[0]!.dropKm, listingBelow[0]!.toDate)
       : `${pluralLv(chartCount, "rādījums", "rādījumi")} bez pretrunām`;
   const listing = [...rows]
     .filter((r) => isListingMileageSource(r) && parseOdometerKm(r.odometer) != null)
@@ -208,16 +210,22 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     .at(-1);
   const listingKm = listing ? parseOdometerKm(listing.odometer) : null;
   const headerKm = parseOdometerKm(newest.odometer);
-  const noteSegments =
-    listingBelow.length === 0 && listing && listingKm != null && headerKm != null && Math.abs(listingKm - headerKm) > 50
-      ? [`sludinājumā ${formatPdfOdometerDisplay(listing.odometer, true)}`]
-      : undefined;
+  const currentListingLine =
+    listing && listingKm != null && headerKm != null && Math.abs(listingKm - headerKm) > 50
+      ? `sludinājumā ${formatPdfOdometerDisplay(listing.odometer, true)}`
+      : null;
+  // 24.11: ja ir „sludinājumā mazāk” fakts, pašreizējā sludinājuma km nepazūd - rinda virs brīdinājuma.
+  const noteSegments = listingBelow.length === 0 && currentListingLine ? [currentListingLine] : undefined;
+  // Ja jaunākais sludinājums pats ir „mazāk” ieraksts, otru rindu nedublē.
+  const listingIsBelowRow = listingBelow.some((a) => a.toKm === listingKm);
+  const noteLead = listingBelow.length > 0 && currentListingLine && !listingIsBelowRow ? currentListingLine : undefined;
   return {
     id: "mileage",
     label: "Nobraukums",
     value,
     note,
     noteSegments,
+    noteLead,
     tone: rollback ? "alert" : listingBelow.length > 0 ? "warn" : "ok",
   };
 }
@@ -349,6 +357,7 @@ function applySummaryTileOverride(tile: PdfSummaryTile, override: ProvinManualBa
     label: title || tile.label,
     value: value || tile.value,
     note: note || tile.note,
+    noteLead: note ? undefined : tile.noteLead,
     tone:
       override.severity === "red" ? "alert" : override.severity === "yellow" ? "warn" : tile.tone === "ok" ? "ok" : "neutral",
   };

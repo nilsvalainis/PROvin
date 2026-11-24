@@ -278,9 +278,10 @@ export function activeListingBelowAnomalies(
   );
 }
 
-/** Kopsavilkuma / PDF teksts: „sludinājumā par 13 880 km mazāk nekā fiksēts”. */
-export function formatListingBelowShortLv(dropKm: number): string {
-  return `sludinājumā par ${formatKmGroupedLv(dropKm)} km mazāk nekā fiksēts`;
+/** Kopsavilkuma / PDF teksts: „sludinājumā (27.09.2015) par 13 880 km mazāk nekā fiksēts” (datums, ja zināms). */
+export function formatListingBelowShortLv(dropKm: number, listingDate?: string | null): string {
+  const d = (listingDate ?? "").trim();
+  return `sludinājumā${d ? ` (${d})` : ""} par ${formatKmGroupedLv(dropKm)} km mazāk nekā fiksēts`;
 }
 
 /** PDF piezīme zem tabulas ar abiem skaitļiem un datumiem (tikai fakts, bez ieteikuma). */

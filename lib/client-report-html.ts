@@ -943,9 +943,9 @@ function buildPdfReportSummaryHtml(
                   : `<span class="pdf-summary-tile__sep" aria-hidden="true"></span>${escapeHtml(part)}`,
               )
               .join("")}</p>`
-          : t.note
-            ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>`
-            : "";
+          : `${t.noteLead ? `<p class="pdf-summary-tile__note">${escapeHtml(t.noteLead)}</p>` : ""}${
+              t.note ? `<p class="pdf-summary-tile__note">${escapeHtml(t.note)}</p>` : ""
+            }`;
       return `<li class="${cls}">
       <p class="pdf-summary-tile__label">${escapeHtml(t.label)}</p>
       ${t.value ? `<p class="pdf-summary-tile__value">${escapeHtml(t.value)}</p>` : ""}
