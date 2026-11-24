@@ -52,7 +52,9 @@ import {
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
 import {
+  activeListingBelowAnomalies,
   countChartMileageReadings,
+  formatListingBelowShortLv,
   hasActiveRollbackAnomaly,
   selectNewestChartMileageRow,
   type OdometerAnomalyOverride,
@@ -191,9 +193,15 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     : "Nav ierakstu";
   const chartCount = countChartMileageReadings(rows);
   const rollback = hasActiveRollbackAnomaly(rows, input.odometerAnomalyOverrides);
+  // 24.11 (Nils A): sludinājumā mazāk nekā agrāk fiksēts - nav „bez pretrunām”, bet fakts brīdinājuma tonī.
+  const listingBelow = rollback
+    ? []
+    : activeListingBelowAnomalies(rows, input.odometerAnomalyOverrides).sort((a, b) => b.dropKm - a.dropKm);
   const note = rollback
     ? pluralLv(1, "nobraukuma kritums", "nobraukuma kritumi")
-    : `${pluralLv(chartCount, "rādījums", "rādījumi")} bez pretrunām`;
+    : listingBelow.length > 0
+      ? formatListingBelowShortLv(listingBelow[0]!.dropKm)
+      : `${pluralLv(chartCount, "rādījums", "rādījumi")} bez pretrunām`;
   const listing = [...rows]
     .filter((r) => isListingMileageSource(r) && parseOdometerKm(r.odometer) != null)
     .sort((a, b) => a.sortableTime - b.sortableTime)
@@ -201,7 +209,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   const listingKm = listing ? parseOdometerKm(listing.odometer) : null;
   const headerKm = parseOdometerKm(newest.odometer);
   const noteSegments =
-    listing && listingKm != null && headerKm != null && Math.abs(listingKm - headerKm) > 50
+    listingBelow.length === 0 && listing && listingKm != null && headerKm != null && Math.abs(listingKm - headerKm) > 50
       ? [`sludinājumā ${formatPdfOdometerDisplay(listing.odometer, true)}`]
       : undefined;
   return {
@@ -210,7 +218,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     value,
     note,
     noteSegments,
-    tone: rollback ? "alert" : "ok",
+    tone: rollback ? "alert" : listingBelow.length > 0 ? "warn" : "ok",
   };
 }
 

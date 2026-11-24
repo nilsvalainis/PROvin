@@ -719,9 +719,34 @@ export type UnifiedMileageAnomalyAnalysis = {
    * nobraukumu". Atsevišķs dzeltens brīdinājums, nekad sarkanā josla (sludinājums nav oficiāls fiksējums).
    */
   listingBelowRecordedSourceOrders: Set<number>;
+  /**
+   * 24.11 (Nils A): sludinājuma rindai - agrākais fiksētais rādījums, ar kuru salīdzināts (abi skaitļi PDF,
+   * kopsavilkumā, AI faktos un admin panelī).
+   */
+  listingBelowReferenceBySourceOrder?: Map<number, ListingBelowReference>;
   /** 19.11: viena cipara izlēcējs uz augšu (sk. {@link isSingleDigitTypoSpike}) - nav salīdzināšanas punkts kritumam. */
   typoSpikeSourceOrders?: Set<number>;
 };
+
+/** Agrāks fiksēts (ne sludinājuma) rādījums, ar kuru salīdzināts sludinājuma km. */
+export type ListingBelowReference = {
+  sourceOrder: number;
+  date: string;
+  km: number;
+  sourceLabel: string;
+};
+
+/** 24.11 (Nils A): sludinājuma km mazāks par agrāk fiksēto vairāk nekā par 1 000 km UN 2 %. */
+export const LISTING_BELOW_RECORDED_MIN_PCT = 0.02;
+
+/**
+ * Vai sludinājuma rādījums ir pretruna pret agrāk fiksēto: starpība > 1 000 km un > 2 % no fiksētā.
+ * Noapaļots sludinājums („90 000” pret 90 450) vai sīka noapaļošana nav pretruna.
+ */
+export function isListingBelowRecorded(listingKm: number, recordedKm: number): boolean {
+  const diff = recordedKm - listingKm;
+  return diff > UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM && diff > recordedKm * LISTING_BELOW_RECORDED_MIN_PCT;
+}
 
 /** Izolēts kritums starp diviem augstākiem kaimiņiem (A → zems → A+). */
 export const ISOLATED_MILEAGE_DROP_MAX_RECOVERY_MS = 183 * 24 * 60 * 60 * 1000;
@@ -1053,6 +1078,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
 
   const map = new Map<number, boolean>();
   const listingBelow = new Set<number>();
+  const listingBelowRef = new Map<number, ListingBelowReference>();
   let prevKm: number | null = null;
   let prevRow: UnifiedMileageRow | null = null;
   for (const r of sorted) {
@@ -1073,10 +1099,18 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       continue;
     }
     if (isListingMileageSource(r)) {
-      // Sludinājums nekad nav sarkanā pretruna; ja zem iepriekšējā fiksētā - atsevišķs dzeltens brīdinājums.
+      // Sludinājums nav odometra korekcija (anomalyBySourceOrder paliek false). 24.11 (Nils A): ja zem agrāk
+      // fiksētā (> 1 000 km un > 2 %) - atsevišķa klase `listing_below`; PDF to rāda sarkanu, ja operators
+      // karogu nav atcēlis (sk. odometer-anomaly-classify). Līknē tas nav (tikai atsevišķs marķieris).
       map.set(r.sourceOrder, false);
-      if (prevKm !== null && prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
+      if (prevKm !== null && prevRow != null && isListingBelowRecorded(km, prevKm)) {
         listingBelow.add(r.sourceOrder);
+        listingBelowRef.set(r.sourceOrder, {
+          sourceOrder: prevRow.sourceOrder,
+          date: prevRow.date,
+          km: prevKm,
+          sourceLabel: prevRow.sourceLabel,
+        });
         chartExclude.add(r.sourceOrder);
       }
       continue;
@@ -1103,6 +1137,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     staleDocumentSourceOrders: staleDocuments,
     dataEntryErrorSourceOrders: dataEntryErrors,
     listingBelowRecordedSourceOrders: listingBelow,
+    listingBelowReferenceBySourceOrder: listingBelowRef,
     typoSpikeSourceOrders: typoSpikes,
   };
 }

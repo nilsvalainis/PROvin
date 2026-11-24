@@ -114,9 +114,21 @@ export const CANONICAL_FACTS_INSTRUCTION =
 export const CANONICAL_FACTS_MAX_CHARS = 4000;
 export const CANONICAL_FACTS_TARGET_MIN_CHARS = 2000;
 
-/** 19.11 (Nils): sludinājuma rādījums nav fakts par odometru - pārdevēja norāde, ne ievades kļūda un ne korekcija. */
+/**
+ * 19.11 (Nils): sludinājuma rādījums nav fakts par odometru - pārdevēja norāde, ne ievades kļūda un ne korekcija.
+ * 24.11 (Nils A): tomēr fakts ar abiem skaitļiem un datumiem (PDF to rāda sarkanu). AUDITS komentārā drīkst
+ * ieteikt klātienē pārbaudīt odometru; dīlera / Business tekstos - tikai fakts.
+ */
 export const LISTING_BELOW_RECORDED_LINE_PREFIX =
-  "Sludinājumā norādīts mazāks nobraukums nekā iepriekš fiksēts (pārdevēja dati, NAV oficiāls fiksējums, NEPIEMINĒT kā korekciju vai ievades kļūdu)";
+  "Sludinājumā norādīts mazāks nobraukums nekā iepriekš fiksēts (pārdevēja dati, NAV oficiāls fiksējums; raksti kā faktu ar abiem skaitļiem un datumiem, NEsauc par korekciju vai ievades kļūdu; AUDITS drīkst ieteikt klātienē pārbaudīt odometru, dīlera/Business variantā tikai fakts)";
+
+/** 24.11: sludinājuma rinda ar salīdzināto agrāk fiksēto rādījumu. */
+export type ListingBelowRecordedFact = SuspectedEntryError & {
+  fromDate: string;
+  fromKm: number;
+  fromSource: string;
+  dropKm: number;
+};
 
 export const SUSPECTED_ENTRY_ERROR_LINE_PREFIX =
   "Atsevišķs neatbilstošs rādījums (iespējama ievades kļūda, NEPIEMINĒT kā korekciju)";
@@ -204,7 +216,7 @@ export type CanonicalFacts = {
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
   suspectedEntryErrors: SuspectedEntryError[];
   /** 19.11: sludinājuma rādījums zem iepriekš fiksētā - atsevišķi no ievades kļūdām. */
-  listingBelowRecorded?: SuspectedEntryError[];
+  listingBelowRecorded?: ListingBelowRecordedFact[];
   /** j26: neticami rādījumi (< 1 000 km pēc > 1 gada), izslēgti no aprēķina un PDF. */
   implausibleReadings: UnifiedMileageRow[];
   /** j26: valstu posmi no reģistru laika līnijas. */
@@ -450,7 +462,18 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const isListingEntry = (e: SuspectedEntryError) =>
     isListingMileageSource({ sourceLabel: e.source, countryUnverified: false });
   const suspectedEntryErrors = suspectedOrListing.filter((e) => !isListingEntry(e));
-  const listingBelowRecorded = suspectedOrListing.filter(isListingEntry);
+  // 24.11 (Nils A): no tās pašas klasifikācijas kā PDF tabula (slieksnis > 1 000 km un > 2 %), ar abiem skaitļiem.
+  const listingBelowRecorded: ListingBelowRecordedFact[] = tableClasses
+    .filter((c) => c.class === "listing_below")
+    .map((c) => ({
+      date: c.toDate,
+      km: c.toKm,
+      source: c.toSource ?? "",
+      fromDate: c.fromDate,
+      fromKm: c.fromKm,
+      fromSource: c.fromSource ?? "",
+      dropKm: c.dropKm,
+    }));
   const anomalyMap = computeOdometerAnomalyBySourceOrder(mileageRows);
   // Tabulas karogs no tā paša izolētā punkta nav korekcijas pazīme.
   const odometerAnomaly =
@@ -673,7 +696,7 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   }
   for (const e of facts.listingBelowRecorded ?? []) {
     lines.push(
-      `- ${LISTING_BELOW_RECORDED_LINE_PREFIX}: ${e.date}, ${formatForensicsInt(e.km)} km, ${e.source}`,
+      `- ${LISTING_BELOW_RECORDED_LINE_PREFIX}: sludinājumā ${e.date} ${formatForensicsInt(e.km)} km (${e.source}); agrāk fiksēts ${e.fromDate} ${formatForensicsInt(e.fromKm)} km (${e.fromSource}); par ${formatForensicsInt(e.dropKm)} km mazāk`,
     );
   }
   for (const r of facts.implausibleReadings) {

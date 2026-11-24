@@ -19,6 +19,24 @@ const RULES: Rule[] = [
     },
   },
   {
+    // 24.11 (Nils A): nobraukuma tabulas piezīme ar abiem skaitļiem (sludinājums zem agrāk fiksētā).
+    re: /Sludinājumā \((\d{2}\.\d{2}\.\d{4})\) norādīts ([\d\s]+?) km - par ([\d\s]+?) km mazāk nekā iepriekš fiksētais ([\d\s]+?) km \((\d{2}\.\d{2}\.\d{4})\)\./g,
+    to: {
+      en: (m) => `The listing (${m[1]}) states ${m[2]} km - ${m[3]} km less than the previously recorded ${m[4]} km (${m[5]}).`,
+      ru: (m) => `В объявлении (${m[1]}) указано ${m[2]} км - на ${m[3]} км меньше, чем ранее зафиксированные ${m[4]} км (${m[5]}).`,
+      de: (m) => `Im Inserat (${m[1]}) sind ${m[2]} km angegeben - ${m[3]} km weniger als die zuvor erfassten ${m[4]} km (${m[5]}).`,
+    },
+  },
+  {
+    // 24.11 (Nils A): kopsavilkuma kartīte.
+    re: /sludinājumā par ([\d\s]+?) km mazāk nekā fiksēts/g,
+    to: {
+      en: (m) => `listing shows ${m[1]} km less than recorded`,
+      ru: (m) => `в объявлении на ${m[1]} км меньше, чем зафиксировано`,
+      de: (m) => `im Inserat ${m[1]} km weniger als erfasst`,
+    },
+  },
+  {
     re: /Aptuveni (\d+) mēne(?:sis|ši|šu) bez ierakstiem/g,
     to: {
       en: (m) => `About ${m[1]} months without records`,
