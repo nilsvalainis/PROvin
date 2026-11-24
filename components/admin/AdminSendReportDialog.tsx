@@ -11,6 +11,8 @@ import {
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import { canSubmitSendReport, ReportRecipientMismatchError } from "@/lib/report-recipient-guard";
 import type { OrderClientMarks } from "@/lib/order-client-marks";
+import type { SourceIssue } from "@/lib/source-consistency";
+import { CriticalSourceIssuesAlert } from "@/components/admin/AdminSourceConsistencyBar";
 
 export type SendReportKind = "audits" | "business" | "dealer" | "asv";
 
@@ -69,6 +71,7 @@ export function AdminSendReportDialog({
   prepare,
   send,
   undoComplete,
+  criticalIssues,
 }: {
   open: boolean;
   onClose: () => void;
@@ -90,6 +93,8 @@ export function AdminSendReportDialog({
     confirmRecipientOverride?: boolean;
   }) => Promise<SendReportResult>;
   undoComplete: () => Promise<void>;
+  /** Kritiskas pretrunas starp avotiem - brīdinājums (sūtīšanu nebloķē). */
+  criticalIssues?: readonly SourceIssue[];
 }) {
   const [kind, setKind] = useState<SendReportKind>(defaultKind);
   const [lang, setLang] = useState<ClientReportLang>("lv");
@@ -265,6 +270,7 @@ export function AdminSendReportDialog({
         ) : (
           <>
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+              <CriticalSourceIssuesAlert issues={criticalIssues} />
               <div>
                 <p className={label}>Atskaite</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">

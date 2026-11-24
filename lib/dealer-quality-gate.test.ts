@@ -237,6 +237,27 @@ describe("evaluateDealerQualityGate", () => {
     expect(check(gate, "contradictions")).toMatchObject({ state: "fail", severity: "warn" });
   });
 
+  it("(e) kritiska avotu pretruna -> brīdinājums, spriedumu nemaina", () => {
+    const gate = evaluateDealerQualityGate(
+      base({
+        sourceIssues: [
+          {
+            id: "mileage_drop_x",
+            kind: "mileage_drop",
+            severity: "critical",
+            title: "Nobraukums samazinās starp avotiem, −30 000 km",
+            values: [
+              { source: "CSDD", value: "180 000 km (15.06.2021)" },
+              { source: "OFICIĀLĀ DĪLERA DATI", value: "150 000 km (01.09.2022)" },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(check(gate, "contradictions")).toMatchObject({ state: "fail", severity: "warn" });
+    expect(check(gate, "contradictions").reason).toContain("Avotu pretruna");
+  });
+
   it("(e) dzinēja / degvielas pretruna -> aizturētu", () => {
     const gate = evaluateDealerQualityGate(base({ powertrainContradiction: true }));
     expect(check(gate, "contradictions")).toMatchObject({ state: "fail", severity: "block" });
