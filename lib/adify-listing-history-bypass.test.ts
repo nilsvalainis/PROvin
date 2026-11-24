@@ -68,51 +68,21 @@ describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
     expect(fetchPage.mock.calls[0]?.[1]).toMatchObject({ proxyUrl: FIXIE });
   });
 
-  it("solves AntiCloudflareTask and refetches with cf_clearance", async () => {
-    const fetchPage = vi
-      .fn()
-      .mockResolvedValueOnce({
-        status: 403,
-        text: CF_HTML,
-        cookie: "",
-        finalUrl: PAGE,
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        text: SSR_HTML,
-        cookie: "cf_clearance=adify-1",
-        finalUrl: PAGE,
-      });
-    const solve = vi.fn().mockResolvedValue({
-      ok: true,
-      token: "cf-tok",
-      cookies: { cf_clearance: "adify-1" },
-      userAgent: "Mozilla/5.0 solver",
-      proxy: FIXIE,
-    });
-
+  it("Fixie without ADIFY_PROXY_URL: Cloudflare challenge never calls CapSolver", async () => {
+    const solve = vi.fn();
+    const fetchPage = vi.fn().mockResolvedValue({ status: 403, text: CF_HTML, cookie: "", finalUrl: PAGE });
     const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => "",
       hasKey: () => true,
       getProxy: () => FIXIE,
       stickyProxyUrl: () => FIXIE,
       solve,
       fetchPage,
     });
-
-    expect(out.html).toContain("__NEXT_DATA__");
-    expect(out.error).toBeNull();
-    expect(solve).toHaveBeenCalledTimes(1);
-    const task = solve.mock.calls[0]?.[0] as { kind?: string; html?: string; proxy?: string; websiteURL?: string };
-    expect(task.kind).toBe("cloudflare_challenge");
-    expect(task.websiteURL).toBe(PAGE);
-    expect(task.proxy).toBe(FIXIE);
-    expect(task.html).toContain("Just a moment");
-    expect(task).not.toHaveProperty("websiteKey");
-    expect(fetchPage).toHaveBeenCalledTimes(2);
-    expect(fetchPage.mock.calls[1]?.[1]).toMatchObject({
-      cookie: "cf_clearance=adify-1",
-      proxyUrl: FIXIE,
-    });
+    expect(out.html).toBeNull();
+    expect(out.error).toMatch(/CapSolver tikai ar ADIFY_PROXY_URL/);
+    expect(solve).not.toHaveBeenCalled();
+    expect(fetchPage).toHaveBeenCalledTimes(1);
   });
 
   it("reports when CapSolver clearance still leaves Just a moment", async () => {
@@ -129,9 +99,8 @@ describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
       userAgent: "ua",
     });
     const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => RESI,
       hasKey: () => true,
-      getProxy: () => FIXIE,
-      stickyProxyUrl: () => FIXIE,
       solve,
       fetchPage,
     });
@@ -151,9 +120,8 @@ describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
       reason: "Adify: CapSolver: custom proxy connect failed (HTTP 400)",
     });
     const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => RESI,
       hasKey: () => true,
-      getProxy: () => FIXIE,
-      stickyProxyUrl: () => FIXIE,
       solve,
       fetchPage,
     });
