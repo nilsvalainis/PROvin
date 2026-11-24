@@ -633,6 +633,21 @@ function walkPowertrain(node: unknown, out: OneautoKvRow[], seen: Set<string>, d
   }
 }
 
+const DECODER_BUILD_DATE_KEY_RE = /^manufactured(?:[_\s-]?(?:year|date))?$/i;
+
+function withoutDecoderBuildDates(node: unknown, depth = 0): unknown {
+  if (depth > 6 || node == null) return node;
+  if (Array.isArray(node)) return node.map((x) => withoutDecoderBuildDates(x, depth + 1));
+  const o = asRecord(node);
+  if (!o) return node;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (DECODER_BUILD_DATE_KEY_RE.test(k)) continue;
+    out[k] = withoutDecoderBuildDates(v, depth + 1);
+  }
+  return out;
+}
+
 export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, unknown>>): OneautoDisplaySections {
   const equipment: OneautoKvRow[] = [];
   const serviceTimeline: OneautoServiceEvent[] = [];
@@ -640,7 +655,9 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   const eqSeen = new Set<string>();
   const ptSeen = new Set<string>();
 
-  const decoder = unwrapResult(results.vin_decoder);
+  // 24.11 (BMW WBAUY…): VIN Decoder `manufactured_year` nāk no VIN 10. pozīcijas - Eiropas BMW tur gads nav
+  // kodēts. Ražošanas datums tikai no OE (VIN Lookup / build sheet / dīlera izdruka).
+  const decoder = withoutDecoderBuildDates(unwrapResult(results.vin_decoder));
   const oeLookup = unwrapResult(results.oe_vin_lookup);
   const build = unwrapResult(results.oe_build_sheet);
   const history = unwrapResult(results.oe_service_history);

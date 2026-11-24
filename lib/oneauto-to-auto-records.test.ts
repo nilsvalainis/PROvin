@@ -93,8 +93,9 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
   });
 
   it("VIN Lookup JSON caur display iekrīt esošajos dīlera laukos", () => {
+    // 24.11: ražošanas gads tikai no OE VIN Lookup (VIN Decoder `manufactured_year` netiek lietots).
     const display = buildOneautoDisplay({
-      vin_decoder: {
+      oe_vin_lookup: {
         result: {
           vehicle_identification_number: "WBAVL12090VX12345",
           oem_vehicle_desc: "BMW X1 (E84) xDrive 20 d",

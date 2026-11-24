@@ -16,12 +16,17 @@ import {
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
 
-export type OdometerAnomalyClass = "typo_outlier" | "rollback" | "date_precision";
+/**
+ * 24.11 (Nils A): `listing_below` - sludinājumā norādīts mazāks nobraukums nekā agrāk fiksēts
+ * (> 1 000 km un > 2 %). Nav odometra korekcija, bet PDF rāda sarkanu, kamēr operators karogu neatceļ.
+ */
+export type OdometerAnomalyClass = "typo_outlier" | "rollback" | "date_precision" | "listing_below";
 
 export const ODOMETER_ANOMALY_LABEL_LV: Record<OdometerAnomalyClass, string> = {
   typo_outlier: "Iespējama ievades kļūda",
   rollback: "Nobraukuma kritums",
   date_precision: "Datuma neprecizitāte",
+  listing_below: "Sludinājumā mazāks nobraukums",
 };
 
 export type ClassifiedOdometerAnomaly = {
@@ -34,6 +39,9 @@ export type ClassifiedOdometerAnomaly = {
   fromKm: number;
   toKm: number;
   dropKm: number;
+  /** `listing_below`: avoti abām pusēm (AI faktiem un panelim). */
+  fromSource?: string;
+  toSource?: string;
 };
 
 export type OdometerAnomalyOverrideAction = "confirm" | "dismiss";
@@ -123,6 +131,27 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
   const out: ClassifiedOdometerAnomaly[] = [];
   const seen = new Set<number>();
 
+  // 24.11 (Nils A): sludinājuma rindas analīzes ciklā izlaistas - šeit atsevišķa klase ar salīdzināto fiksēto rādījumu.
+  for (const r of sorted) {
+    const ref = analysis.listingBelowReferenceBySourceOrder?.get(r.sourceOrder);
+    const km = parseOdometerKm(r.odometer);
+    if (!ref || km == null) continue;
+    seen.add(r.sourceOrder);
+    out.push({
+      key: odometerAnomalyKey(r),
+      sourceOrder: r.sourceOrder,
+      class: "listing_below",
+      labelLv: ODOMETER_ANOMALY_LABEL_LV.listing_below,
+      fromDate: ref.date,
+      toDate: r.date,
+      fromKm: ref.km,
+      toKm: km,
+      dropKm: ref.km - km,
+      fromSource: ref.sourceLabel,
+      toSource: r.sourceLabel,
+    });
+  }
+
   const push = (
     row: UnifiedMileageRow,
     cls: OdometerAnomalyClass,
@@ -210,13 +239,58 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
   return out;
 }
 
+/** Atslēga bez `sourceOrder` - PDF ar izslēgtiem avotiem numurē rindas citādi nekā admin panelis. */
+function odometerAnomalyKeyStem(key: string): string {
+  const i = key.lastIndexOf("|");
+  return i > 0 ? key.slice(0, i) : key;
+}
+
+export function isOdometerAnomalyDismissed(
+  key: string,
+  overrides?: OdometerAnomalyOverride[] | null,
+  opts?: { matchWithoutSourceOrder?: boolean },
+): boolean {
+  if (!overrides?.length) return false;
+  const exact = overrides.find((o) => o.key === key);
+  if (exact) return exact.action === "dismiss";
+  if (!opts?.matchWithoutSourceOrder) return false;
+  const stem = odometerAnomalyKeyStem(key);
+  return overrides.some((o) => o.action === "dismiss" && odometerAnomalyKeyStem(o.key) === stem);
+}
+
 export function applyOdometerAnomalyOverrides(
   anomalies: ClassifiedOdometerAnomaly[],
   overrides?: OdometerAnomalyOverride[] | null,
 ): ClassifiedOdometerAnomaly[] {
   if (!overrides?.length) return anomalies;
-  const byKey = new Map(overrides.map((o) => [o.key, o]));
-  return anomalies.filter((a) => byKey.get(a.key)?.action !== "dismiss");
+  return anomalies.filter(
+    (a) => !isOdometerAnomalyDismissed(a.key, overrides, { matchWithoutSourceOrder: a.class === "listing_below" }),
+  );
+}
+
+/** 24.11 (Nils A): aktīvās (operatora neatceltās) „sludinājumā mazāk” rindas. */
+export function activeListingBelowAnomalies(
+  rows: UnifiedMileageRow[],
+  overrides?: OdometerAnomalyOverride[] | null,
+): ClassifiedOdometerAnomaly[] {
+  return applyOdometerAnomalyOverrides(classifyOdometerAnomalies(rows), overrides).filter(
+    (a) => a.class === "listing_below",
+  );
+}
+
+/** Kopsavilkuma / PDF teksts: „sludinājumā (27.09.2015) par 13 880 km mazāk nekā fiksēts” (datums, ja zināms). */
+export function formatListingBelowShortLv(dropKm: number, listingDate?: string | null): string {
+  const d = (listingDate ?? "").trim();
+  return `sludinājumā${d ? ` (${d})` : ""} par ${formatKmGroupedLv(dropKm)} km mazāk nekā fiksēts`;
+}
+
+/** PDF piezīme zem tabulas ar abiem skaitļiem un datumiem (tikai fakts, bez ieteikuma). */
+export function formatListingBelowFactLv(a: Pick<ClassifiedOdometerAnomaly, "toDate" | "toKm" | "fromDate" | "fromKm" | "dropKm">): string {
+  return `Sludinājumā (${a.toDate}) norādīts ${formatKmGroupedLv(a.toKm)} km - par ${formatKmGroupedLv(a.dropKm)} km mazāk nekā iepriekš fiksētais ${formatKmGroupedLv(a.fromKm)} km (${a.fromDate}).`;
+}
+
+function formatKmGroupedLv(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
 export function hasActiveRollbackAnomaly(

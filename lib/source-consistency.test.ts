@@ -209,12 +209,14 @@ describe("checkSourceConsistency - auto identitāte un AI teksts", () => {
     expect(kinds(issues)).toContain("power:warn");
   });
 
-  it("AI teksts min pilnpiedziņu, ražotājs saka viena ass (4MATIC gadījums) - kritisks, viens punkts", () => {
+  it("AI teksts min pilnpiedziņu, reģistrs saka viena ass (4MATIC gadījums) - kritisks, viens punkts", () => {
     const vi = { ...emptyOutvinVehicleInfo(), drive: "Rear-Wheel Drive" };
+    // 24.11: tikai katalogs (OneAuto / Outvin) piedziņu nenosaka - kritiskumu dod oficiālais reģistrs.
     const issues = run(
       {
         csdd: csdd({ makeModel: "MERCEDES-BENZ E 300 DE" }),
         auto_records: { outvinReport: { vehicleInfo: vi, accidentCheck: "", stolenCheck: "", equipment: [] } },
+        tjekbil: { rawUnprocessedData: '{"traekkendeAksler": "2", "traekhjul": "Baghjulstrukket"}' },
       },
       [
         { label: "Risku analīze", text: "Auto ar 4MATIC pilnpiedziņu, jāpārbauda sadales kārba." },

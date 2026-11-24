@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { adminUiOpenKey, readAdminUiOpen, writeAdminUiOpen } from "@/lib/admin-ui-open-memory";
 import { ChevronDown, ChevronUp, ScanLine } from "lucide-react";
 
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -87,10 +88,44 @@ export function AdminOrderVinScanCard({
   onImportListing: (record: OrderVinScanRecord) => void;
 }) {
   const [record, setRecord] = useState<OrderVinScanRecord | null>(initial);
-  const [showFields, setShowFields] = useState(true);
-  const [showNone, setShowNone] = useState(false);
+  const [showFields, setShowFieldsState] = useState(
+    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields")) ?? true,
+  );
+  const [showNone, setShowNoneState] = useState(
+    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-none")) ?? false,
+  );
   const [busy, setBusy] = useState(false);
-  const [listExpanded, setListExpanded] = useState(false);
+  const [listExpanded, setListExpandedState] = useState(
+    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-list")) ?? false,
+  );
+  // 24.11: stāvoklis paliek pēc FLASH MAX / vedņa soļa maiņas (komponente uzstādīta no jauna).
+  const setShowFields = useCallback(
+    (next: boolean) => {
+      writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields"), next);
+      setShowFieldsState(next);
+    },
+    [sessionId],
+  );
+  const setShowNone = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setShowNoneState((prev) => {
+        const v = typeof next === "function" ? next(prev) : next;
+        writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-none"), v);
+        return v;
+      });
+    },
+    [sessionId],
+  );
+  const setListExpanded = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setListExpandedState((prev) => {
+        const v = typeof next === "function" ? next(prev) : next;
+        writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-list"), v);
+        return v;
+      });
+    },
+    [sessionId],
+  );
   /**
    * Pārlūka importa piezīmes pa avotiem. Agrāk viens globāls paziņojums virs saraksta tika notīrīts katrā
    * userscript ciklā un atkal parādīts («Lapa vēl nav gatava…»), tāpēc saraksts lēkāja (tas pats, kas #1152).

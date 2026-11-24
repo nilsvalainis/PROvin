@@ -269,7 +269,15 @@ function mileageSeriesSpanHtml(points: ChartSeriesPoint[]): string {
 export function buildUnifiedMileageChartWrapHtml(
   rows: UnifiedMileageRow[],
   anomalyBySourceOrder: Map<number, boolean>,
-  opts?: { compact?: boolean; chartExcludeSourceOrders?: Set<number> },
+  opts?: {
+    compact?: boolean;
+    chartExcludeSourceOrders?: Set<number>;
+    /**
+     * 24.11 (Nils A): „sludinājumā mazāk” rindas - sarkans marķieris grafikā, līkne caur tiem neiet
+     * (sludinājums nav oficiāls fiksējums, līkne paliek pa fiksētajiem rādījumiem).
+     */
+    markerSourceOrders?: Set<number>;
+  },
 ): string {
   const compact = opts?.compact === true;
   const chartExclude =
@@ -278,11 +286,18 @@ export function buildUnifiedMileageChartWrapHtml(
 
   if (series.length === 0) return "";
 
-  const tMin = series[0]!.time;
-  const tMax = series[series.length - 1]!.time;
-  const yStart = series[0]!.year;
-  const yEnd = series[series.length - 1]!.year;
-  const { kmMin, kmMax } = chartKmDomain(series);
+  const markerSet = opts?.markerSourceOrders;
+  const markers =
+    markerSet && markerSet.size > 0
+      ? chartSeriesFromRows(rows, new Set<number>()).filter((s) => markerSet.has(s.sourceOrder))
+      : [];
+  const domainSeries = [...series, ...markers].sort((a, b) => a.time - b.time);
+
+  const tMin = domainSeries[0]!.time;
+  const tMax = domainSeries[domainSeries.length - 1]!.time;
+  const yStart = domainSeries[0]!.year;
+  const yEnd = domainSeries[domainSeries.length - 1]!.year;
+  const { kmMin, kmMax } = chartKmDomain(domainSeries);
 
   const W = compact ? 480 : 520;
   const H = compact ? 112 : 172;
@@ -306,7 +321,13 @@ export function buildUnifiedMileageChartWrapHtml(
     isAnomaly: anomalyBySourceOrder.get(s.sourceOrder) === true,
   }));
 
-  const hasAnomaly = plotPoints.some((p) => p.isAnomaly);
+  const hasAnomaly = plotPoints.some((p) => p.isAnomaly) || markers.length > 0;
+  const markerHtml = markers
+    .map(
+      (m) =>
+        `<circle class="pdf-mileage-chart-marker" cx="${xOf(m.time).toFixed(1)}" cy="${yOf(m.km).toFixed(1)}" r="4.2" />`,
+    )
+    .join("\n  ");
 
   const yearSpan = Math.max(0, yEnd - yStart);
   const yearStep = yearSpan <= 10 ? 1 : yearSpan <= 20 ? 2 : 3;
@@ -380,6 +401,7 @@ export function buildUnifiedMileageChartWrapHtml(
   ${pathHtml}
   ${rollbackOverlays.join("\n  ")}
   ${loneDot}
+  ${markerHtml}
   ${yearLabels.join("\n  ")}
 </svg>
 ${mileageSeriesSpanHtml(series)}

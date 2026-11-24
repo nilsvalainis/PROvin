@@ -10,6 +10,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
+import { archiveFieldGetter } from "@/lib/auction-archive-facts";
 import { TJEKBIL_DRIVEN_AXLES_LABEL } from "@/lib/vin-sources/tjekbil-map";
 
 export type RegistryDrivetrain = {
@@ -63,8 +64,15 @@ export function extractRegistryDrivetrain(sourceBlocks: WorkspaceSourceBlocks): 
   return null;
 }
 
-/** Ražotāja komplektācijas avota nosaukums piedziņas faktam (bez komatiem / iekavām - lasa regex). */
-export const OEM_DRIVETRAIN_SOURCE_LABEL = "ražotāja komplektācija - oficiālā dīlera dati";
+/**
+ * Ražotāja kataloga avota nosaukums (OneAuto OE VIN Lookup / build sheet, Outvin `drive`).
+ * 24.11 (Volvo XC90 2.4D AWD): OneAuto `oem_drivetrain_desc` = „Front-Wheel Drive” bija kataloga tips,
+ * nevis ŠĪ auto komplektācija (rūpnīcas kodi AG02 „POWER TRAIN AWD”, K03 Haldex). Tāpēc katalogs ir
+ * zemākā ticamība, nevis „oficiālā dīlera dati”. Bez komatiem - faktu lapas rindu lasa regex.
+ */
+export const OEM_DRIVETRAIN_SOURCE_LABEL = "ražotāja katalogs (OneAuto)";
+/** OneAuto aprīkojuma produkts (build sheet) - nopirkts šim pasūtījumam, rūpnīcas dati par ŠO VIN. */
+export const ONEAUTO_BUILD_SHEET_LABEL = "OneAuto aprīkojums (build sheet)";
 
 const TWO_WD_TEXT_RE =
   /\b4\s?x\s?2\b|\b2wd\b|\brwd\b|\bfwd\b|rear[\s-]?wheel|front[\s-]?wheel|hinterrad|frontantrieb|vorderrad|aizmugur\p{L}*\s+(?:riteņu\s+)?piedziņ|priekšēj\p{L}*\s+(?:riteņu\s+)?piedziņ|baghjul|forhjul|sdrive/iu;
@@ -88,30 +96,251 @@ function oneautoPayloadDrive(payload: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
+/* ---------- 24.11: piedziņa no VISIEM avotiem ar ticamības līmeņiem ---------- */
+
 /**
- * Piedziņa no ražotāja komplektācijas (OneAuto build sheet / VIN Lookup `oem_drivetrain_desc`, dīlera
- * transportlīdzekļa tabulas lauks „Piedziņa”). Tas ir stiprākais pierādījums: ražotāja dati par ŠO VIN.
+ * Ticamība (augstākā pirmā): rūpnīcas opciju kodi (CarVertical / AutoDNA / dīlera aprīkojuma kodi) >
+ * oficiālais reģistrs (CSDD piedziņas lauka nav; Dānijas DMR) > CarVertical / AutoDNA specifikācija >
+ * izsoles > ražotāja katalogs (OneAuto OE VIN Lookup / Outvin `drive`).
  */
-export function extractOemDrivetrain(sourceBlocks: WorkspaceSourceBlocks): RegistryDrivetrain | null {
-  const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
-  const ar = blocks.auto_records;
-  const results = ar.oneautoIngest?.results ?? {};
-  const candidates = [
-    oneautoPayloadDrive((results as Record<string, { payload?: unknown } | undefined>).oe_build_sheet?.payload),
-    oneautoPayloadDrive((results as Record<string, { payload?: unknown } | undefined>).oe_vin_lookup?.payload),
-    ar.outvinReport?.vehicleInfo?.drive ?? "",
-    ar.outvin?.vehicleInfo?.drive ?? "",
-  ];
-  for (const c of candidates) {
-    const parsed = parseDrivetrainText(c);
-    if (parsed) return { drivenAxles: parsed.awd ? 2 : 1, awd: parsed.awd, sourceLabel: OEM_DRIVETRAIN_SOURCE_LABEL };
+export type DrivetrainTier = "factory_codes" | "registry" | "vendor_spec" | "auction" | "oem_catalog";
+
+const TIER_RANK: Record<DrivetrainTier, number> = {
+  factory_codes: 0,
+  registry: 1,
+  vendor_spec: 2,
+  auction: 3,
+  oem_catalog: 4,
+};
+
+/** Rūpnīcas kodi un reģistrs - spriedums paliek arī tad, ja zemākas ticamības avoti runā pretī. */
+const STRONG_TIERS: ReadonlySet<DrivetrainTier> = new Set(["factory_codes", "registry"]);
+
+export const DRIVETRAIN_TIER_LABEL_LV: Record<DrivetrainTier, string> = {
+  factory_codes: "rūpnīcas opciju kodi",
+  registry: "oficiālais reģistrs",
+  vendor_spec: "specifikācija",
+  auction: "izsoles dati",
+  oem_catalog: "ražotāja katalogs",
+};
+
+export type DrivetrainEvidence = {
+  tier: DrivetrainTier;
+  /** Avota nosaukums atskaitē (bez komatiem). */
+  source: string;
+  awd: boolean;
+  /** Teksta fragments, no kura nolasīts (tikai tehnisks, bez personas datiem). */
+  detail: string;
+};
+
+export type DrivetrainResolution = {
+  /** null = nav datu vai avoti runā pretī tā, ka piedziņu nevar noteikt. */
+  drivetrain: RegistryDrivetrain | null;
+  tier: DrivetrainTier | null;
+  evidence: DrivetrainEvidence[];
+  /** Vismaz divi avoti saka atšķirīgu piedziņu. */
+  conflict: boolean;
+  /** Pretrunā ir tikai ražotāja katalogs (OneAuto bez aprīkojuma / Outvin) - dabiska atšķirība. */
+  conflictOnlyCatalog: boolean;
+  /** Tikai katalogs: piedziņa „pēc kataloga, nav apstiprināta” - nekad neizraisa aizliegumu / dzēšanu. */
+  catalogHint: { awd: boolean; source: string } | null;
+};
+
+/** Pilnpiedziņas marķieri rūpnīcas / specifikācijas tekstā (angļu, vācu, LV, ražotāju nosaukumi). */
+const SPEC_AWD_RES: RegExp[] = [
+  /\b(?:awd|4wd)(?![a-z])/i,
+  /all[\s-]?wheel[\s-]?drive|four[\s-]?wheel[\s-]?drive|\b4[\s-]wheel[\s-]drive|allradantrieb|\ballrad\b/i,
+  /haldex/i,
+  /\bx\s?drive/i,
+  /\b4[\s-]?matic/i,
+  /\b4\s?motion/i,
+  /\bquattro\b/i,
+  /\b4x4\b/i,
+  /pilnpiedziņ|visu\s+riteņu\s+piedziņ/iu,
+];
+const SPEC_2WD_RES: RegExp[] = [
+  /front[\s-]?wheel[\s-]?drive|rear[\s-]?wheel[\s-]?drive|frontantrieb|hinterradantrieb/i,
+  /\b(?:fwd|rwd|2wd)(?![a-z])/i,
+  /\b4x2\b/i,
+  /\bs\s?drive\s?\d/i,
+  /priekšēj\p{L}*\s+(?:riteņu\s+)?piedziņ|aizmugurēj\p{L}*\s+(?:riteņu\s+)?piedziņ|priekšpiedziņ|aizmugurpiedziņ/iu,
+];
+/**
+ * Rindas, kas piedziņu NEAPRAKSTA: „Quattro GmbH” riteņi / riepas, „quattro” plāksnītes (Audi 2Z* - var būt
+ * arī tikai tipa zīme), modeļu saraksti ar gadu diapazonu („ID.4 Pro 4MOTION (2021 - 2024)” - līdzīgie modeļi),
+ * apkopes grafiks („Haldex eļļa” - visa modeļa grafiks, ne šī auto).
+ */
+const SPEC_IGNORE_LINE_RE =
+  /gmbh|nameplate|plāksnīt|type\s+sign|tipa\s+zīm|\(\s*\d{4}\s*[-–]\s*\d{4}\s*\)|eļļ\p{L}*\s*\(|iztukšot|uzpildīt/iu;
+/** Rūpnīcas opciju koda rinda: „AG02POWER TRAIN AWD”, „1X2Four wheel drive”, „DB20Gear box”. */
+const FACTORY_CODE_LINE_RE = /(?:^|[^A-Za-z0-9])(?=[A-Z0-9]*\d)[A-Z0-9]{3,5}(?=[A-Z][A-Za-z]{2})/;
+
+const BRAND_DRIVE_WORD_RE = /\b4[\s-]?matic\b|\b4\s?motion\b|\bx\s?drive\w*|\bs\s?drive\w*|\bquattro\b/gi;
+
+/** Vienas rindas spriedums: true = AWD, false = 2WD, null = nav vai abi („2wd and 4wd”). */
+export function drivetrainFromSpecLine(line: string): boolean | null {
+  const t = (line ?? "").trim();
+  if (!t || t.length > 400 || SPEC_IGNORE_LINE_RE.test(t)) return null;
+  const awd = SPEC_AWD_RES.some((re) => re.test(t));
+  const twoWd = SPEC_2WD_RES.some((re) => re.test(t));
+  if (awd === twoWd) return null;
+  return awd;
+}
+
+function pushTextEvidence(
+  out: DrivetrainEvidence[],
+  text: string,
+  vendor: string,
+  opts: { codeLinesOnly?: boolean } = {},
+): void {
+  for (const line of (text ?? "").split(/\r?\n/)) {
+    const v = drivetrainFromSpecLine(line);
+    if (v == null) continue;
+    // „4MATIC” / „4MOTION” pašas izskatās pēc koda + apraksta - pirms koda pārbaudes izņem.
+    const isCode = opts.codeLinesOnly === true || FACTORY_CODE_LINE_RE.test(line.replace(BRAND_DRIVE_WORD_RE, " "));
+    out.push({
+      tier: isCode ? "factory_codes" : "vendor_spec",
+      source: isCode ? `${vendor} rūpnīcas kodi` : `${vendor} specifikācija`,
+      awd: v,
+      detail: line.trim().slice(0, 160),
+    });
   }
+}
+
+/** Izsoles ieraksta piedziņa (TheCarApi lauki). */
+export function auctionLotDrivetrain(get: { tail: (...names: string[]) => string }): boolean | null {
+  const awdRaw = get.tail("isfourwheeldrive");
+  if (/^(yes|true|1|jā)$/i.test(awdRaw)) return true;
+  if (/^(no|false|0|nē)$/i.test(awdRaw)) return false;
+  const driveRaw = get.tail("drive", "drivetrain", "drivetype");
+  if (/4x4|awd|4wd|all|allrad|quattro|xdrive|4matic|4motion/i.test(driveRaw)) return true;
+  if (/front|rear|fwd|rwd|2wd|4x2|vorder|hinter/i.test(driveRaw)) return false;
   return null;
 }
 
-/** Transportlīdzekļa piedziņa: ražotāja komplektācija (prioritāte), tad oficiālais reģistrs. */
+/** Visi piedziņas pierādījumi no ielādētajiem avotiem (bez AI komentāriem un operatora piezīmēm). */
+export function collectDrivetrainEvidence(sourceBlocks: WorkspaceSourceBlocks): DrivetrainEvidence[] {
+  const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
+  const out: DrivetrainEvidence[] = [];
+
+  // 1) CarVertical / AutoDNA RAW: rūpnīcas kodu rindas un specifikācija.
+  pushTextEvidence(out, blocks.carvertical?.aiContextRaw ?? "", SOURCE_BLOCK_LABELS.carvertical);
+  pushTextEvidence(out, blocks.autodna?.aiContextRaw ?? "", SOURCE_BLOCK_LABELS.autodna);
+  // Dīlera aprīkojuma kodi (kods + apraksts) - arī rūpnīcas kodi.
+  const ar = blocks.auto_records;
+  const equipLines = [...(ar.outvinReport?.equipment ?? []), ...(ar.outvin?.equipment ?? [])]
+    .map((e) => (e && typeof e === "object" ? `${(e as { code?: string }).code ?? ""} ${(e as { description?: string }).description ?? ""}` : ""))
+    .filter((l) => l.trim());
+  pushTextEvidence(out, equipLines.join("\n"), "Dīlera aprīkojuma", { codeLinesOnly: true });
+
+  // 2) Oficiālais reģistrs (Dānijas DMR). CSDD piedziņas lauku nedod; modeļa nosaukumu („4MATIC”) neņem.
+  const reg = extractRegistryDrivetrain(blocks);
+  if (reg) out.push({ tier: "registry", source: reg.sourceLabel, awd: reg.awd, detail: `${reg.drivenAxles} dzenošās asis` });
+
+  // 4) Izsoles (TheCarApi).
+  for (const r of blocks.cc_vin?.thecarapiRecords ?? []) {
+    const v = auctionLotDrivetrain(archiveFieldGetter(r));
+    if (v == null) continue;
+    out.push({ tier: "auction", source: (r.site || r.venue || "Izsole").trim().replace(/,/g, " "), awd: v, detail: "" });
+  }
+
+  // 5) Ražotāja katalogs: OneAuto OE VIN Lookup / build sheet, Outvin `drive` (bieži OneAuto kopija).
+  const results = (ar.oneautoIngest?.results ?? {}) as Record<string, { payload?: unknown } | undefined>;
+  // Nils 24.11: OneAuto aprīkojumu (build sheet) bieži nepērkam - bez tā VIN Lookup piedziņa ir vispārīgā
+  // kataloga tips (piem. «XC90 I (275) D5»), ne šī auto komplektācija. Nopirkts build sheet = rūpnīcas dati.
+  const buildSheetDrive = parseDrivetrainText(oneautoPayloadDrive(results.oe_build_sheet?.payload));
+  if (buildSheetDrive) {
+    out.push({
+      tier: "factory_codes",
+      source: ONEAUTO_BUILD_SHEET_LABEL,
+      awd: buildSheetDrive.awd,
+      detail: oneautoPayloadDrive(results.oe_build_sheet?.payload).trim().slice(0, 80),
+    });
+  }
+  const catalog: { source: string; raw: string }[] = [
+    { source: OEM_DRIVETRAIN_SOURCE_LABEL, raw: oneautoPayloadDrive(results.oe_vin_lookup?.payload) },
+    { source: "ražotāja katalogs (Outvin)", raw: ar.outvinReport?.vehicleInfo?.drive ?? "" },
+    { source: "ražotāja katalogs (Outvin)", raw: ar.outvin?.vehicleInfo?.drive ?? "" },
+  ];
+  for (const c of catalog) {
+    const parsed = parseDrivetrainText(c.raw);
+    if (parsed) out.push({ tier: "oem_catalog", source: c.source, awd: parsed.awd, detail: c.raw.trim().slice(0, 80) });
+  }
+  return out;
+}
+
+function tierVerdict(evidence: readonly DrivetrainEvidence[], tier: DrivetrainTier): boolean | "mixed" | null {
+  const vals = new Set(evidence.filter((e) => e.tier === tier).map((e) => e.awd));
+  if (vals.size === 0) return null;
+  if (vals.size > 1) return "mixed";
+  return [...vals][0]!;
+}
+
+/**
+ * Piedziņa no visiem avotiem. Augstākās ticamības līmenis ar viennozīmīgu spriedumu nosaka rezultātu:
+ * - rūpnīcas kodi / reģistrs: spriedums paliek, zemākie avoti pretī - tikai `conflict` (brīdinājums);
+ *   ja rūpnīcas kodi un reģistrs savā starpā nesakrīt vai līmenī ir abi varianti - null;
+ * - specifikācija / izsoles: spriedums tikai tad, ja šie avoti savā starpā sakrīt; citādi null;
+ * - ražotāja katalogs (OneAuto VIN Lookup bez aprīkojuma, Outvin) piedziņu NEKAD nenosaka (Nils 24.11) -
+ *   tikai `catalogHint` faktu lapai („pēc kataloga, nav apstiprināts”).
+ */
+export function resolveVehicleDrivetrain(sourceBlocks: WorkspaceSourceBlocks): DrivetrainResolution {
+  const evidence = collectDrivetrainEvidence(sourceBlocks);
+  const conflict = new Set(evidence.map((e) => e.awd)).size > 1;
+  const nonCatalog = evidence.filter((e) => e.tier !== "oem_catalog");
+  const conflictOnlyCatalog = conflict && new Set(nonCatalog.map((e) => e.awd)).size <= 1;
+  const catalogVerdict = tierVerdict(evidence, "oem_catalog");
+  const catalogHint =
+    nonCatalog.length === 0 && typeof catalogVerdict === "boolean"
+      ? { awd: catalogVerdict, source: evidence.find((e) => e.tier === "oem_catalog")!.source }
+      : null;
+  const empty: DrivetrainResolution = { drivetrain: null, tier: null, evidence, conflict, conflictOnlyCatalog, catalogHint };
+  if (nonCatalog.length === 0) return empty;
+  const tiers = (Object.keys(TIER_RANK) as DrivetrainTier[])
+    .filter((t) => t !== "oem_catalog")
+    .sort((a, b) => TIER_RANK[a] - TIER_RANK[b]);
+  const top = tiers.find((t) => tierVerdict(evidence, t) != null);
+  if (!top) return empty;
+  const verdict = tierVerdict(evidence, top);
+  if (verdict === "mixed" || verdict == null) return empty;
+  if (STRONG_TIERS.has(top)) {
+    for (const t of STRONG_TIERS) {
+      const v = tierVerdict(evidence, t);
+      if (v != null && v !== verdict) return empty;
+    }
+  } else if (new Set(nonCatalog.map((e) => e.awd)).size > 1) {
+    // Specifikācija / izsoles savstarpēji nesakrīt - nezināms. Katalogs vājos avotus neapgāž.
+    return empty;
+  }
+  const first = evidence.find((e) => e.tier === top && e.awd === verdict)!;
+  return {
+    drivetrain: { drivenAxles: verdict ? 2 : 1, awd: verdict, sourceLabel: first.source },
+    tier: top,
+    evidence,
+    conflict,
+    conflictOnlyCatalog,
+    catalogHint: null,
+  };
+}
+
+/**
+ * Tikai ražotāja katalogs (OneAuto / Outvin). Zemākā ticamība - lēmumiem lieto `extractVehicleDrivetrain`.
+ */
+export function extractOemDrivetrain(sourceBlocks: WorkspaceSourceBlocks): RegistryDrivetrain | null {
+  const cat = collectDrivetrainEvidence(sourceBlocks).filter((e) => e.tier === "oem_catalog");
+  if (cat.length === 0 || new Set(cat.map((e) => e.awd)).size > 1) return null;
+  const awd = cat[0]!.awd;
+  return { drivenAxles: awd ? 2 : 1, awd, sourceLabel: cat[0]!.source };
+}
+
+/** Transportlīdzekļa piedziņa no visiem avotiem (sk. `resolveVehicleDrivetrain`); null = nezināma. */
 export function extractVehicleDrivetrain(sourceBlocks: WorkspaceSourceBlocks): RegistryDrivetrain | null {
-  return extractOemDrivetrain(sourceBlocks) ?? extractRegistryDrivetrain(sourceBlocks);
+  return resolveVehicleDrivetrain(sourceBlocks).drivetrain;
+}
+
+/** Vai piedziņas avots ir oficiālais reģistrs (DMR u.c.), nevis rūpnīcas kodi / katalogs. */
+function isRegistrySource(label: string): boolean {
+  return label === SOURCE_BLOCK_LABELS.tjekbil;
 }
 
 /**
@@ -140,26 +369,22 @@ export function stripAwdClaimsForTwoWheelDrive(text: string, dt: RegistryDrivetr
     .join("");
 }
 
-/** Kanoniskās lapas rinda (AI promptam): reģistra piedziņa ar prioritāti. */
+/** Faktu lapas rinda, ja piedziņa zināma tikai no kataloga - bez aizlieguma. */
+export function formatCatalogDrivetrainHintLine(hint: { awd: boolean; source: string }): string {
+  return `Piedziņa pēc ${hint.source} - nav apstiprināta (vispārīgs kataloga tips; aprīkojuma dati nav pirkti): ${hint.awd ? "pilnpiedziņa" : "viena ass"}. Neraksti kā faktu; ja citi dati min citu piedziņu - nepretrunā.`;
+}
+
+/** Kanoniskās lapas rinda (AI promptam): piedziņa ar avotu un prioritāti. */
 export function formatRegistryDrivetrainFactLine(dt: RegistryDrivetrain, otherSourcesClaimAwd: boolean): string {
-  if (dt.sourceLabel === OEM_DRIVETRAIN_SOURCE_LABEL) {
-    if (dt.awd) return `Piedziņa (oficiālais avots ${dt.sourceLabel}, prioritāte): pilnpiedziņa (${dt.drivenAxles} dzenošās asis)`;
-    return (
-      `Piedziņa (oficiālais avots ${dt.sourceLabel}, prioritāte pār reģistru / sludinājumu / modeļa nosaukumu): ${dt.drivenAxles} dzenošā ass - NAV pilnpiedziņa; ` +
-      "aizliegts rakstīt 4MATIC / xDrive / quattro / 4Motion / AWD / 4x4 / pilnpiedziņa" +
-      (otherSourcesClaimAwd
-        ? ". PRETRUNA: cits avots (piem. reģistra modeļa nosaukums) min pilnpiedziņu - tekstā drīkst minēt tikai kā neatbilstību ražotāja datiem"
-        : "")
-    );
-  }
-  if (dt.awd) {
-    return `Piedziņa (oficiālais reģistrs ${dt.sourceLabel}, prioritāte): pilnpiedziņa (${dt.drivenAxles} dzenošās asis)`;
-  }
+  const head = isRegistrySource(dt.sourceLabel)
+    ? `Piedziņa (oficiālais reģistrs ${dt.sourceLabel}, prioritāte pār sludinājumu / car.info)`
+    : `Piedziņa (avots ${dt.sourceLabel}, prioritāte pār zemākas ticamības avotiem)`;
+  if (dt.awd) return `${head}: pilnpiedziņa (${dt.drivenAxles} dzenošās asis)`;
   return (
-    `Piedziņa (oficiālais reģistrs ${dt.sourceLabel}, prioritāte pār sludinājumu / car.info): ${dt.drivenAxles} dzenošā ass - NAV pilnpiedziņa; ` +
+    `${head}: ${dt.drivenAxles} dzenošā ass - NAV pilnpiedziņa; ` +
     "aizliegts rakstīt 4Motion / quattro / xDrive / 4MATIC / AWD / 4x4 / Haldex riskus" +
     (otherSourcesClaimAwd
-      ? ". PRETRUNA: sludinājums / citi avoti min pilnpiedziņu - tekstā drīkst minēt tikai kā neatbilstību reģistram"
+      ? ". PRETRUNA: sludinājums / citi avoti min pilnpiedziņu - tekstā drīkst minēt tikai kā neatbilstību šim avotam"
       : "")
   );
 }
@@ -183,7 +408,7 @@ export function findDrivetrainContradictions(text: string, dt: RegistryDrivetrai
   if (!hit) return [];
   return [
     {
-      message: `${dt.sourceLabel === OEM_DRIVETRAIN_SOURCE_LABEL ? "Ražotāja komplektācija" : "Oficiālais reģistrs"} (${dt.sourceLabel}) saka ${dt.drivenAxles} dzenošā ass (nav pilnpiedziņa), teksts apgalvo pilnpiedziņu (4MATIC / 4Motion / AWD).`,
+      message: `${isRegistrySource(dt.sourceLabel) ? "Oficiālais reģistrs" : "Piedziņas avots"} (${dt.sourceLabel}) saka ${dt.drivenAxles} dzenošā ass (nav pilnpiedziņa), teksts apgalvo pilnpiedziņu (4MATIC / 4Motion / AWD).`,
       sentence: hit,
     },
   ];

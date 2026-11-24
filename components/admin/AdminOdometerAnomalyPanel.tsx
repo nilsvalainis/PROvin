@@ -67,7 +67,9 @@ function AnomalyRow({
   onConfirm: () => void;
   onDismiss: () => void;
 }) {
-  const isRollback = anomaly.class === "rollback";
+  // 24.11 (Nils A): „sludinājumā mazāk” PDF ir sarkans - panelī arī.
+  const isRollback = anomaly.class === "rollback" || anomaly.class === "listing_below";
+  const isListing = anomaly.class === "listing_below";
   return (
     <div
       className={`rounded-lg border px-2.5 py-2 ${
@@ -80,8 +82,10 @@ function AnomalyRow({
     >
       <p className="text-[10px] font-bold uppercase tracking-wide">{anomaly.labelLv}</p>
       <p className="mt-0.5 text-[11px] leading-snug">
-        {formatForensicsInt(anomaly.fromKm)} km ({anomaly.fromDate}) → {formatForensicsInt(anomaly.toKm)} km (
-        {anomaly.toDate}), kritums {formatForensicsInt(anomaly.dropKm)} km
+        {isListing ? "Fiksēts " : ""}
+        {formatForensicsInt(anomaly.fromKm)} km ({anomaly.fromDate}) → {isListing ? "sludinājumā " : ""}
+        {formatForensicsInt(anomaly.toKm)} km ({anomaly.toDate}), {isListing ? "par " : "kritums "}
+        {formatForensicsInt(anomaly.dropKm)} km{isListing ? " mazāk" : ""}
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1">
         <button

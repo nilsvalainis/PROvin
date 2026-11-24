@@ -1,8 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReviewPanel";
+import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { FACT_CHECK_AI_FIX_MAX_FLAGS } from "@/lib/fact-check-ai-fix";
+import { postFactCheckAiFix } from "@/lib/fact-check-ai-fix-client";
+import {
+  applyFlashMaxReviewFinding,
+  type FlashMaxReviewFinding,
+  type FlashMaxReviewState,
+} from "@/lib/flash-max-final-review";
 import { adminProBtn } from "@/lib/admin-pro-tones";
 import {
   factCheckDismissKey,
@@ -45,10 +55,15 @@ function FlagCard({
   flag,
   onDismiss,
   onApplyFix,
+  onAiFix,
+  aiBusy,
 }: {
   flag: FactCheckFlag;
   onDismiss: (flag: FactCheckFlag) => void;
   onApplyFix?: (flag: FactCheckFlag) => void;
+  /** AI labojums (diff skatā), ja nav deterministiskā šablona. */
+  onAiFix?: (flag: FactCheckFlag) => void;
+  aiBusy?: boolean;
 }) {
   const [showFix, setShowFix] = useState(false);
   const isError = flag.level === "E";
@@ -71,6 +86,16 @@ function FlagCard({
               type="button"
               className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-white/70"
               onClick={() => setShowFix(true)}
+            >
+              Labot
+            </button>
+          ) : onAiFix ? (
+            <button
+              type="button"
+              data-fact-fix-ai=""
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-white/70 disabled:opacity-40"
+              disabled={aiBusy}
+              onClick={() => onAiFix(flag)}
             >
               Labot
             </button>
@@ -127,20 +152,139 @@ function FlagCard({
   );
 }
 
+/** «Labot» ar AI: lauka teksts, kur piemērot pieņemtos labojumus, un pasūtījuma dati faktu lapai. */
+export type FactCheckAiFixConfig = {
+  allowed: boolean;
+  fieldLabel?: string;
+  /** Pašreizējais lauka teksts (HTML vai vienkāršs). */
+  text: string;
+  buildPayload: () => Record<string, unknown>;
+  /** Pieņemtā labojuma rezultāts (vienkāršs teksts). */
+  onApplyText: (plain: string) => void;
+};
+
+function normSentence(s: string): string {
+  return s.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Karodziņi, kuru teikums pēc labojuma vairs nav tekstā - tos var paslēpt. */
+export function factCheckFlagsResolvedByText(flags: readonly FactCheckFlag[], nextPlain: string): FactCheckFlag[] {
+  const hay = normSentence(nextPlain);
+  return flags.filter((f) => {
+    const s = normSentence(f.sentence ?? "");
+    return s.length > 0 && !hay.includes(s);
+  });
+}
+
 export function AdminFactCheckPanel({
   flags,
   dismissed,
   onDismiss,
   onApplyFix,
+  aiFix,
 }: {
   flags: readonly FactCheckFlag[] | undefined;
   dismissed: ReadonlySet<string> | readonly string[];
   onDismiss: (flag: FactCheckFlag) => void;
   onApplyFix?: (flag: FactCheckFlag) => void;
+  aiFix?: FactCheckAiFixConfig | null;
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [review, setReview] = useState<FlashMaxReviewState>({ status: "idle" });
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [handled, setHandled] = useState<Record<string, "accepted" | "rejected">>({});
+  const [stale, setStale] = useState<Set<string>>(() => new Set());
+  const aiFixRef = useRef(aiFix);
+  aiFixRef.current = aiFix;
+  const runFlagsRef = useRef<FactCheckFlag[]>([]);
+
+  const runAiFix = useCallback(async (picked: FactCheckFlag[]) => {
+    const cfg = aiFixRef.current;
+    if (!cfg?.allowed || picked.length === 0) return;
+    const plain = adminRichHtmlToPlainText(cfg.text).trim();
+    if (!plain) return;
+    const ordered = [...picked.filter((f) => f.level === "E"), ...picked.filter((f) => f.level !== "E")].slice(
+      0,
+      FACT_CHECK_AI_FIX_MAX_FLAGS,
+    );
+    runFlagsRef.current = ordered;
+    setHandled({});
+    setStale(new Set());
+    setReview({ status: "running" });
+    setReviewOpen(true);
+    const res = await postFactCheckAiFix({
+      ...cfg.buildPayload(),
+      text: plain,
+      fieldLabel: cfg.fieldLabel,
+      flags: ordered.map((f) => ({ id: f.id, level: f.level, message: f.message, sentence: f.sentence })),
+    });
+    setReview(
+      res.ok
+        ? { status: "done", findings: res.findings, fieldLabels: { field: cfg.fieldLabel || "Komentārs" } }
+        : { status: "error", error: res.error },
+    );
+  }, []);
+
+  const acceptFinding = useCallback(
+    (finding: FlashMaxReviewFinding) => {
+      const cfg = aiFixRef.current;
+      const current = cfg ? adminRichHtmlToPlainText(cfg.text).trim() : "";
+      const next = cfg ? applyFlashMaxReviewFinding(current, finding) : null;
+      if (!cfg || next == null) {
+        setStale((prev) => new Set(prev).add(finding.id));
+        return;
+      }
+      cfg.onApplyText(next);
+      setHandled((prev) => ({ ...prev, [finding.id]: "accepted" }));
+      for (const f of factCheckFlagsResolvedByText(runFlagsRef.current, next)) onDismiss(f);
+    },
+    [onDismiss],
+  );
+
+  const rejectFinding = useCallback((finding: FlashMaxReviewFinding) => {
+    setHandled((prev) => ({ ...prev, [finding.id]: "rejected" }));
+  }, []);
+
   const visible = visibleFactCheckFlags(flags, dismissed);
-  if (visible.length === 0) return null;
+  const aiOn = Boolean(aiFix?.allowed && adminRichHtmlToPlainText(aiFix.text).trim());
+  const aiBusy = review.status === "running";
+  const modal = (
+    <AdminResponsiveModal
+      open={reviewOpen && review.status !== "idle"}
+      title="Faktu pārbaude - labojumi"
+      onClose={() => setReviewOpen(false)}
+      maxWidthClass="sm:max-w-2xl"
+      zClass="z-[75]"
+      footer={
+        <button
+          type="button"
+          className="min-h-11 flex-1 rounded-full bg-slate-100 px-4 text-[15px] font-semibold text-slate-700 md:min-h-0 md:flex-none md:rounded-lg md:py-1.5 md:text-[12px]"
+          onClick={() => setReviewOpen(false)}
+        >
+          Aizvērt
+        </button>
+      }
+    >
+      {review.status === "running" ? (
+        <p className="text-[14px] text-slate-600 md:text-[12px]">Labojumi tiek sagatavoti…</p>
+      ) : review.status === "error" ? (
+        <p className="text-[14px] text-[#b42318] md:text-[12px]" role="alert">
+          Labojumus sagatavot neizdevās. Teksts nav mainīts.
+        </p>
+      ) : review.status === "done" && review.findings.length === 0 ? (
+        <p className="text-[14px] font-medium text-emerald-800 md:text-[12px]">Labojumu nav - teksts atbilst faktiem.</p>
+      ) : (
+        <AdminFlashMaxReviewPanel
+          state={review}
+          handled={handled}
+          unappliable={stale}
+          onAccept={acceptFinding}
+          onReject={rejectFinding}
+        />
+      )}
+    </AdminResponsiveModal>
+  );
+  if (visible.length === 0) return reviewOpen ? modal : null;
   const interval = visible.filter(isIntervalWarningFlag);
   const rest = visible.filter((f) => !isIntervalWarningFlag(f));
   return (
@@ -150,6 +294,20 @@ export function AdminFactCheckPanel({
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] font-semibold">Faktu pārbaude</p>
+        <span className="inline-flex shrink-0 items-center gap-1">
+        {aiOn ? (
+          <button
+            type="button"
+            data-fact-fix-all=""
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-white/70 disabled:opacity-40"
+            disabled={aiBusy}
+            aria-busy={aiBusy}
+            onClick={() => void runAiFix(visible)}
+          >
+            {aiBusy ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden /> : null}
+            Labot visas
+          </button>
+        ) : null}
         <button
           type="button"
           className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-amber-300/80 text-[11px] font-semibold leading-none text-amber-900 hover:bg-white/70"
@@ -160,10 +318,18 @@ export function AdminFactCheckPanel({
         >
           ?
         </button>
+        </span>
       </div>
       {helpOpen ? <p className="text-[10px] leading-snug text-amber-900/90">{FACT_CHECK_HELP_LV}</p> : null}
       {rest.map((f) => (
-        <FlagCard key={factCheckDismissKey(f)} flag={f} onDismiss={onDismiss} onApplyFix={onApplyFix} />
+        <FlagCard
+          key={factCheckDismissKey(f)}
+          flag={f}
+          onDismiss={onDismiss}
+          onApplyFix={onApplyFix}
+          onAiFix={aiOn ? (flag) => void runAiFix([flag]) : undefined}
+          aiBusy={aiBusy}
+        />
       ))}
       {interval.length > 0 ? (
         <details className="rounded-lg border border-amber-200/70 bg-amber-50/50 px-2 py-1.5">
@@ -172,11 +338,19 @@ export function AdminFactCheckPanel({
           </summary>
           <div className="mt-1.5 space-y-1.5">
             {interval.map((f) => (
-              <FlagCard key={factCheckDismissKey(f)} flag={f} onDismiss={onDismiss} onApplyFix={onApplyFix} />
+              <FlagCard
+          key={factCheckDismissKey(f)}
+          flag={f}
+          onDismiss={onDismiss}
+          onApplyFix={onApplyFix}
+          onAiFix={aiOn ? (flag) => void runAiFix([flag]) : undefined}
+          aiBusy={aiBusy}
+        />
             ))}
           </div>
         </details>
       ) : null}
+      {modal}
     </div>
   );
 }
