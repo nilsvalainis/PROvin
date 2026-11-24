@@ -32,6 +32,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
   const [busy, setBusy] = useState(false);
   const [snapshot, setSnapshot] = useState<AdifyListingHistorySnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string>("");
 
   const close = useCallback(() => setOpen(false), []);
   const backdropClose = useModalBackdropClose(close);
@@ -41,8 +42,9 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
     setBusy(true);
     setError(null);
     setSnapshot(null);
+    setProgress("");
     try {
-      const data = await loadListingPriceHistorySnapshot(url);
+      const data = await loadListingPriceHistorySnapshot(url, { onStatus: setProgress });
       if (!data.found) {
         setError(data.message || "Meklētais objekts netika atrasts");
         return;
@@ -108,7 +110,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
 
           {busy ? (
             <p className="py-8 text-center text-sm text-[var(--color-provin-muted)]">
-              Ielasu Adify / Tirgus Dati…
+              {progress || "Ielasu Adify / Tirgus Dati…"}
             </p>
           ) : error ? (
             <div className="py-4 text-center">

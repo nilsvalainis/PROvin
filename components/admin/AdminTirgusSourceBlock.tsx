@@ -102,6 +102,7 @@ export function AdminTirgusSourceBlock({
   const val = value ?? emptyTirgusFields();
   const [urlDraft, setUrlDraft] = useState(listingUrl?.trim() ?? "");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ssLv = isSsLvListingUrl(listingUrl || urlDraft);
@@ -139,7 +140,7 @@ export function AdminTirgusSourceBlock({
             .then(async (res) => (res.ok ? ((await res.json()) as ListingMarketSnapshot) : null))
             .catch(() => null);
 
-      const [data, scrape] = await Promise.all([loadListingPriceHistorySnapshot(url), scrapePromise]);
+      const [data, scrape] = await Promise.all([loadListingPriceHistorySnapshot(url, { onStatus: setProgress }), scrapePromise]);
 
       if (!data.found) {
         const scrapeNote =
@@ -206,7 +207,7 @@ export function AdminTirgusSourceBlock({
             onClick={() => void loadAdify()}
             className={fetchBtn}
           >
-            {busy ? "Ielasu…" : "Ielasīt vēsturi"}
+            {busy ? (progress.startsWith("Serveris") ? "Gaida pārlūku…" : "Ielasu…") : "Ielasīt vēsturi"}
           </button>
           <a
             href={ADIFY_HISTORY_PAGE_URL}

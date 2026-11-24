@@ -39,12 +39,25 @@ function emptySnapshot(message: string): AdifyListingHistorySnapshot {
   };
 }
 
+/**
+ * Hetzner Chrome (`/listings/page`) tirgusdati.lv neiziet: 10.-24.11.2026 49 no 49
+ * mēģinājumiem HTTP 403 pēc ~53 s, un tas visu laiku aizņem vienīgo releja rindu
+ * (VIN SCAN pārlūka avoti gaida). Tāpēc Chrome tikai ar `TIRGUSDATI_CHROME_RELAY=1`.
+ * Reālā rezerve ir Tampermonkey no operatora IP (admin klients to palaiž paralēli).
+ */
+export function tirgusDatiChromeRelayEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return (env.TIRGUSDATI_CHROME_RELAY ?? "").trim() === "1";
+}
+
+export const TIRGUSDATI_DIRECT_TIMEOUT_MS = 6_000;
+export const TIRGUSDATI_RELAY_TIMEOUT_MS = 10_000;
+
 /** Tiešā ielase, un ja Cloudflare noraida datacentra IP, tā pati lapa caur releju. */
 async function loadTirgusDatiHistoryHtml(
   listingUrl: string,
 ): Promise<{ html: string | null; message: string }> {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 10_000);
+  const t = setTimeout(() => ctrl.abort(), TIRGUSDATI_DIRECT_TIMEOUT_MS);
   let message = "Neizdevās ielādēt Tirgus Dati vēsturi";
   try {
     const res = await fetchTirgusDatiHistoryPage(listingUrl, ctrl.signal);
@@ -62,6 +75,8 @@ async function loadTirgusDatiHistoryHtml(
 
   const relayed = await loadListingHistoryHtmlViaRelays(tirgusDatiHistoryPageLookupUrl(listingUrl), {
     retryDelayMs: 0,
+    timeoutMs: TIRGUSDATI_RELAY_TIMEOUT_MS,
+    chrome: tirgusDatiChromeRelayEnabled(),
   });
   if (relayed.html && !looksLikeTirgusDatiCloudflareChallenge(relayed.html)) {
     return { html: relayed.html, message: "" };

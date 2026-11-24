@@ -185,12 +185,33 @@ describe("fetchTirgusDatiListingHistory", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.stubEnv("IRISS_LISTINGS_RELAY_URL", "https://relay.test/listings");
     vi.stubEnv("IRISS_LISTINGS_RELAY_TOKEN", "t0ken");
+    vi.stubEnv("TIRGUSDATI_CHROME_RELAY", "1");
 
     const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
 
     expect(snap.found).toBe(true);
     expect(snap.source).toBe("tirgusdati");
     expect(snap.rows).toHaveLength(5);
+  });
+
+  it("does not queue the Hetzner Chrome relay by default (it never passes Cloudflare)", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url.startsWith("https://r.jina.ai/")) {
+        return { ok: true, status: 200, text: async () => "<html>Just a moment...</html>" };
+      }
+      return { ok: false, status: 403, text: async () => "" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("IRISS_LISTINGS_RELAY_URL", "https://relay.test/listings");
+    vi.stubEnv("IRISS_LISTINGS_RELAY_TOKEN", "t0ken");
+    vi.stubEnv("TIRGUSDATI_CHROME_RELAY", "");
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(false);
+    expect(snap.blocked).toBe(true);
+    expect(fetchMock.mock.calls.map((c) => String(c[0]))).not.toContain("https://relay.test/listings/page");
   });
 
   it("uses the relay when Cloudflare answers with the interstitial", async () => {
