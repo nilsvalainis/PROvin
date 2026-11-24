@@ -1,0 +1,31 @@
+[Unit]
+Description=PROVIN AutoDNA relay (atskaites ar kredītu, atlikums), 127.0.0.1:8793
+After=network.target provin-autodna-xvfb.service
+Requires=provin-autodna-xvfb.service
+
+[Service]
+Type=simple
+User=provin-autodna
+Group=provin-autodna
+WorkingDirectory=/opt/provin-autodna
+EnvironmentFile=/etc/provin-autodna.env
+Environment=DISPLAY=:94
+Environment=HOME=/var/lib/provin-autodna
+Environment=PLAYWRIGHT_BROWSERS_PATH=/var/lib/provin-autodna/ms-playwright
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/provin-autodna/server.mjs
+Restart=always
+RestartSec=5
+# Pieteikšanās dati nedrīkst nonākt žurnālā: serviss tos nekad nedrukā, log() tos papildus aizvieto ar ***.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=provin-autodna
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-autodna
+MemoryMax=900M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

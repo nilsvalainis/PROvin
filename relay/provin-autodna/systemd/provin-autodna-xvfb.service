@@ -1,0 +1,14 @@
+[Unit]
+Description=PROVIN AutoDNA relay: Xvfb virtual display :94
+After=network.target
+
+[Service]
+Type=simple
+User=provin-autodna
+Group=provin-autodna
+ExecStart=/usr/bin/Xvfb :94 -screen 0 1366x900x24 -nolisten tcp -ac
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
