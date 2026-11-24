@@ -19,6 +19,7 @@ import {
   DNA_HOME_URL,
   DNA_ORIGIN,
   analyzePurchasePage,
+  classifyLoginForm,
   classifyLoginResponse,
   dnaHistoryUrl,
   dnaVinUrl,
@@ -38,6 +39,9 @@ import {
 const BAD_CREDENTIALS_COOLDOWN_MS = 6 * 3600_000;
 const LOGIN_COOLDOWN_MS = 10 * 60_000;
 const PDF_MAX_BYTES = 15 * 1024 * 1024;
+/** Sīkdatņu logs dzīvi parādās ~5 s pēc ielādes (24.11.2026). */
+const CONSENT_WAIT_MS = 9_000;
+const LOGIN_FORM_WAIT_MS = 10_000;
 
 export function createAutodnaBrowser({ getContext, email, password, log, debugDir, secrets = [], purchaseLive = false }) {
   let page = null;
@@ -55,12 +59,47 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     return page;
   }
 
-  async function dismissConsent(p) {
+  /** Vai profilā jau ir sīkdatņu izvēle (consentmanager `__cmpconsentx*`, derīga ~14 dienas). */
+  async function hasConsentCookie(p) {
+    const cookies = await p
+      .context()
+      .cookies(DNA_ORIGIN)
+      .catch(() => []);
+    const nowSec = Date.now() / 1000;
+    return cookies.some((c) => c.name.startsWith("__cmpconsentx") && (c.expires <= 0 || c.expires > nowSec + 60));
+  }
+
+  /**
+   * Sīkdatņu logs -> "Noraidīt visu". Logs parādās ~5 s PĒC lapas ielādes un pārklāj galveni (24.11 dzīvi), tāpēc,
+   * ja profilā nav derīgas izvēles, gaida to līdz CONSENT_WAIT_MS. Atgriež true, ja logs tika aizvērts.
+   */
+  async function dismissConsent(p, { wait = true } = {}) {
     const no = p.locator("a.cmpboxbtnno").first();
-    if (await no.isVisible().catch(() => false)) {
-      await no.click().catch(() => undefined);
-      await p.waitForTimeout(600);
+    let visible = await no.isVisible().catch(() => false);
+    if (!visible && wait && !(await hasConsentCookie(p))) {
+      visible = await no
+        .waitFor({ state: "visible", timeout: CONSENT_WAIT_MS })
+        .then(() => true)
+        .catch(() => false);
     }
+    if (!visible) return false;
+    await no.click({ timeout: 5_000 }).catch(() => undefined);
+    await no.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => undefined);
+    await p.waitForTimeout(400);
+    return true;
+  }
+
+  /** Cloudflare Turnstile / captcha lapā (NEKAD neapiet -> needs_human). */
+  async function captchaVisible(p) {
+    return p
+      .evaluate(() => {
+        const vis = (el) => !!el && el.getClientRects().length > 0;
+        const frames = [...document.querySelectorAll("iframe")].filter((f) => /challenges\.cloudflare\.com|turnstile|captcha/i.test(f.src || ""));
+        if (frames.some(vis)) return true;
+        if ([...document.querySelectorAll(".cf-turnstile, .g-recaptcha, .h-captcha, #challenge-form")].some(vis)) return true;
+        return /just a moment|verify you are human|verificējiet, ka esat cilvēks/i.test(`${document.title} ${(document.body?.innerText ?? "").slice(0, 3000)}`);
+      })
+      .catch(() => false);
   }
 
   async function onSite(p) {
@@ -133,26 +172,65 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     const p = await getPage();
     lastLoginAttempt = Date.now();
     await p.goto(DNA_HOME_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
-    await p.waitForTimeout(2500);
+    await p.waitForTimeout(1500);
+    // Sīkdatņu logs nāk ar ~5 s aizturi un pārklāj galveni - vispirms to sagaida un aizver, tikai tad "Login".
     await dismissConsent(p);
-    const opener = p.locator("button.header-login").first();
-    if (!(await opener.isVisible().catch(() => false))) {
-      await debugDump(p, "login-no-button");
-      return { state: "needs_human", code: "login_page_changed" };
+    if (await captchaVisible(p)) {
+      await debugDump(p, "login-captcha");
+      return { state: "needs_human", code: "captcha" };
     }
-    await opener.click().catch(() => undefined);
-    await p.waitForTimeout(1200);
-    await dismissConsent(p);
+    const opener = p.locator("button.header-login").first();
     const emailEl = p.locator("#form-login-email");
     const passEl = p.locator("#form-login-pass");
-    if (!(await passEl.isVisible().catch(() => false))) {
-      await debugDump(p, "login-no-form");
-      return { state: "needs_human", code: "login_page_changed" };
+    const buttonFound = await opener.isVisible().catch(() => false);
+    let formVisible = false;
+    const tries = [];
+    if (buttonFound) {
+      // 1) parasts klikšķis; 2) vēlreiz pēc sīkdatņu loga (ja tas parādījās vēlāk); 3) DOM klikšķis uz tās pašas pogas.
+      for (const how of ["click", "click", "dom"]) {
+        if (await passEl.isVisible().catch(() => false)) {
+          formVisible = true;
+          break;
+        }
+        await dismissConsent(p, { wait: false });
+        let err = "";
+        if (how === "dom") {
+          await p
+            .evaluate(() => document.querySelector("button.header-login")?.click())
+            .catch((e) => {
+              err = String(e?.message ?? e).split("\n")[0].slice(0, 120);
+            });
+        } else {
+          await opener.click({ timeout: 5_000 }).catch((e) => {
+            err = String(e?.message ?? e).split("\n")[0].slice(0, 120);
+          });
+        }
+        formVisible = await passEl
+          .waitFor({ state: "visible", timeout: tries.length ? 5_000 : LOGIN_FORM_WAIT_MS })
+          .then(() => true)
+          .catch(() => false);
+        tries.push(`${how}${err ? `: ${err}` : ""}`);
+        if (formVisible) break;
+        if (await captchaVisible(p)) break;
+      }
     }
+    const formState = classifyLoginForm({
+      captcha: await captchaVisible(p),
+      buttonFound,
+      formInDom: (await passEl.count().catch(() => 0)) > 0 && (await emailEl.count().catch(() => 0)) > 0,
+      formVisible,
+    });
+    if (formState !== "open") {
+      await debugDump(p, `login-${formState.replaceAll("_", "-")}`, { tries });
+      say(`pieteikšanās forma: ${formState} (${tries.join(" | ") || "poga nav redzama"})`);
+      if (formState === "captcha") return { state: "needs_human", code: "captcha" };
+      return { state: "needs_human", code: formState === "page_changed" ? "login_page_changed" : "login_form_not_opened" };
+    }
+    if (tries.length > 1) say(`pieteikšanās forma atvērta ${tries.length}. mēģinājumā`);
     await emailEl.fill(email);
     await passEl.fill(password);
     if (!(await p.locator("#sidebar-login-checkbox").isChecked().catch(() => false))) {
-      await p.locator("label.terms-login-widget-text .terms-checkbox-checkmark").first().click().catch(() => undefined);
+      await p.locator("label.terms-login-widget-text .terms-checkbox-checkmark").first().click({ timeout: 5_000 }).catch(() => undefined);
     }
     await p.waitForTimeout(400);
     const respP = p.waitForResponse((r) => r.url().includes("/ajax/client_login"), { timeout: 30_000 }).catch(() => null);
@@ -173,6 +251,10 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     await p.waitForTimeout(2500);
     const st = await isLogin(p);
     if (st.loggedIn) return { state: "active" };
+    if (await captchaVisible(p)) {
+      await debugDump(p, "login-captcha-after-submit", { kind });
+      return { state: "needs_human", code: "captcha" };
+    }
     await debugDump(p, "login-after-submit", { kind });
     return { state: "needs_human", code: "login_unknown" };
   }

@@ -3,7 +3,8 @@
  *
  * Pārbaudīts dzīvi 24.11.2026 no Hetzner (bez pieteikšanās un bez pirkuma):
  *   - www.autodna.lv sākumlapa un /ajax/* bez Cloudflare izaicinājuma; sīkdatņu logs (consentmanager, shadow DOM) -
- *     relejs spiež "Noraidīt visu" (a.cmpboxbtnno);
+ *     relejs spiež "Noraidīt visu" (a.cmpboxbtnno). Logs parādās ~5 s pēc ielādes (ne uzreiz) un pārklāj galveni;
+ *     piekrišanas sīkdatne derīga tikai ~14 dienas, pēc tam logs atkal parādās arī releja profilā;
  *   - pieteikšanās: galvenes poga button.header-login -> forma #form-login (#form-login-email, #form-login-pass,
  *     noteikumu ķeksis #sidebar-login-checkbox caur label) -> POST /ajax/client_login -> {is_valid, errors, default_error};
  *     nepareizai parolei default_error "Nepareizs logins vai parole";
@@ -70,6 +71,20 @@ export function classifyLoginResponse(json) {
   if (/kod|code|verif/i.test(msg)) return "code";
   if (/captcha|turnstile|robot/i.test(msg)) return "captcha";
   return "unknown";
+}
+
+/**
+ * Pieteikšanās formas stāvoklis pēc "Login" klikšķa sākumlapā.
+ * 24.11.2026 vakarā dzīvi: sīkdatņu logs (consentmanager, #cmpwrapper) parādās ~5 s PĒC lapas ielādes un pārklāj
+ * galveni - "Login" klikšķis nesasniedz pogu, forma #form-login paliek DOM, bet neredzama.
+ * @param {{ captcha?: boolean, buttonFound?: boolean, formInDom?: boolean, formVisible?: boolean }} s
+ * @returns {"open"|"captcha"|"page_changed"|"form_not_opened"}
+ */
+export function classifyLoginForm(s) {
+  if (s?.captcha) return "captcha";
+  if (s?.formVisible) return "open";
+  if (!s?.buttonFound || !s?.formInDom) return "page_changed";
+  return "form_not_opened";
 }
 
 const truthy = (v) => v === true || v === 1 || v === "1" || v === "true";
