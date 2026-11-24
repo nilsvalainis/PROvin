@@ -144,3 +144,32 @@ describe("odometra anomāliju stabilā atslēga (audits 3.1)", () => {
     expect(out).toEqual([]);
   });
 });
+
+describe("negācijas - papildu (prod paraugi pēc pirmās palaišanas)", () => {
+  const rows = [{ date: "05.2021", lossAmount: "2 300 EUR", country: "Vācija", sortableTime: 1, sourceOrder: 1, sourceLabel: "CarVertical" }];
+  const f = facts({
+    incidents: rows,
+    damageEvidence: {
+      rows: rows.map((r) => ({ date: r.date, descriptionLv: "Bojājums", amount: r.lossAmount, sourceLabel: r.sourceLabel })),
+      total: 1,
+      withoutAmountCount: 0,
+      hasDealerBodyOrGlassWork: false,
+    },
+  } as Partial<CanonicalFacts>);
+  const ids = (t: string) => flagsOf(t, f).map((x) => x.id);
+  it("īpašības, neziņa, pārbaudes norādes un avoti pirms negācijas - nav kļūda", () => {
+    for (const t of [
+      "Konstruktīvu virsbūves bojājumu pazīmju datos nav.",
+      "Tāpat nav zināms DPF filtra bojājuma cēlonis.",
+      "Jāpārbauda arī radiatoru stāvoklis, vai nav redzamas noplūdes vai bojājumi.",
+      "Reģistrētais negadījums nav bijis kritisks.",
+      "Kamēr CSDD un AutoDNA reģistros nav fiksēts neviens negadījums, CarVertical uzrāda apdrošināšanas gadījumu.",
+    ]) {
+      expect(ids(t), t).not.toContain("no_damage_claim");
+      expect(ids(t), t).not.toContain("no_accidents_claim");
+    }
+  });
+  it("«visos avotos, tostarp CarVertical, negadījumu nav» joprojām kļūda", () => {
+    expect(ids("Visos avotos, tostarp CarVertical, nav fiksēts neviens negadījums.")).toContain("no_accidents_claim");
+  });
+});

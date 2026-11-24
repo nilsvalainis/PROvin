@@ -299,6 +299,11 @@ const THIS_SOURCE_RE = /šajā\s+avotā|šis\s+avots|šī\s+avota|avotā\s+nav|�
 function sentenceSourceScope(sentence: string, focusSourceLabel?: string | null): RegExp[] | null {
   // «visos avotos», «nevienā avotā» - teikums attiecas uz visiem avotiem.
   if (ALL_SOURCES_SCOPE_RE.test(sentence)) return null;
+  // Avoti, kas nosaukti līdz negācijai («CSDD un AutoDNA reģistros nav ..., CarVertical uzrāda ...»).
+  const neg = sentence.search(/\bnav\b|\bnetika\b|\bbez\b/i);
+  const head = neg >= 0 ? sentence.slice(0, neg + 40) : sentence;
+  const headHits = NAMED_SOURCE_SCOPES.filter((x) => x.re.test(head)).map((x) => x.label);
+  if (headHits.length > 0) return headHits;
   const hits = NAMED_SOURCE_SCOPES.filter((x) => x.re.test(sentence)).map((x) => x.label);
   if (hits.length > 0) return hits;
   const focus = (focusSourceLabel ?? "").trim();
@@ -314,8 +319,19 @@ const PROPERTY_NEGATION_RE =
 /** Nosacījums («ja ... nav», «ja apstiprinās, ka ... nav») - nav apgalvojums. */
 const CONDITIONAL_RE = /(?:^|[,;:(]\s*|\s)(?:ja|ja\s+tiek|ja\s+apstiprin\p{L}*|gadījumā,?\s+ja)\s/iu;
 
+/** «nav bijis kritisks», «konstruktīvu bojājumu pazīmju nav», «nav zināms ...» - īpašība / neziņa. */
+const PROPERTY_NEGATION_EXTRA_RE =
+  /\bnav\s+(?:bijis|bijusi|bija|ir)\s+(?:kritisk|būtisk|nopietn|smag|liel|strukturāl)|(?:konstruktīv|strukturāl|kritisk|būtisk|nopietn|smag)\p{L}*\s+(?:\S+\s+){0,2}bojājum|\bnav\s+zinām/iu;
+/** Pārbaudes norādes («pārliecināties, vai nav noplūdes») - nav apgalvojums par datiem. */
+const INSTRUCTION_RE = /\b(?:vai|lai)\s+(?:\S+\s+){0,3}nav\b|jāpārbauda|pārliecin|ieteicam|pārbaudīt\b|novērtē/iu;
+
 function isNegationExempt(sentence: string): boolean {
-  return PROPERTY_NEGATION_RE.test(sentence) || CONDITIONAL_RE.test(sentence);
+  return (
+    PROPERTY_NEGATION_RE.test(sentence) ||
+    PROPERTY_NEGATION_EXTRA_RE.test(sentence) ||
+    CONDITIONAL_RE.test(sentence) ||
+    INSTRUCTION_RE.test(sentence)
+  );
 }
 
 /** Virsraksts (rinda bez darbības vārda, < 8 vārdi) - nav apgalvojums. */

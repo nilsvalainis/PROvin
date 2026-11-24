@@ -38,6 +38,7 @@ import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import {
+  analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
   looksLikeExtraDigitOdometerTypo,
   parseOdometerKm,
@@ -419,8 +420,17 @@ function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[], opts: { vin
   type R = { row: UnifiedMileageRow; km: number; t: number; fam: string; month: boolean; trust: MileageTrust };
   const list: R[] = [];
   const usVin = isNorthAmericanVin(opts.vin);
+  // 24.11 audits: viena avota ievades kļūdas / izlēcēji (dīlera vienas dienas 121 100 pie 91 794) nav salīdzināšanas punkts.
+  let typoOrders = new Set<number>();
+  try {
+    const an = analyzeUnifiedMileageAnomalies(rows);
+    typoOrders = new Set([...an.dataEntryErrorSourceOrders, ...(an.typoSpikeSourceOrders ?? [])]);
+  } catch {
+    /* analīze nav obligāta */
+  }
   for (const row of rows) {
     if ((row as { visitOdometer?: boolean }).visitOdometer) continue;
+    if (typoOrders.has(row.sourceOrder)) continue;
     const km = parseOdometerKm(row.odometer);
     if (km == null || km <= 0 || !(row.sortableTime > 0)) continue;
     if (isSentinelOdometerKm(km) || isInvalidMileageDate(row.date)) continue;
