@@ -85,6 +85,10 @@ export type PdfSummaryTile = {
   tone: PdfSummaryTileTone;
   /** Gara teksta kartīte - režģī aizņem abas kolonnas. */
   wide?: boolean;
+  /** Nobraukums: cik rādījumu grafikā (1. lapas kartītei «Odometrs»). */
+  readings?: number;
+  /** Serviss: jaunākā ieraksta datums (1. lapas kartītei «Serviss»). */
+  latestDate?: string;
 };
 
 export type PdfSummaryInput = {
@@ -227,6 +231,35 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
     noteSegments,
     noteLead,
     tone: rollback ? "alert" : listingBelow.length > 0 ? "warn" : "ok",
+    readings: chartCount,
+  };
+}
+
+/** Jaunākais odometra rādījums 1. lapas augšdaļai (tā pati izvēle kā kartītē «Nobraukums»). */
+export function resolvePdfLatestOdometerReading(
+  input: PdfSummaryInput,
+): { odometer: string; date: string; sourceLabel: string } | null {
+  const rows = prepareUnifiedMileageDisplayRows(
+    collectUnifiedMileageRows({
+      csddForm: input.csddForm ?? undefined,
+      autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+      oneautoBlock: input.oneautoBlock ?? undefined,
+      ccVinBlock: input.ccVinBlock ?? null,
+      asvBlock: input.asvBlock ?? null,
+      manualVendorBlocks: input.manualVendorBlocks ?? undefined,
+      citiAvotiBlock: input.citiAvoti ?? null,
+      tirgusForm: input.tirgusForm ?? null,
+      listingUrl: input.listingUrl ?? null,
+    }),
+  );
+  if (rows.length === 0) return null;
+  const newest =
+    selectNewestChartMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
+  if (!newest.odometer.trim() || parseOdometerKm(newest.odometer) == null) return null;
+  return {
+    odometer: formatPdfOdometerDisplay(newest.odometer, true),
+    date: newest.date.trim(),
+    sourceLabel: newest.sourceLabel,
   };
 }
 
@@ -332,7 +365,16 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
     0,
   );
   const total = dealer + others;
+  const latest = [
+    ...(ar?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).map((r) => r.date),
+    ...(ar?.serviceHistory ?? []).filter(autoRecordsRowHasData).map((r) => r.date),
+    ...(input.citiAvoti?.sections ?? []).flatMap((s) => (s.serviceHistory ?? []).filter(autoRecordsRowHasData).map((r) => r.date)),
+  ]
+    .map((date) => ({ date: date.trim(), ms: parseDotOrIsoDateToMs(date) }))
+    .filter((d) => d.date && d.ms > 0)
+    .sort((a, b) => b.ms - a.ms)[0]?.date;
   return {
+    latestDate: latest,
     id: "service",
     label: "Servisa vēsture",
     value: total === 0 ? "Nav ierakstu" : pluralLv(total, "ieraksts", "ieraksti"),
@@ -366,7 +408,12 @@ function applySummaryTileOverride(tile: PdfSummaryTile, override: ProvinManualBa
 /** Kopsavilkuma plāksnītes secībā, kādā tās drukājas. Operators var slēpt un pārrakstīt katru. */
 export function buildPdfReportSummaryTiles(
   input: PdfSummaryInput,
-  opts?: { pdfBannerInclude?: ProvinBannerPdfInclude | null; manualBanners?: ProvinManualBanner[] | null },
+  opts?: {
+    pdfBannerInclude?: ProvinBannerPdfInclude | null;
+    manualBanners?: ProvinManualBanner[] | null;
+    /** 1. lapas augšdaļa (24.11): «Nav datu» kartīte paliek redzama pelēkā tekstā. */
+    keepEmpty?: boolean;
+  },
 ): PdfSummaryTile[] {
   const computed = [
     buildIncidentsTile(input),
@@ -381,7 +428,7 @@ export function buildPdfReportSummaryTiles(
     const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service" | "listing");
     if (!isProvinBannerIncludedInPdf(kind, include)) return [];
     const applied = applySummaryTileOverride(tile, provinBannerOverrideFor(manuals, kind));
-    if (applied.id !== "incidents" && isPdfEmptyPlaceholder(applied.value)) return [];
+    if (!opts?.keepEmpty && applied.id !== "incidents" && isPdfEmptyPlaceholder(applied.value)) return [];
     return [applied];
   });
 }
