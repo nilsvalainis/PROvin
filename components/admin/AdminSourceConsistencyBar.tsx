@@ -24,13 +24,26 @@ function topSeverity(issues: readonly SourceIssue[]): SourceIssueSeverity | "non
 }
 
 /** Saraksts: punkts + avoti ar vērtībām (kopīgs joslai un sūtīšanas dialogam). */
-export function SourceIssueList({ issues, className = "" }: { issues: readonly SourceIssue[]; className?: string }) {
+export function SourceIssueList({
+  issues,
+  className = "",
+  tone = "theme",
+}: {
+  issues: readonly SourceIssue[];
+  className?: string;
+  /** «light» - skaidras krāsas (gaišs fons) neatkarīgi no admin tēmas. */
+  tone?: "theme" | "light";
+}) {
+  const light = tone === "light";
   return (
-    <ul className={`space-y-1.5 ${className}`}>
+    <ul className={`space-y-1.5 ${className}`} style={light ? { color: "#1f2937" } : undefined}>
       {issues.map((i) => (
         <li key={i.id} className="flex gap-2 text-[12px] leading-snug">
           <span className={`mt-[5px] h-2 w-2 shrink-0 rounded-full ${DOT[i.severity]}`} aria-hidden />
-          <span className={`min-w-0 ${i.severity === "info" ? "text-[var(--color-apple-text-secondary,#6e6e73)]" : ""}`}>
+          <span
+            className={`min-w-0 ${i.severity === "info" && !light ? "text-[var(--color-apple-text-secondary,#6e6e73)]" : ""}`}
+            style={light ? { color: i.severity === "info" ? "#6b7280" : "#1f2937" } : undefined}
+          >
             <span className="font-semibold">{i.title}</span>
             <span className="block break-words">
               {i.values.map((v, n) => (
@@ -51,9 +64,17 @@ export function SourceIssueList({ issues, className = "" }: { issues: readonly S
 export function CriticalSourceIssuesAlert({ issues }: { issues: readonly SourceIssue[] | null | undefined }) {
   if (!issues?.length) return null;
   return (
-    <div className="rounded-lg border border-[rgba(255,59,48,0.35)] bg-[rgba(255,59,48,0.07)] px-3 py-2.5" data-critical-source-issues role="alert">
-      <p className="mb-1.5 text-[12px] font-semibold text-[#d70015]">Kritiskas pretrunas: {issues.length}</p>
-      <SourceIssueList issues={issues} />
+    // 24.11 (Nils, prod): portālā uz body tumšā tēma mantoja baltu tekstu uz rozā fona - krāsas skaidri (kā #1122).
+    <div
+      className="rounded-lg border border-[#fca5a5] bg-[#fef2f2] px-3 py-2.5 text-[#1f2937] [color-scheme:light]"
+      style={{ color: "#1f2937", backgroundColor: "#fef2f2" }}
+      data-critical-source-issues
+      role="alert"
+    >
+      <p className="mb-1.5 text-[12px] font-semibold" style={{ color: "#dc2626" }}>
+        Kritiskas pretrunas: {issues.length}
+      </p>
+      <SourceIssueList issues={issues} tone="light" />
     </div>
   );
 }
@@ -94,8 +115,11 @@ export function AdminSourceConsistencyBar({ issues }: { issues: readonly SourceI
         Pretrunas: {n}
       </button>
       {open && issues.length > 0 ? (
-        <div className="absolute bottom-full left-0 z-50 mb-2 max-h-[60vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated,#fff)] p-3 text-[var(--color-apple-text)] shadow-[0_8px_32px_rgba(15,23,42,0.18)]">
-          <SourceIssueList issues={issues} />
+        <div
+          className="absolute bottom-full left-0 z-50 mb-2 max-h-[60vh] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#e5e7eb] p-3 shadow-[0_8px_32px_rgba(15,23,42,0.18)]"
+          style={{ backgroundColor: "#ffffff", color: "#1f2937" }}
+        >
+          <SourceIssueList issues={issues} tone="light" />
         </div>
       ) : null}
     </div>
