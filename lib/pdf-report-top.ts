@@ -724,7 +724,7 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__hd{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t6-ink);}
 .pdf-top6__hero{display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:26px;}
 .pdf-top6__ph{position:relative;overflow:hidden;background:var(--t6-soft);height:272px;}
-.pdf-top6__ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 60%;}
+.pdf-top6__ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%;transform:scale(1.06);transform-origin:50% 100%;}
 .pdf-top6__ph--empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
 .pdf-top6__ph--empty svg{width:64px;height:64px;color:#c7c7cc;}
 .pdf-top6__ph--empty span{font-size:8.5px;font-weight:500;letter-spacing:.06em;color:var(--t6-mute);}
