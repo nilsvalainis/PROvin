@@ -4,7 +4,7 @@ import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewpor
 
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   PDF_PREPARING_HTML,
@@ -191,6 +191,8 @@ import {
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
 import { checkPrePdfContradictions } from "@/lib/pre-pdf-contradiction-check";
+import { checkSourceConsistency, criticalSourceIssues } from "@/lib/source-consistency";
+import { AdminSourceConsistencyBar, CriticalSourceIssuesAlert } from "@/components/admin/AdminSourceConsistencyBar";
 import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
@@ -1079,6 +1081,33 @@ export function OrderDetailWorkspace({
     () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
     [ws.sourceBlocks],
   );
+  /** Pretrunas starp avotiem (josla pie «Ģenerēt PDF», brīdinājums sūtīšanas dialogā). Rakstīšanu nebremzē. */
+  const dSourceBlocks = useDeferredValue(ws.sourceBlocks);
+  const dRisks = useDeferredValue(ws.tehniskoRiskuAnalize);
+  const dSummary = useDeferredValue(ws.iriss);
+  const dInspection = useDeferredValue(ws.apskatesPlāns);
+  const dInternal = useDeferredValue(internalCommentDraft);
+  const dMileage = useDeferredValue(mileageCommentDraft);
+  const dComparison = useDeferredValue(sourcesComparisonCommentDraft);
+  const sourceIssues = useMemo(() => {
+    const blocks = mergeSourceBlocksWithDefaults(dSourceBlocks as unknown);
+    const texts = collectPrePdfClientTextFields({
+      tehniskoRiskuAnalize: dRisks,
+      iriss: dSummary,
+      apskatesPlāns: dInspection,
+      mileageComment: dMileage,
+      incidentsComment: dInternal,
+      sourcesComparisonComment: dComparison,
+      sourceBlocks: blocks,
+    });
+    return checkSourceConsistency({
+      vin: payload.vin,
+      sourceBlocks: blocks,
+      texts,
+      listingUrl: payload.listingUrl ?? null,
+    });
+  }, [dSourceBlocks, dRisks, dSummary, dInspection, dInternal, dMileage, dComparison, payload.vin, payload.listingUrl]);
+  const criticalIssues = useMemo(() => criticalSourceIssues(sourceIssues), [sourceIssues]);
   /** Citu avotu valstu laika josla - dīlera vizītēm bez valsts (tikai attēlošana). */
   const workspaceCountryEvidence = useMemo(
     () => collectWorkspaceCountryTimeline(blocksDisplaySafe),
@@ -5203,6 +5232,7 @@ export function OrderDetailWorkspace({
         whatsappHref={sendReportWhatsappHref}
         prepare={prepareSendReportPdf}
         send={sendPreparedReport}
+        criticalIssues={criticalIssues}
         undoComplete={async () => {
           if (!(await postAdminAuditComplete(payload.sessionId, false))) throw new Error("undo_failed");
         }}
@@ -5244,6 +5274,11 @@ export function OrderDetailWorkspace({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                  {criticalIssues.length ? (
+                    <div className="mb-3">
+                      <CriticalSourceIssuesAlert issues={criticalIssues} />
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
                       Pielikumu priekšskats
@@ -6780,6 +6815,7 @@ export function OrderDetailWorkspace({
         }`}
       >
         <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
+          <AdminSourceConsistencyBar issues={sourceIssues} />
           <AdminPdfLangSplitButton
             label="Ģenerēt PDF"
             busyLabel={pdfFamilyBusy("pdf")}
