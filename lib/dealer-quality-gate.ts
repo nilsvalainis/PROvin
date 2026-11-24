@@ -33,6 +33,7 @@ import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart"
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { buildDealerVisitSummary } from "@/lib/pdf-dealer-timeline";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, type RegistryDrivetrain } from "@/lib/registry-drivetrain";
+import { checkSourceConsistency, formatSourceIssueLine, type SourceIssue } from "@/lib/source-consistency";
 
 export type DealerQualityGateInput = {
   jobVin: string;
@@ -60,6 +61,8 @@ export type DealerQualityGateInput = {
   powertrainContradiction: boolean;
   /** Melnraksta VIN (auto dati); tukšs, ja nav. */
   draftVin: string;
+  /** Kritiskas avotu pretrunas (lib/source-consistency.ts), bez AI teksta punktiem - tos pārbauda augstāk. */
+  sourceIssues?: readonly SourceIssue[];
   pdf: DealerShadowGatePdf | null;
 };
 
@@ -530,6 +533,11 @@ function checkContradictions(input: DealerQualityGateInput): DealerGateCheck {
       );
     }
   }
+  const sourceIssue = (input.sourceIssues ?? []).find((i) => i.severity === "critical");
+  if (sourceIssue) {
+    // Ēnu režīms: tikai brīdinājums (spriedumu nemaina), lai statistikā redzētu, cik bieži tas trāpa.
+    return fail("contradictions", "warn", `Avotu pretruna: ${clip(formatSourceIssueLine(sourceIssue))}`, "service_table");
+  }
   return ok("contradictions");
 }
 
@@ -658,6 +666,9 @@ export function buildDealerQualityGateInput(args: {
     drivetrain: extractVehicleDrivetrain(blocks),
     powertrainContradiction: Boolean(comments) && commentContradictsPowertrain(comments, identity),
     draftVin: ar.outvinReport?.vehicleInfo?.vinCode ?? "",
+    sourceIssues: checkSourceConsistency({ vin: args.job.vin, sourceBlocks: blocks, nowMs }).filter(
+      (i) => i.kind !== "ai_powertrain" && i.kind !== "ai_drivetrain",
+    ),
     pdf: args.pdf,
   };
 }

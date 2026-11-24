@@ -273,7 +273,8 @@ import {
   buildPdfRunningHeaderLine,
   clientReportRunningPageCss,
 } from "@/lib/pdf-running-page";
-import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
+import { buildCsddOwnerMileageBlockHtml, OWNER_MILEAGE_BLOCK_CSS } from "@/lib/owner-mileage-block-html";
+import { ownerMileageReadingsFromUnifiedRows, type OwnerMileageReading } from "@/lib/owner-mileage-periods";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -1537,12 +1538,43 @@ export function buildUnifiedIncidentsTableHtml(
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-hub-tint--incidents" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;
 }
 
+/**
+ * «Īpašnieki un nobraukums» periodiem - visi nobraukuma avoti (CSDD, dīleris, izsoles, AutoDNA, CarVertical u.c.),
+ * neatkarīgi no tā, vai to tabula PDF ir ieslēgta (km aprēķinam vajag visus rādījumus).
+ */
+function collectOwnerMileageRows(p: ClientReportPayload): UnifiedMileageDisplayRow[] {
+  try {
+    return prepareUnifiedMileageDisplayRows(
+      collectUnifiedMileageRows({
+        csddForm: p.csddForm,
+        autoRecordsBlock: p.autoRecordsBlock,
+        oneautoBlock: p.oneautoBlock ?? null,
+        ccVinBlock: p.ccVinBlock ?? null,
+        asvBlock: p.asvBlock ?? null,
+        manualVendorBlocks: p.manualVendorBlocks,
+        citiAvotiBlock: p.citiAvoti ?? null,
+        tirgusForm: null,
+        listingUrl: null,
+      }),
+    );
+  } catch {
+    return [];
+  }
+}
+
 /** CSDD - strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
 export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
   sparkHtml = "",
   photoDataUrls?: Map<string, string>,
-  opts: { orderVin?: string | null; bloki?: CsddBlokiPdfParts } = {},
+  opts: {
+    orderVin?: string | null;
+    bloki?: CsddBlokiPdfParts;
+    /** Visu avotu rādījumi «Īpašnieki un nobraukums» periodiem; ja nav - tikai CSDD rādījumi. */
+    ownerReadings?: OwnerMileageReading[];
+    lang?: ClientReportLang;
+    nowMs?: number;
+  } = {},
 ): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
   const blokiAfterTable = opts.bloki?.afterTable ?? "";
@@ -1625,14 +1657,11 @@ export function buildCsddAvotuZoneHtml(
       : "";
   const tableHtml = pairHtml || alertsHtml ? `${pairHtml}${alertsHtml}` : "";
 
-  const ownerCountLv = form.ownerCountLatvia.trim();
-  const ownerCountShown = ownerCountLv && !isPdfEmptyPlaceholder(ownerCountLv) ? ownerCountLv : "";
-  const ownerTimelineHtml =
-    ownerCountShown || (form.ownerRegistrationEvents ?? []).some((e) => e.date.trim())
-      ? buildOwnerRegistrationTimelineHtml(ownerCountShown, form.ownerRegistrationEvents ?? [], {
-          compact: true,
-        })
-      : "";
+  // 24.11 (Nils): vecās kartītes «N īpašnieki Latvijā» vietā - bloks «Īpašnieki un nobraukums».
+  const ownerTimelineHtml = buildCsddOwnerMileageBlockHtml(form, opts.ownerReadings, {
+    lang: opts.lang ?? "lv",
+    nowMs: opts.nowMs,
+  });
 
   const prevBlock = form.prevInspectionBlock;
   const prevInspectionDateDisplay = form.prevInspectionDate.trim()
@@ -1690,6 +1719,7 @@ function buildCsddAvotuSubsection(
   sparkHtml = "",
   photoDataUrls?: Map<string, string>,
   lang: ClientReportLang = "lv",
+  ownerReadings?: OwnerMileageReading[],
 ): string {
   if (!vis.csdd) return "";
   const form = p.csddForm;
@@ -1701,10 +1731,11 @@ function buildCsddAvotuSubsection(
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
-    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin, bloki });
+    const zoneOpts = { orderVin: p.vin, bloki, ownerReadings, lang };
+    const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, zoneOpts);
     if (zone) return zone;
     if (hasRaw) return csddAvotuRawZoneHtml(p.csdd, sparkHtml);
-    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, { orderVin: p.vin, bloki });
+    if (sparkHtml) return buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, zoneOpts);
     return "";
   }
 
@@ -2424,7 +2455,14 @@ function buildAvotuDatiSectionHtml(
   const sparkCtx = collectPdfMileageSparkContext(p, vis);
   const spark = (key: MileagePdfSourceKey) => sourceMileageSparkHtml(sparkCtx, key);
 
-  const csdd = buildCsddAvotuSubsection(p, vis, spark("csdd"), sourceBlockPhotoDataUrls, lang);
+  const csdd = buildCsddAvotuSubsection(
+    p,
+    vis,
+    spark("csdd"),
+    sourceBlockPhotoDataUrls,
+    lang,
+    ownerMileageReadingsFromUnifiedRows(collectOwnerMileageRows(p)),
+  );
   const ltab = buildLtabAvotuSubsection(p.manualLtabBlock, vis, spark("ltab"), sourceBlockPhotoDataUrls);
   const citiAvoti = buildCitiAvotiAvotuSubsection(p, vis, spark("cits"), sourceBlockPhotoDataUrls);
 
@@ -3058,6 +3096,7 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-vehicle-kv .pdf-v1-kv td:first-child{width:34%;padding-right:18px;}
       ${oilChangeIntervalPdfBlockCss()}
       ${CSDD_BLOKI_PDF_CSS}
+      ${OWNER_MILEAGE_BLOCK_CSS}
       .pdf-listing-history-frame{
         border:1px solid var(--pdf-line);
         border-radius:var(--pdf-radius-inner);
