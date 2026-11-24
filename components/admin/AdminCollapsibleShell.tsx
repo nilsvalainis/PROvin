@@ -6,6 +6,7 @@ import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { TRAFFIC_HEADER_STRIP_CLASS, type TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { ADMIN_OPEN_BLOCK_EVENT } from "@/lib/admin-mobile-ds";
+import { adminUiOpenKey, readAdminUiOpen, writeAdminUiOpen } from "@/lib/admin-ui-open-memory";
 
 function accordionStorageKey(sessionId: string, blockId: string) {
   return `provin-admin-ui-accordion-v1-${sessionId}-${blockId}`;
@@ -60,7 +61,8 @@ export function AdminCollapsibleShell({
 }) {
   const phone = useAdminIsPhone();
   const collapseLocked = phone ? false : disableCollapse;
-  const initiallyCollapsed = phone || defaultCollapsed;
+  const remembered = readAdminUiOpen(adminUiOpenKey(sessionId, `shell:${blockId}`));
+  const initiallyCollapsed = remembered ?? (phone || defaultCollapsed);
   const [collapsed, setCollapsed] = useState(initiallyCollapsed);
   const [bodyMounted, setBodyMounted] = useState(!initiallyCollapsed);
   const [bodyOpen, setBodyOpen] = useState(!initiallyCollapsed);
@@ -117,8 +119,9 @@ export function AdminCollapsibleShell({
   useEffect(() => {
     if (collapseLocked) return;
     // Telefonā (Nils 23.11): atverot pasūtījumu visi bloki sakļauti; atvērtais paliek tikai, kamēr lapa atvērta.
+    // 24.11: arī pēc FLASH MAX / saglabāšanas (komponente uzstādīta no jauna) - no atmiņas.
     if (phone) {
-      setCollapsed(true);
+      setCollapsed(readAdminUiOpen(adminUiOpenKey(sessionId, `shell:${blockId}`)) ?? true);
       return;
     }
     try {
@@ -132,7 +135,9 @@ export function AdminCollapsibleShell({
   }, [sessionId, blockId, defaultCollapsed, collapseLocked, phone]);
 
   useEffect(() => {
-    if (collapseLocked || phone) return;
+    if (collapseLocked) return;
+    writeAdminUiOpen(adminUiOpenKey(sessionId, `shell:${blockId}`), collapsed);
+    if (phone) return;
     try {
       localStorage.setItem(accordionStorageKey(sessionId, blockId), collapsed ? "1" : "0");
     } catch {

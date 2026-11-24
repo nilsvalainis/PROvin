@@ -269,6 +269,7 @@ import {
 import {
   AdminFactCheckButton,
   AdminFactCheckPanel,
+  type FactCheckAiFixConfig,
   AdminFactCheckPublishConfirm,
 } from "@/components/admin/AdminFactCheckPanel";
 import { AdminTechnicalRiskMapPanel } from "@/components/admin/AdminTechnicalRiskMapPanel";
@@ -1573,8 +1574,29 @@ export function OrderDetailWorkspace({
             dismissFactCheckFlag(flag);
           }
         : undefined,
+      aiFix: { allowed: payload.aiAllowed, buildPayload: () => buildAiOrderPayload() },
     }),
-    [dismissFactCheckFlag, factCheckBusy, factCheckByField, factCheckDismissed, runFactCheck],
+    [
+      buildAiOrderPayload,
+      dismissFactCheckFlag,
+      factCheckBusy,
+      factCheckByField,
+      factCheckDismissed,
+      payload.aiAllowed,
+      runFactCheck,
+    ],
+  );
+
+  /** Faktu pārbaudes «Labot» ar AI lieliem laukiem (diff skatā; nekas netiek mainīts bez «Pieņemt»). */
+  const factCheckAiFixFor = useCallback(
+    (fieldLabel: string, text: string, applyHtml: (html: string) => void): FactCheckAiFixConfig => ({
+      allowed: payload.aiAllowed,
+      fieldLabel,
+      text,
+      buildPayload: () => buildAiOrderPayload(),
+      onApplyText: (plain) => applyHtml(aiExpertSourceCommentToRichHtml(plain)),
+    }),
+    [buildAiOrderPayload, payload.aiAllowed],
   );
 
   const setIrissSummary = useCallback(
@@ -6525,6 +6547,7 @@ export function OrderDetailWorkspace({
                       onInternalCommentChange(applyFactCheckFixToField(internalCommentDraft, flag));
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(ADMIN_INCIDENTS_SUMMARY_LABEL, internalCommentDraft, onInternalCommentChange)}
                   />
                 </div>
                 <div className="min-h-0 min-w-0">
@@ -6574,6 +6597,7 @@ export function OrderDetailWorkspace({
                       onMileageCommentChange(applyFactCheckFixToField(mileageCommentDraft, flag));
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(ADMIN_MILEAGE_HISTORY_COMMENT_LABEL, mileageCommentDraft, onMileageCommentChange)}
                   />
                   <AdminOdometerAnomalyPanel
                     rows={unifiedMileageDisplayRows}
@@ -6652,6 +6676,9 @@ export function OrderDetailWorkspace({
                       });
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(ADMIN_SUMMARY_SECTION_RISK_HEADING, ws.tehniskoRiskuAnalize ?? "", (html) =>
+                      updateWs({ tehniskoRiskuAnalize: html }),
+                    )}
                   />
                   <AdminTechnicalRiskMapPanel
                     sessionId={payload.sessionId}
@@ -6711,6 +6738,9 @@ export function OrderDetailWorkspace({
                       });
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(ADMIN_SUMMARY_SECTION_INSPECTION_HEADING, ws.apskatesPlāns ?? "", (html) =>
+                      updateWs({ apskatesPlāns: html }),
+                    )}
                   />
                 </div>
                 <div className="min-w-0">
@@ -6752,6 +6782,7 @@ export function OrderDetailWorkspace({
                       setIrissSummary(applyFactCheckFixToField(ws.iriss ?? "", flag));
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(ADMIN_SUMMARY_SECTION_SUMMARY_HEADING, ws.iriss ?? "", setIrissSummary)}
                   />
                 </div>
                 <AdminOrderAiKnowledgeUsed sessionId={payload.sessionId} />
@@ -6798,6 +6829,11 @@ export function OrderDetailWorkspace({
                       );
                       dismissFactCheckFlag(flag);
                     }}
+                    aiFix={factCheckAiFixFor(
+                      ADMIN_SOURCES_COMPARISON_LABEL,
+                      sourcesComparisonCommentDraft,
+                      onSourcesComparisonCommentChange,
+                    )}
                   />
                 </div>
               </div>

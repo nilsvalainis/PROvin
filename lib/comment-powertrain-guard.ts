@@ -114,7 +114,8 @@ export function extractLoadedPowertrainIdentity(
  * j26: kārbu un platformu kodi nav dzinēja kodi (VW DQ400E / DQ200 / DL501 kārbas,
  * EA211 / EA888 / EA189 dzinēju saimes, MQB / PQ35 / MLB platformas, ZF 8HP u.c.).
  */
-const NON_ENGINE_CODE_RE = /^(?:DQ\d{3}\w*|DL\d{3}\w*|DSG\w*|EA\d{3}\w*|MQB\w*|PQ\d{2}\w*|MLB\w*|MEB\w*|HP\d{2}\w*|AL\d{3}\w*|AW\d{2}\w*|NAG\d\w*|TF\d{2}\w*)$/;
+const NON_ENGINE_CODE_RE =
+  /^(?:DQ\d{3}\w*|DL\d{3}\w*|DSG\w*|EA\d{3}\w*|MQB\w*|PQ\d{2}\w*|MLB\w*|MEB\w*|HP\d{2}\w*|AL\d{3}\w*|AW\d{2}\w*|NAG\d\w*|TF\d{2}\w*|JF\d{3}\w*|AF\d{2}\w*|MT\d{2}\w*|DCT\d{2,3}\w*|EURO\d+\w*|KW\d+|PS\d+|ZS\d+|HP\d+|CM\d+)$/;
 /** Dzinēja kodu salīdzina tikai teikumos, kas runā par dzinēju / motoru. */
 const ENGINE_SENTENCE_RE = /dzinēj|motor|engine/i;
 
@@ -141,6 +142,27 @@ function splitSentences(text: string): string[] {
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function compactCode(raw: string): string {
+  return raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * 24.11: ielādētais lauks bieži ir garš (piem. «(10 DY3M 4074562) DIESEL DW10FE FAP 90KW»).
+ * Teksta kods sakrīt, ja tas ir kāds no vērtības tokeniem, tā saimes prefikss (DW10 pret DW10FE)
+ * vai vērtības apakšvirkne bez atstarpēm / punktiem (OM651.913 pret «OM 651 913»).
+ */
+export function engineCodeMatchesLoaded(mentioned: string, loaded: string): boolean {
+  const m = compactCode(mentioned);
+  const full = compactCode(loaded);
+  if (!m || !full) return false;
+  if (m === full || full.includes(m)) return true;
+  const tokens = loaded
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter((t) => t.length >= 3 && /[A-Z]/.test(t) && /\d/.test(t));
+  return tokens.some((t) => t === m || (m.length >= 4 && t.startsWith(m)) || (t.length >= 4 && m.startsWith(t)));
 }
 
 export type PowertrainContradiction = {
@@ -182,7 +204,7 @@ export function findPowertrainContradictions(
   }
 
   if (identity.engineCode) {
-    const mentioned = mentionedEngineCodes(plain).filter((c) => c !== identity.engineCode);
+    const mentioned = mentionedEngineCodes(plain).filter((c) => !engineCodeMatchesLoaded(c, identity.engineCode));
     if (mentioned.length > 0) {
       out.push({
         id: "powertrain_engine",
@@ -214,7 +236,14 @@ export function generatedAgainstIsStale(
   current: LoadedPowertrainIdentity,
 ): boolean {
   if (!generated) return false;
-  if (current.engineCode && generated.engineCode && current.engineCode !== generated.engineCode) return true;
+  if (
+    current.engineCode &&
+    generated.engineCode &&
+    // Zīmogs glabā tikai pirmās 24 rakstzīmes (parseGeneratedAgainstPowertrain).
+    compactCode(current.engineCode.trim().slice(0, 24)) !== compactCode(generated.engineCode)
+  ) {
+    return true;
+  }
   if (
     current.fuelKind !== "unknown" &&
     generated.fuelKind !== "unknown" &&
