@@ -95,8 +95,15 @@ describe("rinda", () => {
     process.env.CSDD_PAID_AUTO_ENABLED = "1";
     expect(await enqueueCsddPaidAutoForOrder(ID, { ...audit, checkoutLine: "dealer" })).toBeNull();
     expect(await enqueueCsddPaidAutoForOrder(ID, { ...audit, checkoutLine: "mini" })).toBeNull();
-    expect(await enqueueCsddPaidAutoForOrder(ID, { checkoutLine: "audit", orderVinOrPlate: "WBA5R1C0XLFH42873" })).toBeNull();
     expect(await readCsddPaidAutoJob(ID)).toBeNull();
+  });
+
+  it("bez LV numura -> 'nav LV numura', SMS nekad", async () => {
+    const j = await enqueueCsddPaidAutoForOrder(ID, { checkoutLine: "audit", orderVinOrPlate: "WBA5R1C0XLFH42873" });
+    expect(j).toMatchObject({ state: "no_plate", plate: "" });
+    expect((await runCsddPaidAutoOnce(ID))?.state).toBe("no_plate");
+    expect(h.smsLink).not.toHaveBeenCalled();
+    expect(h.email).not.toHaveBeenCalled();
   });
 
   it("numurs no CSDD API (VIN pasūtījums)", async () => {
@@ -217,5 +224,78 @@ describe("SMS un izziņa", () => {
     await enqueueCsddPaidAutoForOrder(ID, audit);
     expect((await runCsddPaidAutoOnce(ID))?.state).toBe("error");
     expect(h.email).not.toHaveBeenCalled();
+  });
+});
+
+describe("B2B (PROVIN Business)", () => {
+  const P = "manual_order_20261124_b2b1";
+  const partner = { checkoutLine: "business", channel: "b2b_partner" as const, orderVinOrPlate: "SALLAAAM6FA743824" };
+  const withRegistryPlate = (id: string) =>
+    h.drafts.set(id, { workspace: { sourceBlocks: { csdd: { registrationNumber: "", registry: { nr1: "x", fetchedAt: "t", data: { registrationNumber: "RO8544" } } } } } });
+  afterEach(() => {
+    delete process.env.CSDD_PAID_AUTO_B2B_ENABLED;
+  });
+
+  it("partnera Business ar LV numuru (CSDD API) -> ieplānots, tāpat kā AUDITS", async () => {
+    withRegistryPlate(P);
+    const j = await enqueueCsddPaidAutoForOrder(P, partner);
+    expect(j).toMatchObject({ state: "queued", plate: "RO8544", product: "b2b" });
+    expect((await runCsddPaidAutoOnce(P))?.state).toBe("sms_sent");
+    expect(h.smsLink).toHaveBeenCalledWith("RO8544", { login: false });
+  });
+
+  it("Business privātā saite (Stripe business_link) ar LV numuru -> ieplānots", async () => {
+    const j = await enqueueCsddPaidAutoForOrder(ID, { checkoutLine: "business", fulfillment: "business_link", orderVinOrPlate: "RO8544", livemode: true });
+    expect(j).toMatchObject({ state: "queued", product: "b2b" });
+  });
+
+  it("partnera Business bez LV numura -> nav ieplānots ('nav LV numura'); numurs vēlāk -> rindā", async () => {
+    expect(await enqueueCsddPaidAutoForOrder(P, partner)).toMatchObject({ state: "no_plate" });
+    await runCsddPaidAutoOnce(P);
+    expect(h.smsLink).not.toHaveBeenCalled();
+    withRegistryPlate(P);
+    expect(await enqueueCsddPaidAutoForOrder(P, partner)).toMatchObject({ state: "queued", plate: "RO8544" });
+  });
+
+  it("partnera dīlera dati -> nē", async () => {
+    withRegistryPlate(P);
+    expect(await enqueueCsddPaidAutoForOrder(P, { ...partner, checkoutLine: "dealer" })).toBeNull();
+    expect(await readCsddPaidAutoJob(P)).toBeNull();
+  });
+
+  it("demo / testa -> nē (naudu netērē)", async () => {
+    for (const id of ["demo_order_exp_1", "ord_abc12345"]) {
+      withRegistryPlate(id);
+      expect(await enqueueCsddPaidAutoForOrder(id, partner)).toBeNull();
+      expect(await readCsddPaidAutoJob(id)).toBeNull();
+    }
+    expect(await enqueueCsddPaidAutoForOrder(ID, { checkoutLine: "business", fulfillment: "business_link", orderVinOrPlate: "RO8544", livemode: false })).toBeNull();
+    withRegistryPlate(P);
+    expect(await enqueueCsddPaidAutoForOrder(P, { ...partner, isDemo: true })).toBeNull();
+    expect(h.smsLink).not.toHaveBeenCalled();
+  });
+
+  it("atkārtots izsaukums -> viens darbs, viena SMS", async () => {
+    withRegistryPlate(P);
+    const a = await enqueueCsddPaidAutoForOrder(P, partner);
+    await runCsddPaidAutoOnce(P);
+    const b = await enqueueCsddPaidAutoForOrder(P, partner);
+    expect(b?.createdAt).toBe(a?.createdAt);
+    expect(b?.state).toBe("sms_sent");
+    advance(60_000);
+    await runCsddPaidAutoOnce(P);
+    expect(h.smsLink).toHaveBeenCalledTimes(1);
+    expect(h.email).toHaveBeenCalledTimes(1);
+  });
+
+  it("slēdzis izslēgts -> nē; B2B avārijas izslēdzējs aptur tikai B2B", async () => {
+    withRegistryPlate(P);
+    delete process.env.CSDD_PAID_AUTO_ENABLED;
+    expect(await enqueueCsddPaidAutoForOrder(P, partner)).toBeNull();
+    process.env.CSDD_PAID_AUTO_ENABLED = "1";
+    process.env.CSDD_PAID_AUTO_B2B_ENABLED = "0";
+    expect(await enqueueCsddPaidAutoForOrder(P, partner)).toBeNull();
+    expect(await readCsddPaidAutoJob(P)).toBeNull();
+    expect(await enqueueCsddPaidAutoForOrder(ID, audit)).toMatchObject({ state: "queued", product: "audit" });
   });
 });

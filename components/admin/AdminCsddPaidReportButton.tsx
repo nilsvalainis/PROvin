@@ -337,7 +337,7 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
       <div className="mt-1 flex flex-col gap-0.5" data-testid="csdd-paid-auto-status">
         {autoInfo.job ? (
           <span className={autoInfo.job.state === "error" ? "text-red-700" : "text-slate-600"}>
-            Automātiskā izziņa ({autoInfo.job.plate}): {autoInfo.job.label}
+            Automātiskā izziņa{autoInfo.job.plate ? ` (${autoInfo.job.plate})` : ""}: {autoInfo.job.label}
             {autoInfo.job.state === "awaiting_payment" ? (
               <button type="button" className="ml-2 text-slate-500 underline" onClick={() => void recheckAuto()}>
                 Pārbaudīt vēlreiz

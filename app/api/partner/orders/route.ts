@@ -167,6 +167,7 @@ export async function POST(req: Request) {
   schedulePartnerCreditVinOrderFollowups([
     {
       orderId: created.orderId,
+      plan: planRaw,
       vin,
       listingUrl: listingRaw,
       dealerQueued: created.dealerQueued,

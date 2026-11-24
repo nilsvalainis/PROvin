@@ -25,6 +25,7 @@ import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import {
   createPartnerCreditVinOrder,
   schedulePartnerCreditVinOrderFollowups,
+  type PartnerVinOrderFollowup,
 } from "@/lib/b2b-partner-place-vin-order";
 import { findPartnerVinOrdersMap } from "@/lib/b2b-partner-vin-dedup";
 import {
@@ -165,12 +166,7 @@ export async function POST(req: Request) {
     order: ReturnType<typeof buildSubmittedPartnerArchiveRow>;
   }[] = [];
   const failed: { vin: string; error: string }[] = [];
-  const followups: {
-    orderId: string;
-    vin: string;
-    listingUrl: string;
-    dealerQueued: boolean;
-  }[] = [];
+  const followups: PartnerVinOrderFollowup[] = [];
 
   for (const row of consumed.charged) {
     const created = await createPartnerCreditVinOrder({
@@ -213,6 +209,7 @@ export async function POST(req: Request) {
     });
     followups.push({
       orderId: created.orderId,
+      plan: planRaw,
       vin: row.vin,
       listingUrl: row.listingUrl,
       dealerQueued: created.dealerQueued,

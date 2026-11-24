@@ -472,7 +472,7 @@ async function startPaidOrderDownstream(
         console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
       }
       await dealerPlateRun;
-      // Pēc CSDD sēklas: mapes nosaukums ar marku/modeli + automātiskā CSDD maksas izziņa (tikai AUDITS ar LV numuru).
+      // Pēc CSDD sēklas: mapes nosaukums ar marku/modeli + automātiskā CSDD maksas izziņa (AUDITS / Business ar LV numuru).
       if (dropboxCategory) await ensureOrderDropboxFolderSafe(session.id, { vin: order.vin });
       try {
         const paidJob = await enqueueCsddPaidAutoForOrder(session.id, {
@@ -481,6 +481,7 @@ async function startPaidOrderDownstream(
           isDealerData,
           isTelegram: isTelegramGroupPayment(session.amount_total),
           orderVinOrPlate: order.vin,
+          livemode: session.livemode,
         });
         if (paidJob) console.info("[stripe webhook] csdd paid auto queued", { sessionId: session.id, state: paidJob.state });
       } catch (err) {
