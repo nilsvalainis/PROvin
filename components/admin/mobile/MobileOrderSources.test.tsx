@@ -42,10 +42,11 @@ describe("Avotu saraksts telefonā - statuss labajā pusē (22.11 makets v2)", (
 
   it("23.11: telefonā atverot pasūtījumu visi bloki un sadaļas sakļauti (bez localStorage); datorā kā līdz šim", () => {
     const shell = src("components/admin/AdminCollapsibleShell.tsx");
-    expect(shell).toMatch(/if \(phone\) \{\s*setCollapsed\(true\);\s*return;/);
-    expect(shell).toContain("if (collapseLocked || phone) return;");
+    // 24.11: noklusējums sakļauts; atvērtais paliek tikai atmiņā, kamēr lapa atvērta (ne localStorage).
+    expect(shell).toMatch(/if \(phone\) \{\s*setCollapsed\(readAdminUiOpen\([^)]*\)\) \?\? true\);\s*return;/);
+    expect(shell).toContain("if (phone) return;");
     const sec = src("components/admin/AdminPhoneSectionCollapse.tsx");
-    expect(sec).toContain("useState(true)");
+    expect(sec).toContain("readAdminUiOpen(memKey) ?? true");
     expect(sec).not.toContain("localStorage");
   });
 
