@@ -156,6 +156,19 @@ export const IRISS_ORDER_STAGE_LV: Record<IrissOrderStage, string> = {
   inactive: "Neaktīvs",
 };
 
+/**
+ * Īsa norāde statusa izvēlnē: vai šajā posmā sistēma pati meklē auto avotos (izsoles, mobile.de/AutoScout24).
+ * Jāsakrīt ar `isIrissPasutijumsSearchingStatus` (tests to pārbauda).
+ */
+export const IRISS_ORDER_STAGE_SEARCH_LV: Record<IrissOrderStage, "meklē" | "nemeklē"> = {
+  searching: "meklē",
+  offered: "meklē",
+  reserved: "nemeklē",
+  transit: "nemeklē",
+  sold: "nemeklē",
+  inactive: "nemeklē",
+};
+
 export function isIrissOrderStage(v: unknown): v is IrissOrderStage {
   return typeof v === "string" && (IRISS_ORDER_STAGES as readonly string[]).includes(v);
 }
@@ -189,6 +202,12 @@ export const IRISS_PASUTIJUMS_WORKING_STATUSES: readonly IrissPasutijumsListStat
   "reserved",
 ];
 
+/**
+ * Statusi, kuros sistēma pati meklē auto avotos (Nils 24.11): Rezervēts meklēšanu aptur tāpat kā Pārdots un Neaktīvs.
+ * «Working» paliek plašāks - rezervēts pasūtījums vēl ir dzīvs (pavadzīmes, manuāla auto piešķiršana, jau atrastie auto).
+ */
+export const IRISS_PASUTIJUMS_SEARCHING_STATUSES: readonly IrissPasutijumsListStatus[] = ["active", "searching", "offered"];
+
 export function isIrissPasutijumsListStatus(v: unknown): v is IrissPasutijumsListStatus {
   return typeof v === "string" && (IRISS_PASUTIJUMS_LIST_STATUSES as readonly string[]).includes(v);
 }
@@ -202,6 +221,42 @@ export function parseIrissPasutijumsListStatus(v: unknown): IrissPasutijumsListS
 export function isIrissPasutijumsWorkingStatus(s: IrissPasutijumsListStatus): boolean {
   return (IRISS_PASUTIJUMS_WORKING_STATUSES as readonly string[]).includes(s);
 }
+
+/** Vai pasūtījumam automātiski lasa avotus un piesaista jaunus sludinājumus. */
+export function isIrissPasutijumsSearchingStatus(s: IrissPasutijumsListStatus): boolean {
+  return (IRISS_PASUTIJUMS_SEARCHING_STATUSES as readonly string[]).includes(s);
+}
+
+/** Meklēšanas slēdzis (Nils 24.11): ar roku pārrakstīts statusa noklusējums. Nav lauka = statusa noklusējums. */
+export type IrissSearchOverride = "on" | "off";
+
+export function parseIrissSearchOverride(v: unknown): IrissSearchOverride | undefined {
+  return v === "on" || v === "off" ? v : undefined;
+}
+
+type IrissSearchInput = {
+  listStatus?: IrissPasutijumsListStatus | string | null;
+  searchOverride?: IrissSearchOverride | string | null;
+  deletedAt?: string | null;
+};
+
+/**
+ * Faktiskā meklēšana - vienīgā vieta, kur to izlemj (avoti, sync, mobile.de/AutoScout24 auto ielāde, auto piesaiste, UI).
+ * Izdzēsts pasūtījums nemeklē nekad; citādi slēdzis, ja ir; citādi statusa noklusējums.
+ */
+export function isIrissPasutijumsSearchOn(rec: IrissSearchInput): boolean {
+  if ((rec.deletedAt ?? "").trim()) return false;
+  const override = parseIrissSearchOverride(rec.searchOverride);
+  if (override) return override === "on";
+  return (IRISS_PASUTIJUMS_SEARCHING_STATUSES as readonly string[]).includes(rec.listStatus || "active");
+}
+
+/** Slēdža vērtība glabāšanai: ja sakrīt ar statusa noklusējumu - tukšs (undefined). */
+export function irissSearchOverrideFor(listStatus: IrissPasutijumsListStatus, on: boolean): IrissSearchOverride | undefined {
+  return isIrissPasutijumsSearchingStatus(listStatus) === on ? undefined : on ? "on" : "off";
+}
+
+export const IRISS_SEARCH_SWITCH_LV = { on: "Meklē", off: "Nemeklē" } as const;
 
 export type IrissDzintarzemeTameCommissionVariant = "A" | "B" | "C";
 
@@ -332,6 +387,8 @@ export type IrissPasutijumsRecord = {
   statusHistory?: IrissStatusHistoryEntry[];
   /** Neaktīvs iemesls (neobligāts). */
   inactiveReason?: string;
+  /** Meklēšanas slēdzis ar roku; notīrās, mainot statusu. Vecajos JSON nav. */
+  searchOverride?: IrissSearchOverride;
   /** Mīkstā dzēšana. Tukšs / nav = redzams sarakstā. */
   deletedAt?: string;
   /** Tombstones: lauks → iztukšošanas laiks ms. Tukšais uzvar, ja jaunāks. */
@@ -437,6 +494,8 @@ export type IrissPasutijumsListRow = {
   updatedAt: string;
   pinnedAt: string;
   listStatus: IrissPasutijumsListStatus;
+  /** Meklēšanas slēdzis ar roku (nav = statusa noklusējums). */
+  searchOverride?: IrissSearchOverride;
   /** Mīkstā dzēšana. Tukšs / nav = redzams parastajā sarakstā. */
   deletedAt?: string;
   clientFirstName: string;

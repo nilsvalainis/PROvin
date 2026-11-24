@@ -74,6 +74,7 @@ import {
   irissRequiredFieldWarnings,
   isIrissRecordDeleted,
   setIrissInactiveReason,
+  setIrissSearchOn,
 } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_EMPTY_NEW_ORDER_MSG,
@@ -454,6 +455,10 @@ export function IrissPasutijumsEditor({
         }),
       ),
     );
+  }, []);
+
+  const setSearch = useCallback((on: boolean) => {
+    setRec((r) => setIrissSearchOn(r, on, { at: new Date().toISOString() }));
   }, []);
 
   const saveRaw = useCallback(
@@ -2277,6 +2282,7 @@ export function IrissPasutijumsEditor({
           onPatchRecord={patchRecord}
           onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
           onSetStage={setStage}
+          onSetSearch={setSearch}
           stageSignals={stageSignals}
           onSave={saveCurrentPage}
           onSaveCriteria={saveCriteria}

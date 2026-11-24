@@ -221,7 +221,7 @@ function mergeStringByTimestamp(
 
 function mergeListStatus(local: IrissPasutijumsRecord, server: IrissPasutijumsRecord): Pick<
   IrissPasutijumsRecord,
-  "listStatus" | "statusChangedAt" | "inactiveReason"
+  "listStatus" | "statusChangedAt" | "inactiveReason" | "searchOverride"
 > {
   const lAt = statusChangedMs(local);
   const sAt = statusChangedMs(server);
@@ -230,12 +230,15 @@ function mergeListStatus(local: IrissPasutijumsRecord, server: IrissPasutijumsRe
       listStatus: server.listStatus || local.listStatus,
       statusChangedAt: server.statusChangedAt || local.statusChangedAt,
       inactiveReason: server.inactiveReason ?? local.inactiveReason,
+      // Slēdzis pieder uzvarējušajam statusam (arī «nav» ir vērtība - noklusējums).
+      searchOverride: server.searchOverride,
     };
   }
   return {
     listStatus: local.listStatus || server.listStatus,
     statusChangedAt: local.statusChangedAt || server.statusChangedAt,
     inactiveReason: local.inactiveReason ?? server.inactiveReason,
+    searchOverride: local.searchOverride,
   };
 }
 
@@ -257,6 +260,7 @@ export function mergeIrissPasutijumsRecords(
     listStatus: status.listStatus,
     statusChangedAt: status.statusChangedAt,
     inactiveReason: status.inactiveReason,
+    searchOverride: status.searchOverride,
     statusHistory: mergeIrissStatusHistory(local.statusHistory, server.statusHistory),
     deletedAt: local.deletedAt || server.deletedAt,
     clearedFields: mergeClearedMs(local.clearedFields, server.clearedFields),

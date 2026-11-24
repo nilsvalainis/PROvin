@@ -118,6 +118,25 @@ describe("discoverListingOrderMatches", () => {
   });
 });
 
+describe("rezervēts pasūtījums (Nils 24.11)", () => {
+  it("jaunus sludinājumus vairs nepiesaista, bet jau atrastie paliek", () => {
+    const fit = vehicle({ id: "fit", orderIds: ["o-res"] });
+    const before = discoverListingOrderMatches([fit], [order({ id: "o-res", listStatus: "offered" })]);
+    expect(before).toEqual([{ orderId: "o-res", listingId: "fit" }]);
+    const now = "2026-11-24T10:00:00.000Z";
+    const seeded = mergeListingOrderMatches(emptyIrissListingMatchState(), [], now);
+    const state = mergeListingOrderMatches({ ...seeded, seeded: true }, before, now, new Set(["fit"]), new Set(["o-res"]));
+    expect(state.entries.map((e) => e.listingId)).toEqual(["fit"]);
+
+    const reserved = [order({ id: "o-res", listStatus: "reserved" })];
+    const found = discoverListingOrderMatches([fit, vehicle({ id: "fresh" })], reserved);
+    expect(found).toEqual([]);
+    const after = mergeListingOrderMatches(state, found, "2026-11-25T10:00:00.000Z", new Set(["fit", "fresh"]), new Set(["o-res"]));
+    expect(after.entries.map((e) => `${e.orderId}:${e.listingId}:${e.status}`)).toEqual(["o-res:fit:jauns"]);
+    expect(after.unseenCount).toBe(1);
+  });
+});
+
 describe("mergeListingOrderMatches", () => {
   const now = "2026-10-15T12:00:00.000Z";
   const live = new Set(["v1", "v2"]);

@@ -36,7 +36,7 @@ describe("detectIrissListingPlatform", () => {
 });
 
 describe("buildIrissListingSources", () => {
-  it("takes working orders and only the four auctions", () => {
+  it("takes searching orders (not reserved) and only the four auctions", () => {
     const sources = buildIrissListingSources([
       row("a", "active", { mobile: "https://suchen.mobile.de/x", autobid: "https://autobid.de/en/search-results?q=1", openline: "https://www.openlane.eu/en/findcar", auto1: "https://www.auto1.com/en/app/merchant/cars", ecarstrade: "https://ecarstrade.com/search?mark[]=68" }),
       row("s", "searching", { autobid: "https://autobid.de/en/search-results?q=4" }),
@@ -53,7 +53,6 @@ describe("buildIrissListingSources", () => {
       "a:ecarstrade",
       "s:autobid",
       "o:autobid",
-      "r:autobid",
     ]);
   });
 
