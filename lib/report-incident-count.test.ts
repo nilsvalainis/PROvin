@@ -106,12 +106,13 @@ describe("CSDD un dīlera skaits vienāds avotu sarakstā un sadaļā", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const grid = doc.match(/<ul class="pdf-sources-checked-grid">[\s\S]*?<\/ul>/)?.[0] ?? "";
+    // 1. lapas avotu bloks (makets 6a): katrs avots - šūna ar logo/nosaukumu, kategoriju un skaitu.
+    const cells = doc.split('class="pdf-top6-src"').slice(1);
     const gridCount = (label: string) =>
-      grid.match(new RegExp(`${label}</span><span class="pdf-sources-checked-count">([^<]+)<`))?.[1];
+      cells.find((c) => c.includes(`alt="${label}"`) || c.includes(`>${label}<`))?.match(/pdf-top6-src__cnt[^>]*>([^<]+)</)?.[1];
     expect(gridCount(SOURCE_BLOCK_LABELS.csdd)).toBe("3 ieraksti");
     // dīleris: 2 vizītes, nevis 4 (darbu + nobraukuma rinda katrai vizītei)
-    expect(gridCount("OFICIĀLĀ DĪLERA DATI")).toBe("2 ieraksti");
+    expect(gridCount("Oficiālā dīlera dati")).toBe("2 ieraksti");
     // sadaļu virsrakstos tie paši skaitļi
     expect((doc.match(/pdf-src-count-badge[^>]*>3 ieraksti</g) ?? []).length).toBeGreaterThanOrEqual(1);
     expect((doc.match(/pdf-src-count-badge[^>]*>2 ieraksti</g) ?? []).length).toBeGreaterThanOrEqual(1);

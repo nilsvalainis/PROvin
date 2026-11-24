@@ -446,7 +446,7 @@ describe("sludinājuma vēstures kartīte", () => {
     expect(tiles.map((t) => t.id)).not.toContain("listing");
   });
 
-  it("ieliek kartīti ATSKAITES KOPSAVILKUMĀ ar esošo plāksnītes klasi", () => {
+  it("ieliek kartīti 1. lapas «Galvenā informācija» režģī", () => {
     const html = buildClientReportDocumentHtml({
       payload: {
         sessionId: "cs_test",
@@ -481,15 +481,15 @@ describe("sludinājuma vēstures kartīte", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const start = html.indexOf("ATSKAITES KOPSAVILKUMS");
-    const end = html.indexOf("Kas tika pārbaudīts", start);
-    const summary = html.slice(start, end > start ? end : undefined);
-    expect(summary).toContain('pdf-summary-tile pdf-summary-tile--neutral');
-    expect(summary).toContain("Sludinājuma vēsture");
-    expect(summary).toContain("47 dienas");
-    expect(summary).toContain("Publicēts: 01.08.2026");
-    expect(summary).toContain("Cenas izmaiņa: -500 €");
-    expect(summary).not.toContain("pdf-summary-tile--ok\">\n      <p class=\"pdf-summary-tile__label\">Sludinājuma vēsture");
+    // 1. lapas augšdaļa (makets 6a): sludinājuma kartīte tajā pašā kartīšu režģī, bez riska krāsas.
+    const srcAt = html.indexOf('class="pdf-top6__src"');
+    const grid = html.slice(html.indexOf('class="pdf-top6__grid"'), srcAt > 0 ? srcAt : undefined);
+    const card = grid.slice(grid.indexOf("pdf-top6-card--listing"));
+    expect(card).toContain("Sludinājuma vēsture");
+    expect(card).toContain("47 dienas");
+    expect(card).toContain("Publicēts: 01.08.2026");
+    expect(card).toMatch(/Cenas izmaiņa: -500[ \u00a0]€/);
+    expect(card.slice(0, card.indexOf("Publicēts"))).not.toContain("s-alert");
   });
 });
 

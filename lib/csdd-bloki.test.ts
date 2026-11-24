@@ -312,10 +312,18 @@ describe("e.csdd bloki - klienta PDF", () => {
     const html = doc(
       payload(ML, { csddPdfWarnings: true, csddPdfRestrictions: true, csddPdfMeasurements: true, csddPdfTaAnalysis: true }),
     );
-    const summary = html.slice(html.indexOf("pdf-report-summary"));
-    const firstTile = summary.slice(summary.indexOf("pdf-summary-tile__label"), summary.indexOf("pdf-summary-tile__label") + 80);
-    expect(firstTile).toContain("Reģistrācija");
-    expect(html).toContain("pdf-summary-tile--alert");
+    // 1. lapas augšdaļā: e.csdd brīdinājumi pirmie aiz 5 galvenajām kartītēm, risks sarkanā tekstā.
+    const grid = html.slice(html.indexOf('class="pdf-top6__grid"'));
+    const cards = grid.split('class="pdf-top6-card ').slice(1);
+    expect(cards.slice(0, 5).map((c) => c.slice(0, c.indexOf('"')))).toEqual([
+      "pdf-top6-card--incidents",
+      "pdf-top6-card--mileage",
+      "pdf-top6-card--owners",
+      "pdf-top6-card--auctions",
+      "pdf-top6-card--service",
+    ]);
+    expect(cards[5]).toContain("Reģistrācija");
+    expect(html).toContain("pdf-top6-card__v s-alert");
     expect(html).toContain('data-csdd-bloks="restrictions"');
     // Jaunajā formātā mērījumu (izņemot dūmainību, kas jau tabulā) nav - bloks neparādās.
     expect(html).not.toContain('data-csdd-bloks="measurements"');
