@@ -35,7 +35,7 @@ export type ListingAiSnapshot = ListingMarketSnapshot & {
   photoCount: number | null;
 };
 
-const SSLV_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv"]);
+const SSLV_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv", "ss.com", "www.ss.com", "m.ss.com"]);
 
 function isMobileDeListingHost(hostname: string): boolean {
   const host = hostname.trim().toLowerCase().replace(/\.$/, "");
@@ -49,9 +49,167 @@ export function isAllowedListingScrapeHost(hostname: string): boolean {
   return host.includes(".") && !host.startsWith("localhost");
 }
 
+/** ss.lv un ss.com (tas pats portāls; arī m. mobilā versija). */
 export function isSsLvHost(hostname: string): boolean {
   const host = hostname.replace(/^www\./i, "").toLowerCase();
-  return host === "ss.lv" || host.endsWith(".ss.lv");
+  return host === "ss.lv" || host.endsWith(".ss.lv") || host === "ss.com" || host.endsWith(".ss.com");
+}
+
+/**
+ * ss.lv / ss.com mobilās (m.) saites -> www versija (tas pats sludinājums, pilns `msg_div_msg` apraksts
+ * un parametru tabula). Citām saitēm atgriež to pašu URL bez #fragmenta.
+ */
+export function listingScrapeFetchUrl(raw: string): string {
+  let u: URL;
+  try {
+    u = new URL(raw.trim());
+  } catch {
+    return raw.trim();
+  }
+  u.hash = "";
+  const host = u.hostname.toLowerCase();
+  if (host === "m.ss.com" || host === "m.ss.lv") u.hostname = host === "m.ss.com" ? "www.ss.com" : "www.ss.lv";
+  return u.toString();
+}
+
+/**
+ * Klients dažkārt iedod adify.lv / tirgusdati.lv vēstures lapas saiti - īstais sludinājums ir tās
+ * `url` / `q` parametrā. Citām saitēm atgriež to pašu tekstu.
+ */
+export function unwrapListingHistoryLink(raw: string): string {
+  const t = raw.trim();
+  let u: URL;
+  try {
+    u = new URL(t);
+  } catch {
+    return t;
+  }
+  const host = u.hostname.replace(/^www\./i, "").toLowerCase();
+  const inner =
+    host === "adify.lv" ? u.searchParams.get("url") : host === "tirgusdati.lv" ? u.searchParams.get("q") : null;
+  if (!inner || !/^https?:\/\//i.test(inner.trim())) return t;
+  return inner.trim();
+}
+
+/** Vai divas sludinājuma saites ir tas pats sludinājums (bez www./m., #, beigu /). */
+export function sameListingUrl(a: string, b: string): boolean {
+  const norm = (raw: string) => {
+    try {
+      const u = new URL(listingScrapeFetchUrl(raw));
+      return `${u.hostname.replace(/^(www|m)\./i, "").replace(/^ss\.lv$/, "ss.com")}${u.pathname.replace(/\/+$/, "")}${u.search}`.toLowerCase();
+    } catch {
+      return raw.trim().toLowerCase();
+    }
+  };
+  return norm(a) === norm(b);
+}
+
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+  nbsp: " ",
+  amp: "&",
+  quot: '"',
+  apos: "'",
+  lt: "<",
+  gt: ">",
+  laquo: "«",
+  raquo: "»",
+  ldquo: "“",
+  rdquo: "”",
+  bdquo: "„",
+  lsquo: "‘",
+  rsquo: "’",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  euro: "€",
+  deg: "°",
+  times: "×",
+  middot: "·",
+  bull: "•",
+  scaron: "š",
+  Scaron: "Š",
+  zcaron: "ž",
+  Zcaron: "Ž",
+};
+
+function decodeHtmlEntities(s: string): string {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, code: string) => {
+    if (code[0] === "#") {
+      const n = code[1] === "x" || code[1] === "X" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+      if (!Number.isFinite(n) || n <= 0 || n > 0x10ffff) return whole;
+      return n === 0xa0 ? " " : String.fromCodePoint(n);
+    }
+    return NAMED_HTML_ENTITIES[code] ?? NAMED_HTML_ENTITIES[code.toLowerCase()] ?? whole;
+  });
+}
+
+/**
+ * HTML fragments -> teksts ar saglabātām rindiņām (`<br>`, rindkopas, saraksti).
+ * Avota HTML pārnesumi nav nozīmīgi (pārlūks tos rāda kā atstarpi), tāpēc tos saspiež pirms `<br>`.
+ */
+export function htmlToTextKeepLines(html: string): string {
+  const text = html
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<(script|style|noscript|svg|button)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/\s+/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "\n- ")
+    .replace(/<\/(p|div|li|ul|ol|h\d|tr|table|section|article|blockquote)>/gi, "\n")
+    .replace(/<(p|div|h\d|tr|table|section|article|blockquote)\b[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, "");
+  return decodeHtmlEntities(text)
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.replace(/[\t \u00a0]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Elementa iekšējais HTML no atverošā taga pozīcijas (ievēro tāda paša taga ligzdošanu). */
+function innerHtmlOfElementAt(html: string, openIdx: number): string | null {
+  const head = html.slice(openIdx).match(/^<([a-z][a-z0-9]*)\b[^>]*>/i);
+  if (!head) return null;
+  const tag = head[1].toLowerCase();
+  const start = openIdx + head[0].length;
+  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
+  re.lastIndex = start;
+  let depth = 1;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    if (m[0].endsWith("/>")) continue;
+    depth += m[1] ? -1 : 1;
+    if (depth === 0) return html.slice(start, m.index);
+  }
+  return null;
+}
+
+function innerHtmlOfFirst(html: string, openTagRe: RegExp): string | null {
+  const idx = html.search(openTagRe);
+  return idx >= 0 ? innerHtmlOfElementAt(html, idx) : null;
+}
+
+function removeElements(html: string, openTagRe: RegExp): string {
+  let out = html;
+  for (let guard = 0; guard < 10; guard += 1) {
+    const idx = out.search(openTagRe);
+    if (idx < 0) break;
+    const head = out.slice(idx).match(/^<([a-z][a-z0-9]*)\b[^>]*>/i);
+    const inner = innerHtmlOfElementAt(out, idx);
+    if (!head || inner == null) break;
+    const end = idx + head[0].length + inner.length + `</${head[1]}>`.length;
+    out = out.slice(0, idx) + out.slice(end);
+  }
+  return out;
+}
+
+const MIN_DESCRIPTION_CHARS = 12;
+const MAX_DESCRIPTION_CHARS = 20_000;
+
+function usableDescription(text: string | null | undefined): string | null {
+  const t = (text ?? "").trim();
+  if (t.length < MIN_DESCRIPTION_CHARS) return null;
+  return t.length > MAX_DESCRIPTION_CHARS ? `${t.slice(0, MAX_DESCRIPTION_CHARS).trimEnd()}…` : t;
 }
 
 function stripTags(html: string): string {
@@ -93,7 +251,8 @@ function extractSsLvOptions(html: string): Map<string, string> {
     const key = stripTags(m[1]).replace(/:\s*$/, "").trim();
     let val = m[2].replace(/<b>/gi, "").replace(/<\/b>/gi, "");
     val = stripTags(val);
-    if (key.length > 0 && val.length > 0) map.set(key, val);
+    // „Parādīt vin kodu / numura zīmi” ir JS poga, nevis vērtība.
+    if (key.length > 0 && val.length > 0 && !/^Parādīt\b/i.test(val)) map.set(key, val);
   }
   return map;
 }
@@ -102,16 +261,57 @@ function extractSsLvPageTitle(html: string): string | null {
   const m = html.match(/<title>([\s\S]*?)<\/title>/i);
   if (!m?.[1]) return null;
   const title = stripTags(m[1]).replace(/\s*-\s*Sludinājumi\s*$/i, "").trim();
-  return title || null;
+  const ss = title.match(/^SS\.(?:COM|LV)\s*-?\s*(.*)$/i);
+  if (!ss) return title || null;
+  // www.ss.*: „SS.COM BMW Citi, Cena 33 700 €. <apraksta sākums>” -> „BMW Citi”.
+  const short = ss[1].replace(/,\s*Cena\b[\s\S]*$/i, "").trim();
+  return short || null;
 }
 
-/** Sludinājuma brīvā teksta apraksts (pirms parametru tabulas). */
-function extractSsLvDescription(html: string): string | null {
-  const m = html.match(/id="msg_div_msg"[^>]*>([\s\S]*?)<table[\s\S]*?class="options_list"/i);
-  if (!m?.[1]) return null;
-  const inner = m[1].replace(/<div[^>]*id="content_sys_div_msg"[^>]*>[\s\S]*?<\/div>/gi, "");
-  const text = stripTags(inner);
-  return text.length >= 12 ? text : null;
+/**
+ * Pārdevēja brīvais teksts (pirms parametru tabulas), ar rindiņām.
+ * www: `<div id="msg_div_msg">`; m.ss.*: `<div>` tieši aiz galvenās bildes skripta.
+ */
+export function extractSsLvDescription(html: string): string | null {
+  let inner = innerHtmlOfFirst(html, /<div\b[^>]*\bid=["']?msg_div_msg["'\s>]/i);
+  if (inner == null) {
+    const mobile = html.match(/_mbigpic\([^)]*\)[^<]*<\/script>\s*(?=<div\b)/i);
+    if (mobile?.index != null) inner = innerHtmlOfElementAt(html, mobile.index + mobile[0].length);
+  }
+  if (inner == null) return null;
+  const optsAt = inner.search(/<table\b[^>]*class=["']?options_list/i);
+  if (optsAt >= 0) inner = inner.slice(0, optsAt);
+  const tableAt = inner.search(/<table\b/i);
+  if (tableAt >= 0) inner = inner.slice(0, tableAt);
+  inner = removeElements(inner, /<div\b[^>]*\bid=["']?content_sys_div_msg/i);
+  return usableDescription(htmlToTextKeepLines(inner));
+}
+
+/** ss.lv aprīkojuma saraksts (www: `auto_c_head` + treknie `auto_c`; m.: `ads_opt_name_auto`). */
+function extractSsLvEquipment(html: string): { label: string; value: string }[] {
+  const groups: { label: string; items: string[] }[] = [];
+  const re = /class=["']?auto_c_head["']?[^>]*>([\s\S]*?)<\/div>|<b\b[^>]*class=["']?auto_c["']?[^>]*>([\s\S]*?)<\/b>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    if (m[1] != null) {
+      const label = stripTags(decodeHtmlEntities(m[1])).replace(/:\s*$/, "").trim();
+      if (label) groups.push({ label, items: [] });
+    } else if (m[2] != null) {
+      const item = stripTags(decodeHtmlEntities(m[2])).trim();
+      if (!item) continue;
+      if (groups.length === 0) groups.push({ label: "Aprīkojums", items: [] });
+      groups[groups.length - 1].items.push(item);
+    }
+  }
+  const out = groups.filter((g) => g.items.length > 0).map((g) => ({ label: g.label, value: g.items.join(", ") }));
+  if (out.length > 0) return out;
+  const mobileRe = /class=["']?ads_opt_name_auto["']?[^>]*>\s*<b>([\s\S]*?)<\/b>([\s\S]*?)<\/td>/gi;
+  while ((m = mobileRe.exec(html)) !== null) {
+    const label = stripTags(decodeHtmlEntities(m[1])).replace(/:\s*$/, "").trim();
+    const value = stripTags(decodeHtmlEntities(m[2])).trim();
+    if (label && value) out.push({ label, value });
+  }
+  return out;
 }
 
 function extractSsLvPhotoCount(html: string): number | null {
@@ -311,7 +511,7 @@ export function parseSsLvListingAiHtml(html: string, url: string, now: Date = ne
     url,
     pageTitle: extractSsLvPageTitle(html),
     description: extractSsLvDescription(html),
-    options: listingOptionsFromMap(opts),
+    options: [...listingOptionsFromMap(opts), ...extractSsLvEquipment(html)],
     photoCount: extractSsLvPhotoCount(html),
   };
 }
@@ -396,7 +596,67 @@ function extractGenericOptions(html: string): { label: string; value: string }[]
   return out;
 }
 
-/** autoplius / auto24 / mobile.de u.c. - virsraksts, apraksts, km, cena, datums. */
+function jsonLdDescriptions(html: string): string[] {
+  const out: string[] = [];
+  const re = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m: RegExpExecArray | null;
+  const walk = (node: unknown, depth: number) => {
+    if (depth > 6 || node == null) return;
+    if (Array.isArray(node)) {
+      for (const n of node) walk(n, depth + 1);
+      return;
+    }
+    if (typeof node !== "object") return;
+    const o = node as Record<string, unknown>;
+    if (typeof o.description === "string" && o.description.trim()) out.push(o.description);
+    for (const [k, v] of Object.entries(o)) if (k !== "description" && typeof v === "object") walk(v, depth + 1);
+  };
+  while ((m = re.exec(html)) !== null) {
+    try {
+      walk(JSON.parse(m[1]), 0);
+    } catch {
+      /* nederīgs JSON-LD - izlaiž */
+    }
+  }
+  return out;
+}
+
+/**
+ * Pilns pārdevēja apraksts konkrētā portālā (bez navigācijas un reklāmām), ar rindiņām.
+ * autoplius: oriģinālais teksts (`js-comment-original-html`), ne mašīntulkojums;
+ * citi (reklama.lv u.c.): schema.org `itemprop="description"` elements vai JSON-LD `description`.
+ */
+export function extractListingSellerDescription(html: string, host: string): string | null {
+  const h = host.replace(/^www\./i, "").toLowerCase();
+  if (h === "autoplius.lt" || h.endsWith(".autoplius.lt")) {
+    const original = innerHtmlOfFirst(html, /<template\b[^>]*class=["'][^"']*js-comment-original-html/i);
+    const body = original ?? innerHtmlOfFirst(html, /<div\b[^>]*class=["'][^"']*announcement-description/i);
+    const text = body != null ? usableDescription(htmlToTextKeepLines(body)) : null;
+    if (text) return text;
+  }
+  const itemprop = innerHtmlOfFirst(html, /<(?:div|section|p|span|article)\b[^>]*itemprop=["']description["']/i);
+  const fromItemprop = itemprop != null ? usableDescription(htmlToTextKeepLines(itemprop)) : null;
+  if (fromItemprop) return fromItemprop;
+  const ld = jsonLdDescriptions(html)
+    // JSON-LD bieži ir vienkāršs teksts ar \n - tad rindiņas saglabā kā ir.
+    .map((d) => usableDescription(/<[a-z/!]/i.test(d) ? htmlToTextKeepLines(d) : htmlToTextKeepLines(d.replace(/\r?\n/g, "<br>"))))
+    .filter((d): d is string => Boolean(d))
+    .sort((a, b) => b.length - a.length)[0];
+  return ld ?? null;
+}
+
+/** Izvēlas parsētāju pēc saimnieka (ss.lv / ss.com vai vispārīgais). Tīra funkcija - lieto arī pārlūka rezerve. */
+export function parseListingHtmlForUrl(html: string, url: string, now: Date = new Date()): ListingAiSnapshot {
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    host = "";
+  }
+  return isSsLvHost(host) ? parseSsLvListingAiHtml(html, url, now) : parseGenericListingHtml(html, url, now);
+}
+
+/** autoplius / auto24 / reklama.lv u.c. - virsraksts, apraksts, km, cena, datums. */
 export function parseGenericListingHtml(html: string, url: string, now: Date = new Date()): ListingAiSnapshot {
   let host = "";
   try {
@@ -409,6 +669,7 @@ export function parseGenericListingHtml(html: string, url: string, now: Date = n
     metaContent(html, "property", "og:title") ??
     extractSsLvPageTitle(html);
   const description =
+    extractListingSellerDescription(html, host) ??
     metaContent(html, "property", "og:description") ??
     metaContent(html, "name", "description");
   const currentKm = extractGenericKm(text);
@@ -428,7 +689,7 @@ export function parseGenericListingHtml(html: string, url: string, now: Date = n
     currentPriceEur,
     priceChanges: [],
     pageTitle: pageTitle || null,
-    description: description && description.length >= 12 ? description : null,
+    description: usableDescription(description),
     options: extractGenericOptions(html),
     photoCount: null,
     note: ok ? undefined : "Sludinājuma lapā netika atpazīti strukturēti dati.",

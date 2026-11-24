@@ -276,3 +276,44 @@ describe("checkSourceConsistency - bojājumi un cenas", () => {
     expect(issues[0]!.severity).toBe("critical");
   });
 });
+
+describe("checkSourceConsistency - pārdevēja apgalvojumi sludinājuma aprakstā", () => {
+  it("«nav sists», bet AutoDNA ir negadījums - brīdinājums", () => {
+    const issues = run({
+      csdd: csdd(),
+      autodna: { incidents: [{ incidentNo: "1", csngDate: "14.03.2024", lossAmount: "" }] },
+      listing_analysis: { listingPasteRaw: "Pārdodu labā stāvoklī.\nAuto nav sists, servisēts pie dīlera." },
+    });
+    const hit = issues.find((i) => i.id === "listing_claim_no_accidents");
+    expect(hit?.severity).toBe("warn");
+    expect(formatSourceIssueLine(hit!)).toContain("nav sists");
+    expect(formatSourceIssueLine(hit!)).toContain("14.03.2024");
+  });
+
+  it("«nav sists» un avotos negadījumu nav - pretrunas nav", () => {
+    const issues = run({
+      csdd: csdd(),
+      listing_analysis: { listingPasteRaw: "Auto nav sists." },
+    });
+    expect(issues.filter((i) => i.kind === "listing_claim")).toEqual([]);
+  });
+
+  it("aprakstā nobraukums mazāks par fiksēto - brīdinājums", () => {
+    const issues = run({
+      csdd: csdd({ mileageHistory: [{ date: "15.06.2025", odometer: "180000", country: "Latvija" }] }),
+      listing_analysis: { listingPasteRaw: "Audi A4\n\nNobraukums, km: 150 000" },
+    });
+    const hit = issues.find((i) => i.id === "listing_claim_km_below_recorded");
+    expect(hit?.severity).toBe("warn");
+    expect(formatSourceIssueLine(hit!)).toContain("150 000 km");
+    expect(formatSourceIssueLine(hit!)).toContain("180 000 km");
+  });
+
+  it("aprakstā nobraukums lielāks vai vienāds - pretrunas nav", () => {
+    const issues = run({
+      csdd: csdd({ mileageHistory: [{ date: "15.06.2025", odometer: "180000", country: "Latvija" }] }),
+      listing_analysis: { listingPasteRaw: "Nobraukums 185 000 km" },
+    });
+    expect(issues.filter((i) => i.kind === "listing_claim")).toEqual([]);
+  });
+});

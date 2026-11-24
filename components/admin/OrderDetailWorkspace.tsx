@@ -235,7 +235,11 @@ import {
   vinRegistryTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingAiSnapshot, ListingMarketSnapshot } from "@/lib/listing-scrape";
-import { formatListingSnapshotForPasteField } from "@/lib/listing-scrape";
+import {
+  formatListingSnapshotForPasteField,
+  parseListingHtmlForUrl,
+  unwrapListingHistoryLink,
+} from "@/lib/listing-scrape";
 import {
   CarFront,
   Check,
@@ -398,7 +402,10 @@ import {
   shouldAutofillSsLvListing,
 } from "@/lib/admin-ss-lv-adify-autofill";
 import { isListingAutofillUrl } from "@/lib/listing-host";
-import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
+import {
+  fetchListingPageHtmlViaUserscript,
+  loadListingPriceHistorySnapshot,
+} from "@/lib/admin-listing-history-client";
 import { AdminAiSessionCostBar } from "@/components/admin/AdminAiSessionCostBar";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
@@ -2921,7 +2928,7 @@ export function OrderDetailWorkspace({
 
   useEffect(() => {
     if (!workspaceHydrated || adifyAutofillAttemptedRef.current) return;
-    const url = payload.listingUrl?.trim() ?? "";
+    const url = unwrapListingHistoryLink(payload.listingUrl?.trim() ?? "");
     const tirgus = wsPersistRef.current.sourceBlocks.tirgus;
     const listingPasteEmpty = !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim();
     if (!shouldAutofillSsLvListing(url, tirgus) && !(listingPasteEmpty && isListingAutofillUrl(url))) return;
@@ -2937,9 +2944,17 @@ export function OrderDetailWorkspace({
             body: JSON.stringify({ url }),
           }).catch(() => null),
         ]);
-        const scrape = scrapeRes?.ok
+        let scrape = scrapeRes?.ok
           ? ((await scrapeRes.json().catch(() => null)) as ListingAiSnapshot | null)
           : null;
+        // Serveris bloķēts / bez apraksta -> operatora pārlūks (Tampermonkey), tikai atļautie portāli, ne mobile.de.
+        if (!scrape?.description && !wsPersistRef.current.sourceBlocks.listing_analysis.listingPasteRaw.trim()) {
+          const viaBrowser = await fetchListingPageHtmlViaUserscript(url).catch(() => null);
+          if (viaBrowser?.html) {
+            const parsed = parseListingHtmlForUrl(viaBrowser.html, url);
+            if (parsed.ok && parsed.description) scrape = parsed;
+          }
+        }
         const latest = wsPersistRef.current.sourceBlocks.tirgus;
         const tirgusShouldFill = shouldAutofillSsLvListing(url, latest);
         const next = tirgusShouldFill

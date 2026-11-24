@@ -12,7 +12,8 @@ import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { applyCsddTechDataToBlock, csddTechSeedNeeded } from "@/lib/csdd-tech-data-apply";
 import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
-import { formatListingSnapshotForPasteField } from "@/lib/listing-scrape";
+import { isMobileDePageUrl } from "@/lib/marketplace/mobile-de-guard";
+import { formatListingSnapshotForPasteField, sameListingUrl, unwrapListingHistoryLink } from "@/lib/listing-scrape";
 import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
 import { isPlaceholderVin, isValidVin, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { fetchVinSource } from "@/lib/vin-sources";
@@ -69,7 +70,7 @@ export async function computeFreeSourceSeed(
   opts: { vin?: string | null; listingUrl?: string | null },
 ): Promise<FreeSourceSeedOutcome> {
   let blocks = baseline;
-  const listingUrl = opts.listingUrl?.trim() ?? "";
+  const listingUrl = unwrapListingHistoryLink(opts.listingUrl?.trim() ?? "");
   const nr1 = normalizeVin(opts.vin ?? "");
   let nordicVin = usableVin(nr1);
   const csddNr = nr1 && isValidVinOrPlate(nr1) && !isPlaceholderVin(nr1) ? nr1 : "";
@@ -108,7 +109,11 @@ export async function computeFreeSourceSeed(
     doListing
       ? settle(
           "listing",
-          Promise.all([fetchListingPriceHistory(listingUrl), fetchListingAiSnapshot(listingUrl).catch(() => null)]),
+          Promise.all([
+            fetchListingPriceHistory(listingUrl),
+            // mobile.de mūs bloķē: lapu nekad neprasa (ne serveris, ne relejs) - tikai vēsture no Adify / tirgusdati.lv.
+            isMobileDePageUrl(listingUrl) ? Promise.resolve(null) : fetchListingAiSnapshot(listingUrl).catch(() => null),
+          ]),
         )
       : Promise.resolve(null),
     doCsdd ? settle("csdd", fetchCsddTechDataCounted(csddNr, "admin")) : Promise.resolve(null),
@@ -120,7 +125,20 @@ export async function computeFreeSourceSeed(
     if (!listingPair) {
       parts.listing = "error";
     } else {
-      const scrape = listingPair[1];
+      let scrape = listingPair[1];
+      // Klienta saite neiedeva aprakstu (noņemts / pārlikts sludinājums), bet Adify / tirgusdati.lv zina
+      // jaunāko tā paša auto sludinājuma saiti - apraksts no tās. mobile.de nekad.
+      const historyUrl = listingPair[0]?.found ? (listingPair[0].listingUrl ?? "").trim() : "";
+      if (
+        listingPasteEmpty &&
+        !scrape?.description &&
+        historyUrl &&
+        !sameListingUrl(historyUrl, listingUrl) &&
+        !isMobileDePageUrl(historyUrl)
+      ) {
+        const alt = await settle("listing-alt", fetchListingAiSnapshot(historyUrl));
+        if (alt?.ok && alt.description) scrape = alt;
+      }
       const nextTirgus = shouldAutofillSsLvListing(listingUrl, blocks.tirgus)
         ? applySsLvAdifyAutofill(blocks.tirgus, listingUrl, listingPair[0], scrape)
         : null;

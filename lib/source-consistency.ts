@@ -32,6 +32,7 @@ import {
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
 import { isImpossibleFutureDate } from "@/lib/future-date-guard";
+import { extractListingSellerClaims } from "@/lib/listing-seller-claims";
 import { csddHasLatvianRegistryRecord, extractExplicitOwnerCount, ownerEventMonthKey } from "@/lib/owner-count-synthesis";
 import { findOwnerClaimIssues } from "@/lib/owner-claims-check";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
@@ -66,7 +67,8 @@ export type SourceIssueKind =
   | "ai_owners"
   | "damage"
   | "csng"
-  | "auction_price";
+  | "auction_price"
+  | "listing_claim";
 
 export type SourceIssueValue = { source: string; value: string };
 
@@ -772,8 +774,8 @@ function checkAiTexts(
 
 /* ---------- 6. Bojājumi / CSNg ---------- */
 
-function checkDamages(blocks: WorkspaceSourceBlocks, lots: Lot[], nowMs: number, out: SourceIssue[]): void {
-  // Ierakstītie negadījumi / bojājumi citos avotos (datums + avots).
+/** Ierakstītie negadījumi / bojājumi (AutoDNA, CarVertical, LTAB) ar datumu un avotu. */
+function recordedDamageEvents(blocks: WorkspaceSourceBlocks): { source: string; ms: number; date: string }[] {
   const records: { source: string; ms: number; date: string }[] = [];
   for (const key of ["autodna", "carvertical"] as const) {
     const b = blocks[key];
@@ -790,6 +792,12 @@ function checkDamages(blocks: WorkspaceSourceBlocks, lots: Lot[], nowMs: number,
     const ms = dateMs(r.csngDate);
     if (ms > 0) records.push({ source: SOURCE_BLOCK_LABELS.ltab, ms, date: r.csngDate.trim() });
   }
+  return records;
+}
+
+function checkDamages(blocks: WorkspaceSourceBlocks, lots: Lot[], nowMs: number, out: SourceIssue[]): void {
+  // Ierakstītie negadījumi / bojājumi citos avotos (datums + avots).
+  const records = recordedDamageEvents(blocks);
 
   for (const l of lots) {
     const facts = auctionArchiveLotFacts(l.record);
@@ -839,6 +847,62 @@ function checkDamages(blocks: WorkspaceSourceBlocks, lots: Lot[], nowMs: number,
   }
 }
 
+/* ---------- 6b. Pārdevēja apgalvojumi sludinājuma aprakstā ---------- */
+
+const LISTING_PASTE_SOURCE = "Sludinājuma apraksts";
+
+function checkListingClaims(
+  blocks: WorkspaceSourceBlocks,
+  rows: UnifiedMileageRow[],
+  nowMs: number,
+  out: SourceIssue[],
+): void {
+  const claims = extractListingSellerClaims(blocks.listing_analysis.listingPasteRaw);
+
+  if (claims.noAccidents) {
+    const records = recordedDamageEvents(blocks);
+    const uniq = records.filter((r, i) => records.findIndex((x) => x.source === r.source && x.date === r.date) === i);
+    const values: SourceIssueValue[] = uniq.slice(0, 5).map((r) => ({ source: r.source, value: r.date }));
+    const csng = parseCsddRegistrySignals(blocks.csdd, nowMs).csngInsurers;
+    if (csng.state === "present") values.push({ source: "CSDD (apdrošinātāji)", value: csng.text.slice(0, 120) || "ir" });
+    if (values.length > 0) {
+      push(out, {
+        id: "listing_claim_no_accidents",
+        kind: "listing_claim",
+        severity: "warn",
+        title: "Sludinājumā «bez avārijām», avotos ir negadījumi",
+        values: [{ source: LISTING_PASTE_SOURCE, value: `„${claims.noAccidents}”` }, ...values],
+      });
+    }
+  }
+
+  if (claims.km != null) {
+    // Tikai fiksētie rādījumi (ne sludinājuma rindas - tas ir tas pats pārdevēja apgalvojums).
+    let best: { km: number; row: UnifiedMileageRow } | null = null;
+    for (const row of rows) {
+      if (/sludinājum/i.test(row.sourceLabel) || row.documentValue) continue;
+      const km = parseOdometerKm(row.odometer);
+      if (km == null || km <= 0) continue;
+      if (!best || km > best.km) best = { km, row };
+    }
+    if (best) {
+      const drop = best.km - claims.km;
+      if (drop >= Math.max(CROSS_SOURCE_DROP_MIN_KM, best.km * CROSS_SOURCE_DROP_RATIO)) {
+        push(out, {
+          id: "listing_claim_km_below_recorded",
+          kind: "listing_claim",
+          severity: "warn",
+          title: `Sludinājuma aprakstā nobraukums mazāks par fiksēto, −${fmtKm(drop)}`,
+          values: [
+            { source: LISTING_PASTE_SOURCE, value: fmtKm(claims.km) },
+            { source: best.row.sourceLabel, value: `${fmtKm(best.km)}${best.row.date ? ` (${best.row.date})` : ""}` },
+          ],
+        });
+      }
+    }
+  }
+}
+
 /* ---------- 7. Izsoļu cenas ---------- */
 
 function checkAuctionPrices(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIssue[]): void {
@@ -883,6 +947,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
     () => checkAiTexts(blocks, input.vin, input.texts ?? [], out),
     () => checkDamages(blocks, lots, nowMs, out),
     () => checkAuctionPrices(blocks, lots, out),
+    () => checkListingClaims(blocks, mileageRows(blocks, input.listingUrl), nowMs, out),
   ];
   for (const step of steps) {
     // Viena pārbaude ar negaidītiem datiem nedrīkst apturēt pārējās (un nekad - PDF / sūtīšanu).

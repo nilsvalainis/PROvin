@@ -130,3 +130,24 @@ describe("KANONISKIE FAKTI sheet", () => {
     expect(verdicts).not.toMatch(/Teksts\. Teksts\. Teksts\. Teksts\. Teksts\. Teksts\. Teksts\. Teksts\. Teksts\. Teksts\./);
   });
 });
+
+describe("KANONISKIE FAKTI - pārdevēja apgalvojumi sludinājumā", () => {
+  it("apgalvojumi ir lapā ar norādi, ka tie nav pārbaudīti (arī garā lapā - ārpus budžeta)", () => {
+    const blocks = fixtureBlocks();
+    blocks.listing_analysis = {
+      ...blocks.listing_analysis,
+      listingPasteRaw: "BMW 320d\n\nAuto nav sists. Viens īpašnieks.\n\nNobraukums, km: 150 000\nKrāsa: Balta",
+    };
+    blocks.citi_avoti = { ...blocks.citi_avoti, comments: "x".repeat(CANONICAL_FACTS_MAX_CHARS * 2) } as typeof blocks.citi_avoti;
+    const sheet = buildCanonicalFacts({ sourceBlocks: blocks }).sheet;
+    expect(sheet).toContain("Pārdevēja apgalvojumi sludinājumā (NAV pārbaudīti");
+    expect(sheet).toContain("- Nobraukums pēc pārdevēja: 150 000 km");
+    expect(sheet).toContain("„nav sists");
+    expect(sheet).toContain("- Krāsa: Balta");
+    expect(sheet.indexOf("Pārdevēja apgalvojumi")).toBeLessThan(sheet.indexOf(`=== BEIGAS ${CANONICAL_FACTS_HEADER}`));
+  });
+
+  it("bez apraksta sadaļas nav", () => {
+    expect(buildCanonicalFacts({ sourceBlocks: fixtureBlocks() }).sheet).not.toContain("Pārdevēja apgalvojumi");
+  });
+});

@@ -3,6 +3,10 @@
 import { isProvinUserscriptPresent, readProvinUserscriptVersion } from "@/lib/provin-userscript-presence";
 import { adifyHistoryPageLookupUrl, type AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
 import {
+  listingPageBrowserFetchAllowed,
+  userscriptVersionAllowsListingPageFetch,
+} from "@/lib/listing-page-browser-fetch";
+import {
   tirgusDatiHistoryPageLookupUrl,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
@@ -260,4 +264,40 @@ export async function loadListingPriceHistorySnapshot(
   const note = parsedNote || browserFailureNote(browserErrors, canUseBrowser);
   if (!note) return base;
   return { ...base, message: [base.message, note].filter(Boolean).join(" · ") };
+}
+
+/**
+ * Sludinājuma lapas HTML caur Tampermonkey (`provin-listing-page-request`), ja serveris to nedabūja.
+ * Tikai `LISTING_PAGE_BROWSER_HOSTS` portāli; mobile.de nekad (arī skripts to atsaka).
+ */
+export function fetchListingPageHtmlViaUserscript(
+  listingUrl: string,
+  timeoutMs = USERSCRIPT_HISTORY_TIMEOUT_MS,
+): Promise<BrowserHistoryFetch> {
+  if (typeof document === "undefined") return Promise.resolve({ html: null, error: "no_userscript" });
+  if (!listingPageBrowserFetchAllowed(listingUrl)) return Promise.resolve({ html: null, error: "host_not_allowed" });
+  if (!userscriptVersionAllowsListingPageFetch(readProvinUserscriptVersion())) {
+    return Promise.resolve({ html: null, error: "no_userscript" });
+  }
+  const requestId = `lp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (r: BrowserHistoryFetch) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("provin-listing-page-result", onResult);
+      resolve(r);
+    };
+    const timer = window.setTimeout(() => finish({ html: null, error: "timeout" }), timeoutMs);
+    const onResult = (event: Event) => {
+      const detail = (event as CustomEvent<UserscriptHistoryResult>).detail;
+      if (!detail || detail.requestId !== requestId) return;
+      finish(classifyUserscriptHistoryResult(detail));
+    };
+    document.addEventListener("provin-listing-page-result", onResult);
+    document.dispatchEvent(
+      new CustomEvent("provin-listing-page-request", { detail: { requestId, fetchUrl: listingUrl.trim() } }),
+    );
+  });
 }
