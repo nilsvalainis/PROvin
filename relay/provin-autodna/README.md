@@ -21,22 +21,24 @@ Testi (repo saknē): `npx vitest run lib/autodna-relay.test.ts lib/autodna-auto.
 
 - Sākumlapa un `/ajax/*` bez Cloudflare. Sīkdatņu logs (consentmanager) - relejs spiež "Noraidīt visu".
 - Pieteikšanās: galvenes poga -> forma `#form-login` (e-pasts, parole, noteikumu ķeksis) -> `POST /ajax/client_login`
-  -> `{is_valid, default_error}`. **24.11: 1Password parole neder ("Nepareizs logins vai parole")** - Nils ienāk ar Google.
-  Vajag: autodna.lv -> Login -> "Aizmirsi paroli?" -> jauna parole -> 1Password "Cowork Claude" / "www.autodna.lv".
-  E-pasta koda / 2FA solis nav redzēts (forma bez koda lauka); ja parādīsies, relejs atgriež `needs_human: login_code`.
-  Pēc nepareizas paroles relejs 6 h nemēģina vēlreiz (konta bloķēšanas risks).
+  -> `{is_valid, default_error}`. 24.11 rītā vecā 1Password parole neder; **24.11 pēcpusdienā Nils iestatīja paroli
+  (1Password «Cowork Claude» vārdā «www.autodna.lv» ir divi ieraksti - jāņem 24.11 izveidotais, vecais neder) -
+  pieteikšanās strādā, e-pasta koda / 2FA nav.** Pēc nepareizas paroles relejs 6 h nemēģina vēlreiz (bloķēšanas risks).
 - `POST /ajax/client_is_login` (vin=...) -> `client_id`, `report_bought`, `report_date`: ielogots? + vai VIN jau nopirkts.
-- `GET /ajax/get_client_credits` -> `data[{report_code:"report_autodna_vhr", limit}]`: kredītu atlikums.
+- `GET /ajax/get_client_credits` -> `data[{report_code:"report_autodna_vhr", limit}]`: kredītu atlikums (nolasīts dzīvi).
+- "Manas atskaites": `/profile/history` (`.report-item`, 5 lapā, pēdējie 3 mēn.), meklēšana `?search=<VIN>&user_search=1`;
+  saite "Atskaite autoDNA" -> `/vin/<VIN>/<slug>/<žetons>/autodna_vhr`. Tur "Lejupielādēt" -> `#report-link`
+  (`POST /ajax/get_report_file`) -> lejupielāde `/rcontent/.../1.pdf` (mPDF, ~0,7 MB). **PDF lejupielāde pārbaudīta dzīvi**
+  ar jau nopirktu atskaiti (kredīti netiek tērēti).
 - `/vin/<VIN>` (priekšpārbaude + grozs ar "maksāt ar kredītiem" `#payment-select-credit`) no Hetzner IP rāda
-  **Cloudflare Turnstile ķeksi "Verificējiet, ka esat cilvēks"**. Relejs to NEAPIET: kļūda `turnstile`, push Nilam ar saiti;
-  Nils atver saiti savā pārlūkā, apstiprina, un spiež pogu vēlreiz (priekšpārbaude AutoDNA pusē tad ir sagatavota - tā
-  pati parādība, ko izmanto VIN SCAN `lib/vin-scan/autodna-precheck.ts`; vai tas der arī grozam - jāpārbauda dzīvi).
-- Konta lapas `/profile/summary`, `/profile/history` (bez sesijas pāradresē uz sākumlapu).
+  **Cloudflare Turnstile ķeksi "Verificējiet, ka esat cilvēks" - arī ielogotam lietotājam**. Relejs to NEAPIET: kļūda
+  `turnstile`, push Nilam ar saiti; Nils atver saiti savā pārlūkā, apstiprina un spiež pogu vēlreiz (vai tad relejam grozs
+  atveras bez Turnstile - nav pārbaudīts). Tāpēc kredītu apmaksas izvēle, kopsumma un apmaksas poga **vēl nav redzēta**.
 
-**Vēl nav redzēts dzīvi (vajag strādājošu paroli):** konta vēstures rindas, kredītu apmaksas izvēle grozā, apmaksas
-poga, PDF lejupielādes saite. Tāpēc pirkuma poga tiek spiesta tikai ar `AUTODNA_PURCHASE_LIVE=1`; līdz tam pirkums ir
-**sauss** (viss pārbaudīts, ieskaitot kredītu izvēli un 0 € kopsummu, bet poga netiek spiesta, kļūda `dry_run`, admin
-panelī pirkuma poga netiek rādīta). Neatpazītā solī relejs neko nespiež un ieraksta `debug/` (teksts bez e-pastiem, cipari -> #).
+Pirkuma poga tiek spiesta tikai ar `AUTODNA_PURCHASE_LIVE=1`; līdz tam pirkums ir **sauss** (viss pārbaudīts, ieskaitot
+kredītu izvēli un 0 € kopsummu, bet poga netiek spiesta, kļūda `dry_run`, admin panelī pirkuma poga netiek rādīta).
+"Ielādēt nopirkto" strādā jau tagad (pēc pirkuma ar roku PDF nonāk pasūtījumā). Neatpazītā solī relejs neko nespiež un
+ieraksta `debug/` (teksts bez e-pastiem, cipari -> #).
 
 ## Aizsardzība (kāpēc nevar nopirkt nejauši vai divreiz)
 
@@ -68,7 +70,7 @@ PROVIN: PDF -> Blob + Dropbox `/_PROv/<auto>/AutoDNA - VIN.pdf`; admin panelis v
 ## Uzstādīšana (galvenais, root uz 37.27.149.106)
 
 `/etc/provin-autodna.env` (root 600) izveidots 24.11 ar `AUTODNA_RELAY_TOKEN`, `AUTODNA_WEB_EMAIL`,
-`AUTODNA_WEB_PASSWORD` (no 1Password ar `op-galv`; **parole jāatjauno pēc Nila paroles maiņas**),
+`AUTODNA_WEB_PASSWORD` (no 1Password ar `op-galv`, 24.11 izveidotais «www.autodna.lv» ieraksts),
 `PROVIN_AUTODNA_CALLBACK_URL`. Pievienot `AUTODNA_PURCHASE_LIVE=0`. Vērtības nekad nedrukāt.
 
 ```bash

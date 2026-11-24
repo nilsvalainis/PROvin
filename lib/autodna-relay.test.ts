@@ -13,9 +13,11 @@ import {
   isPdfBase64,
   parseClientCredits,
   parseCreditsFromText,
-  parseHistoryRows,
+  dnaHistoryUrl,
+  isReportPdfUrl,
+  parseHistoryItems,
   parseIsLogin,
-  pickPdfHref,
+  pickReportPageHref,
   redact,
   totalLooksLikeCredit,
 } from "@/relay/provin-autodna/lib/dna-page.mjs";
@@ -88,15 +90,21 @@ describe("AutoDNA relejs: lapu un atbilžu atpazīšana (dzīvi redzētās forma
     expect(totalLooksLikeCredit("EUR 9.99")).toBe(false);
   });
 
-  it("PDF saite: tikai autodna domēni, bez paraugiem / noteikumiem", () => {
-    expect(pickPdfHref([{ href: "https://evil.example/download/" + VIN + ".pdf" }], VIN)).toBe("");
-    expect(pickPdfHref([{ href: "/atskaites-piemeri/sample.pdf" }], VIN)).toBe("");
-    expect(pickPdfHref([{ href: "/download?file=terms_and_conditions" }], VIN)).toBe("");
-    expect(pickPdfHref([{ href: "/report/abc" }, { href: "/report/download/abc?vin=" + VIN, text: "Lejupielādēt PDF" }], VIN)).toBe(
-      "https://www.autodna.lv/report/download/abc?vin=" + VIN,
-    );
-    const rows = parseHistoryRows([{ text: `2026-11-05 ${VIN} Audi A4`, links: [{ href: "/report/1" }] }, { text: "nav VIN" }]);
-    expect(rows).toEqual([{ vin: VIN, date: "2026-11-05", links: [{ href: "/report/1" }] }]);
+  it("konta vēsture un atskaites lapa (dzīvi 24.11): tikai šis VIN, tikai autodna.lv, PDF tikai /rcontent", () => {
+    expect(dnaHistoryUrl(VIN)).toBe(`https://www.autodna.lv/profile/history?search=${VIN}&user_search=1`);
+    const page = `https://www.autodna.lv/vin/${VIN}/vw-golf-1998/abc123token/autodna_vhr`;
+    expect(pickReportPageHref([{ href: "https://www.autodna.lv/vin/WBA5R1C0XLFH42873/bmw/tok/autodna_vhr" }, { href: page }], VIN)).toBe(page);
+    expect(pickReportPageHref([{ href: `https://evil.example/vin/${VIN}/x/tok/autodna_vhr` }], VIN)).toBe("");
+    expect(pickReportPageHref([{ href: `https://www.autodna.lv/vin/${VIN}` }], VIN)).toBe("");
+    expect(isReportPdfUrl("https://www.autodna.lv/rcontent/aa/bb/1.pdf?t=x")).toBe(true);
+    expect(isReportPdfUrl("https://www.autodna.lv/assets/pdf/Pieejamibas_deklaracija_autodna_lv.pdf")).toBe(false);
+    expect(isReportPdfUrl("https://evil.example/rcontent/aa/1.pdf")).toBe(false);
+    const rows = parseHistoryItems([
+      { href: page, text: `${VIN} Volkswagen Golf Pirkuma datums 24.11.2026, 13:47:28 Darīga līdz 22.02.2027 23:59:59 Atskaite autoDNA` },
+      { href: page, text: "dublikāts" },
+      { href: "https://www.autodna.lv/atskaites-piemeri", text: "paraugs" },
+    ]);
+    expect(rows).toEqual([{ vin: VIN, date: "24.11.2026", until: "22.02.2027" }]);
   });
 
   it("žurnālā nav e-pasta (arī URL kodēta), paroles, tokena", () => {

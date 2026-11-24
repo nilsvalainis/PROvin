@@ -5,7 +5,8 @@
  *   - pieteikšanās ar e-pastu + paroli (sākumlapas forma #form-login; Google / Facebook pogas NElieto);
  *   - konts: kredītu atlikums (/ajax/get_client_credits) un "vai šim VIN jau nopirkts" (/ajax/client_is_login) -
  *     tie paši pieprasījumi, ko sūta AutoDNA lapa pati;
- *   - "Manas atskaites" (/profile/history) un nopirktās atskaites PDF;
+ *   - "Manas atskaites" (/profile/history, meklēšana ?search=VIN) un nopirktās atskaites PDF (atskaites lapa ->
+ *     "Lejupielādēt" -> "Atskaite PDF", tieši kā Nils to dara ar roku);
  *   - pirkums ar KREDĪTU /vin/<VIN> lapā: tikai, ja redzama "maksāt ar kredītiem" izvēle, kopsumma 0 € un viena skaidra
  *     apmaksas poga. Kamēr AUTODNA_PURCHASE_LIVE nav "1", pirkuma solis ir sauss (viss pārbaudīts, poga netiek spiesta).
  * Ko relejs NEKAD nedara: neiet uz pakām / biznesa pakām / bankas vārtejām (navigācija bloķēta), neievada karti,
@@ -17,17 +18,18 @@ import path from "node:path";
 import {
   DNA_HOME_URL,
   DNA_ORIGIN,
-  DNA_PROFILE_URLS,
   analyzePurchasePage,
   classifyLoginResponse,
+  dnaHistoryUrl,
   dnaVinUrl,
+  isReportPdfUrl,
   isPdfBase64,
   normalizeVin,
   parseClientCredits,
   parseCreditsFromText,
-  parseHistoryRows,
+  parseHistoryItems,
   parseIsLogin,
-  pickPdfHref,
+  pickReportPageHref,
   redact,
   totalLooksLikeCredit,
 } from "./dna-page.mjs";
@@ -203,89 +205,73 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     return { credits, bought: st.reportBought, reportDate: st.reportDate ?? "", reportReady: st.isReport || !st.isTimeout };
   }
 
-  /** Konta vēstures lapas rindas (VIN + saites). */
-  async function historyRows(p) {
-    for (const url of DNA_PROFILE_URLS) {
-      await p.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => undefined);
-      await p.waitForTimeout(2500);
-      await dismissConsent(p);
-      if (!p.url().includes("/profile")) continue;
-      const rows = await p
-        .evaluate(() =>
-          [...document.querySelectorAll("tr, li, .card, [class*=report], [class*=history] > div")]
-            .filter((el) => el.getClientRects().length > 0 && /[A-HJ-NPR-Z0-9]{17}/i.test(el.innerText || ""))
-            .slice(0, 200)
-            .map((el) => ({
-              text: (el.innerText || "").replace(/\s+/g, " ").slice(0, 400),
-              links: [...el.querySelectorAll("a[href]")].map((a) => ({ href: a.getAttribute("href") || "", text: (a.innerText || "").trim().slice(0, 60) })),
-            })),
-        )
-        .catch(() => []);
-      const parsed = parseHistoryRows(rows);
-      if (parsed.length) return parsed;
-    }
-    return [];
+  /** Konta vēsture (5 jaunākās vai meklēšana pēc VIN): rindas ar saiti uz atskaites lapu. */
+  async function historyItems(p, vin = "") {
+    await p.goto(dnaHistoryUrl(vin), { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => undefined);
+    await p.waitForTimeout(2500);
+    await dismissConsent(p);
+    if (!p.url().includes("/profile")) return [];
+    return p
+      .evaluate(() =>
+        [...document.querySelectorAll("a[href*='autodna_vhr']")].slice(0, 100).map((a) => {
+          const item = a.closest(".report-item") ?? a.parentElement;
+          return { href: a.href, text: (item?.innerText || "").replace(/\s+/g, " ").slice(0, 400) };
+        }),
+      )
+      .catch(() => []);
   }
 
-  /** "Manas atskaites" (tikai lasīšana): VIN + datums. */
+  /** "Manas atskaites" (tikai lasīšana): VIN + pirkuma datums + derīguma termiņš. */
   async function listReports() {
     const p = await getPage();
-    const rows = await historyRows(p);
+    const rows = parseHistoryItems(await historyItems(p));
     if (!rows.length) await debugDump(p, "history-empty");
-    return rows.map((r) => ({ vin: r.vin, date: r.date, links: r.links.length }));
+    return rows;
   }
 
-  async function fetchPdf(href) {
-    const ctx = await getContext();
-    const res = await ctx.request.get(href, { timeout: 90_000, maxRedirects: 5 }).catch(() => null);
-    if (!res || !res.ok()) return { ok: false, code: `pdf_get_${res ? res.status() : "x"}` };
-    let host = "";
-    try {
-      host = new URL(res.url()).hostname;
-    } catch {
-      /* */
-    }
-    if (!/(^|\.)autodna\.(lv|com|pl)$/i.test(host)) return { ok: false, code: "pdf_foreign_host" };
-    const buf = await res.body();
-    if (buf.length > PDF_MAX_BYTES) return { ok: false, code: "pdf_too_large" };
-    const base64 = buf.toString("base64");
-    if (!isPdfBase64(base64)) return { ok: false, code: "not_pdf" };
-    return { ok: true, base64, size: buf.length };
-  }
-
-  /** Nopirktās atskaites PDF: konta vēsture -> šī VIN rinda -> lejupielādes saite (vai atskaites lapa -> saite). */
+  /**
+   * Nopirktās atskaites PDF: vēsture ?search=VIN -> atskaites lapa -> "Lejupielādēt" -> #report-link -> lejupielāde
+   * (/rcontent/...pdf). Tikai lasīšana, kredīti netiek tērēti.
+   */
   async function downloadPdf(vin) {
     const v = normalizeVin(vin);
     const p = await getPage();
-    const rows = (await historyRows(p)).filter((r) => r.vin === v);
-    const links = rows.flatMap((r) => r.links);
-    let href = pickPdfHref(links, v);
+    const href = pickReportPageHref(await historyItems(p, v), v);
     if (!href) {
-      // Rindā ir saite uz atskaites lapu (nevis tieši PDF) - atver to un meklē lejupielādes saiti.
-      for (const l of links.slice(0, 4)) {
-        let u;
-        try {
-          u = new URL(l.href, DNA_ORIGIN);
-        } catch {
-          continue;
-        }
-        if (u.origin !== DNA_ORIGIN) continue;
-        await p.goto(u.toString(), { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => undefined);
-        await p.waitForTimeout(3000);
-        const pageLinks = await p
-          .evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => ({ href: a.getAttribute("href") || "", text: (a.innerText || "").trim().slice(0, 60) })))
-          .catch(() => []);
-        href = pickPdfHref(pageLinks, v);
-        if (href) break;
-      }
+      await debugDump(p, "pdf-not-in-history");
+      return { ok: false, code: "not_in_history" };
     }
-    if (!href) {
-      await debugDump(p, "pdf-link-missing", { rows: rows.length });
-      return { ok: false, code: rows.length ? "pdf_link_missing" : "not_in_history" };
+    await p.goto(href, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await p.waitForTimeout(3500);
+    await dismissConsent(p);
+    const menu = p.locator("button.dropdown-btn").filter({ hasText: /Lejupiel/i }).first();
+    const link = p.locator("#report-link").first();
+    if (!(await menu.isVisible().catch(() => false))) {
+      await debugDump(p, "pdf-no-menu");
+      return { ok: false, code: "pdf_link_missing" };
     }
-    const out = await fetchPdf(href);
-    if (out.ok) say(`PDF ${v}: ${out.size} B`);
-    return out;
+    await menu.click().catch(() => undefined);
+    await p.waitForTimeout(700);
+    const dlP = p.waitForEvent("download", { timeout: 90_000 }).catch(() => null);
+    await link.click({ timeout: 10_000 }).catch(() => undefined);
+    const dl = await dlP;
+    if (!dl) {
+      await debugDump(p, "pdf-no-download");
+      return { ok: false, code: "pdf_no_download" };
+    }
+    try {
+      if (!isReportPdfUrl(dl.url())) return { ok: false, code: "pdf_foreign_url" };
+      const file = await dl.path();
+      const buf = file ? await fs.readFile(file) : null;
+      if (!buf) return { ok: false, code: "pdf_read_failed" };
+      if (buf.length > PDF_MAX_BYTES) return { ok: false, code: "pdf_too_large" };
+      const base64 = buf.toString("base64");
+      if (!isPdfBase64(base64)) return { ok: false, code: "not_pdf" };
+      say(`PDF ${v}: ${buf.length} B`);
+      return { ok: true, base64, size: buf.length };
+    } finally {
+      await dl.delete().catch(() => undefined);
+    }
   }
 
   /** /vin/<VIN> lapas kopsavilkums pirkuma lēmumam (bez klikšķiem). */

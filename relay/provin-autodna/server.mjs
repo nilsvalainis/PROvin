@@ -147,7 +147,8 @@ async function getContext() {
     locale: "lv-LV",
     timezoneId: "Europe/Riga",
     viewport: { width: 1366, height: 900 },
-    acceptDownloads: false,
+    // Atskaites PDF AutoDNA atdod kā lejupielādi (#report-link); fails tiek nolasīts un uzreiz dzēsts.
+    acceptDownloads: true,
     args: ["--disable-blink-features=AutomationControlled", "--no-first-run", "--no-default-browser-check", "--disable-dev-shm-usage"],
   };
   try {

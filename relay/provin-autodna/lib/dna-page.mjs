@@ -13,12 +13,15 @@
  *     kredītu atlikums (lapa pati to lieto, lai rādītu "maksāt ar kredītiem" #payment-select-credit);
  *   - /vin/<VIN> (priekšpārbaude + grozs) no Hetzner IP rāda Cloudflare Turnstile ar ķeksi "Verificējiet, ka esat cilvēks"
  *     -> relejs to NEAPIET: needs_human (Nils atver saiti savā pārlūkā, pēc tam priekšpārbaude AutoDNA pusē ir gatava);
- *   - konta lapas /profile/summary, /profile/history (bez sesijas -> pāradresē uz sākumlapu).
+ *   - konta lapas /profile/summary, /profile/history (bez sesijas -> pāradresē uz sākumlapu); ar pareizu paroli (24.11
+ *     vēlāk) vēsture .reports-list > .report-item ar saiti "Atskaite autoDNA" uz /vin/<VIN>/<slug>/<žetons>/autodna_vhr,
+ *     5 rindas lapā, meklēšana ?search=<VIN>&user_search=1; atskaites lapā "Lejupielādēt" -> #report-link -> /rcontent/...pdf (mPDF);
+ *   - ielogotam lietotājam /vin/<VIN> (jauns VIN) arī rāda Turnstile.
  */
 
 export const DNA_ORIGIN = "https://www.autodna.lv";
 export const DNA_HOME_URL = `${DNA_ORIGIN}/`;
-export const DNA_PROFILE_URLS = [`${DNA_ORIGIN}/profile/history`, `${DNA_ORIGIN}/profile/summary`];
+
 export const DNA_VHR_REPORT_CODE = "report_autodna_vhr";
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
@@ -171,13 +174,20 @@ export function totalLooksLikeCredit(totalText) {
   return Number(m[1].replace(",", ".")) === 0;
 }
 
-/**
- * Atskaites lejupielādes saite: tikai autodna domēnos, ceļš ar download/pdf/report un (ja var) šo VIN.
- * @param {{href:string, text?:string}[]} links
- */
-export function pickPdfHref(links, vin) {
+/** Konta vēstures meklēšana pēc VIN (lapas forma: `?search=<VIN>&user_search=1`, bez user_search meklēšana tiek ignorēta; pēc noklusējuma rāda 5 jaunākās, pēdējie 3 mēn.). */
+export function dnaHistoryUrl(vin = "") {
   const v = normalizeVin(vin);
-  const ranked = [];
+  return `${DNA_ORIGIN}/profile/history${v ? `?search=${encodeURIComponent(v)}&user_search=1` : ""}`;
+}
+
+/**
+ * Nopirktās atskaites lapa (dzīvi 24.11): `/vin/<VIN>/<auto-slug>/<žetons>/autodna_vhr` konta vēsturē ("Atskaite autoDNA").
+ * Tikai www.autodna.lv un tieši šis VIN. PDF tajā lapā: "Lejupielādēt" -> #report-link (POST /ajax/get_report_file ->
+ * /rcontent/.../1.pdf).
+ * @param {{href:string}[]} links
+ */
+export function pickReportPageHref(links, vin) {
+  const v = normalizeVin(vin);
   for (const l of links ?? []) {
     let u;
     try {
@@ -185,29 +195,38 @@ export function pickPdfHref(links, vin) {
     } catch {
       continue;
     }
-    if (!/(^|\.)autodna\.(lv|com|pl)$/i.test(u.hostname)) continue;
-    if (u.protocol !== "https:") continue;
-    const hay = `${u.pathname}${u.search} ${l.text ?? ""}`;
-    if (!/download|pdf|lejupiel|pobierz/i.test(hay)) continue;
-    if (/sample|piemer|example|terms|noteikum|qr_code|invoice|rekin/i.test(hay)) continue;
-    const score = (hay.toUpperCase().includes(v) ? 2 : 0) + (/report_autodna_vhr|\.pdf\b/i.test(hay) ? 1 : 0);
-    ranked.push({ href: u.toString(), score });
+    if (u.protocol !== "https:" || !isAllowedHost(u.hostname)) continue;
+    const parts = u.pathname.split("/").filter(Boolean);
+    if (parts[0] !== "vin" || normalizeVin(parts[1]) !== v || parts[parts.length - 1] !== "autodna_vhr") continue;
+    return u.toString();
   }
-  ranked.sort((a, b) => b.score - a.score);
-  return ranked[0]?.href ?? "";
+  return "";
 }
 
-/** "Manas atskaites" rindas (konta vēsture): VIN + saite + datums no lapas rindām. Bez personas datiem. */
-export function parseHistoryRows(rows) {
-  const out = [];
-  for (const r of rows ?? []) {
-    const text = String(r?.text ?? "");
-    const m = text.toUpperCase().match(/\b[A-HJ-NPR-Z0-9]{17}\b/);
-    if (!m) continue;
-    const date = text.match(/\b(\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})\b/)?.[1] ?? "";
-    out.push({ vin: m[0], date, links: (r.links ?? []).slice(0, 10) });
+/** PDF lejupielādes adrese: tikai autodna.lv `/rcontent/...pdf` (ne /assets/pdf deklarācijas, ne paraugi). */
+export function isReportPdfUrl(href) {
+  try {
+    const u = new URL(String(href ?? ""));
+    return u.protocol === "https:" && isAllowedHost(u.hostname) && /^\/rcontent\/.+\.pdf$/i.test(u.pathname);
+  } catch {
+    return false;
   }
-  return out;
+}
+
+/** "Manas atskaites" (konta vēsture): viena rinda uz VIN - datums no "Pirkuma datums" un atskaites lapa. Bez personas datiem. */
+export function parseHistoryItems(items) {
+  const out = new Map();
+  for (const it of items ?? []) {
+    const href = String(it?.href ?? "");
+    const m = href.match(/\/vin\/([A-HJ-NPR-Z0-9]{17})\//i);
+    if (!m || !/\/autodna_vhr(\?|$)/.test(href)) continue;
+    const vin = m[1].toUpperCase();
+    const text = String(it?.text ?? "");
+    const date = text.match(/Pirkuma datums\s*(\d{2}\.\d{2}\.\d{4})/i)?.[1] ?? text.match(/\b(\d{2}\.\d{2}\.\d{4})\b/)?.[1] ?? "";
+    const until = text.match(/D[aeē]r[iī]ga l[iī]dz\s*(\d{2}\.\d{2}\.\d{4})/i)?.[1] ?? "";
+    if (!out.has(vin)) out.set(vin, { vin, date, until });
+  }
+  return [...out.values()];
 }
 
 export function isPdfBase64(b64) {
