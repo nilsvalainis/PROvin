@@ -12,6 +12,7 @@ import {
   CARINFO_SUPER_SEARCH_DIRECT_MS,
   CARINFO_SUPER_SEARCH_FETCH_MS,
   CARINFO_SUPER_SEARCH_RELAY_MS,
+  carinfoScanFromPage,
   runCarinfoLookup,
 } from "@/lib/vin-scan/carinfo-lookup";
 
@@ -48,7 +49,7 @@ const VOLVO_V70_HTML = `
 `;
 
 describe("car.info VIN adreses", () => {
-  it("servera ceļš ir /sv-se/vin/S/, operatora saite paliek /en-se/vin/S/", () => {
+  it("pirmā ir /en-se/vin/S/ (arī operatora saite), /sv-se/vin/S/ ir rezerve", () => {
     expect(carinfoSvVinUrl(VIN)).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(carinfoSwedenVinUrl(VIN)).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
     expect(carinfoSwedenVinUrl(VIN)).not.toContain("search?q=");
@@ -78,15 +79,15 @@ function superSearchLocales(calls: string[]): string[] {
 const EMPTY_SUPER = JSON.stringify({ hits: { idents: [] }, hits_html: "" });
 
 describe("runCarinfoLookup", () => {
-  it("sv-se VIN lapa pietiek, en-se un numuru neprasa", async () => {
+  it("en-se VIN lapa pietiek, sv-se un numuru neprasa", async () => {
     const calls: string[] = [];
     const parsed = await runCarinfoLookup(VIN, "", async (url) => {
       calls.push(url);
       return { status: 200, text: VOLVO_V70_HTML };
     });
-    expect(calls).toEqual([`https://www.car.info/sv-se/vin/S/${VIN}`]);
+    expect(calls).toEqual([`https://www.car.info/en-se/vin/S/${VIN}`]);
     expect(parsed.status).toBe("found");
-    expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
+    expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
     expect(parsed.summary).toBe("Volvo V70, 1997, 523 710 km, 12 īpašnieki");
     expect(parsed.vehicle).toEqual({ make: "Volvo", model: "V70", year: "1997" });
     expect(parsed.mileage).toEqual(
@@ -114,8 +115,8 @@ describe("runCarinfoLookup", () => {
       }
       return { status: 404, text: "not found" };
     });
-    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
-    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls[0]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls[1]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
     expect(calls.at(-1)).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
     expect(calls.some((url) => url.includes("search?q="))).toBe(false);
@@ -145,23 +146,27 @@ describe("runCarinfoLookup", () => {
       return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
     });
     expect(calls.slice(0, 2)).toEqual([
-      `https://www.car.info/sv-se/vin/S/${VIN}`,
       `https://www.car.info/en-se/vin/S/${VIN}`,
+      `https://www.car.info/sv-se/vin/S/${VIN}`,
     ]);
     expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
     expect(calls.some((url) => url.includes("/license-plate/"))).toBe(false);
     expect(parsed.status).toBe("blocked");
     expect(parsed.summary).toBe("car.info bloķē serveri - atver pārlūkā");
-    expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
+    expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
   });
 
-  it("sv-se lapa ar mil nolasa km un auto, en-se netiek saukts", async () => {
+  it("en-se 403: sv-se lapa ar mil nolasa km un auto", async () => {
     const calls: string[] = [];
     const parsed = await runCarinfoLookup("YV1DZ5251B2146640", "", async (url) => {
       calls.push(url);
+      if (url.includes("/en-se/")) return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
       return { status: 200, text: SV_XC60_HTML };
     });
-    expect(calls).toEqual(["https://www.car.info/sv-se/vin/S/YV1DZ5251B2146640"]);
+    expect(calls).toEqual([
+      "https://www.car.info/en-se/vin/S/YV1DZ5251B2146640",
+      "https://www.car.info/sv-se/vin/S/YV1DZ5251B2146640",
+    ]);
     expect(parsed.status).toBe("found");
     expect(parsed.summary).toContain("Volvo XC60");
     expect(parsed.summary).toContain("2011");
@@ -171,18 +176,18 @@ describe("runCarinfoLookup", () => {
     expect(parsed.flags?.registrationCountry).toBe("SE");
   });
 
-  it("sv-se 403 turpina uz en-se un neapstājas", async () => {
+  it("en-se 403 turpina uz sv-se un neapstājas", async () => {
     const calls: string[] = [];
     const parsed = await runCarinfoLookup(VIN, "", async (url) => {
       calls.push(url);
-      if (url.includes("/sv-se/")) return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
+      if (url.includes("/en-se/")) return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
       return { status: 200, text: VOLVO_V70_HTML };
     });
-    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
-    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls[0]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls[1]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(calls.some((url) => url.includes("/search/super/"))).toBe(false);
     expect(parsed.status).toBe("found");
-    expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
   });
 
   it("DK super-search atrod VIN, ko Zviedrijas lapas neredz", async () => {
@@ -224,8 +229,8 @@ describe("runCarinfoLookup", () => {
       if (url.includes("/search/super/")) return { status: 200, text: EMPTY_SUPER };
       return { status: 404, text: "not found" };
     });
-    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${dkVin}`);
-    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${dkVin}`);
+    expect(calls[0]).toBe(`https://www.car.info/en-se/vin/S/${dkVin}`);
+    expect(calls[1]).toBe(`https://www.car.info/sv-se/vin/S/${dkVin}`);
     const dkLocaleAt = CARINFO_SEARCH_LOCALES.indexOf("en-dk");
     expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES].slice(0, dkLocaleAt + 1));
     expect(calls.at(-1)).toBe(dkPage);
@@ -355,5 +360,16 @@ describe("runCarinfoLookup", () => {
     expect(Date.now() - started).toBeLessThan(1_200);
     expect(parsed.status).toBe("blocked");
     expect(parsed.summary).toBe("car.info bloķē serveri - atver pārlūkā");
+  });
+});
+
+describe("carinfoScanFromPage valsts", () => {
+  it("DK lapa ar tirgus izvēlni 'Sweden' nav Zviedrijas reģistrācija", () => {
+    const html = `<html><body><div>Market</div><div>Sweden</div><div>Denmark</div><div>EN / DK</div>
+      <p>AB12345 is a Renault Captur from 2014.</p>
+      <dl><dt>In Traffic</dt><dd>Yes</dd><dt>Number of Owners</dt><dd>3</dd></dl></body></html>`;
+    const parsed = carinfoScanFromPage(200, html);
+    expect(parsed.status).toBe("found");
+    expect(parsed.flags?.registrationCountry).toBeUndefined();
   });
 });
