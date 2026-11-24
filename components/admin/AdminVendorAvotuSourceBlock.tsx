@@ -67,6 +67,7 @@ import {
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 import { AdminCarVerticalPurchaseButton } from "@/components/admin/AdminCarVerticalPurchaseButton";
+import { AdminAutodnaAutoPanel } from "@/components/admin/AdminAutodnaAutoPanel";
 import { AdminCarVerticalAutoPanel } from "@/components/admin/AdminCarVerticalAutoPanel";
 
 const inp =
@@ -226,6 +227,15 @@ export function AdminVendorAvotuSourceBlock({
         ) : null}
         {blockKey === "carvertical" ? (
           <AdminCarVerticalPurchaseButton disabled={disabled} readOnly={readOnly} />
+        ) : null}
+        {blockKey === "autodna" && getSourceBlocks && applyPatchedBlocks ? (
+          <AdminAutodnaAutoPanel
+            sessionId={sessionId}
+            disabled={disabled}
+            readOnly={readOnly}
+            getSourceBlocks={getSourceBlocks}
+            applyPatchedBlocks={applyPatchedBlocks}
+          />
         ) : null}
         {blockKey === "carvertical" || blockKey === "autodna" ? (
           getSourceBlocks && applyPatchedBlocks ? (

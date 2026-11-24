@@ -97,7 +97,7 @@ PROVIN (Vercel) puse: `/api/admin/ecsdd/paid/sms-link`, `/api/admin/ecsdd/paid/r
 ("Sūtīt automātiski": e-pasts no info@provin.lv, temats `PROVIN CSDD SMS`, 1. rinda numurs, 2. rinda teksts; adresāts
 `ECSDD_SMS_TRIGGER_EMAIL` (bez tā poga nav redzama); `ECSDD_SMS_TRIGGER_MODE=pull` - bez e-pasta) un Īsceļiem
 `GET /api/ecsdd/paid-sms` ar `Authorization: Bearer <ECSDD_PAID_API_TOKEN>` (bez env izslēgts).
-Automātiski pēc apmaksas (AUDITS ar LV numuru, `CSDD_PAID_AUTO_ENABLED=1`): `lib/csdd-paid-auto.ts` + cron `/api/cron/csdd-paid-auto`.
+Automātiski pēc apmaksas (AUDITS un PROVIN Business - privātā saite vai B2B partnera konts - ar LV numuru, `CSDD_PAID_AUTO_ENABLED=1`; tikai B2B izslēgt: `CSDD_PAID_AUTO_B2B_ENABLED=0`): `lib/csdd-paid-auto.ts` + cron `/api/cron/csdd-paid-auto`. Bez LV numura adminā "nav LV numura"; demo / Stripe testa režīms naudu netērē.
 CSDD PDF no info@provin.lv: `docs/apps-script/csdd-pdf-inbox.md` -> `POST /api/ecsdd/pdf-inbox`.
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)

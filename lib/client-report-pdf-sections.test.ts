@@ -163,20 +163,20 @@ describe("PDF design system", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("ATSKAITES KOPSAVILKUMS");
-    expect(html).toContain("pdf-summary-tile--alert");
-    expect(html).toContain("Negadījumi un bojājumi");
+    // 24.11 makets 6a: 1. lapas augšdaļa aizstāj «ATSKAITES KOPSAVILKUMS» un «Kas tika pārbaudīts».
+    expect(html).toContain('class="pdf-top6"');
+    expect(html).not.toContain("ATSKAITES KOPSAVILKUMS");
+    expect(html).toContain("pdf-top6-card__v s-alert");
     expect(html).toContain("1 bojājumu ieraksts");
-    expect(html).toContain("120 000 km");
-    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain("120 000");
+    expect(html).toContain(">Īpašnieki<");
     expect(html).toContain("Latvijā 2");
     expect(html).not.toContain("Latvijā: 2");
     expect(html).not.toContain("2 īpašnieki");
-    expect(html).toContain("Kas tika pārbaudīts");
-    expect(html).toContain("pdf-src-dot pdf-src-dot--autodna");
+    expect(html).toContain("atskaites ģenerēšanā izmantotie avoti");
+    expect(html).toContain('alt="autoDNA"');
     expect(html).toContain("PASŪTĪJUMA DATI");
-    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("Kas tika pārbaudīts"));
-    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
+    expect(html.indexOf('class="pdf-top6"')).toBeLessThan(html.indexOf("NOBRAUKUMA VĒSTURE"));
     expect(html.indexOf("NOBRAUKUMA VĒSTURE")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
   });
 
@@ -238,7 +238,7 @@ describe("PDF design system", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain(">Īpašnieki<");
     expect(html).toContain("Latvijā 2");
     expect(html).toContain("Zviedrijā 6");
     expect(html).not.toContain("8 īpašnieki");
@@ -270,7 +270,7 @@ describe("PDF design system", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain(">Īpašnieki<");
     expect(html).not.toContain("Latvijā 2");
     expect(html).not.toContain("Latvijā: 2");
   });
@@ -293,9 +293,9 @@ describe("PDF design system", () => {
     expect(html).toContain("Klients");
     expect(html).toContain("Jānis Bērziņš");
     expect(html).toContain("Interesē tikai bojājumi");
-    expect(html).not.toContain("Transportlīdzeklis");
-    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
-    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
+    // Auto identitāte ir 1. lapas augšdaļā, ne «Pasūtījuma dati» blokā.
+    expect(html.slice(html.indexOf("PASŪTĪJUMA DATI"))).not.toContain("Transportlīdzeklis");
+    expect(html.indexOf('class="pdf-top6"')).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
   });
 
   it("marks each source zone with its own accent and record count", () => {
@@ -561,14 +561,13 @@ describe("Pasūtījuma dati", () => {
     });
     expect(html).toContain("PASŪTĪJUMA DATI");
     expect(html).not.toContain("TRANSPORTLĪDZEKĻA DATI");
-    expect(html).toContain('class="pdf-summary-identity__model">BMW 520D</p>');
-    expect(html).toContain("SADCA2BK6HA098675");
+    expect(html).toMatch(/class="pdf-top6__model"[^>]*>BMW 520D<\/h1>/);
+    expect(html).toContain("<b>VIN</b>SADCA2BK6HA098675");
+    // Dzinējs / degviela no CSDD 1. lapas augšdaļā.
+    expect(html).toMatch(/class="pdf-top6__spec"[^>]*>Dīzelis · 2,0 l · 140 kW</);
     expect(html).not.toContain("Marka / modelis");
-    expect(html.indexOf("ATSKAITES KOPSAVILKUMS")).toBeLessThan(html.indexOf('class="pdf-summary-identity__model"'));
-    expect(html.indexOf('class="pdf-summary-identity__model"')).toBeLessThan(
-      html.indexOf('class="pdf-summary-tiles"'),
-    );
-    expect(html.indexOf("Kas tika pārbaudīts")).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
+    expect(html.indexOf('class="pdf-top6__model"')).toBeLessThan(html.indexOf('class="pdf-top6__grid"'));
+    expect(html.indexOf('class="pdf-top6"')).toBeLessThan(html.indexOf("PASŪTĪJUMA DATI"));
     const csddZone = html.slice(html.indexOf("pdf-src-zone pdf-src-zone--csdd"));
     expect(csddZone).toContain("AB1234");
     expect(csddZone).toContain("Degvielas veids:");
@@ -2269,14 +2268,12 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const wrap = doc.match(/pdf-provin-sources-wrap[\s\S]*?<\/table>/)?.[0] ?? "";
-    expect(wrap).toContain("Maksas vēstures atskaites");
+    const wrap = doc.match(/<p class="pdf-top6__tot">[\s\S]*?<\/p>/)?.[0] ?? "";
     // CSDD skaitās vienreiz - publiskajās datubāzēs (agrāk arī maksas rindā).
-    expect(wrap).toMatch(/Maksas vēstures atskaites<\/td><td>5<\/td>/);
-    expect(wrap).toMatch(/Publiskas Eiropas datubāzes<\/td><td>3<\/td>/);
-    expect(wrap).toMatch(/Citi avoti<\/td><td>3<\/td>/);
-    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>11<\/strong>/);
-    expect(wrap).not.toMatch(/Kopā<\/strong><\/td><td><strong>9<\/strong>/);
+    expect(wrap).toContain("Maksas vēstures atskaites <b>5</b>");
+    expect(wrap).toContain("Publiskas Eiropas datubāzes <b>3</b>");
+    expect(wrap).toContain("Citi avoti <b>3</b>");
+    expect(wrap).toContain("Kopā <b>11</b>");
   });
 
   it("lists each Citi avoti section by title only under Kas tika pārbaudīts", () => {
@@ -2316,15 +2313,15 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const wrap = doc.match(/<section class="pdf-provin-sources-wrap[\s\S]*?<\/section>/)?.[0] ?? "";
-    const table = wrap.match(/<table class="pdf-v1-kv"[\s\S]*?<\/table>/)?.[0] ?? "";
-    expect(table).toMatch(/Citi avoti<\/td><td>4<\/td>/);
-    expect(table).not.toContain("CarFax");
-    expect(table).not.toContain("CEBIA");
-    expect(table).toMatch(/Kopā<\/strong><\/td><td><strong>4<\/strong>/);
-    expect(wrap).toContain("CarFax");
-    expect(wrap).toContain("CEBIA");
-    expect(wrap).toContain("pdf-sources-checked-name");
+    const wrap = doc.match(/<div class="pdf-top6__src">[\s\S]*?<\/section>/)?.[0] ?? "";
+    const tot = wrap.match(/<p class="pdf-top6__tot">[\s\S]*?<\/p>/)?.[0] ?? "";
+    expect(tot).toContain("Citi avoti <b>4</b>");
+    expect(tot).not.toContain("CarFax");
+    expect(tot).not.toContain("CEBIA");
+    expect(tot).toContain("Kopā <b>4</b>");
+    expect(wrap).toContain(">CarFax<");
+    expect(wrap).toContain(">CEBIA<");
+    expect(wrap).toContain("pdf-top6-src");
   });
 
   it("PDF footer is a document colophon without website marketing or issuer personal data", () => {
@@ -2425,7 +2422,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(2);
   });
 
-  it("places one cover photo directly under the summary banners", () => {
+  it("uses the listing cover photo once, as the page 1 photo", () => {
     const id = "la_ph_aabbccddeeff001122334455";
     const src = "data:image/jpeg;base64,/9j/cover";
     const doc = buildClientReportDocumentHtml({
@@ -2441,9 +2438,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       formatBytes: () => "0 B",
       listingAnalysisPhotoDataUrls: new Map([[id, src]]),
     });
-    expect(doc).toContain('class="pdf-cover-photo"');
-    expect(doc).toContain(src);
-    expect(doc.indexOf('class="pdf-report-summary')).toBeLessThan(doc.indexOf('class="pdf-cover-photo"'));
+    // 24.11 (makets 6a): sludinājuma titulbilde ir 1. lapas augšdaļas foto, otrreiz zem tās netiek likta.
+    expect(doc).toContain(`<div class="pdf-top6__ph"><img src="${src}"`);
+    expect((doc.match(/data:image\/jpeg;base64,\/9j\/cover/g) ?? []).length).toBe(1);
+    expect(doc).not.toContain('class="pdf-cover-photo"');
+    expect(doc).toContain("Sludinājuma foto");
     expect(doc).not.toContain('class="pdf-listing-photo-grid"');
     expect(doc).toMatch(/\.pdf-cover-photo\{[^}]*background:#fff/);
     expect(doc).toMatch(/\.pdf-cover-photo__img\{[^}]*background:#fff/);
@@ -3042,7 +3041,7 @@ describe("PDF v4 client report", () => {
     expect(html).toContain(".pdf-incident-card__car .pdf-dmg-sil{width:84px;}");
     expect(html).toContain("border-left:3px solid #F87171");
     expect(html).toContain("120 000");
-    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain(">Īpašnieki<");
     expect(html).toContain("Skaits nav fiksēts");
     expect(html).not.toContain("km nav");
   });

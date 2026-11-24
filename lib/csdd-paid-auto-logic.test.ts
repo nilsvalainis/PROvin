@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   CSDD_PAID_POLL_TOTAL_MS,
+  csddPaidAutoB2bEnabled,
   csddPaidAutoDailyMax,
   csddPaidAutoEnabled,
+  csddPaidAutoIsDemo,
   csddPaidAutoJobOpen,
   csddPaidAutoPlate,
   csddPaidAutoProductEligible,
+  csddPaidAutoProductKind,
   csddPaidAutoStatusLv,
   decideCsddPaidAutoAction,
   isRigaNight,
@@ -30,10 +33,12 @@ const job = (p: Partial<CsddPaidAutoJob> = {}): CsddPaidAutoJob => ({
 const limits = { dailyCount: 0, dailyMax: 10 };
 
 describe("produkta filtrs", () => {
-  it("tikai AUDITS (audit/premium)", () => {
+  it("AUDITS (audit/premium) un PROVIN Business", () => {
     expect(csddPaidAutoProductEligible({ checkoutLine: "audit" })).toBe(true);
     expect(csddPaidAutoProductEligible({ checkoutLine: "premium" })).toBe(true);
-    for (const line of ["dealer", "mini", "plus", "business", "provin_select", "consultation"]) {
+    expect(csddPaidAutoProductKind({ checkoutLine: "audit" })).toBe("audit");
+    expect(csddPaidAutoProductKind({ checkoutLine: "business" })).toBe("b2b");
+    for (const line of ["dealer", "mini", "plus", "provin_select", "consultation"]) {
       expect(csddPaidAutoProductEligible({ checkoutLine: line })).toBe(false);
     }
   });
@@ -44,7 +49,23 @@ describe("produkta filtrs", () => {
     expect(csddPaidAutoProductEligible({ checkoutLine: "audit", fulfillment: "b2b_wallet_topup" })).toBe(false);
     expect(csddPaidAutoProductEligible({ checkoutLine: "audit", fulfillment: "order_upsell" })).toBe(false);
     expect(csddPaidAutoProductEligible({ checkoutLine: "audit", fulfillment: "client_link" })).toBe(true);
-    expect(csddPaidAutoProductEligible({ checkoutLine: "business", fulfillment: "business_link" })).toBe(false);
+    expect(csddPaidAutoProductKind({ checkoutLine: "business", fulfillment: "business_link" })).toBe("b2b");
+    expect(csddPaidAutoProductEligible({ checkoutLine: "business", fulfillment: "b2b_pack" })).toBe(false);
+    expect(csddPaidAutoProductEligible({ checkoutLine: "business", fulfillment: "business_link", isDealerData: true })).toBe(false);
+  });
+  it("B2B partnera konts: tikai Business, ne dīlera dati", () => {
+    expect(csddPaidAutoProductKind({ checkoutLine: "business", channel: "b2b_partner" })).toBe("b2b");
+    expect(csddPaidAutoProductKind({ checkoutLine: "dealer", channel: "b2b_partner" })).toBeNull();
+    expect(csddPaidAutoProductKind({ checkoutLine: "audit", channel: "b2b_partner" })).toBeNull();
+  });
+  it("demo / testa pasūtījumi naudu netērē", () => {
+    expect(csddPaidAutoIsDemo("cs_live_abc")).toBe(false);
+    expect(csddPaidAutoIsDemo("manual_order_20261124_abc")).toBe(false);
+    expect(csddPaidAutoIsDemo("cs_live_abc", { livemode: false })).toBe(true);
+    expect(csddPaidAutoIsDemo("cs_live_abc", { isDemo: true })).toBe(true);
+    expect(csddPaidAutoIsDemo("demo_order_exp_1")).toBe(true);
+    expect(csddPaidAutoIsDemo("ord_abc123")).toBe(true);
+    expect(csddPaidAutoIsDemo("")).toBe(true);
   });
 });
 
@@ -65,6 +86,10 @@ describe("env", () => {
   it("noklusējums izslēgts, griesti 10", () => {
     expect(csddPaidAutoEnabled({})).toBe(false);
     expect(csddPaidAutoEnabled({ CSDD_PAID_AUTO_ENABLED: "1" })).toBe(true);
+    // B2B iet kopā ar galveno slēdzi; atsevišķi tikai izslēdzams.
+    expect(csddPaidAutoB2bEnabled({})).toBe(true);
+    expect(csddPaidAutoB2bEnabled({ CSDD_PAID_AUTO_B2B_ENABLED: "0" })).toBe(false);
+    expect(csddPaidAutoB2bEnabled({ CSDD_PAID_AUTO_B2B_ENABLED: "off" })).toBe(false);
     expect(csddPaidAutoDailyMax({})).toBe(10);
     expect(csddPaidAutoDailyMax({ CSDD_PAID_AUTO_DAILY_MAX: "3" })).toBe(3);
     expect(csddPaidAutoDailyMax({ CSDD_PAID_AUTO_DAILY_MAX: "0" })).toBe(0);
@@ -150,15 +175,19 @@ describe("statuss un normalizācija", () => {
     expect(csddPaidAutoJobOpen(job({ state: "awaiting_payment" }))).toBe(false);
     expect(csddPaidAutoJobOpen(job({ state: "found", rawText: "x" }))).toBe(true);
     expect(csddPaidAutoJobOpen(job({ state: "found", rawText: "x", appliedAt: "t" }))).toBe(false);
+    expect(csddPaidAutoJobOpen(job({ state: "no_plate", plate: "" }))).toBe(false);
+    expect(decideCsddPaidAutoAction(job({ state: "no_plate", plate: "" }), at("2026-11-23T10:00:00"), limits).kind).toBe("none");
   });
   it("teksti latviski", () => {
     expect(csddPaidAutoStatusLv(job({ state: "awaiting_payment" }))).toBe("gaida apmaksu");
+    expect(csddPaidAutoStatusLv(job({ state: "no_plate", plate: "" }))).toBe("nav LV numura");
     expect(csddPaidAutoStatusLv(job({ deferReason: "night" }))).toContain("naktī");
     expect(csddPaidAutoStatusLv(job({ state: "found", appliedAt: "t" }))).toContain("ielasīta");
   });
   it("bojāts ieraksts -> null", () => {
     expect(normalizeCsddPaidAutoJob({ state: "x", plate: "RO8544" }, "s")).toBeNull();
     expect(normalizeCsddPaidAutoJob({ state: "queued" }, "s")).toBeNull();
+    expect(normalizeCsddPaidAutoJob({ state: "no_plate", product: "b2b" }, "s")).toMatchObject({ state: "no_plate", plate: "", product: "b2b" });
     expect(normalizeCsddPaidAutoJob({ state: "queued", plate: "ro8544", polls: 2 }, "s")?.plate).toBe("RO8544");
   });
 });

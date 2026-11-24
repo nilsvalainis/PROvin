@@ -1,6 +1,7 @@
 /**
  * Servera un klienta darba zonas PATCH — deep merge ar iepriekšējo canonical state.
  */
+import { contradictionFeedbackSnapshotField } from "@/lib/contradiction-feedback";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
@@ -35,6 +36,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     ...clearedFieldsSnapshotField(w.clearedFields),
     ...technicalRiskMapSnapshotField(w.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(w.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(w.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(w.dealerMajorWorkOverrides),
   });
 }
@@ -64,6 +66,7 @@ export function persistBodyToOrderDraftWorkspace(
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
   };
 }

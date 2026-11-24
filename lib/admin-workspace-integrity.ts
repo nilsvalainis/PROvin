@@ -29,6 +29,7 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.contradictionFeedback != null ? { contradictionFeedback: w.contradictionFeedback } : {}),
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
@@ -55,6 +56,7 @@ export function stableWorkspaceChecksum(
     ...(normalized.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: normalized.odometerAnomalyOverrides }
       : {}),
+    ...(normalized.contradictionFeedback != null ? { contradictionFeedback: normalized.contradictionFeedback } : {}),
     ...(normalized.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: normalized.dealerMajorWorkOverrides }
       : {}),

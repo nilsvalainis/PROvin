@@ -65,7 +65,7 @@ import type {
 import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listings-vat";
 import { refreshIrissListingMatches } from "@/lib/iriss-listing-match-store";
 import { listIrissPasutijumi, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
-import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsSearchOn, isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { irissScanSourceRows, isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
@@ -439,7 +439,13 @@ export async function runIrissListingsDailySync(
   const [orderRows, scanRows] = await Promise.all([listIrissPasutijumi(), listIrissScan().catch(() => [])]);
   /** SCAN ieraksti = papildu avoti ar `scan:` id; LIST tos rāda atsevišķā „SCAN” skatā. */
   const rows = [...orderRows, ...irissScanSourceRows(scanRows)];
-  const activeOrderIds = new Set(rows.filter((r) => isIrissPasutijumsWorkingStatus(r.listStatus ?? "active")).map((r) => r.id));
+  /**
+   * Apzināti plašāk par meklēšanu: «working» (ar rezervētu) - avotus vairs nelasa, bet jau atrastie auto paliek piesaistīti;
+   * plus pasūtījumi ar ieslēgtu slēdzi (piem. Pārdots + «Meklē»), lai to nolasītie auto netiktu izmesti.
+   */
+  const activeOrderIds = new Set(
+    rows.filter((r) => isIrissPasutijumsWorkingStatus(r.listStatus ?? "active") || isIrissPasutijumsSearchOn(r)).map((r) => r.id),
+  );
   /** Saišu cenas robežas no LIST izmaksu iestatījumiem (servera kopija), ne noklusējumiem. */
   await primeListingSearchCostsFromStore();
   const allSources = buildIrissListingSources(rows);

@@ -48,17 +48,8 @@ import { probeCzRsv, probeDvsaMot } from "@/lib/vin-scan/probes-cz-uk";
 import { probeEuSafetyGate } from "@/lib/vin-scan/probes-eu-recalls";
 import { probeAutodnaPrecheck } from "@/lib/vin-scan/probe-autodna-precheck";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
-import {
-  CARINFO_SUPER_SEARCH_DIRECT_MS,
-  CARINFO_SUPER_SEARCH_RELAY_MS,
-  carinfoResponseBlocked,
-  runCarinfoLookup,
-} from "@/lib/vin-scan/carinfo-lookup";
-import {
-  applyCarinfoSuperSearchHttp,
-  applyVinScanRelayIfBlocked,
-  isCarinfoSuperSearchUrl,
-} from "@/lib/vin-scan/listings-page-relay";
+import { fetchCarinfoPage, type CarinfoFetchTrace } from "@/lib/vin-scan/carinfo-fetch";
+import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
@@ -285,46 +276,12 @@ export async function probeLkfEe(ctx: VinScanContext): Promise<VinScanIndicator>
 
 export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    // Vercel tiešais fetch bieži ir 403. VIN HTML lapa tad iet caur Chrome releju.
-    // Super-search ir JSON. Chrome page.goto to saņem kā 403 un gaida ~52 s, divas reizes
-    // pārsniedz 90 s budžetu un DK/NO/FI VIN lapas vairs netiek vaļā. JSON iet pa plain HTTP.
+    // Tiešais fetch no Vercel bieži ir 403, tad lapa iet caur Hetzner releju (sk. carinfo-fetch.ts).
     // Releja īstais iemesls (dienas limits, rinda pilna, tokens), lai operators neredz tikai „bloķē”.
-    let relayReason = "";
-    const parsed = await runCarinfoLookup(ctx.vin, ctx.plates.se, async (url) => {
-      const superSearch = isCarinfoSuperSearchUrl(url);
-      let direct: { status: number; text: string; cookie: string };
-      try {
-        const fetched = await scanFetch(url, {
-          headers: {
-            accept: superSearch
-              ? "application/json, text/javascript, */*; q=0.01"
-              : "text/html,application/xhtml+xml",
-            referer: "https://www.car.info/sv-se/",
-            ...(superSearch ? { "x-requested-with": "XMLHttpRequest" } : {}),
-          },
-          timeoutMs: superSearch ? CARINFO_SUPER_SEARCH_DIRECT_MS : 12_000,
-        });
-        direct = { status: fetched.status, text: fetched.text, cookie: fetched.cookie ?? "" };
-      } catch (e) {
-        if (!(e instanceof Error) || e.message !== "timeout") throw e;
-        direct = { status: 0, text: "", cookie: "" };
-      }
-      if (!carinfoResponseBlocked(direct.status, direct.text)) {
-        return { status: direct.status, text: direct.text };
-      }
-      const relayed = superSearch
-        ? await applyCarinfoSuperSearchHttp(url, direct, { timeoutMs: CARINFO_SUPER_SEARCH_RELAY_MS })
-        : await applyVinScanRelayIfBlocked(url, direct);
-      const reason = String((relayed as { challengeReason?: string }).challengeReason ?? "").trim();
-      if (reason) relayReason = reason;
-      const relayDiffers = relayed.status !== direct.status || relayed.text !== direct.text;
-      if (relayed.text && relayDiffers && !carinfoResponseBlocked(relayed.status, relayed.text)) {
-        return { status: relayed.status, text: relayed.text };
-      }
-      return { status: direct.status, text: direct.text };
-    });
-    if (parsed.status === "blocked" && relayReason) {
-      return done("carinfo", ctx, { ...parsed, summary: `car.info: ${relayReason}`.slice(0, 240) });
+    const trace: CarinfoFetchTrace = { relayReason: "" };
+    const parsed = await runCarinfoLookup(ctx.vin, ctx.plates.se, (url) => fetchCarinfoPage(url, trace));
+    if (parsed.status === "blocked" && trace.relayReason) {
+      return done("carinfo", ctx, { ...parsed, summary: `car.info: ${trace.relayReason}`.slice(0, 240) });
     }
     return done("carinfo", ctx, parsed);
   } catch (e) {

@@ -114,7 +114,10 @@ async function bypassCloudflare(
   };
 }
 
-/** Adify vēstures HTML caur `ADIFY_PROXY_URL` vai Fixie + CapSolver AntiCloudflareTask (`cf_clearance`). */
+/**
+ * Adify vēstures HTML caur `ADIFY_PROXY_URL` (+ CapSolver AntiCloudflareTask, ja tur izaicinājums).
+ * Bez `ADIFY_PROXY_URL` tikai viens bezmaksas lapas mēģinājums caur Fixie; CapSolver netiek saukts.
+ */
 export async function fetchAdifyHistoryHtmlViaCapsolver(
   pageUrl: string,
   deps: AdifyBypassDeps = {},
@@ -170,6 +173,11 @@ export async function fetchAdifyHistoryHtmlViaCapsolver(
   }
   if (!keyed) {
     return { html: null, error: `${via}: Cloudflare izaicinājums, nav CAPSOLVER_API_KEY` };
+  }
+  // Nila «A» (24.11): CapSolver no datu centra IP (Fixie / CAPSOLVER_PROXY) Adify nekad neiziet -
+  // tērē kredītus velti. Risinām tikai caur `ADIFY_PROXY_URL` (mājas / rezidentu IP).
+  if (!adifyProxy) {
+    return { html: null, error: `${via}: Cloudflare izaicinājums; CapSolver tikai ar ADIFY_PROXY_URL (mājas IP)` };
   }
 
   const next = await bypassCloudflare(pageUrl, page.text, page.status, session, {

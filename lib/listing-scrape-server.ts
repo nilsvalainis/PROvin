@@ -5,9 +5,8 @@ import {
   failedListingSnapshot,
   fetchListingHtmlViaJina,
   isAllowedListingScrapeHost,
-  isSsLvHost,
-  parseGenericListingHtml,
-  parseSsLvListingAiHtml,
+  listingScrapeFetchUrl,
+  parseListingHtmlForUrl,
   type ListingAiSnapshot,
   type ListingMarketSnapshot,
 } from "@/lib/listing-scrape";
@@ -19,7 +18,7 @@ async function fetchListingPageHtml(listingUrl: string): Promise<
 > {
   let u: URL;
   try {
-    u = new URL(listingUrl.trim());
+    u = new URL(listingScrapeFetchUrl(listingUrl));
   } catch {
     return {
       ok: false,
@@ -112,8 +111,7 @@ async function fetchListingPageHtml(listingUrl: string): Promise<
 export async function fetchListingAiSnapshot(listingUrl: string): Promise<ListingAiSnapshot> {
   const fetched = await fetchListingPageHtml(listingUrl);
   if (!fetched.ok) return fetched.snapshot;
-  if (isSsLvHost(fetched.host)) return parseSsLvListingAiHtml(fetched.html, fetched.url);
-  return parseGenericListingHtml(fetched.html, fetched.url);
+  return parseListingHtmlForUrl(fetched.html, fetched.url);
 }
 
 function toMarketSnapshot(snapshot: ListingAiSnapshot): ListingMarketSnapshot {

@@ -132,18 +132,21 @@ describe("marketplace auto interval", () => {
     expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T07:00:00.000Z");
   });
 
-  it("sorts newest and active orders first and keeps reserved after searching", () => {
+  it("skips reserved, completed and inactive orders and sorts newest first", () => {
     const rows = [
       brief({ id: "old", updatedAt: "2026-09-01T00:00:00.000Z", listStatus: "active" }),
       brief({ id: "reserved", updatedAt: "2026-10-18T00:00:00.000Z", listStatus: "reserved" }),
       brief({ id: "fresh", updatedAt: "2026-10-18T12:00:00.000Z", listStatus: "searching" }),
       brief({ id: "done", listStatus: "completed" }),
+      brief({ id: "off", listStatus: "inactive" }),
+      brief({ id: "offered", updatedAt: "2026-08-01T00:00:00.000Z", listStatus: "offered" }),
     ];
-    expect(isMarketplaceAutoOrderActive(rows[3]!)).toBe(false);
+    // Nils 24.11: Rezervēts aptur automātisko ielādi tāpat kā Pārdots un Neaktīvs.
+    expect(rows.map(isMarketplaceAutoOrderActive)).toEqual([true, false, true, false, false, true]);
     expect(sortMarketplaceAutoOrders(rows.filter(isMarketplaceAutoOrderActive)).map((r) => r.id)).toEqual([
       "fresh",
       "old",
-      "reserved",
+      "offered",
     ]);
   });
 

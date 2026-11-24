@@ -9,6 +9,7 @@ import { memo, useCallback, useEffect, useRef, useState, type MouseEvent, type P
 import { IrissAnchoredPopover } from "@/components/admin/IrissAnchoredPopover";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissPasutijumiStatusMenuItems } from "@/components/admin/IrissPasutijumiStatusMenu";
+import { IrissSearchSwitch } from "@/components/admin/IrissSearchSwitch";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import {
   formatIrissExpiredOfferLabel,
@@ -25,7 +26,7 @@ import {
 } from "@/lib/iriss-pasutijumi-list-view";
 import { whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import { irissPhoneTelHref } from "@/lib/iriss-pasutijumi-list-row";
-import { IRISS_ORDER_STAGE_LV, type IrissOrderStage, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_ORDER_STAGE_LV, isIrissPasutijumsSearchOn, type IrissOrderStage, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 import { irissListRowStage, irissListRowStageHint } from "@/lib/iriss-order-stage";
 import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 
@@ -55,6 +56,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   onPin,
   onAskDelete,
   onSetStatus,
+  onSetSearch,
   onRestore,
   actionBusy,
   registerSwipeCloser,
@@ -70,6 +72,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
   onSetStatus: (id: string, stage: IrissOrderStage) => void;
+  /** Meklēšanas slēdzis; bez apstrādātāja (piem. miskastē) slēdzi nerāda. */
+  onSetSearch?: (id: string, on: boolean) => void;
   onRestore?: (id: string) => void;
   onAskStatus?: (id: string) => void;
   actionBusy: string | null;
@@ -211,6 +215,11 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       <ChevronDown className="h-3.5 w-3.5 opacity-55" aria-hidden />
     </button>
   );
+
+  const searchSwitch =
+    onSetSearch && !isIrissRecordDeleted(row) ? (
+      <IrissSearchSwitch on={isIrissPasutijumsSearchOn(row)} busy={statusBusy} onChange={(next) => onSetSearch(row.id, next)} />
+    ) : null;
 
   const newHitsLabel =
     newHits > 0 ? (
@@ -363,9 +372,12 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
           {stageHint ? (
             <span className="iriss-pas-stage-hint mt-0.5 block truncate text-[12px] font-medium leading-snug text-[var(--ink2)]">{stageHint}</span>
           ) : null}
-          <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] leading-snug text-[var(--ink2)] md:hidden">
-            <span className="min-w-0 break-words">{client.name}</span>
-            {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
+          <span className="mt-0.5 flex min-w-0 items-center justify-between gap-2 md:hidden">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] leading-snug text-[var(--ink2)]">
+              <span className="min-w-0 break-words">{client.name}</span>
+              {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
+            </span>
+            {searchSwitch ? <span className="pointer-events-auto relative z-10 shrink-0">{searchSwitch}</span> : null}
           </span>
           <span className="mt-1.5 flex min-w-0 flex-col items-start gap-1 md:hidden">
             {/* QA 29.10: telefonā bez jauniem sludinājumiem nerāda lieku «-» rindu. */}
@@ -395,6 +407,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       </div>
       <div className="relative z-10 flex shrink-0 items-center gap-0.5 max-md:self-start">
         {whatsAppBtn}
+        {searchSwitch ? <span className="mr-2 hidden md:inline-flex">{searchSwitch}</span> : null}
         <span className="hidden md:inline-flex">{statusBtn}</span>
         {moreMenu}
       </div>

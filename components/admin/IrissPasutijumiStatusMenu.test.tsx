@@ -22,6 +22,10 @@ describe("IRISS pasūtījumu statusa izvēlne (atvērta)", () => {
     expect(html).toContain("left:234px");
     for (const label of ["Meklējam", "Piedāvāts", "Rezervēts", "Ceļā", "Pārdots"]) expect(text).toContain(label);
     expect(text).toContain("Neaktīvs");
+    // Nils 24.11: pie katra posma norāde, vai sistēma meklē avotos.
+    for (const label of ["Meklējammeklē", "Piedāvātsmeklē", "Rezervētsnemeklē", "Ceļānemeklē", "Pārdotsnemeklē", "Neaktīvsnemeklē"]) {
+      expect(text.replace(/\s+/g, "")).toContain(label);
+    }
     expect(IRISS_PASUTIJUMI_STATUS_MENU_CLASS).toContain("fixed");
     expect(IRISS_ANCHORED_POPOVER_Z).toBe(200);
   });

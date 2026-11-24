@@ -12,6 +12,7 @@ import {
   defaultIrissDzintarzemeTameDraft,
   emptyIrissOfferRecord,
   isIrissPasutijumsListStatus,
+  parseIrissSearchOverride,
   type IrissDzintarzemeTameDraft,
   type IrissOfferRecord,
   type IrissPasutijumsRecord,
@@ -101,6 +102,7 @@ const ORDER_STRINGS = [
   "notes",
   "internalNotes",
   "inactiveReason",
+  "searchOverride",
 ] as const;
 
 const ORDER_BOOLS = [
@@ -187,6 +189,7 @@ const FIELD_LABEL: Record<string, string> = {
   internalNotes: "Piezīmes (iekšējās)",
   note: "Piezīme",
   inactiveReason: "Iemesls",
+  searchOverride: "Meklēšanas slēdzis",
   dealLeasingOrCredit: "Līzings",
   dealClientFinancing100: "Finansējums 100%",
   dealClientFinancing20: "Finansējums 20%",
@@ -308,6 +311,7 @@ export function adminChangeFieldLabel(field: string): string {
 export function adminChangeFieldValue(kind: AdminChangeHistoryKind, field: string, value: string): string {
   const raw = value.trim();
   if (!raw) return "tukšs";
+  if (field === "searchOverride") return raw === "on" ? "Meklē" : raw === "off" ? "Nemeklē" : "pēc statusa";
   if (field === "listStatus") return IRISS_STATUS_LV[raw] ?? raw;
   if (field === "status" && kind === "b2b-order") return B2B_STATUS_LV[raw] ?? raw;
   if (field === "status" && kind === "iriss-listing") return LISTING_STATUS_LV[raw] ?? raw;
@@ -527,6 +531,10 @@ export function applyIrissOrderSnapshot(rec: IrissPasutijumsRecord, snapshot: Re
     if (!(key in snapshot)) continue;
     if (key === "listStatus") {
       if (isIrissPasutijumsListStatus(snapshot.listStatus)) next.listStatus = snapshot.listStatus;
+      continue;
+    }
+    if (key === "searchOverride") {
+      next.searchOverride = parseIrissSearchOverride(snapshot.searchOverride);
       continue;
     }
     next[key] = snapshot[key] ?? "";

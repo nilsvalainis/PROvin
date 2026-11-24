@@ -153,11 +153,45 @@ function compactCode(raw: string): string {
  * Teksta kods sakrīt, ja tas ir kāds no vērtības tokeniem, tā saimes prefikss (DW10 pret DW10FE)
  * vai vērtības apakšvirkne bez atstarpēm / punktiem (OM651.913 pret «OM 651 913»).
  */
+/**
+ * 24.11 (audits): vai ielādētais lauks vispār satur dzinēja kodu. «TDCI», «2.0L H4», modeļa nosaukums - nav kods,
+ * tad teksta kodu nav ar ko salīdzināt (nav pretruna).
+ */
+export function loadedEngineFieldHasCode(loaded: string): boolean {
+  const u = (loaded ?? "").toUpperCase();
+  if (/(?<![\d.])\d{3}[.\s]\d{3}(?!\d)/.test(u)) return true; // 651.950 / 654 920
+  return u.split(/[^A-Z0-9]+/).some((t) => {
+    if (t.length < 3) return false;
+    // VW/Audi burtu kodi (CUKB, CAGA) ir kodi; mārketinga nosaukumi (TDCI, TSI, DIESEL) - nav.
+    if (/^[A-Z]{3,4}$/.test(t)) return !MARKETING_ENGINE_WORDS.has(t) && !ENGINE_CODE_FALSE_POSITIVE.has(t);
+    return /[A-Z]/.test(t) && /\d/.test(t) && !NON_ENGINE_CODE_RE.test(t) && !/^(?:EURO|KW|PS|HP|ZS|CM)\d+$/.test(t);
+  });
+}
+
+const MARKETING_ENGINE_WORDS = new Set([
+  "TDCI", "TDI", "TSI", "TFSI", "FSI", "CDI", "HDI", "CRDI", "GDI", "MPI", "DCI", "JTD", "JTDM", "VTEC", "MHEV", "PHEV",
+  "HEV", "BEV", "EV", "LPG", "CNG", "AUTO", "BENZ", "GAS", "TURBO", "BLUE", "ECO", "SDI", "DTI", "CRD", "DPF", "FAP",
+]);
+
+/** Mercedes saimes kods: «OM 654.920» / «654.920» / «M651 R4-DIESEL» / «OM654» → 3 cipari. */
+function mercedesFamilyDigits(raw: string): string[] {
+  const u = (raw ?? "").toUpperCase();
+  const out = new Set<string>();
+  for (const m of u.matchAll(/(?<![A-Z0-9])O?M\s?(\d{3})(?!\d)/g)) out.add(m[1]!);
+  for (const m of u.matchAll(/(?<![\d.])(\d{3})[.\s]\d{3}(?!\d)/g)) out.add(m[1]!);
+  return [...out];
+}
+
 export function engineCodeMatchesLoaded(mentioned: string, loaded: string): boolean {
   const m = compactCode(mentioned);
   const full = compactCode(loaded);
   if (!m || !full) return false;
   if (m === full || full.includes(m)) return true;
+  // Ielādētajā laukā nav koda (TDCI u.c.) - nav ar ko salīdzināt.
+  if (!loadedEngineFieldHasCode(loaded)) return true;
+  // Mercedes: OM654 = «OM 654.920» = «654.920» (saime pēc 3 cipariem).
+  const mFam = /^O?M\d{3}/.test(m) ? mercedesFamilyDigits(mentioned) : [];
+  if (mFam.length > 0 && mercedesFamilyDigits(loaded).some((d) => mFam.includes(d))) return true;
   const tokens = loaded
     .toUpperCase()
     .split(/[^A-Z0-9]+/)

@@ -441,6 +441,7 @@ export function workspacePersistFromDraftWorkspace(
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.contradictionFeedback != null ? { contradictionFeedback: w.contradictionFeedback } : {}),
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
@@ -465,6 +466,7 @@ export function workspacePersistFromDraftWorkspace(
     ...(h.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: h.odometerAnomalyOverrides }
       : {}),
+    ...(h.contradictionFeedback != null ? { contradictionFeedback: h.contradictionFeedback } : {}),
     ...(h.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: h.dealerMajorWorkOverrides }
       : {}),

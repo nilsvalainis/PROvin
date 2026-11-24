@@ -30,7 +30,10 @@ export const ODOMETER_ANOMALY_LABEL_LV: Record<OdometerAnomalyClass, string> = {
 };
 
 export type ClassifiedOdometerAnomaly = {
+  /** Stabila atslēga (`odometerAnomalyStableKey`). */
   key: string;
+  /** Vecā atslēga (ar `sourceOrder`) - lai atpazītu līdz 24.11 saglabātos lēmumus. */
+  legacyKey?: string;
   sourceOrder: number;
   class: OdometerAnomalyClass;
   labelLv: string;
@@ -74,9 +77,75 @@ export function odometerAnomalyOverridesSnapshotField(
   return overrides != null ? { odometerAnomalyOverrides: overrides } : {};
 }
 
+/** Vecā (līdz 24.11) atslēga: `datums|odometrs|avots|sourceOrder` - mainās, kad pievieno avotu. */
 export function odometerAnomalyKey(row: Pick<UnifiedMileageRow, "date" | "odometer" | "sourceLabel" | "sourceOrder">): string {
   return `${row.date}|${row.odometer}|${row.sourceLabel}|${row.sourceOrder}`;
 }
+
+/** Avota tips stabilajai atslēgai (bez «(sludinājums)» / «- vizīte ...» astēm). */
+export function odometerSourceType(label: string): string {
+  return (label ?? "")
+    .replace(/\s*\(sludinājums\)\s*$/i, " sludinājums")
+    .replace(/\s*-\s*vizīte.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function normKeyDate(raw: string): string {
+  const t = (raw ?? "").trim();
+  const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2]!.padStart(2, "0")}-${dmy[1]!.padStart(2, "0")}`;
+  const my = t.match(/^(\d{1,2})[./](\d{4})$/);
+  if (my) return `${my[2]}-${my[1]!.padStart(2, "0")}`;
+  return t.slice(0, 10);
+}
+
+/**
+ * 24.11 (audits): STABILA atslēga - noteikums + datums + km (noapaļoti līdz 100) + avota tips.
+ * Nav `sourceOrder`, tāpēc operatora lēmums nepazūd, kad pievieno vai izslēdz avotu.
+ */
+export function odometerAnomalyStableKey(
+  cls: OdometerAnomalyClass,
+  row: Pick<UnifiedMileageRow, "date" | "sourceLabel">,
+  km: number,
+): string {
+  return `v2|${cls}|${normKeyDate(row.date)}|${Math.round(km / 100) * 100}|${odometerSourceType(row.sourceLabel)}`;
+}
+
+/** Vecā atslēga atbilst anomālijai pēc datuma + km (±100) - lasot migrē, saglabātos datus nemaina. */
+function legacyKeyMatches(legacy: string, a: Pick<ClassifiedOdometerAnomaly, "toDate" | "toKm">): boolean {
+  if (legacy.startsWith("v2|")) return false;
+  const [date, odo] = legacy.split("|");
+  if (!date || odo == null) return false;
+  const km = parseOdometerKm(odo);
+  return normKeyDate(date) === normKeyDate(a.toDate) && km != null && Math.abs(km - a.toKm) <= 100;
+}
+
+/** Operatora lēmums anomālijai: precīza atslēga, tad vecā atslēga (datums + km). */
+export function findOdometerAnomalyOverride(
+  a: Pick<ClassifiedOdometerAnomaly, "key" | "toDate" | "toKm"> & { legacyKey?: string },
+  overrides?: OdometerAnomalyOverride[] | null,
+): OdometerAnomalyOverride | undefined {
+  if (!overrides?.length) return undefined;
+  return (
+    overrides.find((o) => o.key === a.key) ??
+    (a.legacyKey ? overrides.find((o) => o.key === a.legacyKey) : undefined) ??
+    overrides.find((o) => legacyKeyMatches(o.key, a))
+  );
+}
+
+/** «01.00.2018» / «00.05.2019» - nederīgs datums (rindu neklasificē). */
+function invalidRowDate(raw: string): boolean {
+  return /(?:^|[./-])00(?:[./-]|$)/.test((raw ?? "").trim().replace(/^(\d{4})-/, "$1."));
+}
+
+/** 999 999, 0, 1 km - aizstājējvērtība, nav rādījums. */
+function sentinelKm(km: number): boolean {
+  return km <= 1 || km >= 1_500_000 || /^9{5,}$/.test(String(Math.round(km)));
+}
+
+const DEALER_ROW_RE = /dīler|dealer|oneauto/i;
 
 /** 01.MM.YYYY vai avota mēneša precizitāte - diena izskatās mākslīga. */
 export function looksArtificialMonthDay(row: Pick<UnifiedMileageRow, "date" | "datePrecision">): boolean {
@@ -113,7 +182,13 @@ function laterPointsStayBelow(
 }
 
 export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): ClassifiedOdometerAnomaly[] {
-  const sorted = sortMileageChronological(rows);
+  // 24.11 audits: 999 999 / 0 km un nederīgi datumi («01.00.2018») nav rādījumi.
+  const sorted = sortMileageChronological(
+    rows.filter((r) => {
+      const km = parseOdometerKm(r.odometer);
+      return !invalidRowDate(r.date) && (km == null || !sentinelKm(km));
+    }),
+  );
   const analysis = analyzeUnifiedMileageAnomalies(sorted);
   const pts: Array<{
     row: UnifiedMileageRow;
@@ -138,7 +213,8 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
     if (!ref || km == null) continue;
     seen.add(r.sourceOrder);
     out.push({
-      key: odometerAnomalyKey(r),
+      key: odometerAnomalyStableKey("listing_below", r, km),
+      legacyKey: odometerAnomalyKey(r),
       sourceOrder: r.sourceOrder,
       class: "listing_below",
       labelLv: ODOMETER_ANOMALY_LABEL_LV.listing_below,
@@ -158,11 +234,21 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
     fromDate: string,
     fromKm: number,
     toKm: number,
+    hasRef = true,
   ) => {
     if (seen.has(row.sourceOrder)) return;
+    // 24.11 audits: «ievades kļūda» tikai, ja ir kritums; vienāds km vai pieaugums tajā pašā dienā (dīlera vizītes
+    // atvēršana / aizvēršana, ±7 d) nav anomālija.
+    if (cls === "typo_outlier" && hasRef && toKm >= fromKm) {
+      const fromRow = sorted.find((r) => r.date === fromDate && parseOdometerKm(r.odometer) === fromKm);
+      const gap = fromRow ? Math.abs(row.sortableTime - fromRow.sortableTime) : Number.POSITIVE_INFINITY;
+      const dealerPair = DEALER_ROW_RE.test(row.sourceLabel) && fromRow != null && DEALER_ROW_RE.test(fromRow.sourceLabel);
+      if (toKm === fromKm || (dealerPair && gap <= 7 * 24 * 60 * 60 * 1000)) return;
+    }
     seen.add(row.sourceOrder);
     out.push({
-      key: odometerAnomalyKey(row),
+      key: odometerAnomalyStableKey(cls, row, toKm),
+      legacyKey: odometerAnomalyKey(row),
       sourceOrder: row.sourceOrder,
       class: cls,
       labelLv: ODOMETER_ANOMALY_LABEL_LV[cls],
@@ -195,11 +281,11 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
     const src = curr.row;
 
     if (analysis.dataEntryErrorSourceOrders.has(src.sourceOrder)) {
-      push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km);
+      push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km, prev != null);
       continue;
     }
     if (isUpwardSpike(src)) {
-      push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km);
+      push(src, "typo_outlier", prev?.row.date ?? src.date, prev?.km ?? curr.km, curr.km, prev != null);
       continue;
     }
 
@@ -239,23 +325,11 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
   return out;
 }
 
-/** Atslēga bez `sourceOrder` - PDF ar izslēgtiem avotiem numurē rindas citādi nekā admin panelis. */
-function odometerAnomalyKeyStem(key: string): string {
-  const i = key.lastIndexOf("|");
-  return i > 0 ? key.slice(0, i) : key;
-}
-
 export function isOdometerAnomalyDismissed(
-  key: string,
+  anomaly: Pick<ClassifiedOdometerAnomaly, "key" | "toDate" | "toKm"> & { legacyKey?: string },
   overrides?: OdometerAnomalyOverride[] | null,
-  opts?: { matchWithoutSourceOrder?: boolean },
 ): boolean {
-  if (!overrides?.length) return false;
-  const exact = overrides.find((o) => o.key === key);
-  if (exact) return exact.action === "dismiss";
-  if (!opts?.matchWithoutSourceOrder) return false;
-  const stem = odometerAnomalyKeyStem(key);
-  return overrides.some((o) => o.action === "dismiss" && odometerAnomalyKeyStem(o.key) === stem);
+  return findOdometerAnomalyOverride(anomaly, overrides)?.action === "dismiss";
 }
 
 export function applyOdometerAnomalyOverrides(
@@ -263,9 +337,7 @@ export function applyOdometerAnomalyOverrides(
   overrides?: OdometerAnomalyOverride[] | null,
 ): ClassifiedOdometerAnomaly[] {
   if (!overrides?.length) return anomalies;
-  return anomalies.filter(
-    (a) => !isOdometerAnomalyDismissed(a.key, overrides, { matchWithoutSourceOrder: a.class === "listing_below" }),
-  );
+  return anomalies.filter((a) => !isOdometerAnomalyDismissed(a, overrides));
 }
 
 /** 24.11 (Nils A): aktīvās (operatora neatceltās) „sludinājumā mazāk” rindas. */

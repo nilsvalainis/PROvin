@@ -5,11 +5,14 @@ import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/Statu
 import { IRISS_ORDER_STAGES, IRISS_ORDER_STAGE_LV, type IrissOrderStage } from "@/lib/iriss-pasutijumi-types";
 import { IRISS_ORDER_STAGE_TONE, type StatusChipRowLayout } from "@/lib/iriss-status-chip";
 import {
+  dispatchIrissListSearchOnFilter,
   dispatchIrissListStatusFilter,
   dispatchIrissListTrashFilter,
+  IRISS_LIST_SEARCH_ON_EVENT,
   IRISS_LIST_STATUS_FILTER_ALL,
   IRISS_LIST_STATUS_FILTER_EVENT,
   IRISS_LIST_TRASH_EVENT,
+  readIrissListSearchOnFilter,
   readIrissListStatusFilter,
   readIrissListTrashFilter,
   type IrissListStatusFilterState,
@@ -29,13 +32,16 @@ type Props = {
   className?: string;
   counts?: Record<IrissOrderStage, number>;
   trashCount?: number;
+  /** Pasūtījumi ar faktiski ieslēgtu meklēšanu (čips «Meklē»). */
+  searchOnCount?: number;
   /** scroll: one phone row. wrap: desktop toolbar and the filter sheet. */
   layout?: StatusChipRowLayout;
 };
 
-export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount, layout = "wrap" }: Props) {
+export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount, searchOnCount, layout = "wrap" }: Props) {
   const [filter, setFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
+  const [searchOn, setSearchOn] = useState(() => readIrissListSearchOnFilter());
 
   useEffect(() => {
     setFilter(readIrissListStatusFilter());
@@ -53,7 +59,13 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
       if (typeof d === "boolean") setTrashOn(d);
     };
     window.addEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    const onSearchOn = (e: Event) => {
+      const d = (e as CustomEvent<boolean>).detail;
+      if (typeof d === "boolean") setSearchOn(d);
+    };
+    window.addEventListener(IRISS_LIST_SEARCH_ON_EVENT, onSearchOn as EventListener);
     return () => {
+      window.removeEventListener(IRISS_LIST_SEARCH_ON_EVENT, onSearchOn as EventListener);
       window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
       window.removeEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
     };
@@ -101,8 +113,30 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
           const next = !trashOn;
           setTrashOn(next);
           dispatchIrissListTrashFilter(next);
+          // Miskaste un «Meklē» ir atsevišķi skati - vienlaikus ieslēgts tikai viens.
+          if (next && searchOn) {
+            setSearchOn(false);
+            dispatchIrissListSearchOnFilter(false);
+          }
         }}
       />
+      <span className="ml-3 inline-flex shrink-0">
+        <StatusFilterChip
+          label="Meklē"
+          count={searchOnCount}
+          pressed={searchOn}
+          tone="neutral"
+          onClick={() => {
+            const next = !searchOn;
+            setSearchOn(next);
+            dispatchIrissListSearchOnFilter(next);
+            if (next && trashOn) {
+              setTrashOn(false);
+              dispatchIrissListTrashFilter(false);
+            }
+          }}
+        />
+      </span>
     </StatusFilterChipRow>
   );
 }

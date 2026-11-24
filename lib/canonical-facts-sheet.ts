@@ -3,6 +3,11 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import {
+  extractListingSellerClaims,
+  formatListingSellerClaimLines,
+  LISTING_SELLER_CLAIMS_TITLE,
+} from "@/lib/listing-seller-claims";
 import { buildCsddRegistrySignalFactLines, CSDD_SIGNALS_FACTS_TITLE } from "@/lib/csdd-registry-signals";
 import { normalizeSignedEurText } from "@/lib/adify-listing-history";
 import {
@@ -213,6 +218,10 @@ export type CanonicalFacts = {
   owners: CanonicalOwnerFacts;
   firstReg: CanonicalFirstReg;
   latestKm: number | null;
+  /** 24.11 audits: visu nobraukuma rindu km (teksta km salīdzina ar visiem, ne tikai jaunāko). */
+  mileageKms?: number[];
+  /** 24.11 audits: nobraukuma rindu datumi (datēts vēsturisks rādījums tekstā nav pretruna). */
+  mileageDates?: string[];
   /** Tikai reāli kritumi (iespējama korekcija). Izolētas ievades kļūdas - `suspectedEntryErrors`. */
   rollbacks: OdometerRollbackBound[];
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
@@ -256,6 +265,8 @@ export type CanonicalFacts = {
   dealerCampaigns: DealerFact[];
   recallCodes: string[];
   listingSummary: string;
+  /** 24.11: pārdevēja apgalvojumi no «Sludinājuma apraksts (iekopēšanai)» - nepārbaudīti, salīdzināšanai. */
+  listingSellerClaimLines?: string[];
   photoSummary: string;
   dateHaystack: string;
   sourceHaystack: string;
@@ -560,6 +571,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     owners,
     firstReg,
     latestKm,
+    mileageKms: mileageRows.map((r) => parseOdometerKm(r.odometer)).filter((n): n is number => n != null && n > 0),
+    mileageDates: mileageRows.map((r) => r.date).filter(Boolean),
     rollbacks,
     suspectedEntryErrors,
     listingBelowRecorded,
@@ -586,6 +599,9 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerCampaigns,
     recallCodes,
     listingSummary,
+    listingSellerClaimLines: formatListingSellerClaimLines(
+      extractListingSellerClaims(blocks.listing_analysis.listingPasteRaw),
+    ),
     photoSummary,
     dateHaystack,
     sourceHaystack: haystack,
@@ -780,7 +796,10 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   // CSDD signāli ir ārpus 4000 zīmju budžeta - garā lapā tie nedrīkst izspiest citus faktus vai pazust paši.
   const csddSignals =
     facts.csddSignalLines.length > 0 ? `\n${[CSDD_SIGNALS_FACTS_TITLE, ...facts.csddSignalLines].join("\n")}` : "";
-  const closed = `${clipSheet(body)}${csddSignals}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
+  // Pārdevēja apgalvojumi arī ārpus budžeta (īsi): bez tiem AI nevar pamanīt pretrunas ar sludinājumu.
+  const claimLines = facts.listingSellerClaimLines ?? [];
+  const sellerClaims = claimLines.length > 0 ? `\n${[LISTING_SELLER_CLAIMS_TITLE, ...claimLines].join("\n")}` : "";
+  const closed = `${clipSheet(body)}${csddSignals}${sellerClaims}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
   return closed;
 }
 

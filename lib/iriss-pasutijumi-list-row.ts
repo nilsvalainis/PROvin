@@ -4,6 +4,7 @@ import { deriveOfferValidUntil, isIrissOfferExpired } from "@/lib/iriss-offer-va
 import { irissListRowStage } from "@/lib/iriss-order-stage";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
+  isIrissPasutijumsSearchOn,
   type IrissOrderStage,
   type IrissPasutijumsListRow,
   type IrissPasutijumsRecord,
@@ -26,6 +27,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     updatedAt: rec.updatedAt,
     pinnedAt: rec.pinnedAt,
     listStatus: rec.listStatus ?? "active",
+    ...(rec.searchOverride ? { searchOverride: rec.searchOverride } : {}),
     deletedAt: rec.deletedAt?.trim() || undefined,
     clientFirstName: rec.clientFirstName.trim(),
     clientLastName: rec.clientLastName.trim(),
@@ -156,4 +158,25 @@ export function countIrissListStatuses(rows: readonly IrissPasutijumsListRow[]):
   const counts: Record<IrissOrderStage, number> = { searching: 0, offered: 0, reserved: 0, transit: 0, sold: 0, inactive: 0 };
   for (const row of rows) counts[irissListRowStage(row)] += 1;
   return counts;
+}
+
+/**
+ * Saraksta redzamība: Miskaste rāda tikai izdzēstos; «Meklē» - tikai faktiski meklējošos no visiem statusiem
+ * (statusu čipus tad neievēro); citādi pēc posmu filtra.
+ */
+export function irissListRowVisible(
+  row: Pick<IrissPasutijumsListRow, "listStatus" | "searchOverride" | "deletedAt" | "dealWorkflowStatus" | "stageSignals">,
+  filter: Record<IrissOrderStage, boolean>,
+  opts: { trashOn: boolean; searchOnOnly: boolean },
+): boolean {
+  const deleted = Boolean(row.deletedAt?.trim());
+  if (opts.trashOn) return deleted;
+  if (deleted) return false;
+  if (opts.searchOnOnly) return isIrissPasutijumsSearchOn(row);
+  return Boolean(filter[irissListRowStage(row)]);
+}
+
+/** Čipa «Meklē» skaits: pasūtījumi ar ieslēgtu meklēšanu (bez miskastes). */
+export function countIrissListSearchOn(rows: readonly Pick<IrissPasutijumsListRow, "listStatus" | "searchOverride" | "deletedAt">[]): number {
+  return rows.filter((r) => isIrissPasutijumsSearchOn(r)).length;
 }

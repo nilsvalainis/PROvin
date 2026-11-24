@@ -26,6 +26,18 @@ import {
   suggestFactCheckFix,
 } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
+import {
+  ContradictionVerdictButtons,
+  useContradictionFeedback,
+} from "@/components/admin/ContradictionFeedbackContext";
+import {
+  applyFeedbackToFactFlags,
+  factFlagFingerprint,
+  feedbackDateLabel,
+  feedbackFor,
+  type ContradictionFeedbackEntry,
+  type ContradictionVerdict,
+} from "@/lib/contradiction-feedback";
 
 export function AdminFactCheckButton({
   busy,
@@ -57,9 +69,14 @@ function FlagCard({
   onApplyFix,
   onAiFix,
   aiBusy,
+  feedback,
+  onVerdict,
 }: {
   flag: FactCheckFlag;
   onDismiss: (flag: FactCheckFlag) => void;
+  /** 24.11: operatora lēmums par šo brīdinājumu (pasūtījumā / šim VIN). */
+  feedback?: ContradictionFeedbackEntry;
+  onVerdict?: (flag: FactCheckFlag, verdict: ContradictionVerdict) => void;
   onApplyFix?: (flag: FactCheckFlag) => void;
   /** AI labojums (diff skatā), ja nav deterministiskā šablona. */
   onAiFix?: (flag: FactCheckFlag) => void;
@@ -67,17 +84,20 @@ function FlagCard({
 }) {
   const [showFix, setShowFix] = useState(false);
   const isError = flag.level === "E";
+  const isInfo = flag.level === "I";
   const suggestion = suggestFactCheckFix(flag);
   return (
     <div
       className={`rounded-lg border px-2.5 py-2 ${
         isError
           ? "border-red-200/90 bg-red-50 text-red-950"
-          : "border-amber-200/80 bg-amber-50/80 text-amber-950"
+          : isInfo
+            ? "border-slate-200 bg-white/70 text-slate-600"
+            : "border-amber-200/80 bg-amber-50/80 text-amber-950"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className={`text-[10px] font-bold tracking-wide ${isError ? "text-red-800" : "text-amber-800"}`}>
+        <p className={`text-[10px] font-bold tracking-wide ${isError ? "text-red-800" : isInfo ? "text-slate-500" : "text-amber-800"}`}>
           {factCheckLevelLabel(flag.level)}
         </p>
         <span className="inline-flex shrink-0 flex-wrap items-center justify-end gap-1">
@@ -100,15 +120,22 @@ function FlagCard({
               Labot
             </button>
           ) : null}
-          <button
-            type="button"
-            className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-white/70"
-            onClick={() => onDismiss(flag)}
-          >
-            Ignorēt
-          </button>
+          {onVerdict ? (
+            <ContradictionVerdictButtons verdict={feedback?.verdict} onVerdict={(v) => onVerdict(flag, v)} />
+          ) : (
+            <button
+              type="button"
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-white/70"
+              onClick={() => onDismiss(flag)}
+            >
+              Ignorēt
+            </button>
+          )}
         </span>
       </div>
+      {feedback?.verdict === "dismiss" ? (
+        <p className="text-[10px] font-medium">noraidīts {feedbackDateLabel(feedback.at)}</p>
+      ) : null}
       <p className="mt-0.5 text-[11px] leading-snug">{flag.sentence}</p>
       <p className="mt-1 text-[11px] leading-snug opacity-90">{flag.message}</p>
       <p className="mt-1 text-[10px] leading-snug font-medium opacity-80">{factCheckActionLine(flag)}</p>
@@ -245,7 +272,16 @@ export function AdminFactCheckPanel({
     setHandled((prev) => ({ ...prev, [finding.id]: "rejected" }));
   }, []);
 
-  const visible = visibleFactCheckFlags(flags, dismissed);
+  const fb = useContradictionFeedback();
+  const shown = fb ? applyFeedbackToFactFlags(flags ?? [], { vin: fb.vin, entries: fb.entries, downgraded: fb.downgraded }) : flags;
+  const visible = visibleFactCheckFlags(shown, dismissed);
+  const feedbackOf = (f: FactCheckFlag) => (fb ? feedbackFor(factFlagFingerprint(f, fb.vin).fp, fb.entries) : undefined);
+  const onVerdict = fb
+    ? (f: FactCheckFlag, verdict: ContradictionVerdict) => {
+        const { fp, rule } = factFlagFingerprint(f, fb.vin);
+        fb.onVerdict({ origin: f.id.startsWith("odo_") || /^c\d/.test(f.id) ? "prepdf" : "fact", fp, rule, severity: f.level }, verdict);
+      }
+    : undefined;
   const aiOn = Boolean(aiFix?.allowed && adminRichHtmlToPlainText(aiFix.text).trim());
   const aiBusy = review.status === "running";
   const modal = (
@@ -302,7 +338,7 @@ export function AdminFactCheckPanel({
             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-white/70 disabled:opacity-40"
             disabled={aiBusy}
             aria-busy={aiBusy}
-            onClick={() => void runAiFix(visible)}
+            onClick={() => void runAiFix(visible.filter((f) => f.level !== "I"))}
           >
             {aiBusy ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden /> : null}
             Labot visas
@@ -329,6 +365,8 @@ export function AdminFactCheckPanel({
           onApplyFix={onApplyFix}
           onAiFix={aiOn ? (flag) => void runAiFix([flag]) : undefined}
           aiBusy={aiBusy}
+          feedback={feedbackOf(f)}
+          onVerdict={onVerdict}
         />
       ))}
       {interval.length > 0 ? (
@@ -345,6 +383,8 @@ export function AdminFactCheckPanel({
           onApplyFix={onApplyFix}
           onAiFix={aiOn ? (flag) => void runAiFix([flag]) : undefined}
           aiBusy={aiBusy}
+          feedback={feedbackOf(f)}
+          onVerdict={onVerdict}
         />
             ))}
           </div>

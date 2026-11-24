@@ -17,7 +17,9 @@ import {
   type IrissOrderSortMode,
 } from "@/components/admin/IrissOrderSortSelect";
 import {
+  countIrissListSearchOn,
   countIrissListStatuses,
+  irissListRowVisible,
   irissListRowMatchesQuery,
   irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
@@ -28,12 +30,14 @@ import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "
 import {
   IRISS_ORDER_STAGES,
   IRISS_ORDER_STAGE_LV,
+  IRISS_ORDER_STAGE_SEARCH_LV,
+  irissSearchOverrideFor,
   type IrissOrderStage,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
-import { applyIrissOrderStage, irissListRowStage } from "@/lib/iriss-order-stage";
+import { applyIrissOrderStage } from "@/lib/iriss-order-stage";
 import {
   IRISS_LIST_STATUS_FILTER_EVENT,
   IrissPasutijumiStatusFilter,
@@ -42,11 +46,13 @@ import {
 } from "@/components/admin/IrissPasutijumiStatusFilter";
 import {
   dispatchIrissListStatusFilter,
+  IRISS_LIST_SEARCH_ON_EVENT,
   IRISS_LIST_TRASH_EVENT,
   parseIrissListStatusFilter,
+  readIrissListSearchOnFilter,
   readIrissListTrashFilter,
 } from "@/lib/iriss-pasutijumi-status-filter";
-import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
+import { isIrissRecordDeleted, setIrissSearchOn } from "@/lib/iriss-pasutijumi-audit-fields";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLimitsMobileDot, IrissLimitsSidebarCard, useIrissLimits } from "@/components/admin/IrissLimitsSidebarCard";
@@ -155,17 +161,6 @@ function buildDefaultListOrder(rows: IrissPasutijumsListRow[], mode: SortMode): 
   return { pinnedOrder: pinned.map((r) => r.id), unpinnedOrder: unpinned.map((r) => r.id) };
 }
 
-function rowMatchesStatusFilter(
-  row: IrissPasutijumsListRow,
-  f: IrissListStatusFilterState,
-  trashOn: boolean,
-): boolean {
-  const deleted = isIrissRecordDeleted(row);
-  if (trashOn) return deleted;
-  if (deleted) return false;
-  return Boolean(f[irissListRowStage(row)]);
-}
-
 async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolean> {
   try {
     const res = await fetch("/api/admin/iriss-pasutijumi/list-order", {
@@ -223,6 +218,7 @@ export function IrissPasutijumiListClient({
   const ectMsg: string | null = null;
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
+  const [searchOnOnly, setSearchOnOnly] = useState(() => readIrissListSearchOnFilter());
   const [listLimit, setListLimit] = useState(IRISS_ORDERS_LIST_PAGE);
   const listSentinelRef = useRef<HTMLDivElement>(null);
   const narrowSwipeViewport = useNarrowIrissSwipeViewport();
@@ -321,9 +317,15 @@ export function IrissPasutijumiListClient({
       if (typeof d === "boolean") setTrashOn(d);
     };
     window.addEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    const onSearchOn = (e: Event) => {
+      const d = (e as CustomEvent<boolean>).detail;
+      if (typeof d === "boolean") setSearchOnOnly(d);
+    };
+    window.addEventListener(IRISS_LIST_SEARCH_ON_EVENT, onSearchOn as EventListener);
     return () => {
       window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
       window.removeEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+      window.removeEventListener(IRISS_LIST_SEARCH_ON_EVENT, onSearchOn as EventListener);
     };
   }, []);
 
@@ -388,6 +390,7 @@ export function IrissPasutijumiListClient({
   const liveRows = useMemo(() => localRows.filter((r) => !isIrissRecordDeleted(r)), [localRows]);
   const trashCount = useMemo(() => localRows.filter((r) => isIrissRecordDeleted(r)).length, [localRows]);
   const statusCounts = useMemo(() => countIrissListStatuses(liveRows), [liveRows]);
+  const searchOnCount = useMemo(() => countIrissListSearchOn(liveRows), [liveRows]);
 
   const allStatusesInFilter = useMemo(
     () => IRISS_ORDER_STAGES.every((k) => statusFilter[k]),
@@ -398,11 +401,11 @@ export function IrissPasutijumiListClient({
 
   const visibleRows = useMemo(
     () =>
-      localRows.filter((r) => rowMatchesStatusFilter(r, statusFilter, trashOn) && irissListRowMatchesQuery(r, searchQuery)),
-    [localRows, statusFilter, searchQuery, trashOn],
+      localRows.filter((r) => irissListRowVisible(r, statusFilter, { trashOn, searchOnOnly }) && irissListRowMatchesQuery(r, searchQuery)),
+    [localRows, statusFilter, searchQuery, trashOn, searchOnOnly],
   );
 
-  const dragReorderEnabled = allStatusesInFilter && !searching;
+  const dragReorderEnabled = allStatusesInFilter && !searching && !searchOnOnly;
 
   const { pinnedRows, unpinnedRows } = useMemo(() => {
     const pinned = visibleRows.filter((r) => Boolean(r.pinnedAt));
@@ -420,7 +423,7 @@ export function IrissPasutijumiListClient({
 
   useEffect(() => {
     setListLimit(IRISS_ORDERS_LIST_PAGE);
-  }, [searchQuery, statusFilter, trashOn, sortMode]);
+  }, [searchQuery, statusFilter, trashOn, searchOnOnly, sortMode]);
 
   useEffect(() => {
     if (dragReorderEnabled || !listWindow.hasMore) return;
@@ -472,7 +475,7 @@ export function IrissPasutijumiListClient({
         const getData = getRes.ok ? ((await getRes.json()) as { record?: IrissPasutijumsRecord }) : null;
         if (!getData?.record) {
           setRowError("Neizdevās nolasīt pasūtījumu - izmaiņa netika saglabāta.");
-          return;
+          return false;
         }
         const nextRecord = mutator(getData.record);
         const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
@@ -484,13 +487,13 @@ export function IrissPasutijumiListClient({
         if (patchRes.status === 409) continue;
         if (!patchRes.ok) {
           setRowError(`Neizdevās saglabāt (${patchRes.status}) - izmaiņa netika saglabāta.`);
-          return;
+          return false;
         }
         patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
       }
       if (!patchData?.record) {
         setRowError("Pasūtījums tikko mainīts citur - atver to un pārbaudi statusu.");
-        return;
+        return false;
       }
       const nextRow = irissPasutijumsToListRow(patchData.record);
       // P5: PD/Autoparka signāli nāk no servera lapas - pēc labojuma paliek tie paši.
@@ -507,6 +510,10 @@ export function IrissPasutijumiListClient({
         schedulePersistListOrder(next);
         return next;
       });
+      return true;
+    } catch {
+      setRowError("Neizdevās saglabāt - pārbaudi savienojumu.");
+      return false;
     } finally {
       setActionBusy(null);
     }
@@ -528,6 +535,25 @@ export function IrissPasutijumiListClient({
         return next;
       });
       void patchRow(id, (record) => applyIrissOrderStage(record, stage, { at: new Date().toISOString() }));
+    },
+    [patchRow],
+  );
+
+  /** Meklēšanas slēdzis: uzreiz redzams (optimistiski); ja saglabāšana neizdodas - atgriež iepriekšējo un rāda kļūdu. */
+  const onSetSearch = useCallback(
+    (id: string, on: boolean) => {
+      let before: IrissPasutijumsListRow["searchOverride"];
+      setLocalRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          before = r.searchOverride;
+          return { ...r, searchOverride: irissSearchOverrideFor(r.listStatus ?? "active", on) };
+        }),
+      );
+      void patchRow(id, (record) => setIrissSearchOn(record, on, { at: new Date().toISOString() })).then((ok) => {
+        if (ok) return;
+        setLocalRows((prev) => prev.map((r) => (r.id === id ? { ...r, searchOverride: before } : r)));
+      });
     },
     [patchRow],
   );
@@ -596,6 +622,7 @@ export function IrissPasutijumiListClient({
       onPin={onPin}
       onAskDelete={setDeleteTargetId}
       onSetStatus={onSetStatus}
+      onSetSearch={onSetSearch}
       onRestore={onRestore}
       onAskStatus={setStatusSheetId}
       actionBusy={actionBusy}
@@ -698,7 +725,7 @@ export function IrissPasutijumiListClient({
             }
           />
           <div className="iriss-pas-seg">
-            <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
+            <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} searchOnCount={searchOnCount} />
           </div>
         </AdminMobileTopBar>
       </div>
@@ -730,7 +757,7 @@ export function IrissPasutijumiListClient({
           </Link>
         </div>
         <div className="iriss-pas-seg mt-2">
-          <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
+          <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} searchOnCount={searchOnCount} />
         </div>
         {ectMsg ? <p className="mt-1 text-[12px] text-[var(--ink2)]">{ectMsg}</p> : null}
       </div>
@@ -785,9 +812,10 @@ export function IrissPasutijumiListClient({
                 if (statusSheetId) onSetStatus(statusSheetId, s);
                 setStatusSheetId(null);
               }}
-              className="flex min-h-12 w-full items-center border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
+              className="flex min-h-12 w-full items-center justify-between gap-3 border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
             >
-              {IRISS_ORDER_STAGE_LV[s]}
+              <span>{IRISS_ORDER_STAGE_LV[s]}</span>
+              <span className="text-[13px] text-[var(--ink3)]">{IRISS_ORDER_STAGE_SEARCH_LV[s]}</span>
             </button>
           ))}
         </div>

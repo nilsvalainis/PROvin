@@ -8,7 +8,9 @@ import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { buildPartnerOrderNotes, type B2bPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
+import { enqueueCsddPaidAutoForOrder } from "@/lib/csdd-paid-auto";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
+import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 
 export type PartnerPlaceContact = {
@@ -61,6 +63,8 @@ export async function createPartnerCreditVinOrder(args: {
 
 export type PartnerVinOrderFollowup = {
   orderId: string;
+  /** Partnera plāns: "business" (PROVIN Business) vai "dealer" (dīlera dati). */
+  plan: B2bPartnerPlanId;
   vin: string;
   listingUrl: string;
   dealerQueued: boolean;
@@ -95,8 +99,29 @@ async function runPaidOrderBackgroundSources(args: PartnerVinOrderFollowup): Pro
   }
 }
 
+/**
+ * PROVIN Business no partnera konta (Nils 24.11 "B2B atskaitēm arī"): pēc CSDD API sēklas - Dropbox mape BUSINESS
+ * un automātiskā CSDD maksas izziņa tāpat kā AUDITS (tikai ar LV numuru, viens darbs uz pasūtījumu, tas pats slēdzis).
+ * Dīlera dati (RAW/PRO) - nē: dīlera PDF CSDD sadaļas nav.
+ */
+async function runPartnerBusinessCsddFollowup(args: PartnerVinOrderFollowup): Promise<void> {
+  if (args.plan !== "business") return;
+  await ensureOrderDropboxFolderSafe(args.orderId, { category: "business", vin: args.vin });
+  try {
+    const job = await enqueueCsddPaidAutoForOrder(args.orderId, {
+      checkoutLine: args.plan,
+      channel: "b2b_partner",
+      orderVinOrPlate: args.vin,
+    });
+    if (job) console.info("[partner/orders] csdd paid auto", { orderId: args.orderId, state: job.state });
+  } catch (err) {
+    console.error("[partner/orders] csdd paid auto:", err);
+  }
+}
+
 export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFollowup): Promise<void> {
   await runPaidOrderBackgroundSources(args);
+  await runPartnerBusinessCsddFollowup(args);
   if (!args.dealerQueued) return;
   try {
     await runDealerDataJob({

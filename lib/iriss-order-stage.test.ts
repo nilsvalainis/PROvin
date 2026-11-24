@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  IRISS_ORDER_STAGE_LIST_STATUS,
   applyIrissOrderStage,
   attachIrissOrderStageSignals,
   irissListRowStageHint,
   irissOrderStage,
   irissOrderStageSignals,
 } from "@/lib/iriss-order-stage";
-import { emptyIrissPasutijums, type IrissOrderStageSignals } from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_ORDER_STAGES,
+  IRISS_ORDER_STAGE_SEARCH_LV,
+  IRISS_PASUTIJUMS_LIST_STATUSES,
+  emptyIrissPasutijums,
+  isIrissPasutijumsSearchingStatus,
+  isIrissPasutijumsWorkingStatus,
+  type IrissOrderStageSignals,
+} from "@/lib/iriss-pasutijumi-types";
 import type { IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 
 const NOW = Date.parse("2026-11-20T10:00:00Z");
@@ -111,5 +120,21 @@ describe("irissListRowStageHint", () => {
       "PD-0017 nosūtīts 19.11",
     );
     expect(irissListRowStageHint({ listStatus: "active" })).toBe("");
+  });
+});
+
+describe("meklēšanas statusi (Nils 24.11: Rezervēts aptur meklēšanu)", () => {
+  it("meklē tikai aktīvs / meklē / piedāvāts; «working» paliek ar rezervētu", () => {
+    const searching = IRISS_PASUTIJUMS_LIST_STATUSES.filter(isIrissPasutijumsSearchingStatus);
+    expect(searching).toEqual(["active", "searching", "offered"]);
+    expect(IRISS_PASUTIJUMS_LIST_STATUSES.filter(isIrissPasutijumsWorkingStatus)).toEqual(["active", "searching", "offered", "reserved"]);
+  });
+
+  it("izvēlnes norāde sakrīt ar to, ko posms saglabā", () => {
+    for (const stage of IRISS_ORDER_STAGES) {
+      const searches = isIrissPasutijumsSearchingStatus(IRISS_ORDER_STAGE_LIST_STATUS[stage]);
+      expect(`${stage}:${IRISS_ORDER_STAGE_SEARCH_LV[stage]}`).toBe(`${stage}:${searches ? "meklē" : "nemeklē"}`);
+    }
+    expect(IRISS_ORDER_STAGE_SEARCH_LV.reserved).toBe("nemeklē");
   });
 });

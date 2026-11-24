@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
 import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import { VENDOR_REGISTERED_RE } from "@/lib/lifecycle-owner-change-text";
 import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
@@ -2979,6 +2980,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 } | null {
   if (!raw) return null;
@@ -3037,6 +3039,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       })(),
       ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(p.technicalRiskMap)),
       ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(p.odometerAnomalyOverrides)),
+      ...contradictionFeedbackSnapshotField(parseContradictionFeedback(p.contradictionFeedback)),
       ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(p.dealerMajorWorkOverrides)),
     };
   } catch {

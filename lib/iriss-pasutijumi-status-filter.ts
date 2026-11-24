@@ -106,3 +106,25 @@ export function dispatchIrissListTrashFilter(next: boolean): void {
   }
   window.dispatchEvent(new CustomEvent(IRISS_LIST_TRASH_EVENT, { detail: next }));
 }
+
+/** Filtrs «Meklē» (Nils 24.11): tikai pasūtījumi ar faktiski ieslēgtu meklēšanu, neatkarīgi no statusa. */
+export const IRISS_LIST_SEARCH_ON_KEY = "iriss-pasutijumi-list-search-on-v1";
+export const IRISS_LIST_SEARCH_ON_EVENT = "iriss-pasutijumi-list-search-on-change";
+
+export function readIrissListSearchOnFilter(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(IRISS_LIST_SEARCH_ON_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function dispatchIrissListSearchOnFilter(next: boolean): void {
+  try {
+    localStorage.setItem(IRISS_LIST_SEARCH_ON_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new CustomEvent(IRISS_LIST_SEARCH_ON_EVENT, { detail: next }));
+}

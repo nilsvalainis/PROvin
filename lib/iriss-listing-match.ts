@@ -17,7 +17,7 @@ import {
 import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
-import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsSearchOn, type IrissPasutijumsListStatus, type IrissSearchOverride } from "@/lib/iriss-pasutijumi-types";
 import {
   isIrissListingHitStatus,
   irissListingMatchKey,
@@ -64,6 +64,7 @@ export type IrissListingMatchOrder = {
   id: string;
   brandModel: string;
   listStatus?: IrissPasutijumsListStatus | string | null;
+  searchOverride?: IrissSearchOverride | null;
   deletedAt?: string | null;
   clientFirstName?: string;
   clientLastName?: string;
@@ -163,12 +164,12 @@ export function countUnseenListingMatches(
   return n;
 }
 
+/** Jaunus sludinājumus piesaista tikai, kamēr meklēšana ieslēgta; pēc apturēšanas esošās piesaistes paliek (merge tās nedzēš). */
 function activeMatchOrders(orders: readonly IrissListingMatchOrder[]): IrissListingMatchOrder[] {
   return orders.filter((o) => {
     const id = (o.id ?? "").trim();
     if (!id || isIrissScanOrderId(id)) return false;
-    if ((o.deletedAt ?? "").trim()) return false;
-    return isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus);
+    return isIrissPasutijumsSearchOn(o);
   });
 }
 
@@ -187,6 +188,7 @@ export function discoverListingOrderMatches(
       id: o.id,
       brandModel: o.brandModel,
       listStatus: (o.listStatus ?? "active") as IrissPasutijumsListStatus,
+      searchOverride: o.searchOverride ?? undefined,
       deletedAt: (o.deletedAt ?? "").trim() || undefined,
       listingLinkAutobid: o.listingLinkAutobid,
       listingLinkOpenline: o.listingLinkOpenline,

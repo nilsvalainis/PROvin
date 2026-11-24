@@ -46,7 +46,8 @@ import {
   type MarketplaceOrderCriteria,
 } from "@/lib/marketplace/query-from-order";
 import {
-  isIrissPasutijumsWorkingStatus,
+  isIrissPasutijumsSearchOn,
+  type IrissSearchOverride,
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
 
@@ -64,6 +65,8 @@ export type MarketplaceAutoOrderBrief = {
   updatedAt: string;
   pinnedAt?: string;
   listStatus: IrissPasutijumsListStatus;
+  searchOverride?: IrissSearchOverride;
+  deletedAt?: string;
 };
 
 export type MarketplaceAutoReady = {
@@ -116,17 +119,14 @@ export function marketplaceAutoProvidersReady(): MarketplaceAutoReady {
   return { ok: true, reason: "" };
 }
 
+/** Automātiskā ielāde tikai, kamēr meklēšana ieslēgta (slēdzis, citādi statusa noklusējums); izdzēstam nekad. */
 export function isMarketplaceAutoOrderActive(row: MarketplaceAutoOrderBrief): boolean {
-  return isIrissPasutijumsWorkingStatus(row.listStatus);
+  return isIrissPasutijumsSearchOn(row);
 }
 
-/** Jaunākie / aktīvākie vispirms: meklēšana pirms rezervēta, piespraustie, tad updatedAt. */
+/** Piespraustie vispirms, tad jaunākie pēc updatedAt. */
 export function sortMarketplaceAutoOrders(rows: readonly MarketplaceAutoOrderBrief[]): MarketplaceAutoOrderBrief[] {
-  const rank = (s: IrissPasutijumsListStatus) => (s === "reserved" ? 1 : 0);
   return [...rows].sort((a, b) => {
-    const ar = rank(a.listStatus);
-    const br = rank(b.listStatus);
-    if (ar !== br) return ar - br;
     const ap = a.pinnedAt?.trim() ? 1 : 0;
     const bp = b.pinnedAt?.trim() ? 1 : 0;
     if (ap !== bp) return bp - ap;
@@ -463,6 +463,8 @@ export async function runMarketplaceAutoLoadNow(now = new Date()): Promise<Marke
         updatedAt: row.updatedAt,
         pinnedAt: row.pinnedAt,
         listStatus: row.listStatus,
+        searchOverride: row.searchOverride,
+        deletedAt: row.deletedAt,
       }));
     },
     async readOrder(id) {

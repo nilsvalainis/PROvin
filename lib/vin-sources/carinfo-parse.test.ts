@@ -133,3 +133,56 @@ Mileage 523,710 km
     expect(parsed.mileage).toEqual([]);
   });
 });
+
+describe("parseCarinfoPastedText vēstures notikumi", () => {
+  it("sludinājums ar atsevišķu 'Removed' datuma rindu ir viens notikums ar nobraukumu", () => {
+    const parsed = parseCarinfoPastedText(`
+EN / DK
+Vehicle info
+In TrafficYes
+Mileage history
+3
+Reported odometer readings
+Registration and customs inspection
+310,000 km
+2019-06-06
+Vehicle history
+12
+Show as list
+Show as cards
+2020-03-03
+Private advertisement
+Removed
+2025-01-14
+6,490 EUR / 216,950 km
+Show classified
+2019-06-06
+Exported
+2019-06-06
+Registration and customs inspection
+Passed
+310,000 km
+Hidden items: 7
+Log in
+Information from Trafikstyrelsen (Danish Transport Authority)
+`);
+    expect(parsed.timeline).toEqual([
+      {
+        date: "2020-03-03",
+        odometer: "216950",
+        country: "Dānija",
+        event: "Privāts sludinājums, 6,490 EUR / 216,950 km, noņemts 14.01.2025",
+      },
+      { date: "2019-06-06", odometer: "", country: "Dānija", event: "Eksportēts" },
+      { date: "2019-06-06", odometer: "310000", country: "Dānija", event: "Reģistrācijas un muitas apskate, izieta" },
+    ]);
+    expect(parsed.mileage).toEqual([
+      { date: "2019-06-06", odometer: "310000", country: "Dānija", origin: "car.info, apskate" },
+    ]);
+    expect(parsed.coverage).toBe("car.info kopā ir 3 nobraukuma ieraksti un 12 vēstures notikumi, bez konta redzami tikai jaunākie");
+  });
+
+  it("bez 'Vehicle history' saraksta notikumu nav", () => {
+    expect(parseCarinfoPastedText("Mileage history\n2024-03-12  145 230 km  Sweden").timeline).toEqual([]);
+  });
+});
