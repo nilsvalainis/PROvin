@@ -6012,6 +6012,7 @@ export function OrderDetailWorkspace({
                 readOnly={false}
                 onChange={(next) => updateSourceBlock("csdd", next)}
                 otherRecordDates={collectWorkspaceRecordDates(blocksDisplaySafe)}
+                ownerMileageRows={unifiedMileageDisplayRows}
                 trafficFillLevel={traffic.csdd}
                 pdfIncludeBlock={pdfVisibility.csdd}
                 onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}

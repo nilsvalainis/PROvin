@@ -239,5 +239,9 @@
  *   „nav pārbaudīts” un aizliegums rakstīt „liegumu nav”), CSNg, noņemts no uzskaites / atļauja
  *   beigusies, OCTA nav vai īstermiņa, nodoklis nav samaksāts, tirdzniecības reģistrs, pilnvara,
  *   atkārtoti TA defekti un apskašu ar vērtējumu 2/3 skaits. Dīlera datu komentāros nav.
+ * - 2026-11-24.0 - Faktu lapā „Īpašnieku periodi” (PDF bloks «Īpašnieki un nobraukums»): katra perioda
+ *   ilgums un km, odometra samazinājums periodā, periodi bez nosakāma km, īsi turēšanas periodi (< 1 g.),
+ *   ārvalstu km zināms tikai līdz gadam X. Blokā tos neraksta - CSDD komentārā pieminēt faktiski
+ *   (dīlera / Business variantā bez ieteikumiem).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-23.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-24.0";

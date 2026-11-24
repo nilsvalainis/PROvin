@@ -49,7 +49,9 @@ import {
   restoreCsddApiValue,
   setCsddFieldManually,
 } from "@/lib/csdd-field-lock";
-import { buildOwnerRegistrationTimelineAdminHtml } from "@/lib/csdd-history-charts";
+import { buildCsddOwnerMileageBlockHtml, OWNER_MILEAGE_BLOCK_ADMIN_CSS } from "@/lib/owner-mileage-block-html";
+import { ownerMileageReadingsFromUnifiedRows } from "@/lib/owner-mileage-periods";
+import type { UnifiedMileageRow } from "@/lib/unified-mileage";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import {
@@ -224,6 +226,8 @@ type Props = {
   otherRecordDates?: string[];
   /** e.csdd automātika (tikai pasūtījumiem, ne konsultācijām). */
   ecsddAuto?: boolean;
+  /** Visu avotu nobraukuma rindas blokam «Īpašnieki un nobraukums» (ja nav - tikai CSDD rādījumi). */
+  ownerMileageRows?: UnifiedMileageRow[];
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -248,7 +252,16 @@ export function AdminCsddSourceBlock({
   onPhotoGroupsStructuralCommit,
   otherRecordDates,
   ecsddAuto = false,
+  ownerMileageRows,
 }: Props) {
+  const ownerMileageHtml = useMemo(() => {
+    const html = buildCsddOwnerMileageBlockHtml(
+      value,
+      ownerMileageRows ? ownerMileageReadingsFromUnifiedRows(ownerMileageRows) : undefined,
+      { responsive: true },
+    );
+    return html ? `<style>${OWNER_MILEAGE_BLOCK_ADMIN_CSS}</style>${html}` : "";
+  }, [value, ownerMileageRows]);
   const firstRegWarnings = useMemo(
     () => collectCsddFirstRegistrationWarnings({ csdd: value, otherRecordDates }),
     [value, otherRecordDates],
@@ -547,18 +560,13 @@ export function AdminCsddSourceBlock({
                       <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
                         {strVal.trim() ? strVal : <span className="text-slate-400">-</span>}
                       </div>
-                      {isOwnerCountField &&
-                      (value.ownerCountLatvia.trim() || value.ownerRegistrationEvents.length > 0) ? (
-                        <div
-                          className="provin-csdd-owner-chart mt-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2 py-1.5 text-[11px]"
-                          dangerouslySetInnerHTML={{
-                            __html: buildOwnerRegistrationTimelineAdminHtml(
-                              value.ownerCountLatvia,
-                              value.ownerRegistrationEvents,
-                            ),
-                          }}
-                        />
-                      ) : null}
+                      {isOwnerCountField && ownerMileageHtml ? (
+                    <div
+                      className="provin-csdd-owner-chart mt-2"
+                      data-owner-mileage-admin=""
+                      dangerouslySetInnerHTML={{ __html: ownerMileageHtml }}
+                    />
+                  ) : null}
                     </>
                   ) : dateKeys.has(key) && !isNonDateOctaValue(key, strVal) ? (
                     <input
@@ -579,16 +587,11 @@ export function AdminCsddSourceBlock({
                       aria-label={label}
                     />
                   )}
-                  {isOwnerCountField &&
-                  (value.ownerCountLatvia.trim() || value.ownerRegistrationEvents.length > 0) ? (
+                  {isOwnerCountField && ownerMileageHtml ? (
                     <div
-                      className="provin-csdd-owner-chart mt-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2 py-1.5 text-[11px]"
-                      dangerouslySetInnerHTML={{
-                        __html: buildOwnerRegistrationTimelineAdminHtml(
-                          value.ownerCountLatvia,
-                          value.ownerRegistrationEvents,
-                        ),
-                      }}
+                      className="provin-csdd-owner-chart mt-2"
+                      data-owner-mileage-admin=""
+                      dangerouslySetInnerHTML={{ __html: ownerMileageHtml }}
                     />
                   ) : null}
                 </>

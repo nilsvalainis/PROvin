@@ -100,6 +100,12 @@ import {
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
 import { collectUnifiedIncidentRows, type UnifiedIncidentRow } from "@/lib/unified-incidents";
+import {
+  buildOwnerMileagePeriods,
+  formatOwnerMileageFactLines,
+  ownerMileageInputFromCsdd,
+  ownerMileageReadingsFromUnifiedRows,
+} from "@/lib/owner-mileage-periods";
 import { extractCampaignCodes } from "@/lib/unit-facts/check";
 
 export const CANONICAL_FACTS_HEADER = "KANONISKIE FAKTI";
@@ -221,6 +227,8 @@ export type CanonicalFacts = {
   dealerComponentCounts: DealerComponentCount[];
   /** j26: reģistru statusi (FIN ierobežojumi, izņemšana no uzskaites u.c.). */
   registryStatusLines: string[];
+  /** 24.11: bloks «Īpašnieki un nobraukums» - periodi un fakti, ko blokā neraksta (samazinājums, trūkstoši rādījumi u.c.). */
+  ownerMileageLines?: string[];
   /** e.csdd teksta signāli (liegumi, CSNg, statuss, OCTA, nodoklis, TA defektu atkārtošanās) - gatavas rindas. */
   csddSignalLines: string[];
   /** 21.11: oficiālā reģistra piedziņa (DMR) - prioritāte pār sludinājumu / car.info. */
@@ -235,6 +243,19 @@ export type CanonicalFacts = {
   sourceHaystack: string;
   sheet: string;
 };
+
+function buildOwnerMileageFactLinesFromRows(
+  csdd: WorkspaceSourceBlocks["csdd"],
+  mileageRows: UnifiedMileageRow[],
+): string[] {
+  try {
+    const readings = ownerMileageReadingsFromUnifiedRows(prepareUnifiedMileageDisplayRows(mileageRows));
+    const input = ownerMileageInputFromCsdd(csdd, readings);
+    return input ? formatOwnerMileageFactLines(buildOwnerMileagePeriods(input)) : [];
+  } catch {
+    return [];
+  }
+}
 
 function unifiedMileagePayload(blocks: WorkspaceSourceBlocks): UnifiedMileageSourcePayload {
   return {
@@ -527,6 +548,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerComponentCounts,
     registryStatusLines,
     csddSignalLines: input.omitCsddRegistrySignals ? [] : buildCsddRegistrySignalFactLines(csdd),
+    ownerMileageLines: buildOwnerMileageFactLinesFromRows(csdd, mileageRows),
     drivetrain: extractVehicleDrivetrain(blocks),
     drivetrainOtherSourcesAwd: otherSourcesClaimAwd(haystack),
     dealerCampaigns,
@@ -588,6 +610,13 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   if (synth) {
     const ctx = formatOwnerCountAiContext(synth).trim();
     if (ctx) lines.push(clip(ctx.replace(/^/gm, "  "), 500));
+  }
+
+  if ((facts.ownerMileageLines ?? []).length > 0) {
+    lines.push(
+      "Īpašnieku periodi (PDF bloks «Īpašnieki un nobraukums» rāda tikai ilgumu un km; samazinājumu, trūkstošus rādījumus, īsus periodus un ārvalstu km robežu blokā NERAKSTA - komentārā pieminēt faktiski):",
+    );
+    lines.push(...(facts.ownerMileageLines ?? []).map((l) => clip(l, 700)));
   }
 
   const countryBit = facts.firstReg.countryLv

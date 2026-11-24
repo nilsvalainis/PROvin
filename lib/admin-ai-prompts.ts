@@ -547,7 +547,8 @@ function aiSourceBlockExtraRules(blockLabel: string): string {
 CSDD FOCUS:
 - Ownership chain, first registration in Latvia, TA history, defects, restrictions — CSDD-unique administrative facts.
 - TA timeline: state old defects as history; do NOT recommend hunting items that the next / following TA no longer lists (~2+ years, lamps, play, wipers, brakes, one-off leaks). EXCEPTION: rust/corrosion and cietās daļiņas / dūmainība stay a caution even after a later clean TA. Climate rust typical spots belong in tech risks / inspection when the winter-salt brief is OBLIGĀTI — not a full rust essay in the CSDD comment.
-- Brief note if CSDD km/TA dates conflict with other sources; do not rewrite the full multi-source odometer essay (that is the mileage comment).`;
+- Brief note if CSDD km/TA dates conflict with other sources; do not rewrite the full multi-source odometer essay (that is the mileage comment).
+- ĪPAŠNIEKU PERIODI: the PDF block «Īpašnieki un nobraukums» prints only each owner's duration and km (unknown = «-»), with NO explanations. If the facts sheet section „Īpašnieku periodi” lists an odometer decrease in a period (when, how much), periods where km cannot be determined (missing readings), short holding periods (< 1 year - which owners) or „ārvalstu nobraukums zināms tikai līdz X. gadam”, mention each of them in this comment factually, one short sentence each, in Latvian, with the owner number and dates from the sheet. Do not recalculate the numbers. In the dealer-data / Business variant state only the fact - no advice or recommendations.`;
   }
   if (blockLabel === L.autodna) {
     return `

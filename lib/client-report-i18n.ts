@@ -924,3 +924,90 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
   }
   return out;
 }
+
+/**
+ * Bloks «Īpašnieki un nobraukums» (CSDD sadaļa, PDF + admin). Teksti uzreiz atskaites valodā
+ * (nav sweep atslēgas). Ilgumi saīsināti vienā rindā («5 g. 10 mēn.», «13 d.»).
+ */
+export type OwnerMileageTextKey =
+  | "title"
+  | "abroad"
+  | "latvia"
+  | "imported"
+  | "firstRegLv"
+  | "since"
+  | "today"
+  | "mileage"
+  | "footApprox"
+  | "footBar";
+
+const OWNER_MILEAGE_TEXT: Record<OwnerMileageTextKey, Record<ClientReportLang, string>> = {
+  title: { lv: "Īpašnieki un nobraukums", en: "Owners and mileage", ru: "Владельцы и пробег", de: "Halter und Laufleistung" },
+  abroad: { lv: "Ārvalstīs", en: "Abroad", ru: "За рубежом", de: "Im Ausland" },
+  latvia: { lv: "Latvijā", en: "In Latvia", ru: "В Латвии", de: "In Lettland" },
+  imported: { lv: "Ievests Latvijā", en: "Imported to Latvia", ru: "Ввезён в Латвию", de: "Nach Lettland eingeführt" },
+  firstRegLv: {
+    lv: "Pirmā reģistrācija Latvijā",
+    en: "First registration in Latvia",
+    ru: "Первая регистрация в Латвии",
+    de: "Erstzulassung in Lettland",
+  },
+  since: { lv: "kopš", en: "since", ru: "с", de: "seit" },
+  today: { lv: "šodien", en: "today", ru: "сегодня", de: "heute" },
+  mileage: { lv: "Nobraukums", en: "Mileage", ru: "Пробег", de: "Laufleistung" },
+  footApprox: {
+    lv: "Zīme «~» nozīmē, ka nobraukums ir aptuvens: tas aprēķināts pēc tuvākajiem odometra rādījumiem.",
+    en: "The sign «~» means the mileage is approximate: it is calculated from the nearest odometer readings.",
+    ru: "Знак «~» означает, что пробег приблизительный: он рассчитан по ближайшим показаниям одометра.",
+    de: "Das Zeichen «~» bedeutet, dass die Laufleistung ungefähr ist: Sie wurde aus den nächstgelegenen Kilometerständen berechnet.",
+  },
+  footBar: {
+    lv: "Josla katrā kolonnā ir viss auto mūžs; iekrāsotā daļa - šī īpašnieka laiks.",
+    en: "The bar in each column is the car's whole life; the coloured part is this owner's time.",
+    ru: "Полоса в каждой колонке - вся жизнь автомобиля; закрашенная часть - время этого владельца.",
+    de: "Der Balken in jeder Spalte zeigt das gesamte Fahrzeugleben; der farbige Teil ist die Zeit dieses Halters.",
+  },
+};
+
+export function ownerMileageT(key: OwnerMileageTextKey, lang: ClientReportLang): string {
+  return OWNER_MILEAGE_TEXT[key][lang] ?? OWNER_MILEAGE_TEXT[key].lv;
+}
+
+/** «N īpašnieki» ar pareizu skaitli katrā valodā. */
+export function ownerMileageOwnersCount(n: number, lang: ClientReportLang): string {
+  if (lang === "en") return `${n} ${n === 1 ? "owner" : "owners"}`;
+  if (lang === "de") return `${n} Halter`;
+  if (lang === "ru") {
+    const m10 = n % 10;
+    const m100 = n % 100;
+    const w = m10 === 1 && m100 !== 11 ? "владелец" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "владельца" : "владельцев";
+    return `${n} ${w}`;
+  }
+  const one = n % 10 === 1 && n % 100 !== 11;
+  return `${n} ${one ? "īpašnieks" : "īpašnieki"}`;
+}
+
+/** Kolonnas virsraksts: «3. īpašnieks». */
+export function ownerMileageOwnerLabel(n: number, lang: ClientReportLang): string {
+  if (lang === "en") return `Owner ${n}`;
+  if (lang === "ru") return `Владелец ${n}`;
+  if (lang === "de") return `${n}. Halter`;
+  return `${n}. īpašnieks`;
+}
+
+/** Saīsināts ilgums vienā rindā: «5 g. 10 mēn.», «13 d.». */
+export function ownerMileageDuration(
+  parts: { years: number; months: number; days?: number },
+  lang: ClientReportLang,
+): string {
+  const U: Record<ClientReportLang, { y: string; m: string; d: string }> = {
+    lv: { y: "g.", m: "mēn.", d: "d." },
+    en: { y: "yr", m: "mo", d: "d" },
+    ru: { y: "г.", m: "мес.", d: "дн." },
+    de: { y: "J.", m: "Mon.", d: "T." },
+  };
+  const u = U[lang] ?? U.lv;
+  if (parts.days != null) return `${parts.days} ${u.d}`;
+  const bits = [parts.years ? `${parts.years} ${u.y}` : "", parts.months ? `${parts.months} ${u.m}` : ""].filter(Boolean);
+  return bits.join(" ") || `0 ${u.m}`;
+}
