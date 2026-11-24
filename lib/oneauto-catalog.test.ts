@@ -72,7 +72,8 @@ describe("OneAuto katalogs", () => {
     const text = display.powertrain.map((r) => `${r.label}: ${r.value}`).join("\n");
     expect(text).toMatch(/manufacturer desc: VAUXHALL/);
     expect(text).toMatch(/fuel type desc: PETROL/);
-    expect(text).toMatch(/manufactured year: 2022/);
+    // 24.11: VIN Decoder `manufactured_year` (VIN 10. pozīcija) netiek rādīts - ražošanas datums tikai no OE.
+    expect(text).not.toMatch(/manufactured year/);
   });
 
   it("OE Build Sheet (Europe) sauc oficiālo asinhrono /v2 ceļu", () => {
