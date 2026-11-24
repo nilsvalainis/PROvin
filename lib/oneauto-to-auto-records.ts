@@ -344,9 +344,8 @@ export function oneautoPowertrainToVehicleInfo(rows: readonly OneautoKvRow[]): {
     const formatted = formatPowerKwBhp(vehicleInfo.power ?? "", powerBhp);
     if (formatted) vehicleInfo.power = formatted;
   }
-  if (!vehicleInfo.productionDate && modelYear) {
-    vehicleInfo.productionDate = modelYear.slice(0, 40);
-  } else if (modelYear && vehicleInfo.productionDate !== modelYear) {
+  // 24.11: modeļa gads NAV ražošanas datums (VIN 10. pozīcija / katalogs) - paliek kā atsevišķa rinda.
+  if (modelYear && vehicleInfo.productionDate !== modelYear) {
     leftovers.push({ label: "Modeļa gads", value: modelYear });
   }
   if (manufacturer) {

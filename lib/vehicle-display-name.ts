@@ -12,7 +12,8 @@
  * nosaukumā izmet, ja ražotāja komplektācija skaidri saka 2WD (4x2 / RWD / FWD) - nekādu minējumu.
  */
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { extractOemDrivetrain } from "@/lib/registry-drivetrain";
+import { productionDateContradictsRecords } from "@/lib/production-date-guard";
+import { extractVehicleDrivetrain } from "@/lib/registry-drivetrain";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 
 export type VehicleNameCandidate = { value: string | null | undefined; source: VehicleNameSource };
@@ -127,9 +128,10 @@ export function resolveVehicleDisplayName(
   sourceBlocks: WorkspaceSourceBlocks,
   extras: VehicleDisplayNameExtras = {},
 ): string {
-  const oem = extractOemDrivetrain(sourceBlocks);
+  // 24.11: piedziņa no visiem avotiem (rūpnīcas kodi > reģistrs > … > OneAuto katalogs), ne tikai katalogs.
+  const dt = extractVehicleDrivetrain(sourceBlocks);
   return pickVehicleDisplayName(vehicleNameCandidatesFromBlocks(sourceBlocks, extras), {
-    twoWheelDrive: oem ? !oem.awd : false,
+    twoWheelDrive: dt ? !dt.awd : false,
   }).name;
 }
 
@@ -148,13 +150,22 @@ export function modelSeriesContradictsName(series: string | null | undefined, na
  * Dīlera tabulas / vāka transportlīdzekļa dati attēlošanai: „Modelis” = vienotais nosaukums (ja tas nav tikai
  * marka); „Modeļa sērija”, kas runā pretī modelim (OneAuto „E220” pie E 300 de), netiek rādīta - bez minējuma.
  */
-export function dealerVehicleInfoForDisplay<T extends { model: string; modelSeries: string }>(
+export function dealerVehicleInfoForDisplay<T extends { model: string; modelSeries: string; productionDate?: string }>(
   vi: T,
   displayName: string | null | undefined,
+  /** 24.11: pirmā reģistrācija / dīlera ierakstu datumi - vēlāku ražošanas datumu nerāda. */
+  productionDateRefs: readonly (string | null | undefined)[] = [],
 ): T {
   const name = clean(displayName);
   const model = name && !isMakeOnlyVehicleName(name) ? name : vi.model;
   const modelSeries = modelSeriesContradictsName(vi.modelSeries, model) ? "" : vi.modelSeries;
-  if (model === vi.model && modelSeries === vi.modelSeries) return vi;
-  return { ...vi, model, modelSeries };
+  const dropProduction =
+    typeof vi.productionDate === "string" &&
+    productionDateContradictsRecords(vi.productionDate, [
+      ...productionDateRefs,
+      (vi as { firstRegistration?: string }).firstRegistration,
+      (vi as { warrantyStartDate?: string }).warrantyStartDate,
+    ]);
+  if (model === vi.model && modelSeries === vi.modelSeries && !dropProduction) return vi;
+  return { ...vi, model, modelSeries, ...(dropProduction ? { productionDate: "" } : {}) };
 }

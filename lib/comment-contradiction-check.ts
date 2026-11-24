@@ -855,9 +855,11 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     registryStatusLines: [],
     csddSignalLines: sheet.includes(CSDD_RESTRICTIONS_NOT_CHECKED_LINE) ? [CSDD_RESTRICTIONS_NOT_CHECKED_LINE] : [],
     drivetrain: (() => {
-      const dm = sheet.match(/Piedziņa \(oficiālais (?:reģistrs|avots) ([^,)]+)[^)]*\):\s*(\d)\s+dzenoš/);
+      // „(oficiālais reģistrs X, prioritāte …)” vai „(avots ražotāja katalogs (OneAuto), prioritāte …)”.
+      const HEAD = String.raw`Piedziņa \((?:oficiālais reģistrs|oficiālais avots|avots) (.+?), prioritāte[^:]*\):\s*`;
+      const dm = sheet.match(new RegExp(`${HEAD}(\\d)\\s+dzenoš`));
       if (dm) return { drivenAxles: Number(dm[2]), awd: false, sourceLabel: dm[1]!.trim() };
-      const am = sheet.match(/Piedziņa \(oficiālais (?:reģistrs|avots) ([^,)]+)[^)]*\):\s*pilnpiedziņa\s*\((\d)/);
+      const am = sheet.match(new RegExp(`${HEAD}pilnpiedziņa\\s*\\((\\d)`));
       return am ? { drivenAxles: Number(am[2]), awd: true, sourceLabel: am[1]!.trim() } : null;
     })(),
     ta: EMPTY_TA,
