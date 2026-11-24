@@ -160,10 +160,18 @@ function compactCode(raw: string): string {
 export function loadedEngineFieldHasCode(loaded: string): boolean {
   const u = (loaded ?? "").toUpperCase();
   if (/(?<![\d.])\d{3}[.\s]\d{3}(?!\d)/.test(u)) return true; // 651.950 / 654 920
-  return u
-    .split(/[^A-Z0-9]+/)
-    .some((t) => t.length >= 3 && /[A-Z]/.test(t) && /\d/.test(t) && !NON_ENGINE_CODE_RE.test(t) && !/^(?:EURO|KW|PS|HP|ZS|CM)\d+$/.test(t));
+  return u.split(/[^A-Z0-9]+/).some((t) => {
+    if (t.length < 3) return false;
+    // VW/Audi burtu kodi (CUKB, CAGA) ir kodi; mārketinga nosaukumi (TDCI, TSI, DIESEL) - nav.
+    if (/^[A-Z]{3,4}$/.test(t)) return !MARKETING_ENGINE_WORDS.has(t) && !ENGINE_CODE_FALSE_POSITIVE.has(t);
+    return /[A-Z]/.test(t) && /\d/.test(t) && !NON_ENGINE_CODE_RE.test(t) && !/^(?:EURO|KW|PS|HP|ZS|CM)\d+$/.test(t);
+  });
 }
+
+const MARKETING_ENGINE_WORDS = new Set([
+  "TDCI", "TDI", "TSI", "TFSI", "FSI", "CDI", "HDI", "CRDI", "GDI", "MPI", "DCI", "JTD", "JTDM", "VTEC", "MHEV", "PHEV",
+  "HEV", "BEV", "EV", "LPG", "CNG", "AUTO", "BENZ", "GAS", "TURBO", "BLUE", "ECO", "SDI", "DTI", "CRD", "DPF", "FAP",
+]);
 
 /** Mercedes saimes kods: «OM 654.920» / «654.920» / «M651 R4-DIESEL» / «OM654» → 3 cipari. */
 function mercedesFamilyDigits(raw: string): string[] {
