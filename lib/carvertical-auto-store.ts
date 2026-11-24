@@ -167,3 +167,6 @@ export async function readCarverticalBalance(): Promise<CarverticalBalance | nul
 export async function writeCarverticalBalance(b: CarverticalBalance) {
   return writeRaw(`${SUBDIR}/_balance.json`, JSON.stringify(b), "application/json");
 }
+
+/** Tā pati krātuve (Blob / lokāla mape) citiem fona piegādātājiem (AutoDNA). */
+export { readRaw as readVendorAutoRaw, writeRaw as writeVendorAutoRaw };
