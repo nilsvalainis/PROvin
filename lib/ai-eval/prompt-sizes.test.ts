@@ -22,9 +22,10 @@ describe("admin system prompt sizes", () => {
  * 21.11.2026: +~235 zīmes (~60 tokeni) - pirmās reģistrācijas nosaukuma noteikums (viena „Pirmā reģistrācija”).
  * 22.11.2026: source_dealer +~1 250, oil_intervals +~600 zīmes - dīlera „Komentāri” un eļļas lauka lomu dalījums, PDF tabulas nedublēt.
  * 22.11.2026 (2): source_dealer +~350 zīmes - „tikai fakti, nekādu ieteikumu” un „pozīcija nav darbība” (audits K4/AI).
+ * 24.11.2026: source_csdd +~320 zīmes (~80 tokeni) - „Īpašnieku periodi” fakti CSDD komentārā (bloks «Īpašnieki un nobraukums»).
  */
 const PROMPT_CHAR_CEILINGS: Record<string, number> = {
-  source_csdd: 31_950,
+  source_csdd: 32_400,
   source_dealer: 38_500,
   technical_risks_v1: 89_650,
   inspection: 82_150,
