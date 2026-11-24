@@ -86,8 +86,8 @@ describe("CSDD izdrukas piemēri (anonimizēti)", () => {
     expect(r.ownerCount).toBe(9);
     expect(r.abroad?.country).toBe("Vācija");
     expect(rowsOf(r)).toEqual([
-      "2000-02.2007 | ~7 g. | 117 969 km",
-      "02.2007 | 13 d. | -",
+      "2000-02.2007 | ~7 g. | ~117 340 km",
+      "02.2007 | 13 d. | ~630 km",
       "02.2007-12.2012 | 5 g. 10 mēn. | 70 364 km",
       "12.2012-01.2015 | 2 g. 1 mēn. | ~21 230 km",
       "01.2015-07.2015 | 6 mēn. | ~6 370 km",
@@ -100,12 +100,28 @@ describe("CSDD izdrukas piemēri (anonimizēti)", () => {
     expect(r.owners[4]!.drop).toEqual({ fromT: d("15.06.2016"), fromKm: 235342, toT: d("11.09.2018"), toKm: 228276 });
   });
 
-  it("4 īpašnieki + Itālija: pašreizējam bez rādījuma pēc maiņas «-»", () => {
+  it("4 īpašnieki + Itālija: km starp maiņām no visiem rādījumiem (arī pēdējās TA), 3. - ekstrapolēts", () => {
     const { r } = fromFixture(OWNER_MILEAGE_FIXTURE_OP);
     expect(r.abroad?.country).toBe("Itālija");
-    expect(rowsOf(r)[0]).toBe("2006-05.2017 | ~11 g. | 254 471 km");
-    expect(r.owners.map((o) => o.km)).toEqual([null, 108090, null, null]);
+    expect(rowsOf(r)).toEqual([
+      "2006-05.2017 | ~11 g. | 254 471 km",
+      "05.2017 | 9 d. | ~550 km",
+      "05.2017-07.2024 | 7 g. 2 mēn. | ~107 540 km",
+      "07.2024-08.2026 | 2 g. 1 mēn. | ~42 670 km",
+      "kopš 08.2026 | 3 mēn. | -",
+    ]);
+    expect(r.owners.map((o) => [o.start?.method, o.end?.method])).toEqual([
+      ["reading", "interpolated"],
+      ["interpolated", "interpolated"],
+      ["interpolated", "extrapolated"],
+      ["extrapolated", undefined],
+    ]);
+    // Pēdējā TA 24.11.2025 393 885 km ir ekstrapolācijas pamatā.
+    expect(r.owners[2]!.end?.loT).toBe(d("24.11.2025"));
     expect(r.owners[3]!.current).toBe(true);
+    const facts = formatOwnerMileageFactLines(r).join("\n");
+    expect(facts).toContain("3. īpašnieks (sākums: interpolēts starp rādījumiem 21.11.2023 un 22.11.2024; beigas: ekstrapolēts no 24.11.2025 ar ~14 800 km gadā)");
+    expect(facts).toContain("Pašreizējam īpašniekam pēc maiņas vēl nav odometra rādījuma");
   });
 
   it("2 īpašnieki: pašreizējam km līdz pēdējam rādījumam («~»)", () => {
@@ -116,6 +132,58 @@ describe("CSDD izdrukas piemēri (anonimizēti)", () => {
 
 describe("aprēķina noteikumi", () => {
   const readings = (pairs: [string, number][]): OwnerMileageReading[] => pairs.map(([t, km]) => ({ t: d(t), km }));
+
+  it("CSDD pēdējās TA odometrs ir rādījums arī tad, ja nobraukuma vēsturē tā nav", () => {
+    const form = ownersForm(["01.01.2015", "01.01.2020", "01.06.2026"], {
+      previousRegistrationCountry: "VĀCIJA",
+      modelYear: "2010",
+      prevInspectionDate: "2025-11-24",
+    });
+    form.prevInspectionBlock = { ...form.prevInspectionBlock, inspectionDateText: "24.11.2025", odometer: "393885" };
+    const rs = readings([["01.01.2015", 100000], ["01.01.2020", 250000], ["22.11.2024", 366058]]);
+    const input = ownerMileageInputFromCsdd(form, rs, NOW)!;
+    expect(input.readings).toHaveLength(4);
+    const r = buildOwnerMileagePeriods(input)!;
+    expect(r.owners[1]!.end?.method).toBe("extrapolated");
+    expect(r.owners[1]!.end?.loT).toBe(d("24.11.2025"));
+    // Dublikātu nepievieno.
+    expect(ownerMileageInputFromCsdd(form, [...rs, { t: d("24.11.2025"), km: 393885 }], NOW)!.readings).toHaveLength(4);
+  });
+
+  it("ekstrapolē tikai pagātnes maiņas datumam; pašreizējam - līdz pēdējam rādījumam, nākotni neizdomā", () => {
+    const form = ownersForm(["01.01.2018", "01.01.2022", "01.06.2025"], { previousRegistrationCountry: "VĀCIJA", modelYear: "2012" });
+    const r = buildOwnerMileagePeriods(
+      ownerMileageInputFromCsdd(form, readings([["01.01.2018", 100000], ["01.01.2020", 120000], ["01.01.2023", 150000]]), NOW)!,
+    )!;
+    // 2. īpašnieks: 01.01.2022 interpolēts (~140 000), 01.06.2025 ekstrapolēts ar 10 000 km gadā (~174 130).
+    expect(r.owners[1]!.end?.method).toBe("extrapolated");
+    expect(ownerMileageKmLabel(r.owners[1]!)).toBe("~34 130 km");
+    expect(r.owners[2]!.km).toBeNull();
+    expect(collectOwnerMileageFacts(r).currentWithoutReading).toBe(true);
+  });
+
+  it("viens rādījums ir precīzs tikai tuvākajai maiņai; otrai - interpolē", () => {
+    const form = ownersForm(["01.03.2020", "10.03.2020", "01.03.2024"], { previousRegistrationCountry: "VĀCIJA", modelYear: "2015" });
+    const r = buildOwnerMileagePeriods(
+      ownerMileageInputFromCsdd(form, readings([["01.03.2019", 60000], ["01.03.2020", 70000], ["01.03.2021", 80000], ["01.03.2024", 110000]]), NOW)!,
+    )!;
+    expect(r.owners[0]!.start?.method).toBe("reading");
+    expect(r.owners[0]!.end?.method).toBe("interpolated");
+    expect(ownerMileageKmLabel(r.owners[0]!)).toBe("~250 km");
+    expect(r.owners[1]!.km).not.toBeNull();
+  });
+
+  it("pirms maiņas rādījumu nav - skaita no pirmā zināmā; ja abās pusēs nav atbalsta - «-»", () => {
+    // Ievests, bet ārvalstu sākums nav zināms (nav izlaiduma gada) - virtuālā 0 km nav.
+    const form = ownersForm(["01.01.2016", "01.01.2018", "01.01.2021"], { previousRegistrationCountry: "VĀCIJA" });
+    const r = buildOwnerMileagePeriods(
+      ownerMileageInputFromCsdd(form, readings([["01.06.2019", 90000], ["01.06.2022", 120000]]), NOW)!,
+    )!;
+    expect(r.abroad).toBeNull();
+    expect(r.owners[0]!.km).toBeNull();
+    expect(r.owners[1]!.start?.method).toBe("firstReading");
+    expect(ownerMileageKmLabel(r.owners[1]!)).toBe("~15 880 km");
+  });
 
   it("interpolē starp tuvākajiem rādījumiem un liek «~»", () => {
     const form = ownersForm(["01.01.2010", "01.01.2011"], { firstRegistration: "2010-01-01" });

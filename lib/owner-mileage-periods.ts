@@ -6,8 +6,11 @@
  * ārvalstīs, dīleris, izsoles, AutoDNA, CarVertical u.c. - vienotā nobraukuma rindas).
  *
  * - Ilgums: no maiņas līdz nākamajai maiņai (pašreizējam - līdz šodienai).
- * - Nobraukums periodā: rādījums perioda sākumā/beigās (± 31 d.) vai lineāri interpolēts starp
- *   tuvākajiem rādījumiem («~»). Ja to nevar noteikt vai odometrs periodā samazinājies - null («-»).
+ * - Nobraukums periodā = odometrs perioda beigās - odometrs perioda sākumā. Odometru katrā maiņas
+ *   datumā rēķina no VISIEM rādījumiem (arī CSDD pēdējās TA): rādījums ± 31 d. (precīzs), citādi
+ *   lineāri starp tuvākajiem rādījumiem, bez rādījuma pēc datuma - pēdējais rādījums + vidējais
+ *   nobraukums gadā, bez rādījuma pirms datuma - no pirmā zināmā («~»). Pašreizējam - līdz pēdējam
+ *   rādījumam. «-» tikai, ja odometrs periodā samazinās vai nav atbalsta vērtību.
  * - Ārvalstu periods: no pirmās reģistrācijas (vai izlaiduma gada) līdz ievešanai Latvijā.
  *
  * Paskaidrojumi (samazinājums, trūkstoši rādījumi, īsi periodi) blokā netiek rakstīti -
@@ -78,6 +81,9 @@ export type OwnerMileagePeriod = {
   kmApprox: boolean;
   /** Periodā odometrs samazinājās (km = null). */
   drop: OwnerMileageDropFact | null;
+  /** Odometra vērtība perioda sākumā / beigās un kā tā iegūta (AI faktiem un pārbaudei). */
+  start: OwnerMileageBoundary | null;
+  end: OwnerMileageBoundary | null;
   /** Ārvalstīm: valsts LV nosaukums (vai tukšs). */
   country: string;
 };
@@ -161,39 +167,153 @@ export function ownerMileageInputFromCsdd(
     firstRegistrationLatvia: csdd.firstRegistrationLatvia,
     modelYear: csdd.modelYear,
     previousRegistrationCountry: csdd.previousRegistrationCountry,
-    readings,
+    readings: withCsddInspectionReading(csdd, readings),
     nowMs,
   };
 }
 
-type KmPoint = { km: number; approx: boolean; loT: number; hiT: number; idx: number | null };
+/**
+ * CSDD «Pēdējā tehniskā apskate» odometrs ar datumu - arī rādījums (ja CSDD nobraukuma vēsturē
+ * tas vēl nav, piem. API dati bez pēdējās TA rindas).
+ */
+export function withCsddInspectionReading(
+  csdd: CsddFormFields,
+  readings: readonly OwnerMileageReading[],
+): OwnerMileageReading[] {
+  const out = [...readings];
+  const block = csdd.prevInspectionBlock;
+  const km = Number(String(block?.odometer ?? "").replace(/\D/g, ""));
+  const t = parseDate(block?.inspectionDateText) || parseDate(csdd.prevInspectionDate);
+  if (!t || !Number.isFinite(km) || km < 100) return out;
+  const dup = out.some((r) => Math.abs(r.t - t) <= 2 * DAY_MS && Math.abs(r.km - km) <= 5);
+  if (!dup) out.push({ t, km });
+  return out;
+}
 
-function kmAt(t: number, rs: readonly OwnerMileageReading[]): KmPoint | null {
-  if (rs.length === 0) return null;
-  let best = -1;
-  let bestDt = Infinity;
-  for (let i = 0; i < rs.length; i++) {
-    const dt = Math.abs(rs[i]!.t - t);
-    if (dt < bestDt) {
-      bestDt = dt;
-      best = i;
-    }
+/** Kā iegūta odometra vērtība perioda robežā. */
+export type OwnerMileageBoundaryMethod =
+  /** Rādījums ± 31 d. no datuma (precīzs). */
+  | "reading"
+  /** Virtuāls 0 km (jauns auto / ārvalstu sākums). */
+  | "origin"
+  /** Lineāri starp tuvākajiem rādījumiem pirms un pēc datuma. */
+  | "interpolated"
+  /** Pēc datuma rādījumu nav - pēdējais rādījums + vidējais nobraukums gadā. */
+  | "extrapolated"
+  /** Pirms datuma rādījumu nav - skaitīts no pirmā zināmā rādījuma. */
+  | "firstReading"
+  /** Pašreizējam īpašniekam - līdz pēdējam rādījumam (nākotne netiek izdomāta). */
+  | "lastReading";
+
+export type OwnerMileageBoundary = {
+  t: number;
+  km: number;
+  method: OwnerMileageBoundaryMethod;
+  /** Rādījumu laiki, uz kuriem vērtība balstās (kritumu meklēšanai). */
+  loT: number;
+  hiT: number;
+  /** Precīza rādījuma indekss sērijā (tikai «reading» / «origin»). */
+  idx: number | null;
+  /** Ekstrapolācijai: km gadā. */
+  ratePerYear?: number;
+  /** Interpolācijas apakšējais punkts ir virtuālais 0 km (izlaiduma gads / pirmā reģistrācija). */
+  fromOrigin?: boolean;
+};
+
+const YEAR_MS = 365.25 * DAY_MS;
+/** Vidējā nobraukuma logs ekstrapolācijai (pēdējie ~3 gadi). */
+const EXTRAPOLATION_WINDOW_MS = 3 * YEAR_MS;
+const EXTRAPOLATION_MIN_SPAN_MS = 180 * DAY_MS;
+
+function isPreciseMethod(m: OwnerMileageBoundaryMethod): boolean {
+  return m === "reading" || m === "origin";
+}
+
+/** Vidējais nobraukums gadā no pēdējiem rādījumiem (null - nevar noteikt). */
+function recentRatePerYear(rs: readonly OwnerMileageReading[]): number | null {
+  if (rs.length < 2) return null;
+  const last = rs[rs.length - 1]!;
+  let ref: OwnerMileageReading | null = null;
+  for (let i = rs.length - 2; i >= 0; i--) {
+    const r = rs[i]!;
+    if (last.t - r.t < EXTRAPOLATION_MIN_SPAN_MS) continue;
+    ref = r;
+    if (last.t - r.t >= EXTRAPOLATION_WINDOW_MS) break;
   }
-  if (best >= 0 && bestDt <= OWNER_MILEAGE_SNAP_DAYS * DAY_MS) {
-    const r = rs[best]!;
-    return { km: r.km, approx: false, loT: r.t, hiT: r.t, idx: best };
-  }
+  if (!ref) return null;
+  const rate = ((last.km - ref.km) / (last.t - ref.t)) * YEAR_MS;
+  return Number.isFinite(rate) && rate >= 0 ? rate : null;
+}
+
+function interpolateAt(t: number, rs: readonly OwnerMileageReading[]): OwnerMileageBoundary | null {
   let prev = -1;
   let next = -1;
   for (let i = 0; i < rs.length; i++) {
-    if (rs[i]!.t < t) prev = i;
-    else if (rs[i]!.t > t && next < 0) next = i;
+    if (rs[i]!.t <= t) prev = i;
+    else if (next < 0) next = i;
   }
-  if (prev < 0 || next < 0) return null;
-  const a = rs[prev]!;
-  const b = rs[next]!;
-  const km = a.km + ((b.km - a.km) * (t - a.t)) / (b.t - a.t);
-  return { km, approx: true, loT: a.t, hiT: b.t, idx: null };
+  if (prev >= 0 && next >= 0) {
+    const a = rs[prev]!;
+    const b = rs[next]!;
+    const km = b.t === a.t ? a.km : a.km + ((b.km - a.km) * (t - a.t)) / (b.t - a.t);
+    return { t, km, method: "interpolated", loT: a.t, hiT: b.t, idx: null, ...(a.origin ? { fromOrigin: true } : null) };
+  }
+  if (prev >= 0) {
+    const a = rs[prev]!;
+    const rate = recentRatePerYear(rs);
+    if (rate == null) return null;
+    return { t, km: a.km + (rate * (t - a.t)) / YEAR_MS, method: "extrapolated", loT: a.t, hiT: a.t, idx: null, ratePerYear: rate };
+  }
+  if (next >= 0) {
+    const b = rs[next]!;
+    return { t, km: b.km, method: "firstReading", loT: b.t, hiT: b.t, idx: null };
+  }
+  return null;
+}
+
+/**
+ * Odometra vērtība katrā perioda robežā no VISIEM rādījumiem.
+ * Rādījums ± 31 d. piesaistās tuvākajai robežai (viens rādījums - vienai robežai); pārējās robežas
+ * interpolē starp tuvākajiem rādījumiem, bez rādījuma pēc datuma - ekstrapolē ar vidējo nobraukumu
+ * gadā, bez rādījuma pirms datuma - skaita no pirmā zināmā.
+ */
+export function ownerMileageBoundaryValues(
+  times: readonly number[],
+  rs: readonly OwnerMileageReading[],
+): Map<number, OwnerMileageBoundary | null> {
+  const uniq = [...new Set(times)].sort((a, b) => a - b);
+  const snap = OWNER_MILEAGE_SNAP_DAYS * DAY_MS;
+  const nearest = new Map<number, { idx: number; dt: number }>();
+  for (const t of uniq) {
+    let best = -1;
+    let bestDt = Infinity;
+    for (let i = 0; i < rs.length; i++) {
+      const dt = Math.abs(rs[i]!.t - t);
+      // Vienādā attālumā - lielākais (tās pašas dienas pēdējais) rādījums.
+      if (dt < bestDt || (dt === bestDt && best >= 0 && rs[i]!.km >= rs[best]!.km)) {
+        bestDt = dt;
+        best = i;
+      }
+    }
+    if (best >= 0 && bestDt <= snap) nearest.set(t, { idx: best, dt: bestDt });
+  }
+  // Viens rādījums var būt precīzs tikai vienai robežai - tuvākajai.
+  const owner = new Map<number, number>();
+  for (const [t, n] of nearest) {
+    const cur = owner.get(n.idx);
+    if (cur == null || n.dt < nearest.get(cur)!.dt) owner.set(n.idx, t);
+  }
+  const out = new Map<number, OwnerMileageBoundary | null>();
+  for (const t of uniq) {
+    const n = nearest.get(t);
+    if (n && owner.get(n.idx) === t) {
+      const r = rs[n.idx]!;
+      out.set(t, { t, km: r.km, method: r.origin ? "origin" : "reading", loT: r.t, hiT: r.t, idx: n.idx });
+    } else {
+      out.set(t, interpolateAt(t, rs));
+    }
+  }
+  return out;
 }
 
 function findDrop(rs: readonly OwnerMileageReading[], loT: number, hiT: number): OwnerMileageDropFact | null {
@@ -213,30 +333,42 @@ function findDrop(rs: readonly OwnerMileageReading[], loT: number, hiT: number):
   return worst;
 }
 
+type PeriodKm = {
+  km: number | null;
+  approx: boolean;
+  drop: OwnerMileageDropFact | null;
+  start: OwnerMileageBoundary | null;
+  end: OwnerMileageBoundary | null;
+};
+
 function periodKm(
-  t0: number,
-  t1: number,
+  a: OwnerMileageBoundary | null,
+  bClosed: OwnerMileageBoundary | null,
   open: boolean,
   rs: readonly OwnerMileageReading[],
-): { km: number | null; approx: boolean; drop: OwnerMileageDropFact | null } {
-  const a = kmAt(t0, rs);
-  let b: KmPoint | null;
+): PeriodKm {
+  let b: OwnerMileageBoundary | null = bClosed;
   if (open) {
-    const after = rs.filter((r) => r.t > t0);
-    const last = after.length ? after[after.length - 1]! : null;
-    const lastIdx = last ? rs.lastIndexOf(last) : -1;
-    b = last && lastIdx !== a?.idx ? { km: last.km, approx: true, loT: last.t, hiT: last.t, idx: lastIdx } : null;
-  } else {
-    b = kmAt(t1, rs);
+    // Pašreizējais īpašnieks: līdz pēdējam rādījumam pēc perioda sākuma (nākotni neizdomā).
+    const last = rs.length ? rs[rs.length - 1]! : null;
+    const lastIdx = rs.length - 1;
+    b =
+      a && last && last.t > a.t && lastIdx !== a.idx && !(a.idx != null && last.t <= a.hiT)
+        ? { t: last.t, km: last.km, method: "lastReading", loT: last.t, hiT: last.t, idx: lastIdx }
+        : null;
   }
-  if (!a || !b) return { km: null, approx: false, drop: null };
+  const none = { km: null, approx: false, drop: null, start: a, end: b };
+  if (!a || !b) return none;
+  // «No pirmā zināmā» abās robežās - atbalsta vērtības nav.
+  if (a.method === "firstReading" && b.method === "firstReading") return none;
+  if (a.idx != null && a.idx === b.idx) return none;
   const drop = findDrop(rs, Math.min(a.loT, b.loT), Math.max(a.hiT, b.hiT));
-  if (drop) return { km: null, approx: false, drop };
-  if (a.idx != null && a.idx === b.idx) return { km: null, approx: false, drop: null };
+  if (drop) return { ...none, drop };
   const diff = b.km - a.km;
-  if (diff < 0) return { km: null, approx: false, drop: null };
-  const approx = a.approx || b.approx;
-  return { km: approx ? Math.round(diff / 10) * 10 : Math.round(diff), approx, drop: null };
+  if (diff < 0) return none;
+  // Pašreizējam īpašniekam km ir līdz pēdējam rādījumam, ne līdz šodienai - vienmēr «~».
+  const approx = open || !isPreciseMethod(a.method) || !isPreciseMethod(b.method);
+  return { km: approx ? Math.round(diff / 10) * 10 : Math.round(diff), approx, drop: null, start: a, end: b };
 }
 
 function ownerEventTimes(events: readonly CsddOwnerChangeRow[]): number[] {
@@ -307,9 +439,14 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
     if (!series.some((r) => r.t <= originT)) series.unshift({ t: originT, km: 0, origin: true });
   }
 
+  const bv = ownerMileageBoundaryValues(
+    [...(hasAbroad && abroadStartT ? [abroadStartT, importT] : []), ...evTs],
+    series,
+  );
+
   let abroad: OwnerMileagePeriod | null = null;
   if (hasAbroad && abroadStartT) {
-    const k = periodKm(abroadStartT, importT, false, series);
+    const k = periodKm(bv.get(abroadStartT) ?? null, bv.get(importT) ?? null, false, series);
     const duration = startYearOnly
       ? { years: Math.max(1, Math.round((importT - abroadStartT) / (365.25 * DAY_MS))), months: 0 }
       : ownerMileageCalendarDuration(abroadStartT, importT);
@@ -326,6 +463,8 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
       km: k.km,
       kmApprox: k.approx,
       drop: k.drop,
+      start: k.start,
+      end: k.end,
       country,
     };
   }
@@ -335,7 +474,7 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
     const t0 = evTs[i]!;
     const isLast = i === evTs.length - 1;
     const t1 = isLast ? nowT : evTs[i + 1]!;
-    const k = periodKm(t0, t1, isLast, series);
+    const k = periodKm(bv.get(t0) ?? null, isLast ? null : (bv.get(t1) ?? null), isLast, series);
     owners.push({
       kind: "owner",
       n: i + 1,
@@ -349,6 +488,8 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
       km: k.km,
       kmApprox: k.approx,
       drop: k.drop,
+      start: k.start,
+      end: k.end,
       country: "",
     });
   }
@@ -397,7 +538,11 @@ function ordList(ns: number[]): string {
     .join(", ")} un ${ns[ns.length - 1]}.`;
 }
 
+export type OwnerMileageApproxFact = { who: string; start: string; end: string };
+
 export type OwnerMileageFacts = {
+  /** Periodi ar «~» km un kā robežas aprēķinātas. */
+  approx: OwnerMileageApproxFact[];
   drops: { who: string; drop: OwnerMileageDropFact }[];
   missing: number[];
   currentWithoutReading: boolean;
@@ -405,6 +550,26 @@ export type OwnerMileageFacts = {
   abroadKnownUntilYear: number | null;
   abroadWithoutReadings: boolean;
 };
+
+function boundaryHowLv(b: OwnerMileageBoundary | null): string {
+  if (!b) return "nav";
+  switch (b.method) {
+    case "reading":
+      return `rādījums ${fmtDate(b.loT)}`;
+    case "origin":
+      return "0 km (jauns)";
+    case "interpolated":
+      return b.fromOrigin
+        ? `interpolēts starp 0 km (${new Date(b.loT).getUTCFullYear()}) un rādījumu ${fmtDate(b.hiT)}`
+        : `interpolēts starp rādījumiem ${fmtDate(b.loT)} un ${fmtDate(b.hiT)}`;
+    case "extrapolated":
+      return `ekstrapolēts no ${fmtDate(b.loT)} ar ~${fmtKm(Math.round((b.ratePerYear ?? 0) / 100) * 100)} gadā`;
+    case "firstReading":
+      return `no pirmā zināmā rādījuma ${fmtDate(b.loT)}`;
+    case "lastReading":
+      return `līdz pēdējam rādījumam ${fmtDate(b.loT)}`;
+  }
+}
 
 export function collectOwnerMileageFacts(r: OwnerMileageResult): OwnerMileageFacts {
   const drops: OwnerMileageFacts["drops"] = [];
@@ -425,7 +590,17 @@ export function collectOwnerMileageFacts(r: OwnerMileageResult): OwnerMileageFac
       abroadKnownUntilYear = new Date(r.lastForeignReadingT).getUTCFullYear();
     }
   }
+  const approx: OwnerMileageApproxFact[] = [];
+  for (const p of [r.abroad, ...r.owners]) {
+    if (!p || p.km == null || !p.kmApprox) continue;
+    approx.push({
+      who: p.kind === "abroad" ? "ārvalstu periods" : `${p.n}. īpašnieks`,
+      start: boundaryHowLv(p.start),
+      end: boundaryHowLv(p.end),
+    });
+  }
   return {
+    approx,
     drops: uniq,
     missing,
     currentWithoutReading: Boolean(cur && cur.km == null && !cur.drop),
@@ -462,11 +637,18 @@ export function formatOwnerMileageFactLines(r: OwnerMileageResult | null): strin
       `- Odometrs samazinājās ${d.who}: ${fmtDate(d.drop.fromT)} ${fmtKm(d.drop.fromKm)} → ${fmtDate(d.drop.toT)} ${fmtKm(d.drop.toKm)} (par ${fmtKm(d.drop.fromKm - d.drop.toKm)}); blokā šim periodam km nav rādīts`,
     );
   }
+  if (f.approx.length) {
+    lines.push(
+      `- Aptuveni aprēķināts nobraukums («~», pēc visiem pieejamajiem rādījumiem): ${f.approx
+        .map((a) => `${a.who} (sākums: ${a.start}; beigas: ${a.end})`)
+        .join("; ")}`,
+    );
+  }
   if (f.missing.length) {
     lines.push(
       f.missing.length === 1
-        ? `- Nobraukums nav nosakāms ${f.missing[0]}. īpašnieka periodā (trūkst odometra rādījuma perioda sākumā vai beigās)`
-        : `- Nobraukums nav nosakāms ${ordList(f.missing)} īpašnieka periodos (trūkst odometra rādījumu perioda sākumā vai beigās)`,
+        ? `- Nobraukums nav nosakāms ${f.missing[0]}. īpašnieka periodā (nav odometra rādījumu, uz kuriem balstīt aprēķinu)`
+        : `- Nobraukums nav nosakāms ${ordList(f.missing)} īpašnieka periodos (nav odometra rādījumu, uz kuriem balstīt aprēķinu)`,
     );
   }
   if (f.currentWithoutReading) {
