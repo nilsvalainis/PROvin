@@ -59,6 +59,7 @@ const NEEDS_HUMAN_LV = {
   captcha: "AutoDNA prasa captcha pieteikšanās brīdī - ielogojies pats",
   login_code: "AutoDNA prasa kodu pieteikšanās brīdī - vajag e-pasta koda ielasi",
   login_page_changed: "AutoDNA pieteikšanās lapa mainījusies",
+  login_form_not_opened: "AutoDNA pieteikšanās forma neatvērās (pārklājums vai lēna lapa) - relejs mēģinās vēlreiz",
   login_unknown: "AutoDNA pieteikšanās neizdevās",
 };
 

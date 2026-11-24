@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   analyzePurchasePage,
+  classifyLoginForm,
   classifyLoginResponse,
   decidePurchase,
   isAllowedHost,
@@ -27,6 +28,17 @@ const VIN = "WVWZZZ1JZXW000001";
 const PDF_B64 = Buffer.from("%PDF-1.7\n% anonimizēts\n").toString("base64");
 
 describe("AutoDNA relejs: lapu un atbilžu atpazīšana (dzīvi redzētās formas 24.11.2026)", () => {
+  it("pieteikšanās forma: sīkdatņu logs pārklāj Login -> forma neatvērās, nevis lapa mainījusies; captcha -> needs_human", () => {
+    expect(classifyLoginForm({ buttonFound: true, formInDom: true, formVisible: true })).toBe("open");
+    // 24.11 vakarā: poga un forma DOM ir, bet #cmpwrapper pārklāja pogu - forma neredzama
+    expect(classifyLoginForm({ buttonFound: true, formInDom: true, formVisible: false })).toBe("form_not_opened");
+    expect(classifyLoginForm({ buttonFound: false, formInDom: true, formVisible: false })).toBe("page_changed");
+    expect(classifyLoginForm({ buttonFound: true, formInDom: false, formVisible: false })).toBe("page_changed");
+    expect(classifyLoginForm({ buttonFound: true, formInDom: true, formVisible: true, captcha: true })).toBe("captcha");
+    expect(classifyLoginForm({ captcha: true })).toBe("captcha");
+    expect(classifyLoginForm({})).toBe("page_changed");
+  });
+
   it("navigācija tikai uz autodna.lv; pakas / bankas aizliegtas; /payment tikai atsevišķi", () => {
     expect(isAllowedHost("www.autodna.lv")).toBe(true);
     expect(isAllowedHost("autodna.lv")).toBe(true);
