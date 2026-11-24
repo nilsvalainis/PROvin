@@ -5,8 +5,8 @@
  * izņemot avotu kartīšu vērtības, kuras tulko esošais atskaites tulkojums (tāpat kā līdz šim).
  *
  * LIKUMS (Nils 24.11): kartīšu kārtojumā vienmēr simetrija - līdz 5 vienā rindā, vairāk - vienādās rindās
- * (6 = 3 + 3, 8 = 4 + 4, 9 = 3 + 3 + 3); ja vienādas rindas nav iespējamas, īsākā rinda centrēta ar to pašu
- * kartītes izmēru. Teksts kartītēs nelūst - burtu izmērs pielāgojas.
+ * (6 = 3 + 3, 8 = 4 + 4, 9 = 3 + 3 + 3); ja vienādas rindas nav iespējamas, īsākā rinda pielīdzināta
+ * kreisajai malai ar to pašu kartītes izmēru (Nils 24.11: necentrēt). Teksts kartītēs nelūst - burtu izmērs pielāgojas.
  */
 
 import type { ClientReportLang } from "@/lib/client-report-i18n";
@@ -186,14 +186,13 @@ export function pdfSymmetricGridRows(n: number): number[] {
   return Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
 }
 
-/** Katrai kartītei rinda un sākuma kolonna režģī ar `2 × kolonnas` pusšūnām (īsākā rinda centrēta). */
+/** Katrai kartītei rinda un sākuma kolonna režģī ar `2 × kolonnas` pusšūnām (īsākā rinda pie kreisās malas). */
 export function pdfSymmetricGridPlacement(n: number): { cols: number; cells: { row: number; col: number }[] } {
   const rows = pdfSymmetricGridRows(n);
   const cols = Math.max(0, ...rows);
   const cells: { row: number; col: number }[] = [];
   rows.forEach((k, r) => {
-    const start = cols - k + 1;
-    for (let i = 0; i < k; i++) cells.push({ row: r + 1, col: start + i * 2 });
+    for (let i = 0; i < k; i++) cells.push({ row: r + 1, col: 1 + i * 2 });
   });
   return { cols, cells };
 }

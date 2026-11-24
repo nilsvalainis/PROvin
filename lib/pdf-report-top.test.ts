@@ -95,12 +95,12 @@ describe("simetriskais režģis (Nila likums 24.11)", () => {
     expect(pdfSymmetricGridRows(n)).toEqual(rows);
   });
 
-  it("visas kartītes vienā platumā, īsākā rinda centrēta", () => {
+  it("visas kartītes vienā platumā, īsākā rinda pie kreisās malas", () => {
     const { cols, cells } = pdfSymmetricGridPlacement(7);
     expect(cols).toBe(4);
     expect(cells.slice(0, 4).map((c) => c.col)).toEqual([1, 3, 5, 7]);
-    // 3 kartītes 8 pusšūnās: 2-3, 4-5, 6-7 → centrā.
-    expect(cells.slice(4).map((c) => c.col)).toEqual([2, 4, 6]);
+    // 3 kartītes 8 pusšūnās: 1-2, 3-4, 5-6 → pie kreisās malas, zem augšējās rindas kartītēm.
+    expect(cells.slice(4).map((c) => c.col)).toEqual([1, 3, 5]);
     expect(cells.slice(4).every((c) => c.row === 2)).toBe(true);
   });
 
