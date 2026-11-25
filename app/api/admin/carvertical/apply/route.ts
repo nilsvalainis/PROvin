@@ -92,8 +92,13 @@ export async function POST(req: Request) {
       patchedSourceBlocks: {
         ...Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
         ...(archive?.changed ? { tirgus: archive.tirgus } : {}),
+        ...(archive?.listingAnalysis ? { listing_analysis: archive.listingAnalysis } : {}),
       },
-      changedKeys: archive?.changed ? [...changedKeys, "tirgus"] : changedKeys,
+      changedKeys: [
+        ...changedKeys,
+        ...(archive?.changed ? ["tirgus" as const] : []),
+        ...(archive?.listingAnalysis ? ["listing_analysis" as const] : []),
+      ],
       ...(archive ? { archivePhotos: { added: archive.added, duplicates: archive.duplicates, notes: archive.notes } } : {}),
       status: next,
     });
