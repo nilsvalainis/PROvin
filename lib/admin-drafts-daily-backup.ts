@@ -123,8 +123,7 @@ async function readJsonFilesFromBlob(prefix: string, token: string): Promise<Map
   do {
     const page = await list({ prefix, token, cursor, limit: 1000 });
     for (const b of page.blobs) {
-      // Revīzijas un klātbūtne pašas ir drošības kopijas / īslaicīgi dati - ikdienas kopijā nav vajadzīgas.
-      if (b.pathname.endsWith(".json") && !/(^|\/)_(revisions|presence)\//.test(b.pathname)) pathnames.push(b.pathname);
+      if (b.pathname.endsWith(".json")) pathnames.push(b.pathname);
     }
     cursor = page.hasMore && page.cursor ? page.cursor : undefined;
   } while (cursor);

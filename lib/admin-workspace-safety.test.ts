@@ -82,63 +82,99 @@ describe("fillEmptyServerFieldsFromLocal (lokālās kopijas atjaunošana)", () =
   });
 });
 
-describe("mergeStaleLocalWithServer (409, novecojusi cilne)", () => {
-  const serverSavedAt = 1_000_000;
-
-  it("servera aizpildītais lauks paliek, ja lokāli nav mainīts pēc servera saglabāšanas", () => {
-    const server = { ...emptyBody(), iriss: "Jaunais no B" };
-    const local = { ...emptyBody(), iriss: "Vecais A", apskatesPlāns: "A plāns" };
-    const m = mergeStaleLocalWithServer(local, server, { iriss: serverSavedAt - 5 }, serverSavedAt);
-    expect(m.iriss).toBe("Jaunais no B");
-    expect(m.apskatesPlāns).toBe("A plāns");
+describe("mergeStaleLocalWithServer (409, trīspusēji, bez pulksteņiem)", () => {
+  it("servera rakstītājs starp lietotāja labojumu un PATCH -> lietotāja teksts paliek, servera jaunums arī", () => {
+    // Cilne redzēja bāzi; lietotājs laboja IRISS; pa to laiku CSDD/CARFAX rakstītājs serverī aizpildīja AutoDNA un pārrakstīja apskates plānu.
+    const base = { ...emptyBody(), iriss: "Vecais IRISS", apskatesPlāns: "Vecais plāns" };
+    const local = { ...base, iriss: "Nila jaunais IRISS" };
+    const server = withVendor({ ...base, apskatesPlāns: "Servera plāns" }, "autodna", "Servera AutoDNA");
+    const { body, localChanged } = mergeStaleLocalWithServer(local, server, base);
+    expect(body.iriss).toBe("Nila jaunais IRISS");
+    expect(body.apskatesPlāns).toBe("Servera plāns");
+    expect(body.sourceBlocks.autodna.comments).toBe("Servera AutoDNA");
+    expect(localChanged).toEqual(["iriss"]);
   });
 
-  it("lokāli tikko mainīts lauks (jaunāks par servera saglabāšanu) uzvar", () => {
-    const server = { ...emptyBody(), iriss: "B teksts" };
-    const local = { ...emptyBody(), iriss: "A labojums" };
-    const m = mergeStaleLocalWithServer(local, server, { iriss: serverSavedAt + 5 }, serverSavedAt);
-    expect(m.iriss).toBe("A labojums");
+  it("nemainīts lokālais lauks nepārraksta jaunāku servera vērtību", () => {
+    const base = { ...emptyBody(), iriss: "A" };
+    const { body } = mergeStaleLocalWithServer(base, { ...base, iriss: "B no cita pārlūka" }, base);
+    expect(body.iriss).toBe("B no cita pārlūka");
   });
 
-  it("veca lokālā notīrīšana neiztukšo servera datus", () => {
-    const server = withVendor(emptyBody(), "autodna", "B AutoDNA");
-    const local = { ...emptyBody(), clearedFields: { iriss: serverSavedAt - 100 }, sourceBlockWipes: ["autodna" as const] };
-    const m = mergeStaleLocalWithServer({ ...local, iriss: "" }, { ...server, iriss: "B IRISS" }, {}, serverSavedAt);
-    expect(m.iriss).toBe("B IRISS");
-    expect(m.sourceBlocks.autodna.comments).toBe("B AutoDNA");
+  it("dzēsums neatdzīvojas: lietotājs iztukšoja lauku un bloku", () => {
+    const base = withVendor({ ...emptyBody(), iriss: "Vecais teksts" }, "autodna", "Vecais AutoDNA");
+    const t = Date.now();
+    const local = {
+      ...withVendor({ ...base, iriss: "" }, "autodna", ""),
+      clearedFields: { iriss: t, "block:autodna": t },
+    };
+    const { body } = mergeStaleLocalWithServer(local, { ...base, cenasAtbilstiba: "Servera cena" }, base);
+    expect(body.iriss).toBe("");
+    expect(body.sourceBlocks.autodna.comments).toBe("");
+    expect(body.cenasAtbilstiba).toBe("Servera cena");
   });
 
-  it("bloks: servera aizpildītais paliek, tukšo aizpilda lokālais", () => {
-    const server = withVendor(emptyBody(), "autodna", "B AutoDNA");
-    const local = withVendor(withVendor(emptyBody(), "autodna", "A vecais AutoDNA"), "carvertical", "A CarVertical");
-    const m = mergeStaleLocalWithServer(local, server, {}, serverSavedAt);
-    expect(m.sourceBlocks.autodna.comments).toBe("B AutoDNA");
-    expect(m.sourceBlocks.carvertical.comments).toBe("A CarVertical");
+  it("apakšlauki (riska karte, odometra/pretrunu/lielo darbu labojumi, AI ekstrakcija) - šeit mainītie paliek", () => {
+    const base = emptyBody();
+    const local = {
+      ...base,
+      technicalRiskMap: { identification: {}, risks: [{ id: "lokāls" }], damage_interpretation: [], recalls: [], strengths: [], unknowns: [] },
+      odometerAnomalyOverrides: [{ id: "o1" }],
+      contradictionFeedback: [{ fp: "c1" }],
+      vehicleAiExtraction: { model: "lokālais" },
+    } as unknown as OrderWorkspacePersistBody;
+    const server = { ...base, dealerMajorWorkOverrides: [{ id: "servera" }] } as unknown as OrderWorkspacePersistBody;
+    const { body } = mergeStaleLocalWithServer(local, server, base);
+    expect(body.technicalRiskMap).toEqual(local.technicalRiskMap);
+    expect(body.odometerAnomalyOverrides).toEqual(local.odometerAnomalyOverrides);
+    expect(body.contradictionFeedback).toEqual(local.contradictionFeedback);
+    expect(body.vehicleAiExtraction).toEqual(local.vehicleAiExtraction);
+    expect(body.dealerMajorWorkOverrides).toEqual(server.dealerMajorWorkOverrides);
+  });
+
+  it("nemainīti apakšlauki ņem servera versiju", () => {
+    const base = { ...emptyBody(), odometerAnomalyOverrides: [{ id: "vecs" }] } as unknown as OrderWorkspacePersistBody;
+    const server = { ...base, odometerAnomalyOverrides: [{ id: "jauns" }] } as unknown as OrderWorkspacePersistBody;
+    const { body } = mergeStaleLocalWithServer(base, server, base);
+    expect(body.odometerAnomalyOverrides).toEqual([{ id: "jauns" }]);
+  });
+
+  it("abas puses mainīja vienu lauku -> uzvar šī cilne, atzīmēts bothChanged", () => {
+    const base = { ...emptyBody(), iriss: "bāze" };
+    const r = mergeStaleLocalWithServer({ ...base, iriss: "A" }, { ...base, iriss: "B" }, base);
+    expect(r.body.iriss).toBe("A");
+    expect(r.bothChanged).toEqual(["iriss"]);
+  });
+
+  it("bez bāzes: lokālais aizpildītais uzvar, tukšo aizpilda serveris", () => {
+    const local = { ...emptyBody(), iriss: "A" };
+    const server = withVendor({ ...emptyBody(), iriss: "B" }, "autodna", "B AutoDNA");
+    const { body } = mergeStaleLocalWithServer(local, server, null);
+    expect(body.iriss).toBe("A");
+    expect(body.sourceBlocks.autodna.comments).toBe("B AutoDNA");
   });
 });
 
 describe("divu pārlūku scenārijs", () => {
   it("A rediģē (nesaglabāts), B atver tukšu un saglabā -> A apvienojot neko nepazaudē", () => {
-    const t0 = 1_000_000;
-    // Serverī sākumā gandrīz tukšs (rev 1). A aizpilda laukus, bet PATCH neaiziet.
-    const aLocal = richBody();
-    const aStamps = { iriss: t0 + 10, apskatesPlāns: t0 + 20, tehniskoRiskuAnalize: t0 + 30, "block:autodna": t0 + 40, "block:carvertical": t0 + 50 } as const;
-    // B atver tukšu un saglabā (rev 2) vēlāk.
-    const bSavedAt = t0 + 1000;
-    const serverAfterB = emptyBody();
-    // A nākamais PATCH -> 409 -> apvienošana.
-    const merged = mergeStaleLocalWithServer(aLocal, serverAfterB, aStamps, bSavedAt);
-    expect(countWorkspaceFilled(merged)).toEqual(countWorkspaceFilled(aLocal));
-    expect(merged.iriss).toBe(aLocal.iriss);
-    expect(merged.sourceBlocks.carvertical.comments).toBe(aLocal.sourceBlocks.carvertical.comments);
+    const base = { ...emptyBody(), cenasAtbilstiba: "x" }; // rev 1 - ko A redzēja atverot
+    const aLocal = { ...richBody(), cenasAtbilstiba: "x" };
+    const serverAfterB = { ...base }; // B saglabāja tukšu (serveris saglabāja "x")
+    const { body } = mergeStaleLocalWithServer(aLocal, serverAfterB, base);
+    expect(countWorkspaceFilled(body)).toEqual(countWorkspaceFilled(aLocal));
+    expect(body.iriss).toBe(aLocal.iriss);
+    expect(body.sourceBlocks.carvertical.comments).toBe(aLocal.sourceBlocks.carvertical.comments);
   });
 
   it("A rediģē, B saglabā citu lauku -> paliek abu dati", () => {
-    const aLocal = { ...emptyBody(), iriss: "A IRISS" };
-    const serverAfterB = withVendor(emptyBody(), "autodna", "B AutoDNA");
-    const merged = mergeStaleLocalWithServer(aLocal, serverAfterB, { iriss: 10 }, 20);
-    expect(merged.iriss).toBe("A IRISS");
-    expect(merged.sourceBlocks.autodna.comments).toBe("B AutoDNA");
+    const base = emptyBody();
+    const { body } = mergeStaleLocalWithServer(
+      { ...base, iriss: "A IRISS" },
+      withVendor(base, "autodna", "B AutoDNA"),
+      base,
+    );
+    expect(body.iriss).toBe("A IRISS");
+    expect(body.sourceBlocks.autodna.comments).toBe("B AutoDNA");
   });
 });
 

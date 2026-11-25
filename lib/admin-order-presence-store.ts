@@ -2,10 +2,16 @@ import "server-only";
 
 /**
  * Pasūtījuma klātbūtne: kurš pārlūks/ierīce šo pasūtījumu ir atvēris (heartbeat ik ~20 s).
- * Blob `<prefix>_presence/<sid>.json` (serverless instancēm kopīgs); bez Blob - atmiņā (lokāli).
+ * Blob `admin-order-presence/<sid>.json` (atsevišķa sakne; serverless instancēm kopīgs); bez Blob - atmiņā.
+ * Faili, kas vecāki par 1 dienu, tiek dzēsti (ik 100. heartbeat instancē).
  * Glabā tikai nejaušu ierīces id, īsu pārlūka nosaukumu un laiku - nav personas datu.
  */
-import { get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
+
+export const PRESENCE_BLOB_ROOT = "admin-order-presence/";
+export const PRESENCE_FILE_MAX_AGE_MS = 24 * 60 * 60_000;
+const PRESENCE_PRUNE_EVERY = 100;
+let heartbeatsSincePrune = 0;
 
 export const PRESENCE_ACTIVE_MS = 60_000;
 const PRESENCE_KEEP_MS = 5 * 60_000;
@@ -21,6 +27,7 @@ const memory = new Map<string, PresenceDoc>();
 /** Tikai testiem. */
 export function resetPresenceMemoryForTests(): void {
   memory.clear();
+  heartbeatsSincePrune = 0;
 }
 
 export function isSafePresenceClientId(id: string): boolean {
@@ -56,8 +63,25 @@ export function applyPresenceHeartbeat(
   return { doc: { clients }, others };
 }
 
-function presencePathname(cfg: PresenceBlobConfig, sessionId: string): string {
-  return `${cfg.prefix}_presence/${sessionId}.json`;
+function presencePathname(_cfg: PresenceBlobConfig, sessionId: string): string {
+  return `${PRESENCE_BLOB_ROOT}${sessionId}.json`;
+}
+
+/** Dzēš klātbūtnes failus, kas nav atjaunoti ilgāk par 1 dienu. */
+export async function prunePresenceFiles(cfg: PresenceBlobConfig, nowMs = Date.now()): Promise<number> {
+  const old: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix: PRESENCE_BLOB_ROOT, token: cfg.token, cursor, limit: 1000 });
+    for (const b of page.blobs) {
+      const up = (b as { uploadedAt?: Date | string }).uploadedAt;
+      const t = up ? new Date(up).getTime() : 0;
+      if (Number.isFinite(t) && nowMs - t > PRESENCE_FILE_MAX_AGE_MS) old.push(b.pathname);
+    }
+    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
+  } while (cursor);
+  if (old.length) await del(old, { token: cfg.token });
+  return old.length;
 }
 
 async function readPresenceDoc(cfg: PresenceBlobConfig, sessionId: string): Promise<PresenceDoc | null> {
@@ -96,5 +120,10 @@ export async function recordOrderPresence(
     allowOverwrite: true,
     contentType: "application/json",
   });
+  heartbeatsSincePrune += 1;
+  if (heartbeatsSincePrune >= PRESENCE_PRUNE_EVERY) {
+    heartbeatsSincePrune = 0;
+    await prunePresenceFiles(cfg, nowMs).catch(() => 0);
+  }
   return r.others;
 }

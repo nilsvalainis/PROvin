@@ -126,11 +126,11 @@ describe("divi pārlūki vienam pasūtījumam (server)", () => {
     invalidateOrderDraftCache(SID);
     const server = await readOrderDraftUncached(SID);
     const serverBody = orderDraftWorkspaceToPersistBody(server!.workspace!);
-    const merged = mergeStaleLocalWithServer(
+    // Bāze = rev 1, ko A redzēja atverot. A dati (aizpildīti virs bāzes) uzvar; B tukšums tos neiztukšo.
+    const { body: merged } = mergeStaleLocalWithServer(
       orderDraftWorkspaceToPersistBody(aLocal),
       serverBody,
-      {},
-      Date.parse(server!.workspaceSavedAt!),
+      orderDraftWorkspaceToPersistBody(ws({ cenasAtbilstiba: "x" })),
     );
     const mergedWs = buildOrderDraftWorkspaceBody(merged, mergePdfVisibility(undefined), {}, serverBody, []);
     const rA = await patchOrderDraft(SID, { workspace: mergedWs }, { expectedWorkspaceRevision: 2 });
@@ -164,7 +164,7 @@ describe("divi pārlūki vienam pasūtījumam (server)", () => {
     // Revīzija ar A datiem ir Blob un atjaunojama.
     const revisions = await listOrderDraftRevisions(SID, 40);
     expect(revisions.length).toBeGreaterThan(0);
-    expect([...blobs.keys()].some((k) => k.startsWith(`admin-order-drafts/_revisions/${SID}/`))).toBe(true);
+    expect([...blobs.keys()].some((k) => k.startsWith(`admin-order-draft-revisions/${SID}/`))).toBe(true);
     const withA = revisions.find((r) => r.reason.startsWith("rev 3"));
     expect(withA).toBeTruthy();
     const restored = await restoreOrderDraftRevision(SID, withA!.revisionId);
@@ -190,7 +190,20 @@ describe("divi pārlūki vienam pasūtījumam (server)", () => {
     await patchOrderDraft(SID, { workspace: ws({ iriss: "a" }) });
     await patchOrderDraft(SID, { workspace: ws({ iriss: "ab" }) });
     await patchOrderDraft(SID, { workspace: ws({ iriss: "abc" }) });
-    const revs = [...blobs.keys()].filter((k) => k.includes("/_revisions/"));
+    const revs = [...blobs.keys()].filter((k) => k.startsWith("admin-order-draft-revisions/"));
     expect(revs.length).toBe(1);
+  });
+
+  it("revīzijas nav pasūtījumu prefiksā; atjaunošana patur pašreizējos orderEdits", async () => {
+    await patchOrderDraft(SID, { workspace: richWs(), orderEdits: { vin: "WVWZZZ3CZNE000001" } });
+    resetBlobRevisionThrottleForTests();
+    await patchOrderDraft(SID, { workspace: ws({ iriss: "cits" }), orderEdits: { vin: "WVWZZZ3CZNE054721" } }, { expectedWorkspaceRevision: 1 });
+    expect([...blobs.keys()].filter((k) => k.startsWith("admin-order-drafts/"))).toEqual([`admin-order-drafts/${SID}.json`]);
+    const revs = await listOrderDraftRevisions(SID, 40);
+    const r = await restoreOrderDraftRevision(SID, revs[revs.length - 1]!.revisionId);
+    expect(r.ok).toBe(true);
+    invalidateOrderDraftCache(SID);
+    const d = await readOrderDraftUncached(SID);
+    expect(d!.orderEdits.vin).toBe("WVWZZZ3CZNE054721");
   });
 });

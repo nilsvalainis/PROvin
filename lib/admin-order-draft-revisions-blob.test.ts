@@ -28,10 +28,12 @@ vi.mock("@vercel/blob", () => ({
 }));
 
 import {
+  BLOB_REVISION_PRUNE_EVERY,
   blobRevisionId,
   isBlobRevisionId,
   listBlobRevisions,
   MAX_BLOB_REVISIONS_PER_SESSION,
+  pruneBlobRevisions,
   readBlobRevisionDoc,
   resetBlobRevisionThrottleForTests,
   shouldWriteBlobRevision,
@@ -57,7 +59,7 @@ describe("Blob revīzijas", () => {
     });
     expect(id).toBe("20261125T103200123Z-rev3");
     expect(isBlobRevisionId(id!)).toBe(true);
-    expect([...blobs.keys()]).toEqual([`admin-order-drafts/_revisions/${sid}/20261125T103200123Z-rev3.json`]);
+    expect([...blobs.keys()]).toEqual([`admin-order-draft-revisions/${sid}/20261125T103200123Z-rev3.json`]);
     const doc = (await readBlobRevisionDoc(cfg, sid, id!)) as { workspace: { iriss: string } };
     expect(doc.workspace.iriss).toBe("A");
     const listed = await listBlobRevisions(cfg, sid);
@@ -81,10 +83,11 @@ describe("Blob revīzijas", () => {
     for (let i = 1; i <= MAX_BLOB_REVISIONS_PER_SESSION + 5; i++) {
       await writeBlobRevision(cfg, sid, { small: i }, { revision: i, reason: "patch", now: new Date(base + i * 61_000) });
     }
+    await pruneBlobRevisions(cfg, sid);
     const listed = await listBlobRevisions(cfg, sid, 100);
     expect(listed.length).toBe(MAX_BLOB_REVISIONS_PER_SESSION + 1);
     expect(listed.some((r) => r.revisionId === blobRevisionId(0, new Date(base)))).toBe(true);
-    expect(deleted.length).toBe(5);
+    expect(listed.length).toBe(MAX_BLOB_REVISIONS_PER_SESSION + 1);
   });
 
   it("neraksta, ja nav iepriekšējās versijas", async () => {
@@ -94,5 +97,17 @@ describe("Blob revīzijas", () => {
 
   it("noraida svešus revīzijas id", async () => {
     expect(await readBlobRevisionDoc(cfg, sid, "../cs_other")).toBeNull();
+  });
+
+  it("list + dzēšana tikai ik 10. rakstā", async () => {
+    const { list } = await import("@vercel/blob");
+    const calls = () => (list as unknown as { mock: { calls: unknown[] } }).mock.calls.length;
+    const before = calls();
+    for (let i = 0; i < BLOB_REVISION_PRUNE_EVERY - 1; i++) {
+      await writeBlobRevision(cfg, sid, { i }, { revision: i, reason: "patch", now: new Date(1e12 + i * 1000) });
+    }
+    expect(calls()).toBe(before);
+    await writeBlobRevision(cfg, sid, { i: 99 }, { revision: 99, reason: "patch", now: new Date(1e12 + 99_000) });
+    expect(calls()).toBe(before + 1);
   });
 });

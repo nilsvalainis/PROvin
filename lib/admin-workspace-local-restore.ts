@@ -71,3 +71,30 @@ export function pickLocalRestoreCandidate(args: {
   if (!best || best.localTotal <= serverTotal) return null;
   return best;
 }
+
+const DISMISS_KEY_PREFIX = "provin-admin-local-restore-dismissed-";
+
+/** Noraidītais piedāvājums vairs nerādās tai pašai kopijai (katram `savedAtMs` atsevišķi). */
+export function isLocalRestoreDismissed(sessionId: string, savedAtMs: number): boolean {
+  try {
+    const raw = localStorage.getItem(`${DISMISS_KEY_PREFIX}${sessionId}`);
+    if (!raw) return false;
+    const list = JSON.parse(raw) as unknown;
+    return Array.isArray(list) && list.includes(savedAtMs);
+  } catch {
+    return false;
+  }
+}
+
+export function rememberLocalRestoreDismissed(sessionId: string, savedAtMs: number): void {
+  try {
+    const key = `${DISMISS_KEY_PREFIX}${sessionId}`;
+    const raw = localStorage.getItem(key);
+    const prev = raw ? (JSON.parse(raw) as unknown) : [];
+    const list = Array.isArray(prev) ? prev.filter((x) => typeof x === "number") : [];
+    if (!list.includes(savedAtMs)) list.unshift(savedAtMs);
+    localStorage.setItem(key, JSON.stringify(list.slice(0, 20)));
+  } catch {
+    /* quota */
+  }
+}

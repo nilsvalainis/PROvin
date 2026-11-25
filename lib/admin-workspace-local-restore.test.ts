@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
-import { pickLocalRestoreCandidate, snapshotRawToPersistBody } from "@/lib/admin-workspace-local-restore";
+import {
+  isLocalRestoreDismissed,
+  pickLocalRestoreCandidate,
+  rememberLocalRestoreDismissed,
+  snapshotRawToPersistBody,
+} from "@/lib/admin-workspace-local-restore";
 import { fillEmptyServerFieldsFromLocal } from "@/lib/admin-workspace-safety";
 
 function snap(fields: Record<string, unknown>, savedAt: string): string {
@@ -55,5 +60,19 @@ describe("lokālās kopijas atjaunošanas piedāvājums", () => {
 
   it("bojāti dati netraucē", () => {
     expect(pickLocalRestoreCandidate({ localRaw: "{bojāts", backupRaw: "nav json", serverBody: null })).toBeNull();
+  });
+
+  it("noraidījumu atceras katram savedAtMs atsevišķi", () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    });
+    expect(isLocalRestoreDismissed("cs_1", 111)).toBe(false);
+    rememberLocalRestoreDismissed("cs_1", 111);
+    expect(isLocalRestoreDismissed("cs_1", 111)).toBe(true);
+    expect(isLocalRestoreDismissed("cs_1", 222)).toBe(false);
+    expect(isLocalRestoreDismissed("cs_2", 111)).toBe(false);
+    vi.unstubAllGlobals();
   });
 });

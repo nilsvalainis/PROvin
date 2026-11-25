@@ -669,7 +669,8 @@ async function restoreOrderDraftRevisionUnlocked(
     workspaceSavedAt: updatedAt,
     workspaceRevision,
     workspaceChecksum,
-    orderEdits: normalized.orderEdits,
+    /** VIN, numurs, klienta kontakti - no pašreizējā dokumenta; atjauno tikai darba zonu. */
+    orderEdits: current?.orderEdits ?? normalized.orderEdits,
     workspace: normalized.workspace,
     /** Rēķins / statusi / VIN SCAN - no pašreizējā (jaunākā) dokumenta, nevis vecās revīzijas. */
     ...extraDraftPersistFields(current ?? normalized),

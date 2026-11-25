@@ -18,7 +18,6 @@ export type WorkspaceTextField = (typeof WORKSPACE_TEXT_FIELDS)[number];
 
 /** Lauka atslēga laika zīmogiem: teksta lauks, `block:<avots>` vai `incidentPhotos`. */
 export type WorkspaceEditKey = WorkspaceTextField | `block:${SourceBlockKey}` | "incidentPhotos";
-export type WorkspaceEditStamps = Partial<Record<WorkspaceEditKey, number>>;
 
 function hasText(v: string | null | undefined): boolean {
   if (!v) return false;
@@ -105,52 +104,132 @@ export function fillEmptyServerFieldsFromLocal(
   return { body: normalizeOrderWorkspacePersistBody(out), filled };
 }
 
+/** Lauki ārpus tekstiem un blokiem, kas arī jāsalīdzina trīspusēji. */
+const WORKSPACE_EXTRA_FIELDS = [
+  "technicalRiskMap",
+  "odometerAnomalyOverrides",
+  "contradictionFeedback",
+  "dealerMajorWorkOverrides",
+] as const;
+
+function same(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+function textSame(a: string | null | undefined, b: string | null | undefined): boolean {
+  return (a ?? "") === (b ?? "");
+}
+
+export type StaleMergeResult = {
+  body: OrderWorkspacePersistBody;
+  /** Lauki, kur uzvarēja šīs cilnes izmaiņas. */
+  localChanged: string[];
+  /** Lauki, ko mainīja abas puses (uzvar lokālais). */
+  bothChanged: string[];
+};
+
 /**
- * Novecojusi cilne (409): servera aizpildītie lauki paliek; lokālie aizpilda tukšos
- * vai tos, ko lietotājs šajā cilnē mainīja PĒC servera saglabāšanas (`stamps[k] > serverSavedAtMs`).
- * Bildes apvieno, dzēsto bilžu kapakmeņi uzvar.
+ * Novecojusi cilne (409) - TRĪSPUSĒJA apvienošana bez pulksteņiem.
+ * `base` = servera versija, ko šī cilne pēdējo reizi redzēja vai saglabāja.
+ * Lauks, ko šī cilne mainīja (`local !== base`), uzvar (arī iztukšošana); citādi ņem servera versiju
+ * (tā satur citu cilņu / servera rakstītāju jaunumus). Bildes apvieno, dzēsto bilžu kapakmeņi uzvar.
+ * Bez `base` (nav zināms, ko cilne redzēja) - lokālais aizpildītais uzvar, tukšo aizpilda serveris.
  */
 export function mergeStaleLocalWithServer(
   local: OrderWorkspacePersistBody,
   server: OrderWorkspacePersistBody | null | undefined,
-  stamps: WorkspaceEditStamps,
-  serverSavedAtMs: number,
-): OrderWorkspacePersistBody {
+  base: OrderWorkspacePersistBody | null | undefined,
+): StaleMergeResult {
   const l = normalizeOrderWorkspacePersistBody(local);
-  if (!server) return l;
+  if (!server) return { body: l, localChanged: [], bothChanged: [] };
   const s = normalizeOrderWorkspacePersistBody(server);
-  const newer = (k: WorkspaceEditKey) => (stamps[k] ?? 0) > serverSavedAtMs;
-  const sel: OrderWorkspacePersistBody = { ...s, sourceBlocks: { ...s.sourceBlocks } };
+  const b = base ? normalizeOrderWorkspacePersistBody(base) : null;
+  const localChanged: string[] = [];
+  const bothChanged: string[] = [];
+  const note = (k: string, serverChanged: boolean) => {
+    localChanged.push(k);
+    if (serverChanged) bothChanged.push(k);
+  };
+
+  // Teksti.
+  const textPick: Partial<Record<WorkspaceTextField, string>> = {};
   for (const f of WORKSPACE_TEXT_FIELDS) {
-    if (!hasText(s[f])) sel[f] = l[f];
-    else if (newer(f) && hasText(l[f])) sel[f] = l[f];
-  }
-  const blocks = sel.sourceBlocks as Record<SourceBlockKey, unknown>;
-  for (const k of SOURCE_BLOCK_KEYS) {
-    if (sourceBlockIsEmpty(k, s.sourceBlocks[k])) blocks[k] = l.sourceBlocks[k];
-    else if (newer(`block:${k}`) && !sourceBlockIsEmpty(k, l.sourceBlocks[k])) blocks[k] = l.sourceBlocks[k];
-  }
-  // Apzināta iztukšošana / bloka notīrīšana šajā cilnē - tikai, ja jaunāka par servera saglabāšanu.
-  const cleared = parseClearedFields(l.clearedFields);
-  const freshCleared: Record<string, number> = {};
-  for (const [k, t] of Object.entries(cleared)) {
-    if (t > serverSavedAtMs) {
-      freshCleared[k] = t;
-      if ((WORKSPACE_TEXT_FIELDS as readonly string[]).includes(k)) sel[k as WorkspaceTextField] = l[k as WorkspaceTextField];
+    const changed = b ? !textSame(l[f], b[f]) : hasText(l[f]);
+    if (changed) {
+      textPick[f] = l[f] ?? "";
+      note(f, b ? !textSame(s[f], b[f]) : hasText(s[f]));
     }
   }
-  const wipes = parseSourceBlockWipes(l.sourceBlockWipes).filter((k) => newer(`block:${k}`));
-  for (const k of wipes) blocks[k] = l.sourceBlocks[k];
+
+  // Bloki.
+  const lBlocks = mergeSourceBlocksWithDefaults(l.sourceBlocks);
+  const sBlocks = mergeSourceBlocksWithDefaults(s.sourceBlocks);
+  const bBlocks = b ? mergeSourceBlocksWithDefaults(b.sourceBlocks) : null;
+  const changedBlocks: SourceBlockKey[] = [];
+  for (const k of SOURCE_BLOCK_KEYS) {
+    const changed = bBlocks ? !same(lBlocks[k], bBlocks[k]) : !sourceBlockIsEmpty(k, lBlocks[k]);
+    if (changed) {
+      changedBlocks.push(k);
+      note(`block:${k}`, bBlocks ? !same(sBlocks[k], bBlocks[k]) : !sourceBlockIsEmpty(k, sBlocks[k]));
+    }
+  }
+
+  // Pārējie lauki.
+  const extraLocal: string[] = [];
+  for (const f of WORKSPACE_EXTRA_FIELDS) {
+    const changed = b ? !same(l[f], b[f]) : l[f] != null;
+    if (changed) {
+      extraLocal.push(f);
+      note(f, b ? !same(s[f], b[f]) : s[f] != null);
+    }
+  }
+  const aiChanged = b
+    ? !same(l.vehicleAiExtraction, b.vehicleAiExtraction) || !same(l.vehicleAiExtractionMeta, b.vehicleAiExtractionMeta)
+    : l.vehicleAiExtraction != null;
+  if (aiChanged) note("vehicleAiExtraction", b ? !same(s.vehicleAiExtraction, b.vehicleAiExtraction) : s.vehicleAiExtraction != null);
+  const previewChanged = b ? l.previewConfirmed !== b.previewConfirmed : l.previewConfirmed;
+
+  // Ienākošais coalesce: servera bāze + šīs cilnes izmaiņas (bildes apvienojas, kapakmeņi uzvar).
+  const wipes = parseSourceBlockWipes(l.sourceBlockWipes).filter((k) => changedBlocks.includes(k));
+  const sel: OrderWorkspacePersistBody = {
+    ...s,
+    ...textPick,
+    sourceBlocks: { ...sBlocks },
+    incidentPhotos: l.incidentPhotos,
+    incidentPhotoGroups: l.incidentPhotoGroups,
+  };
+  for (const k of changedBlocks) (sel.sourceBlocks as Record<SourceBlockKey, unknown>)[k] = lBlocks[k];
+  const freshCleared: Record<string, number> = {};
+  for (const [k, t] of Object.entries(parseClearedFields(l.clearedFields))) {
+    if (k in textPick || (k.startsWith("block:") && changedBlocks.includes(k.slice(6) as SourceBlockKey))) freshCleared[k] = t;
+  }
   sel.clearedFields = freshCleared;
+  delete sel.sourceBlockWipes;
   Object.assign(sel, sourceBlockWipesSnapshotField(wipes));
-  if (!wipes.length) delete sel.sourceBlockWipes;
   Object.assign(sel, deletedPhotoIdsSnapshotField(mergeDeletedPhotoIds(l.deletedPhotoIds, s.deletedPhotoIds)));
-  sel.incidentPhotos = l.incidentPhotos;
-  sel.incidentPhotoGroups = l.incidentPhotoGroups;
-  sel.previewConfirmed = s.previewConfirmed || l.previewConfirmed;
-  sel.vehicleAiExtraction = s.vehicleAiExtraction ?? l.vehicleAiExtraction;
-  sel.vehicleAiExtractionMeta = s.vehicleAiExtractionMeta ?? l.vehicleAiExtractionMeta;
-  return coalesceOrderWorkspacePersistBody(sel, s);
+  const out = coalesceOrderWorkspacePersistBody(sel, s);
+
+  // Šīs cilnes izmaiņas uzvar arī tad, ja coalesce izvēlētos «bagātāko» servera vērtību (dzēsums neatdzīvojas).
+  for (const [f, v] of Object.entries(textPick)) out[f as WorkspaceTextField] = v as string;
+  const outBlocks = out.sourceBlocks as Record<SourceBlockKey, Record<string, unknown>>;
+  for (const k of changedBlocks) {
+    const merged = outBlocks[k] ?? {};
+    const mine = lBlocks[k] as unknown as Record<string, unknown>;
+    const next: Record<string, unknown> = { ...mine };
+    // Bildes - apvienotās (ar kapakmeņiem), ja blokam tādas ir.
+    for (const pf of ["photos", "photoGroups"]) if (pf in merged) next[pf] = merged[pf];
+    outBlocks[k] = next;
+  }
+  for (const f of WORKSPACE_EXTRA_FIELDS) {
+    const v = extraLocal.includes(f) ? l[f] : s[f];
+    if (v === undefined) delete (out as Record<string, unknown>)[f];
+    else (out as Record<string, unknown>)[f] = v;
+  }
+  out.vehicleAiExtraction = aiChanged ? l.vehicleAiExtraction : s.vehicleAiExtraction;
+  out.vehicleAiExtractionMeta = aiChanged ? l.vehicleAiExtractionMeta : s.vehicleAiExtractionMeta;
+  out.previewConfirmed = previewChanged ? l.previewConfirmed : s.previewConfirmed;
+  return { body: out, localChanged, bothChanged };
 }
 
 /** Salīdzina divus stāvokļus un atgriež mainītos laukus (atsauce, tad JSON). */

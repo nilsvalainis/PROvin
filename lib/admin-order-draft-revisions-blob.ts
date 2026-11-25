@@ -2,13 +2,16 @@ import "server-only";
 
 /**
  * Pasūtījuma melnraksta revīzijas Vercel Blob (privāti) - prodā `/tmp` revīzijas nav ilgtermiņa.
- * Ceļš: `<prefix>_revisions/<sid>/<ts>-rev<N>.json` (`<prefix>` = ADMIN_ORDER_DRAFT_BLOB_PREFIX).
+ * Ceļš: `admin-order-draft-revisions/<sid>/<ts>-rev<N>.json` - ATSEVIŠĶA sakne, ne pasūtījumu prefiksā
+ * (citādi AI vēstures / mācīšanās `list(expanded)` un ikdienas backup lasītu ~40x vairāk failu).
  * Saglabā IEPRIEKŠĒJO versiju pirms pārrakstīšanas. Patur pēdējās 40 + lielāko (bagātāko) kopiju.
  */
 import { del, get, list, put } from "@vercel/blob";
 import type { OrderDraftRevisionMeta } from "@/lib/admin-order-draft-types";
 
-export const BLOB_REVISIONS_DIRNAME = "_revisions";
+export const BLOB_REVISIONS_ROOT = "admin-order-draft-revisions/";
+/** `list` + vecāko dzēšana ne katrā rakstā (ik 10. reizi uz sesiju šajā instancē). */
+export const BLOB_REVISION_PRUNE_EVERY = 10;
 export const MAX_BLOB_REVISIONS_PER_SESSION = 40;
 /** Parastai autosaglabāšanai ne biežāk kā 1x minūtē uz sesiju (citādi 40 kopijas = 2 min vēstures). */
 export const BLOB_REVISION_MIN_INTERVAL_MS = 60_000;
@@ -16,14 +19,16 @@ export const BLOB_REVISION_MIN_INTERVAL_MS = 60_000;
 export type BlobRevisionConfig = { token: string; prefix: string };
 
 const lastRevisionAtBySession = new Map<string, number>();
+const writesSincePruneBySession = new Map<string, number>();
 
 /** Tikai testiem. */
 export function resetBlobRevisionThrottleForTests(): void {
   lastRevisionAtBySession.clear();
+  writesSincePruneBySession.clear();
 }
 
-export function blobRevisionSessionPrefix(cfg: BlobRevisionConfig, sessionId: string): string {
-  return `${cfg.prefix}${BLOB_REVISIONS_DIRNAME}/${sessionId}/`;
+export function blobRevisionSessionPrefix(_cfg: BlobRevisionConfig, sessionId: string): string {
+  return `${BLOB_REVISIONS_ROOT}${sessionId}/`;
 }
 
 /** `20261125T103200123Z` - leksikogrāfiski kārtojams. */
@@ -88,6 +93,12 @@ export async function writeBlobRevision(
     },
   );
   lastRevisionAtBySession.set(sessionId, now.getTime());
+  const writes = (writesSincePruneBySession.get(sessionId) ?? 0) + 1;
+  if (writes < BLOB_REVISION_PRUNE_EVERY) {
+    writesSincePruneBySession.set(sessionId, writes);
+    return revisionId;
+  }
+  writesSincePruneBySession.set(sessionId, 0);
   await pruneBlobRevisions(cfg, sessionId).catch((err) => {
     console.warn("[workspace:revision_prune_failed]", {
       sessionId,

@@ -156,11 +156,15 @@ import {
   mergeStaleLocalWithServer,
   shouldWarnWorkspaceUnsaved,
   workspaceUnsavedReason,
-  type WorkspaceEditStamps,
   type WorkspaceUnsavedReason,
 } from "@/lib/admin-workspace-safety";
 import { sendWorkspaceClientEvent } from "@/lib/admin-workspace-client-signal";
-import { pickLocalRestoreCandidate, snapshotRawToPersistBody } from "@/lib/admin-workspace-local-restore";
+import {
+  isLocalRestoreDismissed,
+  pickLocalRestoreCandidate,
+  rememberLocalRestoreDismissed,
+  snapshotRawToPersistBody,
+} from "@/lib/admin-workspace-local-restore";
 import { AdminWorkspaceSafetyBanners, type LocalRestoreOffer } from "@/components/admin/AdminWorkspaceSafetyBanners";
 import { useOrderPresence } from "@/components/admin/useOrderPresence";
 import { AdminWorkspaceRestoreMenu } from "@/components/admin/AdminWorkspaceRestoreMenu";
@@ -1031,8 +1035,8 @@ export function OrderDetailWorkspace({
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
-  /** 25.11 datu drošība: kad lietotājs šajā cilnē mainīja katru lauku (apvienošanai pēc 409). */
-  const editStampsRef = useRef<WorkspaceEditStamps>({});
+  /** 25.11 datu drošība: servera versija, ko šī cilne pēdējo reizi redzēja/saglabāja (trīspusējai apvienošanai pēc 409). */
+  const serverBaseBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const prevTrackedWsRef = useRef<WorkspacePersist | null>(null);
   const suppressEditTrackRef = useRef(false);
   /** Pirmā lokālā izmaiņa, kas vēl nav serverī (null = viss saglabāts). */
@@ -1041,6 +1045,8 @@ export function OrderDetailWorkspace({
   const saveInFlightRef = useRef(false);
   const unsavedBeaconSentRef = useRef<string | null>(null);
   const lastForcedFlushAtRef = useRef(0);
+  /** Apvienošanas laikā paralēls PATCH ar to pašu expectedRevision nav atļauts. */
+  const mergeInFlightRef = useRef(false);
   const autoMergeAfterConflictRef = useRef<(ctx: string) => Promise<boolean>>(async () => false);
   /** EN/DE/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
@@ -1398,6 +1404,7 @@ export function OrderDetailWorkspace({
         return false;
       }
       if (!workspaceHydratedOnceRef.current) return false;
+      if (mergeInFlightRef.current) return false;
       if (workspaceRevisionConflictRef.current) {
         setWorkspaceAutosaveStatus("error");
         return false;
@@ -1507,6 +1514,7 @@ export function OrderDetailWorkspace({
         return false;
       }
       lastGoodPersistBodyRef.current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      serverBaseBodyRef.current = body;
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       setWorkspaceSaveServerOk(true);
@@ -1535,6 +1543,7 @@ export function OrderDetailWorkspace({
         wsStateRef.current = nextWs;
         setWs(nextWs);
       }
+      serverBaseBodyRef.current = body;
       workspaceRevisionRef.current = fresh.workspaceRevision;
       unsavedSinceRef.current = null;
       commitWorkspaceLocalNow({ force: true });
@@ -1575,6 +1584,7 @@ export function OrderDetailWorkspace({
         return;
       }
       setWs(applyPersistBodyToWs(result.mergedBody, { trackDeletes: false }));
+      serverBaseBodyRef.current = result.mergedBody;
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       clearWorkspaceRevisionConflict();
@@ -1597,19 +1607,21 @@ export function OrderDetailWorkspace({
   ]);
 
   /**
-   * 25.11: 409 (cita cilne/pārlūks saglabāja jaunāku) - ielādē servera versiju un apvieno:
-   * servera aizpildītie lauki paliek, lokālie aizpilda tukšos vai šeit mainītos pēc servera saglabāšanas.
+   * 25.11: 409 (cita cilne/pārlūks/servera rakstītājs saglabāja jaunāku) - ielādē servera versiju un apvieno
+   * trīspusēji pret to, ko šī cilne pēdējo reizi redzēja: šeit mainītie lauki paliek, pārējie - no servera.
    */
   autoMergeAfterConflictRef.current = async (ctx: string): Promise<boolean> => {
     if (!orderDraftPersistenceEnabled) return false;
+    if (mergeInFlightRef.current || saveInFlightRef.current) return false;
     const mergeStartedAt = Date.now();
+    mergeInFlightRef.current = true;
+    saveInFlightRef.current = true;
     try {
       const fresh = await fetchCanonicalWorkspace(payload.sessionId);
       const serverBody = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
-      const serverSavedAtMs = Date.parse(fresh.workspaceSavedAt ?? fresh.updatedAt ?? "") || 0;
       syncWsPersistRefFromState();
       const local = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-      const merged = mergeStaleLocalWithServer(local, serverBody, editStampsRef.current, serverSavedAtMs);
+      const { body: merged } = mergeStaleLocalWithServer(local, serverBody, serverBaseBodyRef.current);
       const nextWs = applyPersistBodyToWs(merged, { trackDeletes: false });
       suppressEditTrackRef.current = true;
       wsStateRef.current = nextWs;
@@ -1629,7 +1641,9 @@ export function OrderDetailWorkspace({
       });
       const count = countWorkspaceFilled(merged);
       if (!result.ok) {
-        lastGoodPersistBodyRef.current = merged;
+        // Šī cilne tagad zina servera versiju - nākamā apvienošana salīdzina pret to.
+        lastGoodPersistBodyRef.current = serverBody;
+        serverBaseBodyRef.current = serverBody;
         sendWorkspaceClientEvent({
           sessionId: payload.sessionId,
           event: "conflict_merge_failed",
@@ -1640,6 +1654,7 @@ export function OrderDetailWorkspace({
         return false;
       }
       lastGoodPersistBodyRef.current = merged;
+      serverBaseBodyRef.current = merged;
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       workspaceRevisionConflictRef.current = false;
@@ -1658,6 +1673,9 @@ export function OrderDetailWorkspace({
       return true;
     } catch {
       return false;
+    } finally {
+      saveInFlightRef.current = false;
+      mergeInFlightRef.current = false;
     }
   };
 
@@ -1718,6 +1736,7 @@ export function OrderDetailWorkspace({
     syncWsPersistRefFromState();
     const current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
     const { body, filled } = fillEmptyServerFieldsFromLocal(current, local);
+    if (localRestoreOffer) rememberLocalRestoreDismissed(payload.sessionId, localRestoreOffer.savedAtMs);
     setLocalRestoreOffer(null);
     localRestoreBodyRef.current = null;
     if (!filled.length) return;
@@ -1725,7 +1744,6 @@ export function OrderDetailWorkspace({
     wsStateRef.current = nextWs;
     setWs(nextWs);
     const now = Date.now();
-    for (const k of filled) editStampsRef.current[k as keyof WorkspaceEditStamps] = now;
     lastLocalEditAtRef.current = now;
     if (unsavedSinceRef.current == null) unsavedSinceRef.current = now;
     suppressHydrateAutosaveRef.current = false;
@@ -1739,7 +1757,14 @@ export function OrderDetailWorkspace({
       blocks: count.blocks,
     });
     window.setTimeout(() => void persistFullWorkspaceRef("local_restore", { showFlash: true }), 0);
-  }, [applyPersistBodyToWs, commitWorkspaceLocalNow, payload.sessionId, persistFullWorkspaceRef, syncWsPersistRefFromState]);
+  }, [
+    applyPersistBodyToWs,
+    commitWorkspaceLocalNow,
+    localRestoreOffer,
+    payload.sessionId,
+    persistFullWorkspaceRef,
+    syncWsPersistRefFromState,
+  ]);
 
   const buildAiOrderPayload = useCallback(
     (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
@@ -3083,7 +3108,6 @@ export function OrderDetailWorkspace({
   useLayoutEffect(() => {
     setWorkspaceHydrated(false);
     workspaceHydratedOnceRef.current = false;
-    editStampsRef.current = {};
     unsavedSinceRef.current = null;
     unsavedBeaconSentRef.current = null;
     workspaceDebugLog("hydrate_start", {
@@ -3181,6 +3205,7 @@ export function OrderDetailWorkspace({
       setWs(hydratedWs);
       lastGoodPersistBodyRef.current = body;
       prevTrackedWsRef.current = hydratedWs;
+      serverBaseBodyRef.current = snapshotRawToPersistBody(serverWorkspaceJson);
 
       // 25.11: šīs ierīces kopijā vairāk aizpildītu lauku nekā redzams - piedāvā atjaunot (nekad automātiski).
       try {
@@ -3189,7 +3214,11 @@ export function OrderDetailWorkspace({
           backupRaw: rawBackup,
           serverBody: snapshotRawToPersistBody(serverWorkspaceJson),
         });
-        if (offer && countWorkspaceFilled(body).total < offer.localTotal) {
+        if (
+          offer &&
+          countWorkspaceFilled(body).total < offer.localTotal &&
+          !isLocalRestoreDismissed(payload.sessionId, offer.savedAtMs)
+        ) {
           localRestoreBodyRef.current = offer.body;
           setLocalRestoreOffer({
             savedAtMs: offer.savedAtMs,
@@ -3592,7 +3621,6 @@ export function OrderDetailWorkspace({
     const keys = changedWorkspaceEditKeys(workspaceToPersistBody(prev), workspaceToPersistBody(ws));
     if (!keys.length) return;
     const now = Date.now();
-    for (const k of keys) editStampsRef.current[k] = now;
     lastLocalEditAtRef.current = now;
     if (unsavedSinceRef.current == null) unsavedSinceRef.current = now;
   }, [ws, workspaceHydrated]);
@@ -5996,6 +6024,7 @@ export function OrderDetailWorkspace({
             localRestore={localRestoreOffer}
             onLocalRestore={applyLocalRestore}
             onLocalRestoreDismiss={() => {
+              if (localRestoreOffer) rememberLocalRestoreDismissed(payload.sessionId, localRestoreOffer.savedAtMs);
               localRestoreBodyRef.current = null;
               setLocalRestoreOffer(null);
             }}
