@@ -22,6 +22,7 @@ import {
 import type { CsddInspectionDefectRow } from "@/lib/csdd-extended-parse";
 import type { CsddInspectionWarningRow } from "@/lib/admin-source-blocks";
 import { buildCsddInspectionWarningsHtml } from "@/lib/csdd-inspection-warnings-html";
+import { normalizeCsddDefectText } from "@/lib/report-language-fixes";
 
 function escapeHtml(s: string): string {
   return s
@@ -54,7 +55,7 @@ function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: bool
       ? defects
           .map((d) => {
             const rc = defectRatingClass(d.rating);
-            return `<tr><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${escapeHtml(d.description)}</td></tr>`;
+            return `<tr><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${normalizeCsddDefectText(d.description).split("\n").map(escapeHtml).join("<br />")}</td></tr>`;
           })
           .join("\n")
       : // Vērtējums 1/2/3 bez saraksta avotā - nevis «nav trūkumu» (tā būtu pretruna).

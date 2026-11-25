@@ -1,3 +1,5 @@
+import { translateLeakedSourceTerms } from "@/lib/report-language-fixes";
+
 /**
  * Publisko reģistru (tjekbil / mnt / lkf / car.info) faktu teksts klientam:
  * īsas latviešu rindas, bez ikonām, RED FLAG birkām un avota kājenes.
@@ -37,6 +39,7 @@ export function sanitizeVinRegistryClientLine(raw: string): string {
   s = s.replace(/\s*[—–]\s*/g, " - ");
   s = s.replace(/\s*→\s*/g, ", pēc tam ");
   s = s.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (_m, y: string, mo: string, d: string) => `${d}.${mo}.${y}`);
+  s = translateLeakedSourceTerms(s, "lv");
   s = s.replace(/\s{2,}/g, " ").trim();
   if (!s || /^[-:.,;]+$/.test(s)) return "";
   if (/^(īpašnieka maiņa:?|,)\s*$/i.test(s)) return "";

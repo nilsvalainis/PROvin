@@ -491,3 +491,61 @@ Aptuvenā iepriekš gūto bojājumu vērtība
     expect(agg.clusters[0]?.sourceValuations[0]?.amountEur).toBeNull();
   });
 });
+
+describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
+  const ltab = (date: string, amount: string, ms: number) =>
+    row({ date, lossAmount: amount, sourceLabel: "LTAB", sortableTime: ms, sourceOrder: 1 });
+  const cv = (date: string, amount: string, ms: number) =>
+    row({ date, lossAmount: amount, sourceLabel: "CarVertical", sortableTime: ms, sourceOrder: 0 });
+
+  it("case1: 5 LTAB + 2 carVertical (04.2016, 08.2016) = 5 notikumi, nevis 7", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      ltab("05.04.2016", "610 €", Date.UTC(2016, 3, 5)),
+      ltab("19.08.2016", "380 €", Date.UTC(2016, 7, 19)),
+      ltab("11.02.2018", "900 €", Date.UTC(2018, 1, 11)),
+      ltab("03.06.2020", "1 200 €", Date.UTC(2020, 5, 3)),
+      cv("04.2016", "400 - 450 €", Date.UTC(2016, 3, 1)),
+      cv("08.2016", "", Date.UTC(2016, 7, 1)),
+    ]);
+    expect(agg.rawCount).toBe(7);
+    expect(agg.uniqueCount).toBe(5);
+    const aug = agg.clusters.find((c) => c.date === "19.08.2016")!;
+    expect(aug.sourceValuations.map((v) => v.sourceLabel).sort()).toEqual(["CarVertical", "LTAB"]);
+    expect(aug.kindLabel).toBe("Negadījums");
+  });
+
+  it("±30 dienas pāri mēneša robežai apvieno, tālāk - nē", () => {
+    const near = aggregateUnifiedIncidents([
+      ltab("28.03.2019", "500 €", Date.UTC(2019, 2, 28)),
+      cv("04.2019", "", Date.UTC(2019, 3, 1)),
+    ]);
+    expect(near.uniqueCount).toBe(1);
+    const far = aggregateUnifiedIncidents([
+      ltab("10.01.2019", "500 €", Date.UTC(2019, 0, 10)),
+      cv("04.2019", "", Date.UTC(2019, 3, 1)),
+    ]);
+    expect(far.uniqueCount).toBe(2);
+  });
+
+  it("cita valsts vai dienas datums ar pretrunīgu summu paliek atsevišķi", () => {
+    const otherCountry = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      row({ date: "04.2016", lossAmount: "", sourceLabel: "AutoDNA", country: "Vācija", sortableTime: Date.UTC(2016, 3, 1) }),
+    ]);
+    expect(otherCountry.uniqueCount).toBe(2);
+    const dayConflict = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      cv("02.05.2016", "9 000 €", Date.UTC(2016, 4, 2)),
+    ]);
+    expect(dayConflict.uniqueCount).toBe(2);
+  });
+
+  it("mēneša ieraksts ar pretrunīgu summu (iespējams KASKO) paliek atsevišķi", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      cv("04.2016", "3 000 - 4 000 €", Date.UTC(2016, 3, 1)),
+    ]);
+    expect(agg.uniqueCount).toBe(2);
+  });
+});

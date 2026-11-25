@@ -492,7 +492,7 @@ export function aggregateUnifiedIncidents(
     });
     return { ...cluster, damage: mergeClusterDamage(matched) };
   });
-  const mergedAcrossCountry = mergeIncidentClustersSameAmountAndZones(withDamage);
+  const mergedAcrossCountry = mergeVendorRecordsIntoLtabEvents(mergeIncidentClustersSameAmountAndZones(withDamage));
   mergedAcrossCountry.sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.date.localeCompare(b.date, "lv");
@@ -594,6 +594,75 @@ function mergeIncidentClustersSameAmountAndZones(clusters: UnifiedIncidentCluste
       continue;
     }
     out[idx] = mergeTwoIncidentClusters(out[idx]!, c);
+  }
+  return out;
+}
+
+/** 24.11 audits #3: CarVertical / AutoDNA ieraksts, kas ir tas pats LTAB notikums (±30 dienas). */
+const VENDOR_LTAB_MERGE_MAX_DAYS = 30;
+const VENDOR_DUPLICATE_SOURCE_RE = /carvertical|autodna/i;
+
+function clusterIsMonthPrecision(c: UnifiedIncidentCluster): boolean {
+  return /^\d{1,2}\.\d{4}$/.test(c.date.trim());
+}
+
+function clusterHasLtab(c: UnifiedIncidentCluster): boolean {
+  return c.sourceValuations.some((v) => sourceLooksLikeAccident(v.sourceLabel));
+}
+
+/**
+ * 24.11 audits #3 (case1: «7 bojājumu ieraksti», reāli 5 LTAB negadījumi): carVertical / autoDNA bieži rāda to pašu
+ * Latvijas OCTA gadījumu, ko LTAB, tikai ar mēneša precizitāti («04.2016») un savu remonta tāmi (summa nesakrīt).
+ * Šāds ieraksts ir viens notikums ar vairākiem avotiem, ja:
+ * - tajā ir tikai carVertical / autoDNA (bez LTAB), valsts saderīga ar LTAB notikumu;
+ * - laiks ±30 dienas (mēneša precizitātei - no mēneša sākuma vai beigām);
+ * - LTAB notikumā šī avota vēl nav (viens avota ieraksts = viens notikums);
+ * - summas nedrīkst būt pretrunā: ja abiem ir summa, intervāliem jāpārklājas (ar pielaidi); ja vienam summas nav - apvieno.
+ * Ja vairāki LTAB kandidāti, ņem to, kura summa pārklājas, tad - tuvāko laikā.
+ */
+function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): UnifiedIncidentCluster[] {
+  const out = [...clusters];
+  const daysBetween = (vendor: UnifiedIncidentCluster, ltab: UnifiedIncidentCluster): number => {
+    if (!(vendor.sortableTime > 0) || !(ltab.sortableTime > 0)) return Number.POSITIVE_INFINITY;
+    if (!clusterIsMonthPrecision(vendor)) return Math.abs(vendor.sortableTime - ltab.sortableTime) / 86_400_000;
+    const start = new Date(vendor.sortableTime);
+    const monthStart = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1);
+    const monthEnd = Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0);
+    if (ltab.sortableTime >= monthStart && ltab.sortableTime <= monthEnd) return 0;
+    return Math.min(Math.abs(ltab.sortableTime - monthStart), Math.abs(ltab.sortableTime - monthEnd)) / 86_400_000;
+  };
+  for (let i = 0; i < out.length; i++) {
+    const c = out[i]!;
+    if (clusterHasLtab(c)) continue;
+    if (c.sourceValuations.length === 0 || !c.sourceValuations.every((v) => VENDOR_DUPLICATE_SOURCE_RE.test(v.sourceLabel))) continue;
+    const cBounds = clusterAmountBounds(c);
+    let best = -1;
+    let bestRank = Number.POSITIVE_INFINITY;
+    for (let j = 0; j < out.length; j++) {
+      if (j === i) continue;
+      const t = out[j]!;
+      if (!clusterHasLtab(t)) continue;
+      if (!countriesCompatible(incidentCountryKey(c.country), incidentCountryKey(t.country))) continue;
+      if (t.sourceValuations.some((v) => c.sourceValuations.some((x) => x.sourceLabel === v.sourceLabel))) continue;
+      const days = daysBetween(c, t);
+      if (days > VENDOR_LTAB_MERGE_MAX_DAYS) continue;
+      const tBounds = clusterAmountBounds(t);
+      const amountMatch = boundsOverlap(cBounds, tBounds, true);
+      // Koordinatora lēmums 25.11: abām pusēm summa un intervāli nepārklājas -> divi ieraksti (KASKO nedrīkst paslēpt).
+      if (cBounds && tBounds && !amountMatch) continue;
+      const rank = (amountMatch ? 0 : 1000) + days;
+      if (rank < bestRank) {
+        bestRank = rank;
+        best = j;
+      }
+    }
+    if (best < 0) continue;
+    const target = out[best]!;
+    const merged = mergeTwoIncidentClusters(target, c);
+    // Datums un laiks - no LTAB (dienas precizitāte), ne no mēneša ieraksta.
+    out[best] = { ...merged, date: target.date, sortableTime: target.sortableTime, country: target.country };
+    out.splice(i, 1);
+    i--;
   }
   return out;
 }
