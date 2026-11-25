@@ -498,6 +498,13 @@ export type ClientReportPayload = {
   odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[] | null;
   /** Operatora Lielie darbi labojumi. Nav veco pasūtījumu pārraksts. */
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null;
+  /**
+   * EN/RU/DE: oriģinālais (latviešu) payload PIRMS AI tulkojuma (`applyClientReportTranslatedTexts`).
+   * Fakti (īpašnieku skaits, negadījumi, rādījumi, serviss, izsoles, vecums) 1. lapā un kopsavilkumā
+   * vienmēr tiek aprēķināti no šī - citādi latviešu regex netrāpa tulkotajā tekstā un skaitļi atšķiras
+   * starp valodām. Tikai atmiņā (netiek saglabāts, serverim aiziet gatavs HTML).
+   */
+  factsSource?: ClientReportPayload | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -997,6 +1004,8 @@ function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfT
 function buildPdfTopHtml(args: {
   p: ClientReportPayload;
   pVis: ClientReportPayload;
+  /** Tas pats, bet no oriģinālā (LV) payload pirms tulkojuma - visiem skaitļiem. */
+  pVisFacts: ClientReportPayload;
   vis: PdfVisibilitySettings;
   lang: ClientReportLang;
   logoSvg: string;
@@ -1006,18 +1015,20 @@ function buildPdfTopHtml(args: {
   now: Date;
 }): string {
   const { p, pVis, vis, lang } = args;
+  // Skaitļi no oriģinālā (LV) payload - neatkarīgi no AI tulkojuma (25.11).
+  const f = args.pVisFacts;
   const summaryInput = {
-    csddForm: pVis.csddForm ?? null,
-    autoRecordsBlock: pVis.autoRecordsBlock ?? null,
-    oneautoBlock: pVis.oneautoBlock ?? null,
-    ccVinBlock: pVis.ccVinBlock ?? null,
-    asvBlock: pVis.asvBlock ?? null,
-    manualVendorBlocks: pVis.manualVendorBlocks ?? null,
-    manualLtabBlock: pVis.manualLtabBlock ?? null,
-    citiAvoti: pVis.citiAvoti ?? null,
-    tirgusForm: pVis.tirgusForm ?? null,
-    listingUrl: pVis.listingUrl ?? null,
-    odometerAnomalyOverrides: pVis.odometerAnomalyOverrides ?? null,
+    csddForm: f.csddForm ?? null,
+    autoRecordsBlock: f.autoRecordsBlock ?? null,
+    oneautoBlock: f.oneautoBlock ?? null,
+    ccVinBlock: f.ccVinBlock ?? null,
+    asvBlock: f.asvBlock ?? null,
+    manualVendorBlocks: f.manualVendorBlocks ?? null,
+    manualLtabBlock: f.manualLtabBlock ?? null,
+    citiAvoti: f.citiAvoti ?? null,
+    tirgusForm: f.tirgusForm ?? null,
+    listingUrl: f.listingUrl ?? null,
+    odometerAnomalyOverrides: f.odometerAnomalyOverrides ?? null,
   };
   const tiles = buildPdfReportSummaryTiles(summaryInput, {
     pdfBannerInclude: pVis.pdfBannerInclude ?? null,
@@ -4202,15 +4213,21 @@ export function buildClientReportDocumentHtml(args: {
     printInk = false,
   } = args;
   // Izsoļu pārdošanas rindām - noslēguma cena no izsoles ieraksta (nevis publiskā cena ar maksām).
-  const p: ClientReportPayload = rawPayload.ccVinBlock?.thecarapiRecords?.length
-    ? {
-        ...rawPayload,
-        ccVinBlock: {
-          ...rawPayload.ccVinBlock,
-          sales: salesWithAuctionFinalPrice(rawPayload.ccVinBlock.sales ?? [], rawPayload.ccVinBlock.thecarapiRecords),
-        },
-      }
-    : rawPayload;
+  const withAuctionPrices = (src: ClientReportPayload): ClientReportPayload =>
+    src.ccVinBlock?.thecarapiRecords?.length
+      ? {
+          ...src,
+          ccVinBlock: {
+            ...src.ccVinBlock,
+            sales: salesWithAuctionFinalPrice(src.ccVinBlock.sales ?? [], src.ccVinBlock.thecarapiRecords),
+          },
+        }
+      : src;
+  const p: ClientReportPayload = withAuctionPrices(rawPayload);
+  // Fakti no oriģinālā (LV) payload pirms AI tulkojuma - skaitļi vienādi visās valodās (25.11).
+  const pFacts: ClientReportPayload = rawPayload.factsSource
+    ? withAuctionPrices({ ...rawPayload.factsSource, factsSource: null })
+    : p;
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);
@@ -4247,7 +4264,8 @@ export function buildClientReportDocumentHtml(args: {
 
   // Kopsavilkums, laikjosla, negadījumi: tikai PDF iekļautie avoti (CSDD identitātei kopsavilkumā paliek).
   const pVis = dealerOnly ? p : payloadForPdfVisibility(p, vis, { keepCsdd: true });
-  const pVisTimeline = dealerOnly ? p : payloadForPdfVisibility(p, vis);
+  const pVisFacts = pFacts === p ? pVis : dealerOnly ? pFacts : payloadForPdfVisibility(pFacts, vis, { keepCsdd: true });
+  const pVisTimeline = dealerOnly ? pFacts : payloadForPdfVisibility(pFacts, vis);
 
   // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
   const summaryBannerTiles = vis.alerts
@@ -4255,29 +4273,29 @@ export function buildClientReportDocumentHtml(args: {
         manualBanners: mergeProvinManualBanners(pVis.manualBanners),
         alertBanners: filterAlertBannersForPdf(
           computeProvinAlertBannersFromPayloadSlice({
-            csddForm: pVis.csddForm,
-            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
-            oneautoBlock: pVis.oneautoBlock ?? null,
-            ccVinBlock: pVis.ccVinBlock ?? null,
-            asvBlock: pVis.asvBlock ?? null,
-            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
-            citiAvotiBlock: pVis.citiAvoti ?? null,
-            manualLtabBlock: pVis.manualLtabBlock ?? null,
-            tirgusForm: pVis.tirgusForm ?? null,
-            listingUrl: pVis.listingUrl ?? null,
+            csddForm: pVisFacts.csddForm,
+            autoRecordsBlock: pVisFacts.autoRecordsBlock ?? null,
+            oneautoBlock: pVisFacts.oneautoBlock ?? null,
+            ccVinBlock: pVisFacts.ccVinBlock ?? null,
+            asvBlock: pVisFacts.asvBlock ?? null,
+            manualVendorBlocks: pVisFacts.manualVendorBlocks ?? null,
+            citiAvotiBlock: pVisFacts.citiAvoti ?? null,
+            manualLtabBlock: pVisFacts.manualLtabBlock ?? null,
+            tirgusForm: pVisFacts.tirgusForm ?? null,
+            listingUrl: pVisFacts.listingUrl ?? null,
           }),
           pVis.pdfBannerInclude,
         ),
         infoBanners: filterInfoBannersForPdf(
           computeProvinInfoBannersFromPayloadSlice({
-            csddForm: pVis.csddForm,
-            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
-            oneautoBlock: pVis.oneautoBlock ?? null,
-            ccVinBlock: pVis.ccVinBlock ?? null,
-            asvBlock: pVis.asvBlock ?? null,
-            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
-            manualLtabBlock: pVis.manualLtabBlock ?? null,
-            citiAvotiBlock: pVis.citiAvoti ?? null,
+            csddForm: pVisFacts.csddForm,
+            autoRecordsBlock: pVisFacts.autoRecordsBlock ?? null,
+            oneautoBlock: pVisFacts.oneautoBlock ?? null,
+            ccVinBlock: pVisFacts.ccVinBlock ?? null,
+            asvBlock: pVisFacts.asvBlock ?? null,
+            manualVendorBlocks: pVisFacts.manualVendorBlocks ?? null,
+            manualLtabBlock: pVisFacts.manualLtabBlock ?? null,
+            citiAvotiBlock: pVisFacts.citiAvoti ?? null,
           }),
           pVis.pdfBannerInclude,
         ),
@@ -4303,6 +4321,7 @@ export function buildClientReportDocumentHtml(args: {
       buildPdfTopHtml({
         p,
         pVis,
+        pVisFacts,
         vis,
         lang,
         logoSvg,
