@@ -10,6 +10,7 @@ import { DropboxApiError, getDropboxClient, type DropboxClient } from "@/lib/dro
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import {
   orderDropboxFolderName,
+  orderDropboxNameWithCategory,
   orderDropboxParentPath,
   orderDropboxShouldRename,
   parseOrderDropboxRecord,
@@ -118,13 +119,21 @@ function errCode(e: unknown): string {
  */
 export async function ensureOrderDropboxFolder(
   sessionId: string,
-  opts: { category?: OrderDropboxCategory | null; createdMs?: number; vin?: string | null; plate?: string | null; client?: DropboxClient | null } = {},
+  opts: {
+    category?: OrderDropboxCategory | null;
+    createdMs?: number;
+    vin?: string | null;
+    plate?: string | null;
+    client?: DropboxClient | null;
+    /** Produkts mainījies (manuālais pasūtījums: AUDITI -> BUSINESS): `category` ir noteicošā, esošo mapi pārvieto. */
+    recategorize?: boolean;
+  } = {},
 ): Promise<OrderDropboxRecord | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
   const { record: prev, readError } = await readOrderDropboxRecordResult(sessionId);
   // Nevar nolasīt ierakstu - nezinām, vai mape jau ir. Labāk šoreiz neko nedarīt nekā izveidot otru mapi.
   if (readError) return null;
-  const category = prev?.category ?? opts.category ?? null;
+  const category = (opts.recategorize ? opts.category : null) ?? prev?.category ?? opts.category ?? null;
   if (!category) return null;
   const now = new Date().toISOString();
   const orderCreatedMs = prev?.orderCreatedMs ?? opts.createdMs ?? Date.now();
@@ -153,17 +162,24 @@ export async function ensureOrderDropboxFolder(
       const meta = await client.getMetadata(prev.folderId);
       if (meta && meta.tag === "folder") {
         let current = meta.pathDisplay || prev.path || "";
-        if (orderDropboxShouldRename(meta.name, desiredName)) {
+        // Produkta maiņa: tā pati mape (ar visiem failiem) uz citu virsmapi - nevis otra mape.
+        const categoryChange = prev.category !== category;
+        let finalCategory = category;
+        // Jaunajā virsmapē nosaukums nedrīkst kļūt nabadzīgāks (marka / VIN, kas jau bija nosaukumā, paliek).
+        const swapped = categoryChange ? orderDropboxNameWithCategory(meta.name, prev.category, category) : meta.name;
+        const targetName = orderDropboxShouldRename(swapped, desiredName) ? desiredName : swapped;
+        if (categoryChange || targetName !== meta.name) {
           try {
-            const moved = await client.move(current, `${parent}/${desiredName}`, { autorename: false });
-            current = moved.pathDisplay || `${parent}/${desiredName}`;
+            const moved = await client.move(current, `${parent}/${targetName}`, { autorename: false });
+            current = moved.pathDisplay || `${parent}/${targetName}`;
           } catch (e) {
-            // Ja tāda mape jau ir (cits pasūtījums ar to pašu auto un dienu) - paliek vecais nosaukums.
-            console.warn(`${LOG} rename skipped`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+            // Ja tāda mape jau ir (cits pasūtījums ar to pašu auto un dienu) - paliek vecais nosaukums / virsmape.
+            if (categoryChange) finalCategory = prev.category;
+            console.warn(`${LOG} ${categoryChange ? "move" : "rename"} skipped`, { sessionId: sessionId.slice(-8), error: errCode(e) });
           }
         }
-        if (current === prev.path) return prev;
-        const rec = { ...base, state: "ok" as const, path: current };
+        if (current === prev.path && finalCategory === prev.category) return prev;
+        const rec = { ...base, category: finalCategory, state: "ok" as const, path: current };
         delete (rec as Partial<OrderDropboxRecord>).error;
         await writeRecord(rec);
         return rec;
@@ -177,7 +193,13 @@ export async function ensureOrderDropboxFolder(
     return rec;
   } catch (e) {
     console.error(`${LOG} ensure failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
-    const rec = { ...base, state: prev?.state === "ok" ? ("ok" as const) : ("error" as const), error: errCode(e) };
+    // Kategoriju maina tikai pēc veiksmīgas pārvietošanas - nākamreiz mēģina vēlreiz.
+    const rec = {
+      ...base,
+      category: prev?.category ?? category,
+      state: prev?.state === "ok" ? ("ok" as const) : ("error" as const),
+      error: errCode(e),
+    };
     await writeRecord(rec).catch(() => undefined);
     return rec;
   }
@@ -206,6 +228,22 @@ export async function saveFileToOrderDropboxFolder(
     console.error(`${LOG} upload failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
     return null;
   }
+}
+
+/**
+ * Produkts mainījies pēc mapes izveides (manuālais pasūtījums kļūst par Business / Dīlera datiem): esošo mapi
+ * pārvieto uz pareizo virsmapi. Ja ieraksta nav (vecie pasūtījumi) vai kategorija tā pati - neko nedara.
+ */
+export async function moveOrderDropboxFolderToCategory(
+  sessionId: string,
+  category: OrderDropboxCategory,
+  client?: DropboxClient | null,
+): Promise<OrderDropboxRecord | null> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+  const { record, readError } = await readOrderDropboxRecordResult(sessionId);
+  if (readError || !record) return null;
+  if (record.category === category) return record;
+  return ensureOrderDropboxFolder(sessionId, { category, recategorize: true, ...(client !== undefined ? { client } : {}) });
 }
 
 /** Pēc apmaksas / izveides: tikai fona solis, kļūda neaptur pasūtījumu. */

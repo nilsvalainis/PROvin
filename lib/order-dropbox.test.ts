@@ -23,7 +23,12 @@ vi.mock("@vercel/blob", () => ({
 }));
 vi.mock("@/lib/dropbox-client", async (orig) => ({ ...(await orig<typeof import("@/lib/dropbox-client")>()), getDropboxClient: () => h.client ?? null }));
 
-import { ensureOrderDropboxFolder, readOrderDropboxRecord, saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
+import {
+  ensureOrderDropboxFolder,
+  moveOrderDropboxFolderToCategory,
+  readOrderDropboxRecord,
+  saveFileToOrderFolderOrLegacy,
+} from "@/lib/order-dropbox";
 
 function entry(tag: DropboxEntry["tag"], p: string, id: string): DropboxEntry {
   return { tag, id, name: p.split("/").pop()!, pathLower: p.toLowerCase(), pathDisplay: p, rev: "", size: 0, contentHash: "", serverModified: "" };
@@ -165,5 +170,53 @@ describe("ieraksta krātuve neatbild", () => {
     await expect(saveFileToOrderFolderOrLegacy("cs_test_blob", "x.pdf", new Uint8Array([1]), async () => ({ path: "/x" }))).rejects.toThrow(
       "order_dropbox_record_unreadable",
     );
+  });
+});
+
+describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
+  it("manuālais pasūtījums AUDITI -> BUSINESS: tā pati mape (id), jauns ceļš un nosaukums; atskaite nonāk tur", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("manual_order_t1", { category: "audits", createdMs: created, vin: "WBA00000000000001", client: dbx.client });
+    h.drafts.set("manual_order_t1", { workspace: { sourceBlocks: { csdd: { makeModel: "BMW 325", vin: "WBA00000000000001" } } } });
+    const moved = await moveOrderDropboxFolderToCategory("manual_order_t1", "business", dbx.client);
+    expect(moved?.category).toBe("business");
+    expect(moved?.folderId).toBe(r1?.folderId);
+    expect(moved?.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS");
+    expect(dbx.byId.get(r1!.folderId!)).toBe(moved?.path);
+    expect(dbx.calls.create).toBe(1);
+    expect((await readOrderDropboxRecord("manual_order_t1"))?.category).toBe("business");
+
+    const saved = await saveFileToOrderFolderOrLegacy("manual_order_t1", "PROVIN_BUSINESS_WBA00000000000001.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS/PROVIN_BUSINESS_WBA00000000000001.pdf");
+    expect(dbx.calls.create).toBe(1);
+
+    // Tā pati kategorija vēlreiz - nekas nenotiek.
+    await moveOrderDropboxFolderToCategory("manual_order_t1", "business", dbx.client);
+    expect(dbx.calls.move).toBe(1);
+  });
+
+  it("pārvietošana neizdodas (mērķis aizņemts) - paliek vecā virsmape, nākamreiz mēģina vēlreiz", async () => {
+    const dbx = fakeDropbox();
+    const r1 = await ensureOrderDropboxFolder("manual_order_t2", { category: "audits", createdMs: created, vin: "WBA00000000000002", client: dbx.client });
+    const failing = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      move: async () => {
+        throw new DropboxApiError(409, "to/conflict/folder");
+      },
+    } as unknown as DropboxClient;
+    const r2 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", failing);
+    expect(r2?.category).toBe("audits");
+    expect(r2?.path).toBe(r1?.path);
+    expect((await readOrderDropboxRecord("manual_order_t2"))?.category).toBe("audits");
+    const r3 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", dbx.client);
+    expect(r3?.path).toBe("/_PROv/DILERA DATI/WBA00000000000002_2026-11-23_DILERA DATI");
+  });
+
+  it("vecs pasūtījums bez mapes ieraksta - neko neveido", async () => {
+    const dbx = fakeDropbox();
+    expect(await moveOrderDropboxFolderToCategory("manual_order_old", "business", dbx.client)).toBeNull();
+    expect(dbx.calls.create).toBe(0);
   });
 });

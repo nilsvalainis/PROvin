@@ -65,6 +65,19 @@ export function isProvinReportPdfFilename(filename: string): boolean {
   return REPORT_PDF_KIND_WORDS.some((w) => name.startsWith(`${w}_`)) || name.startsWith("PROVIN_SELECT");
 }
 
+/** Produkta veids pēc PDF nosaukuma (jebkurā valodā, ar «v2-» priedēkli vai bez); nezināms - null. */
+export function reportPdfKindFromFilename(filename: string): ReportPdfKind | null {
+  const name = (filename ?? "").trim().toUpperCase().replace(/^V\d+-/, "");
+  if (!name.endsWith(".PDF")) return null;
+  let best: { kind: ReportPdfKind; len: number } | null = null;
+  for (const [kind, words] of Object.entries(KIND_WORD) as [ReportPdfKind, Record<ClientReportLang, string>][]) {
+    for (const w of Object.values(words)) {
+      if (name.startsWith(`${w}_`) && (!best || w.length > best.len)) best = { kind, len: w.length };
+    }
+  }
+  return best?.kind ?? null;
+}
+
 function vinSlug(vin: string | null | undefined): string {
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   return v.length > 0 ? v : "NAV_VIN";
