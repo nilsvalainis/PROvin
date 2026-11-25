@@ -17,6 +17,40 @@ export type BannedVocabularyEntry = {
   code: string;
 };
 
+/** «pirkt / nepirkt», «nepērciet». */
+const PURCHASE_VERDICT_BUY_RE =
+  /(?<!\p{L})pirkt\s*\/\s*nepirkt(?!\p{L})|(?<!\p{L})nepirkt(?!\p{L})|(?<!\p{L})nepērc(?:iet|ēt)?(?!\p{L})/iu;
+/** «iesakām / neiesakām iegādāties», «ieteicams pirkt», «iegādi neiesakām». */
+const PURCHASE_VERDICT_ADVICE_RE =
+  /(?<!\p{L})(?:ne)?(?:iesakām|iesaku|iesaka|ieteicams|ieteicam)\s+(?:\p{L}+\s+){0,3}?(?:iegādāties|pirkt|iegādi|pirkumu)(?!\p{L})|(?<!\p{L})(?:iegād\p{L}*|pirkum\p{L}*)\s+(?:\p{L}+\s+){0,2}?neiesak\p{L}*/iu;
+/** «slēdziens», «verdikts» (visi locījumi). */
+const PURCHASE_VERDICT_WORD_RE = /(?<!\p{L})(?:slēdzien\p{L}*|verdikt\p{L}*)/iu;
+
+export type PurchaseVerdictHit = { label: string; code: string; match: string };
+
+/**
+ * 25.11 (Nils: «PROVIN dod ieteikumus, lēmumu pieņem klients»): atrod pirkuma verdikta vārdus klienta tekstā.
+ * Lieto deterministiskā faktu pārbaude (comment-contradiction-check) un FLASH MAX noslēguma pārbaude.
+ */
+export function findPurchaseVerdictHits(text: string): PurchaseVerdictHit[] {
+  if (!text) return [];
+  const out: PurchaseVerdictHit[] = [];
+  const rows: Array<[RegExp, string, string]> = [
+    [PURCHASE_VERDICT_BUY_RE, "pirkt / nepirkt", "vocabulary_pirkt_nepirkt"],
+    [PURCHASE_VERDICT_ADVICE_RE, "iesakām / neiesakām iegādāties", "vocabulary_iesakam_iegadaties"],
+    [PURCHASE_VERDICT_WORD_RE, "slēdziens / verdikts", "vocabulary_sledziens"],
+  ];
+  for (const [re, label, code] of rows) {
+    const m = re.exec(text);
+    if (m) out.push({ label, code, match: m[0] });
+  }
+  return out;
+}
+
+export function textHasPurchaseVerdict(text: string): boolean {
+  return findPurchaseVerdictHits(text).length > 0;
+}
+
 export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
     label: "maģistrāle",
@@ -215,6 +249,25 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     pattern: /ekspert/i,
     replacement: "apraksti analīzi bez personas lietvārda (ne speciālists)",
     code: "vocabulary_eksperts",
+  },
+  // 25.11 Nila likums: PROVIN dod ieteikumus, lēmumu pieņem klients - nekāda pirkuma verdikta.
+  {
+    label: "pirkt / nepirkt",
+    pattern: PURCHASE_VERDICT_BUY_RE,
+    replacement: "ieteikums, ko pārbaudīt; lēmumu pieņem klients",
+    code: "vocabulary_pirkt_nepirkt",
+  },
+  {
+    label: "iesakām / neiesakām iegādāties",
+    pattern: PURCHASE_VERDICT_ADVICE_RE,
+    replacement: "ieteikums, ko pārbaudīt",
+    code: "vocabulary_iesakam_iegadaties",
+  },
+  {
+    label: "slēdziens / verdikts",
+    pattern: PURCHASE_VERDICT_WORD_RE,
+    replacement: "ieteikumi",
+    code: "vocabulary_sledziens",
   },
 ] as const;
 

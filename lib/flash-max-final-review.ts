@@ -9,6 +9,7 @@
  */
 
 import { UNTRUSTED_DATA_RULE, wrapUntrustedData } from "@/lib/ai-untrusted-data";
+import { findPurchaseVerdictHits, textHasPurchaseVerdict } from "@/lib/provin-banned-vocabulary";
 
 /** Viens izsaukums: atbildes griesti (ieskaitot domāšanu). Opus 5.5: 20 $ / 1M izejas tokenu. */
 export const FLASH_MAX_REVIEW_MAX_TOKENS = 8000;
@@ -27,13 +28,14 @@ export type FlashMaxReviewField = {
   text: string;
 };
 
-export type FlashMaxReviewKind = "pretruna" | "fakts" | "nepamatots" | "risks" | "valoda" | "atkartojums";
+export type FlashMaxReviewKind = "pretruna" | "fakts" | "nepamatots" | "risks" | "verdikts" | "valoda" | "atkartojums";
 
 export const FLASH_MAX_REVIEW_KIND_LABEL: Record<FlashMaxReviewKind, string> = {
   pretruna: "Pretruna starp sadaļām",
   fakts: "Neatbilst faktiem",
   nepamatots: "Nepamatots apgalvojums",
   risks: "Trūkst tehniskā riska",
+  verdikts: "Pirkuma verdikts (lēmumu pieņem klients)",
   valoda: "Valoda",
   atkartojums: "Atkārtojums starp laukiem",
 };
@@ -56,7 +58,7 @@ export type FlashMaxReviewState =
   | { status: "done"; findings: FlashMaxReviewFinding[]; fieldLabels: Record<string, string> }
   | { status: "error"; error: string };
 
-const KINDS = new Set<FlashMaxReviewKind>(["pretruna", "fakts", "nepamatots", "risks", "valoda", "atkartojums"]);
+const KINDS = new Set<FlashMaxReviewKind>(["pretruna", "fakts", "nepamatots", "risks", "verdikts", "valoda", "atkartojums"]);
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -98,7 +100,8 @@ FIND (only real problems, most important first):
 2. "fakts" - a field contradicts the CANONICAL FACTS (numbers, dates, km, owners, countries, recorded events).
 3. "nepamatots" - a claim with no basis in the facts or in other fields (invented service work, accidents, defects, rust, wrap film, physical inspection by PROVIN, warranties), or a wrong technical statement.
 4. "risks" - a technical risk that is clearly visible in the data (e.g. odometer rollback / mileage warning, recorded damage, import history, overdue oil interval stated in facts) but NOT mentioned in the field where the client would expect it (normally the technical risks or summary field).
-5. "valoda" - only clear Latvian grammar errors or wrong terms that change meaning. Do not report style preferences.
+5. "verdikts" - a purchase decision in any field: telling the client to buy or not to buy, "we (do not) recommend purchasing", a final "verdict" / "conclusion" word. PROVIN gives recommendations (what to check in a service / in person); the client makes the decision. Replace with a neutral recommendation sentence built only from the facts already in that field.
+6. "valoda" - only clear Latvian grammar errors or wrong terms that change meaning. Do not report style preferences.
 
 RULES:
 - NEVER introduce facts that are not in the CANONICAL FACTS or the fields themselves. If unsure, do not report.
@@ -111,14 +114,21 @@ RULES:
 - Keep each fix minimal: "find" is one sentence or phrase (max ~300 characters), "replace" is not much longer than "find" and never adds links, phone numbers or e-mail addresses.
 
 OUTPUT: only one JSON object, no prose before or after:
-{"findings":[{"field":"<field id>","kind":"pretruna|fakts|nepamatots|risks|valoda","reason":"...","find":"...","replace":"..."}]}`;
+{"findings":[{"field":"<field id>","kind":"pretruna|fakts|nepamatots|risks|verdikts|valoda","reason":"...","find":"...","replace":"..."}]}`;
 
 export function buildFlashMaxReviewUserPrompt(fields: FlashMaxReviewField[], factsSheet: string): string {
   const facts = wrapUntrustedData("canonical-facts", factsSheet) || "(faktu lapa tukša)";
   const blocks = fields.map(
     (f) => `<field id="${f.id}" label="${f.label.replace(/"/g, "'")}">\n${f.text.replace(/<\s*\/\s*field\s*>/gi, "</ field>")}\n</field>`,
   );
-  return `CANONICAL FACTS (avotu dati - vienīgā patiesība):\n${facts}\n\nGENERATED FIELDS (${fields.length}):\n${blocks.join("\n\n")}\n\nReturn the JSON object now.`;
+  // 25.11: deterministiski atrastie pirkuma verdikta vārdi - Opus tos obligāti pārraksta kā ieteikumus.
+  const verdictLines = fields.flatMap((f) =>
+    findPurchaseVerdictHits(f.text).map((h) => `- field "${f.id}": "${h.match}"`),
+  );
+  const verdictBlock = verdictLines.length
+    ? `\n\nPURCHASE VERDICT WORDS FOUND (deterministic check - report each as kind "verdikts"):\n${verdictLines.join("\n")}`
+    : "";
+  return `CANONICAL FACTS (avotu dati - vienīgā patiesība):\n${facts}\n\nGENERATED FIELDS (${fields.length}):\n${blocks.join("\n\n")}${verdictBlock}\n\nReturn the JSON object now.`;
 }
 
 /** Izvelk pirmo JSON objektu no modeļa atbildes (arī ja tas ietīts ```json blokā). */
@@ -159,6 +169,8 @@ export function parseFlashMaxReviewResponse(raw: string, fields: FlashMaxReviewF
     if (!reason || (!replace && kind !== "atkartojums")) continue;
     if (kind === "atkartojums" && !find) continue;
     if (/ekspert/i.test(replace) || /ekspert/i.test(reason)) continue;
+    // 25.11: labojums pats nedrīkst ienest pirkuma verdiktu.
+    if (textHasPurchaseVerdict(replace)) continue;
     if (find && !field.text.includes(find)) continue;
     if (!find && kind !== "risks") continue;
     if (find && find.trim() === replace) continue;

@@ -25,6 +25,7 @@ import {
   extractVehicleDrivetrain,
   findDrivetrainContradictions,
 } from "@/lib/registry-drivetrain";
+import { findPurchaseVerdictHits } from "@/lib/provin-banned-vocabulary";
 
 export type ContradictionCheckInput = {
   text: string;
@@ -739,6 +740,18 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
         sentence: bad,
       });
     }
+  }
+
+  // 5c) 25.11: PROVIN dod ieteikumus, lēmumu pieņem klients - pirkuma verdikta vārdi klienta tekstā.
+  for (const hit of findPurchaseVerdictHits(text)) {
+    const needle = hit.match.toLowerCase();
+    push({
+      id: hit.code,
+      kind: "purchase_verdict",
+      level: "W",
+      message: `Pirkuma verdikts „${hit.match}” - PROVIN dod ieteikumus, lēmumu pieņem klients.`,
+      sentence: sentences.find((x) => x.toLowerCase().includes(needle)) ?? hit.match,
+    });
   }
 
   // 6) atsavināšanai, ja nav avotā.

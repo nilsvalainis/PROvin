@@ -13,6 +13,7 @@ import {
   flashMaxSelectionWithData,
   flashMaxUnavailableMenuJobs,
   formatFlashMaxSkipLabel,
+  parseCitiAvotiFlashMaxJobId,
   summaryOnlyFlashMaxSelection,
   type FlashMaxJob,
   type FlashMaxSelection,
@@ -180,10 +181,21 @@ export function AdminFlashMaxPanel({
   // pirms datu ielādes.
   const preset = (next: FlashMaxSelection) => setSelection(next);
   const toggle = (id: string, next: boolean) =>
-    setSelection((prev) => ({
-      ...prev,
-      selectedIds: next ? [...new Set([...prev.selectedIds, id])] : prev.selectedIds.filter((x) => x !== id),
-    }));
+    setSelection((prev) => {
+      let ids = prev.selectedIds;
+      // Noklusējumā atzīmēts viss «Citi avoti» bloks; noņemot vienu sadaļu, pārējās paliek atzīmētas.
+      if (!next && parseCitiAvotiFlashMaxJobId(id) != null && ids.includes("citi_avoti")) {
+        const sectionIds = menuJobs.map((j) => j.id).filter((x) => parseCitiAvotiFlashMaxJobId(x) != null);
+        ids = [...ids.filter((x) => x !== "citi_avoti"), ...sectionIds];
+      }
+      return {
+        ...prev,
+        selectedIds: next ? [...new Set([...ids, id])] : ids.filter((x) => x !== id),
+      };
+    });
+  const isChecked = (id: string) =>
+    selection.selectedIds.includes(id) ||
+    (parseCitiAvotiFlashMaxJobId(id) != null && selection.selectedIds.includes("citi_avoti"));
   const setTier = (id: string, next: AiAdminModelTier) => setSelection((prev) => ({ ...prev, tiers: { ...prev.tiers, [id]: next } }));
   const setBreadth = (id: string, next: CommentBreadth) =>
     setSelection((prev) => ({ ...prev, breadths: { ...prev.breadths, [id]: next } }));
@@ -200,7 +212,7 @@ export function AdminFlashMaxPanel({
         key={job.id}
         job={job}
         size={size}
-        checked={selection.selectedIds.includes(job.id)}
+        checked={isChecked(job.id)}
         unavailable={unavailable[job.id]}
         tier={selection.tiers[job.id] ?? "gemini-flash"}
         breadth={selection.breadths[job.id] ?? defaultFlashMaxJobBreadth(job.id)}
@@ -234,7 +246,6 @@ export function AdminFlashMaxPanel({
       <div className={touch ? "" : "max-h-[40vh] space-y-0.5 overflow-y-auto pr-0.5"}>
         {rows(dailyJobs)}
         <p className={`${groupTitle} ${touch ? "" : "pt-1.5"}`}>Citas sadaļas</p>
-        <p className={`pb-0.5 ${hint}`}>Parasti nav Flash Max - ieķeksē, kad vajag arī šos logus.</p>
         {rows(extraJobs)}
       </div>
       <label className={`block border-t border-slate-100 ${touch ? "mt-3 pt-3" : "mt-2 pt-2"}`}>

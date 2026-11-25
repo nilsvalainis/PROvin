@@ -116,8 +116,10 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   dailySource("csdd", "CSDD", "csdd"),
   dailySource("autodna", "AutoDNA", "autodna"),
   dailySource("carvertical", "CarVertical", "carvertical"),
+  dailySource("carfax", SOURCE_BLOCK_LABELS.carfax, "carfax"),
   dailySource("cc_vin", SOURCE_BLOCK_LABELS.cc_vin, "cc_vin"),
   dailySource("dealer_comments", "Oficiālā dīlera komentāri", "auto_records"),
+  dailySource("dealer_service", "Oficiālā dīlera servisa vēsture", "auto_records", "serviceHistoryNotes"),
   dailySource("dealer_oil", "Eļļas maiņas intervāli", "auto_records", "oilChangeIntervalNotes"),
   dailySource("tirgus", SOURCE_BLOCK_LABELS.tirgus, "tirgus"),
   extraSource("ltab", SOURCE_BLOCK_LABELS.ltab, "ltab"),
@@ -228,8 +230,12 @@ export function defaultFlashMaxBreadths(): Record<string, CommentBreadth> {
   return Object.fromEntries(FLASH_MAX_JOBS.map((job) => [job.id, defaultFlashMaxJobBreadth(job.id)]));
 }
 
-/** FLASH MAX noklusējums: Avotu salīdzinājums ir daily sarakstā, bet nav atzīmēts. */
-export const FLASH_MAX_DEFAULT_SELECTED_IDS: readonly string[] = FLASH_MAX_DAILY_JOB_IDS.filter(
+/**
+ * FLASH MAX noklusējums (17.11 «FLASH MAX pašam jāatpazīst, kuri lauki aizpildīti»): atzīmēti VISI darbi
+ * (arī «Citas sadaļas» - LTAB, valstu reģistri, ASV, Citi avoti), bet ģenerē tikai tos, kuriem ir dati
+ * (`flashMaxSelectionWithData` / `shouldSkipFlashMaxJob`). Avotu salīdzinājums apzināti nav atzīmēts.
+ */
+export const FLASH_MAX_DEFAULT_SELECTED_IDS: readonly string[] = FLASH_MAX_JOBS.map((j) => j.id).filter(
   (id) => id !== "sources_comparison",
 );
 
