@@ -142,9 +142,9 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
 
   it("bojājumi: 3 rindas pa zonām, kopā 5, latviski", () => {
     expect(model.damages).toEqual([
-      { zone: "Priekša", part: "Priekšējais buferis", type: "Skrāpējums līdz gruntij", size: "20-50 mm", quantity: "1", repair: "", notes: "" },
-      { zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Skrāpējums līdz gruntij", size: "20-50 mm", quantity: "3", repair: "", notes: "" },
-      { zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Trūkst detaļas", size: "", quantity: "1", repair: "", notes: "" },
+      { zone: "Priekša", part: "Priekšējais buferis", type: "Skrāpējums līdz gruntij", size: "20-50 mm", quantity: "1", repair: "", notes: "", photoUrls: ["https://img-pa.auto1.com/img3b/test/BS00000_d3.jpg"] },
+      { zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Skrāpējums līdz gruntij", size: "20-50 mm", quantity: "3", repair: "", notes: "", photoUrls: ["https://img-pa.auto1.com/img3b/test/BS00000_d1.jpg"] },
+      { zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Trūkst detaļas", size: "", quantity: "1", repair: "", notes: "", photoUrls: ["https://img-pa.auto1.com/img3b/test/BS00000_d2.jpg"] },
     ]);
     expect(model.damagesTotal).toBe(5);
     expect(html).toContain("<span>Bojājumi</span><b>5</b>");

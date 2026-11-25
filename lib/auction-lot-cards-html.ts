@@ -99,10 +99,72 @@ const ZONE_LABEL: Record<string, string> = {
   roof: "Jumts",
 };
 
-/** Bojājumu bloks izsoles kartītē: shēma (6/12) + saraksts (6/12). Bez bojājumiem un atzīmēm - tukšs. */
+/** Bojājuma sīktēls: gatavs `src` (data URL) + bildes datums (ISO vai DD.MM.YYYY). */
+export type AuctionDamageThumb = { src: string; date: string };
+
+/** Cik sīktēlu rāda pie viena bojājuma; pārējās - «+N» (visas ir galerijā). */
+export const AUCTION_DAMAGE_THUMBS_MAX = 4;
+
+/**
+ * Katra bojājuma bildes pēc avota sasaistes (`ThecarapiPdfDamage.photoUrls`): saite -> saglabātā bilde (pēc
+ * `sourceUrl` vai ieraksta bildes id) -> `dataUrls`. Bez sasaistes vai bez saglabātas bildes - tukšs saraksts.
+ */
+export function auctionDamageThumbs(
+  damages: readonly ThecarapiPdfDamage[],
+  record: Pick<ThecarapiAdminRecord, "photos" | "photoDate" | "date"> | null | undefined,
+  photos: readonly AuctionArchivePhoto[],
+  dataUrls: ReadonlyMap<string, string>,
+): AuctionDamageThumb[][] {
+  if (!damages.some((d) => d.photoUrls?.length)) return damages.map(() => []);
+  const urlById = new Map<string, string>();
+  for (const p of record?.photos ?? []) if (p?.id && p.sourceUrl?.trim()) urlById.set(p.id, p.sourceUrl.trim());
+  const byUrl = new Map<string, AuctionDamageThumb>();
+  const add = (url: string | undefined, id: string, date: string): void => {
+    const u = url?.trim();
+    const src = dataUrls.get(id);
+    if (!u || !src || byUrl.has(u)) return;
+    byUrl.set(u, { src, date });
+  };
+  for (const p of photos) {
+    add(p.sourceUrl, p.id, p.date);
+    add(urlById.get(p.id), p.id, p.date);
+  }
+  // Ieraksta bilde, kas nav lotes sarakstā, bet kurai ir dati (piem. galerijas limits) - arī derīga.
+  for (const p of record?.photos ?? []) if (p?.id) add(p.sourceUrl, p.id, p.date || record?.photoDate || record?.date || "");
+  return damages.map((d) => {
+    const seen = new Set<string>();
+    const out: AuctionDamageThumb[] = [];
+    for (const url of d.photoUrls ?? []) {
+      const t = byUrl.get(url.trim());
+      if (!t || seen.has(t.src)) continue;
+      seen.add(t.src);
+      out.push(t);
+    }
+    return out;
+  });
+}
+
+function damageThumbsHtml(thumbs: readonly AuctionDamageThumb[] | undefined): string {
+  if (!thumbs?.length) return "";
+  const shown = thumbs.slice(0, AUCTION_DAMAGE_THUMBS_MAX);
+  const more = thumbs.length - shown.length;
+  const figs = shown
+    .map((t) => {
+      const date = formatIsoDayLv(t.date) || t.date.trim();
+      return `<figure class="aa-dmg__thumb"><img src="${t.src}" alt=""/>${date ? `<figcaption>${esc(date)}</figcaption>` : ""}</figure>`;
+    })
+    .join("");
+  return `<span class="aa-dmg__ph">${figs}${more > 0 ? `<span class="aa-dmg__more">+${more}</span>` : ""}</span>`;
+}
+
+/**
+ * Bojājumu bloks izsoles kartītē: shēma (6/12) + saraksts (6/12). Bez bojājumiem un atzīmēm - tukšs.
+ * `thumbs[i]` - `damages[i]` bildes (sīktēli zem rindas ar datumu); bez tiem rinda paliek kā līdz šim.
+ */
 export function auctionArchiveDamageBlockHtml(
   damages: readonly ThecarapiPdfDamage[],
   marks: readonly AuctionArchiveOperatorMark[],
+  thumbs?: readonly (readonly AuctionDamageThumb[])[],
 ): string {
   if (damages.length === 0 && marks.length === 0) return "";
   const counts = new Map<string, { slot: PaintMapSlot; n: number }>();
@@ -128,12 +190,12 @@ export function auctionArchiveDamageBlockHtml(
   }));
   const svg = readings.length ? `<div class="aa-scheme">${buildPaintMapSvg(readings)}</div>` : "";
   const rows = [
-    ...damages.map(
-      (d) =>
-        `<li><b>${esc([d.zone, d.part].filter(Boolean).join(", ") || "Virsbūve")}</b><span>${esc(
-          [d.type, d.size, Number.parseInt(d.quantity, 10) > 1 ? `${d.quantity} gab.` : "", d.repair, d.notes].filter(Boolean).join(" · "),
-        )}</span></li>`,
-    ),
+    ...damages.map((d, i) => {
+      const ph = damageThumbsHtml(thumbs?.[i]);
+      return `<li${ph ? ' class="aa-dmg--ph"' : ""}><b>${esc([d.zone, d.part].filter(Boolean).join(", ") || "Virsbūve")}</b><span>${esc(
+        [d.type, d.size, Number.parseInt(d.quantity, 10) > 1 ? `${d.quantity} gab.` : "", d.repair, d.notes].filter(Boolean).join(" · "),
+      )}</span>${ph}</li>`;
+    }),
     ...marks.map(
       (m) =>
         `<li class="aa-dmg--seen"><b>${esc([ZONE_LABEL[m.zone] ?? m.zone, m.part ?? ""].filter(Boolean).join(", "))}</b><span>Redzams bildē (PROVIN atzīme)${
@@ -329,6 +391,12 @@ export const AUCTION_LOT_CARDS_CSS = `
 .aa-dmg__list li{display:grid;gap:1px;padding:5px 0;border-bottom:1px solid var(--pdf-line-soft);font:500 var(--pdf-fs-table)/1.4 Inter,sans-serif}
 .aa-dmg__list b{color:var(--aa-red);font-weight:650}.aa-dmg__list span{color:#334155}
 .aa-dmg__list .aa-dmg--seen b{color:#B45309}
+.aa-dmg__list li.aa-dmg--ph{break-inside:avoid;page-break-inside:avoid}
+.aa-dmg__ph{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:flex-end}
+.aa-dmg__thumb{margin:0;width:22mm;border:1px solid #D2D2D7;border-radius:4px;overflow:hidden;background:#fff;break-inside:avoid;page-break-inside:avoid}
+.aa-dmg__thumb img{display:block;width:100%;height:15mm;object-fit:cover;background:var(--pdf-line-soft)}
+.aa-dmg__thumb figcaption{padding:1px 4px 2px;font:500 7px/1.3 Inter,sans-serif;color:#86868b;font-variant-numeric:tabular-nums}
+.aa-dmg__ph .aa-dmg__more{font:500 8px/1.3 Inter,sans-serif;color:#86868b;padding-bottom:2px}
 .aa-desc{margin:0 0 6px}.aa-desc__lv{margin:0;font:500 var(--pdf-fs-table)/1.5 Inter,sans-serif;color:var(--aa-ink)}
 .aa-desc__orig{margin:3px 0 0;font:400 var(--pdf-fs-fine)/1.45 Inter,sans-serif;color:#94a3b8}.aa-desc__orig span{font-weight:600}
 .aa-gallery .pdf-sec-head--brand{margin:0 0 10px;padding-bottom:8px}
@@ -479,7 +547,11 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
     ].join("");
     const right = l.facts.condition.length ? subhead("Stāvoklis un dokumenti") + kvGrid(l.facts.condition, 1) : "";
     const cols = left && right ? `<div class="aa-cols"><div>${left}</div><div>${right}</div></div>` : left || right ? `<div>${left}${right}</div>` : "";
-    const dmg = auctionArchiveDamageBlockHtml(l.damages, marks.filter((m) => m.auctionKey === l.key));
+    const dmg = auctionArchiveDamageBlockHtml(
+      l.damages,
+      marks.filter((m) => m.auctionKey === l.key),
+      auctionDamageThumbs(l.damages, l.record, l.photos, input.dataUrls),
+    );
     const paint = l.model ? auctionLotPaintBlockHtml(l.model) : "";
     const inspection = l.model ? auctionLotInspectionBlocksHtml(l.model) : "";
     const desc = descriptionBlock(auctionArchiveDescriptions(l.record), translations);

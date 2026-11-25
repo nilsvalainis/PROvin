@@ -111,7 +111,61 @@ function Grid({ grid, toneCol }: { grid: ThecarapiPdfGrid; toneCol?: (col: strin
   );
 }
 
-function DamageZones({ rows }: { rows: readonly ThecarapiPdfDamage[] }) {
+/** Bojājuma bilžu indeksi ieraksta `photos` sarakstā pēc avota sasaistes (`photoUrls`). Bez sasaistes - tukšs. */
+export function thecarapiDamagePhotoIndexes(damage: ThecarapiPdfDamage, photos: readonly ThecarapiStoredPhoto[]): number[] {
+  if (!damage.photoUrls?.length) return [];
+  const out: number[] = [];
+  for (const url of damage.photoUrls) {
+    const i = photos.findIndex((p) => p.sourceUrl?.trim() === url.trim());
+    if (i >= 0 && !out.includes(i)) out.push(i);
+  }
+  return out;
+}
+
+function DamageThumbs({
+  indexes,
+  vin,
+  record,
+  onPhoto,
+}: {
+  indexes: readonly number[];
+  vin: string;
+  record: ThecarapiAdminRecord;
+  onPhoto: (index: number) => void;
+}) {
+  if (!indexes.length) return null;
+  return (
+    <span className="mt-1 flex flex-wrap gap-1" data-testid="tc-damage-thumbs">
+      {indexes.map((i) => {
+        const photo = record.photos[i]!;
+        const day = photoDay(photo, record);
+        return (
+          <button key={photo.id} type="button" onClick={() => onPhoto(i)} className="w-16 min-w-0 text-left" data-photo-id={photo.id}>
+            <img
+              src={photoSrc(vin, photo.id)}
+              alt={day ? `Bojājuma bilde ${day}` : "Bojājuma bilde"}
+              loading="lazy"
+              className="aspect-[4/3] w-full rounded border border-[#D2D2D7] bg-slate-100 object-cover"
+            />
+            {day ? <span className="block truncate text-[10px] leading-snug text-[var(--color-provin-muted)]">{day}</span> : null}
+          </button>
+        );
+      })}
+    </span>
+  );
+}
+
+function DamageZones({
+  rows,
+  vin,
+  record,
+  onPhoto,
+}: {
+  rows: readonly ThecarapiPdfDamage[];
+  vin: string;
+  record: ThecarapiAdminRecord;
+  onPhoto: (index: number) => void;
+}) {
   const zones: { zone: string; items: ThecarapiPdfDamage[] }[] = [];
   for (const d of rows) {
     const z = d.zone || "Cita zona";
@@ -131,6 +185,7 @@ function DamageZones({ rows }: { rows: readonly ThecarapiPdfDamage[] }) {
                 <span className="text-[var(--color-provin-muted)]">
                   {[d.type, d.size, d.quantity ? `${d.quantity} gab.` : "", d.repair ? `Remonts: ${d.repair}` : "", d.notes].filter(Boolean).join(" · ")}
                 </span>
+                <DamageThumbs indexes={thecarapiDamagePhotoIndexes(d, record.photos ?? [])} vin={vin} record={record} onPhoto={onPhoto} />
               </li>
             ))}
           </ul>
@@ -213,7 +268,7 @@ function RecordBlock({
           <KvList rows={model.dates} />
         </Section>
         <Section title={damages != null ? `Bojājumi (${damages})` : "Bojājumi"} empty={model.damages.length === 0}>
-          <DamageZones rows={model.damages} />
+          <DamageZones rows={model.damages} vin={vin} record={record} onPhoto={(i) => onPhoto(recordIndex, i)} />
         </Section>
         <Section title="Lakas biezums" empty={model.paint.length === 0}>
           <KvList

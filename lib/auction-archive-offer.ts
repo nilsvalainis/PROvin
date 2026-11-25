@@ -395,6 +395,8 @@ export type AuctionArchivePhoto = {
   auctionKey: string;
   date: string;
   caption: string;
+  /** Avota saite (ja zināma) - bojājuma bildes sasaistei ar konkrēto bojājumu. */
+  sourceUrl?: string;
 };
 
 export const AUCTION_ARCHIVE_MARK_ZONES = ["front", "rear", "left", "right", "roof"] as const;
@@ -513,7 +515,8 @@ function parsePhoto(raw: unknown): AuctionArchivePhoto | null {
   const o = raw as Record<string, unknown>;
   const id = str(o.id, 40);
   if (!PHOTO_ID_RE.test(id)) return null;
-  return { id, auctionKey: str(o.auctionKey, 120), date: str(o.date, 40), caption: str(o.caption, 160) };
+  const sourceUrl = typeof o.sourceUrl === "string" && /^https?:\/\//i.test(o.sourceUrl.trim()) && o.sourceUrl.length <= 2000 ? o.sourceUrl.trim() : "";
+  return { id, auctionKey: str(o.auctionKey, 120), date: str(o.date, 40), caption: str(o.caption, 160), ...(sourceUrl ? { sourceUrl } : {}) };
 }
 
 const EVENTS: readonly AuctionArchiveEvent[] = [
