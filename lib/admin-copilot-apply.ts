@@ -39,7 +39,7 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
+import { vendorTimelineRowDefaultInPdf, type CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { sanitizeVinRegistryClientText } from "@/lib/vin-registry-client-text";
 import {
@@ -127,7 +127,7 @@ function normalizeHistoryTimelineRow(a: CopilotVehicleHistoryTimelineAction): Ca
   if (!date || !description) return null;
   const country = normalizeCountryNameLv(a.country.trim()) || a.country.trim();
   const odometer = a.odometer?.trim() ? normalizeAutoRecordsOdometer(a.odometer.trim()) : "";
-  return { date, country, description, ...(odometer ? { odometer } : {}), includeInPdf: false };
+  return { date, country, description, ...(odometer ? { odometer } : {}), includeInPdf: vendorTimelineRowDefaultInPdf(description) };
 }
 
 function historyTimelineRowKey(r: CarVerticalTimelineRow): string {

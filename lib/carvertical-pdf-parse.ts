@@ -34,6 +34,17 @@ export type CarVerticalTimelineRow = {
   includeInPdf?: boolean;
 };
 
+/** Tehniskās apskates rinda (LV «apskate», DK «toldsyn/syn», AT «§57a», DE «Hauptuntersuchung»). */
+const TIMELINE_INSPECTION_RE = /apskat|toldsyn|periodisk syn|registreringssyn|§\s*57a|hauptuntersuchung/i;
+
+/**
+ * Ielasīšanas noklusējums laikposma rindai «PDF»: tehniskās apskates ieslēgtas (Nils 25.11 - tām jābūt
+ * laikjoslā), pārējās izslēgtas. Operators jebkuru rindu var izslēgt.
+ */
+export function vendorTimelineRowDefaultInPdf(description: string): boolean {
+  return TIMELINE_INSPECTION_RE.test(description);
+}
+
 export function emptyCarVerticalTimelineRow(): CarVerticalTimelineRow {
   return { date: "", country: "", description: "", includeInPdf: false };
 }
