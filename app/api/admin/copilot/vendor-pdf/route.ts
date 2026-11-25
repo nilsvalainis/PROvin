@@ -18,6 +18,8 @@ import { parseSourcePdfBlobRefs } from "@/lib/admin-source-pdf-blob-constants";
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { runCcVinPdfAgent, runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock } from "@/lib/finnik-report-parse";
+import { applyCarfaxReportToBlock } from "@/lib/carfax-report";
+import { saveCarfaxOriginalPdf } from "@/lib/carfax-pdf-store";
 import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
@@ -83,15 +85,17 @@ export async function POST(req: Request) {
   const isCcVin = targetRaw === "cc_vin";
   const isFinnik = targetRaw === "finnik";
   const isTraficomFi = targetRaw === "traficom_fi";
+  // CARFAX: deterministisks parsētājs pa sadaļām (bez AI) + oriģinālais PDF pasūtījumā.
+  const isCarfax = targetRaw === "carfax";
   // `auto_records` blokā gaidām oficiālā dīlera / rūpnīcas izdruku (BMW portāls, auto-records.com).
-  const target: VendorReportVendor | null = isLtab || isCcVin || isFinnik || isTraficomFi
+  const target: VendorReportVendor | null = isLtab || isCcVin || isFinnik || isTraficomFi || isCarfax
     ? null
     : targetRaw === "autodna" || targetRaw === "carvertical"
       ? targetRaw
       : targetRaw === "auto_records" || targetRaw === "dealer"
         ? "dealer"
         : null;
-  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi && !target) {
+  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi && !isCarfax && !target) {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
@@ -127,7 +131,7 @@ export async function POST(req: Request) {
   // nepieejamība nav iemesls atteikt augšupielādi — tā kļūst par kļūdu tikai tad, ja lokālais
   // parseris no šī PDF neizvelk nevienu ierakstu.
   let aiBlocked: { error: string; detail?: string } | null = null;
-  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi) {
+  if (!isLtab && !isCcVin && !isFinnik && !isTraficomFi && !isCarfax) {
     if (!getAnthropicApiKeyFromEnv()) {
       aiBlocked = { error: "missing_ai_key", detail: "Serverī nav ANTHROPIC_API_KEY" };
     } else {
@@ -168,6 +172,34 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (isCarfax) {
+      const extracted = await extractPdfTextDetailed(buffer, { fileName });
+      const applied = applyCarfaxReportToBlock(sourceBlocks.carfax, extracted.text ?? "");
+      if (!applied) {
+        return NextResponse.json(
+          { error: "extraction_failed", detail: "PDF nav CARFAX atskaite vai teksta slānis ir tukšs." },
+          { status: 422 },
+        );
+      }
+      const saved = await saveCarfaxOriginalPdf({
+        sessionId,
+        bytes: new Uint8Array(buffer),
+        vin: applied.report.vin,
+        csdd: sourceBlocks.csdd,
+      });
+      const block = saved.meta ? { ...applied.block, report: { ...applied.report, pdf: saved.meta } } : applied.block;
+      return NextResponse.json({
+        ok: true,
+        vendor: "carfax",
+        summary: applied.summary,
+        notes: saved.notes,
+        applied: [applied.summary],
+        skipped: [],
+        patchedSourceBlocks: { carfax: block },
+        changedKeys: ["carfax"] satisfies CopilotSourceKey[],
+      });
+    }
+
     if (isFinnik) {
       const extracted = await extractPdfTextDetailed(buffer, { fileName });
       const applied = applyFinnikReportToBlock(sourceBlocks.finnik, extracted.text ?? "");

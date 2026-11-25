@@ -39,7 +39,7 @@ export type VendorOwnerEvent = { source: string; date: string; country: string }
 export function vendorOwnerChangeEvents(sourceBlocks: WorkspaceSourceBlocks): VendorOwnerEvent[] {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const out: VendorOwnerEvent[] = [];
-  for (const key of ["carvertical", "autodna"] as const) {
+  for (const key of ["carvertical", "autodna", "carfax"] as const) {
     for (const t of blocks[key].vehicleHistoryTimeline ?? []) {
       if (!OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) continue;
       out.push({ source: SOURCE_BLOCK_LABELS[key], date: (t.date ?? "").trim(), country: (t.country ?? "").trim() });

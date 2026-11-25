@@ -23,6 +23,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
+import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -61,6 +62,7 @@ export const AI_SOURCE_COMMENT_BLOCK_KEYS: AiSourceCommentBlockKey[] = [
   "csdd",
   "autodna",
   "carvertical",
+  "carfax",
   "auto_records",
   "oneauto",
   "cc_vin",
@@ -106,6 +108,15 @@ export function sourceBlockPlainTextExcludingComments(
     case "carvertical":
       base = vendorAvotuBlockToPlainText({ ...blocks[blockKey], comments: "" }).trim();
       return appendAiContextRawSection(base, blocks[blockKey].aiContextRaw);
+    case "carfax":
+      // Strukturētā atskaite (ātrā pārbaude, bojājumu zonas, īpašnieki, vēsture) - AI komentāram viss.
+      base = [
+        vendorAvotuBlockToPlainText({ ...blocks.carfax, comments: "" }).trim(),
+        carfaxReportToPlainText(blocks.carfax.report),
+      ]
+        .filter(Boolean)
+        .join("\n");
+      return appendAiContextRawSection(base, blocks.carfax.aiContextRaw);
     case "citi_avoti":
       return citiAvotiToPlainText({
         sections: blocks.citi_avoti.sections.map((s) => ({ ...s, comments: "" })),
@@ -161,6 +172,7 @@ export function sourceBlockCommentsPlain(
       return blocks.csdd.comments;
     case "autodna":
     case "carvertical":
+    case "carfax":
       return blocks[blockKey].comments;
     case "citi_avoti":
       return blocks.citi_avoti.sections
@@ -343,6 +355,7 @@ export function applySourceBlockGeneratedComment(
       return { ...block, comments: html };
     case "autodna":
     case "carvertical":
+    case "carfax":
       return { ...(block as VendorAvotuBlockState), comments: html };
     case "citi_avoti": {
       const b = block as CitiAvotiBlockState;

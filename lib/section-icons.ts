@@ -124,6 +124,7 @@ export const SOURCE_BLOCK_ICON: Record<SourceBlockKey, SectionIconId> = {
   csdd: "scrollText",
   autodna: "database",
   carvertical: "barChart",
+  carfax: "fileText",
   auto_records: "shieldCheck",
   oneauto: "layers",
   cc_vin: "globe",

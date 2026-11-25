@@ -578,7 +578,7 @@ function checkFutureDates(blocks: WorkspaceSourceBlocks, nowMs: number, listingU
   for (const w of printableDealerServiceWorks(blocks.auto_records.serviceWorks ?? [])) {
     if (isImpossibleFutureDate(w.date, nowMs)) values.push({ source: SOURCE_BLOCK_LABELS.auto_records, value: w.date });
   }
-  for (const key of ["carvertical", "autodna"] as const) {
+  for (const key of ["carvertical", "autodna", "carfax"] as const) {
     const b = blocks[key];
     for (const r of [...(b.serviceHistory ?? []), ...(b.incidents ?? []).map((x) => ({ date: x.csngDate }))]) {
       if (isImpossibleFutureDate(r.date, nowMs)) values.push({ source: SOURCE_BLOCK_LABELS[key], value: r.date });
@@ -616,7 +616,7 @@ function checkCountry(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIss
   for (const w of blocks.auto_records.serviceWorks ?? []) add(iso2(extractCountryFromLocation(w.location ?? "")), "Dīlera vizītes");
   for (const r of blocks.auto_records.serviceHistory ?? []) add(iso2(r.country), "Dīlera vizītes");
   for (const l of lots) add(iso2(auctionArchiveLotFacts(l.record).country), "Izsoles");
-  for (const key of ["carvertical", "autodna"] as const) {
+  for (const key of ["carvertical", "autodna", "carfax"] as const) {
     const b = blocks[key];
     for (const r of b.serviceHistory ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
     for (const r of b.vehicleHistoryTimeline ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
@@ -890,10 +890,10 @@ function checkAiTexts(
 
 /* ---------- 6. Bojājumi / CSNg ---------- */
 
-/** Ierakstītie negadījumi / bojājumi (AutoDNA, CarVertical, LTAB) ar datumu un avotu. */
+/** Ierakstītie negadījumi / bojājumi (AutoDNA, CarVertical, CARFAX, LTAB) ar datumu un avotu. */
 function recordedDamageEvents(blocks: WorkspaceSourceBlocks): { source: string; ms: number; date: string }[] {
   const records: { source: string; ms: number; date: string }[] = [];
-  for (const key of ["autodna", "carvertical"] as const) {
+  for (const key of ["autodna", "carvertical", "carfax"] as const) {
     const b = blocks[key];
     for (const r of b.incidents ?? []) {
       const ms = dateMs(r.csngDate);

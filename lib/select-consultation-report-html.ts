@@ -78,6 +78,7 @@ function formatSalePricePdfCell(salePrice: string): string {
 const CONSULTATION_MILEAGE_OMIT_VENDOR_TITLES = new Set([
   SOURCE_BLOCK_LABELS.autodna,
   SOURCE_BLOCK_LABELS.carvertical,
+  SOURCE_BLOCK_LABELS.carfax,
 ]);
 
 function richBlockSubsection(title: string, bodyHtml: string): string {

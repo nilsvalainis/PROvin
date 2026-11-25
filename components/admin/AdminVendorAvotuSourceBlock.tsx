@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import {
@@ -16,7 +16,7 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
-import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
+import type { CarfaxBlockState, LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
@@ -73,7 +73,7 @@ import { AdminCarVerticalAutoPanel } from "@/components/admin/AdminCarVerticalAu
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-type BlockKey = "autodna" | "carvertical" | "citi_avoti";
+type BlockKey = "autodna" | "carvertical" | "carfax" | "citi_avoti";
 
 function vendorOdometerSourceLabel(
   blockKey: BlockKey,
@@ -115,6 +115,8 @@ type Props = {
   ) => void;
   photosPersistenceEnabled?: boolean;
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
+  /** Papildu panelis zem PDF augšupielādes (CARFAX strukturētā atskaite). */
+  extraPanel?: ReactNode;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -134,8 +136,13 @@ export function AdminVendorAvotuSourceBlock({
   applyPatchedBlocks,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  extraPanel,
 }: Props) {
-  const block = coerceVendorAvotuBlock(value);
+  // CARFAX strukturētā atskaite (`report`) jāsaglabā pie katras rindas labošanas - coerce to izmet.
+  const carfaxReport = blockKey === "carfax" ? (value as CarfaxBlockState | undefined)?.report : undefined;
+  const block: VendorAvotuBlockState = carfaxReport
+    ? ({ ...coerceVendorAvotuBlock(value), report: carfaxReport } as CarfaxBlockState)
+    : coerceVendorAvotuBlock(value);
   const serviceHistory = block.serviceHistory ?? [];
   const incidents = block.incidents ?? [];
   const incidentsHaveData = incidents.some(ltabRowHasData);
@@ -237,7 +244,7 @@ export function AdminVendorAvotuSourceBlock({
             applyPatchedBlocks={applyPatchedBlocks}
           />
         ) : null}
-        {blockKey === "carvertical" || blockKey === "autodna" ? (
+        {blockKey === "carvertical" || blockKey === "autodna" || blockKey === "carfax" ? (
           getSourceBlocks && applyPatchedBlocks ? (
             <AdminHistoryVendorPdfUpload
               target={blockKey}
@@ -249,6 +256,7 @@ export function AdminVendorAvotuSourceBlock({
             />
           ) : null
         ) : null}
+        {extraPanel}
         <div
           className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
@@ -704,7 +712,7 @@ export function AdminVendorAvotuSourceBlock({
       </div>
 
       <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${embedded ? "" : trafficFillLevel ? "px-2 pb-2" : ""}`}>
-        {blockKey === "autodna" || blockKey === "carvertical" ? (
+        {blockKey === "autodna" || blockKey === "carvertical" || blockKey === "carfax" ? (
           <AdminSourcePdfChecklist
             idPrefix={idBase}
             value={block.pdfChecklist}

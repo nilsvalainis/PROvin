@@ -58,6 +58,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { asvBlockToPlainText } from "@/lib/asv-report";
+import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { isoDateToLvDisplay } from "@/lib/csdd-extended-parse";
 import {
   buildVehicleLifecycleEvents,
@@ -388,6 +389,8 @@ function sourceHaystackFrom(blocks: WorkspaceSourceBlocks, extra: string[]): str
     csddFormToPlainText(blocks.csdd),
     vendorAvotuBlockToPlainText(blocks.autodna),
     vendorAvotuBlockToPlainText(blocks.carvertical),
+    vendorAvotuBlockToPlainText(blocks.carfax),
+    carfaxReportToPlainText(blocks.carfax.report),
     ltabBlockToPlainText(blocks.ltab),
     tirgusFormToPlainText(blocks.tirgus),
     listingAnalysisToPlainText(blocks.listing_analysis),
@@ -1000,7 +1003,7 @@ export function isMileageRelatedCommentField(field?: string | null): boolean {
     f === "summary" ||
     f === "sources_comparison" ||
     f.startsWith("source") ||
-    /csdd|autodna|carvertical|cc_vin|auto_records|mileage/.test(f)
+    /csdd|autodna|carvertical|carfax|cc_vin|auto_records|mileage/.test(f)
   );
 }
 

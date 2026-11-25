@@ -199,6 +199,7 @@ function collectConfirmedCountryMaps(
   const b = mergeSourceBlocksWithDefaults(blocks);
   for (const r of b.autodna.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
   for (const r of b.carvertical.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
+  for (const r of b.carfax.incidents.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
   for (const r of b.ltab.rows.filter(ltabRowHasData)) putIncident(r.csngDate, r.lossAmount, r.incidentNo);
   const citi0 = b.citi_avoti.sections[0];
   if (citi0) {
@@ -213,6 +214,7 @@ function collectConfirmedCountryMaps(
   const mileRows = [
     ...b.autodna.serviceHistory,
     ...b.carvertical.serviceHistory,
+    ...b.carfax.serviceHistory,
     ...b.auto_records.serviceHistory,
     ...(citi0?.serviceHistory ?? []),
     ...(b.csdd.mileageHistory ?? []),
@@ -687,7 +689,7 @@ function applyAppendRaw(
       },
     };
   }
-  if (action.source === "autodna" || action.source === "carvertical") {
+  if (action.source === "autodna" || action.source === "carvertical" || action.source === "carfax") {
     const key = action.source;
     const cur = ensureVendor(blocks[key]);
     return {
@@ -907,7 +909,7 @@ function applyDeleteIncident(
     sections[index] = { ...cur, incidents: rows };
     return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
   }
-  if (action.source === "autodna" || action.source === "carvertical") {
+  if (action.source === "autodna" || action.source === "carvertical" || action.source === "carfax") {
     const cur = ensureVendor(blocks[action.source]);
     const { rows, removed } = deleteIncidentRows(cur.incidents ?? [], target);
     if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
@@ -947,7 +949,7 @@ function applyDeleteMileage(
     sections[index] = { ...cur, serviceHistory: rows };
     return { blocks: { ...blocks, citi_avoti: { sections } }, ok: true };
   }
-  if (action.source === "autodna" || action.source === "carvertical") {
+  if (action.source === "autodna" || action.source === "carvertical" || action.source === "carfax") {
     const cur = ensureVendor(blocks[action.source]);
     const { rows, removed } = deleteMileageRows(cur.serviceHistory ?? [], target);
     if (removed === 0) return { blocks, ok: false, reason: "delete_no_match" };
@@ -961,6 +963,7 @@ const CLEARABLE_FIELDS_BY_SOURCE: Record<CopilotSourceKey, readonly CopilotClear
   csdd: [],
   autodna: ["comments", "aiContextRaw"],
   carvertical: ["comments", "aiContextRaw"],
+  carfax: ["comments", "aiContextRaw"],
   ltab: ["comments", "aiContextRaw", "pdfImportRaw"],
   auto_records: [
     "comments",
@@ -1073,6 +1076,8 @@ export function applyCopilotActions(
         next = { ...next, autodna: applyIncidentToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
         next = { ...next, carvertical: applyIncidentToVendor(next.carvertical, row) };
+      } else if (action.source === "carfax") {
+        next = { ...next, carfax: { ...next.carfax, ...applyIncidentToVendor(next.carfax, row) } };
       } else if (action.source === "cc_vin") {
         next = { ...next, cc_vin: applyIncidentToCcVin(next.cc_vin, action, row) };
       } else {
@@ -1113,6 +1118,8 @@ export function applyCopilotActions(
         next = { ...next, autodna: applyMileageToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
         next = { ...next, carvertical: applyMileageToVendor(next.carvertical, row) };
+      } else if (action.source === "carfax") {
+        next = { ...next, carfax: { ...next.carfax, ...applyMileageToVendor(next.carfax, row) } };
       } else if (action.source === "cc_vin") {
         next = { ...next, cc_vin: applyMileageToCcVin(next.cc_vin, row) };
       } else {
@@ -1134,6 +1141,8 @@ export function applyCopilotActions(
         next = { ...next, autodna: applyHistoryTimelineToVendor(next.autodna, row) };
       } else if (action.source === "carvertical") {
         next = { ...next, carvertical: applyHistoryTimelineToVendor(next.carvertical, row) };
+      } else if (action.source === "carfax") {
+        next = { ...next, carfax: { ...next.carfax, ...applyHistoryTimelineToVendor(next.carfax, row) } };
       } else {
         skipped.push({ action, reason: "unknown_source" });
         continue;
@@ -1352,6 +1361,10 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   pushMile("carvertical", b.carvertical.serviceHistory);
   pushClippedNote(lines, "carvertical comments", b.carvertical.comments);
   pushClippedNote(lines, "carvertical RAW/AI", b.carvertical.aiContextRaw);
+
+  pushInc("carfax", b.carfax.incidents);
+  pushMile("carfax", b.carfax.serviceHistory);
+  pushClippedNote(lines, "carfax comments", b.carfax.comments);
 
   pushInc("ltab", b.ltab.rows);
   pushClippedNote(lines, "ltab comments", b.ltab.comments);

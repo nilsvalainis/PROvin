@@ -24,7 +24,7 @@ export type AdminMobileOrderSectionId = (typeof ADMIN_MOBILE_ORDER_SECTIONS)[num
 /** Pasūtījuma doks: VIN SCAN tikai bezmaksas avoti (nekad auto-run maksas). */
 export const ADMIN_MOBILE_VIN_SCAN_EVENT = "provin-admin-mobile-vin-scan";
 
-export const ADMIN_MOBILE_PAID_SOURCE_KEYS = ["autodna", "carvertical", "auto_records", "oneauto", "asv"] as const;
+export const ADMIN_MOBILE_PAID_SOURCE_KEYS = ["autodna", "carvertical", "carfax", "auto_records", "oneauto", "asv"] as const;
 
 export const ADMIN_MOBILE_SOURCE_STATUS = {
   loaded: "Ielādēts",

@@ -56,6 +56,7 @@ const DISPLAY_ORDER: OwnerCountryId[] = ["latvia", "sweden", "denmark", "estonia
 const TITLE = {
   autodna: SOURCE_BLOCK_LABELS.autodna,
   carvertical: SOURCE_BLOCK_LABELS.carvertical,
+  carfax: SOURCE_BLOCK_LABELS.carfax,
   carinfo: SOURCE_BLOCK_LABELS.carinfo,
   tjekbil: SOURCE_BLOCK_LABELS.tjekbil,
   mnt: SOURCE_BLOCK_LABELS.mnt_ee,
@@ -354,6 +355,12 @@ function collectFromVendorPdf(
       pushCandidate(out, "finland", extractExplicitOwnerCount(b.ownersSummary ?? ""), title, 0);
       continue;
     }
+    if (title === TITLE.carfax) {
+      // CARFAX „Owners (BETA)”: „Īpašnieku skaits: N (Itālija)” - tikai, ja CARFAX īpašniekus uzskaitījis.
+      const text = b.ownersSummary ?? "";
+      pushCandidate(out, inferOwnerCountry(text, title), extractExplicitOwnerCount(text), title, 2);
+      continue;
+    }
     if (title === TITLE.autodna || title === TITLE.carvertical || title === TITLE.citi) {
       const text = [b.ownersSummary, b.comments].filter(Boolean).join("\n");
       const count = extractExplicitOwnerCount(text);
@@ -493,6 +500,13 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
     const text = b.comments;
     const country = inferOwnerCountry(text, SOURCE_BLOCK_LABELS[key]);
     pushCandidate(candidates, country, extractExplicitOwnerCount(text), SOURCE_BLOCK_LABELS[key], 2);
+  }
+
+  const carfaxOwners = blocks.carfax.report?.owners ?? [];
+  if (carfaxOwners.length > 0) {
+    const countries = [...new Set(carfaxOwners.map((o) => o.country).filter(Boolean))].join(", ");
+    const text = `Īpašnieku skaits: ${carfaxOwners.length} (${countries})`;
+    pushCandidate(candidates, inferOwnerCountry(text, TITLE.carfax), carfaxOwners.length, TITLE.carfax, 2);
   }
 
   const citiText = (blocks.citi_avoti.sections ?? [])

@@ -7,6 +7,7 @@ import {
   emptyCitiAvotiSection,
   emptyTirgusFields,
   SOURCE_BLOCK_LABELS,
+  toPdfManualVendorBlocks,
 } from "@/lib/admin-source-blocks";
 import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
 import { LONG_TIMELINE_BODY_A, longTimelineEntriesVendorBlock } from "@/lib/timeline-long-entries.fixture";
@@ -29,6 +30,8 @@ import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-so
 import { emptyLtabCertificate } from "@/lib/ltab-report-extract";
 import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { applyCarfaxReportToBlock } from "@/lib/carfax-report";
+import { CARFAX_FIXTURE_IT } from "@/lib/carfax-report-parse.fixtures";
 
 beforeEach(() => {
   setEcbDailyRatesForTests({
@@ -389,6 +392,36 @@ describe("PDF design system", () => {
     expect(html).toContain("1 ieraksts");
     expect(html).toContain("pdf-src-count-badge--ok");
     expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.carvertical);
+  });
+
+  it("CARFAX: avota zona ar ikonu, faktu karti, 1. lapas logo un nobraukumu vienotajā vēsturē", () => {
+    const blocks = createDefaultSourceBlocks();
+    const applied = applyCarfaxReportToBlock(blocks.carfax, CARFAX_FIXTURE_IT)!;
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: toPdfManualVendorBlocks({ ...blocks, carfax: applied.block }),
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("pdf-src-zone pdf-src-zone--carfax");
+    expect(html).toContain(".pdf-src-dot--carfax{background:#111827;}");
+    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain("194 280");
+    expect(html).toContain('alt="CARFAX"');
+    const hidden = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: toPdfManualVendorBlocks({ ...blocks, carfax: applied.block }),
+        pdfVisibility: mergePdfVisibility({ carfax: false }),
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(hidden).not.toContain("pdf-src-zone pdf-src-zone--carfax");
   });
 
   it("renders every section head with the same icon bubble and title style", () => {

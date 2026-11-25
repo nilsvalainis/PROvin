@@ -10,6 +10,7 @@ export type MileagePdfSourceKey =
   | "csdd"
   | "autodna"
   | "carvertical"
+  | "carfax"
   | "dealer"
   | "tjekbil"
   | "finnik"
@@ -67,6 +68,10 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
     sq === "cv"
   ) {
     return "carvertical";
+  }
+
+  if (t === normLabel(SOURCE_BLOCK_LABELS.carfax) || sq.startsWith("carfax")) {
+    return "carfax";
   }
 
   if (
@@ -172,6 +177,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND: Record<MileagePdfSourceKey, { full: stri
   csdd: { full: "CSDD", abbrev: "CSDD" },
   autodna: { full: "AutoDNA", abbrev: "DNA" },
   carvertical: { full: "CarVertical", abbrev: "CV" },
+  carfax: { full: "CARFAX", abbrev: "CFX" },
   dealer: { full: SOURCE_BLOCK_LABELS.auto_records, abbrev: "DEALER" },
   tjekbil: { full: SOURCE_BLOCK_LABELS.tjekbil, abbrev: "DK" },
   finnik: { full: SOURCE_BLOCK_LABELS.finnik, abbrev: "NL" },
@@ -193,6 +199,7 @@ export const MILEAGE_PDF_SOURCE_COLOR: Record<MileagePdfSourceKey, string> = {
   csdd: "#16A34A",
   autodna: "#1E3A8A",
   carvertical: "#EAB308",
+  carfax: "#111827",
   dealer: "#EA580C",
   tjekbil: "#BE123C",
   finnik: "#C2410C",
@@ -212,6 +219,7 @@ export const PDF_SOURCE_WASH: Record<MileagePdfSourceKey, string> = {
   csdd: "#E6F2EA",
   autodna: "#FFF1E8",
   carvertical: "#E7F6FB",
+  carfax: "#EEF0F3",
   dealer: "#E8F1FC",
   tjekbil: "#FDECEC",
   finnik: "#FFF4ED",
@@ -230,6 +238,7 @@ export const MILEAGE_PDF_SOURCE_LEGEND_ORDER: MileagePdfSourceKey[] = [
   "csdd",
   "autodna",
   "carvertical",
+  "carfax",
   "dealer",
   "tjekbil",
   "finnik",

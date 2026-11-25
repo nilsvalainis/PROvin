@@ -51,7 +51,8 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 
 Sources (must match exactly):
 - csdd is handled by dedicated CSDD PDF import when enabled. No JSON actions for csdd. That import runs on the server before you, and it fills empty CSDD fields (owner count, previous country, inspections, mileage, and the other mapped fields) only when a CSDD PDF is attached in THIS message. If this message has no PDF, do not claim any field was filled and do not say that chat cannot import CSDD. Reply in Latvian that this message has no PDF and the file must be attached again. If CURRENT TABLES already show CSDD values, describe those.
-- autodna | carvertical | ltab | auto_records | cc_vin | citi_avoti | tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi
+- autodna | carvertical | carfax | ltab | auto_records | cc_vin | citi_avoti | tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi
+- CARFAX (carfax.eu „Vehicle History Report”) → carfax. Upload in the CARFAX block runs a dedicated local parser; in chat only add rows the tables do not have yet.
 
 Actions:
 1) upsert_incident — NEGADĪJUMU VĒSTURE: date, lossAmount (EUR or free text), country. ONLY real accidents / insurance claims / damage-loss events. Never invent incidents. Never map vehicle value/price records into incidents.

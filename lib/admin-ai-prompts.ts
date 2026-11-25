@@ -565,6 +565,13 @@ CARVERTICAL FOCUS:
 - Body damage zones (Virsbūves bojājums), insurance claims, and timeline events unique to CarVertical.
 - Apply DAMAGE & CLAIM AMOUNT CONTEXT rules — correlate EUR with zones and vehicle age/class; brief mileage note only if CV differs from other sources.`;
   }
+  if (blockLabel === L.carfax) {
+    return `
+
+CARFAX FOCUS:
+- Quick check flags (stolen, scrapped, import, taxi, recalls, damage / total loss), damage records with zones, components and severity, airbag / salvage events, inspections and owner records unique to CARFAX.
+- "Estimated repair cost" is CARFAX's rough estimate, not an insurance payout; "New owner reported" with dealer type is dealer stock, not a private owner. Brief mileage note only if CARFAX differs from other sources.`;
+  }
   if (blockLabel === L.ltab) {
     return `
 

@@ -197,6 +197,7 @@ import {
   BRAND_LOGO_PDF_SECTION_SLOT_PX,
 } from "@/lib/brand-logo-display";
 import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
+import { CARFAX_ICON_SVG } from "@/lib/pdf-source-logo-svgs";
 import {
   pdfBrandLogoImgHtml,
   pdfDealerLogoDataUri,
@@ -341,6 +342,7 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   const s = new Set<string>();
   if (!vis.autodna) s.add(L.autodna);
   if (!vis.carvertical) s.add(L.carvertical);
+  if (!vis.carfax) s.add(L.carfax);
   if (!vis.tjekbil) s.add(L.tjekbil);
   if (!vis.finnik) s.add(L.finnik);
   if (!vis.mnt_ee) s.add(L.mnt_ee);
@@ -632,6 +634,7 @@ function computeProvinPdfSourcesUsedCounts(
   // CSDD skaitām vienreiz (publiskais reģistrs, n2) - agrāk arī šeit, un „Kopā” bija par 1 lielāks nekā avotu saraksts.
   if (vis.autodna && vendorPdfBlockHasData(getVendorPdfBlock(p, L.autodna))) n1++;
   if (vis.carvertical && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carvertical))) n1++;
+  if (vis.carfax && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carfax))) n1++;
   if (payloadAutoRecordsHasData(p, vis)) n1++;
   if (payloadCcVinHasData(p, vis)) n1++;
   if (vis.tjekbil && vendorPdfBlockHasData(getVendorPdfBlock(p, L.tjekbil))) n1++;
@@ -664,7 +667,7 @@ function collectPdfCheckedSources(
     const f = p.csddForm;
     out.push({ label: L.csdd, count: csddPdfRecordCount(f) });
   }
-  for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo, L.traficom_fi] as const) {
+  for (const title of [L.autodna, L.carvertical, L.carfax, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo, L.traficom_fi] as const) {
     const b = getVendorPdfBlock(p, title);
     if (!b || !vendorPdfBlockHasData(b)) continue;
     if (vendorTitlesOmittedForPdf(vis).has(title)) continue;
@@ -942,6 +945,7 @@ function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfT
     if (s.label === L.csdd) return { logo: { key: "csdd" }, name: "CSDD", category: "catRegistry", count: s.count };
     if (s.label === L.autodna) return { logo: { key: "autodna" }, name: "autoDNA", category: "catHistory", count: s.count };
     if (s.label === L.carvertical) return { logo: { key: "carvertical" }, name: "carVertical", category: "catHistory", count: s.count };
+    if (s.label === L.carfax) return { logo: { key: "carfax" }, name: "CARFAX", category: "catHistory", count: s.count };
     if (s.label === PDF_SOURCE_DEALER_TITLE) {
       const uri = pdfTopMakeLogoUri(makeModel);
       const make = makeModel.split(/\s+/)[0] ?? "";
@@ -1142,6 +1146,9 @@ function vendorSectionIconHtml(title: string): string {
   }
   if (title === L.carinfo) {
     return pdfBrandLogoImgHtml(PDF_SOURCE_LOGO_DATA_URI.carinfo);
+  }
+  if (title === L.carfax) {
+    return pdfBrandLogoImgHtml(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(CARFAX_ICON_SVG)}`);
   }
   return sectionIconPdfHtml(vendorPdfTitleToIconId(title));
 }
@@ -2339,6 +2346,7 @@ function buildVendorAvotuSubsection(
   const L = SOURCE_BLOCK_LABELS;
   if (b.title === L.autodna && !vis.autodna) return "";
   if (b.title === L.carvertical && !vis.carvertical) return "";
+  if (b.title === L.carfax && !vis.carfax) return "";
   if (b.title === L.tjekbil && !vis.tjekbil) return "";
   if (b.title === L.mnt_ee && !vis.mnt_ee) return "";
   if (b.title === L.lkf_ee && !vis.lkf_ee) return "";
@@ -2604,6 +2612,7 @@ function buildAvotuDatiSectionHtml(
   };
   const autodna = vendorHtml(SOURCE_BLOCK_LABELS.autodna);
   const carvertical = vendorHtml(SOURCE_BLOCK_LABELS.carvertical);
+  const carfax = vendorHtml(SOURCE_BLOCK_LABELS.carfax);
   const autoRecords = buildAutoRecordsAvotuSubsection(
     resolvedDealerBlock(p),
     { ...vis, auto_records: dealerPdfVisible(p, vis) },
@@ -2641,6 +2650,7 @@ function buildAvotuDatiSectionHtml(
     csdd,
     autodna,
     carvertical,
+    carfax,
     autoRecords,
     ccVin,
     asv,

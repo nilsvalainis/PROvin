@@ -8,6 +8,7 @@ export const COPILOT_SOURCE_KEYS = [
   "csdd",
   "autodna",
   "carvertical",
+  "carfax",
   "ltab",
   "auto_records",
   "cc_vin",
@@ -61,11 +62,11 @@ export type CopilotMileageAction = {
 /**
  * Vispārīgs laikposma fakts, kas nav nobraukums/negadījums (piem. AutoDNA/CarVertical
  * vēsturiskā cena vai sludinājums ārvalstīs) - "Vēstures kopsavilkums" PDF lentē.
- * Tikai `autodna` / `carvertical`, jo tie ir vienīgie bloki ar `vehicleHistoryTimeline`.
+ * Tikai `autodna` / `carvertical` / `carfax`, jo tie ir vienīgie bloki ar `vehicleHistoryTimeline`.
  */
 export type CopilotVehicleHistoryTimelineAction = {
   type: "upsert_vehicle_history_timeline_row";
-  source: "autodna" | "carvertical";
+  source: "autodna" | "carvertical" | "carfax";
   date: string;
   description: string;
   country: string;

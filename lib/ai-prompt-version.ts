@@ -243,5 +243,8 @@
  *   ilgums un km, odometra samazinājums periodā, periodi bez nosakāma km, īsi turēšanas periodi (< 1 g.),
  *   ārvalstu km zināms tikai līdz gadam X. Blokā tos neraksta - CSDD komentārā pieminēt faktiski
  *   (dīlera / Business variantā bez ieteikumiem).
+ * - 2026-11-25.0 - Jauns avots CARFAX (carfax.eu PDF): avota komentāra fokuss (ātrā pārbaude, bojājumu
+ *   zonas / smagums, drošības spilveni, salvage; remonta aplēse nav izmaksa; dīleris nav īpašnieks),
+ *   Copilot avotu sarakstā `carfax`.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-24.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-25.0";

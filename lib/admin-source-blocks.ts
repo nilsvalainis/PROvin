@@ -27,6 +27,14 @@ import {
   CHECKCAR_VIN_HOME_URL,
 } from "@/lib/admin-vin-urls";
 import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
+import {
+  CARFAX_ADMIN_LABEL,
+  CARFAX_HOME_URL,
+  carfaxPdfFactTexts,
+  carfaxReportToPlainText,
+  normalizeCarfaxReport,
+  type CarfaxReport,
+} from "@/lib/carfax-report";
 import { parseSpeckrOrderSnapshotRaw } from "@/lib/speckr-order";
 import {
   emptyOneautoIngest,
@@ -179,6 +187,7 @@ export const SOURCE_BLOCK_KEYS = [
   "csdd",
   "autodna",
   "carvertical",
+  "carfax",
   "auto_records",
   "oneauto",
   "cc_vin",
@@ -227,6 +236,7 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   tirgus: "Tirgus dati",
   autodna: "AutoDNA",
   carvertical: "CarVertical",
+  carfax: CARFAX_ADMIN_LABEL,
   auto_records: "OFICIĀLĀ DĪLERA DATI",
   oneauto: "ONEAUTO",
   cc_vin: CC_VIN_ADMIN_LABEL,
@@ -268,6 +278,7 @@ export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   tirgus: "https://tirgusdati.lv/app/listings/history",
   autodna: AUTODNA_LV_HOME_URL,
   carvertical: CARVERTICAL_REPORTS_URL,
+  carfax: CARFAX_HOME_URL,
   auto_records: AUTORECORDS_BASE_URL.replace(/\/$/, ""),
   oneauto: "https://www.oneautoapi.com/home/api/",
   cc_vin: CHECKCAR_VIN_HOME_URL,
@@ -289,6 +300,7 @@ export const SOURCE_BLOCK_ADMIN_TITLE_COLOR: Record<SourceBlockKey, string> = {
   tirgus: "text-blue-900",
   autodna: "text-sky-700",
   carvertical: "text-yellow-600",
+  carfax: "text-slate-900",
   auto_records: "text-orange-500",
   oneauto: "text-indigo-800",
   cc_vin: "text-violet-700",
@@ -1173,11 +1185,18 @@ export type ListingAnalysisBlockState = {
   aiContextRaw: string;
 };
 
+/**
+ * CARFAX - tā pati forma kā AutoDNA / CarVertical + strukturētā atskaite (`report`), ko aizpilda
+ * PDF parsētājs vai nākotnes automātika (sk. `lib/carfax-report.ts`).
+ */
+export type CarfaxBlockState = VendorAvotuBlockState & { report?: CarfaxReport };
+
 export type WorkspaceSourceBlocks = {
   csdd: CsddFormFields;
   tirgus: TirgusFormFields;
   autodna: VendorAvotuBlockState;
   carvertical: VendorAvotuBlockState;
+  carfax: CarfaxBlockState;
   auto_records: AutoRecordsBlockState;
   oneauto: OneautoBlockState;
   cc_vin: CcVinBlockState;
@@ -1591,6 +1610,7 @@ export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlock
   take(blocks.csdd);
   take(blocks.autodna);
   take(blocks.carvertical);
+  take(blocks.carfax);
   take(blocks.tjekbil);
   take(blocks.finnik);
   take(blocks.mnt_ee);
@@ -1609,6 +1629,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     tirgus: emptyTirgusFields(),
     autodna: emptyVendorAvotuBlock(),
     carvertical: emptyVendorAvotuBlock(),
+    carfax: emptyVendorAvotuBlock(),
     auto_records: emptyAutoRecordsBlock(),
     oneauto: emptyOneautoBlock(),
     cc_vin: seedCcVinDefaultComment(emptyCcVinBlock()),
@@ -1855,15 +1876,21 @@ export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
   return parts.join("\n\n");
 }
 
-/** Zaudējumu summas avoti (AutoDNA, CarVertical) — ne AUTO RECORDS. */
-const LOSS_VENDOR_KEYS = ["autodna", "carvertical"] as const satisfies readonly StandardSourceBlockKey[];
+/** Zaudējumu summas avoti (AutoDNA, CarVertical, CARFAX) — ne AUTO RECORDS. */
+const LOSS_VENDOR_KEYS = ["autodna", "carvertical", "carfax"] as const satisfies readonly StandardSourceBlockKey[];
+
+/** Vendor bloku atslēgas (AutoDNA / CarVertical / CARFAX) - vienāda forma, vienādi patērētāji. */
+export const VENDOR_HISTORY_BLOCK_KEYS = LOSS_VENDOR_KEYS;
+export type VendorHistoryBlockKey = (typeof LOSS_VENDOR_KEYS)[number];
 
 export function mergeVendorBlocksPlain(blocks: WorkspaceSourceBlocks): string {
   const parts: string[] = [];
   for (const k of LOSS_VENDOR_KEYS) {
     const t = vendorAvotuBlockToPlainText(blocks[k]);
-    if (!t) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[k]}】\n${t}`);
+    const report = k === "carfax" ? carfaxReportToPlainText(blocks.carfax?.report) : "";
+    const body = [t, report].filter(Boolean).join("\n");
+    if (!body) continue;
+    parts.push(`【${SOURCE_BLOCK_LABELS[k]}】\n${body}`);
   }
   const ar = autoRecordsBlockToPlainText(blocks.auto_records).trim();
   if (ar) parts.push(`【${SOURCE_BLOCK_LABELS.auto_records}】\n${ar}`);
@@ -1950,7 +1977,12 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
   for (const k of LOSS_VENDOR_KEYS) {
     const b = blocks[k];
     if (!vendorAvotuBlockHasContent(b)) continue;
+    // CARFAX: ātrā pārbaude, īpašnieki un bojājumu detaļas faktu kartē (tā pati kv tabula kā reģistriem).
+    const carfaxFacts = k === "carfax" ? carfaxPdfFactTexts(blocks.carfax?.report) : null;
     out.push({
+      ...(carfaxFacts?.ownersSummary ? { ownersSummary: carfaxFacts.ownersSummary } : {}),
+      ...(carfaxFacts?.statusRecords ? { statusRecords: carfaxFacts.statusRecords } : {}),
+      ...(carfaxFacts?.autoNotes ? { autoNotes: carfaxFacts.autoNotes } : {}),
       title: SOURCE_BLOCK_LABELS[k],
       mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
       incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
@@ -2697,6 +2729,19 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
   };
 }
 
+function repairCarfaxBlock(b: CarfaxBlockState | undefined): CarfaxBlockState {
+  const v = repairVendorBlock(b);
+  const report = normalizeCarfaxReport(b?.report);
+  return report ? { ...v, report } : v;
+}
+
+function parseCarfaxBlockRaw(raw: Record<string, unknown>): CarfaxBlockState {
+  const hasVendorShape = "serviceHistory" in raw || "incidents" in raw || "photos" in raw || "photoGroups" in raw;
+  const v = hasVendorShape ? parseVendorAvotuBlockRaw(raw) : emptyVendorAvotuBlock();
+  const report = normalizeCarfaxReport(raw.report);
+  return report ? { ...v, report } : v;
+}
+
 function repairCitiSection(s: CitiAvotiSectionState | undefined): CitiAvotiSectionState {
   const v = repairVendorBlock(s);
   return {
@@ -2739,6 +2784,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
     csdd: csddRepaired,
     autodna: repairVendorBlock(blocks.autodna),
     carvertical: repairVendorBlock(blocks.carvertical),
+    carfax: repairCarfaxBlock(blocks.carfax),
     tjekbil: repairVinRegistryBlock(blocks.tjekbil),
     finnik: repairVinRegistryBlock(blocks.finnik),
     traficom_fi: repairVinRegistryBlock(blocks.traficom_fi),
@@ -2879,6 +2925,10 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
   const rawCarvertical = o.carvertical;
   if (rawCarvertical && typeof rawCarvertical === "object") {
     base.carvertical = parseVendorAvotuBlockRaw(rawCarvertical as Record<string, unknown>);
+  }
+  const rawCarfax = o.carfax;
+  if (rawCarfax && typeof rawCarfax === "object") {
+    base.carfax = parseCarfaxBlockRaw(rawCarfax as Record<string, unknown>);
   }
 
   for (const key of REGISTRY_STYLE_BLOCK_KEYS) {

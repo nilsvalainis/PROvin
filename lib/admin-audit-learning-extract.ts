@@ -98,6 +98,7 @@ export function extractLearningSnippetsFromDraft(draft: OrderDraftState): string
     [SOURCE_BLOCK_LABELS.csdd, blocks.csdd.comments],
     [SOURCE_BLOCK_LABELS.autodna, blocks.autodna.comments],
     [SOURCE_BLOCK_LABELS.carvertical, blocks.carvertical.comments],
+    [SOURCE_BLOCK_LABELS.carfax, blocks.carfax.comments],
     [SOURCE_BLOCK_LABELS.auto_records, blocks.auto_records.comments],
     [SOURCE_BLOCK_LABELS.cc_vin, blocks.cc_vin.comments],
     [SOURCE_BLOCK_LABELS.tjekbil, blocks.tjekbil.comments],
