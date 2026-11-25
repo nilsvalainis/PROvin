@@ -22,7 +22,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { archiveFieldGetter, auctionArchiveLotFacts } from "@/lib/auction-archive-facts";
 import { extractCountryFromLocation } from "@/lib/auto-records-paste-parse";
-import { CC_VIN_ADMIN_LABEL } from "@/lib/cc-vin-report";
+import { CC_VIN_ADMIN_LABEL, ccVinSaleRowHasData } from "@/lib/cc-vin-report";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import {
   classifyFuelKind,
@@ -52,7 +52,7 @@ import {
   parseOdometerKm,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
-import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
+import { buildVehicleLifecycleEvents, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export type SourceIssueSeverity = "critical" | "warn" | "info";
@@ -76,7 +76,11 @@ export type SourceIssueKind =
   | "damage"
   | "csng"
   | "auction_price"
-  | "listing_claim";
+  | "listing_claim"
+  | "ai_numbers"
+  | "ai_first_reg_country"
+  | "ai_owner_count_mismatch"
+  | "cover_auctions";
 
 export type SourceIssueValue = { source: string; value: string };
 
@@ -1080,6 +1084,225 @@ function checkAuctionPrices(blocks: WorkspaceSourceBlocks, lots: Lot[], out: Sou
   }
 }
 
+/* ---------- 8. Saskaņotība pirms PDF (24.11 audits, 1. punkts) ---------- */
+
+const KM_IN_TEXT_RE = /(?<![\d.,])(\d{1,3}(?:[   ]\d{3})+|\d{4,7})\s*km\b/gu;
+/** Aptuvens / aprēķināts skaitlis («ap», «~», «vidēji», «gadā», intervāls) - nav rādījums. */
+const KM_APPROX_CONTEXT_RE =
+  /~|≈|\bap\.?\s*$|\baptuven|\bvidēj|\bgadā\b|\bmēnesī\b|intervāl|\bvirs\s*$|\bzem\s*$|\bmazāk\s+par\s*$|\bvairāk\s+par\s*$|robež|diapazon/iu;
+const DAY_DATE_RE = /(?<![\d.])(\d{1,2})\.(\d{1,2})\.((?:19|20)\d{2})(?![\d])/g;
+
+function sentenceAround(text: string, idx: number): string {
+  const start = Math.max(text.lastIndexOf(".", idx - 1 - 12), text.lastIndexOf("\n", idx), 0);
+  const endDot = text.indexOf(". ", idx);
+  const end = endDot < 0 ? text.length : Math.min(endDot + 1, idx + 220);
+  return text.slice(start, end).replace(/^[.\s]+/, "").trim();
+}
+
+/** Visi skaitļi avotu datos (km, summas, intervāli) - ar atstarpēm grupētie arī. */
+function numbersInData(haystack: string): number[] {
+  const out = new Set<number>();
+  for (const m of haystack.matchAll(/\d{1,3}(?:[   .,]\d{3})+|\d+/g)) {
+    const n = Number(m[0].replace(/[^\d]/g, ""));
+    if (Number.isFinite(n) && n >= 1000 && n < 5_000_000) out.add(n);
+  }
+  return [...out];
+}
+
+function dataDateSet(haystack: string): Set<number> {
+  const out = new Set<number>();
+  for (const m of haystack.matchAll(/(?<!\d)(\d{1,2})[./](\d{1,2})[./]((?:19|20)\d{2})(?!\d)|(?<!\d)((?:19|20)\d{2})-(\d{2})-(\d{2})(?!\d)/g)) {
+    const [d, mo, y] = m[1] ? [m[1], m[2], m[3]] : [m[6], m[5], m[4]];
+    const ms = Date.UTC(Number(y), Number(mo) - 1, Number(d));
+    if (Number.isFinite(ms)) out.add(ms);
+  }
+  return out;
+}
+
+/**
+ * (a) Katrs precīzs km skaitlis un dienas datums AI tekstā eksistē datos (ar pielaidi):
+ * km ±10 pret jebkuru datu skaitli vai divu nobraukuma rindu starpību («kritums par 87 046 km»);
+ * datums ±1 diena pret jebkuru datu datumu. Apaļi (dalās ar 1 000) un aptuveni skaitļi netiek pārbaudīti.
+ */
+function checkAiNumbers(
+  blocks: WorkspaceSourceBlocks,
+  rows: UnifiedMileageRow[],
+  texts: readonly { label: string; text: string }[],
+  out: SourceIssue[],
+): void {
+  if (texts.length === 0) return;
+  const haystack = JSON.stringify(blocks);
+  const dataNums = numbersInData(haystack);
+  const rowKms = rows.map((r) => parseOdometerKm(r.odometer)).filter((n): n is number => n != null && n > 0);
+  const diffs: number[] = [];
+  for (let i = 0; i < rowKms.length; i++) for (let j = i + 1; j < rowKms.length; j++) diffs.push(Math.abs(rowKms[i]! - rowKms[j]!));
+  const allowed = [...dataNums, ...rowKms, ...diffs];
+  const dates = dataDateSet(haystack);
+  const kmValues: SourceIssueValue[] = [];
+  const dateValues: SourceIssueValue[] = [];
+  for (const t of texts) {
+    const plain = adminRichHtmlToPlainText(t.text ?? "");
+    if (!plain.trim()) continue;
+    for (const m of plain.matchAll(KM_IN_TEXT_RE)) {
+      const n = Number(m[1]!.replace(/[^\d]/g, ""));
+      if (!Number.isFinite(n) || n < 1000 || n % 1000 === 0) continue;
+      const before = plain.slice(Math.max(0, (m.index ?? 0) - 24), m.index ?? 0);
+      if (KM_APPROX_CONTEXT_RE.test(before)) continue;
+      const after = plain.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 14);
+      if (/^\s*(?:\/|gadā|mēnesī|dienā|nedēļā|per\b|a\s+year)/iu.test(after)) continue;
+      if (allowed.some((a) => Math.abs(a - n) <= 10)) continue;
+      const nearest = rowKms.length ? rowKms.reduce((b, a) => (Math.abs(a - n) < Math.abs(b - n) ? a : b)) : null;
+      const v = `«${fmtKm(n)}»${nearest != null ? ` (tuvākais rādījums datos ${fmtKm(nearest)})` : ""}`;
+      if (!kmValues.some((x) => x.source === t.label && x.value === v)) kmValues.push({ source: t.label, value: v });
+    }
+    for (const m of plain.matchAll(DAY_DATE_RE)) {
+      const ms = Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+      if (!Number.isFinite(ms) || Number(m[2]) > 12 || Number(m[1]) > 31) continue;
+      if (dates.has(ms) || dates.has(ms - DAY_MS) || dates.has(ms + DAY_MS)) continue;
+      const v = `«${m[0]}» - ${sentenceAround(plain, m.index ?? 0).slice(0, 120)}`;
+      if (!dateValues.some((x) => x.source === t.label && x.value.startsWith(`«${m[0]}»`))) dateValues.push({ source: t.label, value: v });
+    }
+  }
+  if (kmValues.length > 0) {
+    push(out, { id: "ai_numbers_km", kind: "ai_numbers", severity: "warn", title: "AI tekstā km skaitlis, kura nav nobraukuma datos", values: kmValues.slice(0, 8) });
+  }
+  if (dateValues.length > 0) {
+    push(out, { id: "ai_numbers_date", kind: "ai_numbers", severity: "warn", title: "AI tekstā datums, kura nav avotu datos", values: dateValues.slice(0, 8) });
+  }
+}
+
+/** «Vācijā» -> «Vācija», «Nīderlandē» -> «Nīderlande» (lokatīvs -> nominatīvs), ISO. */
+function locativeCountryIso(word: string): string {
+  const w = word.trim();
+  const nom = w.replace(/ā$/u, "a").replace(/ē$/u, "e").replace(/ī$/u, "is");
+  return iso2(nom) || iso2(w);
+}
+
+const FIRST_REG_PHRASE_RE =
+  /(?:pirm\p{L}*\s+(?:reizi\s+)?reģistr\p{L}*|pirmoreiz\s+reģistr\p{L}*|izcelsmes\s+valst\p{L}*)[^.!?\n]{0,60}?\b(\p{Lu}\p{Ll}+(?:ā|ē|ī))(?![\p{L}])/gu;
+
+/** (b) Viena 1. reģistrācijas valsts: 1. lapa (dzīves cikls) pret AI tekstiem un CSDD iepriekšējo valsti. */
+function checkFirstRegCountryConsistency(
+  blocks: WorkspaceSourceBlocks,
+  texts: readonly { label: string; text: string }[],
+  listingUrl: string | null | undefined,
+  out: SourceIssue[],
+): void {
+  const events = buildVehicleLifecycleEvents({
+    csddForm: blocks.csdd,
+    autoRecordsBlock: blocks.auto_records,
+    oneautoBlock: blocks.oneauto,
+    ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    citiAvoti: blocks.citi_avoti,
+    tirgusForm: blocks.tirgus,
+    listingUrl: listingUrl ?? null,
+  });
+  const summary = vehicleFirstRegistrationSummary(events);
+  const firstIso = (summary.countryIso || iso2(summary.country)).toUpperCase();
+  if (!firstIso || firstIso === "LV") return;
+  const firstLabel = countryLv(firstIso);
+  const prev = iso2(blocks.csdd.previousRegistrationCountry);
+  if (prev && prev !== "LV" && prev !== firstIso) {
+    push(out, {
+      id: "first_reg_vs_csdd_prev",
+      kind: "first_registration",
+      severity: "info",
+      title: "1. reģistrācijas valsts nav CSDD iepriekšējā valsts - tekstā vienā teikumā jāpaskaidro ceļš",
+      values: [
+        { source: "1. lapa (vēstures kopsavilkums)", value: firstLabel },
+        { source: "CSDD (iepriekšējā valsts)", value: countryLv(prev) },
+      ],
+    });
+  }
+  const values: SourceIssueValue[] = [];
+  for (const t of texts) {
+    const plain = adminRichHtmlToPlainText(t.text ?? "");
+    for (const m of plain.matchAll(FIRST_REG_PHRASE_RE)) {
+      const iso = locativeCountryIso(m[1]!);
+      if (!iso || iso === "LV" || iso === firstIso) continue;
+      values.push({ source: t.label, value: `«${m[0].slice(0, 140)}»` });
+    }
+  }
+  if (values.length === 0) return;
+  push(out, {
+    id: "ai_first_reg_country",
+    kind: "ai_first_reg_country",
+    severity: "warn",
+    title: `AI tekstā cita 1. reģistrācijas valsts (1. lapā ${firstLabel})`,
+    values: [{ source: "1. lapa", value: firstLabel }, ...values.slice(0, 6)],
+  });
+}
+
+const OWNER_WORDS: Record<string, number> = {
+  viens: 1, viena: 1, divi: 2, divas: 2, "trīs": 3, "četri": 4, "četras": 4, pieci: 5, piecas: 5, piecus: 5,
+  "seši": 6, "sešus": 6, "septiņi": 7, "septiņus": 7, "astoņi": 8, "astoņus": 8, "deviņi": 9, "deviņus": 9,
+  divus: 2, "četrus": 4, desmit: 10,
+};
+const OWNER_TOTAL_RE = new RegExp(
+  `(?<![\\p{L}\\d.])(\\d{1,2}|${Object.keys(OWNER_WORDS).join("|")})\\s+(?:\\p{L}+\\s+)?īpašniek(?!(?:u|a)\\s+maiņ)`,
+  "giu",
+);
+/** Teikums par vienu valsti / posmu - nav kopējais skaits. */
+const OWNER_SCOPED_RE = /ārvalst|ārzem|latvij|posm|periodā|līzing|turētāj|pirms\s+import|kopš/iu;
+
+function ownerSentenceScoped(sentence: string): boolean {
+  if (OWNER_SCOPED_RE.test(sentence)) return true;
+  // Valsts lokatīvā («Dānijā 1 īpašnieks») - posma skaits, ne kopējais.
+  for (const m of sentence.matchAll(/(?<![\p{L}])(\p{Lu}\p{Ll}+(?:ā|ē))(?![\p{L}])/gu)) {
+    if (locativeCountryIso(m[1]!)) return true;
+  }
+  return false;
+}
+
+/** (c) Viens kopējais īpašnieku skaits visos AI tekstos. */
+function checkOwnerCountAcrossTexts(texts: readonly { label: string; text: string }[], out: SourceIssue[]): void {
+  const byCount = new Map<number, Set<string>>();
+  for (const t of texts) {
+    const plain = adminRichHtmlToPlainText(t.text ?? "");
+    for (const m of plain.matchAll(OWNER_TOTAL_RE)) {
+      const sentence = sentenceAround(plain, m.index ?? 0);
+      if (ownerSentenceScoped(sentence)) continue;
+      const raw = m[1]!.toLowerCase();
+      const n = /^\d+$/.test(raw) ? Number(raw) : OWNER_WORDS[raw];
+      if (!n) continue;
+      byCount.set(n, (byCount.get(n) ?? new Set()).add(t.label));
+    }
+  }
+  if (byCount.size < 2) return;
+  push(out, {
+    id: "ai_owner_count_mismatch",
+    kind: "ai_owner_count_mismatch",
+    severity: "warn",
+    title: "AI tekstos dažāds kopējais īpašnieku skaits",
+    values: [...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: `${n} īpašnieki` })),
+  });
+}
+
+/** (d) 1. lapas kartīte «Izsoles» pret izsoļu sadaļu: «Nav atrastas», bet ir izsoļu arhīva foto. */
+function checkCoverAuctionCard(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIssue[]): void {
+  const cc = blocks.cc_vin;
+  const salesFound = (cc.sales ?? []).some((r) => ccVinSaleRowHasData(r) && (r.venue?.trim() || r.date?.trim()));
+  const lotsFound = (cc.thecarapiRecords ?? []).some(
+    (r) => (r.venue?.trim() || r.date?.trim()) && ((r.fields ?? []).some((f) => f.value.trim()) || (r.photos ?? []).length > 0 || (r.photoUrls ?? []).length > 0),
+  );
+  if (salesFound || lotsFound || lots.length > 0) return;
+  const groupPhotos = (cc.photoGroups ?? []).reduce((n, g) => n + (g.photos ?? []).length, 0);
+  const photoCount = Math.max((cc.photos ?? []).length, groupPhotos);
+  if (photoCount === 0) return;
+  push(out, {
+    id: "cover_auctions_none_vs_photos",
+    kind: "cover_auctions",
+    severity: "warn",
+    title: "1. lapā «Izsoles - Nav atrastas», bet izsoļu sadaļā ir arhīva foto",
+    values: [
+      { source: "1. lapas kartīte", value: "Nav atrastas" },
+      { source: "Izsoļu arhīvs", value: `${photoCount} arhīva foto` },
+    ],
+  });
+}
+
 /* ---------- kopā ---------- */
 
 export function checkSourceConsistency(input: SourceConsistencyInput): SourceIssue[] {
@@ -1099,6 +1322,10 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
     () => checkDamages(blocks, lots, nowMs, out),
     () => checkAuctionPrices(blocks, lots, out),
     () => checkListingClaims(blocks, mileageRows(blocks, input.listingUrl), nowMs, out),
+    () => checkAiNumbers(blocks, mileageRows(blocks, input.listingUrl), input.texts ?? [], out),
+    () => checkFirstRegCountryConsistency(blocks, input.texts ?? [], input.listingUrl, out),
+    () => checkOwnerCountAcrossTexts(input.texts ?? [], out),
+    () => checkCoverAuctionCard(blocks, lots, out),
   ];
   for (const step of steps) {
     // Viena pārbaude ar negaidītiem datiem nedrīkst apturēt pārējās (un nekad - PDF / sūtīšanu).
