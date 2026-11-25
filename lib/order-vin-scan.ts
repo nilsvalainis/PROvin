@@ -198,6 +198,25 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
   };
 }
 
+/**
+ * Vai divi VIN SCAN ieraksti ir vienādi pēc satura (kartītei: neatjaunot stāvokli ar jaunu, bet tādu pašu objektu).
+ * Aptaujas (ik 4 s), pārlūka importa atbildes un vecāka props citādi katru reizi dod jaunu objektu -> lieks renderis.
+ */
+export function sameOrderVinScanRecord(
+  a: OrderVinScanRecord | null | undefined,
+  b: OrderVinScanRecord | null | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.at !== b.at || a.vin !== b.vin || a.status !== b.status || (a.error ?? "") !== (b.error ?? "")) return false;
+  if (a.indicators.length !== b.indicators.length) return false;
+  try {
+    return JSON.stringify(a.indicators) === JSON.stringify(b.indicators);
+  } catch {
+    return false;
+  }
+}
+
 export function parseOrderVinScanRecord(raw: unknown): OrderVinScanRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;

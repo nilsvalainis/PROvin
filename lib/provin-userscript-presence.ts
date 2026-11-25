@@ -20,33 +20,35 @@ type PresenceWindow = Window & { __provinUserscriptVersion?: string };
 
 export const PROVIN_USERSCRIPT_GUARD_SNIPPET = `(function(){try{var A=${JSON.stringify(
   PROVIN_USERSCRIPT_ATTR,
-)},d=document.documentElement,w=window;function k(){var v=d.getAttribute(A),m=w.__provinUserscriptVersion;if(v){if(m!==v)w.__provinUserscriptVersion=v;return;}if(m)d.setAttribute(A,m);}k();new MutationObserver(k).observe(d,{attributes:true,attributeFilter:[A]});}catch(e){}})();`;
+)},d=document.documentElement,w=window;function k(){var v=d.getAttribute(A),m=w.__provinUserscriptVersion;if(v){if(!m)w.__provinUserscriptVersion=v;return;}if(m)d.setAttribute(A,m);}k();new MutationObserver(k).observe(d,{attributes:true,attributeFilter:[A]});}catch(e){}})();`;
 
 export const PROVIN_USERSCRIPT_SS_KEY = "provin-userscript-version";
 
 function cleanVersion(raw: unknown): string {
+  // TM sandbox var atdot String objektu - pārvēršam primitīvā.
+  if (raw instanceof String) raw = raw.valueOf();
   return typeof raw === "string" ? raw.trim().slice(0, 32) : "";
 }
 
-function persistVersion(version: string) {
-  if (!version || typeof window === "undefined") return;
-  const w = window as PresenceWindow;
-  if (w.__provinUserscriptVersion !== version) w.__provinUserscriptVersion = version;
-  try {
-    if (window.sessionStorage?.getItem(PROVIN_USERSCRIPT_SS_KEY) !== version) {
-      window.sessionStorage.setItem(PROVIN_USERSCRIPT_SS_KEY, version);
-    }
-  } catch {
-    /* ignore */
+/** Skripta versiju salīdzinājums pa skaitļiem («1.27.0» > «1.26.3»); tukša virkne ir zemākā. */
+export function compareProvinUserscriptVersions(a: string, b: string): number {
+  const pa = a.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const pb = b.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i += 1) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d < 0 ? -1 : 1;
   }
+  if (!a && b) return -1;
+  if (a && !b) return 1;
+  return 0;
 }
 
-function peekProvinUserscriptVersion(): string {
-  if (typeof document === "undefined") return "";
-  const attr = cleanVersion(document.documentElement.getAttribute(PROVIN_USERSCRIPT_ATTR));
-  if (attr) return attr;
-  const mem = cleanVersion((window as PresenceWindow).__provinUserscriptVersion);
-  if (mem) return mem;
+function higherVersion(a: string, b: string): string {
+  return compareProvinUserscriptVersions(a, b) >= 0 ? a : b;
+}
+
+function readStoredVersion(): string {
   try {
     return cleanVersion(window.sessionStorage?.getItem(PROVIN_USERSCRIPT_SS_KEY));
   } catch {
@@ -54,14 +56,45 @@ function peekProvinUserscriptVersion(): string {
   }
 }
 
+/** Atmiņā tikai augstākā redzētā versija: divas skripta kopijas (piem. 1.26.3 + 1.27.0) to vairs nešūpo. */
+function persistVersion(version: string) {
+  if (!version || typeof window === "undefined") return;
+  const w = window as PresenceWindow;
+  const mem = cleanVersion(w.__provinUserscriptVersion);
+  if (compareProvinUserscriptVersions(version, mem) > 0) w.__provinUserscriptVersion = version;
+  try {
+    if (compareProvinUserscriptVersions(version, readStoredVersion()) > 0) {
+      window.sessionStorage.setItem(PROVIN_USERSCRIPT_SS_KEY, version);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function readAttrVersion(): string {
+  if (typeof document === "undefined") return "";
+  try {
+    return cleanVersion(document.documentElement.getAttribute(PROVIN_USERSCRIPT_ATTR));
+  } catch {
+    return "";
+  }
+}
+
+function peekProvinUserscriptVersion(): string {
+  if (typeof document === "undefined") return "";
+  const attr = readAttrVersion();
+  const mem = cleanVersion((window as PresenceWindow).__provinUserscriptVersion);
+  return higherVersion(higherVersion(attr, mem), readStoredVersion());
+}
+
 export function rememberProvinUserscriptVersion(raw: unknown): string {
   const version = cleanVersion(raw);
   if (!version || typeof window === "undefined") return version;
   persistVersion(version);
   try {
-    if (document.documentElement.getAttribute(PROVIN_USERSCRIPT_ATTR) !== version) {
-      document.documentElement.setAttribute(PROVIN_USERSCRIPT_ATTR, version);
-    }
+    // Atribūtu liekam tikai tukšam: ja cita skripta kopija jau atzīmēja savu versiju, pārrakstīšana sāktu
+    // cīņu (write -> observe -> write), un VIN SCAN kartītes brīdinājums mirgotu (25.11).
+    if (!readAttrVersion()) document.documentElement.setAttribute(PROVIN_USERSCRIPT_ATTR, version);
   } catch {
     /* ignore */
   }
@@ -91,28 +124,45 @@ export function pingProvinUserscript(): void {
 /**
  * Seko skripta versijai: atribūts, pong notikums un periodisks ping līdz `settleMs`.
  * `onSettled` izsauc vienreiz pēc gaidīšanas loga, lai „nav aktīvs” nerādītu pirms laika.
- * `onVersion` tikai tad, kad versija mainās, lai React setState nenoņemtu `<html>` atribūtus ciklā.
+ * `onVersion` tikai tad, kad augstākā redzētā versija pieaug, lai React setState nenoņemtu `<html>` atribūtus ciklā
+ * un divas skripta kopijas nešūpotu stāvokli.
  */
 export function watchProvinUserscript(
   onVersion: (version: string) => void,
   onSettled: () => void,
   settleMs = PROVIN_USERSCRIPT_SETTLE_MS,
+  /** Vairākas dažādas versijas vienā lapā - Tampermonkey ir divas PROVIN skripta kopijas. Tikai, kad saraksts aug. */
+  onMultiple?: (versions: string[]) => void,
 ): () => void {
   if (typeof document === "undefined") return () => {};
   let last: string | undefined;
   let ping = 0;
+  const seen = new Set<string>();
   const stopPing = () => {
     if (!ping) return;
     window.clearInterval(ping);
     ping = 0;
   };
+  const note = (raw: string) => {
+    const v = cleanVersion(raw);
+    if (!v || seen.has(v)) return;
+    seen.add(v);
+    if (seen.size > 1) onMultiple?.([...seen].sort(compareProvinUserscriptVersions));
+  };
+  /**
+   * Tikai augšup: ja atribūtu raksta divas skripta kopijas ar dažādām versijām, tas mainās ik ~32 ms.
+   * Agrāk katra maiņa bija React setState - brīdinājums VIN SCAN kartītē parādījās/pazuda (raustījās, 25.11).
+   */
   const emit = (version: string) => {
     if (version) stopPing();
-    if (version === last) return;
+    if (last !== undefined && compareProvinUserscriptVersions(version, last) <= 0) return;
     last = version;
     onVersion(version);
   };
-  const sync = () => emit(readProvinUserscriptVersion());
+  const sync = () => {
+    note(readAttrVersion());
+    emit(readProvinUserscriptVersion());
+  };
   const onPong = (ev: Event) => {
     const detail = (ev as CustomEvent).detail as unknown;
     const raw =
@@ -121,14 +171,18 @@ export function watchProvinUserscript(
         : detail && typeof detail === "object"
           ? (detail as { version?: unknown }).version
           : "";
-    if (cleanVersion(raw)) rememberProvinUserscriptVersion(raw);
+    if (cleanVersion(raw)) {
+      note(cleanVersion(raw));
+      rememberProvinUserscriptVersion(raw);
+    }
     sync();
   };
   sync();
   const obs = new MutationObserver(sync);
   obs.observe(document.documentElement, { attributes: true, attributeFilter: [PROVIN_USERSCRIPT_ATTR] });
   document.addEventListener(PROVIN_USERSCRIPT_PONG_EVENT, onPong);
-  if (!last) pingProvinUserscript();
+  // Vienmēr viens ping: atbild katra skripta kopija (pong), tā redzam arī dublikātus.
+  pingProvinUserscript();
   if (!last) {
     ping = window.setInterval(() => {
       if (readProvinUserscriptVersion()) {

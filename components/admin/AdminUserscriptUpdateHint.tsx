@@ -19,6 +19,8 @@ export function AdminUserscriptUpdateHint({
 }) {
   const [version, setVersion] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
+  /** Dažādas versijas vienā lapā: Tampermonkey ir vairākas PROVIN skripta kopijas (saraksts tikai aug). */
+  const [copies, setCopies] = useState<string[]>([]);
   /** iOS/iPadOS un Safari: skripts tur nestrādā - neko nerāda (arī iPad / iPhone guļus). */
   const [unsupported, setUnsupported] = useState(true);
 
@@ -30,12 +32,25 @@ export function AdminUserscriptUpdateHint({
         setVersion((prev) => (prev === next ? prev : next));
       },
       () => setSettled(true),
+      undefined,
+      (list) => setCopies((prev) => (prev.join(",") === list.join(",") ? prev : list)),
     );
   }, []);
 
   if (unsupported) return null;
   const min = vinScanUserscriptMinLabel();
   const box = `admin-userscript-hint mb-2 hidden rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] md:block ${className}`;
+  if (copies.length > 1) {
+    return (
+      <p className={box}>
+        Tampermonkey ir {copies.length} PROVIN skripta kopijas ({copies.join(", ")}). Atstājiet tikai jaunāko - citādi avoti
+        ielādējas divreiz.{" "}
+        <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
+          Lejupielādēt {min}
+        </a>
+      </p>
+    );
+  }
   if (version && vinScanUserscriptUpdateNeeded(version)) {
     return (
       <p className={box}>

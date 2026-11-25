@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
-import type { OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { sameOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
 import { renderHtml, renderText } from "@/lib/test-render";
 import { browserFetchLane } from "@/lib/vin-scan/browser-fetch";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
@@ -76,5 +78,30 @@ describe("pasūtījuma VIN SCAN kartīte", () => {
       elements: [new FakeElement("span", { attrs })],
     });
     expect(run.gm.xhr).toHaveLength(0);
+  });
+
+  it("25.11: tāds pats saturs jaunā objektā nav «izmaiņa» (aptauja / props neatiestata kartīti)", () => {
+    const clone = JSON.parse(JSON.stringify(record)) as OrderVinScanRecord;
+    expect(clone).not.toBe(record);
+    expect(sameOrderVinScanRecord(record, clone)).toBe(true);
+    expect(renderHtml(card(clone))).toBe(renderHtml(card(record)));
+    expect(sameOrderVinScanRecord(record, { ...clone, status: "running" })).toBe(false);
+    const changed = JSON.parse(JSON.stringify(record)) as OrderVinScanRecord;
+    changed.indicators[0]!.status = "found";
+    expect(sameOrderVinScanRecord(record, changed)).toBe(false);
+    expect(sameOrderVinScanRecord(null, null)).toBe(true);
+    expect(sameOrderVinScanRecord(record, null)).toBe(false);
+  });
+
+  it("25.11: skenēšanu sāk tikai lietotāja darbība (poga, «Atkārtot», telefona doks) - nekad efekts", () => {
+    const src = readFileSync(path.join(process.cwd(), "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
+    const calls = [...src.matchAll(/startScan\(/g)].map((m) => src.slice(Math.max(0, m.index! - 700), m.index!));
+    expect(calls).toHaveLength(4);
+    for (const before of calls) {
+      const tail = before.slice(-160);
+      expect(/onClick=\{\(\) => void $/.test(tail) || /row\.action === "retry"/.test(tail) || /const onMobileScan = \(\) => \{/.test(before)).toBe(true);
+    }
+    // Vienīgā POST ar `force: true` ir startScan iekšā.
+    expect(src.match(/force: true/g)).toHaveLength(1);
   });
 });

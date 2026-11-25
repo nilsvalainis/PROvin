@@ -2,6 +2,7 @@
  * PROVIN userscript kfzgutachten.at lapā: rezultātu saraksts -> pasūtījums (bez ielīmēšanas).
  * Testi palaiž īsto skriptu Node vm vidē (lib/vin-scan/test-helpers/userscript-vm.ts). Dati izdomāti.
  */
+import { compareProvinUserscriptVersions } from "@/lib/provin-userscript-presence";
 import { describe, expect, it } from "vitest";
 
 import { FAKE_VIN } from "@/lib/kfzgutachten/__fixtures__/gutachten";
@@ -95,7 +96,7 @@ describe("userscript galvene un versija", () => {
   it("kfzgutachten.at ir @match; versija >= 1.27.0 un atbilst paneļa minimumam", () => {
     expect(userscriptMatchesUrl(meta, kfzUrl(`&provin=${SESSION}`))).toBe(true);
     expect(userscriptMatchesUrl(meta, "https://www.kfzgutachten.at/Home/Search")).toBe(true);
-    expect(meta.version).toBe(KFZ_AT_USERSCRIPT_MIN);
+    expect(compareProvinUserscriptVersions(meta.version, KFZ_AT_USERSCRIPT_MIN)).toBeGreaterThanOrEqual(0);
     expect(vinScanUserscriptMeetsMin(meta.version)).toBe(true);
   });
 
