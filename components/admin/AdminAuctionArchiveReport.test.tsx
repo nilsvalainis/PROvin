@@ -15,11 +15,13 @@ describe("«Izsoļu arhīvs» atsevišķais PDF - pogas (Nils 23.11)", () => {
     expect(html).toContain('aria-label="Ģenerēt izsoļu arhīva PDF: ar vai bez cenām"');
   });
 
-  it("datora apakšējā PDF joslā blakus dīlera PDF, telefonā «Vairāk», izsoļu blokā josla", () => {
+  it("datora apakšējā PDF joslā «Citi PDF ▾» aiz dīlera PDF, telefonā «Vairāk», izsoļu blokā josla", () => {
     const ws = read("components/admin/OrderDetailWorkspace.tsx");
     const bar = ws.slice(ws.indexOf("data-order-pdf-bar"));
-    const dealer = bar.indexOf('label="Ģenerēt dīlera PDF"');
-    const archive = bar.indexOf('label="Ģenerēt izsoļu arhīva PDF"');
+    expect(bar).toContain("orderOtherPdfEntries(");
+    const menu = read("components/admin/AdminOtherPdfMenu.tsx");
+    const dealer = menu.indexOf('label: "Dīlera PDF"');
+    const archive = menu.indexOf('label: "Izsoļu arhīva PDF"');
     expect(dealer).toBeGreaterThan(0);
     expect(archive).toBeGreaterThan(dealer);
     expect(ws).toContain('label: "Izsoļu arhīva PDF"');

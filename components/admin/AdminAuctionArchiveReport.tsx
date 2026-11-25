@@ -6,7 +6,7 @@
  * Identiski dīlera datiem (`AdminDealerDataJobStrip` / `AdminDealerSendDialog`), pielāgots:
  * - `AdminAuctionArchiveReportStrip` - «Izsoļu portālu arhīvs» blokā: «Sūtīt klientam», «Ģenerēt PDF ▾»,
  *   «Skatīt PDF», «Rādīt izsoļu cenas», «Nosūtīts klientam: …»;
- * - `AuctionArchivePdfSplitButton` - tā pati poga datora apakšējā PDF joslā;
+ * - `AuctionArchivePdfSplitButton` - atsevišķa poga ar ▾ (datora apakšējā joslā tagad «Citi PDF ▾» rinda);
  * - `AdminAuctionArchiveSendDialog` - kanāls, situācija («Arhīvs gatavs» / «Datu nav» / «Atcelts»),
  *   AUDITS piedāvājums (ja attiecas), Google atsauksme, rediģējams teksts, pielikuma kartīte. Tikai LV.
  * Klientam sūta tikai pēc Nila pogas «Sūtīt e-pastu».
