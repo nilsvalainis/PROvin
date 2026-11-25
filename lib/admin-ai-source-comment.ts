@@ -279,7 +279,7 @@ Avota sadaļa (fokuss): ${blockLabel}
 ${isolateBanner}${
           isolateDealer
             ? ""
-            : `=== Pasūtījuma konteksts (kanoniskie fakti + verdikti; NEATKĀRTO eseju) ===
+            : `=== Pasūtījuma konteksts (kanoniskie fakti + secinājumi; NEATKĀRTO eseju) ===
 ${portfolioContext}
 
 `

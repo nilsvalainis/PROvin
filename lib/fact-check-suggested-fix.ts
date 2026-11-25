@@ -179,6 +179,8 @@ export function factCheckActionLine(flag: FactCheckFlag): string {
     case "leak_phrase":
     case "atsavinasanai":
       return "Noņem iekšējo frāzi vai pārbaudi avotu.";
+    case "purchase_verdict":
+      return "Pārraksti kā ieteikumu (ko pārbaudīt) - lēmumu pieņem klients.";
     case "unsourced_date":
     case "unsourced":
       return "Pārbaudi avotu vai ignorē, ja frāze nav apgalvojums.";

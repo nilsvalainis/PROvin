@@ -257,7 +257,7 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(listingPeekPhraseByTone("photos", "info")).toBe("");
     expect(listingPeekPhraseByTone("dealer", "critical")).toBe("");
     expect(listingPeekPhraseByTone("incidents", "info")).toContain("Latvijas OCTA datubāzē");
-    expect(listingPeekPhraseById("recommendation-neiesakam")).toContain("neiesakām");
+    expect(listingPeekPhraseById("recommendation-neiesakam")).toContain("būtiskus riskus");
   });
 
   it("uses the approved Latvian preset texts", () => {

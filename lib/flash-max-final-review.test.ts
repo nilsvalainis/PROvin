@@ -71,7 +71,7 @@ describe("FLASH MAX noslēguma pārbaude - atbildes apstrāde", () => {
       kind: "valoda",
       reason: "r",
       find: "Ieteicams pirkt pēc apskates.",
-      replace: "Ieteicams iegādāties pēc apskates.",
+      replace: "Ieteicams pārbaudīt pēc apskates.",
     }));
     expect(parseFlashMaxReviewResponse(json(many), fields)).toHaveLength(FLASH_MAX_REVIEW_MAX_FINDINGS);
     expect(() => parseFlashMaxReviewResponse("Viss kārtībā.", fields)).toThrow(/invalid_json/);

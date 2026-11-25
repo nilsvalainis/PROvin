@@ -3,7 +3,7 @@
  */
 
 import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
-import { dropFutureDatedRows } from "@/lib/future-date-guard";
+import { dropFutureDatedRows, isImpossibleFutureDate } from "@/lib/future-date-guard";
 import { VENDOR_REGISTERED_RE } from "@/lib/lifecycle-owner-change-text";
 import type { TirgusPriceHistoryRow } from "@/lib/adify-listing-history";
 import { formatAdifyDeltaLabel, formatAdifyPriceLabel } from "@/lib/adify-listing-history";
@@ -1815,7 +1815,8 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | und
 export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | undefined): string {
   const safe = coerceVendorAvotuBlock(b);
   const lines: string[] = [];
-  const mh = (safe.serviceHistory ?? []).filter(autoRecordsRowHasData);
+  // 25.11: nākotnes datumi (23.11 likums) nav fakts - AI kontekstā (AutoDNA / CarVertical / CARFAX rindas) neiet.
+  const mh = dropFutureDatedRows((safe.serviceHistory ?? []).filter(autoRecordsRowHasData), { source: "vendor_ai_context" });
   if (mh.length > 0) {
     lines.push(CSDD_MILEAGE_UNIFIED_TITLE);
     for (const r of mh) {
@@ -1830,7 +1831,7 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | un
       );
     }
   }
-  const inc = (safe.incidents ?? []).filter(ltabRowHasData);
+  const inc = (safe.incidents ?? []).filter((r) => ltabRowHasData(r) && !isImpossibleFutureDate(wsStr(r?.csngDate)));
   if (inc.length > 0) {
     lines.push(NEGADIJUMU_VESTURE_TITLE);
     for (const r of inc) {
@@ -1839,7 +1840,9 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | un
       );
     }
   }
-  const timeline = (safe.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowHasData);
+  const timeline = dropFutureDatedRows((safe.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowHasData), {
+    source: "vendor_ai_context",
+  });
   if (timeline.length > 0) {
     lines.push(CARVERTICAL_TIMELINE_TITLE);
     for (const r of timeline) {

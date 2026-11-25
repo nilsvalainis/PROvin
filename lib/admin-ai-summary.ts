@@ -67,14 +67,14 @@ ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
 
-Uzdevums: apspriestie **fakti** + **tikai ja vajag** slēdziens ar rekomendāciju uz **pārbaudi servisā**. Sāc ar faktu, ne ar vēstures vērtējumu. Bez dual-history ievada, bez on-one-hand pretstatījuma.
+Uzdevums: apspriestie **fakti** + **tikai ja vajag** ieteikumi ar **pārbaudi servisā**. Sāc ar faktu, ne ar vēstures vērtējumu. Bez dual-history ievada, bez on-one-hand pretstatījuma.
 
 OBLIGĀTI:
 - Šī ir vieta, kur avotu dati tiek sasaistīti - pārējos laukos katrs avots pastāsta tikai savu daļu.
 - NEATKĀRTO un neapkopo jau ģenerētos teikumus no avotiem / nobraukuma / negadījumiem / „${ADMIN_TECHNICAL_RISKS_LABEL}” / apskates.
 - Neveido „CSDD… AutoDNA… CarVertical…” katalogu.
-- „Fakti” (fiksētais, apspriestais) + „Rekomendācija” TIKAI ja kāds punkts nav 100% pierādīts un prasa servisa / klātienes pārbaudi. Ja slēdziena nav vajadzības, rekomendāciju IZLAID.
-- Neapgalvo defektu, kas datos nav fiksēts. Nav pirkuma verdikta esejas (pirkt / nepirkt).
+- „Fakti” (fiksētais, apspriestais) + „Rekomendācija” TIKAI ja kāds punkts nav 100% pierādīts un prasa servisa / klātienes pārbaudi. Ja ieteikuma nav vajadzības, rekomendāciju IZLAID.
+- Neapgalvo defektu, kas datos nav fiksēts. Nav pirkuma lēmuma (buy / do-not-buy) - PROVIN dod ieteikumus, lēmumu pieņem klients.
 - Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm.
 - NESĀC ar „Sveiki” vai sarunas uzrunu. NESĀC ar dual-history / on-one-hand ievadu.
 - NERAKSTI cenas, tirgus EUR joslas, remonta/apkopes izmaksas - tās ir „Cenas vērtējums” un 1. sadaļa. Bez € / EUR skaitļiem.
