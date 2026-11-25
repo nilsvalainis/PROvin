@@ -29,6 +29,7 @@ import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { splitEquipmentText } from "@/lib/report-language-fixes";
 
 export function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -500,6 +501,7 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
           .map(
             (g, i) =>
               `<div class="aa-equip__g${eqGroups.length % 2 === 1 && i === eqGroups.length - 1 ? " aa-equip__g--wide" : ""}">${subhead(g.group)}<div class="aa-chips">${g.items
+                .flatMap((x) => splitEquipmentText(x))
                 .map((x) => `<span class="aa-chip">${esc(x)}</span>`)
                 .join("")}</div></div>`,
           )
