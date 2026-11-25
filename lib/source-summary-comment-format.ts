@@ -677,6 +677,14 @@ function looksLikeHeadingLine(line: string): boolean {
   return true;
 }
 
+/**
+ * Teikums ar datumu (DD.MM.GGGG) vai nobraukumu (… km) ir fakts, nevis virsraksts.
+ * 25.11.2026: „Pirmais ieraksts fiksēts 31.10.2012 ar nobraukumu 20 927 km.” kļuva par treknu virsrakstu.
+ */
+function looksLikeFactSentence(heading: string): boolean {
+  return /(?<!\d)\d{1,2}\.\s?\d{1,2}(?:\.\s?\d{2,4})?(?!\d)/.test(heading) || /\d\s?km(?![\p{L}])/u.test(heading);
+}
+
 function lineToHeadingBody(line: string): string {
   const t = line.trim();
   const wrapped = t.match(/^\*{1,2}\s*([^*\n]+?)\s*\*{1,2}\.?\s*(.*)$/);
@@ -698,7 +706,7 @@ function lineToHeadingBody(line: string): string {
     const heading = plain.slice(0, end).replace(/[.!?]\s*$/, "").trim();
     const rest = plain.slice(end + 1).trim();
     const wordCount = heading.split(/\s+/).filter(Boolean).length;
-    if (rest && wordCount >= 2 && wordCount <= 12 && !/^\d/.test(heading)) {
+    if (rest && wordCount >= 2 && wordCount <= 12 && !/^\d/.test(heading) && !looksLikeFactSentence(heading)) {
       return `${heading}\n${rest}`;
     }
   }
