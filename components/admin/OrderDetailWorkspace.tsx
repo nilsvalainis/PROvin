@@ -5996,6 +5996,8 @@ export function OrderDetailWorkspace({
           setPhrasesOpen(true);
         }}
         onGoSummary={() => goWizardStep(WIZARD_SUMMARY_STEP)}
+        izvilkums={pdfVisibility.izvilkums === true}
+        onIzvilkumsChange={(next) => onPdfVisibilityChange({ izvilkums: next })}
         onGeneratePdf={() => void openPrintReport()}
         onGeneratePdfEn={() => void openPrintReport({ lang: "en" })}
         onGeneratePdfRu={() => void openPrintReport({ lang: "ru" })}
@@ -7004,6 +7006,11 @@ export function OrderDetailWorkspace({
                 verdict,
               )
             }
+          />
+          <AdminPdfIncludeToggle
+            label="Izvilkums"
+            checked={pdfVisibility.izvilkums === true}
+            onChange={(next) => onPdfVisibilityChange({ izvilkums: next })}
           />
           <AdminPdfLangSplitButton
             label="Ģenerēt PDF"

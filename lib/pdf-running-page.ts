@@ -80,12 +80,16 @@ export function clientReportRunningPageCss(opts?: {
   header?: string;
   footer?: string;
   lang?: PdfRunningLang;
+  /** Papildu rinda zem kājenes (piem. «Izvilkums» piezīme). */
+  footerNote?: string;
 }): string {
   const header = cssContentString((opts?.header ?? "PROVIN.LV").trim() || "PROVIN.LV");
   const footer = cssContentString((opts?.footer ?? "").trim());
   const pageLabel = cssContentString(pdfRunningPageCounterLabel(opts?.lang ?? "lv"));
-  const footerRule = footer
-    ? `content:"${footer}";font:500 7pt Inter,sans-serif;color:#64748b;vertical-align:top;padding-top:5mm;`
+  const note = cssContentString((opts?.footerNote ?? "").trim());
+  const footerContent = [footer, note].filter(Boolean).join("\\A ");
+  const footerRule = footerContent
+    ? `content:"${footerContent}";font:500 7pt Inter,sans-serif;color:#64748b;vertical-align:top;padding-top:5mm;${note ? "white-space:pre-wrap;line-height:1.5;" : ""}`
     : "content:none;";
   return `
       @page{
@@ -100,7 +104,7 @@ export function clientReportRunningPageCss(opts?: {
         @bottom-center{content:none;}
         @bottom-right{
           content:"${pageLabel}" counter(page) " / " counter(pages);
-          font:600 7.5pt Inter,sans-serif;color:#334155;vertical-align:top;padding-top:5mm;
+          font:600 7.5pt Inter,sans-serif;color:#334155;vertical-align:top;padding-top:5mm;${note ? "white-space:nowrap;" : ""}
         }
       }
       @page:first{
