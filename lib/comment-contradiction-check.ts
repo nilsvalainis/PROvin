@@ -830,6 +830,27 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     }
   }
 
+  // 8b) 24.11 audits #2: sludinājuma km nosaukts par jaunāko / reģistrēto rādījumu.
+  const lm = facts.listingMileage;
+  if (lm && facts.latestKm != null && Math.abs(lm.km - facts.latestKm) > 1_500) {
+    const listingKmRe = new RegExp(`(?<!\\d)${formatForensicsInt(lm.km).replace(/\s/g, "[\\s\\u00a0]?")}\\s*km`, "i");
+    for (const sentence of sentences) {
+      if (!listingKmRe.test(sentence)) continue;
+      if (!/jaunāk|pēdēj|reģistrēt|fiksēt|apstiprināt|csdd|tehniskās\s+apskates/iu.test(sentence)) continue;
+      // Teikums, kas pats saka «sludinājumā», ir pareizs, ja vien sludinājuma km nav tieši nosaukts par jaunāko / reģistrēto.
+      const kmSrc = listingKmRe.source;
+      const qualifiedRe = new RegExp(`(?:jaunāk|pēdēj|reģistrēt|fiksēt)\\p{L}*\\s+(?:\\p{L}+\\s+){0,2}${kmSrc}`, "iu");
+      if (/sludinājum/iu.test(sentence) && !qualifiedRe.test(sentence) && !/atbilst\s+(?:jaunākajam|pēdējam)/iu.test(sentence)) continue;
+      push({
+        id: "listing_km_as_latest",
+        kind: "contradiction",
+        level: "W",
+        message: `${formatForensicsInt(lm.km)} km ir tikai sludinājumā (${lm.date}); jaunākais apstiprinātais rādījums ir ${formatForensicsInt(facts.latestKm)} km.`,
+        sentence,
+      });
+    }
+  }
+
   // 9) Starp laukiem: tas pats auto, dažādi īpašnieku skaiti / negadījumu skaiti.
   for (const other of input.otherFieldTexts ?? []) {
     if (!other.text.trim() || other.field === field) continue;
@@ -973,6 +994,13 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       countryIso,
     },
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
+    listingMileage: (() => {
+      const m = sheet.match(/Sludinājumā norādīts:\s*([\d\s]+?)\s*km\s*\(([^)\n]*)\)/);
+      if (!m) return null;
+      const km = parseSpacedInt(m[1] ?? "0");
+      const latest = latestKmRaw ? parseSpacedInt(latestKmRaw) : null;
+      return { date: (m[2] ?? "").split(",")[0]!.trim(), km, source: "", diffFromConfirmedKm: latest != null ? km - latest : null };
+    })(),
     // Promptā ir visi avotu dati - visi km lieluma skaitļi ir „avota rādījumi”.
     mileageKms: extractKmLikeNumbers(t).filter((n) => n >= 1000 && n < 2_000_000),
     rollbacks,

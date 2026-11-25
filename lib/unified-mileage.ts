@@ -1211,9 +1211,23 @@ export const IMPLAUSIBLE_READING_RATIO = 10;
  * valsts maiņa to neietekmē. Ja servisā fiksēta odometra / paneļa nomaiņa - netiek piemērots.
  * Saglabātos datus nemaina: rindas izslēdz tikai aprēķinā un PDF/AI.
  */
+/**
+ * 24.11 audits #13 (case3: auto ražots 11.2012, dīlera ieraksts 20.11.2012 «90 000 km», pēc tam 2 954 km):
+ * rādījums, kas pārsniedz fizisko maksimumu kopš pirmās reģistrācijas, ir ievades kļūda, nevis odometra kritums.
+ * Maksimums = max(IMPOSSIBLE_READING_FLOOR_KM, IMPOSSIBLE_READING_MAX_KM_PER_DAY × dienas kopš 1. reģistrācijas).
+ */
+export const IMPOSSIBLE_READING_MAX_KM_PER_DAY = 300;
+export const IMPOSSIBLE_READING_FLOOR_KM = 5_000;
+
+export function isImpossibleReadingSinceStart(km: number, t: number, startMs: number): boolean {
+  if (!(startMs > 0) || !Number.isFinite(t) || !Number.isFinite(km)) return false;
+  const days = Math.max(0, (t - startMs) / 86_400_000);
+  return km > Math.max(IMPOSSIBLE_READING_FLOOR_KM, IMPOSSIBLE_READING_MAX_KM_PER_DAY * days);
+}
+
 export function findImplausibleMileageReadings(
   rows: readonly UnifiedMileageRow[],
-  opts?: { odometerReplacementNoted?: boolean },
+  opts?: { odometerReplacementNoted?: boolean; vehicleStartMs?: number },
 ): UnifiedMileageRow[] {
   if (opts?.odometerReplacementNoted) return [];
   const dated = rows
@@ -1221,16 +1235,33 @@ export function findImplausibleMileageReadings(
     .filter((x) => x.r.odometer.replace(/\D/g, "") !== "" && Number.isFinite(x.km) && Number.isFinite(x.t));
   if (dated.length < 2) return [];
   const earliest = Math.min(...dated.map((x) => x.t));
+  const startMs = opts?.vehicleStartMs ?? 0;
   return dated
     .filter(
       (x) =>
-        x.km < IMPLAUSIBLE_READING_MAX_KM &&
-        x.t - earliest >= IMPLAUSIBLE_READING_MIN_AGE_DAYS * 86_400_000 &&
-        dated.some(
-          (y) => y.t < x.t && y.km >= IMPLAUSIBLE_READING_MAX_KM && y.km >= x.km * IMPLAUSIBLE_READING_RATIO,
-        ),
+        (x.km < IMPLAUSIBLE_READING_MAX_KM &&
+          x.t - earliest >= IMPLAUSIBLE_READING_MIN_AGE_DAYS * 86_400_000 &&
+          dated.some(
+            (y) => y.t < x.t && y.km >= IMPLAUSIBLE_READING_MAX_KM && y.km >= x.km * IMPLAUSIBLE_READING_RATIO,
+          )) ||
+        // Fiziski neiespējams kopš 1. reģistrācijas UN vēlāk ir rādījums uz pusi mazāks (secība to neapstiprina).
+        // Tikai pats pirmais rādījums ap 1. reģistrāciju (±1 gads), ne ārvalstu vēsture pirms importa un ne korekcija.
+        (x.t === earliest &&
+          Math.abs(x.t - startMs) <= 365 * 86_400_000 &&
+          isImpossibleReadingSinceStart(x.km, x.t, startMs) &&
+          dated.some((y) => y.t > x.t && y.km * 2 <= x.km)),
     )
     .map((x) => x.r);
+}
+
+/** Agrākā zināmā pirmā reģistrācija (jebkurā valstī) no CSDD formas; 0, ja nav. */
+export function vehicleStartMsFromPayload(p: UnifiedMileageSourcePayload): number {
+  const csdd = p.csddForm;
+  if (!csdd) return 0;
+  const raw = (csdd.firstRegistration ?? "").trim() || (csdd.registry?.data.firstRegistrationIso ?? "").trim();
+  if (!raw) return 0;
+  const ms = parseMileageDateForSort(raw);
+  return Number.isFinite(ms) && ms > 0 ? ms : 0;
 }
 
 export function formatImplausibleReadingLine(r: UnifiedMileageRow): string {
@@ -1470,7 +1501,10 @@ export function collectUnifiedMileageRows(
   }
   if (options?.includeImplausible) return out;
   const implausible = new Set(
-    findImplausibleMileageReadings(out, { odometerReplacementNoted: odometerReplacementNotedIn(p) }),
+    findImplausibleMileageReadings(out, {
+      odometerReplacementNoted: odometerReplacementNotedIn(p),
+      vehicleStartMs: vehicleStartMsFromPayload(p),
+    }),
   );
   return implausible.size > 0 ? out.filter((r) => !implausible.has(r)) : out;
 }
@@ -1517,7 +1551,10 @@ export function collectImplausibleMileageReadings(
   options?: CollectUnifiedMileageOptions,
 ): UnifiedMileageRow[] {
   const all = collectUnifiedMileageRows(p, { ...options, includeImplausible: true });
-  return findImplausibleMileageReadings(all, { odometerReplacementNoted: odometerReplacementNotedIn(p) });
+  return findImplausibleMileageReadings(all, {
+    odometerReplacementNoted: odometerReplacementNotedIn(p),
+    vehicleStartMs: vehicleStartMsFromPayload(p),
+  });
 }
 
 function parseCitiAvotiMileageFromComments(raw: string): { date: string; odometer: string; country: string }[] {

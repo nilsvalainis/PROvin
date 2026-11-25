@@ -38,6 +38,7 @@ vi.mock("@/lib/dropbox-client", () => ({ getDropboxClient: () => ({}) }));
 vi.mock("@/lib/ltab-dropbox", () => ({ saveFileToProvOrderFolder: m.saveDropbox }));
 // Vecs pasūtījums bez mapes ieraksta - kopija mapē pēc VIN (`saveFileToProvOrderFolder`).
 vi.mock("@/lib/order-dropbox", () => ({
+  moveOrderDropboxFolderToCategory: async () => null,
   saveFileToOrderFolderOrLegacy: async (_s: string, _n: string, _b: Uint8Array, legacy: () => Promise<{ path: string }>) => ({
     path: (await legacy()).path,
     duplicate: false,

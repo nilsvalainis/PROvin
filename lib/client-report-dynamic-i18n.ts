@@ -5,6 +5,7 @@
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { countryIsoFromLvLocative, ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
+import { translateClientReportLvTerms } from "@/lib/client-report-lv-terms-i18n";
 
 type Target = Exclude<ClientReportLang, "lv">;
 type Rule = { re: RegExp; to: Record<Target, (m: RegExpExecArray) => string> };
@@ -174,7 +175,7 @@ export function applyClientReportDynamicTranslations(html: string, lang: ClientR
     .slice(bodyAt)
     // Skripti un stili netiek aiztikti.
     .replace(/(<(script|style)\b[\s\S]*?<\/\2>)|>([^<]+)</g, (all, block: string | undefined, _tag, text: string | undefined) =>
-      block ? block : `>${translateTextNode(text ?? "", lang)}<`,
+      block ? block : `>${translateClientReportLvTerms(translateTextNode(text ?? "", lang), lang)}<`,
     );
   return head + body;
 }

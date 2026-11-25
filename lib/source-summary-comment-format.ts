@@ -3,6 +3,7 @@
  * Hibrīds: objektīvs konteksts + skaidri atzīmētas datu neatbilstības.
  */
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
+import { applyReportLanguageFixes } from "@/lib/report-language-fixes";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -546,6 +547,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
   });
   out = replaceCrankshaftDamperWording(out);
+  out = applyReportLanguageFixes(out);
   out = groupClientNumberThousands(out);
   out = stripInternalClientLeaks(out);
   return stripForbiddenPersonaNouns(out);

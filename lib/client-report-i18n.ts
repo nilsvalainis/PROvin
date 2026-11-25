@@ -102,6 +102,10 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Odometrs (km)": { en: "Odometer reading (km)", ru: "Пробег (км)" },
   Avots: { en: "Source", ru: "Источник" },
   Valsts: { en: "Country", ru: "Страна" },
+  // LTAB izziņas transportlīdzekļa rinda (pirms «Valsts» → «Country»).
+  "Valsts numura zīme": { en: "Registration plate", ru: "Госномер" },
+  "izlaiduma gads": { en: "year of manufacture", ru: "год выпуска" },
+  Transportlīdzeklis: { en: "Vehicle", ru: "Транспортное средство" },
   Komentārs: { en: "Comment", ru: "Комментарий" },
 
   // CSDD strukturētie lauki
@@ -551,6 +555,9 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Odometrs (km)": "Kilometerstand (km)",
   Avots: "Quelle",
   Valsts: "Land",
+  "Valsts numura zīme": "Kennzeichen",
+  "izlaiduma gads": "Baujahr",
+  Transportlīdzeklis: "Fahrzeug",
   Komentārs: "Kommentar",
   "Marka, modelis:": "Marke, Modell:",
   "Reģistrācijas numurs:": "Kennzeichen:",
