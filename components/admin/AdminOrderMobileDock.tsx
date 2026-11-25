@@ -76,6 +76,9 @@ type Props = {
   onGenerateAsvPdfDe: () => void;
   onGenerateOemPdf: () => void;
   onGeneratePrintInkPdf: () => void;
+  /** «Izvilkums» ķeksītis klienta PDF (ūdenszīme, kājenes piezīme). */
+  izvilkums?: boolean;
+  onIzvilkumsChange?: (next: boolean) => void;
   pdfLangLock?: "lv" | "en" | "ru" | "de" | null;
   onUnlockPdfLang?: () => void;
   vin: string;
@@ -181,6 +184,8 @@ export function AdminOrderMobileDock({
   onGenerateAsvPdfDe,
   onGenerateOemPdf,
   onGeneratePrintInkPdf,
+  izvilkums,
+  onIzvilkumsChange,
   pdfLangLock = null,
   onUnlockPdfLang,
   vin,
@@ -383,6 +388,17 @@ export function AdminOrderMobileDock({
 
       {sheet === "pdf" && !dockCovered ? (
         <AdminMobileSheet open title="Ģenerēt PDF" onClose={() => setSheet(null)}>
+          {onIzvilkumsChange ? (
+            <label className={`${sheetRow} cursor-pointer select-none`}>
+              <input
+                type="checkbox"
+                className="h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--color-provin-accent)]"
+                checked={izvilkums === true}
+                onChange={(e) => onIzvilkumsChange(e.target.checked)}
+              />
+              <span>Izvilkums</span>
+            </label>
+          ) : null}
           {pdfLangLock && onUnlockPdfLang ? (
             <button type="button" className={`${sheetRow} text-[var(--color-provin-muted)]`} onClick={onUnlockPdfLang}>
               Mainīt valodu ({pdfLangLock.toUpperCase()})

@@ -211,6 +211,13 @@ import {
   type SectionIconId,
 } from "@/lib/section-icons";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
+import {
+  buildIzvilkumsWatermarkHtml,
+  izvilkumsFooterNote,
+  izvilkumsWord,
+  izvilkumsWordUpper,
+  PDF_IZVILKUMS_CSS,
+} from "@/lib/pdf-izvilkums";
 import { PDF_TIGHT_GAP_CSS_ROOT, PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 import {
   PDF_BUSINESS_DOC_TITLE,
@@ -879,6 +886,8 @@ function pdfTopDateLabel(now: Date): string {
 }
 
 function pdfTopKind(p: ClientReportPayload, lang: ClientReportLang): { kindTitle: string; kindSub?: string } {
+  // «Izvilkums» (25.11): produkta vārda vietā, pārējais (datu atskaite, datums) paliek.
+  if (isIzvilkumsReport(p)) return { kindTitle: izvilkumsWord(lang), kindSub: pdfTopText("kindBusinessSub", lang) };
   if (isDealerOnlyReport(p)) return { kindTitle: pdfTopText("kindDealer", lang) };
   if (isAsvOnlyReport(p)) return { kindTitle: pdfTopText("kindAsv", lang) };
   if (isBusinessBrandReport(p)) return { kindTitle: PDF_BUSINESS_DOC_TITLE, kindSub: pdfTopText("kindBusinessSub", lang) };
@@ -2748,6 +2757,7 @@ function clientReportPageChromeCss(running?: {
   header?: string;
   footer?: string;
   lang?: ClientReportLang;
+  footerNote?: string;
 }): string {
   return clientReportRunningPageCss(running);
 }
@@ -2765,6 +2775,7 @@ function clientReportPrintCss(running?: {
   header?: string;
   footer?: string;
   lang?: ClientReportLang;
+  footerNote?: string;
 }): string {
   return `
 ${clientReportPageChromeCss(running)}
@@ -3987,6 +3998,12 @@ ${pdfDocFooterCss()}
     `;
 }
 
+/** Admin ķeksītis «Izvilkums» (pdfVisibility.izvilkums); dīlera un ASV atskaitēm nav. */
+export function isIzvilkumsReport(p: Pick<ClientReportPayload, "pdfVisibility" | "pdfReportKind">): boolean {
+  if (p.pdfReportKind === "dealer" || p.pdfReportKind === "asv") return false;
+  return mergePdfVisibility(p.pdfVisibility).izvilkums === true;
+}
+
 export function buildClientReportDocumentHtml(args: {
   payload: ClientReportPayload;
   portfolio: ClientReportPortfolioRow[];
@@ -4031,6 +4048,7 @@ export function buildClientReportDocumentHtml(args: {
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);
   const b2bInternational = isB2bInternationalClientReport(p);
+  const izvilkums = !dealerOnly && !asvOnly && isIzvilkumsReport(p);
   const includeLvSuffix = !b2bInternational;
   const logoSvg = provincLogoSvg({ includeLvSuffix });
   const savedVis = mergePdfVisibility(p.pdfVisibility);
@@ -4209,6 +4227,7 @@ export function buildClientReportDocumentHtml(args: {
       generatedLabel: `Ģenerēts ${dateFmt.format(new Date())}`,
       productBrand: dealerOnly ? "PROVIN_DILERIS" : businessBrand ? "PROVIN_BUSINESS" : undefined,
       includeLvSuffix,
+      productLabel: izvilkums ? izvilkumsWordUpper(lang) : undefined,
     }),
   );
   lines.push("</div>");
@@ -4242,13 +4261,14 @@ export function buildClientReportDocumentHtml(args: {
       lang,
     }),
     lang,
+    footerNote: izvilkums ? izvilkumsFooterNote(lang) : undefined,
   });
   const html = `<!DOCTYPE html><html lang="lv"${htmlClass}><head><meta charset="utf-8"/>
 <meta name="color-scheme" content="light"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(docTitle)}</title><style>${runningCss}${PDF_TOP6_CSS}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<title>${escapeHtml(docTitle)}</title><style>${runningCss}${PDF_TOP6_CSS}${izvilkums ? PDF_IZVILKUMS_CSS : ""}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${izvilkums ? buildIzvilkumsWatermarkHtml(lang) : ""}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

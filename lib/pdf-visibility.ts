@@ -67,6 +67,8 @@ export type PdfVisibilitySettings = {
   autoRecordsOilInterval: boolean;
   /** OFICIĀLĀ DĪLERA DATI: aprīkojums / komplektācija. Noklusējums: rādīt. */
   autoRecordsEquipment: boolean;
+  /** «Izvilkums» (25.11): ūdenszīme, kājenes piezīme, produkta vārds. Nav lauka = izslēgts. */
+  izvilkums?: boolean;
 } & CsddPdfBlokiFlags;
 
 const IRISS_SUBSECTIONS_ON = {
@@ -334,6 +336,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     csddPdfRestrictions: o.csddPdfRestrictions === true,
     csddPdfMeasurements: o.csddPdfMeasurements === true,
     csddPdfTaAnalysis: o.csddPdfTaAnalysis === true,
+    izvilkums: o.izvilkums === true,
   };
 }
 
