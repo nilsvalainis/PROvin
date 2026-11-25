@@ -1,7 +1,7 @@
 import { isPartnerVinAdminOrder } from "@/lib/b2b-partner-orders";
 
-/** Etiķete pie summas manuālam pasūtījumam, kas vēl nav apmaksāts. */
-export const MANUAL_UNPAID_LABEL_LV = "Manuāls · nav apmaksāts";
+/** Sīks statuss zem summas manuālam pasūtījumam, kas vēl nav apmaksāts («Manuāls» ir tikai pie klienta). */
+export const MANUAL_UNPAID_LABEL_LV = "nav apmaksāts";
 
 /**
  * Manuāli izveidots pasūtījums, kas vēl nav apmaksāts (sarakstā rāda klusinātu).

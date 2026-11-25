@@ -59,13 +59,20 @@ describe("Pasūtījumu saraksts datorā - kolonnas", () => {
 describe("Manuāls, vēl neapmaksāts pasūtījums", () => {
   const unpaid = row({ id: "manual_order_u", isManual: true, paymentStatus: "unpaid" });
 
-  it("datorā un telefonā klusināts + etiķete pie summas", () => {
+  it("datorā un telefonā klusināts + «nav apmaksāts» zem summas", () => {
     const html = renderHtml(<AdminOrdersTable orders={[unpaid]} />);
     expect(html.match(/data-manual-unpaid=""/g)?.length).toBe(2);
-    expect(html.match(/Manuāls · nav apmaksāts/g)?.length).toBe(2);
+    expect(html.match(/data-manual-unpaid-label/g)?.length).toBe(2);
+    expect(html).not.toContain("Manuāls · nav apmaksāts");
     const cells = desktop(html).split("<td").slice(1);
-    expect(cells[4]).toContain("Manuāls · nav apmaksāts");
+    expect(cells[4]).toContain("nav apmaksāts");
     expect(cells[4]).not.toContain("Pirms apmaksas");
+  });
+
+  it("«Manuāls» tikai pie klienta, ne summas šūnā", () => {
+    const cells = desktop(renderHtml(<AdminOrdersTable orders={[unpaid]} />)).split("<td").slice(1);
+    expect(cells[4]).not.toContain("Manuāls");
+    expect(cells[5]).toContain(">Manuāls<");
   });
 
   it("pēc apmaksas izskatās kā pārējie", () => {
@@ -74,11 +81,24 @@ describe("Manuāls, vēl neapmaksāts pasūtījums", () => {
     expect(html).not.toContain("nav apmaksāts");
   });
 
+  it("summas šūnās rezervēta vieta divām ikonām (summas vienā kolonnā)", () => {
+    const html = renderHtml(<AdminOrdersTable orders={[row({}), { ...unpaid, paymentStatus: "paid" }]} />);
+    const amountCells = desktop(html).split("<td").slice(1).filter((c) => c.includes("data-admin-order-amount"));
+    expect(amountCells).toHaveLength(2);
+    // Stripe rinda: 2 tukšas vietas; manuālā: zīmulis + dzēst.
+    expect(amountCells[0].match(/h-\[26px\] w-\[26px\] shrink-0"/g)?.length).toBe(2);
+    expect(amountCells[1]).toContain("Labot summu");
+    expect(amountCells[1]).toContain("Dzēst manuālo pasūtījumu");
+  });
+
   it("partnera maka darbs netiek iezīmēts kā neapmaksāts", () => {
     const html = renderHtml(
       <AdminOrdersTable orders={[{ ...unpaid, partnerId: "ptr_0123456789abcdef", partnerCompanyName: "Testa Auto" }]} />,
     );
     expect(html).not.toContain("data-manual-unpaid");
     expect(html).not.toContain("nav apmaksāts");
+    const cells = desktop(html).split("<td").slice(1);
+    expect(cells[4]).toContain("Kredīts");
+    expect(cells[4]).toContain("Ielikt PDF arhīvā");
   });
 });

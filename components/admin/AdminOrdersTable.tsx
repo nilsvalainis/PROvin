@@ -238,6 +238,31 @@ function rowEditsLocalStoragePrefix(row: AdminOrdersTableRow, tableDefaultPrefix
   return tableDefaultPrefix;
 }
 
+/** Summas šūnas mazās ikonas (bez rāmja/fona), 26 px. */
+const AMOUNT_ICON_BTN =
+  "inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center !rounded-[7px] !border-0 bg-transparent text-[#8e8e93] transition hover:bg-[#f2f2f7] hover:text-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-50";
+const AMOUNT_ICON_DEL =
+  "inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center !rounded-[7px] !border-0 bg-transparent text-[#d92d20] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50";
+
+/** Rezervēta vieta ikonai, lai summas līdzinās vienā kolonnā. */
+function AmountIconSlot() {
+  return <span className="inline-block h-[26px] w-[26px] shrink-0" aria-hidden />;
+}
+
+/** Summa labajā malā; zem tās sīka otrā rinda (statuss / saite), ja ir. */
+function AmountStack({ main, sub }: { main: ReactNode; sub?: ReactNode }) {
+  return (
+    <span className="inline-flex flex-col items-end">
+      <span className="leading-tight">{main}</span>
+      {sub ? (
+        <span className="mt-0.5 inline-flex items-center justify-end gap-1 text-[11.5px] font-medium leading-tight !text-[#8e8e93]">
+          {sub}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 const manualCellEditBtn =
   "inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200/90 bg-white text-[var(--color-provin-muted)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:text-[var(--color-provin-accent)] disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -355,10 +380,16 @@ function ManualOrderAmountCell({
   id,
   amountTotal,
   currency,
+  sub,
+  trailing,
 }: {
   id: string;
   amountTotal: number | null;
   currency: string | null;
+  /** Otrā rinda zem summas (piem. «nav apmaksāts»). */
+  sub?: ReactNode;
+  /** Aiz zīmuļa (dzēšanas poga vai tukša vieta). */
+  trailing?: ReactNode;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -386,8 +417,8 @@ function ManualOrderAmountCell({
 
   if (!editing) {
     return (
-      <span className="inline-flex items-center justify-end gap-1.5">
-        <span>{formatMoneyEur(amountTotal, currency)}</span>
+      <span className="inline-flex items-center justify-end">
+        <AmountStack main={formatMoneyEur(amountTotal, currency)} sub={sub} />
         <button
           type="button"
           onClick={() => {
@@ -395,12 +426,13 @@ function ManualOrderAmountCell({
             setError(null);
             setEditing(true);
           }}
-          className={manualCellEditBtn}
+          className={`ml-1 ${AMOUNT_ICON_BTN}`}
           aria-label="Labot summu"
           title="Labot summu"
         >
-          <Pencil className="h-3 w-3" strokeWidth={2} aria-hidden />
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
         </button>
+        {trailing ?? <AmountIconSlot />}
       </span>
     );
   }
@@ -468,7 +500,7 @@ function ManualOrderDeleteButton({ id }: { id: string }) {
       type="button"
       onClick={() => void onDelete()}
       disabled={deleting}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200/90 bg-white text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+      className={AMOUNT_ICON_DEL}
       aria-label="Dzēst manuālo pasūtījumu"
       title="Dzēst manuālo pasūtījumu"
     >
@@ -1353,7 +1385,7 @@ export function AdminOrdersTable({
               <th className={`${hug} py-2.5 pl-4 pr-4`}>Termiņš (48 h)</th>
               <th className="py-2.5 pr-4">Marka, modelis, VIN</th>
               <th className={`${hug} py-2.5 pr-4`}>Rez.</th>
-              <th className={`${hug} py-2.5 pr-4 text-right`}>Summa</th>
+              <th className={`${hug} py-2.5 pr-3 text-right`}>Summa</th>
               <th className="py-2.5 pr-4">Klients</th>
               <th className={`${hug} py-2.5 pr-4`}>Datums</th>
             </tr>
@@ -1471,32 +1503,58 @@ export function AdminOrdersTable({
                       />
                     )}
                   </td>
-                  <td className={`${hug} py-1 pr-4 text-right text-[14px] font-semibold tabular-nums text-[#1d1d1f]`}>
-                    <span className="inline-flex items-center justify-end gap-1.5">
-                      {manualUnpaid ? (
-                        <span className="text-[11px] font-medium text-[#8e8e93]" data-manual-unpaid-label>
-                          {MANUAL_UNPAID_LABEL_LV}
-                        </span>
-                      ) : !isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? (
-                        <PaymentStatusCalm status={o.paymentStatus} />
-                      ) : null}
-                      <PaymentAdjustmentTag row={o} />
-                      {isPartnerVin ? (
-                        <>
-                          <span className="text-[12px] font-medium text-[#8e8e93]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>
-                          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                            <AdminPartnerArchivePdfButton sessionId={o.id} compact />
+                  <td className={`${hug} py-1 pr-3 text-right text-[14px] font-semibold tabular-nums text-[#1d1d1f]`} data-admin-order-amount>
+                    {(() => {
+                      const sub =
+                        manualUnpaid || (!isPartnerVin && o.paymentStatus.toLowerCase() !== "paid") || o.paymentAdjustmentLabel ? (
+                          <>
+                            {manualUnpaid ? (
+                              <span className="!text-[#8e8e93]" data-manual-unpaid-label>{MANUAL_UNPAID_LABEL_LV}</span>
+                            ) : !isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? (
+                              <PaymentStatusCalm status={o.paymentStatus} />
+                            ) : null}
+                            <PaymentAdjustmentTag row={o} />
+                          </>
+                        ) : null;
+                      if (isPartnerVin) {
+                        return (
+                          <span className="inline-flex items-center justify-end">
+                            <AmountStack
+                              main={<span className="text-[13px] !text-[#6e6e73]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>}
+                              sub={
+                                <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                                  <AdminPartnerArchivePdfButton sessionId={o.id} variant="link" />
+                                </span>
+                              }
+                            />
+                            <span className="ml-1 inline-flex">
+                              <AmountIconSlot />
+                              <AmountIconSlot />
+                            </span>
                           </span>
-                        </>
-                      ) : o.isManual ? (
-                        <>
-                          <ManualOrderAmountCell id={o.id} amountTotal={o.amountTotal} currency={o.currency} />
-                          {!isPack ? <ManualOrderDeleteButton id={o.id} /> : null}
-                        </>
-                      ) : (
-                        formatMoneyEur(o.amountTotal, o.currency)
-                      )}
-                    </span>
+                        );
+                      }
+                      if (o.isManual) {
+                        return (
+                          <ManualOrderAmountCell
+                            id={o.id}
+                            amountTotal={o.amountTotal}
+                            currency={o.currency}
+                            sub={sub}
+                            trailing={!isPack ? <ManualOrderDeleteButton id={o.id} /> : undefined}
+                          />
+                        );
+                      }
+                      return (
+                        <span className="inline-flex items-center justify-end">
+                          <AmountStack main={formatMoneyEur(o.amountTotal, o.currency)} sub={sub} />
+                          <span className="ml-1 inline-flex">
+                            <AmountIconSlot />
+                            <AmountIconSlot />
+                          </span>
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="max-w-[420px] py-1 pr-4">
                     <span className="flex min-w-0 items-center gap-1.5">
