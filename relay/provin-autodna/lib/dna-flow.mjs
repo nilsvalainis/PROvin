@@ -37,7 +37,7 @@ import {
   totalLooksLikeCredit,
 } from "./dna-page.mjs";
 import { DNA_PRECHECK_MESSAGE_LV, decidePrecheck, parsePrecheckHtml } from "./dna-precheck.mjs";
-import { collectDomPhotoEntries, downloadArchivePhotos } from "./archive-photos.mjs";
+import { collectDomPhotoEntries, domPhotoShapesSummary, downloadArchivePhotos } from "./archive-photos.mjs";
 
 /** Pēc nepareizas paroles nemēģina atkal 6 h (konta bloķēšanas risks); citādi ne biežāk kā reizi 10 min. */
 const BAD_CREDENTIALS_COOLDOWN_MS = 6 * 3600_000;
@@ -558,15 +558,52 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
           if (node.nodeType === 1) {
             const el = node;
             if (/^H[1-6]$/.test(el.tagName) && Number(el.tagName[1]) <= level && !re.test(el.textContent || "") && out.some((x) => x.type === "img")) break;
+            const pick = (els, names) => {
+              for (const e of els) {
+                if (!e) continue;
+                for (const n of names) {
+                  const v = e.getAttribute(n);
+                  if (v && !v.startsWith("data:") && !v.startsWith("#")) {
+                    try {
+                      return new URL(v, location.href).href;
+                    } catch {
+                      /* nav */
+                    }
+                  }
+                }
+              }
+              return "";
+            };
+            const BIG_ATTRS = ["data-full", "data-large", "data-original", "data-big", "data-zoom", "data-zoom-image", "data-image", "data-img", "data-href", "data-url", "data-highres", "data-hires", "data-orig"];
+            const attrNames = (els) => [...new Set(els.filter(Boolean).flatMap((e) => [...e.attributes].map((x) => `${e.tagName.toLowerCase()}@${x.name}`)))].slice(0, 30).join(",");
+            const bgUrl = (e) => {
+              const m = /url\(["']?([^"')]+)["']?\)/.exec(e?.style?.backgroundImage || getComputedStyle(e).backgroundImage || "");
+              return m ? new URL(m[1], location.href).href : "";
+            };
             if (el.tagName === "IMG") {
               const a = el.closest("a[href]");
+              const box = el.closest("[data-remote],[data-toggle='lightbox'],[data-fancybox],[data-lightbox],[data-gallery]");
               out.push({
                 type: "img",
                 href: a ? a.href : "",
-                dataFull: el.getAttribute("data-full") || el.getAttribute("data-large") || el.getAttribute("data-original") || "",
+                dataRemote: pick([box, a, el], ["data-remote", "data-src-full"]),
+                dataFull: pick([el, a, box, el.parentElement], BIG_ATTRS),
                 dataSrc: el.getAttribute("data-src") || el.getAttribute("data-lazy") || "",
                 srcset: el.getAttribute("srcset") || el.getAttribute("data-srcset") || "",
                 src: el.currentSrc || el.src || "",
+                attrs: attrNames([el, a, box]),
+              });
+            } else if ((el.matches("[data-remote],[data-toggle='lightbox'],[data-fancybox],[data-lightbox]") || (el.tagName === "A" && /\.(jpe?g|png|webp)(\?|$)/i.test(el.getAttribute("href") || ""))) && !el.querySelector("img")) {
+              // Galerijas elements bez <img> (fona bilde + saite uz lielo).
+              out.push({
+                type: "img",
+                href: el.tagName === "A" ? el.href : "",
+                dataRemote: pick([el], ["data-remote", "data-src-full"]),
+                dataFull: pick([el], BIG_ATTRS),
+                dataSrc: el.getAttribute("data-src") || "",
+                srcset: "",
+                src: bgUrl(el),
+                attrs: attrNames([el]),
               });
             }
           } else {
@@ -583,11 +620,16 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
       return { ok: true, groups: [] };
     }
     const entries = collectDomPhotoEntries(items, { dateStyle: "day" });
+    const shapes = domPhotoShapesSummary(items);
     if (!entries.length) {
-      await debugDump(p, "photos-none");
+      await debugDump(p, "photos-none", { shapes });
       return { ok: true, groups: [] };
     }
     const groups = await downloadArchivePhotos(p, entries, { log: say });
+    const got = groups.reduce((n, g) => n + g.photos.length, 0);
+    const small = groups.reduce((n, g) => n + g.photos.filter((ph) => entries.some((e) => e.url !== ph.url && e.fallbacks?.includes(ph.url))).length, 0);
+    // Debug (bez vērtībām): kā izskatās bilžu saites - lai redzētu, vai lielais variants atrasts.
+    if (!got || small) await debugDump(p, got ? "photos-small-variant" : "photos-download-failed", { shapes, found: entries.length, got, small });
     return { ok: true, groups };
   }
 

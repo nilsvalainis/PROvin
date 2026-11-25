@@ -76,6 +76,14 @@ relejs -> PROVIN /api/autodna/relay-callback:
 PROVIN: PDF -> Blob + Dropbox `/_PROv/<auto>/AutoDNA - VIN.pdf`; admin panelis vienreiz ievieto blokā (esošais parseris).
 ```
 
+### Arhīva foto pilnā kvalitātē (`POST /autodna/report-photos`)
+
+Tikai jau nopirktai atskaitei (nekad nepērk). Katrai bildei sadaļā «Transportlīdzekļa arhīva fotogrāfijas» kandidāti no
+lielākā: saite uz bildi (`<a href>`) > lightbox `data-remote` > `data-full`/`data-original`/`data-zoom`... > `srcset` >
+sīktēla saites «paaugstinātie» varianti (bez `?w=&h=`, `/thumb/` -> `/original/`, bez `_thumb`/`-300x200`) > sākotnējā bilde.
+Pirmā derīgā (image/*, ≤ 8 MB) paliek; ja lapas `fetch` neiet (CORS), mēģina caur pārlūka konteksta pieprasījumu.
+Ja lielais nav atrasts, `debug/photos-small-variant-*.json` / `photos-download-failed-*.json` rāda saišu formas (bez vērtībām).
+
 ## Uzstādīšana (galvenais, root uz 37.27.149.106)
 
 `/etc/provin-autodna.env` (root 600) izveidots 24.11 ar `AUTODNA_RELAY_TOKEN`, `AUTODNA_WEB_EMAIL`,
