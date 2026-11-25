@@ -427,7 +427,7 @@ function lookup(piece: string, lang: Target): string | null {
 function translateExact(piece: string, lang: Target): string | null {
   const direct = lookup(piece, lang);
   if (direct != null) return direct;
-  const tail = piece.match(/^(.+?)([:.])$/s);
+  const tail = piece.match(/^([\s\S]+?)([:.])$/);
   if (tail) {
     const hit = lookup(tail[1]!, lang);
     if (hit != null) return hit + tail[2];
