@@ -28,6 +28,9 @@ import {
   groupPhotoEntries,
   isAllowedPhotoUrl,
   largestFromSrcset,
+  looksLikeImageUrl,
+  photoKeyPathsSummary,
+  pickReportPageHref,
 } from "@/relay/provin-carvertical/lib/archive-photos.mjs";
 import { createRelayCore as createCvCore } from "@/relay/provin-carvertical/lib/relay-core.mjs";
 import { createRelayCore as createDnaCore } from "@/relay/provin-autodna/lib/relay-core.mjs";
@@ -90,6 +93,41 @@ describe("releja arhīva foto: tīrā loģika (abos relejos tas pats fails)", ()
       ["07.2020", 2],
       ["01.2022", 1],
     ]);
+  });
+
+  it("CDN saites bez paplašinājuma: der, ja atslēga vai hosts norāda uz bildi; PDF / HTML - nē", () => {
+    expect(looksLikeImageUrl("https://x.example/a/b/c")).toBe(false);
+    expect(looksLikeImageUrl("https://x.example/a/b/c", "photoUrl")).toBe(true);
+    expect(looksLikeImageUrl("https://images.example.net/abc123")).toBe(true);
+    expect(looksLikeImageUrl("https://x.example/report.pdf", "photo")).toBe(false);
+    const json = {
+      report: {
+        listings: [
+          { listedAt: "2020-07-10", media: [{ id: 1, location: "https://x.example/m/1" }, { id: 2, location: "https://x.example/m/2" }] },
+          { listedAt: "2022-01-03", photos: ["https://x.example/m/3"] },
+        ],
+        sellerUrl: "https://dealer.example/car",
+      },
+    };
+    expect(collectJsonPhotoEntries(json)).toEqual([
+      { url: "https://x.example/m/1", date: "07.2020" },
+      { url: "https://x.example/m/2", date: "07.2020" },
+      { url: "https://x.example/m/3", date: "01.2022" },
+    ]);
+    expect(photoKeyPathsSummary(json)).toEqual(["report.listings[].media[].location × 2", "report.listings[].photos[] × 1"]);
+  });
+
+  it("atskaites lapas saite pēc reportId no «Manas atskaites»", () => {
+    const origin = "https://www.carvertical.com";
+    const links = [
+      { href: "https://www.carvertical.com/lv/user/reports", text: "Atskaites" },
+      { href: "https://www.carvertical.com/lv/precheck/pricing?r=abc-123", text: "Pirkt" },
+      { href: "/lv/report/abc-123/pdf", text: "PDF" },
+      { href: "/lv/report/abc-123", text: "Priekšskatījums" },
+      { href: "https://evil.example/lv/report/abc-123", text: "Priekšskatījums" },
+    ];
+    expect(pickReportPageHref(links, "abc-123", origin)).toBe("https://www.carvertical.com/lv/report/abc-123");
+    expect(pickReportPageHref(links, "zzz", origin)).toBe("");
   });
 
   it("AutoDNA DOM: saite uz pilno bildi > srcset > src, datums no virsraksta", () => {

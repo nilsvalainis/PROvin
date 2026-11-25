@@ -431,7 +431,7 @@ export function createRelayCore({
       const acct = await browser.account();
       const existing = findReportForVin(acct.reports, v, now());
       if (!existing || existing.status !== 30) return { status: "not_found" };
-      const out = await browser.reportPhotos(existing.id);
+      const out = await browser.reportPhotos(existing.id, v);
       if (!out.ok) return { status: "error", code: out.code || "photos_failed" };
       return { status: out.groups.length ? "ok" : "no_photos", reportId: existing.id, groups: out.groups };
     } finally {

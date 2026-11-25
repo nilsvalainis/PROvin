@@ -27,10 +27,20 @@ export function isAllowedPhotoUrl(raw) {
   return true;
 }
 
-export function looksLikeImageUrl(raw) {
+const IMG_KEY_HINT_RE = /photo|image|img|picture|pic$|thumb|gallery|original|large|full|^src$|media/i;
+const IMG_HOST_HINT_RE = /(^|[.-])(img|imgs|image|images|photo|photos|media|cdn|static|assets|pictures)[.-]/i;
+
+/**
+ * Bildes saite: https + (paplašinājums / bilžu ceļš / bilžu hosts) vai - ja atslēga norāda uz bildi
+ * («photo», «imageUrl», «original»...) - jebkura https saite (CDN bieži bez paplašinājuma).
+ */
+export function looksLikeImageUrl(raw, keyHint = "") {
   if (!isAllowedPhotoUrl(raw)) return false;
   const u = new URL(raw);
-  return IMG_EXT_RE.test(u.pathname) || IMG_PATH_RE.test(u.pathname);
+  if (/\.(pdf|html?|js|css|json|svg)(\?|#|$)/i.test(u.pathname)) return false;
+  if (IMG_EXT_RE.test(u.pathname) || IMG_PATH_RE.test(u.pathname)) return true;
+  if (IMG_HOST_HINT_RE.test(`${u.hostname}.`)) return true;
+  return Boolean(keyHint) && IMG_KEY_HINT_RE.test(keyHint);
 }
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -107,13 +117,13 @@ export function collectJsonPhotoEntries(json, { dateStyle = "month", max = ARCHI
     seen.add(url);
     out.push({ url, date });
   };
-  const walk = (node, ctxDate, depth) => {
-    if (depth > 14 || out.length >= max || node == null) return;
+  const walk = (node, ctxDate, depth, keyHint) => {
+    if (depth > 16 || out.length >= max || node == null) return;
     if (Array.isArray(node)) {
       for (const v of node) {
         if (typeof v === "string") {
-          if (looksLikeImageUrl(v)) push(v, ctxDate);
-        } else walk(v, ctxDate, depth + 1);
+          if (looksLikeImageUrl(v, keyHint)) push(v, ctxDate);
+        } else walk(v, ctxDate, depth + 1, keyHint);
       }
       return;
     }
@@ -129,14 +139,14 @@ export function collectJsonPhotoEntries(json, { dateStyle = "month", max = ARCHI
       }
     }
     const imgs = Object.entries(node)
-      .filter(([, v]) => typeof v === "string" && looksLikeImageUrl(v))
+      .filter(([k, v]) => typeof v === "string" && looksLikeImageUrl(v, IMG_KEY_HINT_RE.test(k) ? k : keyHint))
       .sort((a, b) => keyRank(a[0]) - keyRank(b[0]));
     if (imgs.length) push(imgs[0][1], date);
-    for (const [, v] of Object.entries(node)) {
-      if (v && typeof v === "object") walk(v, date, depth + 1);
+    for (const [k, v] of Object.entries(node)) {
+      if (v && typeof v === "object") walk(v, date, depth + 1, IMG_KEY_HINT_RE.test(k) ? k : keyHint);
     }
   };
-  walk(json, "", 0);
+  walk(json, "", 0, "");
   return out;
 }
 
@@ -151,14 +161,14 @@ export function collectDomPhotoEntries(items, { dateStyle = "day", max = ARCHIVE
   for (const it of Array.isArray(items) ? items : []) {
     if (out.length >= max) break;
     if (it?.type === "date") {
-      const m = /(\d{2}\.\d{2}\.\d{4}|\d{2}\.\d{4})/.exec(String(it.text ?? ""));
+      const m = /(\d{2}\.\d{2}\.\d{4}|\d{2}\.\d{4}|\d{4}-\d{2}(?:-\d{2})?)/.exec(String(it.text ?? ""));
       const d = m ? archiveDateLabel(m[1], dateStyle) : "";
       if (d) date = d;
       continue;
     }
     if (it?.type !== "img") continue;
     const candidates = [it.href, it.dataFull, largestFromSrcset(it.srcset), it.dataSrc, it.src];
-    const url = candidates.find((c) => typeof c === "string" && looksLikeImageUrl(c));
+    const url = candidates.find((c, i) => typeof c === "string" && looksLikeImageUrl(c, i === 0 ? "" : "src"));
     if (!url || seen.has(url)) continue;
     seen.add(url);
     out.push({ url, date });
@@ -178,6 +188,50 @@ export function groupPhotoEntries(entries) {
     g.urls.push(e.url);
   }
   return groups;
+}
+
+/**
+ * Nopirktās atskaites lapas saite no "Manas atskaites" (Priekšskatījums / Skatīt): tā pati vietne, satur reportId.
+ */
+export function pickReportPageHref(links, reportId, origin) {
+  const id = String(reportId ?? "").trim();
+  if (!id) return "";
+  const ok = (l) => {
+    try {
+      const u = new URL(String(l?.href ?? ""), origin);
+      return u.origin === new URL(origin).origin && u.href.includes(id) && !/checkout|pricing|billing|pdf/i.test(u.pathname);
+    } catch {
+      return false;
+    }
+  };
+  const hits = (Array.isArray(links) ? links : []).filter(ok);
+  const pref = hits.find((l) => /priek[sš]skat|preview|skat[iī]t|view|atv[eē]rt|open/i.test(String(l.text ?? "")));
+  const pick = pref ?? hits[0];
+  return pick ? new URL(pick.href, origin).href : "";
+}
+
+/** Debug: JSON atslēgu ceļi, kuros ir bilžu saites (bez vērtībām) - «sections.photos.groups[].images[]» × N. */
+export function photoKeyPathsSummary(json, max = 40) {
+  const counts = new Map();
+  const walk = (node, p, depth, keyHint) => {
+    if (depth > 16 || node == null) return;
+    if (Array.isArray(node)) {
+      for (const v of node) {
+        if (typeof v === "string") {
+          if (looksLikeImageUrl(v, keyHint)) counts.set(`${p}[]`, (counts.get(`${p}[]`) ?? 0) + 1);
+        } else walk(v, `${p}[]`, depth + 1, keyHint);
+      }
+      return;
+    }
+    if (typeof node !== "object") return;
+    for (const [k, v] of Object.entries(node)) {
+      const kp = p ? `${p}.${k}` : k;
+      if (typeof v === "string" && looksLikeImageUrl(v, IMG_KEY_HINT_RE.test(k) ? k : keyHint)) counts.set(kp, (counts.get(kp) ?? 0) + 1);
+      else if (v && typeof v === "object") walk(v, kp, depth + 1, IMG_KEY_HINT_RE.test(k) ? k : keyHint);
+    }
+  };
+  walk(json, "", 0, "");
+  return [...counts.entries()].slice(0, max).map(([k, n]) => `${k} × ${n}`);
 }
 
 /** Lejupielādēta bilde der: image/* (ne SVG), ne tukša, ≤ limits. */
