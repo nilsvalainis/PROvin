@@ -32,6 +32,7 @@ import {
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
+import { AdminAutodnaPreviousSearches } from "@/components/admin/AdminAutodnaPreviousSearches";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
@@ -704,6 +705,13 @@ export function AdminVendorAvotuSourceBlock({
       </div>
 
       <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${embedded ? "" : trafficFillLevel ? "px-2 pb-2" : ""}`}>
+        {blockKey === "autodna" ? (
+          <AdminAutodnaPreviousSearches
+            rows={block.previousSearches}
+            readOnly={readOnly || !!disabled}
+            onRemove={() => onChange({ ...block, previousSearches: undefined })}
+          />
+        ) : null}
         {blockKey === "autodna" || blockKey === "carvertical" ? (
           <AdminSourcePdfChecklist
             idPrefix={idBase}

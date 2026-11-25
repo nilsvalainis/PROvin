@@ -27,6 +27,7 @@ import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
+import { extractAutodnaPreviousSearches } from "@/lib/autodna-previous-searches-pdf";
 import { tryImportVendorArchivePhotosFromPdf, type VendorArchiveImportResult } from "@/lib/vendor-archive-photos-import";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
@@ -356,6 +357,14 @@ export async function POST(req: Request) {
       if (filled !== current) {
         result.sourceBlocks = { ...result.sourceBlocks, [target]: filled };
         if (!changedKeys.includes(target)) changedKeys.push(target);
+      }
+      if (target === "autodna") {
+        // «Iepriekšējie meklējumi» (IP maskēts, karte no PDF) -> klienta PDF kartīte.
+        const searches = await extractAutodnaPreviousSearches(new Uint8Array(buffer), extracted.text ?? "");
+        if (searches.length) {
+          result.sourceBlocks = { ...result.sourceBlocks, autodna: { ...result.sourceBlocks.autodna, previousSearches: searches } };
+          if (!changedKeys.includes("autodna")) changedKeys.push("autodna");
+        }
       }
     }
     const notes = aiBlocked

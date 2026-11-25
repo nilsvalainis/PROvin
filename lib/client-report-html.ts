@@ -115,6 +115,7 @@ import {
   type CsddBlokiPdfParts,
 } from "@/lib/csdd-bloki-pdf-html";
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
+import { AUTODNA_PREVIOUS_SEARCHES_PDF_CSS, buildAutodnaPreviousSearchesPdfHtml } from "@/lib/autodna-previous-searches";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import { stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
@@ -2400,7 +2401,8 @@ function buildVendorAvotuSubsection(
     "Transportlīdzekļa informācija",
     b.title === L.traficom_fi ? { columns: 1 } : undefined,
   );
-  if (!hasComments && !factsHtml && !photosHtml && !sparkHtml) return "";
+  const searchesHtml = b.title === L.autodna ? buildAutodnaPreviousSearchesPdfHtml(b.previousSearches ?? []) : "";
+  if (!hasComments && !factsHtml && !photosHtml && !sparkHtml && !searchesHtml) return "";
   const head = sectionHeadBrand(
     vendorSectionIconHtml(b.title),
     b.title,
@@ -2409,6 +2411,7 @@ function buildVendorAvotuSubsection(
   const bodyParts: string[] = [];
   if (sparkHtml) bodyParts.push(sparkHtml);
   if (factsHtml) bodyParts.push(factsHtml);
+  if (searchesHtml) bodyParts.push(searchesHtml);
   if (photosHtml) bodyParts.push(photosHtml);
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   const body = `<div class="pdf-source-section-body">${bodyParts.join("\n")}</div>`;
@@ -3248,6 +3251,7 @@ ${clientReportPageChromeCss(running)}
       .pdf-ltab-izzi-status{margin:0 0 8px;font-size:var(--pdf-fs-base);line-height:1.45;font-weight:600;color:#334155;}
       .pdf-ltab-izzi--muted .pdf-ltab-izzi-status{margin:0;font-weight:500;color:#64748b;}
       .pdf-ltab-izzi-footer{margin:10px 0 0;font-size:9px;line-height:1.4;color:#94a3b8;}
+      ${AUTODNA_PREVIOUS_SEARCHES_PDF_CSS}
       /* Viens apakšvirsrakstu stils visās sadaļās (CSDD, dīleris, LTAB, sludinājums, foto). */
       .pdf-subhead{
         display:flex;align-items:center;gap:7px;margin:var(--pdf-gap-heading) 0 8px;

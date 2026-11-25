@@ -94,6 +94,7 @@ import {
   normalizeAsvBlock,
   type AsvBlockState,
 } from "@/lib/asv-report";
+import { normalizeAutodnaPreviousSearches, type AutodnaPreviousSearch } from "@/lib/autodna-previous-searches";
 import {
   countListingAnalysisPhotos,
   listingCoverFromRaw,
@@ -1099,6 +1100,8 @@ export type VendorAvotuBlockState = {
   /** CarVertical — bojājumu detaļas (PDF grafiks + admin). */
   damageDetails?: CarVerticalDamageDetailRow[];
   pdfChecklist?: SourcePdfChecklist;
+  /** AutoDNA «Iepriekšējie meklējumi» (IP maskēts, karte no PDF) - klienta PDF kartīte. */
+  previousSearches?: AutodnaPreviousSearch[];
   /** Papildu konteksts tikai AI — nav PDF. */
   aiContextRaw: string;
   photos: SourceBlockPhotoMeta[];
@@ -1841,6 +1844,7 @@ export function vendorAvotuBlockHasContent(b: VendorAvotuBlockState | null | und
     (safe.damageDetails ?? []).some((r) => r.date.trim() || r.lossAmount.trim()) ||
     wsStr(safe.comments).trim().length > 0 ||
     sourcePdfChecklistHasAny(safe.pdfChecklist) ||
+    (safe.previousSearches ?? []).length > 0 ||
     sourceBlockPhotosHaveContent(safe)
   );
 }
@@ -2056,6 +2060,8 @@ export type ClientManualVendorBlockPdf = {
    */
   ownerChangeHints?: Array<{ date: string; country: string; description: string }>;
   damageDetails?: CarVerticalDamageDetailRow[];
+  /** AutoDNA «Iepriekšējie meklējumi» kartīte. */
+  previousSearches?: AutodnaPreviousSearch[];
   /** AutoDNA / CarVertical iekopētais RAW — zonu hidratācijai, netiek drukāts. */
   sourceRaw?: string;
   /** Publisko reģistru (tjekbil / mnt / lkf / car.info) īsie fakti PDF. */
@@ -2117,6 +2123,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
         };
       })(),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
+      ...(k === "autodna" && (b.previousSearches ?? []).length > 0 ? { previousSearches: b.previousSearches } : {}),
       ...(() => {
         const sourceRaw = [b.mileagePasteRaw, b.aiContextRaw, b.comments]
           .map((s) => (s ?? "").trim())
@@ -2444,6 +2451,7 @@ function parseVendorAvotuBlockRaw(raw: Record<string, unknown>): VendorAvotuBloc
           }
         : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
+      ...previousSearchesField(raw.previousSearches),
       ...syncedSourceBlockPhotos(raw),
     };
   }
@@ -2865,8 +2873,14 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
       : {}),
     ...(Array.isArray(b.damageDetails) ? { damageDetails: b.damageDetails } : {}),
     ...(b.pdfChecklist ? { pdfChecklist: b.pdfChecklist } : {}),
+    ...previousSearchesField(b.previousSearches),
     ...syncedSourceBlockPhotos(b),
   };
+}
+
+function previousSearchesField(raw: unknown): { previousSearches?: AutodnaPreviousSearch[] } {
+  const rows = normalizeAutodnaPreviousSearches(raw);
+  return rows.length ? { previousSearches: rows } : {};
 }
 
 /**
