@@ -76,6 +76,20 @@ function lvMenesisForm(n: number): string {
 }
 
 /**
+ * Kartītes «Reģistrācija Latvijā» vērtība (Nils 25.11): līdz 1 mēn. - «N dienas», tālāk «5 mēn.», «1 g. 3 mēn.», «2 g.».
+ * EN/RU/DE tulko `client-report-dynamic-i18n` (tās pašas vienības kā «Vecums»).
+ */
+export function formatLatviaTenureShort(days: number, months: number): string {
+  const d = Math.max(0, Math.floor(days));
+  const mo = Math.max(0, Math.floor(months));
+  if (mo < 1) return `${d} ${lvDienaLabel(d)}`;
+  const y = Math.floor(mo / 12);
+  const m = mo % 12;
+  if (y === 0) return `${m} mēn.`;
+  return m === 0 ? `${y} g.` : `${y} g. ${m} mēn.`;
+}
+
+/**
  * Tikai reģistra notikumi (CSDD, LTAB pēc LV numura). Sludinājumi, dīlera serviss un
  * CarVertical/AutoDNA rindas ar valsti „Latvija” NAV reģistrācija Latvijā.
  * Ja CSDD ir „Pirmā reģistrācija Latvijā” - tas ir precīzais sākuma datums.

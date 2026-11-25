@@ -718,6 +718,12 @@ function sourcesHtml(m: PdfTopModel): string {
   return `<div class="pdf-top6__src"><div class="pdf-top6__shead"><p class="pdf-top6__hd">${sourcesHeadingHtml(lang, m.wordmarkHtml)}</p>${parts.length ? `<p class="pdf-top6__tot">${parts.join(" · ")}</p>` : ""}</div><div class="pdf-top6__scan"></div><div class="pdf-top6__cells" style="grid-template-columns:repeat(${cols * 2},minmax(0,1fr))">${items}</div></div>`;
 }
 
+/**
+ * Inter 800 ar lielajiem burtiem ir platāks par `pdfTopTextEm` vidējo (iPhone 25.11: «BMW 530D XDRIVE»
+ * pārklājās ar odometru). Titulam rezerve 8 %; precīzo izmēru pēc fontu ielādes pielāgo `PDF_TOP6_FIT_SCRIPT`.
+ */
+export const PDF_TOP_TITLE_SAFETY = 0.92;
+
 /** Visa 1. lapas augšdaļa vienā blokā, kas lapu pārrāvumā nepārtrūkst. */
 export function buildPdfTopSectionHtml(m: PdfTopModel): string {
   const { lang } = m;
@@ -729,8 +735,10 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
     : "";
   const model = m.makeModel.trim();
   const maxTitle = hasPhoto ? 32 : 40;
-  const one = model ? pdfTopFitPx(model, W, maxTitle, 22) : maxTitle;
-  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${Math.max(18, Math.min(hasPhoto ? 26 : 32, Math.floor((2 * W) / Math.max(1, pdfTopTextEm(model)))))}px`;
+  const one = model ? pdfTopFitPx(model, W * PDF_TOP_TITLE_SAFETY, maxTitle, 22) : maxTitle;
+  const twoLinePx = Math.max(18, Math.min(hasPhoto ? 26 : 32, Math.floor((2 * W * PDF_TOP_TITLE_SAFETY) / Math.max(1, pdfTopTextEm(model)))));
+  // `data-fit-min`: pēc fontu ielādes skripts samazina izmēru, līdz ietilpst kolonnā; ja nē - lūzt 2 rindās.
+  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${twoLinePx}px`;
   const vin = m.vin.trim() ? `<p class="pdf-top6__vin"><b>VIN</b>${esc(m.vin.trim())}</p>` : "";
   const spec = m.specLine.trim()
     ? `<p class="pdf-top6__spec" style="${fitStyle(pdfTopFitPx(m.specLine, W, 9, 7), 7)}">${esc(m.specLine)}</p>`
@@ -750,7 +758,7 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
       : "",
   ].filter(Boolean);
   const pairHtml = pair.length ? `<div class="pdf-top6__pair">${pair.join("")}</div>` : "";
-  const ident = `<p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}`;
+  const ident = `<p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" data-fit-min="18" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}`;
   const hero = hasPhoto
     ? `<div class="pdf-top6__hero"><div class="pdf-top6__photo">${photo}</div><div class="pdf-top6__id">${ident}${odo}${pairHtml}</div></div>`
     : `<div class="pdf-top6__hero pdf-top6__hero--nophoto"><div class="pdf-top6__id">${ident}</div><div class="pdf-top6__id">${odo}${pairHtml}</div></div>`;
@@ -760,6 +768,28 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
 /** Atsevišķa josla dīlera atskaitei (tai nav 1. lapas kopsavilkuma). */
 export function buildPdfTopBarOnlyHtml(m: Pick<PdfTopModel, "logoSvg" | "kindTitle" | "kindSub" | "dateLabel">): string {
   return `<section class="pdf-top6 pdf-top6--bar-only" role="region">${buildPdfTopBarHtml(m)}</section>`;
+}
+
+/**
+ * Pēc fontu ielādes: katrs vienrindas teksts 1. lapas augšdaļā (tituls, odometrs, kartītes, avoti) nedrīkst
+ * iziet ārpus savas kolonnas. Samazina burtu izmēru pa 0,25 px līdz `data-fit-min` (noklusēti 60 %);
+ * ja neietilpst arī tad - atļauj lūzt. Serverī (Chromium) un pārlūkā strādā vienādi.
+ */
+export function pdfTop6FitScriptBody(): string {
+  return `function provinFitTop6(){
+  var els=document.querySelectorAll(".pdf-top6 .pdf-top6__model,.pdf-top6 .pdf-top6__big,.pdf-top6 .pdf-top6-card__v,.pdf-top6 .pdf-top6__lab,.pdf-top6 .pdf-top6__pv,.pdf-top6 .pdf-top6__vin,.pdf-top6 .pdf-top6__spec,.pdf-top6 .pdf-top6-src__nm,.pdf-top6 .pdf-top6__kind");
+  for(var i=0;i<els.length;i++){
+    var el=els[i];
+    if(!el.clientWidth) continue;
+    var cs=getComputedStyle(el);
+    var fs=parseFloat(cs.fontSize);
+    if(!(fs>0)) continue;
+    var min=parseFloat(el.getAttribute("data-fit-min")||"")||fs*0.6;
+    var n=0;
+    while(el.scrollWidth>el.clientWidth+0.5&&fs-0.25>=min&&n++<200){fs-=0.25;el.style.fontSize=fs+"px";}
+    if(el.scrollWidth>el.clientWidth+0.5){el.style.whiteSpace="normal";el.style.overflowWrap="anywhere";}
+  }
+}`;
 }
 
 /** Bloka stils (A4, px kā maketā; drukā melnbaltā lasāms - risks treknāks). */
@@ -779,10 +809,11 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__hero{display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:26px;}
 .pdf-top6__hero--nophoto{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;}
 .pdf-top6__hero--nophoto .pdf-top6__odo{margin-top:0;}
+.pdf-top6__id,.pdf-top6__photo{min-width:0;}
 .pdf-top6__ph{position:relative;overflow:hidden;background:var(--t6-soft);height:272px;}
 .pdf-top6__ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%;transform:scale(1.06);transform-origin:50% 100%;}
 .pdf-top6__cap{margin-top:7px!important;font-size:8px;color:var(--t6-mute);letter-spacing:.02em;}
-.pdf-top6__model{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1.02;color:var(--t6-ink);}
+.pdf-top6__model{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1.02;color:var(--t6-ink);max-width:100%;overflow-wrap:anywhere;}
 .pdf-top6__vin{margin-top:10px!important;font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6__vin b{font-weight:800;letter-spacing:-0.01em;color:var(--t6-blue);margin-right:8px;}
 .pdf-top6__spec{margin-top:10px!important;color:var(--t6-mute);letter-spacing:.02em;white-space:nowrap;}
@@ -790,7 +821,7 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__big{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6__big small{font-size:.42em;font-weight:500;letter-spacing:0;color:var(--t6-mute);margin-left:4px;}
 .pdf-top6__sub{margin-top:6px!important;font-size:8.5px;color:var(--t6-mute);}
-.pdf-top6__pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;padding-top:12px;border-top:.5px solid var(--t6-hair);}
+.pdf-top6__pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:20px;padding-top:12px;border-top:.5px solid var(--t6-hair);}
 .pdf-top6__pv{margin-top:4px!important;font-size:13px;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;}
 .pdf-top6__pair .pdf-top6__sub{margin-top:2px!important;}
 .pdf-top6__kc{margin-top:28px;}

@@ -87,10 +87,37 @@ const RULES: Rule[] = [
     to: { en: (m) => `abroad ${m[1]}`, ru: (m) => `за рубежом ${m[1]}`, de: (m) => `Ausland ${m[1]}` },
   },
   {
+    // Kartīte «Reģistrācija Latvijā» (Nils 25.11): viss teksta mezgls ir ilgums - «1 g. 3 mēn.», «5 mēn.», «2 g.».
+    re: /^(\s*)(?:(\d+) g\.)?(?: ?(\d+) mēn\.)?(\s*)$/g,
+    to: {
+      en: (m) => tenure(m, "en"),
+      ru: (m) => tenure(m, "ru"),
+      de: (m) => tenure(m, "de"),
+    },
+  },
+  {
+    re: /^(\s*)(\d+) dien(?:a|as)(\s*)$/g,
+    to: {
+      en: (m) => `${m[1]}${m[2]} ${m[2] === "1" ? "day" : "days"}${m[3]}`,
+      ru: (m) => `${m[1]}${m[2]} дн.${m[3]}`,
+      de: (m) => `${m[1]}${m[2]} ${m[2] === "1" ? "Tag" : "Tage"}${m[3]}`,
+    },
+  },
+  {
     re: /(?<![\p{L}\p{N}])Jaunākais:/gu,
     to: { en: () => "Latest:", ru: () => "Последний:", de: () => "Neuester:" },
   },
 ];
+
+/** «1 g. 3 mēn.» → tās pašas vienības kā `pdfTopAgeLabel` («Vecums»). Tukšu mezglu atstāj, kā ir. */
+function tenure(m: RegExpExecArray, lang: Target): string {
+  const [all, lead = "", y, mo, trail = ""] = m;
+  if (!y && !mo) return all ?? "";
+  const U: Record<Target, [string, string]> = { en: ["yrs", "mos"], ru: ["г.", "мес."], de: ["J.", "Mon."] };
+  const [yu, mu] = U[lang];
+  const parts = [y ? `${y} ${yu}` : "", mo ? `${mo} ${mu}` : ""].filter(Boolean);
+  return `${lead}${parts.join(" ")}${trail}`;
+}
 
 /** „2. un 3.” → EN/RU „2 and 3” / „2 и 3”, DE „2. und 3.”. */
 function ordinalList(raw: string, lang: Target): string {
