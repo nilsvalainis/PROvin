@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check lib/cv-page.mjs && node --check lib/cv-flow.mjs && node --check lib/relay-core.mjs"
+    "check": "node --check server.mjs && node --check lib/cv-photos.mjs && node --check lib/cv-page.mjs && node --check lib/cv-flow.mjs && node --check lib/relay-core.mjs"
   },
   "dependencies": {
     "playwright": "^1.59.1"

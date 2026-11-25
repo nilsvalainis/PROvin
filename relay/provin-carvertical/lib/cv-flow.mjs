@@ -29,12 +29,15 @@ import {
   redact,
 } from "./cv-page.mjs";
 import {
+  ARCHIVE_PHOTOS_TOTAL_MAX_BYTES,
+  acceptDownloadedPhoto,
   collectDomPhotoEntries,
   collectJsonPhotoEntries,
   downloadArchivePhotos,
   photoKeyPathsSummary,
   pickReportPageHref,
 } from "./archive-photos.mjs";
+import { CV_PHOTO_MAX, CV_ZIP_MAX_BYTES, parseCvPhotoSection, photosFromSetZip, summarizeDataDict } from "./cv-photos.mjs";
 
 const CODE_TTL_MS = 15 * 60_000;
 
@@ -393,6 +396,101 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
   }
 
   /**
+   * Lapas kontekstā: lejupielādē saiti (GET, `auth` tikai CarVertical API) vai ņem dotu base64; attēlu, kas lielāks par
+   * `shrinkOver`, samazina līdz `maxDim` px (JPEG 0,9) - kā to dara pati CarVertical atskaite. Atgriež base64.
+   */
+  async function pageBytes(p, { url = "", auth = "", b64 = "", contentType = "", maxBytes, shrinkOver = 900 * 1024, maxDim = 2000 }) {
+    return p
+      .evaluate(
+        async ({ url, auth, b64, contentType, maxBytes, shrinkOver, maxDim }) => {
+          const toB64 = (bytes) => {
+            let bin = "";
+            for (let k = 0; k < bytes.length; k += 0x8000) bin += String.fromCharCode(...bytes.subarray(k, k + 0x8000));
+            return btoa(bin);
+          };
+          try {
+            let blob;
+            let status = 200;
+            if (b64) {
+              const bin = atob(b64);
+              const arr = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+              blob = new Blob([arr], { type: contentType });
+            } else {
+              const r = await fetch(url, { method: "GET", credentials: auth ? "omit" : "include", ...(auth ? { headers: { Authorization: auth } } : {}) });
+              status = r.status;
+              if (!r.ok) return { ok: false, status };
+              blob = await r.blob();
+            }
+            if (blob.size > maxBytes) return { ok: false, status: 413 };
+            let type = blob.type || contentType;
+            if (/^image\//.test(type) && blob.size > shrinkOver) {
+              const bmp = await createImageBitmap(blob);
+              const k = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+              const c = document.createElement("canvas");
+              c.width = Math.round(bmp.width * k);
+              c.height = Math.round(bmp.height * k);
+              c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+              const out = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.9));
+              if (out) {
+                blob = out;
+                type = "image/jpeg";
+              }
+            }
+            return { ok: true, status, contentType: type, size: blob.size, base64: toB64(new Uint8Array(await blob.arrayBuffer())) };
+          } catch (e) {
+            return { ok: false, status: 0, error: String(e?.message ?? e).slice(0, 120) };
+          }
+        },
+        { url, auth, b64, contentType, maxBytes, shrinkOver, maxDim },
+      )
+      .catch((e) => ({ ok: false, status: -1, error: String(e?.message ?? "").slice(0, 120) }));
+  }
+
+  /** dataDict.photo ieraksti -> grupas: komplekti (ZIP ar manifest.json) un atsevišķas saites; oriģināli, samazināti ≤2000 px. */
+  async function downloadCvPhotoItems(p, items, reportId, trace) {
+    const groups = [];
+    let total = 0;
+    let count = 0;
+    const add = (date, base64, contentType, size) => {
+      let g = groups.find((x) => x.date === date);
+      if (!g) {
+        g = { date, photos: [] };
+        groups.push(g);
+      }
+      g.photos.push({ base64, contentType });
+      total += size;
+      count++;
+    };
+    for (const it of items) {
+      if (count >= CV_PHOTO_MAX || total >= ARCHIVE_PHOTOS_TOTAL_MAX_BYTES) break;
+      if (it.kind === "url") {
+        const r = await pageBytes(p, { url: it.url, maxBytes: 20 * 1024 * 1024 });
+        if (r.ok && acceptDownloadedPhoto(r)) add(it.date, r.base64, r.contentType, r.size);
+        else trace.failed.push(`url ${r.status}${r.error ? ` ${r.error}` : ""}`);
+        continue;
+      }
+      const url =
+        it.kind === "set" ? `${CV_API}/reports/${encodeURIComponent(reportId)}/photos?setId=${encodeURIComponent(it.setId)}` : it.url;
+      const z = await pageBytes(p, { url, auth: it.kind === "set" ? bearer : "", maxBytes: CV_ZIP_MAX_BYTES, shrinkOver: Infinity });
+      if (!z.ok) {
+        trace.failed.push(`${it.kind} ${z.status}${z.error ? ` ${z.error}` : ""}`);
+        continue;
+      }
+      const photos = photosFromSetZip(Buffer.from(z.base64, "base64"));
+      trace.sets.push(`${it.kind} ${it.date}: zip ${z.size} B, ${photos.length} attēli`);
+      for (const ph of photos) {
+        if (count >= CV_PHOTO_MAX || total >= ARCHIVE_PHOTOS_TOTAL_MAX_BYTES) break;
+        const r = ph.buf.length > 900 * 1024 ? await pageBytes(p, { b64: ph.buf.toString("base64"), contentType: ph.contentType, maxBytes: 40 * 1024 * 1024 }) : null;
+        if (r && !r.ok) continue;
+        const out = r ?? { base64: ph.buf.toString("base64"), contentType: ph.contentType, size: ph.buf.length };
+        if (acceptDownloadedPhoto(out)) add(it.date, out.base64, out.contentType, out.size);
+      }
+    }
+    return groups;
+  }
+
+  /**
    * Arhīva foto JAU NOPIRKTAI atskaitei (tikai lasīšana, nekad nepērk):
    *  1) atskaites API ar sesijas Bearer (GET) - ja tur ir bilžu saites;
    *  2) citādi atver atskaites lapu ("Manas atskaites" -> Priekšskatījums šim reportId / VIN) un klausās, ko lapa
@@ -420,6 +518,10 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
       nextData: false,
       domImgs: 0,
       opened: "",
+      photoSection: null,
+      dataDict: null,
+      sets: [],
+      failed: [],
     };
     const entries = [];
     const seenUrl = new Set();
@@ -443,7 +545,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
       .evaluate(
         async ({ api, id, auth }) => {
           const out = [];
-          for (const suffix of ["", "/data", "/full", "/photos", "/images", "/gallery"]) {
+          for (const suffix of [""]) {
             try {
               const r = await fetch(`${api}/reports/${encodeURIComponent(id)}${suffix}`, { method: "GET", headers: { Authorization: auth } });
               const ct = r.headers.get("content-type") || "";
@@ -463,6 +565,25 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
       trace.direct.push(`GET /reports/{id}${d.suffix} -> ${d.status}${keys ? ` keys: ${keys}` : ""}`);
       if (d.json) addJson(d.json, `api /reports/{id}${d.suffix}`);
     }
+
+    // 0) Pareizais ceļš (kā pati CarVertical atskaite): dataDict.photo -> komplekti / saites.
+    const reportJson = direct.find((d) => d.suffix === "")?.json ?? null;
+    const section = parseCvPhotoSection(reportJson?.dataDict);
+    trace.photoSection = {
+      version: section.version,
+      items: section.items.reduce((acc, it) => ({ ...acc, [it.kind]: (acc[it.kind] ?? 0) + 1 }), {}),
+      dates: [...new Set(section.items.map((it) => it.date))],
+    };
+    if (section.items.length) {
+      const groups = await downloadCvPhotoItems(p, section.items, reportId, trace);
+      const n = groups.reduce((k, g) => k + g.photos.length, 0);
+      trace.photoSection.downloaded = n;
+      if (n) {
+        say(`arhīva foto: ${n} no dataDict.photo (${section.items.length} ieraksti, v${section.version || "?"})`);
+        return { ok: true, groups };
+      }
+    }
+    trace.dataDict = summarizeDataDict(reportJson?.dataDict);
 
     // 2) Atskaites lapa: ko lapa pati ielādē.
     if (!entries.length) {

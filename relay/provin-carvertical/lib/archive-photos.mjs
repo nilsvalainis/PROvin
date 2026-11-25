@@ -5,9 +5,9 @@
  * Relejs NEKAD nepērk šajā ceļā: tikai lasa atskaites datus (GET) un lejupielādē bildes (GET, tikai https, tikai image/*).
  */
 
-export const ARCHIVE_PHOTO_MAX = 60;
+export const ARCHIVE_PHOTO_MAX = 100;
 export const ARCHIVE_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
-export const ARCHIVE_PHOTOS_TOTAL_MAX_BYTES = 40 * 1024 * 1024;
+export const ARCHIVE_PHOTOS_TOTAL_MAX_BYTES = 60 * 1024 * 1024;
 
 const IMG_EXT_RE = /\.(jpe?g|png|webp)(\?|#|$)/i;
 const IMG_PATH_RE = /\/(images?|photos?|img|pictures?|media|gallery)\//i;
