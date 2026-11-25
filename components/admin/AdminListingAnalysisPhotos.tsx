@@ -58,6 +58,8 @@ type Props = {
   onHidePhotoWatermarksChange?: (next: boolean) => void;
   /** Avota atslēga source-block-photo API (piem. tirgus = sludinājuma vēsture). */
   uploadBlockKey?: string;
+  /** Papildu rinda zem grupas virsraksta (piem. AutoDNA / CarVertical arhīva foto avots un pārvietošana). */
+  renderGroupExtra?: (group: PhotoGroupLike) => ReactNode;
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
@@ -292,6 +294,7 @@ export function AdminListingAnalysisPhotos({
   hidePhotoWatermarks,
   onHidePhotoWatermarksChange,
   uploadBlockKey,
+  renderGroupExtra,
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -903,6 +906,8 @@ export function AdminListingAnalysisPhotos({
                   </div>
                 ) : null}
               </div>
+
+              {renderGroupExtra ? renderGroupExtra(group) : null}
 
               {renderDropZone(
                 group.id,

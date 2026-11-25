@@ -23,6 +23,7 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
+import { AdminArchivePhotoGroupBar } from "@/components/admin/AdminArchivePhotoGroupBar";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -122,6 +123,8 @@ type Props = {
   archiveBridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents"> | null;
   /** Palielina apakšējās joslas «Ģenerēt izsoļu arhīva PDF» pēc ģenerēšanas. */
   archiveRefreshKey?: number;
+  /** AutoDNA / CarVertical arhīva foto grupa -> atpakaļ uz «Sludinājuma vēsture» (kļūdas teksts vai null). */
+  onMoveArchiveGroup?: (groupId: string) => Promise<string | null>;
 };
 
 export function AdminCcVinSourceBlock({
@@ -142,6 +145,7 @@ export function AdminCcVinSourceBlock({
   b2bClient = false,
   archiveBridge = null,
   archiveRefreshKey = 0,
+  onMoveArchiveGroup,
 }: Props) {
   const editable = !readOnly && !disabled;
   const handoffVin = useAdminVinHandoff()?.vin ?? "";
@@ -1058,6 +1062,19 @@ export function AdminCcVinSourceBlock({
               onHidePhotoWatermarksChange={(next) =>
                 onChange({ ...value, hidePhotoWatermarks: next })
               }
+              renderGroupExtra={(group) => (
+                <AdminArchivePhotoGroupBar
+                  group={group}
+                  disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+                  moveLabel="Uz sludinājuma vēsturi"
+                  onMove={onMoveArchiveGroup}
+                  onGroupChange={(next) =>
+                    void onPhotoGroupsStructuralCommit(
+                      (value.photoGroups ?? []).map((g) => (g.id === next.id ? { ...g, ...next } : g)),
+                    )
+                  }
+                />
+              )}
             />
           ) : null}
           {!readOnly && !disabled ? (

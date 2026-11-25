@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
+import { AdminVendorArchivePhotosButton } from "@/components/admin/AdminVendorArchivePhotosButton";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { autodnaAutoCanApply, autodnaVinPageUrl, isLowCredits } from "@/lib/autodna-auto-logic";
@@ -267,6 +268,15 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
             <button type="button" className={btn} disabled={disabled || busy} onClick={() => void apply()}>
               Ievietot vēlreiz
             </button>
+          ) : null}
+          {ready && status?.pdf && status.appliedAt ? (
+            <AdminVendorArchivePhotosButton
+              sessionId={sessionId}
+              source="autodna"
+              disabled={disabled || busy}
+              getSourceBlocks={getSourceBlocks}
+              applyPatchedBlocks={applyPatchedBlocks}
+            />
           ) : null}
           {relayConfigured && session !== "active" ? (
             <button type="button" className={btn} disabled={busy} onClick={() => void connect()}>

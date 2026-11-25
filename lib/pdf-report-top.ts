@@ -357,7 +357,11 @@ export type PdfTopPhoto = {
   listingCoverId?: string;
 };
 
-type PhotoGroupLike = { title?: string; photos?: { id: string; sourceUrl?: string; contentHash?: string }[] };
+type PhotoGroupLike = {
+  title?: string;
+  photos?: { id: string; sourceUrl?: string; contentHash?: string }[];
+  archive?: { date?: string };
+};
 
 function listingPortal(listingUrl: string | null | undefined): string {
   const t = (listingUrl ?? "").trim();
@@ -432,10 +436,21 @@ export function resolvePdfTopPhoto(args: {
   for (const g of (args.tirgusForm?.photoGroups ?? []) as PhotoGroupLike[]) {
     const p = (g.photos ?? []).find((ph) => img(args.sourceBlockPhotoDataUrls, ph.id));
     if (p) {
+      const title = (g.title ?? "").trim();
+      // AutoDNA / CarVertical arhīva grupa: klientam tikai datums (avots - ja admins ieslēdzis to virsrakstā).
+      const archiveDate = g.archive?.date?.trim() ?? "";
+      if (g.archive) {
+        return {
+          src: img(args.sourceBlockPhotoDataUrls, p.id),
+          kind: "listingHistory",
+          where: title === archiveDate ? "" : title,
+          date: title !== archiveDate && archiveDate && title.includes(archiveDate) ? "" : archiveDate,
+        };
+      }
       return {
         src: img(args.sourceBlockPhotoDataUrls, p.id),
         kind: "listingHistory",
-        where: (g.title ?? "").trim() || listingPortal(args.listingUrl),
+        where: title || listingPortal(args.listingUrl),
         date: "",
       };
     }

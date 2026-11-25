@@ -1,4 +1,5 @@
 import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+import { parseVendorArchiveGroupMeta, type VendorArchiveGroupMeta } from "@/lib/vendor-archive-photo-group";
 
 /** Starptautiskās vēstures avota fotogrāfijas — vizuālie pierādījumi PDF. */
 export const CC_VIN_MAX_PHOTOS = 500;
@@ -14,6 +15,8 @@ export type CcVinPhotoGroup = {
   /** Manuāli ievadāms virsraksts PDF (piem. datums, izsole, bojājums). */
   title: string;
   photos: CcVinPhotoMeta[];
+  /** AutoDNA / CarVertical arhīva foto grupa (avots, datums, dHash) - sk. vendor-archive-photo-group. */
+  archive?: VendorArchiveGroupMeta;
 };
 
 const PHOTO_ID_RE = /^ih_ph_[a-f0-9]{24}$/;
@@ -100,7 +103,10 @@ export function normalizeCcVinPhotoGroups(rawGroups: unknown, legacyPhotos?: unk
       const title = trimPhotoGroupTitle(o.title);
       const photos = normalizeCcVinPhotos(o.photos);
       if (photos.length === 0 && !title) continue;
-      out.push({ id, title, photos });
+      const archive = parseVendorArchiveGroupMeta((o as { archive?: unknown }).archive, photos.map((p) => p.id));
+      // Tukša arhīva grupa (pārvietota / visas bildes dzēstas) nav vajadzīga.
+      if (archive && photos.length === 0) continue;
+      out.push({ id, title, photos, ...(archive ? { archive } : {}) });
     }
     if (out.length > 0) {
       return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeCcVinPhotos(legacyPhotos)));
