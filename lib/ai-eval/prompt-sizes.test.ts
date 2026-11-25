@@ -24,17 +24,19 @@ describe("admin system prompt sizes", () => {
  * 22.11.2026 (2): source_dealer +~350 zīmes - „tikai fakti, nekādu ieteikumu” un „pozīcija nav darbība” (audits K4/AI).
  * 24.11.2026: source_csdd +~320 zīmes (~80 tokeni) - „Īpašnieku periodi” fakti CSDD komentārā (bloks «Īpašnieki un nobraukums»).
  * 24.11.2026 (2): lauku aģenta prompti +~265 zīmes (~65 tokeni) - „Pārdevēja apgalvojumi sludinājumā” salīdzināšana ar datiem.
+ * 25.11.2026: lauku aģenta prompti +~330-430 zīmes (~85-110 tokeni) - BANNED VOCABULARY «pirkt / nepirkt», «iesakām iegādāties»,
+ *   «slēdziens / verdikts» (Nils: PROVIN dod ieteikumus, lēmumu pieņem klients).
  */
 const PROMPT_CHAR_CEILINGS: Record<string, number> = {
   source_csdd: 32_400,
   source_dealer: 38_500,
-  technical_risks_v1: 89_920,
-  inspection: 82_410,
-  summary: 81_550,
-  mileage: 81_590,
-  incidents: 83_180,
+  technical_risks_v1: 90_350,
+  inspection: 82_740,
+  summary: 81_910,
+  mileage: 81_920,
+  incidents: 83_510,
   price: 29_450,
-  seller: 78_000,
+  seller: 78_340,
   oil_intervals: 35_600,
 };
 

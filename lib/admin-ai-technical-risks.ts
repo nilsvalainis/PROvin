@@ -134,7 +134,7 @@ OBLIGĀTI:
 - Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
 - Ķēde pret zobsiksnu: tikai pēc šī motora koda vai pēc fiksētas siksnas/ķēdes maiņas šajā pasūtījumā. Nekad abus vienam dzinējam. Citas paaudzes vai cita koda kaites (jebkura marka) NELIEC, ja kods/tilpums nesakrīt.
 - NEATKĀRTO jau uzrakstītos avotu/nobraukuma/negadījumu komentārus gandrīz tādā pašā garumā — tikai saisti tipisko agregāta risku ar šī auto datiem.
-- Neraksti klātienes checklistu (2. sadaļa) un nenosaki gala pirkuma verdiktu (3. sadaļa).
+- Neraksti klātienes checklistu (2. sadaļa) un nedod pirkuma lēmumu (buy / do-not-buy) - PROVIN dod ieteikumus, lēmumu pieņem klients.
 - Eļļas maiņas intervālu matemātiku (cik bieži mainīta, km pret OEM) NERAKSTI — tas ir laukā „Eļļas maiņas intervāli”; šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks.
 - WRAP_FILM: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes) jau ir fiksēta aplīmēšana. Šī rinda NAV fakts par auto. Ja datos nav — par plēvi NERAKSTI.
 - Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — viena rindkopa: rūsa arkās, sliekšņu apakšās un apakšdaļā ir klimata risks, ne pierādīts defekts; cinkojums un svaiga TA to neatceļ. Bagāžnieka vāku / numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Ja bloka NAV, par Lietuvu/Igauniju un „turpmāko sāli Latvijā” NERAKSTI.`,
