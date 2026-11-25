@@ -175,6 +175,7 @@ import type {
   CsddTechnicalInspectionRow,
   CsddInspectionDefectRow,
 } from "@/lib/csdd-extended-parse";
+import { parseCsddMeasurementsCarryStored, type CsddMeasurementsCarry } from "@/lib/csdd-measurements-carry";
 import {
   cleanCsddInspectionNotes,
   emptyCsddPreviousInspectionBlock,
@@ -490,6 +491,11 @@ export type CsddFormFields = {
   apiUnlocked?: string[];
   /** RAW/PDF vērtības, kas atšķiras no API (rāda konflikta ikonu). */
   conflicts?: Record<string, CsddFieldConflict>;
+  /**
+   * Iepriekšējā RAW tehniskie mērījumi (e.csdd «Tehniskie dati» + bremzes), kad RAW aizvietoja cits avots
+   * (maksas izziņa / PDF). Sk. `lib/csdd-measurements-carry.ts`.
+   */
+  measurementsCarry?: CsddMeasurementsCarry;
 };
 
 /** CSDD API atbildes momentuzņēmums (tie paši lauki, ko atgriež `epak.tl_tehn_dati`). */
@@ -2704,6 +2710,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
     ...syncedSourceBlockPhotos(raw),
     ...parseCsddRegistryLockStoredRaw(raw),
+    ...(parseCsddMeasurementsCarryStored(raw.measurementsCarry) ? { measurementsCarry: parseCsddMeasurementsCarryStored(raw.measurementsCarry) } : {}),
   };
 }
 

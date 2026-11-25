@@ -29,6 +29,7 @@ import {
   looksLikeSmokeOpacity,
 } from "@/lib/csdd-extended-parse";
 import { csddOctaFieldValueFromRaw } from "@/lib/csdd-registry-signals";
+import { nextCsddMeasurementsCarry } from "@/lib/csdd-measurements-carry";
 import {
   extractRegistryStructuredFields,
   normalizeRoadTaxDisplay,
@@ -820,5 +821,22 @@ export function applyCsddPdfImportToForm(
     if (current[key] === undefined) delete (withOperator as Record<string, unknown>)[key];
     else (withOperator as Record<string, unknown>)[key] = current[key];
   }
-  return protectCsddApiFields(current, withOperator, "pdf");
+  const out = protectCsddApiFields(current, withOperator, "pdf");
+  // RAW aizvietots: iepriekšējā RAW tehniskie mērījumi (e.csdd «Tehniskie dati», bremzes) nedrīkst pazust (Nils 25.11).
+  const carry = nextCsddMeasurementsCarry({
+    prevRaw: current.rawUnprocessedData ?? "",
+    prevTaDate: csddLastTaDateText(current),
+    prevCarry: current.measurementsCarry,
+    nextRaw: raw,
+  });
+  if (carry) out.measurementsCarry = carry;
+  else delete out.measurementsCarry;
+  return out;
+}
+
+/** Pēdējās TA datums DD.MM.YYYY no formas (`prevInspectionDate` ISO vai pēdējās apskates bloks). */
+export function csddLastTaDateText(csdd: Pick<CsddFormFields, "prevInspectionDate" | "prevInspectionBlock">): string {
+  const iso = String(csdd.prevInspectionDate ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  return (csdd.prevInspectionBlock?.inspectionDateText ?? "").trim();
 }
