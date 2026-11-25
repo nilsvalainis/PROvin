@@ -3,6 +3,14 @@
 import { useRef, useState } from "react";
 import { FileUp, Loader2 } from "lucide-react";
 
+import { uploadNotifyPortfolioBlobs } from "@/lib/admin-notify-upload-portfolio-client";
+import {
+  PARTNER_ARCHIVE_DIRECT_MAX_BYTES,
+  PARTNER_ARCHIVE_PDF_MAX_BYTES,
+  partnerArchiveErrorMessage,
+  partnerArchiveTooLargeMessage,
+} from "@/lib/partner-archive-pdf-upload";
+
 export function AdminPartnerArchivePdfButton({
   sessionId,
   compact = false,
@@ -24,22 +32,40 @@ export function AdminPartnerArchivePdfButton({
     setOk("");
     setErr("");
     try {
-      const fd = new FormData();
-      fd.set("sessionId", sessionId);
-      fd.set("reportPdf", file, file.name || "PROVIN_BUSINESS.pdf");
-      const res = await fetch("/api/admin/partner-client-report", {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (file.size > PARTNER_ARCHIVE_PDF_MAX_BYTES) {
+        setErr(partnerArchiveTooLargeMessage(file.size));
+        return;
+      }
+      const name = file.name || "PROVIN_BUSINESS.pdf";
+      let res: Response;
+      try {
+        // Caur Vercel Blob - API ķermenis ~4,5 MB, lielāki PDF agrāk krita ar 413.
+        const [ref] = await uploadNotifyPortfolioBlobs({
+          sessionId,
+          files: [{ blob: file, filename: name, mime: "application/pdf" }],
+        });
+        res = await fetch("/api/admin/partner-client-report", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, blobUrl: ref!.url, filename: name }),
+        });
+      } catch (blobErr) {
+        if (file.size > PARTNER_ARCHIVE_DIRECT_MAX_BYTES) throw blobErr;
+        // Rezerve maziem failiem (Blob nav pieejams).
+        const fd = new FormData();
+        fd.set("sessionId", sessionId);
+        fd.set("reportPdf", file, name);
+        res = await fetch("/api/admin/partner-client-report", { method: "POST", credentials: "include", body: fd });
+      }
+      const data = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
       if (!res.ok) {
-        setErr(data.message || data.error || "Neizdevās saglabāt PDF.");
+        setErr(partnerArchiveErrorMessage(res.status, data, file.size));
         return;
       }
       setOk("PDF ir partnera arhīvā pie šī pasūtījuma.");
     } catch {
-      setErr("Tīkla kļūda. Mēģini vēlreiz.");
+      setErr("PDF neizdevās augšupielādēt (tīkls vai failu krātuve). Mēģini vēlreiz.");
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
