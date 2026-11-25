@@ -1,5 +1,6 @@
 import { parseHidePhotoWatermarks } from "@/lib/admin-photo-watermark";
 import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+import { parseVendorArchiveGroupMeta, type VendorArchiveGroupMeta } from "@/lib/vendor-archive-photo-group";
 
 /** Avotu sadaļu fotogrāfijas - vizuālie pierādījumi PDF (līdz 50 gab. vienā blokā). */
 export const SOURCE_BLOCK_MAX_PHOTOS = 50;
@@ -28,6 +29,8 @@ export type SourceBlockPhotoGroup = {
   /** Manuāli ievadāms virsraksts PDF (piem. datums, izdruka, bojājums). */
   title: string;
   photos: SourceBlockPhotoMeta[];
+  /** AutoDNA / CarVertical arhīva foto grupa (avots, datums, dHash) - sk. vendor-archive-photo-group. */
+  archive?: VendorArchiveGroupMeta;
 };
 
 const PHOTO_ID_RE = /^sbp_ph_[a-f0-9]{24}$/;
@@ -114,7 +117,10 @@ export function normalizeSourceBlockPhotoGroups(
       const title = trimPhotoGroupTitle(o.title);
       const photos = normalizeSourceBlockPhotos(o.photos, max);
       if (photos.length === 0 && !title) continue;
-      out.push({ id, title, photos });
+      const archive = parseVendorArchiveGroupMeta((o as { archive?: unknown }).archive, photos.map((p) => p.id));
+      // Tukša arhīva grupa (pārvietota / visas bildes dzēstas) nav vajadzīga.
+      if (archive && photos.length === 0) continue;
+      out.push({ id, title, photos, ...(archive ? { archive } : {}) });
     }
     if (out.length > 0) {
       return enforcePhotoGroupLimit(

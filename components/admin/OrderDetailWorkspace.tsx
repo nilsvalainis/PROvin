@@ -2025,6 +2025,34 @@ export function OrderDetailWorkspace({
     [applyPersistBodyToWs, commitWorkspaceLocalNow],
   );
 
+  /** AutoDNA / CarVertical arhīva foto grupa: «Sludinājuma vēsture» <-> izsoļu portālu arhīvs (viens klikšķis). */
+  const moveArchivePhotoGroup = useCallback(
+    async (groupId: string, to: "cc_vin" | "tirgus"): Promise<string | null> => {
+      try {
+        const res = await fetch("/api/admin/vendor-archive-photos/move", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: payload.sessionId, groupId, to, sourceBlocks: wsPersistRef.current.sourceBlocks }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+          patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
+          changedKeys?: string[];
+        };
+        if (!res.ok || !data.ok || !data.patchedSourceBlocks) {
+          return data.error === "photo_limit" ? "Mērķa sadaļā sasniegts foto griests." : "Neizdevās pārvietot grupu.";
+        }
+        applyCopilotPatchedBlocks(data.patchedSourceBlocks, (data.changedKeys ?? []) as CopilotSourceKey[]);
+        return null;
+      } catch {
+        return "Neizdevās pārvietot grupu.";
+      }
+    },
+    [applyCopilotPatchedBlocks, payload.sessionId],
+  );
+
   const restoreCopilotBlocksSnapshot = useCallback(
     (snapshot: WorkspaceSourceBlocks) => {
       workspaceDirtyRef.current = true;
@@ -6386,6 +6414,7 @@ export function OrderDetailWorkspace({
               b2bClient={b2bClientOrder}
               archiveBridge={dealerSendBridge}
               archiveRefreshKey={archiveRefreshKey}
+              onMoveArchiveGroup={(groupId) => moveArchivePhotoGroup(groupId, "tirgus")}
             />
           </div>
         ) : null}
@@ -6580,6 +6609,7 @@ export function OrderDetailWorkspace({
                       onPhotoGroupsStructuralCommit={(next) =>
                         void commitGenericSourcePhotoGroups("tirgus", next)
                       }
+                      onMoveArchiveGroup={(groupId) => moveArchivePhotoGroup(groupId, "cc_vin")}
                     />
                   </div>
                 </ListingAnalysisSubsectionHeading>

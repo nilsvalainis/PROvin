@@ -15,6 +15,7 @@ import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
+import { tryImportVendorArchivePhotosFromPdf } from "@/lib/vendor-archive-photos-import";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,13 +80,21 @@ export async function POST(req: Request) {
       result.sourceBlocks = { ...result.sourceBlocks, autodna: filled };
       if (!changedKeys.includes("autodna")) changedKeys.push("autodna");
     }
+    // Arhīva foto «Sludinājuma vēsturē» - tikai pirmajā automātiskajā ievietošanā; vēlāk ar pogu «Ielādēt arhīva foto».
+    const archive = status.appliedAt
+      ? null
+      : await tryImportVendorArchivePhotosFromPdf({ sessionId, source: "autodna", pdfBytes: bytes, sourceBlocks: result.sourceBlocks });
     const next = await markAutodnaAutoApplied(sessionId);
     return NextResponse.json({
       ok: true,
       summary: agent.summary,
       notes: useAi ? agent.notes : [...agent.notes, "AI izlaists - izmantots tikai PDF teksta slānis."],
-      patchedSourceBlocks: Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
-      changedKeys,
+      patchedSourceBlocks: {
+        ...Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
+        ...(archive?.changed ? { tirgus: archive.tirgus } : {}),
+      },
+      changedKeys: archive?.changed ? [...changedKeys, "tirgus"] : changedKeys,
+      ...(archive ? { archivePhotos: { added: archive.added, duplicates: archive.duplicates, notes: archive.notes } } : {}),
       status: next,
     });
   } catch (e) {

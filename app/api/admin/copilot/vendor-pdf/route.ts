@@ -26,6 +26,7 @@ import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
+import { tryImportVendorArchivePhotosFromPdf, type VendorArchiveImportResult } from "@/lib/vendor-archive-photos-import";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
 /** Gemini lasījums (līdz 60 s) + Sonnet rezerve, ja `VENDOR_PDF_PRIMARY=gemini`. */
@@ -325,7 +326,15 @@ export async function POST(req: Request) {
 
     const result = applyCopilotActions(sourceBlocks, agent.actions, { onlyAuto: false });
     const changedKeys: CopilotSourceKey[] = result.changedKeys;
+    let archive: VendorArchiveImportResult | null = null;
     if (target === "autodna" || target === "carvertical") {
+      // Arhīva foto -> «Sludinājuma vēsture» (dedup; jau esošās bildes izlaiž).
+      archive = await tryImportVendorArchivePhotosFromPdf({
+        sessionId,
+        source: target,
+        pdfBytes: new Uint8Array(buffer),
+        sourceBlocks: result.sourceBlocks,
+      });
       const extracted = await extractPdfTextDetailed(buffer, { fileName });
       const current = result.sourceBlocks[target];
       const filled = upsertVendorPdfAiContext(current, extracted.text ?? "", {
@@ -360,8 +369,12 @@ export async function POST(req: Request) {
       notes,
       applied: result.applied.map(describeAction),
       skipped: result.skipped.map((s) => ({ label: describeAction(s.action), reason: s.reason })),
-      patchedSourceBlocks: Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
-      changedKeys,
+      patchedSourceBlocks: {
+        ...Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
+        ...(archive?.changed ? { tirgus: archive.tirgus } : {}),
+      },
+      changedKeys: archive?.changed ? [...changedKeys, "tirgus"] : changedKeys,
+      ...(archive ? { archivePhotos: { added: archive.added, duplicates: archive.duplicates, notes: archive.notes } } : {}),
     });
   } catch (e) {
     const detail = e instanceof Error ? e.message : "unknown";

@@ -12,6 +12,7 @@ import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawFiel
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import { AdminArchivePhotoGroupBar } from "@/components/admin/AdminArchivePhotoGroupBar";
 import { LISTING_HISTORY_MAX_PHOTOS, type SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
 import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
@@ -80,6 +81,8 @@ type Props = {
   sessionId?: string;
   photosPersistenceEnabled?: boolean;
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
+  /** AutoDNA / CarVertical arhīva foto grupa -> izsoļu portālu arhīvs (kļūdas teksts vai null). */
+  onMoveArchiveGroup?: (groupId: string) => Promise<string | null>;
 };
 
 export function AdminTirgusSourceBlock({
@@ -98,6 +101,7 @@ export function AdminTirgusSourceBlock({
   sessionId,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  onMoveArchiveGroup,
 }: Props) {
   const val = value ?? emptyTirgusFields();
   const [urlDraft, setUrlDraft] = useState(listingUrl?.trim() ?? "");
@@ -459,6 +463,17 @@ export function AdminTirgusSourceBlock({
         onHidePhotoWatermarksChange={(next) => onChange({ ...val, hidePhotoWatermarks: next })}
         maxPhotos={LISTING_HISTORY_MAX_PHOTOS}
         blockKey="tirgus"
+        renderGroupExtra={(group) => (
+          <AdminArchivePhotoGroupBar
+            group={group}
+            disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+            moveLabel="Uz izsoļu arhīvu"
+            onMove={onMoveArchiveGroup}
+            onGroupChange={(next) =>
+              onPhotoGroupsStructuralCommit((val.photoGroups ?? []).map((g) => (g.id === next.id ? { ...g, ...next } : g)))
+            }
+          />
+        )}
       />
     ) : null;
 
