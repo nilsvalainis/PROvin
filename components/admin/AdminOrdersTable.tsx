@@ -72,6 +72,7 @@ import { AdminReviewRequestQueue } from "@/components/admin/AdminReviewRequestQu
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
+import { isManualUnpaidAdminOrder, MANUAL_UNPAID_LABEL_LV } from "@/lib/admin-orders-manual-unpaid";
 import {
   AUDIT_RESULT_COLORS,
   AUDIT_RESULT_COLOR_DOT_CLASS,
@@ -237,6 +238,31 @@ function rowEditsLocalStoragePrefix(row: AdminOrdersTableRow, tableDefaultPrefix
   return tableDefaultPrefix;
 }
 
+/** Summas šūnas mazās ikonas (bez rāmja/fona), 26 px. */
+const AMOUNT_ICON_BTN =
+  "inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center !rounded-[7px] !border-0 bg-transparent text-[#8e8e93] transition hover:bg-[#f2f2f7] hover:text-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-50";
+const AMOUNT_ICON_DEL =
+  "inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center !rounded-[7px] !border-0 bg-transparent text-[#d92d20] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50";
+
+/** Rezervēta vieta ikonai, lai summas līdzinās vienā kolonnā. */
+function AmountIconSlot() {
+  return <span className="inline-block h-[26px] w-[26px] shrink-0" aria-hidden />;
+}
+
+/** Summa labajā malā; zem tās sīka otrā rinda (statuss / saite), ja ir. */
+function AmountStack({ main, sub }: { main: ReactNode; sub?: ReactNode }) {
+  return (
+    <span className="inline-flex flex-col items-end">
+      <span className="leading-tight">{main}</span>
+      {sub ? (
+        <span className="mt-0.5 inline-flex items-center justify-end gap-1 text-[11.5px] font-medium leading-tight !text-[#8e8e93]">
+          {sub}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 const manualCellEditBtn =
   "inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200/90 bg-white text-[var(--color-provin-muted)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:text-[var(--color-provin-accent)] disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -354,10 +380,16 @@ function ManualOrderAmountCell({
   id,
   amountTotal,
   currency,
+  sub,
+  trailing,
 }: {
   id: string;
   amountTotal: number | null;
   currency: string | null;
+  /** Otrā rinda zem summas (piem. «nav apmaksāts»). */
+  sub?: ReactNode;
+  /** Aiz zīmuļa (dzēšanas poga vai tukša vieta). */
+  trailing?: ReactNode;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -385,8 +417,8 @@ function ManualOrderAmountCell({
 
   if (!editing) {
     return (
-      <span className="inline-flex items-center justify-end gap-1.5">
-        <span>{formatMoneyEur(amountTotal, currency)}</span>
+      <span className="inline-flex items-center justify-end">
+        <AmountStack main={formatMoneyEur(amountTotal, currency)} sub={sub} />
         <button
           type="button"
           onClick={() => {
@@ -394,12 +426,13 @@ function ManualOrderAmountCell({
             setError(null);
             setEditing(true);
           }}
-          className={manualCellEditBtn}
+          className={`ml-1 ${AMOUNT_ICON_BTN}`}
           aria-label="Labot summu"
           title="Labot summu"
         >
-          <Pencil className="h-3 w-3" strokeWidth={2} aria-hidden />
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
         </button>
+        {trailing ?? <AmountIconSlot />}
       </span>
     );
   }
@@ -467,7 +500,7 @@ function ManualOrderDeleteButton({ id }: { id: string }) {
       type="button"
       onClick={() => void onDelete()}
       disabled={deleting}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200/90 bg-white text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+      className={AMOUNT_ICON_DEL}
       aria-label="Dzēst manuālo pasūtījumu"
       title="Dzēst manuālo pasūtījumu"
     >
@@ -1062,6 +1095,7 @@ export function AdminOrdersTable({
             miniHighlight: v.miniHighlight,
           });
           const ingest = v.isPack ? null : o.ingest ?? null;
+          const manualUnpaid = isManualUnpaidAdminOrder(o);
           const sentLabel = adminIngestSentLabel(ingest);
           const title = v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v);
           const deadline: AdminMobileDeadlineTag | null = v.isPack
@@ -1098,7 +1132,8 @@ export function AdminOrdersTable({
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
               data-amx-tone={tone ?? undefined}
-              className={`am-press ${v.isPack ? "cursor-default" : "cursor-pointer"}`}
+              data-manual-unpaid={manualUnpaid ? "" : undefined}
+              className={`am-press ${v.isPack ? "cursor-default" : "cursor-pointer"}${manualUnpaid ? " opacity-[0.55]" : ""}`}
               onPointerDown={(e) => {
                 if (!v.pdfHref && v.isPack) return;
                 swipeRef.current = { id: o.id, x: e.clientX, dx: 0 };
@@ -1206,6 +1241,11 @@ export function AdminOrdersTable({
                   {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
                   </span>
                 </p>
+                {manualUnpaid ? (
+                  <p className="amx-row-sub mt-0.5 truncate text-[12px]" data-manual-unpaid-label>
+                    {MANUAL_UNPAID_LABEL_LV}
+                  </p>
+                ) : null}
               </div>
               {deadline || sentLabel ? (
                 <div className="flex shrink-0 flex-col items-end gap-0.5">
@@ -1343,18 +1383,17 @@ export function AdminOrdersTable({
           <thead>
             <tr className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#6e6e73]">
               <th className={`${hug} py-2.5 pl-4 pr-4`}>Termiņš (48 h)</th>
-              <th className="py-2.5 pr-4">Marka, modelis</th>
-              <th className={`${hug} py-2.5 pr-4`}>VIN</th>
+              <th className="py-2.5 pr-4">Marka, modelis, VIN</th>
               <th className={`${hug} py-2.5 pr-4`}>Rez.</th>
+              <th className={`${hug} py-2.5 pr-3 text-right`}>Summa</th>
               <th className="py-2.5 pr-4">Klients</th>
               <th className={`${hug} py-2.5 pr-4`}>Datums</th>
-              <th className={`${hug} py-2.5 pr-4 text-right`}>Summa</th>
             </tr>
           </thead>
           {dayGroups.map((g) => (
           <tbody key={g.key}>
             <tr className="border-t border-[#ededed] bg-[#fafafa]">
-              <td colSpan={7} className="px-4 py-1.5 text-[12px] font-semibold text-[#3a3a3c]">
+              <td colSpan={6} className="px-4 py-1.5 text-[12px] font-semibold text-[#3a3a3c]">
                 {g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
                 <span className="ml-2 font-normal text-[#aeaeb2]">
                   {g.list.length} pasūt. · {formatMoneyEur(g.sum, "eur")}
@@ -1388,10 +1427,14 @@ export function AdminOrdersTable({
                 router.push(orderHref);
               };
               const mm = isPack ? packLabel : o.makeModel?.trim() || "";
+              const manualUnpaid = isManualUnpaidAdminOrder(o);
               return (
                 <tr
                   key={o.id}
-                  className={`h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors ${
+                  data-manual-unpaid={manualUnpaid ? "" : undefined}
+                  className={`h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-[background-color,opacity] ${
+                    manualUnpaid ? "opacity-[0.55] hover:opacity-100 focus-within:opacity-100 " : ""
+                  }${
                     isPack
                       ? "bg-[#faf9fc]"
                       : o.isDemo || partnerHighlight || dealerHighlight
@@ -1426,28 +1469,26 @@ export function AdminOrdersTable({
                       />
                     )}
                   </td>
-                  <td className="max-w-[300px] py-1 pr-4">
+                  <td className="max-w-[320px] py-1 pr-4">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span
-                        className={`truncate text-[14px] ${mm ? "font-bold text-[#1d1d1f]" : "text-[#aeaeb2]"}`}
+                        className={`truncate text-[14px] leading-tight ${mm ? "font-bold text-[#1d1d1f]" : "text-[#aeaeb2]"}`}
                         title={mm || undefined}
                       >
                         {mm || "-"}
                       </span>
                       {miniHighlight ? <span className={MINI_PILL}>MINI</span> : null}
                     </span>
-                  </td>
-                  <td className={`${hug} py-1 pr-4`}>
                     {hasVin ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="font-mono text-[12px] tracking-wide text-[#3a3a3c]" title={vin}>
+                      <span className="mt-0.5 flex items-center gap-1.5" data-admin-order-vin>
+                        <span className="font-mono text-[12px] leading-tight tracking-wide text-[#3a3a3c]" title={vin}>
                           {vin}
                         </span>
                         <AdminVinNotSeventeenFlag vin={vin} compact />
                         <AdminVinCopyButton value={vin} />
                       </span>
-                    ) : (
-                      <span className="text-[#c7c7cc]">-</span>
+                    ) : isPack ? null : (
+                      <span className="mt-0.5 block text-[12px] leading-tight text-[#c7c7cc]">Bez VIN</span>
                     )}
                   </td>
                   <td className={`${hug} py-1 pr-4`}>
@@ -1461,6 +1502,59 @@ export function AdminOrdersTable({
                         onColorChange={(c) => markColor(o.id, c)}
                       />
                     )}
+                  </td>
+                  <td className={`${hug} py-1 pr-3 text-right text-[14px] font-semibold tabular-nums text-[#1d1d1f]`} data-admin-order-amount>
+                    {(() => {
+                      const sub =
+                        manualUnpaid || (!isPartnerVin && o.paymentStatus.toLowerCase() !== "paid") || o.paymentAdjustmentLabel ? (
+                          <>
+                            {manualUnpaid ? (
+                              <span className="!text-[#8e8e93]" data-manual-unpaid-label>{MANUAL_UNPAID_LABEL_LV}</span>
+                            ) : !isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? (
+                              <PaymentStatusCalm status={o.paymentStatus} />
+                            ) : null}
+                            <PaymentAdjustmentTag row={o} />
+                          </>
+                        ) : null;
+                      if (isPartnerVin) {
+                        return (
+                          <span className="inline-flex items-center justify-end">
+                            <AmountStack
+                              main={<span className="text-[13px] !text-[#6e6e73]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>}
+                              sub={
+                                <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                                  <AdminPartnerArchivePdfButton sessionId={o.id} variant="link" />
+                                </span>
+                              }
+                            />
+                            <span className="ml-1 inline-flex">
+                              <AmountIconSlot />
+                              <AmountIconSlot />
+                            </span>
+                          </span>
+                        );
+                      }
+                      if (o.isManual) {
+                        return (
+                          <ManualOrderAmountCell
+                            id={o.id}
+                            amountTotal={o.amountTotal}
+                            currency={o.currency}
+                            sub={sub}
+                            trailing={!isPack ? <ManualOrderDeleteButton id={o.id} /> : undefined}
+                          />
+                        );
+                      }
+                      return (
+                        <span className="inline-flex items-center justify-end">
+                          <AmountStack main={formatMoneyEur(o.amountTotal, o.currency)} sub={sub} />
+                          <span className="ml-1 inline-flex">
+                            <AmountIconSlot />
+                            <AmountIconSlot />
+                          </span>
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="max-w-[420px] py-1 pr-4">
                     <span className="flex min-w-0 items-center gap-1.5">
@@ -1497,27 +1591,6 @@ export function AdminOrdersTable({
                   </td>
                   <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums text-[#3a3a3c]`}>
                     {o.isManual && !isPartnerVin ? <ManualOrderDateCell id={o.id} created={o.created} /> : RIGA_DATETIME.format(new Date(o.created * 1000))}
-                  </td>
-                  <td className={`${hug} py-1 pr-4 text-right text-[14px] font-semibold tabular-nums text-[#1d1d1f]`}>
-                    <span className="inline-flex items-center justify-end gap-1.5">
-                      {!isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? <PaymentStatusCalm status={o.paymentStatus} /> : null}
-                      <PaymentAdjustmentTag row={o} />
-                      {isPartnerVin ? (
-                        <>
-                          <span className="text-[12px] font-medium text-[#8e8e93]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>
-                          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                            <AdminPartnerArchivePdfButton sessionId={o.id} compact />
-                          </span>
-                        </>
-                      ) : o.isManual ? (
-                        <>
-                          <ManualOrderAmountCell id={o.id} amountTotal={o.amountTotal} currency={o.currency} />
-                          {!isPack ? <ManualOrderDeleteButton id={o.id} /> : null}
-                        </>
-                      ) : (
-                        formatMoneyEur(o.amountTotal, o.currency)
-                      )}
-                    </span>
                   </td>
                 </tr>
               );

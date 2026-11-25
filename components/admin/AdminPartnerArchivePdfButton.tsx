@@ -6,9 +6,12 @@ import { FileUp, Loader2 } from "lucide-react";
 export function AdminPartnerArchivePdfButton({
   sessionId,
   compact = false,
+  variant = "button",
 }: {
   sessionId: string;
   compact?: boolean;
+  /** «link» - maza pelēka saite (pasūtījumu saraksta summas šūnā). */
+  variant?: "button" | "link";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -61,7 +64,9 @@ export function AdminPartnerArchivePdfButton({
           inputRef.current?.click();
         }}
         className={
-          compact
+          variant === "link"
+            ? "inline-flex items-center !rounded-none !border-0 bg-transparent p-0 whitespace-nowrap text-[11.5px] font-medium leading-tight text-[#6e6e73] underline underline-offset-2 transition hover:text-[#1d1d1f] disabled:opacity-50"
+            : compact
             ? "inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-violet-700/25 bg-violet-50/90 px-2.5 py-1.5 text-[10px] font-semibold text-violet-950 shadow-sm transition hover:bg-violet-100/95 disabled:opacity-50"
             : "inline-flex items-center gap-1 rounded-md border border-violet-700/25 bg-violet-50/90 px-2 py-1 text-[10px] font-semibold text-violet-950 shadow-sm transition hover:bg-violet-100/95 disabled:opacity-50"
         }
@@ -69,7 +74,7 @@ export function AdminPartnerArchivePdfButton({
       >
         {busy ? (
           <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden />
-        ) : (
+        ) : variant === "link" ? null : (
           <FileUp className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
         )}
         Ielikt PDF arhīvā
