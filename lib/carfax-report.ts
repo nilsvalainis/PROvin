@@ -191,18 +191,47 @@ function damageToIncident(d: CarfaxDamage): VendorLike["incidents"][number] {
   };
 }
 
+/** CARFAX „Affected components” → tās pašas detaļu grupas, ko lieto CarVertical / AutoDNA. */
+const COMPONENT_LV: Record<string, string> = {
+  "external lighting": "Ārējais apgaismojums",
+  lighting: "Ārējais apgaismojums",
+  "body exterior": "Virsbūves ārējās daļas",
+  "exterior body": "Virsbūves ārējās daļas",
+  body: "Virsbūves ārējās daļas",
+  "body structure": "Virsbūves konstrukcija",
+  glass: "Stikli",
+  windows: "Stikli",
+  wheels: "Riteņi un riepas",
+  tires: "Riteņi un riepas",
+  suspension: "Balstiekārta",
+  airbags: "Drošības spilveni",
+  "safety systems": "Drošības sistēmas",
+  engine: "Dzinējs",
+  powertrain: "Spēka agregāts",
+  cooling: "Dzesēšanas sistēma",
+  "cooling system": "Dzesēšanas sistēma",
+  interior: "Salons",
+  electrical: "Elektrosistēma",
+  electronics: "Elektrosistēma",
+  mechanical: "Mehāniskās daļas",
+};
+
+export function carfaxComponentLv(raw: string): string {
+  return COMPONENT_LV[raw.trim().toLowerCase()] ?? raw.trim();
+}
+
+/**
+ * Bojājumu detaļa tieši CarVertical formā: zonas (siluetam) + detaļu grupas + summa.
+ * Cēlonis / smagums paliek faktu kartē un AI kontekstā (CarVertical detaļās to nav).
+ */
 function damageToDetail(d: CarfaxDamage): CarVerticalDamageDetailRow {
-  const groups = [
-    d.cause ? `Cēlonis: ${d.cause}` : "",
-    d.components.length > 0 ? `Komponentes: ${d.components.join(", ")}` : "",
-    d.severity ? `Smagums: ${d.severity}` : "",
-  ].filter(Boolean);
+  const groups = d.components.map(carfaxComponentLv);
   return {
     date: d.date,
     country: d.country,
     lossAmount: d.repairCost,
     damagedSides: d.areas.join(", "),
-    damageGroups: groups.join("; "),
+    damageGroups: groups.join(", "),
   };
 }
 
@@ -250,7 +279,7 @@ export function carfaxReportToVendorRows(r: CarfaxReport): Required<Pick<VendorL
     serviceHistory: sortAutoRecordsDescending(serviceHistory),
     incidents,
     vehicleHistoryTimeline,
-    damageDetails: r.damages.filter((d) => d.areas.length || d.components.length || d.severity || d.cause).map(damageToDetail),
+    damageDetails: r.damages.filter((d) => d.areas.length || d.components.length).map(damageToDetail),
   };
 }
 
@@ -412,7 +441,8 @@ export function carfaxPdfFactTexts(r: CarfaxReport | null | undefined): {
   if (r.owners.length > 0) {
     for (const o of r.owners) {
       const parts = [o.purchaseYear ? `no ${o.purchaseYear}` : "", o.lengthOfUse, o.ownerType].filter(Boolean);
-      owners.push(`${o.index}. īpašnieks: ${[o.country, ...parts].filter(Boolean).join(", ")}`);
+      // Atslēga nedrīkst būt „N. īpašnieks:” - klienta PDF to uzskata par personas vārdu un izgriež.
+      owners.push(`${o.index}. īpašnieka periods: ${[o.country, ...parts].filter(Boolean).join(", ")}`);
     }
   }
 
@@ -423,15 +453,10 @@ export function carfaxPdfFactTexts(r: CarfaxReport | null | undefined): {
   }
 
   const notes: string[] = [];
+  // Zonas, grupas, summa un valsts ir negadījumu kartītē (kā CarVertical) - šeit tikai tas, kā tur nav.
   for (const d of r.damages) {
-    const parts = [
-      d.country,
-      d.cause,
-      d.areas.length > 0 ? `zonas: ${d.areas.join(", ").toLocaleLowerCase("lv")}` : "",
-      d.components.length > 0 ? `komponentes: ${d.components.join(", ")}` : "",
-      d.severity ? `smagums: ${d.severity}` : "",
-    ].filter(Boolean);
-    notes.push(`Bojājums ${d.date}: ${parts.join("; ") || "detaļas nav norādītas"}`);
+    const parts = [d.cause, d.severity ? `smagums: ${d.severity}` : ""].filter(Boolean);
+    if (parts.length > 0) notes.push(`Bojājums ${d.date}: ${parts.join("; ")}`);
   }
   const flag = (kind: CarfaxHistoryEvent["kind"], label: string) => {
     const hits = r.history.filter((e) => e.kind === kind);

@@ -424,6 +424,47 @@ describe("PDF design system", () => {
     expect(hidden).not.toContain("pdf-src-zone pdf-src-zone--carfax");
   });
 
+  it("CARFAX negadījums renderējas ar tām pašām klasēm / siluetu / summu kā CarVertical", () => {
+    const incidentZone = (title: string) => {
+      const html = buildClientReportDocumentHtml({
+        payload: minimalPayload({
+          manualVendorBlocks: [
+            {
+              title,
+              mileageRows: [],
+              incidentRows: [{ csngDate: "05.2024", lossAmount: "250 - 500 €", incidentNo: "Itālija" }],
+              comments: "",
+              damageDetails: [
+                {
+                  date: "05.2024",
+                  country: "Itālija",
+                  lossAmount: "250 - 500 €",
+                  damagedSides: "Kreisā sāna priekšpuse",
+                  damageGroups: "Ārējais apgaismojums",
+                },
+              ],
+            },
+          ],
+        } as Partial<ClientReportPayload>),
+        portfolio: [],
+        pdfInsights: [],
+        dateFmt: new Intl.DateTimeFormat("lv-LV"),
+        formatBytes: () => "0 B",
+      });
+      const at = html.indexOf('<div class="pdf-page-flow-chunk pdf-unified-incidents-zone');
+      const end = html.indexOf("</article>", at);
+      expect(at).toBeGreaterThan(0);
+      return html
+        .slice(at, end)
+        .replace(new RegExp(title, "gi"), "AVOTS");
+    };
+    const cv = incidentZone(SOURCE_BLOCK_LABELS.carvertical);
+    const cf = incidentZone(SOURCE_BLOCK_LABELS.carfax);
+    expect(cv).toContain("pdf-incident-card--with-dmg");
+    expect(cv).toContain("250 - 500 €");
+    expect(cf).toBe(cv);
+  });
+
   it("renders every section head with the same icon bubble and title style", () => {
     const html = doc();
     expect(html).toContain("font-size:var(--pdf-fs-sec);font-weight:700");

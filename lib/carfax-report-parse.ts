@@ -410,24 +410,25 @@ function statusFromText(text: string): { lv: string; status: CarfaxCheckStatus }
   return { lv: text, status: "attention" };
 }
 
+/** Zonas - tie paši kanoniskie nosaukumi kā AutoDNA / CarVertical (`lib/damage-zones.ts`), lai siluets sakrīt. */
 const AREA_LV: Record<string, string> = {
-  front: "Priekša",
+  front: "Priekšpuse",
   rear: "Aizmugure",
-  left: "Kreisā puse",
-  right: "Labā puse",
-  "left front": "Priekša kreisā",
-  "right front": "Priekša labā",
-  "left rear": "Aizmugure kreisā",
-  "right rear": "Aizmugure labā",
-  "front left": "Priekša kreisā",
-  "front right": "Priekša labā",
-  "rear left": "Aizmugure kreisā",
-  "rear right": "Aizmugure labā",
+  left: "Kreisais sāns",
+  right: "Labais sāns",
+  "left front": "Kreisā sāna priekšpuse",
+  "right front": "Labā sāna priekšpuse",
+  "left rear": "Kreisā sāna aizmugure",
+  "right rear": "Labā sāna aizmugure",
+  "front left": "Kreisā sāna priekšpuse",
+  "front right": "Labā sāna priekšpuse",
+  "rear left": "Kreisā sāna aizmugure",
+  "rear right": "Labā sāna aizmugure",
   roof: "Jumts",
+  top: "Jumts",
   underbody: "Apakša",
   undercarriage: "Apakša",
   interior: "Salons",
-  top: "Augšpuse",
 };
 
 const SEVERITY_LV: Record<string, string> = {

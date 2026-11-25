@@ -227,7 +227,7 @@ describe("parseCarfaxReportText - Itālija: īpašnieki, zonas, smagums", () => 
         date: "05.2024",
         country: "Itālija",
         cause: "",
-        areas: ["Priekša"],
+        areas: ["Priekšpuse"],
         components: ["External Lighting"],
         repairCost: "250 - 500 €",
         severity: "vidējs",
@@ -236,7 +236,7 @@ describe("parseCarfaxReportText - Itālija: īpašnieki, zonas, smagums", () => 
         date: "12.2024",
         country: "Itālija",
         cause: "pilnīga bojāeja (total loss)",
-        areas: ["Kreisā puse", "Priekša kreisā"],
+        areas: ["Kreisais sāns", "Kreisā sāna priekšpuse"],
         components: [],
         repairCost: "līdz 250 €",
         severity: "vidējs līdz smags",
@@ -274,8 +274,8 @@ describe("carfaxReportToVendorRows / bloks", () => {
       date: "05.2024",
       country: "Itālija",
       lossAmount: "250 - 500 €",
-      damagedSides: "Priekša",
-      damageGroups: "Komponentes: External Lighting; Smagums: vidējs",
+      damagedSides: "Priekšpuse",
+      damageGroups: "Ārējais apgaismojums",
     });
     const listing = rows.vehicleHistoryTimeline.find((t) => t.description.startsWith("Piedāvāts pārdošanai"))!;
     expect(listing.includeInPdf).toBe(false);
@@ -391,7 +391,7 @@ describe("CARFAX darbvirsmas integrācija", () => {
     const blocks = blocksWithCarfax(CARFAX_FIXTURE_IT);
     const forComment = sourceBlockPlainTextExcludingComments("carfax", blocks);
     expect(forComment).toContain("ĀTRĀ PĀRBAUDE");
-    expect(forComment).toContain("zonas Kreisā puse, Priekša kreisā");
+    expect(forComment).toContain("zonas Kreisais sāns, Kreisā sāna priekšpuse");
     expect(forComment).toContain("ĪPAŠNIEKI (CARFAX BETA)");
     expect(mergeVendorBlocksPlain(blocks)).toContain("【CARFAX】");
     expect(orderHasSourceDataForAi(blocks)).toBe(true);
