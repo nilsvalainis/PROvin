@@ -223,7 +223,7 @@ describe("releja arhīva foto: lejupielāde lielais -> sīktēls", () => {
       { url: "https://www.autodna.lv/o/b.jpg", date: "01.02.2020", fallbacks: ["https://www.autodna.lv/t/b.jpg"] },
       { url: "https://www.autodna.lv/o/c.jpg", date: "03.04.2021", fallbacks: ["https://www.autodna.lv/t/c.jpg"] },
     ]);
-    expect(groups.map((g) => [g.date, g.photos.map((p) => p.url)])).toEqual([
+    expect(groups.map((g) => [g.date, g.photos.map((p: { url: string }) => p.url)])).toEqual([
       ["01.02.2020", ["https://big.example.com/a.jpg", "https://www.autodna.lv/t/b.jpg"]],
       ["03.04.2021", ["https://www.autodna.lv/t/c.jpg"]],
     ]);
