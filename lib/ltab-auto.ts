@@ -18,7 +18,7 @@ import {
 import { readLtabAutoStatus, writeLtabAutoStatus } from "@/lib/ltab-auto-store";
 import { isLtabAutoActive, type LtabAutoStatus } from "@/lib/ltab-auto-types";
 import { ltabPdfFileName, saveLtabPdfToOrderFolder } from "@/lib/ltab-dropbox";
-import { readOrderDropboxRecord, saveFileToOrderDropboxFolder } from "@/lib/order-dropbox";
+import { saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
 import { LTAB_SKIP_REASON_LV, resolveLtabQueryTarget } from "@/lib/ltab-query-target";
 import { normalizeVin } from "@/lib/order-field-validation";
 import { buildLtabNoClaimsCertificate, type LtabCertificate } from "@/lib/ltab-report-extract";
@@ -181,18 +181,14 @@ async function saveLtabPdf(
   const client = getDropboxClient();
   if (!client) return { pdf: undefined, note: " · Dropbox nav konfigurēts, PDF nav saglabāts" };
   try {
-    // Jaunie pasūtījumi: sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
-    const orderFolder = await readOrderDropboxRecord(sessionId).catch(() => null);
-    const inOrder =
-      orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes).catch(() => null) : null;
-    if (inOrder) {
-      return {
-        pdf: { dropboxPath: inOrder.path, name: inOrder.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() },
-        note: "",
-      };
-    }
-    const saved = await saveLtabPdfToOrderFolder(client, car, bytes);
-    return { pdf: { dropboxPath: saved.path, name: saved.name, size: saved.size, savedAt: nowIso() }, note: "" };
+    // Jaunie pasūtījumi: tikai sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
+    const saved = await saveFileToOrderFolderOrLegacy(sessionId, ltabPdfFileName(car.plate), bytes, () =>
+      saveLtabPdfToOrderFolder(client, car, bytes),
+    );
+    return {
+      pdf: { dropboxPath: saved.path, name: saved.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() },
+      note: "",
+    };
   } catch (e) {
     console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");
     return { pdf: undefined, note: " · PDF neizdevās saglabāt Dropbox" };

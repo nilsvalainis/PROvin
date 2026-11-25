@@ -29,6 +29,7 @@ import { buildClientReportCommentSnapshot } from "@/lib/client-report-comment-sn
 import { dropboxReportFilename } from "@/lib/client-report-sends-core";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
+import { saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
@@ -436,7 +437,11 @@ export async function POST(req: Request) {
       try {
         const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
         const car = orderCarFromCsdd(csdd, "", notifyVin);
-        const saved = await saveFileToProvOrderFolder(client, car, dropboxReportFilename(serverSend.version, serverPdf.filename), bytes);
+        const reportName = dropboxReportFilename(serverSend.version, serverPdf.filename);
+        // Jaunie pasūtījumi: tikai sava mape (AUDITI/..., DILERA DATI/...); vecajiem - mape pēc VIN `/_PROv` saknē.
+        const saved = await saveFileToOrderFolderOrLegacy(sessionId, reportName, bytes, () =>
+          saveFileToProvOrderFolder(client, car, reportName, bytes),
+        );
         dropboxPath = saved.path;
         serverSend.dropboxPath = saved.path;
       } catch (e) {

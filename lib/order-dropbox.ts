@@ -26,27 +26,44 @@ import {
 const LOG = "[order-dropbox]";
 const DIR = "order_dropbox";
 
-export async function readOrderDropboxRecord(sessionId: string): Promise<OrderDropboxRecord | null> {
-  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+/**
+ * Ieraksts + vai lasīšana izdevās. `readError` - krātuve neatbildēja (nevis "nav ieraksta"): tad jaunu mapi NEVEIDO,
+ * citādi pārejoša Blob kļūda radītu otru mapi ar citu nosaukumu (marka jau zināma) un pārrakstītu ierakstu.
+ */
+export async function readOrderDropboxRecordResult(
+  sessionId: string,
+): Promise<{ record: OrderDropboxRecord | null; readError: boolean }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { record: null, readError: false };
   const file = `${DIR}/${sessionId}.json`;
   const blob = getOrderDraftBlobConfig();
   if (blob) {
     try {
       const res = await get(`${blob.prefix}${file}`, { access: "private", token: blob.token, useCache: false });
-      if (res?.statusCode === 200 && res.stream) return parseOrderDropboxRecord(JSON.parse(await new Response(res.stream).text()));
-    } catch {
-      /* nav ieraksta */
+      if (res?.statusCode === 200 && res.stream) {
+        return { record: parseOrderDropboxRecord(JSON.parse(await new Response(res.stream).text())), readError: false };
+      }
+      // `get` atgriež null tikai 404 gadījumā - ieraksta nav.
+      if (!res) return { record: null, readError: false };
+    } catch (e) {
+      if (process.env.VERCEL === "1") {
+        console.warn(`${LOG} record read failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+        return { record: null, readError: true };
+      }
     }
   }
   const dir = getOrderDraftStorageDir();
   if (dir && process.env.VERCEL !== "1") {
     try {
-      return parseOrderDropboxRecord(JSON.parse(await fs.readFile(path.join(dir, file), "utf8")));
+      return { record: parseOrderDropboxRecord(JSON.parse(await fs.readFile(path.join(dir, file), "utf8"))), readError: false };
     } catch {
       /* nav ieraksta */
     }
   }
-  return null;
+  return { record: null, readError: false };
+}
+
+export async function readOrderDropboxRecord(sessionId: string): Promise<OrderDropboxRecord | null> {
+  return (await readOrderDropboxRecordResult(sessionId)).record;
 }
 
 async function writeRecord(rec: OrderDropboxRecord): Promise<void> {
@@ -104,7 +121,9 @@ export async function ensureOrderDropboxFolder(
   opts: { category?: OrderDropboxCategory | null; createdMs?: number; vin?: string | null; plate?: string | null; client?: DropboxClient | null } = {},
 ): Promise<OrderDropboxRecord | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
-  const prev = await readOrderDropboxRecord(sessionId);
+  const { record: prev, readError } = await readOrderDropboxRecordResult(sessionId);
+  // Nevar nolasīt ierakstu - nezinām, vai mape jau ir. Labāk šoreiz neko nedarīt nekā izveidot otru mapi.
+  if (readError) return null;
   const category = prev?.category ?? opts.category ?? null;
   if (!category) return null;
   const now = new Date().toISOString();
@@ -198,4 +217,29 @@ export function ensureOrderDropboxFolderSafe(
     () => undefined,
     (e) => console.error(`${LOG} ensure crashed`, e instanceof Error ? e.message.slice(0, 120) : "unknown"),
   );
+}
+
+/**
+ * Fails pasūtījuma mapē visiem avotiem (CarVertical, AutoDNA, LTAB, CARFAX, atskaites PDF kopija):
+ *  - pasūtījumam ir mapes ieraksts (jaunie, no 23.11) -> TIKAI tā mape (`AUDITI/...`, `DILERA DATI/...`);
+ *    ja saglabāt neizdodas - kļūda (nevis otra mape `/_PROv` saknē);
+ *  - ieraksta nav (vecie pasūtījumi) -> `legacy()` (mape pēc VIN `/_PROv` saknē kā līdz šim).
+ */
+export async function saveFileToOrderFolderOrLegacy<T extends { path: string }>(
+  sessionId: string,
+  fileName: string,
+  bytes: Uint8Array,
+  legacy: () => Promise<T>,
+): Promise<{ path: string; duplicate: boolean; legacy: boolean }> {
+  const { record, readError } = isSafeOrderDraftSessionId(sessionId)
+    ? await readOrderDropboxRecordResult(sessionId)
+    : { record: null, readError: false };
+  if (readError) throw new Error("order_dropbox_record_unreadable");
+  if (record) {
+    const saved = await saveFileToOrderDropboxFolder(sessionId, fileName, bytes);
+    if (!saved) throw new Error("order_dropbox_save_failed");
+    return { ...saved, legacy: false };
+  }
+  const saved = await legacy();
+  return { path: saved.path, duplicate: false, legacy: true };
 }

@@ -24,6 +24,8 @@ vi.mock("@/lib/source-health-store", () => ({ recordSourceOutcomes: async () => 
 vi.mock("@/lib/admin-order-draft-store", () => ({
   readOrderDraft: async () => ({ orderEdits: {}, workspace: { sourceBlocks: { csdd: draftCsdd } } }),
   isSafeOrderDraftSessionId: (id: string) => /^[A-Za-z0-9_-]{6,120}$/.test(id),
+  getOrderDraftBlobConfig: () => null,
+  getOrderDraftStorageDir: () => "",
 }));
 vi.mock("@/lib/copilot-vendor-pdf-agent", () => ({
   runLtabPdfAgent: async ({ buffer }: { buffer: ArrayBuffer }) => {

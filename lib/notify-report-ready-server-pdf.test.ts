@@ -36,6 +36,14 @@ vi.mock("@vercel/blob", () => ({ get: m.get, del: m.del }));
 vi.mock("@/lib/client-report-sends", () => ({ readClientReportSends: m.readSends, recordClientReportSend: m.recordSend }));
 vi.mock("@/lib/dropbox-client", () => ({ getDropboxClient: () => ({}) }));
 vi.mock("@/lib/ltab-dropbox", () => ({ saveFileToProvOrderFolder: m.saveDropbox }));
+// Vecs pasūtījums bez mapes ieraksta - kopija mapē pēc VIN (`saveFileToProvOrderFolder`).
+vi.mock("@/lib/order-dropbox", () => ({
+  saveFileToOrderFolderOrLegacy: async (_s: string, _n: string, _b: Uint8Array, legacy: () => Promise<{ path: string }>) => ({
+    path: (await legacy()).path,
+    duplicate: false,
+    legacy: true,
+  }),
+}));
 vi.mock("@/lib/admin-audit-complete-store", () => ({ setAuditDeadlineComplete: m.complete }));
 
 import { POST } from "@/app/api/admin/notify-report-ready/route";
