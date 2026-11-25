@@ -6,11 +6,12 @@
  *
  * Teksta mezgls tiek sadalīts pa atdalītājiem (« · », «; », «, », «: ») un tulkots tikai tas
  * gabals, kas PILNĪBĀ sakrīt ar zināmu terminu vai šablonu - nezināms teksts (avotu oriģināli,
- * nosaukumi) paliek kā ir. CSDD defektu brīvais teksts paliek AI atlieku gājienam
- * (`translateClientReportHtmlResidue`). 25.11.2026: EN/RU/DE PDF palika «3 ieraksti», «Nav ierakstu».
+ * nosaukumi) paliek kā ir. CSDD TA defektu kataloga teikumi - `csdd-ta-defects-i18n`; nezināmi
+ * defektu teksti paliek AI atlieku gājienam (`translateClientReportHtmlResidue`). 25.11.2026: EN/RU/DE PDF palika «3 ieraksti», «Nav ierakstu».
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
+import { translateCsddTaDefectText } from "@/lib/csdd-ta-defects-i18n";
 
 type Target = Exclude<ClientReportLang, "lv">;
 type Tr = Record<Target, string>;
@@ -452,6 +453,9 @@ function translatePiece(piece: string, lang: Target, depth = 0): string {
   if (!core || !/\p{L}/u.test(core)) return piece;
   const whole = translateExact(core, lang);
   if (whole != null) return lead + whole + trail;
+  // CSDD TA defektu / piezīmju standarta teikumi (veselā gabalā, pirms dalīšanas pa komatiem).
+  const defect = translateCsddTaDefectText(core, lang);
+  if (defect != null) return lead + defect + trail;
   for (let i = depth; i < DELIMS.length; i++) {
     const d = DELIMS[i]!;
     if (!core.includes(d)) continue;
