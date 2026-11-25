@@ -50,6 +50,11 @@ export type ThecarapiPdfDamage = {
   quantity: string;
   repair: string;
   notes: string;
+  /**
+   * Šī bojājuma bilžu saites no avota (piem. AUTO1 `DamagesV3[].subAreaImages`). Tikai tad, ja avots bildi piesaista
+   * konkrētam bojājumam; citādi lauka nav. PDF tekstā saites nedrukā - tikai sasaistei ar saglabātajām bildēm.
+   */
+  photoUrls?: string[];
 };
 
 export type ThecarapiPdfWheelSet = { title: string; grid: ThecarapiPdfGrid };
@@ -512,7 +517,11 @@ function relativeLeaves(value: unknown, skipImages = true): Leaf[] {
 
 // --- Bojājumi ---
 
-type DamageDraft = ThecarapiPdfDamage & { baseType: string; rawPart: string; qty: number | null };
+type DamageDraft = ThecarapiPdfDamage & { baseType: string; rawPart: string; qty: number | null; urls: string[] };
+
+function addDamageUrls(target: DamageDraft, urls: readonly string[]): void {
+  for (const url of urls) if (!target.urls.includes(url)) target.urls.push(url);
+}
 
 const DAMAGE_TECH_KEYS = /^(id|uuid|index|sort|sortorder|position_index|quantitytype|imageid|damageid|areaid|partid|order)$/i;
 
@@ -528,6 +537,7 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
     baseType: "",
     rawPart: "",
     qty: null,
+    urls: [...new Set(collectUrls(value))],
   };
   let desc = "";
   const notes: string[] = [];
@@ -653,7 +663,11 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
       const seen = new Set<string>();
       for (const item of items) {
         const key = [item.zone, item.part, item.type, item.size].join("|");
-        if (seen.has(key)) continue;
+        if (seen.has(key)) {
+          const first = rows.find((row) => [row.zone, row.part, row.type, row.size].join("|") === key);
+          if (first) addDamageUrls(first, item.urls);
+          continue;
+        }
         seen.add(key);
         rows.push(item);
       }
@@ -680,6 +694,7 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
         }
         if (!match.repair && item.repair) match.repair = item.repair;
         if (!match.zone && item.zone) match.zone = item.zone;
+        addDamageUrls(match, item.urls);
       }
       if (Array.isArray(node.value)) for (const raw of node.value) for (const url of collectUrls(raw)) if (!partByUrl.has(url)) partByUrl.set(url, "");
     }
@@ -707,6 +722,7 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
       quantity: row.quantity || (row.qty != null ? String(row.qty) : ""),
       repair: row.repair,
       notes: row.notes,
+      ...(row.urls.length ? { photoUrls: [...row.urls] } : {}),
     }));
   return { rows: ordered, total, partByUrl };
 }

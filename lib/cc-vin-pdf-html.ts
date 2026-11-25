@@ -123,7 +123,7 @@ export function buildCcVinAuctionCardsHtml(b: CcVinBlockState, opts: CcVinPdfAuc
   const photos: AuctionArchivePhoto[] = [];
   for (const p of opts.photos ?? []) {
     const lot = keysOf(p).map((k) => lotByKey.get(k)).find(Boolean);
-    if (lot) photos.push({ id: p.id, auctionKey: lot.key, date: p.date || lot.date, caption: "" });
+    if (lot) photos.push({ id: p.id, auctionKey: lot.key, date: p.date || lot.date, caption: "", ...(p.sourceUrl?.trim() ? { sourceUrl: p.sourceUrl.trim() } : {}) });
   }
   const parts = buildAuctionLotsHtml({
     summary,

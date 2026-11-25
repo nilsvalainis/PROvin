@@ -176,7 +176,7 @@ export async function persistAuctionArchivePhotos(args: {
 
   const photos = args.sources
     .filter((s) => done.has(s.id))
-    .map((s) => ({ id: s.id, auctionKey: s.auctionKey, date: s.date, caption: s.caption }));
+    .map((s) => ({ id: s.id, auctionKey: s.auctionKey, date: s.date, caption: s.caption, ...(s.url ? { sourceUrl: s.url } : {}) }));
   return { photos, missing: args.sources.length - photos.length };
 }
 
