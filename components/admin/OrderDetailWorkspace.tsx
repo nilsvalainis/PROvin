@@ -2226,6 +2226,13 @@ export function OrderDetailWorkspace({
       setWs((prev) => {
         const merged = { ...prev.sourceBlocks };
         for (const key of changedKeys) {
+          if ((key as string) === "listing_analysis") {
+            // Arhīva foto automātiskā titulbilde: tikai coverPhoto un tikai, ja lauks vēl nekad nav aizpildīts.
+            const cover = patched.listing_analysis?.coverPhoto;
+            const cur = mergeSourceBlocksWithDefaults(prev.sourceBlocks).listing_analysis;
+            if (cover?.id && cur.coverPhoto === undefined) merged.listing_analysis = { ...cur, coverPhoto: cover };
+            continue;
+          }
           if (patched[key] != null) {
             (merged as Record<string, unknown>)[key] =
               key === "cc_vin"

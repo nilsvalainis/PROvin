@@ -32,6 +32,7 @@ import {
   type VendorArchiveVia,
 } from "@/lib/vendor-archive-photo-group";
 import { extractVendorArchivePhotos, type ExtractedArchiveGroup } from "@/lib/vendor-archive-photos-pdf";
+import { finalizeVendorArchiveImport } from "@/lib/vendor-archive-photos-sync";
 import { fetchVendorArchiveRelayPhotos, RELAY_ARCHIVE_REASON_LV, vendorArchiveRelayConfigured } from "@/lib/vendor-archive-relay";
 
 const EXISTING_HASH_READ_LIMIT = 250;
@@ -100,9 +101,13 @@ export type VendorArchiveImportResult = {
   overLimit: number;
   /** Releja pilnā bilde aizstāja PDF sīktēlu (tas pats id, lielāka izšķirtspēja). */
   upgraded: number;
+  /** Aizstāto bilžu id (Dropbox kopija jāpārraksta ar pilno bildi). */
+  upgradedIds?: string[];
   extracted: number;
   notes: string[];
   changed: boolean;
+  /** Automātiski ielikta titulbilde (tikai ja «PDF augšas bilde» nekad nav aizpildīta). */
+  listingAnalysis?: WorkspaceSourceBlocks["listing_analysis"];
 };
 
 /** Jau izvilktas grupas -> Blob + tirgus grupas (kopīgs PDF un releja ceļam). */
@@ -182,6 +187,7 @@ export async function importVendorArchiveGroups(args: {
       duplicates,
       overLimit,
       upgraded,
+      upgradedIds: [...upgradedIds],
       extracted,
       notes,
       changed: true,
@@ -198,6 +204,7 @@ export async function importVendorArchiveGroups(args: {
     duplicates,
     overLimit: overLimit + merged.overLimit,
     upgraded,
+    upgradedIds: [...upgradedIds],
     extracted,
     notes,
     changed: merged.added > 0 || metaChanged,
@@ -225,7 +232,7 @@ export async function importVendorArchivePhotosFromPdf(args: {
  * PDF sīktēli + (ja relejs pieslēgts un VIN zināms) releja pilnās bildes: tās aizstāj PDF versijas (dHash),
  * jaunās pievieno. Relejs nepieejams -> paliek PDF versijas.
  */
-export async function importVendorArchivePhotosFull(args: {
+async function importVendorArchivePhotosCore(args: {
   sessionId: string;
   source: VendorArchiveSource;
   pdfBytes: Uint8Array | null;
@@ -263,12 +270,33 @@ export async function importVendorArchivePhotosFull(args: {
     extracted: (fromPdf?.extracted ?? 0) + fromRelay.extracted,
     notes: [...(fromPdf?.notes ?? []).filter((n) => !/dublikāti izlaisti/.test(n)), ...fromRelay.notes],
     changed: Boolean(fromPdf?.changed) || fromRelay.changed,
+    upgradedIds: fromRelay.upgradedIds,
+  };
+}
+
+/**
+ * PDF + relejs, tad: visas šī avota arhīva foto -> pasūtījuma Dropbox mapē (bez dublikātiem) un, ja «PDF augšas bilde»
+ * nekad nav aizpildīta, automātiska titulbilde (ārpuse no priekšas).
+ */
+export async function importVendorArchivePhotosFull(args: Parameters<typeof importVendorArchivePhotosCore>[0]): Promise<VendorArchiveImportResult> {
+  const res = await importVendorArchivePhotosCore(args);
+  const blocks = res.changed ? { ...args.sourceBlocks, tirgus: res.tirgus } : args.sourceBlocks;
+  const fin = await finalizeVendorArchiveImport({
+    sessionId: args.sessionId,
+    source: args.source,
+    sourceBlocks: blocks,
+    upgradedIds: res.upgradedIds,
+  });
+  return {
+    ...res,
+    notes: [...res.notes, ...fin.notes],
+    ...(fin.listingAnalysis ? { listingAnalysis: fin.listingAnalysis } : {}),
   };
 }
 
 /** Import, kas nekad nemet: kļūdu gadījumā bloks paliek kā bija, piezīme paskaidro. */
 export async function tryImportVendorArchivePhotosFromPdf(
-  args: Parameters<typeof importVendorArchivePhotosFull>[0],
+  args: Parameters<typeof importVendorArchivePhotosCore>[0],
 ): Promise<VendorArchiveImportResult> {
   try {
     return await importVendorArchivePhotosFull(args);

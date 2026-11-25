@@ -75,8 +75,11 @@ export async function POST(req: Request) {
       duplicates: res.duplicates,
       extracted: res.extracted,
       notes: res.notes,
-      patchedSourceBlocks: res.changed ? { tirgus: res.tirgus } : {},
-      changedKeys: res.changed ? ["tirgus"] : [],
+      patchedSourceBlocks: {
+        ...(res.changed ? { tirgus: res.tirgus } : {}),
+        ...(res.listingAnalysis ? { listing_analysis: res.listingAnalysis } : {}),
+      },
+      changedKeys: [...(res.changed ? ["tirgus"] : []), ...(res.listingAnalysis ? ["listing_analysis"] : [])],
     });
   } catch (e) {
     console.error("[admin/vendor-archive-photos] failed", e instanceof Error ? e.message.slice(0, 200) : "unknown");
