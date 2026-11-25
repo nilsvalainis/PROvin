@@ -2,6 +2,8 @@
  * Dīlera dati «Sūtīt klientam» logs: teksts no šablonu reģistra (labojams adminā «Šabloni»).
  * Tīra loģika - der klienta komponentei un testiem.
  */
+import type { ClientReportLang } from "@/lib/client-report-i18n";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { GOOGLE_REVIEW_URL } from "@/lib/messages/shared-blocks";
 import { reportReadyVinVar } from "@/lib/messages/template-vars";
@@ -59,6 +61,8 @@ export type DealerSendMessageInput = {
   /** Tikai «Dati gatavi»: Google atsauksmes lūgums (var kopā ar piedāvājumu - tad pēc piedāvājuma bloka). */
   review?: boolean;
   doc?: MessageTemplatesDoc | null;
+  /** Klienta (PDF) valoda; noklusējums LV. */
+  lang?: ClientReportLang | null;
 };
 
 function tidy(text: string): string {
@@ -90,8 +94,10 @@ export function buildDealerSendVars(input: DealerSendMessageInput): Record<strin
 
 export function buildDealerSendMessage(input: DealerSendMessageInput): { subject?: string; text: string } {
   const id = dealerSendTemplateId(input.channel, input.situation);
-  const rendered = renderTemplateById(id, buildDealerSendVars(input), input.doc);
-  const text = tidy(rendered?.text ?? "");
+  const rendered = renderTemplateById(id, buildDealerSendVars(input), input.doc, { lang: input.lang });
+  const raw = tidy(rendered?.text ?? "");
+  // B2B paraksts tikai «PROVIN» (Nils 25.11) - arī, ja admina pārrakstā palicis «Nils».
+  const text = input.b2b ? applyB2bSignature(raw) : raw;
   const subject = input.channel === "email" ? rendered?.subject?.trim() : undefined;
   return subject ? { subject, text } : { text };
 }

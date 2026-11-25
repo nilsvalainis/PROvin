@@ -21,6 +21,8 @@ import {
   type AuctionArchivePhoto,
   type AuctionArchiveSummary,
 } from "@/lib/auction-archive-offer";
+import { buildAuctionArchivePdfFilename } from "@/lib/audit-report-pdf-filename";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { auctionArchiveEquipment, auctionArchiveModelTitle, auctionArchiveVersion } from "@/lib/auction-archive-facts";
 import { getClientReportPrintCss } from "@/lib/client-report-html";
 import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
@@ -162,8 +164,7 @@ export function auctionArchiveTextsToTranslate(records: readonly ThecarapiAdminR
   return [...new Set([...records.flatMap(auctionArchiveDescriptions), ...auctionArchiveEquipment(records).untranslated])];
 }
 
-export function auctionArchivePdfFilename(vin: string): string {
-  // Nils 23.11: viens nosaukums visur (piedāvājuma PDF un atsevišķais pakalpojums).
-  const v = vin.replace(/[^A-Za-z0-9]/g, "").slice(0, 17).toUpperCase() || "VIN";
-  return `IZSOLU_ARHIVS_${v}.pdf`;
+export function auctionArchivePdfFilename(vin: string, lang?: ClientReportLang | null): string {
+  // Nils 23.11: viens nosaukums visur (piedāvājuma PDF un atsevišķais pakalpojums); 25.11: viena funkcija visiem PDF.
+  return buildAuctionArchivePdfFilename(vin, lang);
 }

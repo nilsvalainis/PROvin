@@ -3,6 +3,9 @@
  * piedāvājumam «dīlera datu vietā» (#1140), kas paliek kā ir. Tīra loģika: sūtīšanas logs (tie paši
  * 3 gadījumi kā dīlera datiem), teksti no šablonu reģistra, sūtījumu žurnāls, faila nosaukums. Tikai LV.
  */
+import { buildAuctionArchivePdfFilename } from "@/lib/audit-report-pdf-filename";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   auctionArchiveCountries,
   formatIsoDayLv,
@@ -33,9 +36,8 @@ const SENT_KIND_LV: Record<AuctionArchiveSendSituation, string> = {
 };
 
 /** Klientam nosūtītais fails (Nils 23.11): «IZSOLU_ARHIVS_<VIN>.pdf». */
-export function auctionArchiveReportPdfFilename(vin: string | null | undefined): string {
-  const v = (vin ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 17).toUpperCase() || "VIN";
-  return `IZSOLU_ARHIVS_${v}.pdf`;
+export function auctionArchiveReportPdfFilename(vin: string | null | undefined, lang?: ClientReportLang | null): string {
+  return buildAuctionArchivePdfFilename(vin, lang);
 }
 
 /** «Arhīvā: 2 izsoles (21.10.2026, Itālija), 84 oriģinālās izsoles bildes ar datumiem, …» + vērtības teikums. */
@@ -100,7 +102,9 @@ export function buildAuctionArchiveSendVars(input: AuctionArchiveSendMessageInpu
 
 export function buildAuctionArchiveSendMessage(input: AuctionArchiveSendMessageInput): { subject?: string; text: string } {
   const rendered = renderTemplateById(auctionArchiveSendTemplateId(input.channel, input.situation), buildAuctionArchiveSendVars(input), input.doc);
-  const text = tidy(rendered?.text ?? "");
+  const raw = tidy(rendered?.text ?? "");
+  // B2B paraksts tikai «PROVIN» (Nils 25.11).
+  const text = input.b2b ? applyB2bSignature(raw) : raw;
   const subject = input.channel === "email" ? rendered?.subject?.trim() : undefined;
   return subject ? { subject, text } : { text };
 }

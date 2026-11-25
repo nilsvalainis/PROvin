@@ -44,6 +44,7 @@ import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/m
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
 import { buildReportReadyEmailVars, reportReadyTemplateId, reportReadyVinVar } from "@/lib/messages/template-vars";
 import { formatEmailAmountEur, provinEmailSubject } from "@/lib/email/email-subject";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import { dealerRefundEmailCopy, paymentConfirmationCopy, resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { buildInvoiceDownloadUrl } from "@/lib/thanks-session";
 
@@ -610,12 +611,14 @@ export async function sendReportReadyEmail(opts: {
   const custom = opts.custom?.subject.trim() && opts.custom.text.trim() ? opts.custom : null;
   if (custom) {
     const b2b = opts.b2bClient === true;
+    // B2B paraksts tikai «PROVIN» (Nils 25.11) - arī rediģētā tekstā.
+    const customText = b2b ? applyB2bSignature(custom.text.trim()) : custom.text.trim();
     await sendSmtpMail({
       to: opts.to,
       subject: custom.subject.trim(),
-      text: custom.text.trim(),
+      text: customText,
       html: dealerDataOperatorMessageEmailHtml({
-        text: custom.text.trim(),
+        text: customText,
         b2bClient: b2b,
         lang: opts.lang ?? "lv",
         context: {
@@ -1127,12 +1130,13 @@ export async function sendDealerDataOperatorEmail(opts: {
   context?: OperatorEmailContext | null;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
-  const text = opts.text.trim();
+  const b2bClient = opts.b2bClient === true;
+  // B2B paraksts tikai «PROVIN» (Nils 25.11) - arī rediģētā tekstā.
+  const text = b2bClient ? applyB2bSignature(opts.text.trim()) : opts.text.trim();
   if (!subject || !text) {
     throw new Error("missing_subject_or_text");
   }
   const attachments = dedupeAttachmentFilenames(opts.attachments ?? []);
-  const b2bClient = opts.b2bClient === true;
   const lang = opts.lang ?? "lv";
   await sendSmtpMail({
     to: opts.to,

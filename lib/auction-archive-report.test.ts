@@ -25,7 +25,7 @@ const S: AuctionArchiveSummary = {
 describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
   it("faila nosaukums IZSOLU_ARHIVS_<VIN>.pdf", () => {
     expect(auctionArchiveReportPdfFilename("wauzzzf43pa018831")).toBe("IZSOLU_ARHIVS_WAUZZZF43PA018831.pdf");
-    expect(auctionArchiveReportPdfFilename("")).toBe("IZSOLU_ARHIVS_VIN.pdf");
+    expect(auctionArchiveReportPdfFilename("")).toBe("IZSOLU_ARHIVS_NAV_VIN.pdf");
   });
 
   it("saturs: vērtības teikums, cenas tikai ar ķeksi", () => {
@@ -81,7 +81,7 @@ describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
     expect(wa.subject).toBeUndefined();
     expect(wa.text).toContain("Atcēlām Jūsu izsoļu arhīva pasūtījumu");
     expect(wa.text).toContain("PROVIN konta atlikumā");
-    expect(wa.text).toContain("Nils, PROVIN");
+    expect(wa.text.endsWith("\nPROVIN")).toBe(true); // B2B bez «Nils» (Nils 25.11)
   });
 
   it("žurnāls: «Nosūtīts klientam: …» kā dīlera datiem; parse atmet nederīgo", () => {

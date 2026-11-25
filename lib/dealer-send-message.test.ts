@@ -79,10 +79,11 @@ describe("dealer send texts", () => {
     expect(nd.text).toContain("Summu 14,99 € atgriezām Jūsu PROVIN konta atlikumā.");
     expect(nd.text).not.toContain("uz karti");
     expect(nd.text).not.toContain("PROVIN.LV");
-    expect(nd.text.endsWith("Nils\nPROVIN")).toBe(true);
+    expect(nd.text.endsWith("Ar cieņu,\nPROVIN")).toBe(true); // B2B bez «Nils» (Nils 25.11)
     const c = buildDealerSendMessage({ channel: "whatsapp", situation: "cancelled", b2b: true, vin: VIN, refundCents: 1499 });
     expect(c.text).toContain("atgriezām Jūsu PROVIN konta atlikumā.");
-    expect(c.text.endsWith("Nils, PROVIN")).toBe(true);
+    expect(c.text.endsWith("\nPROVIN")).toBe(true);
+    expect(c.text).not.toContain("Nils");
   });
 
   it("B2C no data: card refund with bank timing", () => {

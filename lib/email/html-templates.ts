@@ -710,6 +710,13 @@ const EMAIL_INTENT_BUTTONS: Array<{ re: RegExp; label: string }> = [
   { re: /^pasūtīt(?:\s+provin\s+audits)?$/i, label: "Pasūtīt PROVIN AUDITS" },
   { re: /^atvērt\s+atskaiti$/i, label: "Atvērt atskaiti" },
   { re: /^lejupielādēt\s+rēķinu$/i, label: "Lejupielādēt rēķinu" },
+  // Tulkotie klientu šabloni (Nils 25.11): poga klienta valodā.
+  { re: /^pay$/i, label: "Pay" },
+  { re: /^order(?:\s+provin\s+audit)?$/i, label: "Order PROVIN AUDIT" },
+  { re: /^bezahlen$/i, label: "Bezahlen" },
+  { re: /^bestellen$/i, label: "PROVIN AUDIT bestellen" },
+  { re: /^оплатить$/iu, label: "Оплатить" },
+  { re: /^заказать$/iu, label: "Заказать PROVIN AUDIT" },
 ];
 
 function emailIntentButton(line: string): string | null {
