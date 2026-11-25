@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.27.0
+// @version      1.27.1
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -121,7 +121,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.27.0";
+  const SCRIPT_VERSION = "1.27.1";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -166,7 +166,12 @@
     try {
       const html = pageDocumentElement();
       if (!html) return;
-      if (userscriptAttrVersion(html) === SCRIPT_VERSION) return;
+      const current = userscriptAttrVersion(html);
+      if (current === SCRIPT_VERSION) return;
+      /* 1.27.1: cita PROVIN skripta kopija (piem. vecā 1.26.x) jau atzīmēja savu versiju - nepārrakstām.
+         Divas kopijas citādi rakstīja viena otrai pāri ik ~32 ms, un VIN SCAN kartīte raustījās (25.11).
+         Admin lapa augstāko versiju uzzina no pong notikuma. */
+      if (current) return;
       html.setAttribute("data-provin-userscript", SCRIPT_VERSION);
       try {
         window.__provinUserscriptVersion = SCRIPT_VERSION;
