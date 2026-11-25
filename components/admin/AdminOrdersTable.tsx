@@ -53,8 +53,6 @@ import {
   formatAdminMobileDeadlineTag,
   type AdminMobileDeadlineTag,
 } from "@/lib/admin-mobile-ds";
-import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
-import { formatAuditDeadlineRemaining, isAdminOrderInactive } from "@/lib/admin-audit-deadline";
 import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
 import {
   ADMIN_ORDERS_DEADLINE_PARAM,
@@ -62,7 +60,6 @@ import {
   matchesAdminOrdersDeadlineFilter,
   parseAdminOrdersDeadlineFilter,
 } from "@/lib/admin-orders-deadline-filter";
-import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
 import {
   AdminAuditResultColorControl,
 } from "@/components/admin/AdminAuditResultColorControl";
@@ -923,20 +920,6 @@ export function AdminOrdersTable({
   }, [displayedOrders, doneOrder]);
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
-  const slaTick = useAdminAuditDeadlineTick();
-  void slaTick;
-  const slaCounts = useMemo(() => {
-    let urgentCount = 0;
-    let overdueCount = 0;
-    for (const o of displayedOrders) {
-      if (isAdminOrderInactive(o)) continue;
-      const status = formatAuditDeadlineRemaining(o.deadlineFromUnix ?? o.created).status;
-      if (status === "overdue") overdueCount++;
-      else if (status === "urgent") urgentCount++;
-    }
-    return { urgentCount, overdueCount };
-  }, [displayedOrders, slaTick]);
-
   const markComplete = useCallback((id: string, complete: boolean) => {
     setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
   }, []);
@@ -991,9 +974,7 @@ export function AdminOrdersTable({
 
   return (
     <>
-      <div className="hidden md:block">
-      <AdminAuditSlaListBanner urgentCount={slaCounts.urgentCount} overdueCount={slaCounts.overdueCount} />
-      </div>
+      {/* 48 h SLA josla saraksta augšā noņemta (Nils 25.11) - termiņš redzams kolonnā «Termiņš (48 h)». */}
       {/* V1: viena slaida rinda - rezultāta segmenti kreisi, papildu vadīklas labi. */}
       <div className="mt-2 hidden items-center gap-2 md:flex">
         {showUnpaidViewSwitch ? <AdminOrdersViewSwitch /> : null}
