@@ -570,7 +570,7 @@ CARVERTICAL FOCUS:
 
 CARFAX FOCUS:
 - Quick check flags (stolen, scrapped, import, taxi, recalls, damage / total loss), damage records with zones, components and severity, airbag / salvage events, inspections and owner records unique to CARFAX.
-- "Estimated repair cost" is CARFAX's rough estimate, not an insurance payout; "New owner reported" with dealer type is dealer stock, not a private owner. Brief mileage note only if CARFAX differs from other sources.`;
+- Never state CARFAX repair cost estimates or any EUR repair amounts; "New owner reported" with dealer type is dealer stock, not a private owner. Brief mileage note only if CARFAX differs from other sources.`;
   }
   if (blockLabel === L.ltab) {
     return `
