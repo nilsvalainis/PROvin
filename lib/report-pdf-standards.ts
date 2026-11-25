@@ -186,7 +186,7 @@ export function buildClientReportLegalFooterPlainText(): string {
 /** Noņem / aizstāj biežus trešo pušu komerciālos nosaukumus failu nosaukumos PDF sarakstā. */
 export function sanitizeAttachmentFileNameForReport(fileName: string): string {
   let s = fileName.replace(
-    /\b(carvertical|carVertical|auto[\s-]*dna|autodna|autoDNA|auto-records|auto\s*records)\b/gi,
+    /\b(carvertical|carVertical|carfax|CARFAX|auto[\s-]*dna|autodna|autoDNA|auto-records|auto\s*records)\b/gi,
     "vēstures atskaite",
   );
   s = s.replace(/\s{2,}/g, " ").trim();

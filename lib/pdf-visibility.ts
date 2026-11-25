@@ -36,6 +36,7 @@ export type PdfVisibilitySettings = {
   csdd: boolean;
   autodna: boolean;
   carvertical: boolean;
+  carfax: boolean;
   auto_records: boolean;
   oneauto: boolean;
   cc_vin: boolean;
@@ -97,6 +98,7 @@ export const DEALER_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   csdd: false,
   autodna: false,
   carvertical: false,
+  carfax: false,
   auto_records: true,
   oneauto: true,
   cc_vin: false,
@@ -134,6 +136,7 @@ export const ASV_ONLY_PDF_VISIBILITY: PdfVisibilitySettings = {
   csdd: false,
   autodna: false,
   carvertical: false,
+  carfax: false,
   auto_records: false,
   oneauto: false,
   cc_vin: false,
@@ -174,6 +177,7 @@ export const MINI_DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   csdd: true,
   autodna: false,
   carvertical: false,
+  carfax: false,
   auto_records: false,
   oneauto: false,
   cc_vin: true,
@@ -251,6 +255,7 @@ export const DEFAULT_PDF_VISIBILITY: PdfVisibilitySettings = {
   csdd: true,
   autodna: true,
   carvertical: true,
+  carfax: true,
   auto_records: true,
   oneauto: true,
   cc_vin: true,
@@ -298,6 +303,7 @@ export function mergePdfVisibility(raw: unknown): PdfVisibilitySettings {
     csdd: isBool(o.csdd) ? o.csdd : d.csdd,
     autodna: isBool(o.autodna) ? o.autodna : d.autodna,
     carvertical: isBool(o.carvertical) ? o.carvertical : d.carvertical,
+    carfax: isBool(o.carfax) ? o.carfax : d.carfax,
     auto_records: isBool(o.auto_records) ? o.auto_records : d.auto_records,
     oneauto: isBool(o.oneauto) ? o.oneauto : d.oneauto,
     cc_vin: isBool(o.cc_vin) ? o.cc_vin : d.cc_vin,

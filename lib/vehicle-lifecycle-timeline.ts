@@ -526,7 +526,7 @@ function lifecycleSourceLooksInformationalVendor(source: string): boolean {
   const t = source.trim();
   if (!t) return false;
   if (vendorTimelineIsInformational(t)) return true;
-  return /carvertical|autodna/i.test(t);
+  return /carvertical|autodna|carfax/i.test(t);
 }
 
 /** CarVertical „Kanāda” pret Copart / dīlera ASV nav robežšķērsošana. */
@@ -964,7 +964,7 @@ function collectForeignOwnerChangeEvents(input: LifecycleInput, facts: Lifecycle
   const vendor: OwnerChangeCandidate[] = [];
   for (const b of input.manualVendorBlocks ?? []) {
     const informational = vendorTimelineIsInformational(b.title);
-    const isVendor = /autodna|carvertical/i.test(b.title);
+    const isVendor = /autodna|carvertical|carfax/i.test(b.title);
     if (informational && !isVendor) continue;
     const defaultCountry = REGISTRY_DEFAULT_COUNTRY[b.title] ?? "";
     const estonian = b.title === SOURCE_BLOCK_LABELS.mnt_ee || b.title === SOURCE_BLOCK_LABELS.lkf_ee;

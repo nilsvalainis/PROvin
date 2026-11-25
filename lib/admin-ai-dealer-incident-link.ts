@@ -110,7 +110,7 @@ function collectIncidentItems(blocks: WorkspaceSourceBlocks): DealerIncidentLink
     out.push({ date, ms, monthOnly: monthOnlyDate(dateRaw), label });
   };
 
-  for (const key of ["autodna", "carvertical"] as const) {
+  for (const key of ["autodna", "carvertical", "carfax"] as const) {
     for (const r of blocks[key].incidents.filter(ltabRowHasData)) {
       push(r.csngDate, [r.lossAmount, r.incidentNo].filter((x) => x.trim()).join(" "), SOURCE_BLOCK_LABELS[key]);
     }

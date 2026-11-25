@@ -39,7 +39,7 @@ export type VendorOwnerEvent = { source: string; date: string; country: string }
 export function vendorOwnerChangeEvents(sourceBlocks: WorkspaceSourceBlocks): VendorOwnerEvent[] {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const out: VendorOwnerEvent[] = [];
-  for (const key of ["carvertical", "autodna"] as const) {
+  for (const key of ["carvertical", "autodna", "carfax"] as const) {
     for (const t of blocks[key].vehicleHistoryTimeline ?? []) {
       if (!OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) continue;
       out.push({ source: SOURCE_BLOCK_LABELS[key], date: (t.date ?? "").trim(), country: (t.country ?? "").trim() });
@@ -91,7 +91,11 @@ export function findOwnerClaimIssues(plainText: string, sourceBlocks: WorkspaceS
   // Atļautie skaitļi: CSDD, katra avota kandidāti, kopsumma, ārvalstu daļa (kopā - LV).
   const owners = new Set<number>();
   if (csddCount != null) owners.add(csddCount);
-  for (const c of synth.candidates) owners.add(c.count);
+  for (const c of synth.candidates) {
+    owners.add(c.count);
+    // CARFAX: kopā ar dīleriem un bez tiem - abi skaitļi pamatoti („privāto īpašnieku bija N”).
+    if (c.dealerCount && c.dealerCount > 0) owners.add(c.count - c.dealerCount);
+  }
   if (synth.totalCount > 0) owners.add(synth.totalCount);
   const lv = synth.chosen.latvia?.count;
   if (lv != null && synth.totalCount > lv) owners.add(synth.totalCount - lv);

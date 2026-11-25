@@ -30,6 +30,7 @@ export function collectWorkspaceCountryTimeline(
   const mileageRows = [
     ...b.autodna.serviceHistory,
     ...b.carvertical.serviceHistory,
+    ...b.carfax.serviceHistory,
     ...b.auto_records.serviceHistory,
     ...(citi?.serviceHistory ?? []),
     ...(b.csdd.mileageHistory ?? []),
@@ -43,6 +44,7 @@ export function collectWorkspaceCountryTimeline(
   const incidentRows = [
     ...b.autodna.incidents,
     ...b.carvertical.incidents,
+    ...b.carfax.incidents,
     ...b.ltab.rows,
     ...(citi?.incidents ?? []),
   ].filter(ltabRowHasData);

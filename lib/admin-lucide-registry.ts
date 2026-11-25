@@ -45,6 +45,7 @@ export const SOURCE_BLOCK_LUCIDE: Record<SourceBlockKey, LucideIcon> = {
   csdd: ScrollText,
   autodna: Database,
   carvertical: ChartColumn,
+  carfax: FileSearch,
   auto_records: ShieldCheck,
   oneauto: Factory,
   cc_vin: Globe,

@@ -563,6 +563,7 @@ const LOGO_HEIGHT: Partial<Record<PdfSourceLogoKey, number>> = {
   csdd: 14,
   autodna: 14,
   carvertical: 15.5,
+  carfax: 11,
   openlane: 12.5,
   autobid: 20,
   auto1: 13,

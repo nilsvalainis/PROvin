@@ -31,6 +31,7 @@ export function buildListingNotCountryChangeBrief(blocks: WorkspaceSourceBlocks)
   };
   add(listingCountriesFromRows(b.autodna.vehicleHistoryTimeline));
   add(listingCountriesFromRows(b.carvertical.vehicleHistoryTimeline));
+  add(listingCountriesFromRows(b.carfax.vehicleHistoryTimeline));
   for (const section of b.citi_avoti.sections ?? []) {
     add(listingCountriesFromRows(section.vehicleHistoryTimeline));
   }

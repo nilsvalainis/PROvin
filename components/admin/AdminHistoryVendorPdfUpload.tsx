@@ -20,6 +20,7 @@ import {
 export type VendorPdfUploadTarget =
   | "autodna"
   | "carvertical"
+  | "carfax"
   | "auto_records"
   | "cc_vin"
   | "ltab"
@@ -34,6 +35,10 @@ const LABELS: Record<VendorPdfUploadTarget, { title: string; hint: string }> = {
   carvertical: {
     title: "Augšupielādēt CarVertical PDF atskaiti",
     hint: "Velc PDF šeit vai klikšķini · Copilot aģents aizpilda tabulas (RAW lauki netiek aiztikti)",
+  },
+  carfax: {
+    title: "Augšupielādēt CARFAX PDF atskaiti",
+    hint: "Velc PDF šeit vai klikšķini · nolasām visas sadaļas (ātrā pārbaude, bojājumi, nobraukums, īpašnieki, vēsture); oriģināls saglabājas pasūtījumā",
   },
   auto_records: {
     title: "Augšupielādēt oficiālā dīlera PDF (BMW / auto-records.com)",
@@ -328,7 +333,9 @@ export function AdminHistoryVendorPdfUpload({
       </div>
       {busy ? (
         <p className="mt-1 text-[9px] leading-snug text-[var(--color-provin-accent)]" role="status">
-          Copilot lasa PDF (teksta slānis + Claude Sonnet, līdz ~1 min)…
+          {target === "carfax"
+            ? "Lasa CARFAX PDF…"
+            : "Copilot lasa PDF (teksta slānis + Claude Sonnet, līdz ~1 min)…"}
         </p>
       ) : null}
       {notice ? (

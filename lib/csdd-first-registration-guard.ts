@@ -55,7 +55,7 @@ export function collectWorkspaceRecordDates(blocks: WorkspaceSourceBlocks): stri
   const push = (raw: string | undefined) => {
     if (raw?.trim()) out.push(raw.trim());
   };
-  for (const key of ["autodna", "carvertical"] as const) {
+  for (const key of ["autodna", "carvertical", "carfax"] as const) {
     const b = blocks[key];
     for (const r of b.serviceHistory ?? []) push(r.date);
     for (const r of b.vehicleHistoryTimeline ?? []) push(r.date);

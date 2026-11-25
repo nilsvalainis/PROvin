@@ -27,6 +27,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText } from "@/lib/asv-report";
+import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -148,7 +149,7 @@ function unifiedIncidentsWithLossPlainText(blocks: WorkspaceSourceBlocks): strin
 
 function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   const parts: string[] = [];
-  for (const key of ["autodna", "carvertical"] as const) {
+  for (const key of ["autodna", "carvertical", "carfax"] as const) {
     const inc = blocks[key].incidents.filter(ltabRowHasData);
     if (inc.length === 0) continue;
     parts.push(`【${aiSourceBlockLabel(key)} — ${NEGADIJUMU_VESTURE_TITLE}】`);
@@ -270,6 +271,12 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     { key: "csdd", text: csddFormToPlainText(blocks.csdd) },
     { key: "autodna", text: vendorAvotuBlockToPlainText(blocks.autodna) },
     { key: "carvertical", text: vendorAvotuBlockToPlainText(blocks.carvertical) },
+    {
+      key: "carfax",
+      text: [vendorAvotuBlockToPlainText(blocks.carfax), carfaxReportToPlainText(blocks.carfax.report)]
+        .filter(Boolean)
+        .join("\n"),
+    },
     { key: "auto_records", text: autoRecordsBlockToPlainText(blocks.auto_records) },
     { key: "oneauto", text: oneautoBlockToPlainText(blocks.oneauto), label: OFFICIAL_DEALER_SECTION_TITLE },
     { key: "cc_vin", text: ccVinBlockToPlainText(blocks.cc_vin) },

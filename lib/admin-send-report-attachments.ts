@@ -18,6 +18,7 @@ export type SendReportAttachmentDisplay = {
 const KIND_FROM_NAME: ReadonlyArray<{ re: RegExp; label: string }> = [
   { re: /carvertical|car[\s._-]*vertical/i, label: "CarVertical" },
   { re: /autodna|auto[\s._-]*dna/i, label: "AutoDNA" },
+  { re: /carfax/i, label: "CARFAX" },
 ];
 
 function firstNonempty(...vals: Array<string | null | undefined>): string {

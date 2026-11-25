@@ -31,6 +31,7 @@ const PHOTO_BLOCK_KEYS = [
   "csdd",
   "autodna",
   "carvertical",
+  "carfax",
   "tjekbil",
   "mnt_ee",
   "lkf_ee",

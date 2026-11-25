@@ -130,6 +130,7 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[csddTrafficLevel(block as WorkspaceSourceBlocks["csdd"])];
     case "autodna":
     case "carvertical":
+    case "carfax":
       return TRAFFIC_RANK[vendorAvotuTrafficLevel(block as WorkspaceSourceBlocks["autodna"])];
     case "auto_records":
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
@@ -347,6 +348,13 @@ export function coalesceOrderWorkspacePersistBody(
           pickRicherSourceBlock("carvertical", incomingBlocks.carvertical, baselineBlocks.carvertical),
           incomingBlocks.carvertical,
           baselineBlocks.carvertical,
+        ),
+    carfax: wiped.has("carfax")
+      ? incomingBlocks.carfax
+      : withMergedSourceBlockPhotos(
+          pickRicherSourceBlock("carfax", incomingBlocks.carfax, baselineBlocks.carfax),
+          incomingBlocks.carfax,
+          baselineBlocks.carfax,
         ),
     auto_records: wiped.has("auto_records")
       ? incomingBlocks.auto_records
@@ -734,6 +742,7 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   s += csddTrafficLevel(body.sourceBlocks.csdd) === "empty" ? 0 : 2;
   s += vendorAvotuTrafficLevel(body.sourceBlocks.autodna) === "empty" ? 0 : 1;
   s += vendorAvotuTrafficLevel(body.sourceBlocks.carvertical) === "empty" ? 0 : 1;
+  s += vendorAvotuTrafficLevel(body.sourceBlocks.carfax) === "empty" ? 0 : 1;
   s += autoRecordsTrafficLevel(body.sourceBlocks.auto_records) === "empty" ? 0 : 1;
   s += oneautoTrafficLevel(body.sourceBlocks.oneauto) === "empty" ? 0 : 1;
   s += ltabTrafficLevel(body.sourceBlocks.ltab) === "empty" ? 0 : 1;
@@ -760,7 +769,11 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
   if (hasText(b.autodna?.mileagePasteRaw ?? "", 12) || hasText(b.carvertical?.mileagePasteRaw ?? "", 12)) {
     return true;
   }
-  if (vendorAvotuTrafficLevel(b.autodna) !== "empty" || vendorAvotuTrafficLevel(b.carvertical) !== "empty") {
+  if (
+    vendorAvotuTrafficLevel(b.autodna) !== "empty" ||
+    vendorAvotuTrafficLevel(b.carvertical) !== "empty" ||
+    vendorAvotuTrafficLevel(b.carfax) !== "empty"
+  ) {
     return true;
   }
   if (tirgusTrafficLevel(b.tirgus) !== "empty" || listingAnalysisTrafficLevel(b.listing_analysis) !== "empty") {

@@ -26,7 +26,7 @@ import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-li
 import { collectDamageEvidence } from "@/lib/damage-evidence";
 
 function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
-  for (const key of ["autodna", "carvertical"] as const) {
+  for (const key of ["autodna", "carvertical", "carfax"] as const) {
     const incidents = blocks[key]?.incidents;
     if (Array.isArray(incidents) && incidents.some(ltabRowHasData)) return true;
   }
@@ -64,6 +64,7 @@ export function orderHasSourceDataForAi(sourceBlocks: WorkspaceSourceBlocks): bo
     csddFormHasContent(blocks.csdd),
     vendorAvotuBlockHasContent(blocks.autodna),
     vendorAvotuBlockHasContent(blocks.carvertical),
+    vendorAvotuBlockHasContent(blocks.carfax),
     autoRecordsBlockHasContent(blocks.auto_records),
     oneautoBlockHasContent(blocks.oneauto),
     ccVinBlockHasContent(blocks.cc_vin),

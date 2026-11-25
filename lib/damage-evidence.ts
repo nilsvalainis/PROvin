@@ -83,6 +83,7 @@ export function collectDamageEvidence(sourceBlocks: WorkspaceSourceBlocks): Dama
   };
   pushVendorIncidents(blocks.autodna.incidents, SOURCE_BLOCK_LABELS.autodna);
   pushVendorIncidents(blocks.carvertical.incidents, SOURCE_BLOCK_LABELS.carvertical);
+  pushVendorIncidents(blocks.carfax.incidents, SOURCE_BLOCK_LABELS.carfax);
   for (const section of blocks.citi_avoti.sections ?? []) {
     pushVendorIncidents(section.incidents, section.label?.trim() || "Citi avoti");
   }

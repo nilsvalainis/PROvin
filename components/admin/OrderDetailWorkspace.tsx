@@ -53,7 +53,9 @@ import { mergeImportedPhotoGroups } from "@/lib/auction-photo-group-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
+import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
+import { AdminCarfaxSourceBlock } from "@/components/admin/AdminCarfaxSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhoto";
@@ -625,6 +627,10 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
     case "autodna":
     case "carvertical":
       return vendorAvotuBlockToPlainText(blocks[key] ?? null);
+    case "carfax":
+      return [vendorAvotuBlockToPlainText(blocks.carfax ?? null), carfaxReportToPlainText(blocks.carfax?.report)]
+        .filter(Boolean)
+        .join("\n");
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -2183,6 +2189,7 @@ export function OrderDetailWorkspace({
         | "csdd"
         | "autodna"
         | "carvertical"
+        | "carfax"
         | "tjekbil"
         | "finnik"
         | "mnt_ee"
@@ -3820,6 +3827,7 @@ export function OrderDetailWorkspace({
       csdd: "empty" as const,
       autodna: "empty" as const,
       carvertical: "empty" as const,
+      carfax: "empty" as const,
       auto_records: "empty" as const,
       oneauto: "empty" as const,
       cc_vin: "empty" as const,
@@ -3839,6 +3847,7 @@ export function OrderDetailWorkspace({
         csdd: csddTrafficLevel(b.csdd),
         autodna: vendorAvotuTrafficLevel(b?.autodna),
         carvertical: vendorAvotuTrafficLevel(b?.carvertical),
+        carfax: vendorAvotuTrafficLevel(b?.carfax),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
         oneauto: oneautoTrafficLevel(b.oneauto),
         cc_vin: ccVinTrafficLevel(b.cc_vin),
@@ -3873,7 +3882,9 @@ export function OrderDetailWorkspace({
 
   const wizardStepLevels = useMemo((): TrafficFillLevel[] => {
     const dash = dashboardWizardTrafficLevel(payload);
-    const vendors = worstTrafficLevel(traffic.autodna, traffic.carvertical);
+    // CARFAX ir papildu avots - tukšs CARFAX nepasliktina soļa statusu.
+    const vendorsBase = worstTrafficLevel(traffic.autodna, traffic.carvertical);
+    const vendors = traffic.carfax === "empty" ? vendorsBase : worstTrafficLevel(vendorsBase, traffic.carfax);
     return [
       dash,
       worstTrafficLevel(traffic.csdd, traffic.ltab),
@@ -6261,6 +6272,23 @@ export function OrderDetailWorkspace({
                 photosPersistenceEnabled={orderDraftPersistenceEnabled}
                 onPhotoGroupsStructuralCommit={(next) =>
                   void commitGenericSourcePhotoGroups("carvertical", next)
+                }
+              />
+            </div>
+            <div id="admin-order-block-carfax" className="flex min-h-0 min-w-0 flex-col">
+              <AdminCarfaxSourceBlock
+                value={blocksDisplaySafe.carfax}
+                onChange={(next) => updateSourceBlock("carfax", next)}
+                trafficFillLevel={traffic.carfax}
+                sessionId={payload.sessionId}
+                pdfInclude={pdfVisibility.carfax}
+                onPdfIncludeChange={(next) => onPdfVisibilityChange({ carfax: next })}
+                aiComment={aiCommentSlot("carfax")}
+                getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+                applyPatchedBlocks={applyCopilotPatchedBlocks}
+                photosPersistenceEnabled={orderDraftPersistenceEnabled}
+                onPhotoGroupsStructuralCommit={(next) =>
+                  void commitGenericSourcePhotoGroups("carfax", next)
                 }
               />
             </div>
