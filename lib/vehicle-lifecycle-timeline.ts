@@ -4,6 +4,7 @@
  */
 
 import {
+  citiAvotiSectionLabel,
   emptyAutoRecordsBlock,
   ltabRowHasData,
   REGISTRY_STYLE_BLOCK_KEYS,
@@ -15,6 +16,9 @@ import {
   type CsddFormFields,
   type TirgusFormFields,
 } from "@/lib/admin-source-blocks";
+import { readKfzAtStore } from "@/lib/kfzgutachten/apply-citi";
+import { KFZ_AT_COUNTRY_LV, KFZ_AT_SECTION_LABEL, kfzExactDateDdMmYyyy } from "@/lib/kfzgutachten/kfzgutachten";
+import { kfzOverallLv } from "@/lib/kfzgutachten/parse-gutachten";
 import { autoRecordsServiceWorkRowIsPrintable } from "@/lib/auto-records-service-works";
 import { resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
@@ -607,6 +611,54 @@ function odometerMatchesVendorListing(
   return listingHintKey(date, country, odometer).some((k) => listingKeys.has(k));
 }
 
+/** Atzīme pie atkārtotas apskates (CSDD «atkārtota pārbaude»). */
+export const INSPECTION_REPEAT_MARK = "atkārtota";
+
+/** CSDD vērtējums 2/3/4 (vai teksts «2 - …»), ja `ratingLevel` nav saglabāts. */
+function csddInspectionFailed(r: { ratingLevel?: number | null; ratingLabel: string }): boolean {
+  if (r.ratingLevel != null) return r.ratingLevel > 1;
+  const m = /^\s*(\d)\b/.exec(r.ratingLabel ?? "");
+  return m ? Number(m[1]) > 1 : false;
+}
+
+/**
+ * Austrijas §57a apskates (kfzgutachten.at, «Citi avoti» sadaļa): atzinumi ar rezultātu, iepriekšējā
+ * apskate un meklēšanas saraksta datumi. Nobraukums tām pašām dienām paliek nobraukuma tabulā.
+ */
+function collectKfzAtInspectionEvents(citi: CitiAvotiBlockState | null): LifecycleEvent[] {
+  const sections = citi?.sections ?? [];
+  const out: LifecycleEvent[] = [];
+  for (const [i, section] of sections.entries()) {
+    if (section.label?.trim() !== KFZ_AT_SECTION_LABEL) continue;
+    const store = readKfzAtStore(section);
+    const source = citiAvotiSectionLabel(section, i, sections.length).toUpperCase();
+    const seen = new Set<string>();
+    const push = (rawDate: string, detail: string, odometer: string, failed: boolean) => {
+      const date = kfzExactDateDdMmYyyy(rawDate);
+      if (!date || seen.has(date)) return;
+      seen.add(date);
+      out.push(
+        makeEvent({
+          kind: "inspection",
+          rawDate: date,
+          title: "Tehniskā apskate",
+          detail,
+          country: KFZ_AT_COUNTRY_LV,
+          odometer: odometer.replace(/\D/g, ""),
+          source,
+          tone: failed ? "warn" : "info",
+        }),
+      );
+    };
+    for (const r of store.reports) {
+      push(r.date, kfzOverallLv(r.overall), r.odometerKm, r.overall === "major" || r.overall === "dangerous");
+    }
+    for (const r of store.reports) if (r.previous) push(r.previous.date, "", r.previous.odometerKm, false);
+    for (const r of store.list) push(r.date, "", "", false);
+  }
+  return out;
+}
+
 function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   const csdd = input.csddForm;
@@ -674,9 +726,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     );
   }
 
+  // Visas CSDD apskates (arī neizturētās «2»/«3» un atkārtotās tajā pašā mēnesī) - katra savā kartītē.
   for (const r of csdd?.technicalInspectionHistory ?? []) {
     if (!r.date.trim()) continue;
-    const failed = r.ratingLevel != null && r.ratingLevel > 1;
+    const failed = csddInspectionFailed(r);
+    const repeat = /atkārtot/i.test(r.inspectionType ?? "");
     const sameDayKm = (csdd?.mileageHistory ?? []).find((m) => {
       if (!m.date.trim() || !m.odometer.trim()) return false;
       const a = parseLifecycleTimeMs(m.date);
@@ -695,7 +749,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         kind: "inspection",
         rawDate: r.date,
         title: "Tehniskā apskate",
-        detail: r.ratingLabel.trim(),
+        detail: [r.ratingLabel.trim(), repeat ? INSPECTION_REPEAT_MARK : ""].filter(Boolean).join(" · "),
         country: "Latvija",
         odometer: sameDayKm?.odometer ?? "",
         source: "CSDD",
@@ -703,6 +757,8 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       }),
     );
   }
+
+  out.push(...collectKfzAtInspectionEvents(input.citiAvoti ?? null));
 
   const dealer = resolveDealerAutoRecords(
     input.autoRecordsBlock,
@@ -1241,12 +1297,92 @@ function isCsddLatviaOwnerChange(e: LifecycleEvent): boolean {
   );
 }
 
+const TONE_RANK: Record<LifecycleEventTone, number> = { info: 0, warn: 1, alert: 2 };
+
+/** CarVertical apskates datums ir mēneša precizitātē (01.02.2025 = „02.2025”), tāpat MM.YYYY ieraksti. */
+function inspectionIsMonthPrecision(e: LifecycleEvent): boolean {
+  if (/^\d{1,2}\.\d{4}$/.test(e.date.trim())) return true;
+  return e.sources.length > 0 && e.sources.every(isCarVerticalSource);
+}
+
+/** Mēneša precizitātes apskate pieķeras dienas apskatei šajā logā (avots var nobīdīt mēnesi). */
+const INSPECTION_MONTH_ATTACH_MS = 45 * 24 * 60 * 60 * 1000;
+
+function absorbInspection(host: LifecycleEvent, e: LifecycleEvent): void {
+  if (!host.odometer && e.odometer) host.odometer = e.odometer;
+  if (!host.country && e.country) host.country = e.country;
+  else if (host.country && host.country === e.country && !lifecycleCountryIsSoft(e)) {
+    host.countryUnverified = false;
+    host.timelineInformational = false;
+  }
+  if (!host.detail && e.detail) host.detail = e.detail;
+  if (!host.body && e.body) host.body = e.body;
+  if (TONE_RANK[e.tone] > TONE_RANK[host.tone]) host.tone = e.tone;
+  for (const src of e.sources) if (!host.sources.includes(src)) host.sources.push(src);
+  collapseCountryOnlyDetail(host);
+}
+
+/**
+ * Tehniskās apskates apvieno pa DIENĀM, ne mēnešiem: neizturēta apskate (vērtējums 2) un atkārtotā
+ * apskate tajā pašā mēnesī ir divi notikumi (Nils 25.11, WBAFB71080LV66575 - laikjoslā pazuda «2»).
+ * Mēneša precizitātes rindas (CarVertical) pievienojas tuvākajai tā paša mēneša dienas apskatei.
+ */
+function mergeInspectionEvents(events: LifecycleEvent[]): LifecycleEvent[] {
+  const inspections = events.filter((e) => e.kind === "inspection");
+  if (inspections.length === 0) return events;
+  const dropped = new Set<LifecycleEvent>();
+  const anchorsByDay = new Map<string, LifecycleEvent>();
+  // CSDD vispirms - tā vērtējums ir precīzākais kartītes teksts.
+  const precise = inspections
+    .filter((e) => !inspectionIsMonthPrecision(e) && e.time > 0)
+    .sort((a, b) => Number(b.sources.includes("CSDD")) - Number(a.sources.includes("CSDD")));
+  for (const e of precise) {
+    const day = eventDayKey(e);
+    const host = anchorsByDay.get(day);
+    if (!host) {
+      anchorsByDay.set(day, e);
+      continue;
+    }
+    absorbInspection(host, e);
+    dropped.add(e);
+  }
+  const anchors = [...anchorsByDay.values()];
+  const monthOnly = new Map<string, LifecycleEvent>();
+  for (const e of inspections) {
+    if (!inspectionIsMonthPrecision(e) || e.time <= 0) continue;
+    const eIso = countryLabelToIso2(e.country);
+    const candidates = anchors.filter((a) => {
+      if (Math.abs(a.time - e.time) > INSPECTION_MONTH_ATTACH_MS) return false;
+      const aIso = countryLabelToIso2(a.country);
+      return !eIso || !aIso || eIso === aIso;
+    });
+    const sameMonth = candidates.filter((a) => sameLifecycleMonth(a, e));
+    const pool = sameMonth.length > 0 ? sameMonth : candidates;
+    const host = pool.sort((a, b) => Math.abs(a.time - e.time) - Math.abs(b.time - e.time))[0];
+    if (host) {
+      absorbInspection(host, e);
+      dropped.add(e);
+      continue;
+    }
+    const key = `${monthKey(e.time)}|${e.country.toLowerCase()}`;
+    const prev = monthOnly.get(key);
+    if (prev) {
+      absorbInspection(prev, e);
+      dropped.add(e);
+    } else {
+      monthOnly.set(key, e);
+    }
+  }
+  return events.filter((e) => !dropped.has(e));
+}
+
 function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
   const byKey = new Map<string, LifecycleEvent>();
   const out: LifecycleEvent[] = [];
   for (const e of events) {
     // Īpašnieku maiņas jau apvienotas; divas maiņas vienā mēnesī (07.07 un 27.07) ir divi notikumi.
-    if (e.kind === "owner_change") {
+    // Apskates jau apvienotas pa dienām (`mergeInspectionEvents`).
+    if (e.kind === "owner_change" || e.kind === "inspection") {
       out.push(e);
       continue;
     }
@@ -1708,7 +1844,9 @@ export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEve
   facts.push(...collectForeignOwnerChangeEvents(input, facts));
   const odo = mergeSameDateTypeCountryDisagreement(collectOdometerEvents(input));
   const merged = mergeOdometerIntoFacts(facts, odo);
-  const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);
+  const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(mergeInspectionEvents(merged))).filter(
+    (e) => e.time > 0,
+  );
   if (deduped.length === 0) return [];
   const previousRegistrationCountry = input.csddForm?.previousRegistrationCountry ?? "";
   const resolved = resolveFirstRegistration(deduped, previousRegistrationCountry);

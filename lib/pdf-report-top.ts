@@ -467,7 +467,15 @@ export function pdfTopPhotoCaption(photo: PdfTopPhoto, lang: Lang): string {
 // Kartītes
 
 export type PdfTopCardTone = "risk" | "none" | "plain";
-export type PdfTopCard = { id: string; label: string; value: string; note: string; tone: PdfTopCardTone };
+export type PdfTopCard = {
+  id: string;
+  label: string;
+  value: string;
+  note: string;
+  tone: PdfTopCardTone;
+  /** Markas logo pie etiķetes (tikai «Serviss», ja ir oficiālā dīlera ieraksti; Nils 25.11, makets A). */
+  labelLogoUri?: string;
+};
 
 const DEFAULT_TILE_LABEL: Record<string, string> = {
   incidents: "Negadījumi un bojājumi",
@@ -499,6 +507,8 @@ export function buildPdfTopKeyCards(args: {
   /** Izsoļu portālu arhīvs iekļauts PDF (citādi kartītes «Izsoles» nav). */
   auctionsVisible: boolean;
   auctionsHaveData: boolean;
+  /** Markas logo (`pdfTopMakeLogoUri`) - kartītei «Serviss», ja tās datos ir oficiālā dīlera ieraksti. */
+  serviceLogoUri?: string | null;
   lang: Lang;
 }): PdfTopCard[] {
   const { lang } = args;
@@ -553,7 +563,8 @@ export function buildPdfTopKeyCards(args: {
   const svc = byId.get("service");
   if (svc) {
     const note = !ov.has("service") && svc.latestDate ? `${pdfTopText("serviceLatest", lang)} ${svc.latestDate}` : tileNote(svc);
-    out.push({ id: "service", label: label(svc, "service"), value: svc.value, note, tone: toneOf(svc, true) });
+    const logo = args.serviceLogoUri && (svc.dealerRecords ?? 0) > 0 ? { labelLogoUri: args.serviceLogoUri } : {};
+    out.push({ id: "service", label: label(svc, "service"), value: svc.value, note, tone: toneOf(svc, true), ...logo });
   }
   return out;
 }
@@ -631,6 +642,22 @@ export function buildPdfTopBarHtml(m: Pick<PdfTopModel, "logoSvg" | "kindTitle" 
   return `<div class="pdf-top6__bar"><span class="pdf-top6__logo">${m.logoSvg}</span><span class="pdf-top6__kind">${right}</span></div>`;
 }
 
+/** Etiķetes logo: augstums px un atstarpe līdz tekstam (makets A). */
+const LABEL_LOGO_H = 13;
+const LABEL_LOGO_GAP = 6;
+
+/** SVG data URI platuma/augstuma attiecība (no width/height vai viewBox); nezināma - 1. */
+export function pdfTopSvgAspect(uri: string): number {
+  const b64 = /^data:image\/svg\+xml;base64,(.+)$/.exec(uri)?.[1];
+  if (!b64) return 1;
+  const head = /^<svg\b[^>]*>/.exec(fromBase64(b64))?.[0] ?? "";
+  const w = Number(/\bwidth="([\d.]+)"/.exec(head)?.[1]);
+  const h = Number(/\bheight="([\d.]+)"/.exec(head)?.[1]);
+  if (w > 0 && h > 0) return w / h;
+  const vb = /\bviewBox="[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+([\d.]+)"/.exec(head);
+  return vb && Number(vb[1]) > 0 && Number(vb[2]) > 0 ? Number(vb[1]) / Number(vb[2]) : 1;
+}
+
 function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
   if (cards.length === 0) return "";
   const { cols, cells } = pdfSymmetricGridPlacement(cards.length);
@@ -643,13 +670,18 @@ function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
   const items = cards
     .map((c, i) => {
       const cell = cells[i]!;
-      const labPx = pdfTopFitPx(c.label, inner, 7.5, 6.25, { upper: true, tracking: 0.14 });
+      const logoW = c.labelLogoUri ? Math.min(LABEL_LOGO_H * pdfTopSvgAspect(c.labelLogoUri), LABEL_LOGO_H * 2.5) : 0;
+      const labW = c.labelLogoUri ? inner - logoW - LABEL_LOGO_GAP : inner;
+      const labPx = pdfTopFitPx(c.label, labW, 7.5, 6.25, { upper: true, tracking: 0.14 });
       const vCls = c.tone === "risk" ? " s-alert" : c.tone === "none" ? " s-none" : "";
       const valueHtml = c.value
         ? `<p class="pdf-top6-card__v${vCls}" style="${fitStyle(fits[i] == null ? null : shared, 8.5)}">${esc(c.value)}</p>`
         : "";
       const noteHtml = c.note ? `<p class="pdf-top6-card__sub">${keepNumbers(esc(c.note))}</p>` : "";
-      return `<div class="pdf-top6-card pdf-top6-card--${esc(c.id.replace(/[^a-z0-9-]/gi, "-"))}" style="grid-row:${cell.row};grid-column:${cell.col} / span 2"><p class="pdf-top6__lab" style="${fitStyle(labPx, 6.25)}">${esc(c.label)}</p>${valueHtml}${noteHtml}</div>`;
+      const labelHtml = c.labelLogoUri
+        ? `<p class="pdf-top6__lab" style="display:flex;align-items:center;gap:${LABEL_LOGO_GAP}px;${fitStyle(labPx, 6.25)}"><img src="${esc(c.labelLogoUri)}" alt="" style="height:${LABEL_LOGO_H}px;width:auto;max-width:${LABEL_LOGO_H * 2.5}px;flex:none;margin:-2px 0">${esc(c.label)}</p>`
+        : `<p class="pdf-top6__lab" style="${fitStyle(labPx, 6.25)}">${esc(c.label)}</p>`;
+      return `<div class="pdf-top6-card pdf-top6-card--${esc(c.id.replace(/[^a-z0-9-]/gi, "-"))}" style="grid-row:${cell.row};grid-column:${cell.col} / span 2">${labelHtml}${valueHtml}${noteHtml}</div>`;
     })
     .join("");
   return `<div class="pdf-top6__kc"><p class="pdf-top6__hd">${esc(pdfTopText("keyInfo", lang))}</p><div class="pdf-top6__grid" style="grid-template-columns:repeat(${cols * 2},minmax(0,1fr))">${items}</div></div>`;

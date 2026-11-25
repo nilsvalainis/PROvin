@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
-import { createDefaultSourceBlocks, emptyCsddFields } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyAutoRecordsBlock, emptyCsddFields } from "@/lib/admin-source-blocks";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   PDF_SOURCE_LOGO_TONE,
   buildPdfTopKeyCards,
+  buildPdfTopSectionHtml,
   pdfSymmetricGridPlacement,
   pdfSymmetricGridRows,
   pdfTopAgeLabel,
@@ -133,6 +134,68 @@ describe("galvenās kartītes", () => {
     expect(none[0]).toMatchObject({ value: "Nav atrastas", tone: "plain" });
     const nodata = buildPdfTopKeyCards({ baseTiles: [], ccVinBlock: null, auctionsVisible: true, auctionsHaveData: false, lang: "de" });
     expect(nodata[0]).toMatchObject({ label: "Auktionen", value: "Keine Daten", tone: "none" });
+  });
+});
+
+describe("kartīte «Serviss» ar markas logo (Nils 25.11, makets A)", () => {
+  const svc = (dealerRecords: number): PdfSummaryTile[] => [
+    { id: "service", label: "Servisa vēsture", value: "15 ieraksti", note: "", tone: "ok", latestDate: "16.09.2026", dealerRecords },
+  ];
+  const html = (cards: ReturnType<typeof buildPdfTopKeyCards>) =>
+    buildPdfTopSectionHtml({
+      lang: "lv",
+      logoSvg: "<svg></svg>",
+      kindTitle: "Business",
+      dateLabel: "25.11.2026",
+      makeModel: "BMW 320d",
+      vin: "WBA5R1C0XLFH42873",
+      specLine: "",
+      photo: null,
+      odometer: null,
+      age: "",
+      firstReg: null,
+      cards,
+      sources: [],
+      totals: { paid: 0, pub: 0, other: 0 },
+      wordmarkHtml: "",
+    });
+  const card = (h: string) => h.match(/<div class="pdf-top6-card pdf-top6-card--service"[^]*?<\/div>/)?.[0] ?? "";
+
+  it("BMW ar dīlera ierakstiem - logo ir etiķetē, teksts nelūst", () => {
+    const uri = pdfTopMakeLogoUri("BMW 320d")!;
+    expect(uri).toBeTruthy();
+    for (const lang of ["lv", "en", "ru", "de"] as const) {
+      const cards = buildPdfTopKeyCards({ baseTiles: svc(15), auctionsVisible: false, auctionsHaveData: false, serviceLogoUri: uri, lang });
+      expect(cards[0]!.labelLogoUri).toBe(uri);
+      const c = card(html(cards));
+      expect(c).toMatch(/<p class="pdf-top6__lab" style="display:flex;align-items:center;gap:6px;font-size:7\.5px"><img src="data:image\/svg\+xml;base64,[^"]+" alt="" style="height:13px;width:auto/);
+      expect(c).not.toContain("white-space:normal");
+    }
+  });
+  it("servisa dati nav no dīlera - bez logo", () => {
+    const cards = buildPdfTopKeyCards({ baseTiles: svc(0), auctionsVisible: false, auctionsHaveData: false, serviceLogoUri: pdfTopMakeLogoUri("BMW 320d"), lang: "lv" });
+    expect(cards[0]!.labelLogoUri).toBeUndefined();
+    expect(card(html(cards))).not.toContain("<img");
+  });
+  it("nezināma marka - bez logo", () => {
+    expect(pdfTopMakeLogoUri("ZZTOP X1")).toBeNull();
+    const cards = buildPdfTopKeyCards({ baseTiles: svc(15), auctionsVisible: false, auctionsHaveData: false, serviceLogoUri: pdfTopMakeLogoUri("ZZTOP X1"), lang: "lv" });
+    expect(card(html(cards))).not.toContain("<img");
+  });
+  it("pilnā dokumentā: dīlera servisa ieraksti + BMW → logo kartītē «Serviss»", () => {
+    const h = doc(
+      {
+        csddForm: { ...emptyCsddFields(), makeModel: "BMW 320D", registrationStatus: "Reģistrēts" },
+        autoRecordsBlock: {
+          ...emptyAutoRecordsBlock(),
+          serviceHistory: [{ date: "16.09.2026", odometer: "120000", country: "DE" }],
+        } as ClientReportPayload["autoRecordsBlock"],
+      },
+      "lv",
+    );
+    const c = card(h);
+    expect(c).toContain("Serviss");
+    expect(c).toContain("<img");
   });
 });
 
