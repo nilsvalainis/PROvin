@@ -150,6 +150,21 @@ import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, removedPhotoIds } f
 import { clearedFieldsSnapshotField, mergeClearedFields, nextClearedFields } from "@/lib/admin-cleared-fields";
 import { resolveOrderWorkspaceHydration, shouldAutosaveHydratedLocalDraft } from "@/lib/admin-order-workspace-hydrate";
 import {
+  changedWorkspaceEditKeys,
+  countWorkspaceFilled,
+  fillEmptyServerFieldsFromLocal,
+  mergeStaleLocalWithServer,
+  shouldWarnWorkspaceUnsaved,
+  workspaceUnsavedReason,
+  type WorkspaceEditStamps,
+  type WorkspaceUnsavedReason,
+} from "@/lib/admin-workspace-safety";
+import { sendWorkspaceClientEvent } from "@/lib/admin-workspace-client-signal";
+import { pickLocalRestoreCandidate, snapshotRawToPersistBody } from "@/lib/admin-workspace-local-restore";
+import { AdminWorkspaceSafetyBanners, type LocalRestoreOffer } from "@/components/admin/AdminWorkspaceSafetyBanners";
+import { useOrderPresence } from "@/components/admin/useOrderPresence";
+import { AdminWorkspaceRestoreMenu } from "@/components/admin/AdminWorkspaceRestoreMenu";
+import {
   bumpWorkspaceSaveGeneration,
   fetchCanonicalWorkspace,
   isWorkspaceRevisionConflict,
@@ -915,6 +930,11 @@ export function OrderDetailWorkspace({
     "stale_revision" | "overwrite_blocked" | null
   >(null);
   const [workspaceConflictBusy, setWorkspaceConflictBusy] = useState(false);
+  const [unsavedWarn, setUnsavedWarn] = useState<{ reason: WorkspaceUnsavedReason; message?: string | null } | null>(null);
+  const [saveNowBusy, setSaveNowBusy] = useState(false);
+  const [localRestoreOffer, setLocalRestoreOffer] = useState<LocalRestoreOffer | null>(null);
+  const localRestoreBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
+  const [conflictNotice, setConflictNotice] = useState<string | null>(null);
   const workspaceRevisionConflictRef = useRef(false);
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
@@ -1011,6 +1031,17 @@ export function OrderDetailWorkspace({
   const lastGoodPersistBodyRef = useRef<OrderWorkspacePersistBody | null>(null);
   const workspaceRevisionRef = useRef(0);
   const wsPersistRef = useRef(ws);
+  /** 25.11 datu drošība: kad lietotājs šajā cilnē mainīja katru lauku (apvienošanai pēc 409). */
+  const editStampsRef = useRef<WorkspaceEditStamps>({});
+  const prevTrackedWsRef = useRef<WorkspacePersist | null>(null);
+  const suppressEditTrackRef = useRef(false);
+  /** Pirmā lokālā izmaiņa, kas vēl nav serverī (null = viss saglabāts). */
+  const unsavedSinceRef = useRef<number | null>(null);
+  const lastLocalEditAtRef = useRef(0);
+  const saveInFlightRef = useRef(false);
+  const unsavedBeaconSentRef = useRef<string | null>(null);
+  const lastForcedFlushAtRef = useRef(0);
+  const autoMergeAfterConflictRef = useRef<(ctx: string) => Promise<boolean>>(async () => false);
   /** EN/DE/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
   const pdfBusyRef = useRef(false);
@@ -1411,6 +1442,8 @@ export function OrderDetailWorkspace({
         wsStateRef.current = wsPersistRef.current;
       }
       let result;
+      const saveStartedAt = Date.now();
+      saveInFlightRef.current = true;
       try {
         result = await persistWorkspaceState({
           sessionId: payload.sessionId,
@@ -1425,6 +1458,7 @@ export function OrderDetailWorkspace({
           fetchKeepalive: logContext === "navigation_flush",
         });
       } catch (e) {
+        saveInFlightRef.current = false;
         workspaceDebugLog("persist_failed", {
           sessionId: payload.sessionId,
           source: "client_patch",
@@ -1438,6 +1472,10 @@ export function OrderDetailWorkspace({
         }
         return false;
       }
+      saveInFlightRef.current = false;
+      if (result.ok && lastLocalEditAtRef.current <= saveStartedAt) {
+        unsavedSinceRef.current = null;
+      }
       if (result.ok && typeof result.workspaceRevision === "number") {
         if (result.workspaceRevision > workspaceRevisionRef.current) {
           workspaceRevisionRef.current = result.workspaceRevision;
@@ -1449,6 +1487,10 @@ export function OrderDetailWorkspace({
       }
       if (!result.ok) {
         commitWorkspaceLocalNow({ force: true });
+        if (isWorkspaceRevisionConflict(result.error) && !logContext.startsWith("conflict_merge")) {
+          // 25.11: cita cilne/pārlūks saglabāja jaunāku versiju - ielādē to un apvieno, nekad nepārraksta aklā.
+          if (await autoMergeAfterConflictRef.current(logContext)) return true;
+        }
         if (isWorkspaceRevisionConflict(result.error)) {
           workspaceRevisionConflictRef.current = true;
           setWorkspaceRevisionConflict(result.error === "overwrite_blocked" ? "overwrite_blocked" : "stale_revision");
@@ -1488,9 +1530,13 @@ export function OrderDetailWorkspace({
       const fresh = await fetchCanonicalWorkspace(payload.sessionId);
       const body = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
       if (body) {
-        setWs(applyPersistBodyToWs(body, { trackDeletes: false }));
+        const nextWs = applyPersistBodyToWs(body, { trackDeletes: false });
+        suppressEditTrackRef.current = true;
+        wsStateRef.current = nextWs;
+        setWs(nextWs);
       }
       workspaceRevisionRef.current = fresh.workspaceRevision;
+      unsavedSinceRef.current = null;
       commitWorkspaceLocalNow({ force: true });
       clearWorkspaceRevisionConflict();
       setWorkspaceSaveServerOk(true);
@@ -1549,6 +1595,151 @@ export function OrderDetailWorkspace({
     payload.sessionId,
     syncWsPersistRefFromState,
   ]);
+
+  /**
+   * 25.11: 409 (cita cilne/pārlūks saglabāja jaunāku) - ielādē servera versiju un apvieno:
+   * servera aizpildītie lauki paliek, lokālie aizpilda tukšos vai šeit mainītos pēc servera saglabāšanas.
+   */
+  autoMergeAfterConflictRef.current = async (ctx: string): Promise<boolean> => {
+    if (!orderDraftPersistenceEnabled) return false;
+    const mergeStartedAt = Date.now();
+    try {
+      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
+      const serverBody = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
+      const serverSavedAtMs = Date.parse(fresh.workspaceSavedAt ?? fresh.updatedAt ?? "") || 0;
+      syncWsPersistRefFromState();
+      const local = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const merged = mergeStaleLocalWithServer(local, serverBody, editStampsRef.current, serverSavedAtMs);
+      const nextWs = applyPersistBodyToWs(merged, { trackDeletes: false });
+      suppressEditTrackRef.current = true;
+      wsStateRef.current = nextWs;
+      setWs(nextWs);
+      workspaceRevisionRef.current = fresh.workspaceRevision;
+      commitWorkspaceLocalNow({ force: true });
+      lastGoodPersistBodyRef.current = serverBody;
+      const result = await persistWorkspaceState({
+        sessionId: payload.sessionId,
+        body: merged,
+        baseline: serverBody,
+        pdfVisibility: pdfVisibilityRef.current,
+        pdfBannerInclude: pdfBannerIncludeRef.current,
+        manualBanners: manualBannersRef.current,
+        expectedWorkspaceRevision: fresh.workspaceRevision,
+        logContext: `conflict_merge:${ctx}`,
+      });
+      const count = countWorkspaceFilled(merged);
+      if (!result.ok) {
+        lastGoodPersistBodyRef.current = merged;
+        sendWorkspaceClientEvent({
+          sessionId: payload.sessionId,
+          event: "conflict_merge_failed",
+          fields: count.fields,
+          blocks: count.blocks,
+          revision: fresh.workspaceRevision,
+        });
+        return false;
+      }
+      lastGoodPersistBodyRef.current = merged;
+      workspaceRevisionRef.current = result.workspaceRevision;
+      commitWorkspaceLocalNow({ force: true });
+      workspaceRevisionConflictRef.current = false;
+      setWorkspaceRevisionConflict(null);
+      setWorkspaceSaveServerOk(true);
+      setWorkspaceAutosaveStatus("saved");
+      if (lastLocalEditAtRef.current <= mergeStartedAt) unsavedSinceRef.current = null;
+      setConflictNotice("Pasūtījums bija mainīts citā pārlūkā - izmaiņas apvienotas, nekas nav pazaudēts.");
+      sendWorkspaceClientEvent({
+        sessionId: payload.sessionId,
+        event: "conflict_auto_merged",
+        fields: count.fields,
+        blocks: count.blocks,
+        revision: result.workspaceRevision,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /** Rezerves izvēlne: pārlūka kopija aizstāj darba zonu (lietotājs apstiprināja). */
+  const restoreLocalSnapshotFromMenu = useCallback(
+    (snapshot: string): boolean => {
+      const body = snapshotRawToPersistBody(snapshot);
+      if (!body) return false;
+      const nextWs = applyPersistBodyToWs(body);
+      wsStateRef.current = nextWs;
+      setWs(nextWs);
+      suppressHydrateAutosaveRef.current = false;
+      workspaceDirtyRef.current = true;
+      commitWorkspaceLocalNow({ force: true });
+      window.setTimeout(() => void persistFullWorkspaceRef("restore_local", { showFlash: true }), 0);
+      return true;
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, persistFullWorkspaceRef],
+  );
+  const [restoreMenuOpenKey, setRestoreMenuOpenKey] = useState(0);
+
+  /** «Saglabāt tagad» no brīdinājuma «Nav saglabāts serverī». */
+  const saveNowFromUnsavedWarn = useCallback(async () => {
+    if (!workspaceHydratedOnceRef.current) {
+      setUnsavedWarn({ reason: "not_hydrated", message: "ielāde nav pabeigta - pārlādē lapu (dati paliek šajā pārlūkā)" });
+      return;
+    }
+    if (!orderDraftPersistenceEnabled) {
+      setUnsavedWarn({ reason: "persistence_off", message: "servera glabātuve izslēgta - dati tikai šajā pārlūkā" });
+      return;
+    }
+    setSaveNowBusy(true);
+    try {
+      commitWorkspaceLocalNow({ force: true });
+      let ok: boolean;
+      if (workspaceRevisionConflictRef.current) {
+        workspaceRevisionConflictRef.current = false;
+        ok = await autoMergeAfterConflictRef.current("save_now");
+        if (!ok) workspaceRevisionConflictRef.current = true;
+      } else {
+        ok = await persistFullWorkspaceRef("save_now", { showFlash: true });
+      }
+      if (ok) {
+        unsavedSinceRef.current = null;
+        setUnsavedWarn(null);
+      } else {
+        setUnsavedWarn({ reason: "save_error", message: "neizdevās - mēģini vēlreiz" });
+      }
+    } finally {
+      setSaveNowBusy(false);
+    }
+  }, [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef]);
+
+  /** Lokālās kopijas atjaunošana: aizpilda tikai tukšos servera laukus, tad saglabā serverī. */
+  const applyLocalRestore = useCallback(() => {
+    const local = localRestoreBodyRef.current;
+    if (!local) return;
+    syncWsPersistRefFromState();
+    const current = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+    const { body, filled } = fillEmptyServerFieldsFromLocal(current, local);
+    setLocalRestoreOffer(null);
+    localRestoreBodyRef.current = null;
+    if (!filled.length) return;
+    const nextWs = applyPersistBodyToWs(body, { trackDeletes: false });
+    wsStateRef.current = nextWs;
+    setWs(nextWs);
+    const now = Date.now();
+    for (const k of filled) editStampsRef.current[k as keyof WorkspaceEditStamps] = now;
+    lastLocalEditAtRef.current = now;
+    if (unsavedSinceRef.current == null) unsavedSinceRef.current = now;
+    suppressHydrateAutosaveRef.current = false;
+    workspaceDirtyRef.current = true;
+    commitWorkspaceLocalNow({ force: true });
+    const count = countWorkspaceFilled(body);
+    sendWorkspaceClientEvent({
+      sessionId: payload.sessionId,
+      event: "local_restore",
+      fields: count.fields,
+      blocks: count.blocks,
+    });
+    window.setTimeout(() => void persistFullWorkspaceRef("local_restore", { showFlash: true }), 0);
+  }, [applyPersistBodyToWs, commitWorkspaceLocalNow, payload.sessionId, persistFullWorkspaceRef, syncWsPersistRefFromState]);
 
   const buildAiOrderPayload = useCallback(
     (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
@@ -2892,6 +3083,9 @@ export function OrderDetailWorkspace({
   useLayoutEffect(() => {
     setWorkspaceHydrated(false);
     workspaceHydratedOnceRef.current = false;
+    editStampsRef.current = {};
+    unsavedSinceRef.current = null;
+    unsavedBeaconSentRef.current = null;
     workspaceDebugLog("hydrate_start", {
       sessionId: payload.sessionId,
       source: "hydrate",
@@ -2986,6 +3180,29 @@ export function OrderDetailWorkspace({
       wsStateRef.current = hydratedWs;
       setWs(hydratedWs);
       lastGoodPersistBodyRef.current = body;
+      prevTrackedWsRef.current = hydratedWs;
+
+      // 25.11: šīs ierīces kopijā vairāk aizpildītu lauku nekā redzams - piedāvā atjaunot (nekad automātiski).
+      try {
+        const offer = pickLocalRestoreCandidate({
+          localRaw: rawV3 ?? rawV2,
+          backupRaw: rawBackup,
+          serverBody: snapshotRawToPersistBody(serverWorkspaceJson),
+        });
+        if (offer && countWorkspaceFilled(body).total < offer.localTotal) {
+          localRestoreBodyRef.current = offer.body;
+          setLocalRestoreOffer({
+            savedAtMs: offer.savedAtMs,
+            localTotal: offer.localTotal,
+            serverTotal: offer.serverTotal,
+          });
+        } else {
+          localRestoreBodyRef.current = null;
+          setLocalRestoreOffer(null);
+        }
+      } catch {
+        setLocalRestoreOffer(null);
+      }
 
       const mergedVisibility = applyOrderPdfVisibilityDefaults(mergePdfVisibility(chosen.pdfVisibility), {
         checkoutLine: payload.checkoutLine,
@@ -3362,6 +3579,86 @@ export function OrderDetailWorkspace({
       }
     };
   }, [payload.sessionId, flushWorkspaceLocalStorageSync, flushWorkspaceServerPatch]);
+
+  /** 25.11: lauku izmaiņu laika zīmogi (409 apvienošanai) + «nesaglabāts kopš». */
+  useEffect(() => {
+    const prev = prevTrackedWsRef.current;
+    prevTrackedWsRef.current = ws;
+    if (!workspaceHydrated || !prev) return;
+    if (suppressEditTrackRef.current) {
+      suppressEditTrackRef.current = false;
+      return;
+    }
+    const keys = changedWorkspaceEditKeys(workspaceToPersistBody(prev), workspaceToPersistBody(ws));
+    if (!keys.length) return;
+    const now = Date.now();
+    for (const k of keys) editStampsRef.current[k] = now;
+    lastLocalEditAtRef.current = now;
+    if (unsavedSinceRef.current == null) unsavedSinceRef.current = now;
+  }, [ws, workspaceHydrated]);
+
+  const autosaveStatusRef = useRef(workspaceAutosaveStatus);
+  autosaveStatusRef.current = workspaceAutosaveStatus;
+
+  /** 25.11: lokālas izmaiņas >10 s nav serverī - brīdinājums galvenē + beacon žurnālam (bez satura). */
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    const tick = () => {
+      const now = Date.now();
+      const reason = workspaceUnsavedReason({
+        persistenceEnabled: orderDraftPersistenceEnabled,
+        hydrated: workspaceHydratedOnceRef.current,
+        revisionConflict: workspaceRevisionConflictRef.current,
+        saveError: autosaveStatusRef.current === "error",
+      });
+      const since = unsavedSinceRef.current;
+      // Debounce bada aizsargs: ja ws mainās biežāk par autosave intervālu, PATCH nekad neaiziet - piespiež ik 30 s.
+      if (
+        reason === "pending" &&
+        since != null &&
+        now - since >= 30_000 &&
+        !saveInFlightRef.current &&
+        now - lastForcedFlushAtRef.current >= 30_000
+      ) {
+        lastForcedFlushAtRef.current = now;
+        void flushWorkspaceServerPatch({ showFlash: false });
+      }
+      // Parastā gaidīšanā skaita no pēdējās izmaiņas (rakstot autosave debounce vēl nav izpildījies).
+      const effectiveSince = since == null ? null : reason === "pending" ? Math.max(since, lastLocalEditAtRef.current) : since;
+      const warn = shouldWarnWorkspaceUnsaved({
+        unsavedSinceMs: effectiveSince,
+        nowMs: now,
+        saveInFlight: saveInFlightRef.current,
+      });
+      if (!warn) {
+        // Reiz parādīts brīdinājums paliek, līdz dati tiešām ir serverī (bez mirgošanas rakstot).
+        if (since == null) {
+          setUnsavedWarn(null);
+          unsavedBeaconSentRef.current = null;
+        }
+        return;
+      }
+      setUnsavedWarn((cur) => (cur && (cur.reason === reason || cur.message) ? cur : { reason }));
+      const beaconKey = `${since}:${reason}`;
+      if (unsavedBeaconSentRef.current !== beaconKey) {
+        unsavedBeaconSentRef.current = beaconKey;
+        const count = countWorkspaceFilled(workspaceToPersistBody(wsStateRef.current));
+        sendWorkspaceClientEvent({
+          sessionId: payload.sessionId,
+          event: "unsaved_not_sent",
+          reason,
+          fields: count.fields,
+          blocks: count.blocks,
+          unsavedMs: since == null ? 0 : now - since,
+          revision: workspaceRevisionRef.current,
+        });
+      }
+    };
+    const t = window.setInterval(tick, 3000);
+    return () => window.clearInterval(t);
+  }, [flushWorkspaceServerPatch, orderDraftPersistenceEnabled, payload.sessionId, workspaceHydrated]);
+
+  const presenceOthers = useOrderPresence(payload.sessionId, orderDraftPersistenceEnabled && workspaceHydrated);
 
   /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — debounce. */
   useEffect(() => {
@@ -5324,6 +5621,15 @@ export function OrderDetailWorkspace({
       items: [
         { id: "flash", label: "FLASH MAX", onClick: () => setMobileFlashRequest((n) => n + 1), disabled: !payload.aiAllowed },
         {
+          id: "restore-backup",
+          label: "Atjaunot no rezerves",
+          sub: "Servera versijas un šī pārlūka kopijas",
+          onClick: () => {
+            setMobileMore(false);
+            setRestoreMenuOpenKey((n) => n + 1);
+          },
+        },
+        {
           id: "copilot",
           label: "Copilot",
           onClick: () => {
@@ -5680,6 +5986,35 @@ export function OrderDetailWorkspace({
       ) : null}
 
       <AdminPersistenceHealthBanner durableConfigured={orderDraftPersistenceEnabled} />
+      {workspaceHydrated ? (
+        <div className={`mx-auto mb-2 w-full min-w-0 px-1 ${ADMIN_CONTENT_MAX}`}>
+          <AdminWorkspaceSafetyBanners
+            unsaved={unsavedWarn}
+            onSaveNow={() => void saveNowFromUnsavedWarn()}
+            saveBusy={saveNowBusy}
+            presenceOthers={presenceOthers}
+            localRestore={localRestoreOffer}
+            onLocalRestore={applyLocalRestore}
+            onLocalRestoreDismiss={() => {
+              localRestoreBodyRef.current = null;
+              setLocalRestoreOffer(null);
+            }}
+            conflictNotice={conflictNotice}
+            onConflictNoticeDismiss={() => setConflictNotice(null)}
+          />
+          <div className="md:hidden">
+            <AdminWorkspaceRestoreMenu
+              sessionId={payload.sessionId}
+              backupStorageKey={storageKeyWorkspaceBackup(payload.sessionId)}
+              orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+              onRestoreLocalSnapshot={restoreLocalSnapshotFromMenu}
+              onServerRestored={() => void reloadCanonicalWorkspaceFromServer()}
+              hideTrigger
+              openKey={restoreMenuOpenKey}
+            />
+          </div>
+        </div>
+      ) : null}
       {workspaceAutosaveStatus === "error" ? (
         <p
           className="mx-auto mb-3 max-w-2xl rounded-lg border border-red-500/50 bg-red-50 px-3 py-2 text-center text-sm font-bold leading-snug text-red-950 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-100"
@@ -5782,6 +6117,16 @@ export function OrderDetailWorkspace({
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
             }}
           />
+          <div className="max-md:hidden">
+            <AdminWorkspaceRestoreMenu
+              sessionId={payload.sessionId}
+              backupStorageKey={storageKeyWorkspaceBackup(payload.sessionId)}
+              orderDraftPersistenceEnabled={orderDraftPersistenceEnabled}
+              disabled={!workspaceHydrated}
+              onRestoreLocalSnapshot={restoreLocalSnapshotFromMenu}
+              onServerRestored={() => void reloadCanonicalWorkspaceFromServer()}
+            />
+          </div>
           {workspaceAutosaveStatus === "error" ? (
             <span className="max-w-[14rem] text-[11px] font-bold leading-tight text-red-800 dark:text-red-200" role="alert">
               {WORKSPACE_SAVE_FAILED_LABEL}
