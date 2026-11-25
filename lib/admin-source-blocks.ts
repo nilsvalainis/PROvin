@@ -31,6 +31,7 @@ import {
   CARFAX_ADMIN_LABEL,
   CARFAX_HOME_URL,
   carfaxPdfFactTexts,
+  carfaxReportHasContent,
   carfaxReportToPlainText,
   normalizeCarfaxReport,
   type CarfaxReport,
@@ -1189,13 +1190,27 @@ export type ListingAnalysisBlockState = {
 };
 
 /**
- * CARFAX - tā pati forma kā AutoDNA / CarVertical + strukturētā atskaite (`report`), ko aizpilda
- * PDF parsētājs vai nākotnes automātika (sk. `lib/carfax-report.ts`).
+ * CARFAX - patstāvīgs avota bloks (Nila norādījums 25.11: nav AutoDNA / CarVertical daļa).
+ * Galvenais ir strukturētā atskaite (`report`), ko aizpilda PDF parsētājs vai nākotnes automātika
+ * (sk. `lib/carfax-report.ts`). Rindas (`serviceHistory`, `incidents`, `vehicleHistoryTimeline`,
+ * `damageDetails`) ir atvasinātas no `report` un nonāk kopējās nobraukuma / negadījumu / laikjoslas
+ * tabulās ar avotu «CARFAX». Lauku nosaukumi sakrīt ar #1204 saglabāto formu - vecie dati lasās bez
+ * pārrakstīšanas (sk. `parseCarfaxBlockRaw`).
  */
-export type CarfaxBlockState = VendorAvotuBlockState & {
+export type CarfaxBlockState = {
   report?: CarfaxReport;
   /** Pēdējais «Pirkt CARFAX» klikšķis - pasta ielase zina, kuram pasūtījumam gaidīt PDF. */
   purchase?: CarfaxPurchaseRequest;
+  serviceHistory: AutoRecordsServiceRow[];
+  incidents: LtabIncidentRow[];
+  vehicleHistoryTimeline?: CarVerticalTimelineRow[];
+  damageDetails?: CarVerticalDamageDetailRow[];
+  comments: string;
+  /** Papildu konteksts tikai AI - nav PDF. */
+  aiContextRaw: string;
+  photos: SourceBlockPhotoMeta[];
+  photoGroups: SourceBlockPhotoGroup[];
+  hidePhotoWatermarks?: boolean;
 };
 
 export type WorkspaceSourceBlocks = {
@@ -1256,6 +1271,18 @@ export function emptyLtabBlock(): LtabBlockState {
     rows: [emptyLtabRow()],
     comments: "",
     pdfImportRaw: "",
+    aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
+    hidePhotoWatermarks: false,
+  };
+}
+
+export function emptyCarfaxBlock(): CarfaxBlockState {
+  return {
+    serviceHistory: [],
+    incidents: [],
+    comments: "",
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
@@ -1636,7 +1663,7 @@ export function createDefaultSourceBlocks(): WorkspaceSourceBlocks {
     tirgus: emptyTirgusFields(),
     autodna: emptyVendorAvotuBlock(),
     carvertical: emptyVendorAvotuBlock(),
-    carfax: emptyVendorAvotuBlock(),
+    carfax: emptyCarfaxBlock(),
     auto_records: emptyAutoRecordsBlock(),
     oneauto: emptyOneautoBlock(),
     cc_vin: seedCcVinDefaultComment(emptyCcVinBlock()),
@@ -1883,22 +1910,100 @@ export function citiAvotiToPlainText(b: CitiAvotiBlockState): string {
   return parts.join("\n\n");
 }
 
-/** Zaudējumu summas avoti (AutoDNA, CarVertical, CARFAX) — ne AUTO RECORDS. */
-const LOSS_VENDOR_KEYS = ["autodna", "carvertical", "carfax"] as const satisfies readonly StandardSourceBlockKey[];
+/** Zaudējumu summas avoti (AutoDNA, CarVertical) — ne AUTO RECORDS. CARFAX ir patstāvīgs bloks (sk. `carfax*`). */
+const LOSS_VENDOR_KEYS = ["autodna", "carvertical"] as const satisfies readonly StandardSourceBlockKey[];
 
-/** Vendor bloku atslēgas (AutoDNA / CarVertical / CARFAX) - vienāda forma, vienādi patērētāji. */
-export const VENDOR_HISTORY_BLOCK_KEYS = LOSS_VENDOR_KEYS;
-export type VendorHistoryBlockKey = (typeof LOSS_VENDOR_KEYS)[number];
+/* ---------- CARFAX (patstāvīgs avots) ---------- */
+
+export function carfaxBlockHasContent(b: CarfaxBlockState | null | undefined): boolean {
+  if (!b || typeof b !== "object") return false;
+  return (
+    carfaxReportHasContent(b.report) ||
+    (b.serviceHistory ?? []).some(autoRecordsRowHasData) ||
+    (b.incidents ?? []).some(ltabRowHasData) ||
+    (b.vehicleHistoryTimeline ?? []).some(carVerticalTimelineRowHasData) ||
+    wsStr(b.comments).trim().length > 0 ||
+    sourceBlockPhotosHaveContent(b)
+  );
+}
+
+/** Pilns CARFAX teksts (rindas + strukturētā atskaite) AI kontekstam un vecajam plakanajam laukam. */
+export function carfaxBlockToPlainText(b: CarfaxBlockState | null | undefined): string {
+  if (!b || typeof b !== "object") return "";
+  const rows = vendorAvotuBlockToPlainText({
+    serviceHistory: b.serviceHistory ?? [],
+    incidents: b.incidents ?? [],
+    comments: b.comments ?? "",
+    aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
+    ...(b.vehicleHistoryTimeline ? { vehicleHistoryTimeline: b.vehicleHistoryTimeline } : {}),
+  });
+  return [rows, carfaxReportToPlainText(b.report)].filter(Boolean).join("\n");
+}
+
+/** CARFAX ieraksts kopējām tabulām (nobraukums, negadījumi, laikjosla) - avots «CARFAX», bez AutoDNA / CarVertical apstrādes. */
+function toPdfCarfaxSourceEntry(b: CarfaxBlockState): ClientManualVendorBlockPdf | null {
+  if (!carfaxBlockHasContent(b)) return null;
+  const timelineAll = (b.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowHasData);
+  const timeline = timelineAll.filter(carVerticalTimelineRowInPdf);
+  const listingCountryHints = listingCountryHintsFromTimeline(timelineAll);
+  const ownerChangeHints = timelineAll
+    .filter((r) => r.date.trim() && VENDOR_REGISTERED_RE.test(r.description.trim()))
+    .map((r) => ({ date: r.date, country: r.country, description: r.description }));
+  const facts = carfaxPdfFactTexts(b.report);
+  return {
+    title: SOURCE_BLOCK_LABELS.carfax,
+    mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
+    incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
+    comments: (b.comments ?? "").trim(),
+    ...syncedSourceBlockPhotos(b),
+    ...(facts.ownersSummary ? { ownersSummary: facts.ownersSummary } : {}),
+    ...(facts.statusRecords ? { statusRecords: facts.statusRecords } : {}),
+    ...(facts.autoNotes ? { autoNotes: facts.autoNotes } : {}),
+    ...(timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {}),
+    ...(listingCountryHints.length > 0 ? { listingCountryHints } : {}),
+    ...(ownerChangeHints.length > 0 ? { ownerChangeHints } : {}),
+    ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
+  };
+}
+
+/** Klienta PDF «CARFAX» sadaļa - sava zona ar savām tabulām (ne AutoDNA / CarVertical sadaļa). */
+export type ClientCarfaxBlockPdf = {
+  report: CarfaxReport | null;
+  mileageRows: AutoRecordsServiceRow[];
+  incidentRows: LtabIncidentRow[];
+  damageDetails: CarVerticalDamageDetailRow[];
+  /** Laikposma rindas ar PDF ķeksi. */
+  timeline: CarVerticalTimelineRow[];
+  comments: string;
+  photos?: SourceBlockPhotoMeta[];
+  photoGroups?: SourceBlockPhotoGroup[];
+};
+
+export function toPdfCarfaxBlock(b: CarfaxBlockState | null | undefined): ClientCarfaxBlockPdf | null {
+  if (!b || !carfaxBlockHasContent(b)) return null;
+  const report = b.report && carfaxReportHasContent(b.report) ? b.report : null;
+  return {
+    report,
+    mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
+    incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
+    damageDetails: (b.damageDetails ?? []).filter((d) => d.date.trim() || d.damagedSides.trim() || d.damageGroups.trim()),
+    timeline: (b.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf),
+    comments: (b.comments ?? "").trim(),
+    ...syncedSourceBlockPhotos(b),
+  };
+}
 
 export function mergeVendorBlocksPlain(blocks: WorkspaceSourceBlocks): string {
   const parts: string[] = [];
   for (const k of LOSS_VENDOR_KEYS) {
     const t = vendorAvotuBlockToPlainText(blocks[k]);
-    const report = k === "carfax" ? carfaxReportToPlainText(blocks.carfax?.report) : "";
-    const body = [t, report].filter(Boolean).join("\n");
-    if (!body) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[k]}】\n${body}`);
+    if (!t) continue;
+    parts.push(`【${SOURCE_BLOCK_LABELS[k]}】\n${t}`);
   }
+  const cfx = carfaxBlockToPlainText(blocks.carfax);
+  if (cfx) parts.push(`【${SOURCE_BLOCK_LABELS.carfax}】\n${cfx}`);
   const ar = autoRecordsBlockToPlainText(blocks.auto_records).trim();
   if (ar) parts.push(`【${SOURCE_BLOCK_LABELS.auto_records}】\n${ar}`);
   const cc = ccVinBlockToPlainText(blocks.cc_vin).trim();
@@ -1986,12 +2091,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
   for (const k of LOSS_VENDOR_KEYS) {
     const b = blocks[k];
     if (!vendorAvotuBlockHasContent(b)) continue;
-    // CARFAX: ātrā pārbaude, īpašnieki un bojājumu detaļas faktu kartē (tā pati kv tabula kā reģistriem).
-    const carfaxFacts = k === "carfax" ? carfaxPdfFactTexts(blocks.carfax?.report) : null;
     out.push({
-      ...(carfaxFacts?.ownersSummary ? { ownersSummary: carfaxFacts.ownersSummary } : {}),
-      ...(carfaxFacts?.statusRecords ? { statusRecords: carfaxFacts.statusRecords } : {}),
-      ...(carfaxFacts?.autoNotes ? { autoNotes: carfaxFacts.autoNotes } : {}),
       title: SOURCE_BLOCK_LABELS[k],
       mileageRows: (b.serviceHistory ?? []).filter(autoRecordsRowHasData),
       incidentRows: (b.incidents ?? []).filter(ltabRowHasData),
@@ -2020,6 +2120,9 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       })(),
     });
   }
+  // CARFAX - patstāvīgs avots; kopējās tabulās tikai ar savu nosaukumu «CARFAX».
+  const carfaxEntry = toPdfCarfaxSourceEntry(blocks.carfax);
+  if (carfaxEntry) out.push(carfaxEntry);
   for (const k of REGISTRY_STYLE_BLOCK_KEYS) {
     const b = blocks[k];
     if (!vinRegistryBlockHasContent(b)) continue;
@@ -2759,19 +2862,50 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
   };
 }
 
-function repairCarfaxBlock(b: CarfaxBlockState | undefined): CarfaxBlockState {
-  const v = repairVendorBlock(b);
-  const report = normalizeCarfaxReport(b?.report);
-  const purchase = normalizeCarfaxPurchaseRequest(b?.purchase);
-  return { ...v, ...(report ? { report } : {}), ...(purchase ? { purchase } : {}) };
+/**
+ * Vendor formas rindas → CARFAX bloks. Migrācija lasīšanas brīdī (#1204 → patstāvīgs bloks): rindas, komentāri,
+ * foto paliek; vecais `pdfChecklist` (AutoDNA / CarVertical ķekši) pāriet komentāra tekstā, `mileagePasteRaw` -
+ * AI kontekstā. Tukšās rindu sagataves (AutoDNA/CarVertical tabulu tukšā rinda) netiek saglabātas.
+ */
+function carfaxFromVendorShape(
+  v: VendorAvotuBlockState,
+  extra: { report: CarfaxReport | null; purchase: CarfaxPurchaseRequest | undefined },
+): CarfaxBlockState {
+  const legacyChecklist = sourcePdfChecklistHasAny(v.pdfChecklist) ? v.pdfChecklist : undefined;
+  const comments = legacyChecklist ? mergePdfChecklistAndComments(legacyChecklist, v.comments ?? "") : (v.comments ?? "");
+  const pasteRaw = wsStr(v.mileagePasteRaw).trim();
+  const aiContextRaw = pasteRaw && !wsStr(v.aiContextRaw).includes(pasteRaw)
+    ? [wsStr(v.aiContextRaw).trim(), pasteRaw].filter(Boolean).join("\n\n")
+    : wsStr(v.aiContextRaw);
+  return {
+    ...(extra.report ? { report: extra.report } : {}),
+    ...(extra.purchase ? { purchase: extra.purchase } : {}),
+    serviceHistory: (v.serviceHistory ?? []).filter(autoRecordsRowHasData),
+    incidents: (v.incidents ?? []).filter(ltabRowHasData),
+    ...(v.vehicleHistoryTimeline ? { vehicleHistoryTimeline: v.vehicleHistoryTimeline.filter(carVerticalTimelineRowHasData) } : {}),
+    ...(v.damageDetails ? { damageDetails: v.damageDetails } : {}),
+    comments,
+    aiContextRaw,
+    photos: v.photos ?? [],
+    photoGroups: v.photoGroups ?? [],
+    hidePhotoWatermarks: v.hidePhotoWatermarks === true,
+  };
 }
 
-function parseCarfaxBlockRaw(raw: Record<string, unknown>): CarfaxBlockState {
-  const hasVendorShape = "serviceHistory" in raw || "incidents" in raw || "photos" in raw || "photoGroups" in raw;
-  const v = hasVendorShape ? parseVendorAvotuBlockRaw(raw) : emptyVendorAvotuBlock();
-  const report = normalizeCarfaxReport(raw.report);
-  const purchase = normalizeCarfaxPurchaseRequest(raw.purchase);
-  return { ...v, ...(report ? { report } : {}), ...(purchase ? { purchase } : {}) };
+function repairCarfaxBlock(b: CarfaxBlockState | undefined): CarfaxBlockState {
+  if (!b || typeof b !== "object") return emptyCarfaxBlock();
+  return carfaxFromVendorShape(repairVendorBlock(b as VendorAvotuBlockState), {
+    report: normalizeCarfaxReport(b.report),
+    purchase: normalizeCarfaxPurchaseRequest(b.purchase),
+  });
+}
+
+export function parseCarfaxBlockRaw(raw: Record<string, unknown>): CarfaxBlockState {
+  const hasRowShape = "serviceHistory" in raw || "incidents" in raw || "photos" in raw || "photoGroups" in raw;
+  return carfaxFromVendorShape(hasRowShape ? parseVendorAvotuBlockRaw(raw) : emptyVendorAvotuBlock(), {
+    report: normalizeCarfaxReport(raw.report),
+    purchase: normalizeCarfaxPurchaseRequest(raw.purchase),
+  });
 }
 
 function repairCitiSection(s: CitiAvotiSectionState | undefined): CitiAvotiSectionState {

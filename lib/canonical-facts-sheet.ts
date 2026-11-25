@@ -55,11 +55,11 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
+  carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { asvBlockToPlainText } from "@/lib/asv-report";
-import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { isoDateToLvDisplay } from "@/lib/csdd-extended-parse";
 import {
   buildVehicleLifecycleEvents,
@@ -392,8 +392,7 @@ function sourceHaystackFrom(blocks: WorkspaceSourceBlocks, extra: string[]): str
     csddFormToPlainText(blocks.csdd),
     vendorAvotuBlockToPlainText(blocks.autodna),
     vendorAvotuBlockToPlainText(blocks.carvertical),
-    vendorAvotuBlockToPlainText(blocks.carfax),
-    carfaxReportToPlainText(blocks.carfax.report),
+    carfaxBlockToPlainText(blocks.carfax),
     ltabBlockToPlainText(blocks.ltab),
     tirgusFormToPlainText(blocks.tirgus),
     listingAnalysisToPlainText(blocks.listing_analysis),

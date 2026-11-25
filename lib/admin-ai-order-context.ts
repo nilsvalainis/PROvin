@@ -21,13 +21,13 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
+  carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
   oneautoBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText } from "@/lib/asv-report";
-import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { OFFICIAL_DEALER_SECTION_TITLE } from "@/lib/oneauto-dealer";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -273,9 +273,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
     { key: "carvertical", text: vendorAvotuBlockToPlainText(blocks.carvertical) },
     {
       key: "carfax",
-      text: [vendorAvotuBlockToPlainText(blocks.carfax), carfaxReportToPlainText(blocks.carfax.report)]
-        .filter(Boolean)
-        .join("\n"),
+      text: carfaxBlockToPlainText(blocks.carfax),
     },
     { key: "auto_records", text: autoRecordsBlockToPlainText(blocks.auto_records) },
     { key: "oneauto", text: oneautoBlockToPlainText(blocks.oneauto), label: OFFICIAL_DEALER_SECTION_TITLE },

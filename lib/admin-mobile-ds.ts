@@ -14,6 +14,8 @@ export const ADMIN_MOBILE_ORDER_SECTIONS = [
   { id: "admin-m-sec-kopsavilkums", label: "Kopsavilkums", wizard: 0 },
   { id: "admin-m-sec-avoti", label: "Avoti", wizard: 1 },
   { id: "admin-m-sec-negadijumi", label: "Negadījumi", wizard: 2 },
+  // CARFAX - patstāvīgs avots ar savu ierakstu (ne «Negadījumi» / AutoDNA / CarVertical daļa).
+  { id: "admin-order-block-carfax", label: "CARFAX", wizard: 14 },
   { id: "admin-m-sec-nobraukums", label: "Nobraukums", wizard: 1 },
   { id: "admin-m-sec-foto", label: "Foto", wizard: 12 },
   { id: "admin-m-sec-komentari", label: "Komentāri", wizard: 13 },

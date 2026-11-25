@@ -38,6 +38,7 @@ import {
   oneautoTrafficLevel,
   tirgusTrafficLevel,
   vendorAvotuTrafficLevel,
+  carfaxTrafficLevel,
   vinRegistryTrafficLevel,
   type TrafficFillLevel,
 } from "@/lib/admin-block-traffic-status";
@@ -130,8 +131,9 @@ function sourceBlockTrafficRank(key: SourceBlockKey, block: WorkspaceSourceBlock
       return TRAFFIC_RANK[csddTrafficLevel(block as WorkspaceSourceBlocks["csdd"])];
     case "autodna":
     case "carvertical":
-    case "carfax":
       return TRAFFIC_RANK[vendorAvotuTrafficLevel(block as WorkspaceSourceBlocks["autodna"])];
+    case "carfax":
+      return TRAFFIC_RANK[carfaxTrafficLevel(block as WorkspaceSourceBlocks["carfax"])];
     case "auto_records":
       return TRAFFIC_RANK[autoRecordsTrafficLevel(block as WorkspaceSourceBlocks["auto_records"])];
     case "cc_vin":
@@ -742,7 +744,7 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   s += csddTrafficLevel(body.sourceBlocks.csdd) === "empty" ? 0 : 2;
   s += vendorAvotuTrafficLevel(body.sourceBlocks.autodna) === "empty" ? 0 : 1;
   s += vendorAvotuTrafficLevel(body.sourceBlocks.carvertical) === "empty" ? 0 : 1;
-  s += vendorAvotuTrafficLevel(body.sourceBlocks.carfax) === "empty" ? 0 : 1;
+  s += carfaxTrafficLevel(body.sourceBlocks.carfax) === "empty" ? 0 : 1;
   s += autoRecordsTrafficLevel(body.sourceBlocks.auto_records) === "empty" ? 0 : 1;
   s += oneautoTrafficLevel(body.sourceBlocks.oneauto) === "empty" ? 0 : 1;
   s += ltabTrafficLevel(body.sourceBlocks.ltab) === "empty" ? 0 : 1;
@@ -772,7 +774,7 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
   if (
     vendorAvotuTrafficLevel(b.autodna) !== "empty" ||
     vendorAvotuTrafficLevel(b.carvertical) !== "empty" ||
-    vendorAvotuTrafficLevel(b.carfax) !== "empty"
+    carfaxTrafficLevel(b.carfax) !== "empty"
   ) {
     return true;
   }
