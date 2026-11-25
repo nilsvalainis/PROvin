@@ -1,6 +1,6 @@
 /**
- * Apmaksāta pasūtījuma auto plūsmas ilgums (Stripe webhook, maxDuration 300 s):
- * `Promise.allSettled([seedPaidOrderAutoSources, runOrderFreeVinScan])`.
+ * Apmaksāta pasūtījuma auto plūsmas ilgums (Stripe webhook, maxDuration 300 s): sēkla un VIN SCAN
+ * (25.11: webhook tos palaiž secīgi - VIN SCAN pēc CSDD; paralēlais mērījums paliek kā sliktākā slodze).
  *
  * Mērām viltus laikā sliktāko gadījumu, kad NEVIENS ārējais serveris neatbild: `fetch` nekad
  * neatgriežas un beidzas tikai tad, kad izsaucējs pats to pārtrauc ar AbortSignal.
@@ -271,6 +271,29 @@ describe("apmaksāta pasūtījuma auto plūsma: sliktākais ilgums, kad avoti ne
     expect(r.noSignal).toEqual([]);
     expect(r.neverAborted).toEqual([]);
     expect(r.lastFetchEndS).toBeLessThan(BUDGET_S);
+  });
+
+  /**
+   * 25.11: webhook VIN SCAN palaiž PĒC sēklas (ar CSDD numurzīmi un 1. reģ. datumu). Ja sēkla aizņēma
+   * tik daudz, ka VIN SCAN vairs neiekļaujas, darbs aiziet fona maršrutā (savs 300 s budžets).
+   * Šeit: viss klusē -> sēkla, tad lēmums, tad (ja inline) VIN SCAN - kopā < 280 s.
+   */
+  it("secīgi (sēkla -> VIN SCAN pēc lēmuma) iekļaujas 280 s vai aiziet fonā", async () => {
+    const { decideOrderAutoIntakeMode } = await import("@/lib/order-auto-intake-core");
+    const { seedPaidOrderAutoSources, runOrderFreeVinScan } = await loadFlow();
+    const seq = (async () => {
+      await seedPaidOrderAutoSources(SESSION, { vin: VIN, listingUrl: LISTING_URL });
+      const elapsedMs = Date.now() - t0;
+      const mode = decideOrderAutoIntakeMode({ elapsedMs, canDispatch: true });
+      if (mode === "inline") await runOrderFreeVinScan(SESSION, { vin: VIN, listingUrl: LISTING_URL });
+      return mode;
+    })();
+    const r = await run("sequential", seq);
+    const mode = await seq;
+    expect(r.settledS).not.toBeNull();
+    if (mode === "inline") expect(r.settledS as number).toBeLessThan(BUDGET_S);
+    expect(r.noSignal).toEqual([]);
+    expect(r.neverAborted).toEqual([]);
   });
 
   /**

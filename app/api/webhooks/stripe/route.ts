@@ -25,7 +25,16 @@ import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { invalidateUnpaidCheckoutListCache } from "@/lib/admin-unpaid-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
-import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
+import {
+  canDispatchOrderAutoIntake,
+  dispatchOrderAutoIntake,
+  runOrderAutoIntake,
+} from "@/lib/order-auto-intake";
+import {
+  decideOrderAutoIntakeMode,
+  ORDER_AUTO_INTAKE_FUNCTION_BUDGET_MS,
+  ORDER_AUTO_INTAKE_SAFETY_MS,
+} from "@/lib/order-auto-intake-core";
 import { enqueueCsddPaidAutoForOrder } from "@/lib/csdd-paid-auto";
 import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
 import { orderDropboxCategory } from "@/lib/order-dropbox-folder";
@@ -70,6 +79,8 @@ async function fulfillPaidCheckoutSession(
   stripeEventId: string,
   thinSession: Stripe.Checkout.Session,
 ): Promise<"pending" | "done"> {
+  /** Funkcijas sākums - `after()` darbi dalās ar to pašu `maxDuration` (300 s). */
+  const fulfillStartedAt = Date.now();
   const session = await stripe.checkout.sessions.retrieve(thinSession.id);
   const ps = session.payment_status;
   if (ps !== "paid" && ps !== "no_payment_required") {
@@ -450,12 +461,12 @@ async function startPaidOrderDownstream(
         console.error("[stripe webhook] quick eval auto import:", err);
       }
       const vinForAuto = effectiveVin && isValidVin(effectiveVin) ? effectiveVin : order.vin;
-      const [seedRes, scanRes] = await Promise.allSettled([
+      // 25.11: VIN SCAN iet PĒC CSDD sēklas (ne paralēli), lai saņem LV numurzīmi un 1. reģ. datumu.
+      const [seedRes] = await Promise.allSettled([
         seedPaidOrderAutoSources(session.id, {
           vin: vinForAuto,
           listingUrl: order.listingUrl,
         }),
-        runOrderFreeVinScan(session.id, { vin: vinForAuto, listingUrl: order.listingUrl }),
       ]);
       if (seedRes.status === "fulfilled") {
         const r = seedRes.value;
@@ -465,11 +476,6 @@ async function startPaidOrderDownstream(
         }
       } else {
         console.error("[stripe webhook] paid order auto sources:", seedRes.reason);
-      }
-      if (scanRes.status === "fulfilled") {
-        console.info("[stripe webhook] free VIN SCAN", { sessionId: session.id, ...scanRes.value });
-      } else {
-        console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
       }
       await dealerPlateRun;
       // Pēc CSDD sēklas: mapes nosaukums ar marku/modeli + automātiskā CSDD maksas izziņa (AUDITS / Business ar LV numuru).
@@ -486,6 +492,29 @@ async function startPaidOrderDownstream(
         if (paidJob) console.info("[stripe webhook] csdd paid auto queued", { sessionId: session.id, state: paidJob.state });
       } catch (err) {
         console.error("[stripe webhook] csdd paid auto:", err);
+      }
+      // 25.11: VIN SCAN (ar numurzīmi un 1. reģ. datumu) + bezmaksas imports blokos (izsoles, TheCarApi, foto,
+      // CSDD, sludinājums) + viena push ziņa ar AutoDNA / CARFAX priekšskatījumu. Ja šajā 300 s budžetā vairs
+      // nepietiek laika - fona maršrutā ar savu budžetu. Nekādu pirkumu.
+      const intakeBody = { vin: vinForAuto, listingUrl: order.listingUrl, skipPush: isDealerData };
+      const mode = decideOrderAutoIntakeMode({
+        elapsedMs: Date.now() - fulfillStartedAt,
+        canDispatch: canDispatchOrderAutoIntake(),
+      });
+      const dispatched = mode === "background" && (await dispatchOrderAutoIntake(session.id, intakeBody));
+      if (dispatched) {
+        console.info("[stripe webhook] auto intake -> background", { sessionId: session.id });
+      } else {
+        try {
+          const r = await runOrderAutoIntake(session.id, {
+            ...intakeBody,
+            trigger: "webhook",
+            deadlineAt: fulfillStartedAt + ORDER_AUTO_INTAKE_FUNCTION_BUDGET_MS - ORDER_AUTO_INTAKE_SAFETY_MS,
+          });
+          console.info("[stripe webhook] auto intake", { sessionId: session.id, ...r });
+        } catch (err) {
+          console.error("[stripe webhook] auto intake:", err);
+        }
       }
     });
   }
