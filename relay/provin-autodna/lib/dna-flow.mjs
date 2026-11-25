@@ -37,6 +37,7 @@ import {
   totalLooksLikeCredit,
 } from "./dna-page.mjs";
 import { DNA_PRECHECK_MESSAGE_LV, decidePrecheck, parsePrecheckHtml } from "./dna-precheck.mjs";
+import { collectDomPhotoEntries, downloadArchivePhotos } from "./archive-photos.mjs";
 
 /** Pēc nepareizas paroles nemēģina atkal 6 h (konta bloķēšanas risks); citādi ne biežāk kā reizi 10 min. */
 const BAD_CREDENTIALS_COOLDOWN_MS = 6 * 3600_000;
@@ -513,7 +514,85 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     }
   }
 
+  /**
+   * Arhīva foto JAU NOPIRKTAI atskaitei (tikai lasīšana, tas pats ceļš kā PDF): vēsture ?search=VIN -> atskaites lapa ->
+   * sadaļa «Transportlīdzekļa arhīva fotogrāfijas» -> bilžu saites + datumi -> lejupielāde lapas kontekstā.
+   * Neko nespiež (izņemot sīkdatņu logu "Noraidīt"), uz /vin/<VIN> pirkuma lapu neiet.
+   */
+  async function reportPhotos(vin) {
+    const v = normalizeVin(vin);
+    const p = await getPage();
+    const href = pickReportPageHref(await historyItems(p, v), v);
+    if (!href) return { ok: false, code: "not_in_history" };
+    await p.goto(href, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await p.waitForTimeout(3500);
+    await dismissConsent(p);
+    // Slinkā ielāde: aizritina līdz sadaļai un tai cauri.
+    await p
+      .evaluate(async () => {
+        const re = /arh[iī]va\s+fotogr|archive\s+photo|archiwaln/i;
+        const head = [...document.querySelectorAll("h1,h2,h3,h4,h5,.title,.section-title,[class*='title']")].find((el) => re.test(el.textContent || ""));
+        if (!head) return;
+        head.scrollIntoView();
+        for (let i = 0; i < 12; i++) {
+          window.scrollBy(0, 700);
+          await new Promise((r) => setTimeout(r, 250));
+        }
+      })
+      .catch(() => undefined);
+    await p.waitForTimeout(1500);
+    const items = await p
+      .evaluate(() => {
+        const re = /arh[iī]va\s+fotogr|archive\s+photo|archiwaln/i;
+        const heads = [...document.querySelectorAll("h1,h2,h3,h4,h5,.title,.section-title,[class*='title']")];
+        const head = heads.find((el) => re.test(el.textContent || ""));
+        if (!head) return null;
+        const level = /^H[1-6]$/.test(head.tagName) ? Number(head.tagName[1]) : 3;
+        const out = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+        walker.currentNode = head;
+        let n = 0;
+        let node = walker.nextNode();
+        while (node && n < 3000) {
+          n++;
+          if (node.nodeType === 1) {
+            const el = node;
+            if (/^H[1-6]$/.test(el.tagName) && Number(el.tagName[1]) <= level && !re.test(el.textContent || "") && out.some((x) => x.type === "img")) break;
+            if (el.tagName === "IMG") {
+              const a = el.closest("a[href]");
+              out.push({
+                type: "img",
+                href: a ? a.href : "",
+                dataFull: el.getAttribute("data-full") || el.getAttribute("data-large") || el.getAttribute("data-original") || "",
+                dataSrc: el.getAttribute("data-src") || el.getAttribute("data-lazy") || "",
+                srcset: el.getAttribute("srcset") || el.getAttribute("data-srcset") || "",
+                src: el.currentSrc || el.src || "",
+              });
+            }
+          } else {
+            const t = (node.textContent || "").trim();
+            if (t && /\d{2}\.\d{2}\.\d{4}/.test(t) && t.length <= 60) out.push({ type: "date", text: t });
+          }
+          node = walker.nextNode();
+        }
+        return out;
+      })
+      .catch(() => null);
+    if (!items) {
+      await debugDump(p, "photos-no-section");
+      return { ok: true, groups: [] };
+    }
+    const entries = collectDomPhotoEntries(items, { dateStyle: "day" });
+    if (!entries.length) {
+      await debugDump(p, "photos-none");
+      return { ok: true, groups: [] };
+    }
+    const groups = await downloadArchivePhotos(p, entries, { log: say });
+    return { ok: true, groups };
+  }
+
   return {
+    reportPhotos,
     peekSession,
     ensureSession,
     login,

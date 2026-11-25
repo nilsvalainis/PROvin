@@ -27,6 +27,7 @@
  *   POST /carvertical/reports         "Manas atskaites" saraksts (tikai lasīšana)
  *   POST /carvertical/purchase        {vin, ref, requestId, confirm:true} -> {jobId}; TIKAI ar confirm:true (Nila poga)
  *   POST /carvertical/report          {vin, ref} -> {jobId}; jau nopirktas atskaites PDF, nekad nepērk
+ *   POST /carvertical/report-photos   {vin} -> arhīva foto jau nopirktai atskaitei (tikai lasīšana, nekad nepērk)
  *   GET  /carvertical/jobs/:id        uzdevuma stāvoklis
  *   GET  /carvertical/jobs/:id/pdf    saņemtais PDF (glabājas 48 h; PROVIN to paņem pēc "result" notikuma)
  *   POST /carvertical/logout          kill switch: aizver pārlūku + izdzēš profilu
@@ -253,6 +254,12 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "POST" && p === "/reports") {
       return sendJson(res, 200, await core.listReports());
+    }
+    if (req.method === "POST" && p === "/report-photos") {
+      const body = await readJson(req);
+      const out = await core.reportPhotos(body.vin);
+      const status = out.status === "ok" || out.status === "no_photos" ? 200 : out.status === "busy" ? 409 : out.status === "invalid_vin" ? 400 : out.status === "not_found" ? 404 : out.status === "needs_login" ? 409 : 502;
+      return sendJson(res, status, out);
     }
     if (req.method === "POST" && (p === "/purchase" || p === "/report")) {
       const body = await readJson(req);

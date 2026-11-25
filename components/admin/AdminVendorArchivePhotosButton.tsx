@@ -44,6 +44,7 @@ export function AdminVendorArchivePhotosButton({
         ok?: boolean;
         error?: string;
         added?: number;
+        upgraded?: number;
         notes?: string[];
         patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
         changedKeys?: string[];
@@ -57,9 +58,10 @@ export function AdminVendorArchivePhotosButton({
         applyPatchedBlocks(data.patchedSourceBlocks, data.changedKeys as CopilotSourceKey[]);
       }
       const added = data.added ?? 0;
-      const head = added > 0 ? `${added} foto ielikti «Sludinājuma vēsturē».` : "Jaunu foto nav.";
-      setLine([head, ...(data.notes ?? [])].join(" "));
-      setIsError(added === 0 && (data.notes ?? []).some((n) => /nav atrasta|neizdevās|nav nolasāmu/.test(n)));
+      const upgraded = data.upgraded ?? 0;
+      const head = added > 0 ? `${added} foto ielikti «Sludinājuma vēsturē».` : upgraded > 0 ? "" : "Jaunu foto nav.";
+      setLine([head, ...(data.notes ?? [])].filter(Boolean).join(" "));
+      setIsError(added === 0 && upgraded === 0 && (data.notes ?? []).some((n) => /nav atrasta|neizdevās|nav nolasāmu/.test(n)));
     } catch {
       setIsError(true);
       setLine("Arhīva foto neizdevās ielādēt");

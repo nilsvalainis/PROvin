@@ -415,8 +415,33 @@ export function createRelayCore({
     }
   }
 
+  /**
+   * Arhīva foto JAU NOPIRKTAI atskaitei (2. fāze). Tikai lasīšana: nekad nepērk, neliek rindā pirkumu, nesāk pieteikšanos.
+   * Atskaite jāatrod "Manās atskaitēs" (gatava, statuss 30), citādi `not_found`.
+   */
+  async function reportPhotos(vin) {
+    const v = normalizeVin(vin);
+    if (!isValidVin(v)) return { status: "invalid_vin" };
+    if (busy) return { status: "busy" };
+    busy = true;
+    try {
+      const s = await browser.peekSession();
+      setSession(s);
+      if (s.state !== "active") return { status: "needs_login", session };
+      const acct = await browser.account();
+      const existing = findReportForVin(acct.reports, v, now());
+      if (!existing || existing.status !== 30) return { status: "not_found" };
+      const out = await browser.reportPhotos(existing.id);
+      if (!out.ok) return { status: "error", code: out.code || "photos_failed" };
+      return { status: out.groups.length ? "ok" : "no_photos", reportId: existing.id, groups: out.groups };
+    } finally {
+      busy = false;
+    }
+  }
+
   return {
     load,
+    reportPhotos,
     enqueue,
     tick,
     submitCode,

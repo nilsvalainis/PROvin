@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     // Arhīva foto «Sludinājuma vēsturē» - tikai pirmajā automātiskajā ievietošanā; vēlāk ar pogu «Ielādēt arhīva foto».
     const archive = status.appliedAt
       ? null
-      : await tryImportVendorArchivePhotosFromPdf({ sessionId, source: "autodna", pdfBytes: bytes, sourceBlocks: result.sourceBlocks });
+      : await tryImportVendorArchivePhotosFromPdf({ sessionId, source: "autodna", pdfBytes: bytes, vin: status.vin, sourceBlocks: result.sourceBlocks, relayTimeoutMs: 90_000 });
     const next = await markAutodnaAutoApplied(sessionId);
     return NextResponse.json({
       ok: true,

@@ -14,6 +14,8 @@ import {
   writeSourceBlockPhotoJpeg,
 } from "@/lib/admin-source-block-photo-store";
 import { CC_VIN_MAX_PHOTOS, makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat, type CcVinPhotoGroup } from "@/lib/cc-vin-photo-types";
+import sharp from "sharp";
+
 import { dhashImage } from "@/lib/photo-dhash";
 import {
   LISTING_HISTORY_MAX_PHOTOS,
@@ -22,13 +24,15 @@ import {
   type SourceBlockPhotoGroup,
 } from "@/lib/source-block-photo-types";
 import {
-  isDuplicateDhash,
+  ARCHIVE_DHASH_DUP_MAX_DISTANCE,
+  dhashDistance,
   mergeVendorArchivePhotoGroups,
   type ArchiveIncomingGroup,
   type VendorArchiveSource,
   type VendorArchiveVia,
 } from "@/lib/vendor-archive-photo-group";
 import { extractVendorArchivePhotos, type ExtractedArchiveGroup } from "@/lib/vendor-archive-photos-pdf";
+import { fetchVendorArchiveRelayPhotos, RELAY_ARCHIVE_REASON_LV, vendorArchiveRelayConfigured } from "@/lib/vendor-archive-relay";
 
 const EXISTING_HASH_READ_LIMIT = 250;
 
@@ -46,24 +50,47 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
   return out;
 }
 
-type AnyGroup = { photos: { id: string }[]; archive?: { hashes?: Record<string, string> } };
+type AnyGroup = {
+  photos: { id: string }[];
+  archive?: { source?: string; via?: string; hashes?: Record<string, string> };
+};
+
+type PhotoStore = "tirgus" | "cc_vin";
+/** Zināma bilde: hash + kur tā glabājas; `upgradable` - tā paša avota PDF sīktēls (releja bilde to var aizstāt). */
+type KnownPhoto = { hash: string; store: PhotoStore; id: string; upgradable: boolean };
 
 /** Zināmie dHash: no grupu meta, citādi nolasa JPEG (līdz limitam). */
-async function collectHashes(groups: AnyGroup[], read: (id: string) => Promise<Buffer | null>): Promise<string[]> {
-  const known: string[] = [];
-  const toRead: string[] = [];
+async function collectHashes(
+  groups: AnyGroup[],
+  store: PhotoStore,
+  source: VendorArchiveSource,
+  read: (id: string) => Promise<Buffer | null>,
+): Promise<KnownPhoto[]> {
+  const known: KnownPhoto[] = [];
+  const toRead: { id: string; upgradable: boolean }[] = [];
   for (const g of groups) {
+    const upgradable = g.archive?.source === source && g.archive.via !== "relay";
     for (const p of g.photos) {
       const h = g.archive?.hashes?.[p.id];
-      if (h) known.push(h);
-      else if (toRead.length < EXISTING_HASH_READ_LIMIT) toRead.push(p.id);
+      if (h) known.push({ hash: h, store, id: p.id, upgradable });
+      else if (toRead.length < EXISTING_HASH_READ_LIMIT) toRead.push({ id: p.id, upgradable });
     }
   }
-  const read2 = await mapPool(toRead, 6, async (id) => {
-    const buf = await read(id);
-    return buf ? dhashImage(buf) : null;
+  const read2 = await mapPool(toRead, 6, async (x) => {
+    const buf = await read(x.id);
+    const hash = buf ? await dhashImage(buf) : null;
+    return hash ? { hash, store, id: x.id, upgradable: x.upgradable } : null;
   });
-  return [...known, ...read2.filter((h): h is string => Boolean(h))];
+  return [...known, ...read2.filter((h): h is KnownPhoto => h != null)];
+}
+
+async function imageWidth(buf: Buffer | null): Promise<number> {
+  if (!buf) return 0;
+  try {
+    return (await sharp(buf).metadata()).width ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 export type VendorArchiveImportResult = {
@@ -71,6 +98,8 @@ export type VendorArchiveImportResult = {
   added: number;
   duplicates: number;
   overLimit: number;
+  /** Releja pilnā bilde aizstāja PDF sīktēlu (tas pats id, lielāka izšķirtspēja). */
+  upgraded: number;
   extracted: number;
   notes: string[];
   changed: boolean;
@@ -90,20 +119,34 @@ export async function importVendorArchiveGroups(args: {
   const tirgusGroups = (tirgus.photoGroups ?? []) as SourceBlockPhotoGroup[];
   const ccGroups = (sourceBlocks.cc_vin?.photoGroups ?? []) as CcVinPhotoGroup[];
   const extracted = args.groups.reduce((n, g) => n + g.photos.length, 0);
-  const seen = [
-    ...(await collectHashes(tirgusGroups, (id) => readSourceBlockPhotoJpeg(sessionId, id))),
-    ...(await collectHashes(ccGroups, (id) => readCcVinPhotoJpeg(sessionId, id))),
+  const seen: KnownPhoto[] = [
+    ...(await collectHashes(tirgusGroups, "tirgus", source, (id) => readSourceBlockPhotoJpeg(sessionId, id))),
+    ...(await collectHashes(ccGroups, "cc_vin", source, (id) => readCcVinPhotoJpeg(sessionId, id))),
   ];
   let capacity = LISTING_HISTORY_MAX_PHOTOS - tirgusGroups.reduce((n, g) => n + g.photos.length, 0);
   let duplicates = 0;
   let overLimit = 0;
+  let upgraded = 0;
+  const upgradedIds = new Set<string>();
   const incoming: ArchiveIncomingGroup[] = [];
   for (const g of args.groups) {
     const inc: ArchiveIncomingGroup = { source, date: g.date, via, ...(g.expected ? { expected: g.expected } : {}), photos: [] };
     for (const photo of g.photos) {
       const hash = await dhashImage(photo.jpeg);
       if (!hash) continue;
-      if (isDuplicateDhash(hash, seen)) {
+      const match = seen.find((k) => dhashDistance(hash, k.hash) <= ARCHIVE_DHASH_DUP_MAX_DISTANCE);
+      if (match) {
+        // 2. fāze: tā paša avota PDF sīktēlu aizstāj ar releja pilno bildi (tas pats id - grupas un PDF nemainās).
+        if (via === "relay" && match.upgradable && !upgradedIds.has(match.id)) {
+          const old = match.store === "tirgus" ? await readSourceBlockPhotoJpeg(sessionId, match.id) : await readCcVinPhotoJpeg(sessionId, match.id);
+          if (photo.width > (await imageWidth(old)) * 1.15) {
+            if (match.store === "tirgus") await writeSourceBlockPhotoJpeg(sessionId, match.id, photo.jpeg);
+            else await writeCcVinPhotoJpeg(sessionId, match.id, photo.jpeg);
+            upgradedIds.add(match.id);
+            upgraded++;
+            continue;
+          }
+        }
         duplicates++;
         continue;
       }
@@ -113,17 +156,38 @@ export async function importVendorArchiveGroups(args: {
       }
       const id = makeSourceBlockPhotoId();
       await writeSourceBlockPhotoJpeg(sessionId, id, photo.jpeg);
-      seen.push(hash);
+      seen.push({ hash, store: "tirgus", id, upgradable: false });
       capacity--;
       inc.photos.push({ id, hash });
     }
     if (inc.photos.length) incoming.push(inc);
   }
   const notes = [...(args.notes ?? [])];
+  if (upgraded) notes.push(`${upgraded} PDF sīktēli aizstāti ar pilnām bildēm.`);
   if (duplicates) notes.push(`${duplicates} dublikāti izlaisti.`);
   if (overLimit) notes.push(`${overLimit} foto neielikti - sasniegts ${LISTING_HISTORY_MAX_PHOTOS} foto griests.`);
-  if (!incoming.length) return { tirgus, added: 0, duplicates, overLimit, extracted, notes, changed: false };
-  const merged = mergeVendorArchivePhotoGroups(tirgusGroups, incoming, {
+  // Tirgus grupas, kurās bildes aizstātas -> «pilnas bildes» (tikai meta; id paliek).
+  const baseGroups = upgradedIds.size
+    ? tirgusGroups.map((g) =>
+        g.archive && g.photos.some((p) => upgradedIds.has(p.id)) ? { ...g, archive: { ...g.archive, via: "relay" as const } } : g,
+      )
+    : tirgusGroups;
+  const metaChanged = baseGroups !== tirgusGroups && baseGroups.some((g, i) => g !== tirgusGroups[i]);
+  if (!incoming.length) {
+    if (!metaChanged) return { tirgus, added: 0, duplicates, overLimit, upgraded, extracted, notes, changed: false };
+    const syncedMeta = syncSourceBlockPhotoGroupsAndFlat(baseGroups, LISTING_HISTORY_MAX_PHOTOS);
+    return {
+      tirgus: { ...tirgus, photoGroups: syncedMeta.photoGroups, photos: syncedMeta.photos },
+      added: 0,
+      duplicates,
+      overLimit,
+      upgraded,
+      extracted,
+      notes,
+      changed: true,
+    };
+  }
+  const merged = mergeVendorArchivePhotoGroups(baseGroups, incoming, {
     max: LISTING_HISTORY_MAX_PHOTOS,
     makeGroupId: makeSourceBlockPhotoGroupId,
   });
@@ -133,9 +197,10 @@ export async function importVendorArchiveGroups(args: {
     added: merged.added,
     duplicates,
     overLimit: overLimit + merged.overLimit,
+    upgraded,
     extracted,
     notes,
-    changed: merged.added > 0,
+    changed: merged.added > 0 || metaChanged,
   };
 }
 
@@ -156,12 +221,57 @@ export async function importVendorArchivePhotosFromPdf(args: {
   });
 }
 
+/**
+ * PDF sīktēli + (ja relejs pieslēgts un VIN zināms) releja pilnās bildes: tās aizstāj PDF versijas (dHash),
+ * jaunās pievieno. Relejs nepieejams -> paliek PDF versijas.
+ */
+export async function importVendorArchivePhotosFull(args: {
+  sessionId: string;
+  source: VendorArchiveSource;
+  pdfBytes: Uint8Array | null;
+  vin?: string;
+  sourceBlocks: WorkspaceSourceBlocks;
+  relayTimeoutMs?: number;
+}): Promise<VendorArchiveImportResult> {
+  const fromPdf = args.pdfBytes
+    ? await importVendorArchivePhotosFromPdf({ ...args, pdfBytes: args.pdfBytes })
+    : null;
+  const blocks = fromPdf?.changed ? { ...args.sourceBlocks, tirgus: fromPdf.tirgus } : args.sourceBlocks;
+  const vin = (args.vin ?? "").trim();
+  if (!vin || !vendorArchiveRelayConfigured(args.source)) {
+    return fromPdf ?? { tirgus: blocks.tirgus, added: 0, duplicates: 0, overLimit: 0, upgraded: 0, extracted: 0, notes: [], changed: false };
+  }
+  const relay = await fetchVendorArchiveRelayPhotos(args.source, vin, { timeoutMs: args.relayTimeoutMs });
+  if (!relay.ok) {
+    const note = RELAY_ARCHIVE_REASON_LV[relay.reason];
+    const base = fromPdf ?? { tirgus: blocks.tirgus, added: 0, duplicates: 0, overLimit: 0, upgraded: 0, extracted: 0, notes: [], changed: false };
+    return { ...base, notes: note ? [...base.notes, note] : base.notes };
+  }
+  const fromRelay = await importVendorArchiveGroups({
+    sessionId: args.sessionId,
+    source: args.source,
+    via: "relay",
+    groups: relay.groups,
+    sourceBlocks: blocks,
+  });
+  return {
+    tirgus: fromRelay.tirgus,
+    added: (fromPdf?.added ?? 0) + fromRelay.added,
+    duplicates: fromRelay.duplicates,
+    overLimit: (fromPdf?.overLimit ?? 0) + fromRelay.overLimit,
+    upgraded: fromRelay.upgraded,
+    extracted: (fromPdf?.extracted ?? 0) + fromRelay.extracted,
+    notes: [...(fromPdf?.notes ?? []).filter((n) => !/dublikāti izlaisti/.test(n)), ...fromRelay.notes],
+    changed: Boolean(fromPdf?.changed) || fromRelay.changed,
+  };
+}
+
 /** Import, kas nekad nemet: kļūdu gadījumā bloks paliek kā bija, piezīme paskaidro. */
 export async function tryImportVendorArchivePhotosFromPdf(
-  args: Parameters<typeof importVendorArchivePhotosFromPdf>[0],
+  args: Parameters<typeof importVendorArchivePhotosFull>[0],
 ): Promise<VendorArchiveImportResult> {
   try {
-    return await importVendorArchivePhotosFromPdf(args);
+    return await importVendorArchivePhotosFull(args);
   } catch (e) {
     console.error("[vendor-archive-photos] import failed", e instanceof Error ? e.message.slice(0, 200) : "unknown");
     return {
@@ -169,6 +279,7 @@ export async function tryImportVendorArchivePhotosFromPdf(
       added: 0,
       duplicates: 0,
       overLimit: 0,
+      upgraded: 0,
       extracted: 0,
       notes: ["Arhīva foto neizdevās nolasīt."],
       changed: false,

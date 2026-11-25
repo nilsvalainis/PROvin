@@ -395,8 +395,28 @@ export function createRelayCore({
     }, { status: "busy" });
   }
 
+  /**
+   * Arhīva foto JAU NOPIRKTAI atskaitei (2. fāze). Tikai lasīšana: nekad nepērk, neliek rindā pirkumu, nesāk pieteikšanos.
+   * Pirkuma aizsargs (#1201) un `report_bought` pārbaude paliek pirkuma ceļā neskarti; te - ja nav nopirkts, `not_found`.
+   */
+  async function reportPhotos(vin) {
+    const v = normalizeVin(vin);
+    if (!isValidVin(v)) return { status: "invalid_vin" };
+    return exclusive(async () => {
+      const s = await browser.peekSession();
+      setSession(s);
+      if (s.state !== "active") return { status: "needs_login", session };
+      const acct = await browser.account(v);
+      if (!acct.bought) return { status: "not_found" };
+      const out = await browser.reportPhotos(v);
+      if (!out.ok) return { status: out.code === "not_in_history" ? "not_found" : "error", code: out.code || "photos_failed" };
+      return { status: out.groups.length ? "ok" : "no_photos", groups: out.groups };
+    }, { status: "busy" });
+  }
+
   return {
     load,
+    reportPhotos,
     precheck,
     enqueue,
     tick,

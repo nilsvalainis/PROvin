@@ -9,16 +9,20 @@ import { getDropboxClient } from "@/lib/dropbox-client";
 import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { isVendorArchiveSource, type VendorArchiveSource } from "@/lib/vendor-archive-photo-group";
-import { importVendorArchivePhotosFromPdf } from "@/lib/vendor-archive-photos-import";
+import { importVendorArchivePhotosFull } from "@/lib/vendor-archive-photos-import";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /** Jau saglabātais AutoDNA / CarVertical PDF (Blob, rezerve - pasūtījuma Dropbox mape). */
-async function readStoredVendorPdf(sessionId: string, source: VendorArchiveSource): Promise<Uint8Array | null> {
+async function readStoredVendorPdf(
+  sessionId: string,
+  source: VendorArchiveSource,
+): Promise<{ bytes: Uint8Array | null; vin: string }> {
   const status = source === "carvertical" ? await readCarverticalAutoStatus(sessionId) : await readAutodnaAutoStatus(sessionId);
-  if (!status?.pdf) return null;
+  const vin = status?.vin ?? "";
+  if (!status?.pdf) return { bytes: null, vin };
   let bytes = status.pdf.blobPath
     ? source === "carvertical"
       ? await readCarverticalPdf(sessionId)
@@ -34,11 +38,11 @@ async function readStoredVendorPdf(sessionId: string, source: VendorArchiveSourc
       }
     }
   }
-  return bytes;
+  return { bytes, vin };
 }
 
 /**
- * Admin: «Ielādēt arhīva foto» - no jau saglabātā AutoDNA / CarVertical PDF izvelk arhīva foto un ieliek
+ * Admin: «Ielādēt arhīva foto» - no jau saglabātā AutoDNA / CarVertical PDF (un releja pilnās bildes, ja pieejams) ieliek
  * «Sludinājuma vēsture» grupās (dedup pret esošajām). Neko nepērk, PDF tikai lasa.
  */
 export async function POST(req: Request) {
@@ -59,13 +63,15 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "missing_source_blocks" }, { status: 400 });
   }
-  const bytes = await readStoredVendorPdf(sessionId, source);
-  if (!bytes) return NextResponse.json({ error: "pdf_missing" }, { status: 404 });
+  const { bytes, vin } = await readStoredVendorPdf(sessionId, source);
+  if (!bytes && !vin) return NextResponse.json({ error: "pdf_missing" }, { status: 404 });
   try {
-    const res = await importVendorArchivePhotosFromPdf({ sessionId, source, pdfBytes: bytes, sourceBlocks });
+    // PDF sīktēli + releja pilnās bildes (ja relejs pieslēgts); relejs tikai lasa jau nopirktu atskaiti.
+    const res = await importVendorArchivePhotosFull({ sessionId, source, pdfBytes: bytes, vin, sourceBlocks });
     return NextResponse.json({
       ok: true,
       added: res.added,
+      upgraded: res.upgraded,
       duplicates: res.duplicates,
       extracted: res.extracted,
       notes: res.notes,
