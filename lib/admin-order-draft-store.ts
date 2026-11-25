@@ -40,7 +40,18 @@ import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import { parseOrderVinPlateResolution } from "@/lib/order-vin-plate-resolution";
 import { normalizePlateNumber } from "@/lib/order-field-validation";
-import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
+import {
+  coalesceOrderDraftWorkspacePatch,
+  orderDraftWorkspaceToPersistBody,
+} from "@/lib/admin-order-draft-workspace-merge";
+import { detectWorkspaceShrink } from "@/lib/admin-workspace-safety";
+import {
+  isBlobRevisionId,
+  listBlobRevisions,
+  readBlobRevisionDoc,
+  shouldWriteBlobRevision,
+  writeBlobRevision,
+} from "@/lib/admin-order-draft-revisions-blob";
 import {
   nextWorkspaceRevisionAfterRestore,
   stableWorkspaceChecksum,
@@ -575,25 +586,42 @@ export async function listOrderDraftRevisions(
   sessionId: string,
   limit = 20,
 ): Promise<OrderDraftRevisionMeta[]> {
-  const dir = resolveDraftDir();
-  if (!dir || !isSafeOrderDraftSessionId(sessionId)) return [];
-  const revDir = revisionSessionDirPath(dir, sessionId);
-  const files = await fs.readdir(revDir).catch(() => []);
-  const jsonFiles = files.filter((f) => f.endsWith(".json")).sort().reverse().slice(0, Math.max(1, limit));
+  if (!isSafeOrderDraftSessionId(sessionId)) return [];
   const out: OrderDraftRevisionMeta[] = [];
-  for (const f of jsonFiles) {
-    const full = path.join(revDir, f);
+  const blob = resolveOrderDraftBlob();
+  if (blob) {
     try {
-      const raw = await fs.readFile(full, "utf8");
-      const parsed = JSON.parse(raw) as unknown;
-      const meta = parseDraftRevisionMeta(parsed);
-      if (!meta) continue;
-      out.push(meta);
-    } catch {
-      /* ignore bad revision file */
+      for (const r of await listBlobRevisions(blob, sessionId, limit)) {
+        out.push({ revisionId: r.revisionId, updatedAt: r.updatedAt, savedAt: r.savedAt, reason: r.reason });
+      }
+    } catch (err) {
+      console.warn("[workspace:revision_list_failed]", {
+        sessionId,
+        detail: err instanceof Error ? err.message : String(err),
+      });
     }
   }
-  return out;
+  const dir = resolveDraftDir();
+  /** Vercel `/tmp` revīzijas nav uzticamas - rāda tikai Blob. */
+  if (dir && !(process.env.VERCEL === "1" && isEphemeralDraftDir(dir))) {
+    const revDir = revisionSessionDirPath(dir, sessionId);
+    const files = await fs.readdir(revDir).catch(() => []);
+    const jsonFiles = files.filter((f) => f.endsWith(".json")).sort().reverse().slice(0, Math.max(1, limit));
+    for (const f of jsonFiles) {
+      const full = path.join(revDir, f);
+      try {
+        const raw = await fs.readFile(full, "utf8");
+        const parsed = JSON.parse(raw) as unknown;
+        const meta = parseDraftRevisionMeta(parsed);
+        if (!meta) continue;
+        out.push(meta);
+      } catch {
+        /* ignore bad revision file */
+      }
+    }
+  }
+  out.sort((a, b) => (Date.parse(b.savedAt) || 0) - (Date.parse(a.savedAt) || 0));
+  return out.slice(0, Math.max(1, limit));
 }
 
 export async function restoreOrderDraftRevision(
@@ -609,19 +637,25 @@ async function restoreOrderDraftRevisionUnlocked(
   revisionId: string,
 ): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
-  if (!dir) return { ok: false, error: "store_disabled" };
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
   if (!/^[a-zA-Z0-9_.-]+$/.test(revisionId) || revisionId.length > 120) {
     return { ok: false, error: "invalid_revision" };
   }
-  const revFp = path.join(revisionSessionDirPath(dir, sessionId), `${revisionId}.json`);
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(await fs.readFile(revFp, "utf8")) as unknown;
-  } catch {
-    return { ok: false, error: "revision_not_found" };
+  let doc: unknown = null;
+  if (blob && isBlobRevisionId(revisionId)) {
+    doc = await readBlobRevisionDoc(blob, sessionId, revisionId);
   }
-  if (!parsed || typeof parsed !== "object") return { ok: false, error: "invalid_revision" };
-  const doc = (parsed as { doc?: unknown }).doc;
+  if (doc == null && dir) {
+    const revFp = path.join(revisionSessionDirPath(dir, sessionId), `${revisionId}.json`);
+    try {
+      const parsed = JSON.parse(await fs.readFile(revFp, "utf8")) as unknown;
+      doc = parsed && typeof parsed === "object" ? ((parsed as { doc?: unknown }).doc ?? null) : null;
+    } catch {
+      doc = null;
+    }
+  }
+  if (doc == null) return { ok: false, error: "revision_not_found" };
   const normalized = normalizeLoadedDraft(doc, sessionId);
   if (!normalized) return { ok: false, error: "invalid_revision" };
   const current = await readOrderDraftUncached(sessionId);
@@ -635,15 +669,24 @@ async function restoreOrderDraftRevisionUnlocked(
     workspaceSavedAt: updatedAt,
     workspaceRevision,
     workspaceChecksum,
-    orderEdits: normalized.orderEdits,
+    /** VIN, numurs, klienta kontakti - no pašreizējā dokumenta; atjauno tikai darba zonu. */
+    orderEdits: current?.orderEdits ?? normalized.orderEdits,
     workspace: normalized.workspace,
-    ...extraDraftPersistFields(normalized),
+    /** Rēķins / statusi / VIN SCAN - no pašreizējā (jaunākā) dokumenta, nevis vecās revīzijas. */
+    ...extraDraftPersistFields(current ?? normalized),
   };
   try {
-    await fs.mkdir(dir, { recursive: true });
-    const fp = draftFilePath(dir, sessionId);
-    await writeOrderDraftFileConditional(fp, JSON.stringify(nextDoc));
-    await writeOrderDraftRevision(dir, sessionId, nextDoc, "restore");
+    // Atjaunošanu var atsaukt: pašreizējā versija vispirms kļūst par revīziju.
+    if (blob && current) {
+      await writeBlobRevision(blob, sessionId, { sessionId, ...current }, {
+        revision: current.workspaceRevision ?? 0,
+        reason: "restore",
+      });
+    }
+    const committed = await commitOrderDraftDocument(sessionId, nextDoc, "patch");
+    if (!committed.fsOk && !committed.blobOk) return { ok: false, error: "write_failed:fs_and_blob" };
+    invalidateOrderDraftCache(sessionId);
+    console.info("[workspace:revision_restored]", { sessionId, revisionId, workspaceRevision });
     return { ok: true, updatedAt, workspaceRevision };
   } catch (e) {
     if (isConditionalWriteConflict(e)) throw e;
@@ -846,6 +889,48 @@ async function patchOrderDraftUnlocked(
       });
     }
   }
+  /** 25.11: «tukšāks» saturs pirms rakstīšanas - vienmēr revīzija + `overwrite_shrink` žurnālā (bez satura). */
+  let shrinkDetected = false;
+  if (workspacePatch != null && prev?.workspace) {
+    const prevBody = orderDraftWorkspaceToPersistBody(prev.workspace);
+    const incomingShrink = detectWorkspaceShrink(prevBody, orderDraftWorkspaceToPersistBody(workspacePatch));
+    const resultShrink =
+      nextWorkspace != null ? detectWorkspaceShrink(prevBody, orderDraftWorkspaceToPersistBody(nextWorkspace)) : null;
+    shrinkDetected = incomingShrink.shrink || Boolean(resultShrink?.shrink);
+    if (shrinkDetected) {
+      console.warn("[workspace:overwrite_shrink]", {
+        sessionId,
+        prevRevision: prevRev,
+        prevFields: incomingShrink.prev.fields,
+        prevBlocks: incomingShrink.prev.blocks,
+        incomingFields: incomingShrink.next.fields,
+        incomingBlocks: incomingShrink.next.blocks,
+        resultFields: resultShrink?.next.fields ?? null,
+        resultBlocks: resultShrink?.next.blocks ?? null,
+        expectedRevision: options.expectedWorkspaceRevision,
+        saveGeneration: options.saveGeneration,
+      });
+    }
+  }
+  if (blobCfg && prev && (workspacePatch !== undefined || patch.orderEdits !== undefined)) {
+    if (shouldWriteBlobRevision(sessionId, { force: shrinkDetected })) {
+      try {
+        await writeBlobRevision(blobCfg, sessionId, { sessionId, ...prev }, {
+          revision: prevRev,
+          reason: shrinkDetected ? "overwrite_shrink" : "patch",
+        });
+      } catch (err) {
+        console.error("[workspace:revision_write_failed]", {
+          sessionId,
+          shrink: shrinkDetected,
+          detail: err instanceof Error ? err.message : String(err),
+        });
+        /** Shrink bez drošības kopijas nerakstām - labāk 503 un dati paliek pārlūkā. */
+        if (shrinkDetected) return { ok: false, error: "write_failed:revision_backup" };
+      }
+    }
+  }
+
   const updatedAt = new Date().toISOString();
   const workspaceSavedAt =
     workspacePatch !== undefined ? updatedAt : (prev?.workspaceSavedAt ?? prev?.updatedAt);

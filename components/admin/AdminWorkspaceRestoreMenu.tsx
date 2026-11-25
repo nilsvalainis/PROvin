@@ -25,6 +25,11 @@ type Props = {
   orderDraftPersistenceEnabled: boolean;
   disabled?: boolean;
   onRestoreLocalSnapshot: (snapshot: string) => boolean;
+  /** Pēc servera revīzijas atjaunošanas - ielādē canonical versiju darba zonā (citādi router.refresh). */
+  onServerRestored?: () => void;
+  /** Telefonā atver no «Vairāk» - bez savas pogas. */
+  hideTrigger?: boolean;
+  openKey?: number;
 };
 
 export function AdminWorkspaceRestoreMenu({
@@ -33,6 +38,9 @@ export function AdminWorkspaceRestoreMenu({
   orderDraftPersistenceEnabled,
   disabled,
   onRestoreLocalSnapshot,
+  onServerRestored,
+  hideTrigger,
+  openKey,
 }: Props) {
   const router = useRouter();
   const menuId = useId();
@@ -63,7 +71,7 @@ export function AdminWorkspaceRestoreMenu({
       return;
     }
     setLoading(true);
-    void fetch(`/api/admin/order-draft?sessionId=${encodeURIComponent(sessionId)}&limit=20`, {
+    void fetch(`/api/admin/order-draft?sessionId=${encodeURIComponent(sessionId)}&limit=40`, {
       credentials: "include",
     })
       .then(async (res) => {
@@ -82,6 +90,12 @@ export function AdminWorkspaceRestoreMenu({
     if (!open) return;
     loadLists();
   }, [open, loadLists]);
+
+  useEffect(() => {
+    if (!openKey || openKey <= 0) return;
+    setOpen(true);
+    window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  }, [openKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -135,14 +149,15 @@ export function AdminWorkspaceRestoreMenu({
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (data.error === "store_disabled") {
-          setErr("Servera glabātuve nav ieslēgta (ADMIN_ORDER_DRAFT_DIR)");
+          setErr("Servera glabātuve nav ieslēgta");
         } else {
           setErr("Neizdevās atjaunot no servera");
         }
         return;
       }
       setOpen(false);
-      router.refresh();
+      if (onServerRestored) onServerRestored();
+      else router.refresh();
     } catch {
       setErr("Neizdevās savienoties ar serveri");
     } finally {
@@ -154,7 +169,7 @@ export function AdminWorkspaceRestoreMenu({
 
   return (
     <div className="relative shrink-0" ref={panelRef}>
-      <button
+      {hideTrigger ? null : <button
         type="button"
         disabled={disabled}
         className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[10px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] disabled:opacity-50 dark:hover:bg-white/[0.06]"
@@ -165,7 +180,7 @@ export function AdminWorkspaceRestoreMenu({
       >
         <History className="h-3.5 w-3.5 shrink-0" aria-hidden />
         Atjaunot no rezerves
-      </button>
+      </button>}
       {open ? (
         <div
           id={menuId}
@@ -218,7 +233,7 @@ export function AdminWorkspaceRestoreMenu({
           {orderDraftPersistenceEnabled && serverRevisions.length > 0 ? (
             <div>
               <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-                Serverī (Dropbox / disks)
+                Serverī (pēdējās 40)
               </p>
               <ul className="max-h-40 space-y-0.5 overflow-y-auto">
                 {serverRevisions.map((rev) => {
