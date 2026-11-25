@@ -143,7 +143,9 @@ import {
 } from "@/lib/auto-records-service-works";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { normalizeLossAmountEurDisplay, normalizeLtabIncidentRow } from "@/lib/loss-amount-format";
+import { isValidLtabPlate } from "@/lib/ltab-query-target";
 import {
+  LTAB_NOT_POSSIBLE_NO_LV_PLATE_LV,
   ltabCertificateHasContent,
   ltabCertificateToPlainText,
   parseLtabCertificateRaw,
@@ -1957,6 +1959,8 @@ export type ClientManualVendorBlockPdf = {
 export type ClientManualLtabBlockPdf = {
   rows: LtabIncidentRow[];
   comments: string;
+  /** Neitrāls (pelēks) statuss, kad izziņas nav, piem. «LTAB pārbaude nav iespējama - nav Latvijas numura». */
+  statusNote?: string;
   certificate?: LtabCertificate;
   photos?: SourceBlockPhotoMeta[];
   photoGroups?: SourceBlockPhotoGroup[];
@@ -2083,8 +2087,29 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
   return out;
 }
 
-export function toPdfLtabManualBlock(b: LtabBlockState): ClientManualLtabBlockPdf | null {
-  if (!ltabBlockHasContent(b)) return null;
+/**
+ * LTAB meklē tikai pēc LV numurzīmes. Ja CSDD dati ir, bet derīgas LV numurzīmes nav (ārzemju / noņemts auto),
+ * klienta PDF LTAB bloks saka to skaidri, nevis paliek tukšs.
+ */
+export function ltabNotPossibleNoLvPlate(csdd: CsddFormFields | null | undefined): boolean {
+  if (!csdd) return false;
+  const reg = csdd.registry?.data;
+  const hasCsddData = Boolean(reg || (csdd.registrationStatus ?? "").trim() || (csdd.vin ?? "").trim());
+  if (!hasCsddData) return false;
+  const plate = (reg?.registrationNumber ?? "").trim() || (csdd.registrationNumber ?? "").trim();
+  return !plate || !isValidLtabPlate(plate);
+}
+
+export function toPdfLtabManualBlock(
+  b: LtabBlockState,
+  opts?: { csdd?: CsddFormFields | null },
+): ClientManualLtabBlockPdf | null {
+  if (!ltabBlockHasContent(b)) {
+    if (opts && ltabNotPossibleNoLvPlate(opts.csdd)) {
+      return { rows: [], comments: "", statusNote: LTAB_NOT_POSSIBLE_NO_LV_PLATE_LV };
+    }
+    return null;
+  }
   return {
     rows: b.rows.filter(ltabRowHasData),
     comments: b.comments.trim(),

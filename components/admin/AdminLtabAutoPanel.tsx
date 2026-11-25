@@ -160,7 +160,7 @@ export function AdminLtabAutoPanel({ sessionId, orderVin, value, disabled, readO
           ) : null}
           {canInsert ? (
             <button type="button" className={btn} disabled={disabled || busy} onClick={() => void apply()}>
-              {status?.state === "claims" ? "Ievietot LTAB izziņu" : "Ievietot \"Nav OCTA atlīdzības\""}
+              {status?.state === "claims" || status?.certificate ? "Ievietot LTAB izziņu" : "Ievietot \"Nav OCTA atlīdzības\""}
             </button>
           ) : null}
         </div>

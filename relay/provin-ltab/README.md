@@ -1,9 +1,10 @@
 # provin-ltab: LTAB OCTA zaudējumu izziņa PROVIN pasūtījumiem (Hetzner, bez AI)
 
 `services.ltab.lv/VehicleInsAndAcc` -> ķeksītis "Esmu informēts..." -> Vienotā pieteikšanās `vpm.viss.gov.lv` (agrāk latvija.lv) Smart-ID (Nils apstiprina telefonā)
--> meklēšana **tikai pēc Latvijas numurzīmes** (otrais ķeksītis formā) -> rezultāts. Ja ir negadījumi, relejs lejupielādē
-**oriģinālo PDF** un nosūta to uz PROVIN. PROVIN to saglabā pasūtījuma Dropbox mapē (`/_PROv/<auto VIN>/LTAB - AB1234.pdf`)
-un rāda LTAB blokā avotos kā "LTAB".
+-> meklēšana **tikai pēc Latvijas numurzīmes** (otrais ķeksītis formā) -> rezultāts. Relejs lejupielādē **oriģinālo PDF**
+(LTAB izziņu dod arī tad, ja negadījumu nav) un nosūta to uz PROVIN. PROVIN to saglabā pasūtījuma Dropbox mapē
+(`/_PROv/<auto VIN>/LTAB - AB1234.pdf`), nolasa izziņu (laiks, auto, numurs, negadījumu skaits, apdrošināšanas periods)
+un ievieto LTAB blokā - arī bez negadījumiem (25.11.2026; agrāk izziņa un PDF bez negadījumiem tika izmesti).
 
 Kad relejs saņem uzdevumu, to nosaka PROVIN: tikai, ja CSDD dati rāda LV reģistrāciju (`lib/ltab-query-target.ts`).
 Ārzemju auto netiek meklēti (arī ne pēc VIN).

@@ -115,12 +115,26 @@ describe("LTAB atzvans no releja", () => {
     expect(pushes.at(-1)?.title).toMatch(/negadījumi/);
   });
 
-  it("no claims: nothing is uploaded, status says OCTA gadījumu nav", async () => {
-    await handleLtabRelayEvent({ jobId: "job-1", ref: SID, plate: "AB1234", state: "result", found: false });
-    expect(store.get(SID)?.state).toBe("no_claims");
-    await handleLtabRelayEvent({ jobId: "job-1", ref: SID, plate: "AB1234", state: "result", found: false, pdfBase64: pdfB64("NOCLAIMS") });
-    expect(store.get(SID)?.state).toBe("no_claims");
+  it("no claims without PDF: fallback certificate (plate, time, 0) - never an empty block", async () => {
+    await handleLtabRelayEvent({ jobId: "job-1", ref: SID, plate: "AB1234", state: "result", found: false, at: "2026-11-25T09:29:16.000Z" });
+    const s = store.get(SID)!;
+    expect(s.state).toBe("no_claims");
+    expect(s.message).toBe("Negadījumi nav reģistrēti");
+    expect(s.certificate).toMatchObject({ plate: "AB1234", accidentCount: "0", issuedAt: "25.11.2026 11:29:16" });
+    expect(s.certificate?.makeModel).toBe("");
+    expect(s.pdf).toBeUndefined();
     expect(uploads).toHaveLength(0);
+  });
+
+  it("no claims with PDF: keeps the certificate and saves the ORIGINAL PDF to Dropbox (as before by hand)", async () => {
+    await handleLtabRelayEvent({ jobId: "job-1", ref: SID, plate: "AB1234", state: "result", found: false, pdfBase64: pdfB64("NOCLAIMS") });
+    const s = store.get(SID)!;
+    expect(s.state).toBe("no_claims");
+    expect(s.certificate).toMatchObject({ plate: "AB1234", accidentCount: "0", makeModel: "BMW 640I" });
+    expect(s.pdf?.dropboxPath).toBe("/_PROv/BMW 640i 2012 WBALW3C59CC891863/LTAB - AB1234.pdf");
+    expect(uploads).toHaveLength(1);
+    expect(s.mismatch).toBeUndefined();
+    expect(pushes).toHaveLength(0);
   });
 
   it("marks a certificate for another car as mismatch (not auto-applied)", async () => {

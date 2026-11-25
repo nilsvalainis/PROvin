@@ -1,6 +1,8 @@
 import type { LtabBlockState } from "@/lib/admin-source-blocks";
-import { ltabBlockHasContent } from "@/lib/admin-source-blocks";
-import { ltabCertificateHasContent, type LtabCertificate } from "@/lib/ltab-report-extract";
+import { ltabBlockHasContent, ltabRowHasData } from "@/lib/admin-source-blocks";
+import { LTAB_COMMENT_NO_OCTA_CLAIM } from "@/lib/admin-ltab-comment-presets";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { ltabCertificateHasContent, ltabCertificateIsNoClaims, type LtabCertificate } from "@/lib/ltab-report-extract";
 import type { LtabAutoStatus } from "@/lib/ltab-auto-types";
 import { normalizeLtabPlate } from "@/lib/ltab-query-target";
 
@@ -103,11 +105,28 @@ export function ltabCertificateMismatch(
   return null;
 }
 
+/**
+ * LTAB blokā ir tikai automātikas agrāk ielikts šablons "Nav OCTA atlīdzības" (bez izziņas, rindām, bildēm) -
+ * šādu bloku drīkst papildināt ar izziņu (pasūtījumi no 23.11.2026, kad izziņa tika izmesta).
+ */
+export function ltabBlockHasOnlyNoClaimTemplate(block: LtabBlockState): boolean {
+  if (ltabCertificateHasContent(block.certificate)) return false;
+  if ((block.rows ?? []).some(ltabRowHasData)) return false;
+  if ((block.photos ?? []).length > 0) return false;
+  const plain = adminRichHtmlToPlainText(block.comments ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain === LTAB_COMMENT_NO_OCTA_CLAIM;
+}
+
 /** Automātiski ievieto tikai tukšā LTAB blokā, ja izziņa atbilst auto un vēl nav ievietota. */
 export function ltabAutoCanApply(status: LtabAutoStatus | null | undefined, block: LtabBlockState): boolean {
   if (!status || status.appliedAt || status.mismatch) return false;
   if (status.state === "claims") return ltabCertificateHasContent(status.certificate) && !ltabBlockHasContent(block);
-  if (status.state === "no_claims") return !ltabBlockHasContent(block);
+  if (status.state === "no_claims") {
+    if (!ltabBlockHasContent(block)) return true;
+    return ltabCertificateHasContent(status.certificate) && ltabBlockHasOnlyNoClaimTemplate(block);
+  }
   return false;
 }
 
@@ -115,3 +134,17 @@ export function isPdfBytes(bytes: Uint8Array): boolean {
   return bytes.byteLength > 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
 }
 
+
+/**
+ * LTAB pārbaude ir notikusi un negadījumu nav: izziņa ar "Negadījumu skaits 0" vai šablons
+ * "Nav OCTA atlīdzības" bez rindām. Pozitīvs pārbaudes fakts kopsavilkumam un pretrunu pārbaudei.
+ */
+export function ltabNoClaimsConfirmed(
+  b: { rows?: LtabBlockState["rows"]; comments?: string; certificate?: LtabCertificate } | null | undefined,
+): boolean {
+  if (!b) return false;
+  if ((b.rows ?? []).some(ltabRowHasData)) return false;
+  if (b.certificate && ltabCertificateHasContent(b.certificate)) return ltabCertificateIsNoClaims(b.certificate);
+  const plain = adminRichHtmlToPlainText(b.comments ?? "").replace(/\s+/g, " ");
+  return plain.includes(LTAB_COMMENT_NO_OCTA_CLAIM);
+}

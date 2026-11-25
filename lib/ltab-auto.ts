@@ -21,7 +21,7 @@ import { ltabPdfFileName, saveLtabPdfToOrderFolder } from "@/lib/ltab-dropbox";
 import { readOrderDropboxRecord, saveFileToOrderDropboxFolder } from "@/lib/order-dropbox";
 import { LTAB_SKIP_REASON_LV, resolveLtabQueryTarget } from "@/lib/ltab-query-target";
 import { normalizeVin } from "@/lib/order-field-validation";
-import type { LtabCertificate } from "@/lib/ltab-report-extract";
+import { buildLtabNoClaimsCertificate, type LtabCertificate } from "@/lib/ltab-report-extract";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 /**
@@ -173,6 +173,32 @@ export function orderCarFromCsdd(csdd: CsddFormFields, plate: string, orderVin: 
   };
 }
 
+async function saveLtabPdf(
+  sessionId: string,
+  car: ReturnType<typeof orderCarFromCsdd>,
+  bytes: Uint8Array,
+): Promise<{ pdf: LtabAutoStatus["pdf"]; note: string }> {
+  const client = getDropboxClient();
+  if (!client) return { pdf: undefined, note: " · Dropbox nav konfigurēts, PDF nav saglabāts" };
+  try {
+    // Jaunie pasūtījumi: sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
+    const orderFolder = await readOrderDropboxRecord(sessionId).catch(() => null);
+    const inOrder =
+      orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes).catch(() => null) : null;
+    if (inOrder) {
+      return {
+        pdf: { dropboxPath: inOrder.path, name: inOrder.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() },
+        note: "",
+      };
+    }
+    const saved = await saveLtabPdfToOrderFolder(client, car, bytes);
+    return { pdf: { dropboxPath: saved.path, name: saved.name, size: saved.size, savedAt: nowIso() }, note: "" };
+  } catch (e) {
+    console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");
+    return { pdf: undefined, note: " · PDF neizdevās saglabāt Dropbox" };
+  }
+}
+
 /** Releja notikums (atzvans). Atgriež jauno stāvokli vai kļūdu. */
 export async function handleLtabRelayEvent(
   ev: LtabRelayEvent,
@@ -223,13 +249,8 @@ export async function handleLtabRelayEvent(
   }
 
   const hasClaims = certificate ? ltabCertificateHasClaims(certificate) : ev.found === true;
-  if (!hasClaims) {
-    const status = await saveStatus(sessionId, { ...base, state: "no_claims", message: "OCTA gadījumu nav" });
-    void recordSourceOutcomes([{ id: "ltab_auto", ok: true, msg: "no_claims" }]).catch(() => undefined);
-    return { ok: true, status };
-  }
 
-  if (!bytes) {
+  if (hasClaims && !bytes) {
     const status = await saveStatus(sessionId, { ...base, state: "error", message: "LTAB rādīja negadījumus, bet PDF nav saņemts - augšupielādē manuāli" });
     return { ok: true, status };
   }
@@ -238,27 +259,30 @@ export async function handleLtabRelayEvent(
   const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
   const car = orderCarFromCsdd(csdd, base.plate ?? ev.plate, draft?.orderEdits?.vin ?? "");
 
-  let pdf: LtabAutoStatus["pdf"];
-  let dropboxNote = "";
-  const client = getDropboxClient();
-  if (!client) {
-    dropboxNote = " · Dropbox nav konfigurēts, PDF nav saglabāts";
-  } else {
-    try {
-      // Jaunie pasūtījumi: sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
-      const orderFolder = await readOrderDropboxRecord(sessionId).catch(() => null);
-      const inOrder =
-        orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, ltabPdfFileName(car.plate), bytes).catch(() => null) : null;
-      if (inOrder) {
-        pdf = { dropboxPath: inOrder.path, name: inOrder.path.split("/").pop() || ltabPdfFileName(car.plate), size: bytes.byteLength, savedAt: nowIso() };
-      } else {
-        const saved = await saveLtabPdfToOrderFolder(client, car, bytes);
-        pdf = { dropboxPath: saved.path, name: saved.name, size: saved.size, savedAt: nowIso() };
-      }
-    } catch (e) {
-      console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");
-      dropboxNote = " · PDF neizdevās saglabāt Dropbox";
-    }
+  // Oriģinālais LTAB PDF pasūtījuma mapē - arī tad, ja negadījumu nav (kā agrāk ar roku).
+  const saved = bytes ? await saveLtabPdf(sessionId, car, bytes) : { pdf: undefined, note: "" };
+  const pdf = saved.pdf;
+  const dropboxNote = saved.note;
+
+  if (!hasClaims) {
+    // Izziņa bez negadījumiem: periodi / auto / izziņas laiks paliek blokam un klienta PDF.
+    // Ja PDF neizdevās nolasīt, rezerves izziņa ar to, ko LTAB lapa apstiprināja (numurs, laiks, 0).
+    const cert = certificate
+      ? certificate.accidentCount.trim() || ev.found !== false
+        ? certificate
+        : { ...certificate, accidentCount: "0" }
+      : buildLtabNoClaimsCertificate(car.plate || base.plate || ev.plate, base.checkedAt ?? now);
+    const mismatch = certificate ? ltabCertificateMismatch(certificate, { plate: car.plate, make: car.make, year: car.year }) : null;
+    const status = await saveStatus(sessionId, {
+      ...base,
+      state: "no_claims",
+      message: `Negadījumi nav reģistrēti${dropboxNote}`,
+      certificate: cert,
+      ...(pdf ? { pdf } : {}),
+      ...(mismatch ? { mismatch } : {}),
+    });
+    void recordSourceOutcomes([{ id: "ltab_auto", ok: true, msg: "no_claims" }]).catch(() => undefined);
+    return { ok: true, status };
   }
 
   const mismatch = certificate ? ltabCertificateMismatch(certificate, { plate: car.plate, make: car.make, year: car.year }) : null;

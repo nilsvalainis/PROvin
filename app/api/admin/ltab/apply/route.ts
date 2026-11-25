@@ -6,7 +6,9 @@ import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { mergeSourceBlocksWithDefaults, type LtabBlockState } from "@/lib/admin-source-blocks";
 import { applyLtabCommentTemplate, LTAB_COMMENT_NO_OCTA_CLAIM } from "@/lib/admin-ltab-comment-presets";
 import { markLtabAutoApplied } from "@/lib/ltab-auto";
+import { ltabBlockHasOnlyNoClaimTemplate } from "@/lib/ltab-auto-logic";
 import { readLtabAutoStatus } from "@/lib/ltab-auto-store";
+import { ltabCertificateHasContent } from "@/lib/ltab-report-extract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +39,16 @@ export async function POST(req: Request) {
     const result = applyCopilotActions(
       blocks,
       [{ type: "set_ltab_certificate", source: "ltab", certificate: status.certificate, confidence: "high" }],
+      { onlyAuto: false },
+    );
+    ltab = result.sourceBlocks.ltab;
+  } else if (ltabCertificateHasContent(status.certificate)) {
+    // Bez negadījumiem: izziņa (laiks, auto, numurs, "Negadījumu skaits 0", apdrošināšanas periods) kā agrāk ar roku.
+    // Agrāk automātikas ielikto šablona komentāru noņemam - statusu tagad rāda izziņa.
+    const base = ltabBlockHasOnlyNoClaimTemplate(ltab) ? { ...ltab, comments: "" } : ltab;
+    const result = applyCopilotActions(
+      { ...blocks, ltab: base },
+      [{ type: "set_ltab_certificate", source: "ltab", certificate: status.certificate!, confidence: "high" }],
       { onlyAuto: false },
     );
     ltab = result.sourceBlocks.ltab;

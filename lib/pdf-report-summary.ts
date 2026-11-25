@@ -17,6 +17,7 @@ import type {
   TirgusFormFields,
 } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
+import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import type {
   ProvinAlertBanner,
   ProvinBannerPdfInclude,
@@ -137,12 +138,16 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
     }
     // j26: izsoļu / reģistru bojājumi bez summas - nekad „nav negadījumu”.
     const damageCount = countPdfDamageEvidence(input);
+    // LTAB «nav negadījumu» ir pārbaudīts fakts (OCTA Latvijā), ne tikai datu trūkums.
+    const ltabNoClaims = ltabNoClaimsConfirmed(input.manualLtabBlock);
     if (damageCount > 0) {
       return {
         id: "incidents",
         label: "Negadījumi un bojājumi",
         value: `Bojājumi: ${damageCount}`,
-        note: "Izsoļu / reģistru bojājumi bez summas",
+        note: ltabNoClaims
+          ? "Izsoļu / reģistru bojājumi bez summas · LTAB: OCTA negadījumu nav"
+          : "Izsoļu / reģistru bojājumi bez summas",
         tone: "warn",
       };
     }
@@ -150,7 +155,7 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
       id: "incidents",
       label: "Negadījumi un bojājumi",
       value: "Nav ierakstu",
-      note: "Avotos nav fiksētu negadījumu",
+      note: ltabNoClaims ? "Avotos nav fiksētu negadījumu · LTAB: negadījumi nav reģistrēti" : "Avotos nav fiksētu negadījumu",
       tone: "ok",
     };
   }
