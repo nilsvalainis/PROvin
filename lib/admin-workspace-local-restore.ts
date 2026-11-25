@@ -5,6 +5,13 @@
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseWorkspaceSnapshotSavedAtMs, type OrderWorkspacePersistBody } from "@/lib/admin-order-workspace-persist";
 import { countWorkspaceFilled } from "@/lib/admin-workspace-safety";
+import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
+import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
+import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
+import { contradictionFeedbackSnapshotField } from "@/lib/contradiction-feedback";
+import { dealerMajorWorkOverridesSnapshotField } from "@/lib/dealer-major-works-override-persist";
 
 export type LocalRestoreCandidate = {
   body: OrderWorkspacePersistBody;
@@ -13,10 +20,14 @@ export type LocalRestoreCandidate = {
   serverTotal: number;
 };
 
-export function snapshotRawToPersistBody(raw: string | null | undefined): OrderWorkspacePersistBody | null {
-  if (!raw?.trim()) return null;
-  const h = hydrateWorkspaceFromStorage(raw);
-  if (!h) return null;
+type HydratedSnapshot = NonNullable<ReturnType<typeof hydrateWorkspaceFromStorage>>;
+
+/**
+ * Pilns darba zonas ķermenis no hidratēta momentuzņēmuma - VISI apakšlauki (riska karte, odometra/pretrunu/
+ * lielo darbu labojumi, kapakmeņi, iztukšošanas marķieri). Lieto gan ielādes stāvoklim, gan apvienošanas bāzei,
+ * lai bāze un lokālais būtu salīdzināmi (citādi trūkstošs lauks = viltus «lokāli mainīts»).
+ */
+export function hydratedSnapshotToPersistBody(h: HydratedSnapshot): OrderWorkspacePersistBody {
   return {
     sourceBlocks: h.sourceBlocks,
     iriss: h.iriss,
@@ -28,7 +39,21 @@ export function snapshotRawToPersistBody(raw: string | null | undefined): OrderW
     vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
     incidentPhotoGroups: h.incidentPhotoGroups ?? [],
     incidentPhotos: h.incidentPhotos ?? [],
+    ...sourceBlockWipesSnapshotField(h.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(h.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(h.clearedFields),
+    ...technicalRiskMapSnapshotField(h.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
+    ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
+    ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
   };
+}
+
+export function snapshotRawToPersistBody(raw: string | null | undefined): OrderWorkspacePersistBody | null {
+  if (!raw?.trim()) return null;
+  const h = hydrateWorkspaceFromStorage(raw);
+  if (!h) return null;
+  return hydratedSnapshotToPersistBody(h);
 }
 
 function backupEntries(backupRaw: string | null): { savedAtMs: number; data: string }[] {

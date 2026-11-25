@@ -1621,7 +1621,7 @@ export function OrderDetailWorkspace({
       const serverBody = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
       syncWsPersistRefFromState();
       const local = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
-      const { body: merged } = mergeStaleLocalWithServer(local, serverBody, serverBaseBodyRef.current);
+      const { body: merged, fieldMergedBlocks } = mergeStaleLocalWithServer(local, serverBody, serverBaseBodyRef.current);
       const nextWs = applyPersistBodyToWs(merged, { trackDeletes: false });
       suppressEditTrackRef.current = true;
       wsStateRef.current = nextWs;
@@ -1662,7 +1662,11 @@ export function OrderDetailWorkspace({
       setWorkspaceSaveServerOk(true);
       setWorkspaceAutosaveStatus("saved");
       if (lastLocalEditAtRef.current <= mergeStartedAt) unsavedSinceRef.current = null;
-      setConflictNotice("Pasūtījums bija mainīts citā pārlūkā - izmaiņas apvienotas, nekas nav pazaudēts.");
+      setConflictNotice(
+        fieldMergedBlocks.length
+          ? `Apvienots ar servera izmaiņām: ${fieldMergedBlocks.map((k) => SOURCE_BLOCK_LABELS[k] ?? k).join(", ")}`
+          : "Pasūtījums bija mainīts citā pārlūkā - izmaiņas apvienotas, nekas nav pazaudēts.",
+      );
       sendWorkspaceClientEvent({
         sessionId: payload.sessionId,
         event: "conflict_auto_merged",

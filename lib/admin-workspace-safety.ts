@@ -125,9 +125,44 @@ export type StaleMergeResult = {
   body: OrderWorkspacePersistBody;
   /** Lauki, kur uzvarēja šīs cilnes izmaiņas. */
   localChanged: string[];
-  /** Lauki, ko mainīja abas puses (uzvar lokālais). */
+  /** Lauki, ko mainīja abas puses (teksti/apakšlauki: uzvar lokālais; bloki: apvienoti pa laukiem). */
   bothChanged: string[];
+  /** Avotu bloki, kurus mainīja abas puses un kas apvienoti pa laukiem (paziņojumam). */
+  fieldMergedBlocks: SourceBlockKey[];
 };
+
+/**
+ * Bloks, ko mainīja gan šī cilne, gan serveris (piem. CSDD maksas izziņa, CARFAX pasts, AutoDNA apply,
+ * kamēr Nils pilda to pašu bloku): trīspusēji PA LAUKIEM - šeit mainītais lauks -> lokālais, citādi servera.
+ */
+function meaningful(v: unknown): boolean {
+  if (v == null) return false;
+  if (typeof v === "string") return hasText(v);
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "object") return Object.keys(v as object).length > 0;
+  return true;
+}
+
+/** Bez bāzes: lokāli aizpildītie lauki uzvar, tukšos aizpilda serveris. */
+function mergeSourceBlockFieldsNoBase(local: unknown, server: unknown): Record<string, unknown> {
+  const l = (local && typeof local === "object" ? local : {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...((server && typeof server === "object" ? server : {}) as Record<string, unknown>) };
+  for (const [key, v] of Object.entries(l)) if (meaningful(v)) out[key] = v;
+  return out;
+}
+
+export function mergeSourceBlockFields(local: unknown, server: unknown, base: unknown): Record<string, unknown> {
+  const l = (local && typeof local === "object" ? local : {}) as Record<string, unknown>;
+  const sv = (server && typeof server === "object" ? server : {}) as Record<string, unknown>;
+  const b = (base && typeof base === "object" ? base : {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...sv };
+  for (const key of new Set([...Object.keys(l), ...Object.keys(b)])) {
+    if (same(l[key], b[key])) continue;
+    if (l[key] === undefined) delete out[key];
+    else out[key] = l[key];
+  }
+  return out;
+}
 
 /**
  * Novecojusi cilne (409) - TRĪSPUSĒJA apvienošana bez pulksteņiem.
@@ -142,11 +177,12 @@ export function mergeStaleLocalWithServer(
   base: OrderWorkspacePersistBody | null | undefined,
 ): StaleMergeResult {
   const l = normalizeOrderWorkspacePersistBody(local);
-  if (!server) return { body: l, localChanged: [], bothChanged: [] };
+  if (!server) return { body: l, localChanged: [], bothChanged: [], fieldMergedBlocks: [] };
   const s = normalizeOrderWorkspacePersistBody(server);
   const b = base ? normalizeOrderWorkspacePersistBody(base) : null;
   const localChanged: string[] = [];
   const bothChanged: string[] = [];
+  const fieldMergedBlocks: SourceBlockKey[] = [];
   const note = (k: string, serverChanged: boolean) => {
     localChanged.push(k);
     if (serverChanged) bothChanged.push(k);
@@ -167,11 +203,21 @@ export function mergeStaleLocalWithServer(
   const sBlocks = mergeSourceBlocksWithDefaults(s.sourceBlocks);
   const bBlocks = b ? mergeSourceBlocksWithDefaults(b.sourceBlocks) : null;
   const changedBlocks: SourceBlockKey[] = [];
+  /** Šīs cilnes versija katram mainītajam blokam (bothChanged - jau apvienota pa laukiem). */
+  const localBlockPick: Partial<Record<SourceBlockKey, Record<string, unknown>>> = {};
   for (const k of SOURCE_BLOCK_KEYS) {
     const changed = bBlocks ? !same(lBlocks[k], bBlocks[k]) : !sourceBlockIsEmpty(k, lBlocks[k]);
-    if (changed) {
-      changedBlocks.push(k);
-      note(`block:${k}`, bBlocks ? !same(sBlocks[k], bBlocks[k]) : !sourceBlockIsEmpty(k, sBlocks[k]));
+    if (!changed) continue;
+    changedBlocks.push(k);
+    const serverChanged = bBlocks ? !same(sBlocks[k], bBlocks[k]) : !sourceBlockIsEmpty(k, sBlocks[k]);
+    note(`block:${k}`, serverChanged);
+    if (serverChanged) {
+      localBlockPick[k] = bBlocks
+        ? mergeSourceBlockFields(lBlocks[k], sBlocks[k], bBlocks[k])
+        : mergeSourceBlockFieldsNoBase(lBlocks[k], sBlocks[k]);
+      fieldMergedBlocks.push(k);
+    } else {
+      localBlockPick[k] = lBlocks[k] as unknown as Record<string, unknown>;
     }
   }
 
@@ -199,7 +245,7 @@ export function mergeStaleLocalWithServer(
     incidentPhotos: l.incidentPhotos,
     incidentPhotoGroups: l.incidentPhotoGroups,
   };
-  for (const k of changedBlocks) (sel.sourceBlocks as Record<SourceBlockKey, unknown>)[k] = lBlocks[k];
+  for (const k of changedBlocks) (sel.sourceBlocks as Record<SourceBlockKey, unknown>)[k] = localBlockPick[k];
   const freshCleared: Record<string, number> = {};
   for (const [k, t] of Object.entries(parseClearedFields(l.clearedFields))) {
     if (k in textPick || (k.startsWith("block:") && changedBlocks.includes(k.slice(6) as SourceBlockKey))) freshCleared[k] = t;
@@ -215,7 +261,7 @@ export function mergeStaleLocalWithServer(
   const outBlocks = out.sourceBlocks as Record<SourceBlockKey, Record<string, unknown>>;
   for (const k of changedBlocks) {
     const merged = outBlocks[k] ?? {};
-    const mine = lBlocks[k] as unknown as Record<string, unknown>;
+    const mine = localBlockPick[k] ?? {};
     const next: Record<string, unknown> = { ...mine };
     // Bildes - apvienotās (ar kapakmeņiem), ja blokam tādas ir.
     for (const pf of ["photos", "photoGroups"]) if (pf in merged) next[pf] = merged[pf];
@@ -229,7 +275,7 @@ export function mergeStaleLocalWithServer(
   out.vehicleAiExtraction = aiChanged ? l.vehicleAiExtraction : s.vehicleAiExtraction;
   out.vehicleAiExtractionMeta = aiChanged ? l.vehicleAiExtractionMeta : s.vehicleAiExtractionMeta;
   out.previewConfirmed = previewChanged ? l.previewConfirmed : s.previewConfirmed;
-  return { body: out, localChanged, bothChanged };
+  return { body: out, localChanged, bothChanged, fieldMergedBlocks };
 }
 
 /** Salīdzina divus stāvokļus un atgriež mainītos laukus (atsauce, tad JSON). */

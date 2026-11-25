@@ -209,3 +209,34 @@ describe("beacon / brīdinājuma nosacījumi", () => {
     expect(shouldWarnWorkspaceUnsaved({ unsavedSinceMs: 40_000, nowMs: 50_000, saveInFlight: true })).toBe(false);
   });
 });
+
+describe("bloks mainīts abās pusēs -> apvieno pa laukiem", () => {
+  it("Nils pilda AutoDNA komentāru, serveris ieliek AutoDNA servisa vēsturi -> paliek abi", () => {
+    const base = withVendor(emptyBody(), "autodna", "");
+    const local = withVendor(base, "autodna", "Nila komentārs");
+    const serverBlock = {
+      ...base.sourceBlocks.autodna,
+      aiContextRaw: "Servera AutoDNA apply dati",
+      serviceHistory: [{ ...base.sourceBlocks.autodna.serviceHistory[0]!, date: "01.03.2021" }],
+    };
+    const server = normalizeOrderWorkspacePersistBody({ ...base, sourceBlocks: { ...base.sourceBlocks, autodna: serverBlock } });
+    const r = mergeStaleLocalWithServer(local, server, base);
+    expect(r.body.sourceBlocks.autodna.comments).toBe("Nila komentārs");
+    expect(r.body.sourceBlocks.autodna.aiContextRaw).toBe("Servera AutoDNA apply dati");
+    expect(r.body.sourceBlocks.autodna.serviceHistory[0]!.date).toBe("01.03.2021");
+    expect(r.fieldMergedBlocks).toEqual(["autodna"]);
+  });
+
+  it("tas pats bloka lauks abās pusēs -> uzvar šī cilne", () => {
+    const base = withVendor(emptyBody(), "autodna", "bāze");
+    const r = mergeStaleLocalWithServer(withVendor(base, "autodna", "A"), withVendor(base, "autodna", "B"), base);
+    expect(r.body.sourceBlocks.autodna.comments).toBe("A");
+    expect(r.fieldMergedBlocks).toEqual(["autodna"]);
+  });
+
+  it("tikai lokāli mainīts bloks - nav pa-lauku apvienošanas paziņojuma", () => {
+    const base = emptyBody();
+    const r = mergeStaleLocalWithServer(withVendor(base, "autodna", "A"), base, base);
+    expect(r.fieldMergedBlocks).toEqual([]);
+  });
+});
