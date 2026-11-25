@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, FileUp, Loader2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { CitiAvotiBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
@@ -18,6 +18,11 @@ import {
   kfzgutachtenSearchUrl,
 } from "@/lib/kfzgutachten/kfzgutachten";
 import type { KfzGutachtenReport } from "@/lib/kfzgutachten/parse-gutachten";
+import {
+  KFZ_AT_LIST_ACK_EVENT,
+  KFZ_AT_LIST_EVENT,
+  parseKfzAtUserscriptDetail,
+} from "@/lib/kfzgutachten/userscript-bridge";
 
 const inp =
   "min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -26,6 +31,8 @@ const btn =
 
 type Props = {
   vin: string;
+  /** Pasūtījuma sessionId - «Atvērt sarakstu» saitē, lai PROVIN skripts sarakstu nosūta tieši šim pasūtījumam. */
+  sessionId?: string;
   value: CitiAvotiBlockState;
   onChange: (next: CitiAvotiBlockState) => void;
   getSourceBlocks?: () => WorkspaceSourceBlocks;
@@ -33,7 +40,7 @@ type Props = {
 };
 
 /** Citi avoti: Austrijas §57a apskates - saite uz bezmaksas sarakstu, saraksta ielīmēšana, nopirkto atzinumu PDF. */
-export function AdminKfzGutachtenPanel({ vin, value, onChange, getSourceBlocks, disabled }: Props) {
+export function AdminKfzGutachtenPanel({ vin, sessionId, value, onChange, getSourceBlocks, disabled }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [manualDate, setManualDate] = useState<string | null>(null);
   const [listPaste, setListPaste] = useState("");
@@ -61,7 +68,7 @@ export function AdminKfzGutachtenPanel({ vin, value, onChange, getSourceBlocks, 
   const dateText = manualDate ?? resolution?.date ?? "";
   const exact = kfzExactDateDdMmYyyy(dateText);
   const chosen = resolution?.candidates.find((c) => c.date === exact);
-  const url = kfzgutachtenSearchUrl(vin, exact);
+  const url = kfzgutachtenSearchUrl(vin, exact, sessionId);
 
   const apply = (add: { reports?: KfzGutachtenReport[]; list?: ReturnType<typeof parseKfzSearchListText> }) => {
     const res = applyKfzAtToCitiAvoti(value, add, { vin });
@@ -73,6 +80,31 @@ export function AdminKfzGutachtenPanel({ vin, value, onChange, getSourceBlocks, 
     setNotice(parts.length ? `${parts.join(" · ")}.` : "Jaunu ierakstu nav.");
     setError(res.warnings.length ? res.warnings.join(" ") : null);
   };
+
+  // PROVIN skripts (kfzgutachten.at pēc «Suchen») -> saraksts šim pasūtījumam bez ielīmēšanas.
+  const applyRef = useRef(apply);
+  useEffect(() => {
+    applyRef.current = apply;
+  });
+  const handledAtRef = useRef(0);
+  useEffect(() => {
+    if (disabled || !sessionId) return;
+    const orderVin = vin.trim().toUpperCase();
+    const onList = (ev: Event) => {
+      const d = parseKfzAtUserscriptDetail((ev as CustomEvent).detail);
+      if (!d || d.sessionId !== sessionId || d.vin !== orderVin) return;
+      const rows = parseKfzSearchListText(d.text, orderVin);
+      if (handledAtRef.current !== d.at) {
+        handledAtRef.current = d.at;
+        if (rows.length > 0) applyRef.current({ list: rows });
+      }
+      document.dispatchEvent(
+        new CustomEvent(KFZ_AT_LIST_ACK_EVENT, { detail: { sessionId, vin: orderVin, at: d.at, added: rows.length } }),
+      );
+    };
+    document.addEventListener(KFZ_AT_LIST_EVENT, onList);
+    return () => document.removeEventListener(KFZ_AT_LIST_EVENT, onList);
+  }, [disabled, sessionId, vin]);
 
   const uploadPdfs = async (files: File[]) => {
     if (disabled || busy || files.length === 0) return;

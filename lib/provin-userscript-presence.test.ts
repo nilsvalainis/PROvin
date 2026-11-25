@@ -276,7 +276,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     expect(versions.filter(Boolean)).toEqual(["1.26.0"]);
     expect(readProvinUserscriptVersion()).toBe("1.26.0");
     expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.0");
-    expect(vinScanUserscriptUpdateNeeded("1.26.0")).toBe(false);
+    // 1.27 pievieno kfzgutachten.at tiltu - 1.26.0 tagad prasa atjauninājumu.
+    expect(vinScanUserscriptUpdateNeeded("1.26.0")).toBe(true);
     expect(dom.liveIntervals.size).toBe(0);
     expect(dom.attrMutations).toBeLessThan(20);
     expect(dom.observerFires).toBeLessThan(30);
@@ -315,7 +316,7 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     expect(dom.attrMutations).toBeLessThan(8);
     expect(dom.observerFires).toBeLessThan(12);
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
   });
 
   it("1.26.1 + aizsargs + watch atjauno atribūtu pēc React noņemšanas un nestormo", async () => {
@@ -328,9 +329,9 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(50);
     await flushMany(10);
-    expect(versions.filter(Boolean).at(-1)).toBe("1.26.3");
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.3");
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(versions.filter(Boolean).at(-1)).toBe("1.27.0");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.0");
+    expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
     expect(dom.attrMutations).toBeLessThan(20);
     stop();
   });
@@ -342,8 +343,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(200);
     await flushMany(10);
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.3");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.0");
     expect(dom.attrMutations).toBeLessThan(8);
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
   });
 });

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.26.3
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.27.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -77,6 +77,8 @@
 // @match        https://www.mercedes-benz.com/*
 // @match        https://www.volvocars.com/*
 // @match        https://www.toyota.com/*
+// @match        https://kfzgutachten.at/*
+// @match        https://www.kfzgutachten.at/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -119,7 +121,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.26.3";
+  const SCRIPT_VERSION = "1.27.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -224,6 +226,238 @@
   const GM_CV_PURCHASE = "provin_cv_purchase";
   const GM_CV_PURCHASE_VIN = "provin_cv_purchase_vin";
   const GM_CV_PURCHASE_RESULT = "provin_cv_purchase_result";
+
+  /* ---------- kfzgutachten.at (Austrijas §57a apskates): saraksts -> PROVIN pasūtījums ----------
+     Saite no pasūtījuma: https://kfzgutachten.at/?vin=…&date=…&provin=<sessionId>.
+     Skripts NEKO nespiež (Suchen spiež Nils, captcha neaiztiek), nepērk atzinumus un neaizpilda formas.
+     Pēc «Suchen» nolasa rezultātu tabulu, ņem tikai pasūtījuma VIN rindas un ieliek GM krātuvē;
+     admin lapa (tas pats skripts) tās nodod pasūtījuma panelim. Bez `provin` saitē neko nesūta. */
+  const GM_KFZ_ORDER = "provin_kfz_at_order";
+  const GM_KFZ_LIST = "provin_kfz_at_list";
+  const GM_KFZ_ACK = "provin_kfz_at_ack";
+  const KFZ_ORDER_TTL_MS = 2 * 60 * 60 * 1000;
+  const KFZ_ORDER_ID_RE = /^[A-Za-z0-9_.-]{6,200}$/;
+  const KFZ_VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
+  const KFZ_DATE_RE = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+
+  function kfzCleanVin(raw) {
+    return String(raw || "")
+      .replace(/[\s-]/g, "")
+      .toUpperCase();
+  }
+
+  function kfzReadJson(key) {
+    try {
+      const raw = String(GM_getValue(key, "") || "");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Pasūtījums no saites (arī no ReturnUrl, ja lapa vispirms pārsūta uz pieteikšanos). */
+  function kfzOrderFromUrl() {
+    let id = params.get("provin") || "";
+    let v = params.get("vin") || "";
+    if (!id) {
+      const ret = params.get("ReturnUrl") || params.get("returnUrl") || "";
+      if (ret) {
+        try {
+          const u = new URL(ret, "https://kfzgutachten.at/");
+          id = u.searchParams.get("provin") || "";
+          v = u.searchParams.get("vin") || "";
+        } catch {
+          id = "";
+        }
+      }
+    }
+    id = String(id).trim();
+    v = kfzCleanVin(v);
+    if (!KFZ_ORDER_ID_RE.test(id) || !KFZ_VIN_RE.test(v)) return null;
+    return { sessionId: id, vin: v };
+  }
+
+  function kfzPendingOrder() {
+    const o = kfzReadJson(GM_KFZ_ORDER);
+    if (!o || !KFZ_ORDER_ID_RE.test(String(o.sessionId || "")) || !KFZ_VIN_RE.test(String(o.vin || ""))) return null;
+    if (Date.now() - Number(o.at || 0) > KFZ_ORDER_TTL_MS) return null;
+    return { sessionId: String(o.sessionId), vin: String(o.vin) };
+  }
+
+  function kfzHtmlToText(html) {
+    return String(html || "")
+      .replace(/<(script|style|noscript|template|textarea|select)\b[\s\S]*?<\/\1\s*>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      /* HTML avota rindu pārtraukumi nav saraksta rindas - rindas nosaka tikai tagi. */
+      .replace(/\s+/g, " ")
+      .replace(/<\/(td|th)\s*>/gi, "\t")
+      .replace(/<br\b[^>]*>/gi, "\n")
+      .replace(/<\/(tr|p|div|li|h[1-6]|dd|dt|table|thead|tbody|section|article|header|footer)\s*>/gi, "\n")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;|&#160;/gi, " ")
+      .replace(/&Auml;/g, "Ä")
+      .replace(/&Ouml;/g, "Ö")
+      .replace(/&Uuml;/g, "Ü")
+      .replace(/&auml;/g, "ä")
+      .replace(/&ouml;/g, "ö")
+      .replace(/&uuml;/g, "ü")
+      .replace(/&szlig;/g, "ß")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&amp;/gi, "&");
+  }
+
+  function kfzValidDate(raw) {
+    const m = KFZ_DATE_RE.exec(String(raw || "").trim());
+    if (!m) return "";
+    const d = Number(m[1]);
+    const mo = Number(m[2]);
+    const y = Number(m[3]);
+    if (y < 1950 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return "";
+    return m[0];
+  }
+
+  function kfzCell(raw) {
+    return String(raw || "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /** Rezultātu rindas (Modelis | Datums | Numurzīme | VIN) no lapas HTML. Tabula vai kartītes ar etiķetēm. */
+  function kfzAtListRowsFromHtml(html) {
+    const text = kfzHtmlToText(html);
+    const rows = [];
+    const seen = {};
+    function push(model, date, plate, rowVin) {
+      const d = kfzValidDate(date);
+      const v = kfzCleanVin(rowVin);
+      const p = kfzCell(plate).toUpperCase();
+      if (!d || !KFZ_VIN_RE.test(v) || !p || p.length > 15) return;
+      const key = d + "|" + p + "|" + v;
+      if (seen[key]) return;
+      seen[key] = 1;
+      rows.push({ model: kfzCell(model).slice(0, 80), date: d, plate: p, vin: v });
+    }
+    const rest = [];
+    text.split("\n").forEach(function (line) {
+      const cells = line.split("\t").map(kfzCell).filter(function (c) {
+        return c !== "";
+      });
+      if (cells.length >= 4) {
+        const di = cells.findIndex(function (c) {
+          return Boolean(kfzValidDate(c));
+        });
+        if (di >= 0 && di + 2 < cells.length && KFZ_VIN_RE.test(kfzCleanVin(cells[di + 2]))) {
+          push(cells.slice(0, di).join(" "), cells[di], cells[di + 1], cells[di + 2]);
+          return;
+        }
+      }
+      rest.push(line);
+    });
+    /* Kartīšu izkārtojums (piem. telefonā): «Marke und Type: … Gutachtendatum: … Kennzeichen: … FIN: …». */
+    const flat = rest
+      .join("\n")
+      .replace(/(Marke und Type|Gutachtendatum|Kennzeichen|FIN)\s*:/gi, "\n$1:")
+      .replace(/[ \t]+/g, " ");
+    const re = /Marke und Type:\s*([^\n]*?)\s*\n\s*Gutachtendatum:\s*(\d{2}\.\d{2}\.\d{4})\s*\n\s*Kennzeichen:\s*([^\n]{1,15}?)\s*\n\s*FIN:\s*([A-HJ-NPR-Z0-9]{17})/gi;
+    let m;
+    while ((m = re.exec(flat))) push(m[1], m[2], m[3], m[4]);
+    return rows;
+  }
+
+  function kfzStatus(message, isError) {
+    if (!document.body) return;
+    let bar = document.getElementById("provin-kfz-status");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "provin-kfz-status";
+      bar.setAttribute("role", "status");
+      document.body.appendChild(bar);
+    }
+    const css =
+      "position:fixed;z-index:2147483647;right:12px;bottom:12px;max-width:320px;padding:6px 10px;border-radius:8px;" +
+      "font:500 12px/1.3 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;" +
+      (isError ? "background:#fef2f2;color:#b91c1c;border:1px solid #fecaca" : "background:#f8fafc;color:#334155;border:1px solid #e2e8f0");
+    if (bar.textContent !== message) bar.textContent = message;
+    bar.style.cssText = css;
+  }
+
+  function watchKfzAtList() {
+    if (window.__provinKfzWatch) return;
+    window.__provinKfzWatch = true;
+    const fromUrl = kfzOrderFromUrl();
+    if (fromUrl) {
+      try {
+        GM_setValue(GM_KFZ_ORDER, JSON.stringify({ sessionId: fromUrl.sessionId, vin: fromUrl.vin, at: Date.now() }));
+      } catch (e) {
+        console.warn("PROVIN kfzgutachten", e);
+      }
+    }
+    const started = Date.now();
+    let lastSig = "";
+    let sentAt = 0;
+    let sentCount = 0;
+    const tick = function () {
+      const order = kfzPendingOrder();
+      let html = "";
+      try {
+        html = document.documentElement ? document.documentElement.outerHTML : "";
+      } catch {
+        html = "";
+      }
+      const rows = kfzAtListRowsFromHtml(html);
+      if (!order) {
+        if (rows.length > 0) kfzStatus("PROVIN: nav pasūtījuma - atver sarakstu no PROVIN pasūtījuma", true);
+        return;
+      }
+      if (rows.length === 0) {
+        if (!sentAt) kfzStatus("PROVIN: gaida sarakstu");
+        return;
+      }
+      const mine = rows.filter(function (r) {
+        return r.vin === order.vin;
+      });
+      if (mine.length === 0) {
+        kfzStatus("PROVIN: sarakstā nav pasūtījuma VIN " + order.vin, true);
+        return;
+      }
+      const text = mine
+        .map(function (r) {
+          return [r.model, r.date, r.plate, r.vin].join("\t");
+        })
+        .join("\n");
+      const sig = order.sessionId + "|" + text;
+      if (sig !== lastSig) {
+        const at = Date.now();
+        try {
+          GM_setValue(
+            GM_KFZ_LIST,
+            JSON.stringify({ sessionId: order.sessionId, vin: order.vin, text: text, count: mine.length, at: at }),
+          );
+        } catch (e) {
+          kfzStatus("PROVIN: neizdevās nosūtīt sarakstu", true);
+          return;
+        }
+        lastSig = sig;
+        sentAt = at;
+        sentCount = mine.length;
+      }
+      const ack = kfzReadJson(GM_KFZ_ACK);
+      const got = ack && String(ack.sessionId || "") === order.sessionId && Number(ack.at || 0) === sentAt;
+      kfzStatus("PROVIN: " + sentCount + " apskates nosūtītas pasūtījumam" + (got ? " (saņemts)" : ""));
+    };
+    const timer = window.setInterval(function () {
+      if (Date.now() - started > 30 * 60 * 1000) {
+        window.clearInterval(timer);
+        return;
+      }
+      tick();
+    }, 1000);
+    tick();
+  }
+
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
   if (IS_PROVIN_ADMIN) {
@@ -705,9 +939,61 @@
       run();
     }
 
+    /* kfzgutachten.at saraksts (GM krātuvē no kfzgutachten.at cilnes) -> pasūtījuma panelis.
+       Panelis pieņem tikai savu pasūtījumu (sessionId + VIN) un atbild ar ack; tad ierakstu dzēšam. */
+    function pollKfzAtList() {
+      if (window.__provinKfzPoll) return;
+      window.__provinKfzPoll = true;
+      document.addEventListener("provin-kfz-at-list-ack", function (ev) {
+        const d = ev && ev.detail ? ev.detail : {};
+        const data = kfzReadJson(GM_KFZ_LIST);
+        if (!data || String(data.sessionId || "") !== String(d.sessionId || "") || Number(data.at || 0) !== Number(d.at || 0)) {
+          return;
+        }
+        try {
+          GM_deleteValue(GM_KFZ_LIST);
+          GM_setValue(
+            GM_KFZ_ACK,
+            JSON.stringify({ sessionId: String(data.sessionId), at: Number(data.at), added: Number(d.added || 0), ackAt: Date.now() }),
+          );
+        } catch {
+          /* ignore */
+        }
+      });
+      window.setInterval(function () {
+        const data = kfzReadJson(GM_KFZ_LIST);
+        if (!data) return;
+        if (Date.now() - Number(data.at || 0) > KFZ_ORDER_TTL_MS) {
+          try {
+            GM_deleteValue(GM_KFZ_LIST);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        document.dispatchEvent(
+          new CustomEvent("provin-kfz-at-list", {
+            detail: {
+              sessionId: String(data.sessionId || ""),
+              vin: String(data.vin || ""),
+              text: String(data.text || ""),
+              count: Number(data.count || 0),
+              at: Number(data.at || 0),
+            },
+          }),
+        );
+      }, 1500);
+    }
+
     watchStatVinBrowserFetch();
     pollSwedishImport();
+    pollKfzAtList();
     pollVinScan();
+    return;
+  }
+
+  if (host === "kfzgutachten.at") {
+    watchKfzAtList();
     return;
   }
 

@@ -57,11 +57,15 @@ export function kfzDateIsPartial(raw: string | null | undefined): boolean {
 /**
  * Saite uz meklēšanas formu ar aizpildītu VIN un datumu.
  * Lapas skripts aizpilda formu no `?vin=&date=` (pēc pieteikšanās, ja sesija beigusies).
+ * Ar `orderId` (pasūtījuma sessionId) PROVIN Tampermonkey skripts pēc «Suchen» sarakstu nosūta pasūtījumam.
  * Bez datuma liekam tukšu `date=`, lai lapas skripts nekrīt un VIN tomēr ieliek.
  */
-export function kfzgutachtenSearchUrl(vin: string, firstRegDate?: string | null): string {
+export function kfzgutachtenSearchUrl(vin: string, firstRegDate?: string | null, orderId?: string | null): string {
   const v = vin.trim().toUpperCase();
   if (!v) return KFZ_AT_HOME_URL;
   const date = kfzExactDateDdMmYyyy(firstRegDate);
-  return `${KFZ_AT_HOME_URL}?vin=${encodeURIComponent(v)}&date=${encodeURIComponent(date)}`;
+  // `provin` - pasūtījums, kuram PROVIN skripts nosūta sarakstu (bez tā skripts neko nesūta).
+  const order = (orderId ?? "").trim();
+  const orderPart = order && /^[A-Za-z0-9_.-]{6,200}$/.test(order) ? `&provin=${encodeURIComponent(order)}` : "";
+  return `${KFZ_AT_HOME_URL}?vin=${encodeURIComponent(v)}&date=${encodeURIComponent(date)}${orderPart}`;
 }
