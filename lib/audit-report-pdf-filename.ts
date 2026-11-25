@@ -2,13 +2,75 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { CheckoutLineKind } from "@/lib/stripe-session";
 
 /**
- * Klienta audita PDF pielikuma standarta nosaukums.
- * Formāts: PROVIN_AUDITS_<VIN>.pdf, PROVIN_MINI_<VIN>.pdf, PROVIN_BUSINESS_<VIN>.pdf
- * vai OFICIALA_DILERA_DATI_<VIN>.pdf; ne-LV valodai galotne _EN / _RU / _DE (kā UI).
- * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN - tikai burti un cipari, lielie burti).
+ * VIENA vieta visiem klienta PDF failu nosaukumiem (Nils 25.11): nosaukums klienta valodā visur -
+ * «Ģenerēt PDF», «Citi PDF», e-pasta pielikums, servera PDF (Dropbox mape, klienta saite, partneru arhīvs).
+ *
+ * Shēma: <PRODUKTS>[_<IZVILKUMS>]_<VIN>[_<VALODA>][_<DRUKAI>].pdf
+ *   - produkta un «izvilkuma» vārdi tulkoti; RU - latīņu transliterācija (bez kirilicas failu nosaukumā);
+ *   - tikai A-Z, 0-9 un «_» (bez diakritikas: Ä -> AE), lai droši visās e-pasta programmās un Dropbox;
+ *   - ne-LV valodām paliek galotne _EN / _RU / _DE: EN un DE produkta vārds bieži sakrīt
+ *     (PROVIN_AUDIT, PROVIN_MINI), un abas valodu versijas vienā pasūtījuma mapē nedrīkst pārrakstīt viena otru;
+ *   - LV nosaukumi nemainās (PROVIN_AUDITS_<VIN>.pdf, OFICIALA_DILERA_DATI_<VIN>.pdf).
  */
 
-/** "" latviski, citādi "_EN" / "_RU" / "_DE" pirms ".pdf" (tā pati konvencija, kas drukas PDF nosaukumam). */
+export type ReportPdfKind =
+  | "audits"
+  | "mini"
+  | "business"
+  | "dealer"
+  | "oem_dealer"
+  | "asv"
+  | "auction_archive";
+
+const KIND_WORD: Record<ReportPdfKind, Record<ClientReportLang, string>> = {
+  audits: { lv: "PROVIN_AUDITS", en: "PROVIN_AUDIT", de: "PROVIN_AUDIT", ru: "PROVIN_AUDIT" },
+  mini: { lv: "PROVIN_MINI", en: "PROVIN_MINI", de: "PROVIN_MINI", ru: "PROVIN_MINI" },
+  business: { lv: "PROVIN_BUSINESS", en: "PROVIN_BUSINESS", de: "PROVIN_BUSINESS", ru: "PROVIN_BUSINESS" },
+  dealer: {
+    lv: "OFICIALA_DILERA_DATI",
+    en: "OFFICIAL_DEALER_DATA",
+    de: "OFFIZIELLE_HAENDLERDATEN",
+    ru: "OFITSIALNYE_DANNYE_DILERA",
+  },
+  oem_dealer: { lv: "OEM_DILERA_DATI", en: "OEM_DEALER_DATA", de: "OEM_HAENDLERDATEN", ru: "OEM_DANNYE_DILERA" },
+  asv: { lv: "PROVIN_ASV", en: "PROVIN_USA", de: "PROVIN_USA", ru: "PROVIN_SSHA" },
+  auction_archive: { lv: "IZSOLU_ARHIVS", en: "AUCTION_ARCHIVE", de: "AUKTIONSARCHIV", ru: "ARKHIV_AUKTSIONOV" },
+};
+
+/** «Izvilkums» ķeksis (saīsinātā PDF versija). */
+export const REPORT_PDF_EXTRACT_WORD: Record<ClientReportLang, string> = {
+  lv: "IZVILKUMS",
+  en: "EXTRACT",
+  de: "AUSZUG",
+  ru: "VYPISKA",
+};
+
+/** Tumšākā drukas versija (Nila papīra drukai). */
+export const REPORT_PDF_PRINT_WORD: Record<ClientReportLang, string> = {
+  lv: "DRUKAI",
+  en: "PRINT",
+  de: "DRUCK",
+  ru: "PECHAT",
+};
+
+/** Visi produktu vārdi visās valodās (piem. «vai šis ir mūsu atskaites PDF?»). */
+export const REPORT_PDF_KIND_WORDS: readonly string[] = [
+  ...new Set(Object.values(KIND_WORD).flatMap((m) => Object.values(m))),
+];
+
+/** Vai faila nosaukums ir PROVIN atskaites PDF (jebkurā valodā, ar «v2-» u.c. priedēkli vai bez). */
+export function isProvinReportPdfFilename(filename: string): boolean {
+  const name = (filename ?? "").trim().toUpperCase().replace(/^V\d+-/, "");
+  if (!name.endsWith(".PDF")) return false;
+  return REPORT_PDF_KIND_WORDS.some((w) => name.startsWith(`${w}_`)) || name.startsWith("PROVIN_SELECT");
+}
+
+function vinSlug(vin: string | null | undefined): string {
+  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return v.length > 0 ? v : "NAV_VIN";
+}
+
+/** "" latviski, citādi "_EN" / "_RU" / "_DE" pirms ".pdf". */
 export function reportLangFilenameSuffix(lang?: ClientReportLang | null): string {
   if (lang === "en") return "_EN";
   if (lang === "ru") return "_RU";
@@ -16,9 +78,28 @@ export function reportLangFilenameSuffix(lang?: ClientReportLang | null): string
   return "";
 }
 
-function withReportLangSuffix(filename: string, lang?: ClientReportLang | null): string {
+/** Vienīgā funkcija klienta PDF nosaukumam - to lieto visas vietas. */
+export function buildReportPdfFilename(args: {
+  kind: ReportPdfKind;
+  vin: string | null | undefined;
+  lang?: ClientReportLang | null;
+  /** «Izvilkums» ķeksis. */
+  extract?: boolean;
+  /** Tumšākā drukas versija. */
+  print?: boolean;
+  /** Papildu galotne (piem. «DZA» Dzintarzeme veidnei). */
+  variant?: string | null;
+}): string {
+  const lang: ClientReportLang = args.lang ?? "lv";
+  const parts = [KIND_WORD[args.kind][lang]];
+  if (args.extract) parts.push(REPORT_PDF_EXTRACT_WORD[lang]);
+  parts.push(vinSlug(args.vin));
   const suffix = reportLangFilenameSuffix(lang);
-  return suffix ? filename.replace(/\.pdf$/i, `${suffix}.pdf`) : filename;
+  if (suffix) parts.push(suffix.slice(1));
+  const variant = (args.variant ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (variant) parts.push(variant);
+  if (args.print) parts.push(REPORT_PDF_PRINT_WORD[lang]);
+  return `${parts.join("_")}.pdf`;
 }
 
 export type ProvinAuditPdfProductBrand =
@@ -45,6 +126,17 @@ export function resolveProvinAuditPdfProductBrand(args: {
   return "PROVIN_AUDITS";
 }
 
+const BRAND_KIND: Record<ProvinAuditPdfProductBrand, ReportPdfKind> = {
+  PROVIN_AUDITS: "audits",
+  PROVIN_MINI: "mini",
+  PROVIN_DILERIS: "dealer",
+  PROVIN_BUSINESS: "business",
+};
+
+export function reportPdfKindFromBrand(brand: ProvinAuditPdfProductBrand): ReportPdfKind {
+  return BRAND_KIND[brand];
+}
+
 export function buildProvinAuditPdfFilename(
   vin: string | null | undefined,
   product?: {
@@ -52,6 +144,8 @@ export function buildProvinAuditPdfFilename(
     amountTotalCents?: number | null;
     brand?: ProvinAuditPdfProductBrand | null;
     lang?: ClientReportLang | null;
+    extract?: boolean;
+    print?: boolean;
   },
 ): string {
   const brand =
@@ -60,11 +154,13 @@ export function buildProvinAuditPdfFilename(
       checkoutLine: product?.checkoutLine,
       amountTotalCents: product?.amountTotalCents,
     });
-  // Dīlera dati - tas pats nosaukums kā UI pogai «Dīlera PDF» (OFICIALA_DILERA_DATI_<VIN>.pdf).
-  if (brand === "PROVIN_DILERIS") return buildProvinDilerisPdfFilename(vin, product?.lang);
-  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const slug = v.length > 0 ? v : "NAV_VIN";
-  return withReportLangSuffix(`${brand}_${slug}.pdf`, product?.lang);
+  return buildReportPdfFilename({
+    kind: BRAND_KIND[brand],
+    vin,
+    lang: product?.lang,
+    extract: product?.extract,
+    print: product?.print,
+  });
 }
 
 /** PROVIN SELECT konsultācijas PDF nosaukums e-pasta pielikumam (bez VIN). */
@@ -77,27 +173,35 @@ export function buildProvinSelectConsultationPdfFilename(sessionId: string): str
 export function buildProvinDilerisPdfFilename(
   vin: string | null | undefined,
   lang?: ClientReportLang | null,
+  opts?: { extract?: boolean; print?: boolean; variant?: string | null },
 ): string {
-  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const slug = v.length > 0 ? v : "NAV_VIN";
-  return withReportLangSuffix(`OFICIALA_DILERA_DATI_${slug}.pdf`, lang);
+  return buildReportPdfFilename({ kind: "dealer", vin, lang, ...opts });
 }
 
 /** OEM-stila dīlera API izdruka (atsevišķs fails). */
-export function buildOemDealerPdfFilename(vin: string | null | undefined): string {
-  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const slug = v.length > 0 ? v : "NAV_VIN";
-  return `OEM_DILERA_DATI_${slug}.pdf`;
+export function buildOemDealerPdfFilename(vin: string | null | undefined, lang?: ClientReportLang | null): string {
+  return buildReportPdfFilename({ kind: "oem_dealer", vin, lang });
 }
 
 /** PROVIN BUSINESS datu atskaite (tā pati atskaite, cits virsraksts). */
-export function buildProvinBusinessPdfFilename(vin: string | null | undefined): string {
-  return buildProvinAuditPdfFilename(vin, { brand: "PROVIN_BUSINESS" });
+export function buildProvinBusinessPdfFilename(
+  vin: string | null | undefined,
+  lang?: ClientReportLang | null,
+  opts?: { extract?: boolean; print?: boolean },
+): string {
+  return buildReportPdfFilename({ kind: "business", vin, lang, ...opts });
 }
 
 /** Tikai ASV vēsture (VIN Audit / PROVIN noformējums). */
-export function buildProvinAsvPdfFilename(vin: string | null | undefined): string {
-  const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const slug = v.length > 0 ? v : "NAV_VIN";
-  return `PROVIN_ASV_${slug}.pdf`;
+export function buildProvinAsvPdfFilename(
+  vin: string | null | undefined,
+  lang?: ClientReportLang | null,
+  opts?: { extract?: boolean; print?: boolean },
+): string {
+  return buildReportPdfFilename({ kind: "asv", vin, lang, ...opts });
+}
+
+/** Izsoļu arhīva PDF (piedāvājums un atsevišķais pakalpojums). */
+export function buildAuctionArchivePdfFilename(vin: string | null | undefined, lang?: ClientReportLang | null): string {
+  return buildReportPdfFilename({ kind: "auction_archive", vin, lang });
 }

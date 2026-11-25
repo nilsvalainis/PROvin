@@ -17,6 +17,7 @@ import {
   type DealerSendOptions,
   type DealerSendSituation,
 } from "@/lib/dealer-send-message";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import { messageTemplatesDocFromOverrides } from "@/lib/messages/shared-block-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import type { OrderClientMarks } from "@/lib/order-client-marks";
@@ -162,6 +163,7 @@ export function AdminDealerSendDialog({
       vin,
       refundCents,
       doc: templatesDocCache,
+      lang: pdfLang,
     }),
   );
   // Izsoļu arhīvs: stāvoklis tikai kamēr logs atvērts.
@@ -225,14 +227,16 @@ export function AdminDealerSendDialog({
     if (!open || situation !== "archive" || !arch) return;
     const ready = arch.offer?.status === "chose_archive";
     const sum = arch.offer && ready ? arch.offer.summary : arch.summary;
+    // B2B paraksts tikai «PROVIN» (Nils 25.11).
+    const sign = (t: string) => (b2b ? applyB2bSignature(t) : t);
     if (channel === "whatsapp") {
       setSubject("");
-      setText(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents, showPrices));
+      setText(sign(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents, showPrices)));
     } else {
       setSubject(ready ? auctionArchiveReadySubject(sum) : auctionArchiveOfferSubject(sum));
-      setText(ready ? auctionArchiveReadyText(sum, showPrices) : auctionArchiveOfferText(sum, arch.paidCents, showPrices));
+      setText(sign(ready ? auctionArchiveReadyText(sum, showPrices) : auctionArchiveOfferText(sum, arch.paidCents, showPrices)));
     }
-  }, [open, situation, channel, arch, showPrices]);
+  }, [open, situation, channel, arch, showPrices, b2b]);
 
   // Piedāvājumā jau saglabātā izvēle (piem. «Sūtīt izsoļu arhīvu» pēc klienta «Jā»).
   const archOfferShowPrices = arch?.offer?.showPrices === true;
@@ -260,10 +264,11 @@ export function AdminDealerSendDialog({
       offer: opts.offer ? offer : null,
       review: opts.review,
       doc,
+      lang: pdfLang,
     });
     setSubject(m.subject ?? "");
     setText(m.text);
-  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc]);
+  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc, pdfLang]);
 
   const busyClose = useModalBackdropClose(onClose, busy === null);
   // 22.11 (Nils, iPhone): telefona doks (Kopēt VIN · VIN SCAN · PDF …) nedrīkst aizsegt «Sūtīt e-pastu».
@@ -481,6 +486,7 @@ export function AdminDealerSendDialog({
             customerEmail: customerEmail.trim(),
             subject: subject.trim(),
             text: text.trim(),
+            lang: pdfLang,
             ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
             ...sendFlags(),
           }),

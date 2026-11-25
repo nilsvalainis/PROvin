@@ -1,3 +1,4 @@
+import { isProvinReportPdfFilename } from "@/lib/audit-report-pdf-filename";
 export type PartnerReportAttachmentPick = {
   filename: string;
   contentType: string;
@@ -13,8 +14,8 @@ export function pickClientReportPdfAttachment<T extends PartnerReportAttachmentP
     return type === "application/pdf" || name.endsWith(".pdf");
   });
   if (pdfs.length === 0) return null;
-  const ours = pdfs.find((a) =>
-    /^(PROVIN_AUDITS|PROVIN_MINI|PROVIN_BUSINESS|PROVIN_SELECT|DILERA)/i.test(a.filename.trim()),
+  const ours = pdfs.find(
+    (a) => isProvinReportPdfFilename(a.filename) || /^DILERA/i.test(a.filename.trim()),
   );
   return ours ?? pdfs[0] ?? null;
 }

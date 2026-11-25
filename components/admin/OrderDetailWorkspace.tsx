@@ -199,6 +199,7 @@ import {
 import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
 import {
   buildClientReportDocumentHtml,
+  isIzvilkumsReport,
   type ClientReportLang,
   type ClientReportPayload,
 } from "@/lib/client-report-html";
@@ -4789,22 +4790,23 @@ export function OrderDetailWorkspace({
       }
     }
 
-    const printTitle = dealerOnly
-      ? buildProvinDilerisPdfFilename(payload.vin)
+    // Viena funkcija visiem PDF nosaukumiem (Nils 25.11): valoda + «Izvilkums» + druka.
+    const fileOpts = {
+      extract: isIzvilkumsReport(reportPayload),
+      print: opts?.printInk === true,
+    };
+    const printFileTitle = dealerOnly
+      ? buildProvinDilerisPdfFilename(payload.vin, reportLang, fileOpts)
       : asvOnly
-        ? buildProvinAsvPdfFilename(payload.vin)
+        ? buildProvinAsvPdfFilename(payload.vin, reportLang, fileOpts)
         : businessBrand
-          ? buildProvinBusinessPdfFilename(payload.vin)
+          ? buildProvinBusinessPdfFilename(payload.vin, reportLang, fileOpts)
           : buildProvinAuditPdfFilename(payload.vin, {
               checkoutLine: payload.checkoutLine,
               amountTotalCents: payload.amountTotal,
+              lang: reportLang,
+              ...fileOpts,
             });
-    const langSuffix = reportLang === "en" ? "_EN" : reportLang === "ru" ? "_RU" : reportLang === "de" ? "_DE" : "";
-    const printFileTitle = opts?.printInk
-      ? printTitle.replace(/\.pdf$/i, `${langSuffix}_drukai.pdf`)
-      : langSuffix
-        ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
-        : printTitle;
     if (opts?.serverPdf) {
       try {
         const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });
