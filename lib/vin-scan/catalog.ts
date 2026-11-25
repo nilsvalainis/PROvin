@@ -4,6 +4,7 @@
  */
 
 import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
+import { kfzgutachtenSearchUrl } from "@/lib/kfzgutachten/kfzgutachten";
 import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates, normalizeScanPlate } from "@/lib/vin-scan/plates";
 
@@ -46,6 +47,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "cz_rsv",
   "dvsa_mot",
   "eu_safety_gate",
+  "kfz_at",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -475,6 +477,15 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
       void vin;
       return "https://ec.europa.eu/safety-gate-alerts/screen/search?resetSearch=true";
     },
+  },
+  {
+    id: "kfz_at",
+    label: "Austrija · §57a apskates (kfzgutachten.at)",
+    country: "AT",
+    hint: "Austrijas tehnisko apskašu saraksts bez maksas (vajag precīzu 1. reģ. datumu); atzinums 1,19 € gab. - pērk Nils",
+    needs: ["vin"],
+    // Meklēšanu sargā reCAPTCHA: saite atver formu ar VIN (un datumu, ja zināms), «Suchen» spiež cilvēks.
+    openUrl: (vin) => kfzgutachtenSearchUrl(vin),
   },
 ];
 

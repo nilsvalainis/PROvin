@@ -3,6 +3,7 @@
  * Nobraukuma sadaļā: divi līknes grafiki (maksas vs bezmaksas/publiski avoti) un tabula.
  */
 
+import { KFZ_AT_SECTION_LABEL } from "@/lib/kfzgutachten/kfzgutachten";
 import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
 import {
   activeListingBelowAnomalies,
@@ -959,6 +960,7 @@ function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfT
     if (s.label === L.carinfo) return { name: "car.info", category: s.label, count: s.count };
     if (s.label === L.traficom_fi) return { name: "Traficom", category: s.label, count: s.count };
     if (s.label === L.tjekbil) return { name: s.label, category: "catRegistry", count: s.count };
+    if (s.label === KFZ_AT_SECTION_LABEL) return { name: "kfzgutachten.at", category: "catRegistry", count: s.count };
     return { name: s.label, category: "catOther", count: s.count };
   });
 }

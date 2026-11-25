@@ -27,6 +27,7 @@ import {
   parseMileageHistoryOdometerPaste,
 } from "@/lib/mileage-history-odometer-paste-parse";
 import { AdminCitiAvotiCopilotUpload } from "@/components/admin/AdminCitiAvotiCopilotUpload";
+import { AdminKfzGutachtenPanel } from "@/components/admin/AdminKfzGutachtenPanel";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
@@ -53,6 +54,8 @@ type Props = {
     patched: Partial<WorkspaceSourceBlocks>,
     changedKeys: CopilotSourceKey[],
   ) => void;
+  /** Pasūtījuma VIN - kfzgutachten.at (Austrijas §57a apskates) panelim. */
+  orderVin?: string;
 };
 
 function sectionFromVendor(
@@ -81,6 +84,7 @@ export function AdminCitiAvotiSourceBlock({
   onPhotoGroupsStructuralCommit,
   getSourceBlocks,
   applyPatchedBlocks,
+  orderVin,
 }: Props) {
   const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
@@ -151,6 +155,15 @@ export function AdminCitiAvotiSourceBlock({
     >
       <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
         <div className={`min-h-0 flex-1 space-y-3 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+          {orderVin && !readOnly ? (
+            <AdminKfzGutachtenPanel
+              vin={orderVin}
+              value={value}
+              onChange={onChange}
+              getSourceBlocks={getSourceBlocks}
+              disabled={disabled}
+            />
+          ) : null}
           {sections.map((section, index) => {
             const heading = citiAvotiSectionLabel(section, index, total);
             const titled = Boolean(section.label?.trim());

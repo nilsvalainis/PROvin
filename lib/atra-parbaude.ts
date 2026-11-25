@@ -46,6 +46,7 @@ const GROUPS: ReadonlyArray<{ id: AtraFreeGroupId; label: string; ids: readonly 
       "lt_itpr",
       "cz_rsv",
       "dvsa_mot",
+      "kfz_at",
       "vegvesen",
     ],
   },
