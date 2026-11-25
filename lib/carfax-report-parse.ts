@@ -100,6 +100,10 @@ export type CarfaxPdfFileMeta = {
   savedAt: string;
   blobPath?: string;
   dropboxPath?: string;
+  /** PDF md5 (pasta ielases idempotence - tas pats PDF netiek ielikts divreiz). */
+  md5?: string;
+  /** "email" - PDF automātiski no info@provin.lv pasta (Apps Script). */
+  via?: "upload" | "email";
 };
 
 export type CarfaxReport = {
