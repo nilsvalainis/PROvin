@@ -4,6 +4,7 @@
 
 import type {
   AutoRecordsBlockState,
+  CarfaxBlockState,
   CitiAvotiBlockState,
   CitiAvotiSectionState,
   CsddFormFields,
@@ -16,6 +17,7 @@ import type {
 import {
   CSDD_FORM_STRUCTURED_FIELDS,
   autoRecordsBlockHasContent,
+  carfaxBlockHasContent,
   coerceVendorAvotuBlock,
   csddFormHasContent,
   csddMileageRowHasData,
@@ -87,6 +89,21 @@ export function vendorAvotuTrafficLevel(b: VendorAvotuBlockState | null | undefi
     if (!vendorAvotuBlockHasContent(safe)) return "empty";
     if (vendorComplete(safe)) return "complete";
     return "partial";
+  } catch {
+    return "empty";
+  }
+}
+
+/** CARFAX (patstāvīgs avots): atskaite ielasīta + komentārs = pilns; tikai atskaite vai tikai komentārs = daļēji. */
+export function carfaxTrafficLevel(b: CarfaxBlockState | null | undefined): TrafficFillLevel {
+  try {
+    if (!b || !carfaxBlockHasContent(b)) return "empty";
+    const hasData =
+      Boolean(b.report && (b.report.vin || b.report.history.length > 0 || b.report.quickChecks.length > 0)) ||
+      (b.serviceHistory ?? []).length > 0 ||
+      (b.incidents ?? []).length > 0;
+    const hasComment = wsStr(b.comments).trim().length > 0;
+    return hasData && hasComment ? "complete" : "partial";
   } catch {
     return "empty";
   }
