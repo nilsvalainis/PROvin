@@ -26,6 +26,14 @@ function str(v: unknown, max: number): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 }
 
+/** Releja priekšpārbaudes skaitļi `{photos, history}` (citādi nekas). */
+function precheckOf(v: unknown): { photos: number | null; history: number | null } | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? Math.floor(x) : null);
+  return { photos: n(o.photos), history: n(o.history) };
+}
+
 /**
  * Hetzner `relay/provin-autodna` -> PROVIN: uzdevuma stāvoklis / rezultāts (PDF), sesija (vajag Nilu), atlikums.
  * Bearer `AUTODNA_RELAY_TOKEN`. Atbildē tikai stāvoklis.
@@ -71,6 +79,7 @@ export async function POST(req: Request) {
       ...(typeof raw.credits === "number" && Number.isFinite(raw.credits) ? { credits: Math.max(0, Math.floor(raw.credits)) } : {}),
       ...(typeof raw.pdfSize === "number" && Number.isFinite(raw.pdfSize) ? { pdfSize: raw.pdfSize } : {}),
       ...(str(raw.at, 40) ? { at: str(raw.at, 40) } : {}),
+      ...(precheckOf(raw.precheck) ? { precheck: precheckOf(raw.precheck)! } : {}),
     };
   }
   const out = await handleAutodnaRelayEvent(ev);

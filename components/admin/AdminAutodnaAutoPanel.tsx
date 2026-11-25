@@ -13,6 +13,7 @@ import {
   type AutodnaSessionState,
 } from "@/lib/autodna-auto-types";
 import { AUTODNA_PURCHASE_CONFIRM_LV } from "@/lib/autodna-background-purchase";
+import { AUTODNA_PRECHECK_BLOCK_LV, autodnaPrecheckCountsLabel, type AutodnaPrecheckGuard } from "@/lib/autodna-purchase-guard";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 const btn =
@@ -49,15 +50,21 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
   const [session, setSession] = useState<AutodnaSessionState>("unknown");
   const [relayConfigured, setRelayConfigured] = useState(false);
   const [purchaseLive, setPurchaseLive] = useState(false);
+  const [precheck, setPrecheck] = useState<AutodnaPrecheckGuard | null>(null);
+  const [precheckBusy, setPrecheckBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const inFlight = useRef(false);
   const appliedFor = useRef("");
 
   const load = useCallback(
-    async (refresh = false) => {
+    async (refresh = false, livePrecheck = false) => {
       try {
-        const res = await fetch(`/api/admin/autodna/fona?sessionId=${encodeURIComponent(sessionId)}${refresh ? "&refresh=1" : ""}`, { cache: "no-store" });
+        const q = new URLSearchParams({ sessionId });
+        if (refresh) q.set("refresh", "1");
+        if (isValidVin(vin)) q.set("vin", vin);
+        if (livePrecheck && isValidVin(vin)) q.set("precheck", "live");
+        const res = await fetch(`/api/admin/autodna/fona?${q.toString()}`, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as {
           status: AutodnaAutoStatus | null;
@@ -65,22 +72,30 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
           session: AutodnaSessionState;
           relayConfigured: boolean;
           purchaseLive?: boolean;
+          precheck?: AutodnaPrecheckGuard | null;
         };
         setStatus(data.status);
         setBalance(data.balance);
         setSession(data.session);
         setRelayConfigured(data.relayConfigured);
         setPurchaseLive(data.purchaseLive === true);
+        if (data.precheck !== undefined) setPrecheck(data.precheck ?? null);
       } catch {
         /* nākamajā reizē */
       }
     },
-    [sessionId],
+    [sessionId, vin],
   );
 
   useEffect(() => {
-    void load();
+    void load(false, true);
   }, [load]);
+
+  const recheck = async () => {
+    setPrecheckBusy(true);
+    await load(false, true);
+    setPrecheckBusy(false);
+  };
 
   const active = isAutodnaAutoActive(status);
   const stale = active && Date.now() - Date.parse(status?.updatedAt ?? "") > 20 * 60_000;
@@ -137,10 +152,18 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { status?: AutodnaAutoStatus; session?: AutodnaSessionState; ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        status?: AutodnaAutoStatus;
+        session?: AutodnaSessionState;
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        precheck?: AutodnaPrecheckGuard;
+      };
       if (data.status) setStatus(data.status);
       if (data.session) setSession(data.session);
-      if (!res.ok) setError(failMsg);
+      if (data.precheck) setPrecheck(data.precheck);
+      if (!res.ok) setError(res.status === 409 && data.message ? data.message : failMsg);
       return data;
     } catch {
       setError(failMsg);
@@ -152,7 +175,7 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
   };
 
   const buy = async () => {
-    if (!isValidVin(vin) || inFlight.current) return;
+    if (!isValidVin(vin) || inFlight.current || precheck?.allowed !== true) return;
     if (!window.confirm(AUTODNA_PURCHASE_CONFIRM_LV)) return;
     const requestId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
     await post({ action: "purchase", sessionId, vin, confirm: true, requestId }, "AutoDNA pirkumu neizdevās sākt");
@@ -173,7 +196,12 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
   const ready = status?.state === "ready";
   const when = fmtWhen(status?.readyAt ?? status?.updatedAt);
   const canBuy = relayConfigured && purchaseLive && isValidVin(vin) && (!active || stale) && !(ready && status?.vin === vin);
-  const turnstile = status?.state === "error" && status.code === "turnstile" && isValidVin(status.vin ?? vin);
+  const turnstile =
+    status?.state === "error" && (status.code === "turnstile" || status.code === "precheck_unavailable") && isValidVin(status.vin ?? vin);
+  // Nila likums 25.11: pirkt drīkst tikai, ja priekšpārbaude rāda >0 arhīva foto vai vēstures ierakstu.
+  const precheckOk = precheck?.allowed === true;
+  const precheckBlock = precheck && !precheck.allowed ? AUTODNA_PRECHECK_BLOCK_LV[precheck.code ?? "precheck_unavailable"] : "Priekšpārbaude nav pieejama";
+  const precheckUnavailable = !precheck || precheck.code === "precheck_unavailable";
 
   return (
     <div className="mb-2 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1.5 text-[11px] text-slate-700">
@@ -204,17 +232,30 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
           {status.appliedAt ? <span className="text-slate-500">· ievietots blokā</span> : null}
         </p>
       ) : null}
+      {canBuy ? (
+        <p className="mt-1">
+          {precheck && (precheck.photos != null || precheck.history != null) ? (
+            <span className={precheckOk ? "text-slate-600" : "text-red-600"}>{autodnaPrecheckCountsLabel(precheck)}</span>
+          ) : null}
+          {!precheckOk ? <span className="text-red-600">{precheck && (precheck.photos != null || precheck.history != null) ? " · " : ""}{precheckBlock}</span> : null}
+        </p>
+      ) : null}
       {error ? <p className="mt-1 text-red-700">{error}</p> : null}
       {!readOnly ? (
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {turnstile ? (
+          {turnstile || (canBuy && precheckUnavailable) ? (
             <a className={btn} href={autodnaVinPageUrl(status?.vin ?? vin)} target="_blank" rel="noopener noreferrer">
               Atvērt AutoDNA
             </a>
           ) : null}
           {canBuy ? (
-            <button type="button" className={btn} disabled={disabled || busy} onClick={() => void buy()}>
+            <button type="button" className={btn} disabled={disabled || busy || !precheckOk} onClick={() => void buy()}>
               Pirkt AutoDNA (fonā)
+            </button>
+          ) : null}
+          {canBuy && precheckUnavailable ? (
+            <button type="button" className={btn} disabled={precheckBusy} onClick={() => void recheck()}>
+              Pārbaudīt vēlreiz
             </button>
           ) : null}
           {relayConfigured && isValidVin(vin) && (!active || stale) ? (

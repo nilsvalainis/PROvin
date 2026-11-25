@@ -6,6 +6,7 @@ import { applyBalanceUpdate, balanceIsStale, isLowCredits, isPdfBytes, rigaDay }
 import {
   AUTODNA_STATE_LABEL_LV,
   isAutodnaAutoActive,
+  type AutodnaAutoPrecheck,
   type AutodnaAutoState,
   type AutodnaAutoStatus,
 } from "@/lib/autodna-auto-types";
@@ -39,6 +40,8 @@ export type AutodnaRelayJobEvent = {
   pdfSize?: number;
   /** Tikai testiem / maziem failiem: PDF tieši notikumā. */
   pdfBase64?: string;
+  /** Releja priekšpārbaudes skaitļi (arhīva foto / vēsture). */
+  precheck?: AutodnaAutoPrecheck;
 };
 
 export type AutodnaStartDecision =
@@ -95,6 +98,8 @@ export const AUTODNA_ERROR_LV: Record<string, string> = {
   purchase_unconfirmed: "Poga nospiesta, bet pirkums nav apstiprināts - pārbaudi AutoDNA kontā (otrreiz nepērku)",
   pay_click_failed: "AutoDNA pirkuma poga neizdevās - pērc ar roku",
   report_timeout: "Atskaite vēl top - nospied \"Ielādēt nopirkto\" vēlāk",
+  precheck_no_records: "Pirkt nedrīkst - AutoDNA nav foto un vēstures ierakstu",
+  precheck_unavailable: "Priekšpārbaude nav pieejama - atver AutoDNA saiti, pagaidi, kamēr ielādējas, tad spied vēlreiz",
 };
 
 /** Kļūdas, par kurām Nilam vajag push (vajag viņa rīcību). */
@@ -102,7 +107,13 @@ export const AUTODNA_PUSH_ERRORS = new Set(["turnstile", "bad_credentials", "cap
 
 /** Releja progresa notikums -> stāvoklis (rezultātu apstrādā atsevišķi). */
 export function reduceAutodnaProgress(prev: AutodnaAutoStatus | null, ev: AutodnaRelayJobEvent, now: string): AutodnaAutoStatus {
-  const base: AutodnaAutoStatus = { ...(prev ?? { state: "queued", updatedAt: now }), vin: ev.vin || prev?.vin, jobId: ev.jobId, updatedAt: now };
+  const base: AutodnaAutoStatus = {
+    ...(prev ?? { state: "queued", updatedAt: now }),
+    vin: ev.vin || prev?.vin,
+    jobId: ev.jobId,
+    updatedAt: now,
+    ...(ev.precheck ? { precheck: { ...ev.precheck, checkedAt: ev.at || now } } : {}),
+  };
   if (ev.state === "error") {
     const code = (ev.code ?? "error").slice(0, 60);
     return { ...base, state: "error", code, message: AUTODNA_ERROR_LV[code] ?? ev.message?.slice(0, 200) ?? "AutoDNA kļūda" };

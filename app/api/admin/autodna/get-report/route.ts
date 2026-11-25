@@ -1,6 +1,8 @@
 /**
  * Admin: autoDNA POST /api/getReport (multipart: vin, deliveryByEmail).
  * Dokumentācija: Api_Sandbox_Business-tech_Documentation — 3.5 / 3.6.
+ * Tērē kredītus - tāpēc tas pats aizsargs kā fona pirkumam (Nila likums 25.11): tikai, ja AutoDNA priekšpārbaude
+ * rāda >0 arhīva foto vai vēstures ierakstu; citādi 409, partnera API netiek saukts.
  */
 import { NextResponse } from "next/server";
 
@@ -8,6 +10,8 @@ import { getAutodnaConfig } from "@/lib/autodna-api";
 import { autodnaGetReportIdempotent } from "@/lib/autodna-purchase";
 import { autodnaResultToNextResponse } from "@/lib/autodna-admin-route";
 import { getAdminSession } from "@/lib/admin-auth";
+import { AUTODNA_PRECHECK_BLOCK_LV } from "@/lib/autodna-purchase-guard";
+import { resolveAutodnaPurchaseGuard } from "@/lib/autodna-purchase-precheck";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const maxDuration = 90;
@@ -38,6 +42,12 @@ export async function POST(req: Request) {
 
   const deliveryByEmail = o.deliveryByEmail === true || o.deliveryByEmail === "true";
   const force = o.force === true || o.force === "true";
+
+  const precheck = await resolveAutodnaPurchaseGuard({ vin, live: true }).catch(() => null);
+  if (!precheck?.allowed) {
+    const code = precheck?.code ?? "precheck_unavailable";
+    return NextResponse.json({ error: code, message: AUTODNA_PRECHECK_BLOCK_LV[code], precheck }, { status: 409 });
+  }
 
   try {
     const result = await autodnaGetReportIdempotent({ vin, deliveryByEmail }, config, { force });

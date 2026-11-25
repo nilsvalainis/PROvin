@@ -5,12 +5,16 @@
  * `report` (jau nopirktas atskaites lejupielāde, nekad nepērk). Pirkuma aizsardzība:
  *   1) pirms pirkuma AutoDNA pašai pajautā, vai šim VIN atskaite jau nopirkta - ja jā, lejupielādē, NEPĒRK;
  *   2) VIN reģistrs (`state.json`) tiek ierakstīts PIRMS klikšķa - pēc restarta / kļūdas tas pats VIN netiek pirkts otrreiz;
- *   3) pērk tikai, ja kredītu atlikums >= 1 (nolasīts tajā pašā solī); karti / pakas relejs neaiztiek.
+ *   3) pērk tikai, ja kredītu atlikums >= 1 (nolasīts tajā pašā solī); karti / pakas relejs neaiztiek;
+ *   4) Nila likums 25.11: pērk TIKAI, ja AutoDNA bezmaksas priekšpārbaude (/vin/<VIN> tajā pašā pārlūkā) rāda
+ *      «Auto arhīva fotogrāfijas» vai «Transportlīdzekļa vēsture» ar >0 ierakstiem. Citādi (arī Turnstile / nezināms
+ *      formāts / kļūda) - `precheck_no_records` / `precheck_unavailable`, kredīts netiek tērēts.
  */
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 
 import { decidePurchase, isValidVin, normalizeVin } from "./dna-page.mjs";
+import { DNA_PRECHECK_MESSAGE_LV } from "./dna-precheck.mjs";
 
 const ACTIVE = new Set(["queued", "running", "awaiting_login", "checking", "purchasing", "waiting_report", "downloading"]);
 
@@ -54,6 +58,17 @@ export function filePdfStore(dir, { keepMs = 48 * 3600_000 } = {}) {
   };
 }
 
+/** Pārlūka priekšpārbaudes rezultāts -> drošs lēmums (jebkas neskaidrs = nepērk). */
+export function precheckVerdict(pre) {
+  const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const photos = num(pre?.photos);
+  const history = num(pre?.history);
+  const allowed = pre?.allowed === true && ((photos ?? 0) > 0 || (history ?? 0) > 0);
+  if (allowed) return { allowed: true, photos, history };
+  const code = pre?.code === "precheck_no_records" && (photos != null || history != null) ? "precheck_no_records" : "precheck_unavailable";
+  return { allowed: false, code, photos, history, ...(pre?.turnstile ? { reason: "turnstile" } : {}) };
+}
+
 const NEEDS_HUMAN_LV = {
   bad_credentials: "AutoDNA neņēma paroli - Nilam jāiestata parole (Aizmirsi paroli?) un jāieliek 1Password",
   captcha: "AutoDNA prasa captcha pieteikšanās brīdī - ielogojies pats",
@@ -84,6 +99,15 @@ export function createRelayCore({
   let busy = false;
   let lastActivity = now().getTime();
   let lastHumanCode = "";
+
+  async function readBrowserPrecheck(vin) {
+    try {
+      return await browser.precheck(vin);
+    } catch (e) {
+      log(`priekšpārbaude neizdevās: ${e instanceof Error ? e.message : "?"}`);
+      return null;
+    }
+  }
 
   async function persist() {
     if (!stateFile) return;
@@ -172,7 +196,7 @@ export function createRelayCore({
   }
 
   /** Gaida, kamēr AutoDNA atskaite ir lejupielādējama (pēc pirkuma tā top dažas minūtes). */
-  async function downloadWithWait(job, { existing, credits }) {
+  async function downloadWithWait(job, { existing, credits, precheck = null }) {
     const deadline = now().getTime() + reportWaitMs;
     let last = { ok: false, code: "not_found" };
     // Atzvans tikai vienreiz (katrs ir Vercel izsaukums); atkārtojumi klusi līdz termiņam.
@@ -193,7 +217,7 @@ export function createRelayCore({
     if (typeof credits === "number") await updateBalance(credits);
     // PDF paliek relejā (Vercel pieprasījuma ķermenis ir ~4,5 MB) - PROVIN to paņem ar GET /jobs/:id/pdf.
     const size = await pdfStore.save(job.jobId, last.base64);
-    await jobEvent(job, "result", { existing, pdfSize: size, ...(typeof credits === "number" ? { credits } : {}) });
+    await jobEvent(job, "result", { existing, pdfSize: size, ...(typeof credits === "number" ? { credits } : {}), ...(precheck ? { precheck } : {}) });
   }
 
   async function runJob(job) {
@@ -244,22 +268,37 @@ export function createRelayCore({
       return;
     }
 
+    // Nila likums 25.11: bezmaksas priekšpārbaude PIRMS jebkuras pirkuma darbības.
+    const pre = precheckVerdict(await readBrowserPrecheck(job.vin));
+    const precheck = { photos: pre.photos, history: pre.history };
+    log(`${job.jobId.slice(0, 8)} priekšpārbaude: ${pre.allowed ? "drīkst" : pre.code} (foto ${pre.photos ?? "?"}, vēsture ${pre.history ?? "?"})`);
+    if (!pre.allowed) {
+      await jobEvent(job, "error", {
+        code: pre.code,
+        message: DNA_PRECHECK_MESSAGE_LV[pre.code],
+        precheck,
+        ...(pre.reason ? { reason: pre.reason } : {}),
+        ...(typeof acct.credits === "number" ? { credits: acct.credits } : {}),
+      });
+      return;
+    }
+
     // Reģistrs PIRMS klikšķa: pēc kļūdas / restarta šis VIN netiek pirkts otrreiz.
     purchased[job.vin] = { jobId: job.jobId, startedAt: now().toISOString() };
     await persist();
-    await jobEvent(job, "purchasing", { credits: acct.credits });
+    await jobEvent(job, "purchasing", { credits: acct.credits, precheck });
     const bought = await browser.purchase(job.vin, { creditsBefore: acct.credits });
     if (!bought.ok) {
       if (bought.clicked !== true) {
         delete purchased[job.vin];
         await persist();
       }
-      await jobEvent(job, "error", { code: bought.code || "purchase_failed", message: bought.message || "Pirkums neizdevās" });
+      await jobEvent(job, "error", { code: bought.code || "purchase_failed", message: bought.message || "Pirkums neizdevās", precheck });
       return;
     }
     await jobEvent(job, "waiting_report");
     const after = await browser.account(job.vin).catch(() => ({ credits: null }));
-    await downloadWithWait(job, { existing: false, credits: typeof after.credits === "number" ? after.credits : null });
+    await downloadWithWait(job, { existing: false, credits: typeof after.credits === "number" ? after.credits : null, precheck });
   }
 
   /** Viens solis: nākamais uzdevums. Atgriež true, ja kaut kas tika darīts. */
@@ -346,8 +385,19 @@ export function createRelayCore({
     }, { status: "busy" });
   }
 
+  /** Tikai lasīšana: priekšpārbaude ielogotajā pārlūkā (bez pirkuma). */
+  async function precheck(vin) {
+    const v = normalizeVin(vin);
+    if (!isValidVin(v)) return { status: "invalid_vin" };
+    return exclusive(async () => {
+      const out = precheckVerdict(await readBrowserPrecheck(v));
+      return { status: "ok", vin: v, ...out };
+    }, { status: "busy" });
+  }
+
   return {
     load,
+    precheck,
     enqueue,
     tick,
     login,

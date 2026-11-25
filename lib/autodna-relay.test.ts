@@ -132,7 +132,17 @@ describe("AutoDNA relejs: lapu un atbilžu atpazīšana (dzīvi redzētās forma
   });
 });
 
-function fakeBrowser(opts: { credits: number | null; bought?: boolean; session?: string; sessionCode?: string; purchase?: { ok: boolean; clicked: boolean; code?: string }; pdfOk?: boolean }) {
+type FakePrecheck = { allowed: boolean; code?: string; photos: number | null; history: number | null; turnstile?: boolean } | "throw";
+
+function fakeBrowser(opts: {
+  credits: number | null;
+  bought?: boolean;
+  session?: string;
+  sessionCode?: string;
+  purchase?: { ok: boolean; clicked: boolean; code?: string };
+  pdfOk?: boolean;
+  precheck?: FakePrecheck;
+}) {
   const calls: string[] = [];
   let bought = Boolean(opts.bought);
   let credits = opts.credits;
@@ -155,6 +165,12 @@ function fakeBrowser(opts: { credits: number | null; bought?: boolean; session?:
     },
     async probe() {
       return { decision: { step: "ready" } };
+    },
+    async precheck(vin: string) {
+      calls.push(`precheck:${vin}`);
+      const pre = opts.precheck ?? { allowed: true, photos: 2, history: 4 };
+      if (pre === "throw") throw new Error("lapa neatvērās");
+      return pre;
     },
     async purchase(vin: string) {
       calls.push(`purchase:${vin}`);
@@ -229,7 +245,8 @@ describe("AutoDNA relejs: pirkuma rinda", () => {
     await core.tick();
     expect(b.calls.filter((c) => c.startsWith("purchase"))).toEqual([`purchase:${VIN}`]);
     expect(jobStates(events)).toEqual(["checking", "purchasing", "waiting_report", "downloading", "result"]);
-    expect(events.find((e) => e.state === "result")).toMatchObject({ existing: false, credits: 3 });
+    expect(events.find((e) => e.state === "result")).toMatchObject({ existing: false, credits: 3, precheck: { photos: 2, history: 4 } });
+    expect(b.calls.indexOf(`precheck:${VIN}`)).toBeLessThan(b.calls.indexOf(`purchase:${VIN}`));
     expect((core.purchasedVins() as Record<string, unknown>)[VIN]).toBeTruthy();
   });
 
@@ -293,6 +310,80 @@ describe("AutoDNA relejs: pirkuma rinda", () => {
     const { core } = makeCore(fakeBrowser({ credits: 1 }));
     expect(() => core.enqueue({ ref: "sess_123456", vin: "ABC", kind: "purchase" })).toThrow();
     expect(() => core.enqueue({ ref: "sess_123456", vin: VIN, kind: "buy_all" })).toThrow();
+  });
+});
+
+describe("AutoDNA relejs: priekšpārbaudes aizsargs (Nila likums 25.11)", () => {
+  const run = async (precheck: FakePrecheck, extra: { bought?: boolean } = {}) => {
+    const b = fakeBrowser({ credits: 5, precheck, ...extra });
+    const { core, events } = makeCore(b);
+    core.enqueue({ ref: "sess_123456", vin: VIN, kind: "purchase" });
+    await core.tick();
+    return { b, core, events, bought: b.calls.some((c) => c.startsWith("purchase")) };
+  };
+
+  it("arhīva foto > 0 -> pērk", async () => {
+    const out = await run({ allowed: true, photos: 3, history: 0 });
+    expect(out.bought).toBe(true);
+    expect(out.events.find((e) => e.state === "purchasing")).toMatchObject({ precheck: { photos: 3, history: 0 } });
+  });
+
+  it("vēsture > 0 -> pērk", async () => {
+    expect((await run({ allowed: true, photos: 0, history: 7 })).bought).toBe(true);
+  });
+
+  it("abi 0 -> precheck_no_records, nepērk, VIN reģistrā nepaliek, skaitļi notikumā", async () => {
+    const out = await run({ allowed: false, code: "precheck_no_records", photos: 0, history: 0 });
+    expect(out.bought).toBe(false);
+    expect(out.events.find((e) => e.state === "error")).toMatchObject({ code: "precheck_no_records", precheck: { photos: 0, history: 0 } });
+    expect((out.core.purchasedVins() as Record<string, unknown>)[VIN]).toBeUndefined();
+    expect(jobStates(out.events)).not.toContain("purchasing");
+  });
+
+  it("Turnstile / pending -> precheck_unavailable, nepērk", async () => {
+    const out = await run({ allowed: false, code: "precheck_unavailable", photos: null, history: null, turnstile: true });
+    expect(out.bought).toBe(false);
+    expect(out.events.find((e) => e.state === "error")).toMatchObject({ code: "precheck_unavailable", reason: "turnstile" });
+  });
+
+  it("nezināms formāts / pārlūka kļūda / pretrunīga atbilde -> precheck_unavailable, nepērk", async () => {
+    for (const pre of ["throw", { allowed: true, photos: 0, history: 0 }, { allowed: true, photos: null, history: null }] as FakePrecheck[]) {
+      const out = await run(pre);
+      expect(out.bought).toBe(false);
+      expect(out.events.find((e) => e.state === "error")).toMatchObject({ code: "precheck_unavailable" });
+    }
+  });
+
+  it("jau nopirkts -> lejupielāde bez priekšpārbaudes un bez pirkuma", async () => {
+    const out = await run({ allowed: false, code: "precheck_no_records", photos: 0, history: 0 }, { bought: true });
+    expect(out.bought).toBe(false);
+    expect(out.b.calls.some((c) => c.startsWith("precheck"))).toBe(false);
+    expect(out.events.find((e) => e.state === "result")).toMatchObject({ existing: true });
+  });
+
+  it("nav kredītu -> priekšpārbaude netiek pat atvērta", async () => {
+    const b = fakeBrowser({ credits: 0 });
+    const { core } = makeCore(b);
+    core.enqueue({ ref: "sess_123456", vin: VIN, kind: "purchase" });
+    await core.tick();
+    expect(b.calls.some((c) => c.startsWith("precheck"))).toBe(false);
+  });
+
+  it("/precheck (tikai lasīšana) atdod skaitļus, nepērk", async () => {
+    const b = fakeBrowser({ credits: 5, precheck: { allowed: true, photos: 1, history: 2 } });
+    const { core } = makeCore(b);
+    expect(await core.precheck(VIN)).toEqual({ status: "ok", vin: VIN, allowed: true, photos: 1, history: 2 });
+    expect(await core.precheck("ABC")).toEqual({ status: "invalid_vin" });
+    expect(b.calls.some((c) => c.startsWith("purchase"))).toBe(false);
+  });
+
+  it("pārlūka pirkuma solī priekšpārbaude notiek pirms analīzes un klikšķa", () => {
+    const flow = fs.readFileSync(path.join(process.cwd(), "relay/provin-autodna/lib/dna-flow.mjs"), "utf8");
+    const body = flow.slice(flow.indexOf("async function purchase("));
+    const pre = body.indexOf("await readPrecheck(p)");
+    expect(pre).toBeGreaterThan(0);
+    expect(pre).toBeLessThan(body.indexOf("analyzePurchasePage(snap, v)"));
+    expect(pre).toBeLessThan(body.indexOf("await btn.click("));
   });
 });
 

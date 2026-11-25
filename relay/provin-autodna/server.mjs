@@ -26,6 +26,7 @@
  *   POST /autodna/login           Nila poga "Pieslēgt AutoDNA"
  *   GET  /autodna/balance         {credits, checkedAt} no keša; ja vecāks par 30 min - atjauno fonā
  *   POST /autodna/reports         "Manas atskaites" saraksts (tikai lasīšana)
+ *   POST /autodna/precheck        {vin}: AutoDNA bezmaksas priekšpārbaude (arhīva foto / vēsture), bez pirkuma
  *   POST /autodna/probe           {vin}: pirkuma lapas pārbaude BEZ klikšķiem (galvenajam pirms AUTODNA_PURCHASE_LIVE=1)
  *   POST /autodna/purchase        {vin, ref, requestId, confirm:true} -> {jobId}; TIKAI ar confirm:true (Nila poga)
  *   POST /autodna/report          {vin, ref} -> {jobId}; jau nopirktas atskaites PDF, nekad nepērk
@@ -259,6 +260,10 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "POST" && p === "/reports") {
       return sendJson(res, 200, await core.listReports());
+    }
+    if (req.method === "POST" && p === "/precheck") {
+      const body = await readJson(req);
+      return sendJson(res, 200, await core.precheck(body.vin));
     }
     if (req.method === "POST" && p === "/probe") {
       const body = await readJson(req);
