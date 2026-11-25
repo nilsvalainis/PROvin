@@ -27,6 +27,7 @@ import {
   pickCreditUseHref,
   redact,
 } from "./cv-page.mjs";
+import { collectJsonPhotoEntries, downloadArchivePhotos } from "./archive-photos.mjs";
 
 const CODE_TTL_MS = 15 * 60_000;
 
@@ -349,5 +350,41 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
     return out;
   }
 
-  return { peekSession, ensureSession, login, submitCode, account, purchase, downloadPdf };
+  /**
+   * Arhīva foto JAU NOPIRKTAI atskaitei (tikai lasīšana): atskaites JSON ar to pašu sesijas Bearer (GET),
+   * bilžu saites + datumi, bildes lejupielādē lapas kontekstā. Neko nespiež, nekur nenaviģē ārpus "Manas atskaites".
+   */
+  async function reportPhotos(reportId) {
+    const p = await getPage();
+    if (!bearer || !p.url().startsWith(CV_ORIGIN)) await account().catch(() => undefined);
+    if (!bearer) return { ok: false, code: "no_session_token" };
+    const data = await p
+      .evaluate(
+        async ({ api, id, auth }) => {
+          for (const suffix of ["", "/data"]) {
+            const r = await fetch(`${api}/reports/${encodeURIComponent(id)}${suffix}`, { method: "GET", headers: { Authorization: auth } });
+            if (!r.ok) continue;
+            const json = await r.json().catch(() => null);
+            if (json && typeof json === "object") return { ok: true, json };
+          }
+          return { ok: false };
+        },
+        { api: CV_API, id: reportId, auth: bearer },
+      )
+      .catch(() => ({ ok: false }));
+    if (!data.ok) {
+      await debugDump(p, "photos-no-report-json");
+      return { ok: false, code: "report_json" };
+    }
+    const entries = collectJsonPhotoEntries(data.json, { dateStyle: "month" });
+    if (!entries.length) {
+      // Forma nezināma vai foto nav: lapas atskaite debug mapē (bez e-pastiem, cipari -> #), lai var pielāgot parseri.
+      await debugDump(p, "photos-none");
+      return { ok: true, groups: [] };
+    }
+    const groups = await downloadArchivePhotos(p, entries, { authHeader: bearer, authHost: new URL(CV_API).hostname, log: say });
+    return { ok: true, groups };
+  }
+
+  return { peekSession, ensureSession, login, submitCode, account, purchase, downloadPdf, reportPhotos };
 }
