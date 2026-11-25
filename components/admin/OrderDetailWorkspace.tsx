@@ -42,7 +42,7 @@ import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecords
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { MobileDealerOrderPanel } from "@/components/admin/mobile/MobileDealerOrderPanel";
 import { MobileOrderMoreSheet, type MobileOrderMoreGroup } from "@/components/admin/mobile/MobileOrderMoreSheet";
-import { AuctionArchivePdfSplitButton, generateAuctionArchiveReportPdf } from "@/components/admin/AdminAuctionArchiveReport";
+import { generateAuctionArchiveReportPdf } from "@/components/admin/AdminAuctionArchiveReport";
 import { AdminMobileGlassSaveStatus } from "@/components/admin/mobile/AdminMobileGlass";
 import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
@@ -302,6 +302,7 @@ import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { AdminOtherPdfMenu, orderOtherPdfEntries } from "@/components/admin/AdminOtherPdfMenu";
 import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
 import {
   AdminSendReportDialog,
@@ -533,12 +534,8 @@ const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
 const workspaceToolbarBtn =
   "rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 
-const wizardFooterBtnBase =
-  "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center rounded-lg px-3 py-2 text-[11px] font-semibold tracking-tight transition disabled:cursor-not-allowed disabled:opacity-40";
 const PDF_FOOTER_NEUTRAL_TONE =
   "provin-tone provin-tone-neutral border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] shadow-sm hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
-const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] ${PDF_FOOTER_NEUTRAL_TONE}`;
-const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] ${PDF_FOOTER_NEUTRAL_TONE}`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string, extra?: ReactNode) {
   return (
@@ -3957,8 +3954,6 @@ export function OrderDetailWorkspace({
     [wizardStepLevels],
   );
 
-  const pdfButtonLabel = (key: string, idle: string) =>
-    pdfJob?.key === key ? `${pdfJob.pct}%` : idle;
   const pdfFamilyBusy = (prefix: string) =>
     pdfJob && (pdfJob.key === prefix || pdfJob.key.startsWith(`${prefix}-`)) ? `${pdfJob.pct}%` : null;
 
@@ -7027,7 +7022,7 @@ export function OrderDetailWorkspace({
           adminOverlayCovered ? "" : "md:block"
         }`}
       >
-        <div className={`mx-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
+        <div className={`mx-auto flex w-full min-w-0 flex-nowrap items-center justify-end gap-2 ${ADMIN_CONTENT_MAX}`}>
           <AdminSourceConsistencyBar
             issues={sourceIssues}
             onVerdict={(issue, verdict) =>
@@ -7052,57 +7047,20 @@ export function OrderDetailWorkspace({
             onPrimary={() => void openPrintReport()}
             onLang={(lang) => void openPrintReport({ lang })}
           />
-          <AdminPdfLangSplitButton
-            label="Ģenerēt BUSINESS PDF"
-            title="Tā pati atskaite ar virsrakstu Business Datu atskaite."
-            busyLabel={pdfFamilyBusy("business")}
-            disabled={pdfJob !== null}
+          <AdminOtherPdfMenu
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
             lockLang={pdfLangLock}
             onUnlockLang={unlockPdfLang}
-            toneClass={PDF_FOOTER_NEUTRAL_TONE}
-            dividerClass="border-[var(--admin-border-subtle)]"
-            onPrimary={() => void openPrintReport({ businessBrand: true })}
-            onLang={(lang) => void openPrintReport({ businessBrand: true, lang })}
+            entries={orderOtherPdfEntries({
+              pdfBusy: pdfJob !== null,
+              familyBusy: pdfFamilyBusy,
+              inkBusy: pdfJob?.key === "ink" ? `${pdfJob.pct}%` : null,
+              archiveBusy: archivePdfBusy,
+              openPrintReport: (opts) => void openPrintReport(opts),
+              openAuctionArchivePdf: (showPrices) => void openAuctionArchivePdf(showPrices),
+              openOemDealerReport: () => void openOemDealerReport(),
+            })}
           />
-          <AdminPdfLangSplitButton
-            label="Ģenerēt dīlera PDF"
-            title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
-            busyLabel={pdfFamilyBusy("dealer")}
-            disabled={pdfJob !== null}
-            lockLang={pdfLangLock}
-            onUnlockLang={unlockPdfLang}
-            toneClass={PDF_FOOTER_NEUTRAL_TONE}
-            dividerClass="border-[var(--admin-border-subtle)]"
-            onPrimary={() => void openPrintReport({ dealerOnly: true })}
-            onLang={(lang) => void openPrintReport({ dealerOnly: true, lang })}
-          />
-          <AuctionArchivePdfSplitButton
-            label="Ģenerēt izsoļu arhīva PDF"
-            title="Tikai IZSOĻU ARHĪVS (bildes, nobraukums, bojājumi). ▾ - ar izsoļu cenām."
-            busyLabel={archivePdfBusy ? "Gatavo…" : null}
-            disabled={archivePdfBusy}
-            toneClass={PDF_FOOTER_NEUTRAL_TONE}
-            dividerClass="border-[var(--admin-border-subtle)]"
-            onGenerate={(showPrices) => void openAuctionArchivePdf(showPrices)}
-          />
-          <AdminPdfLangSplitButton
-            label="Ģenerēt ASV PDF"
-            title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
-            busyLabel={pdfFamilyBusy("asv")}
-            disabled={pdfJob !== null}
-            lockLang={pdfLangLock}
-            onUnlockLang={unlockPdfLang}
-            toneClass={PDF_FOOTER_NEUTRAL_TONE}
-            dividerClass="border-[var(--admin-border-subtle)]"
-            onPrimary={() => void openPrintReport({ asvOnly: true })}
-            onLang={(lang) => void openPrintReport({ asvOnly: true, lang })}
-          />
-          <button type="button" onClick={() => void openOemDealerReport()} className={wizardFooterOem} title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites.">
-            OEM dīlera PDF
-          </button>
-          <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ printInk: true })} className={wizardFooterPrintInk} title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai">
-            {pdfButtonLabel("ink", "Drukājamā versija")}
-          </button>
         </div>
       </div>
       {factCheckPublishItems && typeof document !== "undefined"
