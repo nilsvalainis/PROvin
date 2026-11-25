@@ -76,8 +76,13 @@ body:has(.admin-ios-theme) {
   color: #000000;
 }
 
-/* Žetons (.am-badge), ikona (.am-icon, krāsa = currentColor) un čipa skaitlis (.am-chip-count, manto čipa krāsu) - sava krāsa uz tumša fona. */
-.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd):not(:where(.am-badge, .am-icon, .am-chip-count)) {
+/*
+ * Žetons (.am-badge), ikona (.am-icon, krāsa = currentColor) un čipa skaitlis (.am-chip-count, manto čipa krāsu) - sava krāsa uz tumša fona.
+ * Tumšās pogas/saites ar `text-white` (piem. «Jauna klienta saite», «Business saite», «+ Jauns»): to `span` teksts manto balto
+ * (25.11 - agrāk šī kārtula to pārkrāsoja melnu uz melna). Pašam elementam ar `text-white` arī paliek sava krāsa.
+ * Viss :where() iekšā - specifiskums nemainās.
+ */
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd):not(:where(.am-badge, .am-icon, .am-chip-count, [class*="text-white"], :is(a, button, [role="button"])[class*="text-white"] *)) {
   color: #000000;
 }
 

@@ -1,4 +1,4 @@
-import { adminOrderFullyReversed, isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
+import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import {
   countAdminOrdersHiddenByAmountFilter,
   filterAdminOrdersForDashboard,
@@ -19,8 +19,6 @@ import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import { AdminUnpaidOrdersPanel } from "@/components/admin/AdminUnpaidOrdersPanel";
 import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
 import { listUnpaidAdminOrders, stripeCheckoutSessionDashboardUrl } from "@/lib/admin-unpaid-orders";
-import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVinScanDashboardCards";
-import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 import { headers } from "next/headers";
 import { loadAdminOrderIngests } from "@/lib/admin-orders-ingest-load";
@@ -278,17 +276,6 @@ export default async function AdminOrdersPage({
       </Link>
     ) : null;
   const paged = queryAdminOrderRows(tableOrders, ordersQuery);
-  const vinCards = pickOrderVinScanDashboardCards(
-    ordersWithUpsell.map((o) => ({
-      sessionId: o.id,
-      title: [o.makeModel, o.vin || draftSummaries.get(o.id)?.vin].filter(Boolean).join(" · ") || o.customerName || "Pasūtījums",
-      vin: o.vin || draftSummaries.get(o.id)?.vin || null,
-      checkoutLine: o.checkoutLine,
-      auditComplete: Boolean(o.auditComplete) || adminOrderFullyReversed(o),
-      isB2bPack: Boolean(o.isB2bPack),
-      hint: draftSummaries.get(o.id)?.vinScan ?? null,
-    })),
-  );
   const moreHref = (() => {
     const p = new URLSearchParams();
     if (showAll) p.set("show_all", "1");
@@ -354,12 +341,10 @@ export default async function AdminOrdersPage({
 
       {orders.length > 0 ? (
         <>
-          <AdminOrderVinScanDashboardCards cards={vinCards} surface="desktop" />
           <AdminOrdersTable
             orders={paged.rows}
             showUnpaidViewSwitch
             doneOrder={ordersQuery.sort === "oldest" ? "asc" : "desc"}
-            belowTopBar={<AdminOrderVinScanDashboardCards cards={vinCards} surface="mobile" />}
             toolbarEnd={
               <>
                 <AdminClientLinkButton />

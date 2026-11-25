@@ -27,7 +27,13 @@ import {
   pickCreditUseHref,
   redact,
 } from "./cv-page.mjs";
-import { collectJsonPhotoEntries, downloadArchivePhotos } from "./archive-photos.mjs";
+import {
+  collectDomPhotoEntries,
+  collectJsonPhotoEntries,
+  downloadArchivePhotos,
+  photoKeyPathsSummary,
+  pickReportPageHref,
+} from "./archive-photos.mjs";
 
 const CODE_TTL_MS = 15 * 60_000;
 
@@ -110,7 +116,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
   }
 
   /** Neatpazīts solis: lapas etiķetes un teksts bez e-pastiem, cipari -> # (tikai servisa lietotājam). */
-  async function debugDump(p, tag) {
+  async function debugDump(p, tag, extra = null) {
     if (!debugDir) return;
     try {
       const s = await snapshot(p);
@@ -123,7 +129,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
         )
         .catch(() => []);
       await fs.mkdir(debugDir, { recursive: true, mode: 0o700 });
-      const body = redact(JSON.stringify({ url: s.url, labels, text: s.text.slice(0, 6000) }, null, 1), allSecrets).replace(/\d/g, "#");
+      const body = redact(JSON.stringify({ url: s.url, labels, text: s.text.slice(0, 6000), ...(extra ? { extra } : {}) }, null, 1), allSecrets).replace(/\d/g, "#");
       await fs.writeFile(path.join(debugDir, `${tag}-${Date.now()}.json`), body, { mode: 0o600 });
     } catch {
       /* debug nav kritisks */
@@ -351,38 +357,192 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
   }
 
   /**
-   * Arhīva foto JAU NOPIRKTAI atskaitei (tikai lasīšana): atskaites JSON ar to pašu sesijas Bearer (GET),
-   * bilžu saites + datumi, bildes lejupielādē lapas kontekstā. Neko nespiež, nekur nenaviģē ārpus "Manas atskaites".
+   * Arhīva foto JAU NOPIRKTAI atskaitei (tikai lasīšana, nekad nepērk):
+   *  1) atskaites API ar sesijas Bearer (GET) - ja tur ir bilžu saites;
+   *  2) citādi atver atskaites lapu ("Manas atskaites" -> Priekšskatījums šim reportId / VIN) un klausās, ko lapa
+   *     pati ielādē (JSON atbildes ar bilžu saitēm), + __NEXT_DATA__ + lapas <img>.
+   * Nekas netiek nospiests, izņemot "Priekšskatījums" pogu, ja tai nav saites (navigācijas aizsargs paliek spēkā).
+   * Neatrodot - debug fails ar tīkla ceļiem (bez vaicājumiem / tokeniem) un JSON atslēgu ceļiem (bez vērtībām).
    */
-  async function reportPhotos(reportId) {
+  async function reportPhotos(reportId, vin = "") {
     const p = await getPage();
     if (!bearer || !p.url().startsWith(CV_ORIGIN)) await account().catch(() => undefined);
     if (!bearer) return { ok: false, code: "no_session_token" };
-    const data = await p
+    const apiHost = new URL(CV_API).hostname;
+    const trace = { direct: [], reportHref: "", reportLinks: [], network: [], keyPaths: [], nextData: false, domImgs: 0, opened: "" };
+    const entries = [];
+    const seenUrl = new Set();
+    const addEntries = (list) => {
+      for (const e of list) {
+        if (seenUrl.has(e.url)) continue;
+        seenUrl.add(e.url);
+        entries.push(e);
+      }
+    };
+    const addJson = (json, label) => {
+      const found = collectJsonPhotoEntries(json, { dateStyle: "month" });
+      if (found.length) {
+        trace.keyPaths.push(`${label}: ${photoKeyPathsSummary(json).join("; ")}`);
+        addEntries(found);
+      }
+    };
+
+    // 1) Tiešie API ceļi (GET).
+    const direct = await p
       .evaluate(
         async ({ api, id, auth }) => {
-          for (const suffix of ["", "/data"]) {
-            const r = await fetch(`${api}/reports/${encodeURIComponent(id)}${suffix}`, { method: "GET", headers: { Authorization: auth } });
-            if (!r.ok) continue;
-            const json = await r.json().catch(() => null);
-            if (json && typeof json === "object") return { ok: true, json };
+          const out = [];
+          for (const suffix of ["", "/data", "/full", "/photos", "/images", "/gallery"]) {
+            try {
+              const r = await fetch(`${api}/reports/${encodeURIComponent(id)}${suffix}`, { method: "GET", headers: { Authorization: auth } });
+              const ct = r.headers.get("content-type") || "";
+              const json = r.ok && ct.includes("json") ? await r.json().catch(() => null) : null;
+              out.push({ suffix, status: r.status, json });
+            } catch {
+              out.push({ suffix, status: 0, json: null });
+            }
           }
-          return { ok: false };
+          return out;
         },
         { api: CV_API, id: reportId, auth: bearer },
       )
-      .catch(() => ({ ok: false }));
-    if (!data.ok) {
-      await debugDump(p, "photos-no-report-json");
-      return { ok: false, code: "report_json" };
+      .catch(() => []);
+    for (const d of direct) {
+      trace.direct.push(`GET /reports/{id}${d.suffix} -> ${d.status}`);
+      if (d.json) addJson(d.json, `api /reports/{id}${d.suffix}`);
     }
-    const entries = collectJsonPhotoEntries(data.json, { dateStyle: "month" });
+
+    // 2) Atskaites lapa: ko lapa pati ielādē.
     if (!entries.length) {
-      // Forma nezināma vai foto nav: lapas atskaite debug mapē (bez e-pastiem, cipari -> #), lai var pielāgot parseri.
-      await debugDump(p, "photos-none");
+      const onResponse = async (res) => {
+        try {
+          const u = new URL(res.url());
+          if (u.hostname !== apiHost && !u.hostname.endsWith("carvertical.com")) return;
+          const ct = res.headers()["content-type"] ?? "";
+          if (trace.network.length < 80) trace.network.push(`${res.request().method()} ${u.hostname}${u.pathname} ${res.status()} ${ct.split(";")[0]}`);
+          if (!res.ok() || !ct.includes("json")) return;
+          const json = await res.json().catch(() => null);
+          if (json) addJson(json, `${u.hostname}${u.pathname}`);
+        } catch {
+          /* ne JSON */
+        }
+      };
+      p.on("response", onResponse);
+      try {
+        if (!p.url().startsWith(`${CV_ORIGIN}/lv/user/reports`)) await account().catch(() => undefined);
+        const links = await p
+          .evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => ({ href: a.href, text: (a.innerText || a.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 60) })))
+          .catch(() => []);
+        trace.reportLinks = links
+          .filter((l) => /report/i.test(l.href) && !/\/lv\/user\/reports\/?$/.test(l.href))
+          .slice(0, 30)
+          .map((l) => {
+            try {
+              return `${new URL(l.href).pathname} | ${l.text}`;
+            } catch {
+              return l.text;
+            }
+          });
+        let href = pickReportPageHref(links, reportId, CV_ORIGIN);
+        if (!href && vin) {
+          // Rinda ar šo VIN -> "Priekšskatījums": saite vai poga (atver jaunu cilni vai pāriet tajā pašā).
+          const row = p.locator("tr, li, [role=row], div").filter({ hasText: vin }).filter({ hasText: /Priekšskat|Preview/i }).last();
+          const prev = row.locator("a, button, [role=button]").filter({ hasText: /Priekšskat|Preview/i }).first();
+          if (await prev.isVisible().catch(() => false)) {
+            const rowHref = await prev.getAttribute("href").catch(() => null);
+            if (rowHref) href = new URL(rowHref, CV_ORIGIN).href;
+            else {
+              const popupP = p.context().waitForEvent("page", { timeout: 8_000 }).catch(() => null);
+              await prev.click({ timeout: 5_000 }).catch(() => undefined);
+              const popup = await popupP;
+              if (popup) {
+                await popup.waitForLoadState("domcontentloaded").catch(() => undefined);
+                href = popup.url();
+                await popup.close().catch(() => undefined);
+              } else {
+                await p.waitForTimeout(3_000);
+                if (p.url() !== `${CV_ORIGIN}/lv/user/reports` && p.url().startsWith(CV_ORIGIN)) href = p.url();
+              }
+              trace.opened = "poga";
+            }
+          }
+        }
+        trace.reportHref = href ? new URL(href).pathname : "";
+        if (href && !isForbiddenPath(new URL(href).pathname)) {
+          await p.goto(href, { waitUntil: "domcontentloaded", timeout: 60_000 });
+          await p.waitForTimeout(6_000);
+          await stayInLatvia(p);
+          // Slinkā ielāde: lapai cauri.
+          await p
+            .evaluate(async () => {
+              for (let i = 0; i < 25; i++) {
+                window.scrollBy(0, 900);
+                await new Promise((r) => setTimeout(r, 300));
+              }
+            })
+            .catch(() => undefined);
+          await p.waitForTimeout(2_500);
+          const nextData = await p
+            .evaluate(() => {
+              const el = document.querySelector("script#__NEXT_DATA__");
+              try {
+                return el ? JSON.parse(el.textContent || "null") : null;
+              } catch {
+                return null;
+              }
+            })
+            .catch(() => null);
+          if (nextData) {
+            trace.nextData = true;
+            addJson(nextData, "__NEXT_DATA__");
+          }
+          if (!entries.length) {
+            const items = await p
+              .evaluate(() => {
+                const out = [];
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+                let node = walker.nextNode();
+                let n = 0;
+                while (node && n < 20000) {
+                  n++;
+                  if (node.nodeType === 1 && node.tagName === "IMG") {
+                    const el = node;
+                    if ((el.naturalWidth || el.width || 0) >= 200) {
+                      const a = el.closest("a[href]");
+                      out.push({
+                        type: "img",
+                        href: a ? a.href : "",
+                        dataFull: el.getAttribute("data-full") || el.getAttribute("data-original") || "",
+                        dataSrc: el.getAttribute("data-src") || "",
+                        srcset: el.getAttribute("srcset") || "",
+                        src: el.currentSrc || el.src || "",
+                      });
+                    }
+                  } else if (node.nodeType === 3) {
+                    const t = (node.textContent || "").trim();
+                    if (t && t.length <= 40 && /\d{2}\.\d{4}|\d{4}-\d{2}/.test(t)) out.push({ type: "date", text: t });
+                  }
+                  node = walker.nextNode();
+                }
+                return out;
+              })
+              .catch(() => []);
+            trace.domImgs = items.filter((x) => x.type === "img").length;
+            addEntries(collectDomPhotoEntries(items, { dateStyle: "month" }));
+          }
+        }
+      } finally {
+        p.off("response", onResponse);
+      }
+    }
+
+    if (!entries.length) {
+      await debugDump(p, "photos-none", trace);
       return { ok: true, groups: [] };
     }
-    const groups = await downloadArchivePhotos(p, entries, { authHeader: bearer, authHost: new URL(CV_API).hostname, log: say });
+    const groups = await downloadArchivePhotos(p, entries, { authHeader: bearer, authHost: apiHost, log: say });
+    if (!groups.length) await debugDump(p, "photos-download-failed", { ...trace, found: entries.length });
+    else say(`arhīva foto: ${entries.length} saites (${trace.keyPaths.length ? "JSON" : "lapa"})`);
     return { ok: true, groups };
   }
 

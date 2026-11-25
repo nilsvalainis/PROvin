@@ -129,6 +129,10 @@ function installFakeDom(opts?: {
   };
 }
 
+function pingProvinUserscriptForTest(dom: ReturnType<typeof installFakeDom>) {
+  dom.document.dispatchEvent(new CustomEvent(PROVIN_USERSCRIPT_PING_EVENT));
+}
+
 /** Kā React 19 `releaseSingletonInstance`: noņem visus `<html>` atribūtus. */
 function reactWipesHtml(dom: ReturnType<typeof installFakeDom>) {
   for (const key of [...dom.attrs.keys()]) dom.document.documentElement.removeAttribute(key);
@@ -168,10 +172,30 @@ function installUserscript126Header(version = "1.26.0") {
 /** Pašreizējā skripta admin galvene (stamp + observer + ping/pong) no public kopijas. */
 function installCurrentUserscriptAdminHeader() {
   const src = readFileSync(path.join(process.cwd(), "public/userscripts/provin-vin-autofill.user.js"), "utf8");
+  runUserscriptAdminHeader(src);
+}
+
+function runUserscriptAdminHeader(src: string) {
   const start = src.indexOf("  const SCRIPT_VERSION");
   const end = src.indexOf("  const GM_PENDING_VIN");
   if (start < 0 || end <= start) throw new Error("nav userscript admin galvenes");
   new Function(`"use strict";\n${src.slice(start, end)}`)();
+}
+
+/** 1.27.0 galvene (bez 1.27.1 «nepārrakstīt citu kopiju») - kā Nila vecā kopija Tampermonkey. */
+function installUserscript1270Header(version: string) {
+  const src = readFileSync(path.join(process.cwd(), "public/userscripts/provin-vin-autofill.user.js"), "utf8")
+    .replace(/const SCRIPT_VERSION = "[^"]+";/, `const SCRIPT_VERSION = "${version}";`)
+    .replace(/\n\s*if \(current\) return;/, "");
+  runUserscriptAdminHeader(src);
+}
+
+/** Pārlūka kārtība: katrs taimeris ir atsevišķs uzdevums, pēc tā - mikrouzdevumi (MutationObserver). */
+async function runTasks(count: number) {
+  for (let i = 0; i < count; i += 1) {
+    vi.advanceTimersToNextTimer();
+    await flushMany(4);
+  }
 }
 
 const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
@@ -329,8 +353,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(50);
     await flushMany(10);
-    expect(versions.filter(Boolean).at(-1)).toBe("1.27.0");
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.0");
+    expect(versions.filter(Boolean).at(-1)).toBe("1.27.1");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.1");
     expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
     expect(dom.attrMutations).toBeLessThan(20);
     stop();
@@ -343,8 +367,51 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(200);
     await flushMany(10);
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.0");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.27.1");
     expect(dom.attrMutations).toBeLessThan(8);
     expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
+  });
+  it("25.11: divas skripta kopijas (1.26.3 + 1.27.0) - agrāk watch šūpojās un brīdinājums mirgoja", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 100000 });
+    // Pārlūkā katrs taimeris ir atsevišķs uzdevums; viltus pulkstenī vienāda termiņa taimeri saplūst - nobīdām par 1 ms.
+    let jitter = 0;
+    dom.win.setTimeout = (fn: () => void, ms: number) => setTimeout(fn, ms + (jitter++ % 2));
+    new Function(PROVIN_USERSCRIPT_GUARD_SNIPPET)();
+    installUserscript1270Header("1.26.3");
+    vi.advanceTimersByTime(7);
+    installUserscript1270Header("1.27.0");
+    await flushMany(4);
+    const versions: string[] = [];
+    const copies: string[][] = [];
+    const stop = watchProvinUserscript((v) => versions.push(v), () => {}, undefined, (list) => copies.push(list));
+    await runTasks(200);
+    // Vecās kopijas cīnās savā starpā (tas paliek, kamēr Nils neizdzēš veco kopiju) ...
+    expect(dom.attrMutations).toBeGreaterThan(50);
+    // ... bet admin stāvoklis mainās tikai augšup (agrāk ~136 reizes šajos 200 uzdevumos: «tagad 1.26.3» parādījās/pazuda).
+    expect(versions.length).toBeLessThanOrEqual(3);
+    expect(versions.at(-1)).toBe("1.27.0");
+    expect(copies.at(-1)).toEqual(["1.26.3", "1.27.0"]);
+    expect(copies.length).toBe(1);
+    stop();
+  });
+
+  it("25.11: 1.27.1 + vecā 1.26.3 kopija - atribūtu cīņa beidzas, admin redz 1.27.1", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 400 });
+    new Function(PROVIN_USERSCRIPT_GUARD_SNIPPET)();
+    installUserscript1270Header("1.26.3");
+    installCurrentUserscriptAdminHeader();
+    const versions: string[] = [];
+    const stop = watchProvinUserscript((v) => versions.push(v), () => {});
+    pingProvinUserscriptForTest(dom);
+    await runTasks(50);
+    reactWipesHtml(dom);
+    await runTasks(50);
+    const after = dom.attrMutations;
+    await runTasks(100);
+    expect(dom.attrMutations).toBe(after);
+    expect(readProvinUserscriptVersion()).toBe("1.27.1");
+    expect(versions.at(-1)).toBe("1.27.1");
+    expect(versions.length).toBeLessThanOrEqual(3);
+    stop();
   });
 });

@@ -22,6 +22,7 @@ import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
   parseOrderVinScanRecord,
+  sameOrderVinScanRecord,
   type OrderVinScanRecord,
   type OrderVinScanSourceRow,
 } from "@/lib/order-vin-scan";
@@ -133,9 +134,14 @@ export function AdminOrderVinScanCard({
   const [importNotes, setImportNotes] = useState<Record<string, string>>({});
   const [photoFail, setPhotoFail] = useState(0);
 
+  // Tikai satura maiņa: jauns, bet tāds pats `initial` objekts (vecāka renderis) nedrīkst atiestatīt kartīti.
+  const adoptRecord = useCallback((next: OrderVinScanRecord | null) => {
+    setRecord((cur) => (sameOrderVinScanRecord(cur, next) ? cur : next));
+  }, []);
+
   useEffect(() => {
-    setRecord(initial);
-  }, [initial]);
+    adoptRecord(initial);
+  }, [initial, adoptRecord]);
 
   useEffect(() => {
     setImportNotes({});
@@ -146,7 +152,7 @@ export function AdminOrderVinScanCard({
     const started = Date.parse(record.at);
     const age = Number.isFinite(started) ? Date.now() - started : 0;
     if (age >= ORDER_VIN_SCAN_STUCK_MS) {
-      setRecord({ ...record, status: "error", error: record.error || "Skenēšana apstājās" });
+      adoptRecord({ ...record, status: "error", error: record.error || "Skenēšana apstājās" });
       return;
     }
     let stop = false;
@@ -158,7 +164,7 @@ export function AdminOrderVinScanCard({
         if (!res.ok || stop) return;
         const json = (await res.json()) as { vinScan?: unknown };
         const next = parseOrderVinScanRecord(json.vinScan);
-        if (next) setRecord(next);
+        if (next) adoptRecord(next);
       } catch {
         /* ignore */
       }
@@ -174,7 +180,7 @@ export function AdminOrderVinScanCard({
       window.clearInterval(timer);
       window.clearTimeout(stopAt);
     };
-  }, [sessionId, record?.status, record?.at]);
+  }, [sessionId, record?.status, record?.at, adoptRecord]);
 
   useEffect(() => {
     const onResult = (ev: Event) => {
@@ -218,13 +224,13 @@ export function AdminOrderVinScanCard({
             return rest;
           });
           const next = parseOrderVinScanRecord(json?.vinScan);
-          if (next) setRecord(next);
+          if (next) adoptRecord(next);
         })
         .catch(() => noteFor("Importēšana neizdevās"));
     };
     document.addEventListener("provin-vin-scan-result", onResult);
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
-  }, [sessionId, vin]);
+  }, [sessionId, vin, adoptRecord]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
   const sourceCount = record?.indicators.length ?? 0;
@@ -266,14 +272,14 @@ export function AdminOrderVinScanCard({
       if (!res.ok) return null;
       const json = (await res.json()) as { vinScan?: unknown };
       const next = parseOrderVinScanRecord(json.vinScan);
-      if (next) setRecord(next);
+      if (next) adoptRecord(next);
       return next;
     } catch {
       return null;
     } finally {
       setBusy(false);
     }
-  }, [busy, listingUrl, sessionId, vin]);
+  }, [adoptRecord, busy, listingUrl, sessionId, vin]);
 
   useEffect(() => {
     const emit = (detail: AdminMobileVinScanState) => {
