@@ -33,7 +33,13 @@ import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-
 import { parseCsddRegistrySignals } from "@/lib/csdd-registry-signals";
 import { isImpossibleFutureDate } from "@/lib/future-date-guard";
 import { extractListingSellerClaims } from "@/lib/listing-seller-claims";
-import { csddHasLatvianRegistryRecord, extractExplicitOwnerCount, ownerEventMonthKey } from "@/lib/owner-count-synthesis";
+import {
+  csddHasLatvianRegistryRecord,
+  dealerSuffix,
+  extractExplicitOwnerCount,
+  ownerEventMonthKey,
+  synthesizeOwnerCountsFromBlocks,
+} from "@/lib/owner-count-synthesis";
 import { findOwnerClaimIssues } from "@/lib/owner-claims-check";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
@@ -218,6 +224,33 @@ function push(out: SourceIssue[], issue: SourceIssue): void {
   out.push(issue);
 }
 
+/* ---------- 1b. Ārvalstu īpašnieku kopskaits (CARFAX pret citiem avotiem) ---------- */
+
+/**
+ * Nila lēmums 25.11: CARFAX skaita arī dīlerus (juridiski īpašnieki) - salīdzina KOPSKAITU ar citu avotu
+ * tās pašas valsts skaitu (piem. car.info Zviedrijā), sadalījumu rāda vērtībā.
+ */
+function checkForeignOwnerCounts(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
+  const synth = synthesizeOwnerCountsFromBlocks(blocks);
+  const carfax = synth.candidates.filter((c) => c.source === SOURCE_BLOCK_LABELS.carfax && c.country !== "latvia");
+  for (const cf of carfax) {
+    const others = synth.candidates.filter(
+      (c) => c.source !== cf.source && c.country === cf.country && cf.country !== "other" && c.count !== cf.count,
+    );
+    if (others.length === 0) continue;
+    push(out, {
+      id: `owners_foreign_${cf.country}`,
+      kind: "owners",
+      severity: "warn",
+      title: "Ārvalstu īpašnieku skaits atšķiras starp avotiem",
+      values: [
+        { source: cf.source, value: `${cf.count}${dealerSuffix(cf.dealerCount)}` },
+        ...others.map((c) => ({ source: c.source, value: `${c.count}${dealerSuffix(c.dealerCount)}` })),
+      ],
+    });
+  }
+}
+
 /* ---------- 1. Īpašnieku skaits Latvijā ---------- */
 
 const OWNER_CHANGE_RE =
@@ -243,7 +276,7 @@ function checkOwners(blocks: WorkspaceSourceBlocks, out: SourceIssue[]): void {
   const vendorCounts: SourceIssueValue[] = [];
   let changeCountOnly = false;
   let explicitMismatch = false;
-  for (const key of ["carvertical", "autodna"] as const) {
+  for (const key of ["carvertical", "autodna", "carfax"] as const) {
     const b = blocks[key];
     const text = adminRichHtmlToPlainText(b.comments ?? "");
     let explicit: number | null = null;
@@ -1055,6 +1088,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
   const out: SourceIssue[] = [];
   const steps: (() => void)[] = [
     () => checkOwners(blocks, out),
+    () => checkForeignOwnerCounts(blocks, out),
     () => checkMileage(mileageRows(blocks, input.listingUrl), out, { vin: input.vin, nowMs }),
     () => checkFutureDates(blocks, nowMs, input.listingUrl, out),
     () => checkCountry(blocks, lots, out),

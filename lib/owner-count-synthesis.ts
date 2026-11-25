@@ -10,6 +10,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import type { AsvBlockState } from "@/lib/asv-report";
+import { carfaxOwnerStats } from "@/lib/carfax-report";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 
 export type OwnerCountryId = "latvia" | "sweden" | "denmark" | "estonia" | "finland" | "germany" | "other";
@@ -20,6 +21,8 @@ export type OwnerCountCandidate = {
   source: string;
   /** Mazāks = uzticamāks (oficiālais reģistrs pirms vendor atskaites). */
   priority: number;
+  /** No `count` - cik bija dīleri (juridiski īpašnieki; CARFAX). Rāda „9 (t. sk. 4 dīleri)”. */
+  dealerCount?: number;
 };
 
 export type OwnerCountSynthesis = {
@@ -150,9 +153,10 @@ function pushCandidate(
   count: number | null,
   source: string,
   priority: number,
+  dealerCount?: number,
 ): void {
   if (count == null) return;
-  out.push({ country, count, source, priority });
+  out.push({ country, count, source, priority, ...(dealerCount && dealerCount > 0 ? { dealerCount } : {}) });
 }
 
 function choosePerCountry(candidates: OwnerCountCandidate[]): Partial<Record<OwnerCountryId, OwnerCountCandidate>> {
@@ -177,7 +181,7 @@ export function formatOwnerCountBannerNoteParts(
   for (const id of DISPLAY_ORDER) {
     const row = chosen[id];
     if (!row) continue;
-    parts.push(`${COUNTRY_LOCATIVE[id]}: ${row.count}`);
+    parts.push(`${COUNTRY_LOCATIVE[id]}: ${row.count}${dealerSuffix(row.dealerCount)}`);
   }
   return parts;
 }
@@ -187,7 +191,14 @@ export type OwnerCountCountryStat = {
   iso: string;
   name: string;
   count: number;
+  dealerCount?: number;
 };
+
+/** „ (t. sk. 4 dīleri)” - tukšs, ja dīleru nav vai nav zināms. */
+export function dealerSuffix(dealerCount: number | undefined): string {
+  if (!dealerCount || dealerCount <= 0) return "";
+  return ` (t. sk. ${dealerCount} ${dealerCount === 1 ? "dīleris" : "dīleri"})`;
+}
 
 export function formatOwnerCountCountryStats(
   chosen: Partial<Record<OwnerCountryId, OwnerCountCandidate>>,
@@ -196,7 +207,12 @@ export function formatOwnerCountCountryStats(
   for (const id of DISPLAY_ORDER) {
     const row = chosen[id];
     if (!row) continue;
-    out.push({ iso: COUNTRY_ISO[id], name: COUNTRY_LOCATIVE[id], count: row.count });
+    out.push({
+      iso: COUNTRY_ISO[id],
+      name: COUNTRY_LOCATIVE[id],
+      count: row.count,
+      ...(row.dealerCount ? { dealerCount: row.dealerCount } : {}),
+    });
   }
   return out;
 }
@@ -207,7 +223,7 @@ export function formatOwnerCountTileFacts(
 ): { value: string; note: string } {
   const stats = formatOwnerCountCountryStats(chosen);
   if (stats.length === 0) return { value: "", note: "" };
-  const fact = (s: OwnerCountCountryStat) => `${s.name} ${s.count}`;
+  const fact = (s: OwnerCountCountryStat) => `${s.name} ${s.count}${dealerSuffix(s.dealerCount)}`;
   return {
     value: fact(stats[0]!),
     note: stats.slice(1).map(fact).join(", "),
@@ -240,8 +256,12 @@ export function formatOwnerCountAiContext(synthesis: OwnerCountSynthesis): strin
   for (const c of synthesis.candidates) {
     const picked = synthesis.chosen[c.country];
     const used = picked?.source === c.source && picked.count === c.count;
+    const dealers =
+      c.dealerCount && c.dealerCount > 0
+        ? ` (t. sk. dīleri ${c.dealerCount}, pārējie īpašnieki ${c.count - c.dealerCount})`
+        : "";
     lines.push(
-      `- ${c.source} → ${COUNTRY_LOCATIVE[c.country]}: ${c.count}${used ? " (izvēlēts)" : " (nav saskaitīts klāt)"}`,
+      `- ${c.source} → ${COUNTRY_LOCATIVE[c.country]}: ${c.count}${dealers}${used ? " (izvēlēts)" : " (nav saskaitīts klāt)"}`,
     );
   }
   return lines.join("\n");
@@ -356,9 +376,10 @@ function collectFromVendorPdf(
       continue;
     }
     if (title === TITLE.carfax) {
-      // CARFAX „Owners (BETA)”: „Īpašnieku skaits: N (Itālija)” - tikai, ja CARFAX īpašniekus uzskaitījis.
+      // CARFAX: „Īpašnieku skaits: 9 (Zviedrija; t. sk. 4 dīleri)” - kopskaits ar dīleriem (Nila lēmums 25.11).
       const text = b.ownersSummary ?? "";
-      pushCandidate(out, inferOwnerCountry(text, title), extractExplicitOwnerCount(text), title, 2);
+      const dealers = Number(text.match(/t\.\s*sk\.\s*(\d{1,2})\s*dīler/i)?.[1] ?? 0);
+      pushCandidate(out, inferOwnerCountry(text, title), extractExplicitOwnerCount(text), title, 2, dealers);
       continue;
     }
     if (title === TITLE.autodna || title === TITLE.carvertical || title === TITLE.citi) {
@@ -502,11 +523,17 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
     pushCandidate(candidates, country, extractExplicitOwnerCount(text), SOURCE_BLOCK_LABELS[key], 2);
   }
 
-  const carfaxOwners = blocks.carfax.report?.owners ?? [];
-  if (carfaxOwners.length > 0) {
-    const countries = [...new Set(carfaxOwners.map((o) => o.country).filter(Boolean))].join(", ");
-    const text = `Īpašnieku skaits: ${carfaxOwners.length} (${countries})`;
-    pushCandidate(candidates, inferOwnerCountry(text, TITLE.carfax), carfaxOwners.length, TITLE.carfax, 2);
+  const carfaxStats = carfaxOwnerStats(blocks.carfax.report);
+  if (carfaxStats.total > 0) {
+    const text = `Īpašnieku skaits: ${carfaxStats.total} (${carfaxStats.country})`;
+    pushCandidate(
+      candidates,
+      inferOwnerCountry(text, TITLE.carfax),
+      carfaxStats.total,
+      TITLE.carfax,
+      2,
+      carfaxStats.dealers,
+    );
   }
 
   const citiText = (blocks.citi_avoti.sections ?? [])

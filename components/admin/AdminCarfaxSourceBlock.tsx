@@ -13,7 +13,7 @@ import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { CarfaxBlockState, VendorAvotuBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
-import type { CarfaxReport } from "@/lib/carfax-report";
+import { carfaxOwnerStats, formatCarfaxOwnerCount, type CarfaxReport } from "@/lib/carfax-report";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 
 type Props = {
@@ -71,6 +71,7 @@ function km(v: string): string {
 
 export function CarfaxReportPanel({ report }: { report: CarfaxReport }) {
   const mc = report.mileageCheck;
+  const ownerStats = carfaxOwnerStats(report);
   const head = [report.vehicleTitle, report.vin, report.reportCreatedAt ? `izveidota ${report.reportCreatedAt}` : ""]
     .filter(Boolean)
     .join(" · ");
@@ -134,10 +135,16 @@ export function CarfaxReportPanel({ report }: { report: CarfaxReport }) {
           </Table>
         </>
       ) : null}
-      {report.owners.length > 0 || report.ownersNote ? (
+      {ownerStats.total > 0 || report.ownersNote ? (
         <>
           <Sub>Īpašnieki</Sub>
           <Table>
+            {ownerStats.total > 0 ? (
+              <Row
+                k={`Īpašnieku skaits${ownerStats.country ? ` · ${ownerStats.country}` : ""}`}
+                v={formatCarfaxOwnerCount(ownerStats)}
+              />
+            ) : null}
             {report.ownersNote ? <Row k="Īpašnieki" v={report.ownersNote} tone="text-red-700" /> : null}
             {report.owners.map((o) => (
               <Row

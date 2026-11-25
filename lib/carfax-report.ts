@@ -165,16 +165,19 @@ const TIMELINE_PDF_KINDS = new Set<CarfaxHistoryEvent["kind"]>([
   "other",
 ]);
 
+function ownerTypeOf(e: CarfaxHistoryEvent): string {
+  const typeDetail = e.details.find((d) => d.startsWith("īpašnieka tips: "));
+  return typeDetail ? typeDetail.slice("īpašnieka tips: ".length) : "";
+}
+
 /**
- * Laikposma apraksts. Dīlera ieraksts nav īpašnieks pircēja izpratnē - „Dīleris kā īpašnieks”
- * (lai īpašnieku skaitā netiek skaitīti noliktavas ieraksti); citi - „Ziņots jaunais īpašnieks (…)”.
+ * Laikposma apraksts. Nila lēmums 25.11: dīleris ir juridiski reģistrēts īpašnieks - tā ir īpašnieka maiņa
+ * („Īpašnieka maiņa · dīleris”), skaitā to skaita, bet vienmēr ar sadalījumu (sk. `carfaxOwnerStats`).
  */
 export function carfaxTimelineDescription(e: CarfaxHistoryEvent): string {
   if (e.kind === "owner") {
-    const typeDetail = e.details.find((d) => d.startsWith("īpašnieka tips: "));
-    const type = typeDetail ? typeDetail.slice("īpašnieka tips: ".length) : "";
-    if (type === "dīleris") return "Dīleris kā īpašnieks";
-    return type ? `Ziņots jaunais īpašnieks (${type})` : "Ziņots jaunais īpašnieks";
+    const type = ownerTypeOf(e);
+    return type ? `Īpašnieka maiņa · ${type}` : "Īpašnieka maiņa";
   }
   const extra = e.details.filter((d) => !d.startsWith("īpašnieka tips: "));
   return extra.length > 0 ? `${e.eventLv} (${extra.join(", ")})` : e.eventLv;
@@ -348,6 +351,53 @@ export function applyCarfaxReportObject<B extends VendorLike & { report?: Carfax
 const STATUS_LV: Record<string, string> = { ok: "kārtībā", attention: "jāpievērš uzmanība", unavailable: "nav datu" };
 
 /** PDF faktu kartes rindas („Atslēga: vērtība”) - `ownersSummary` / `statusRecords` / `autoNotes`. */
+export type CarfaxOwnerStats = {
+  /** Visi īpašnieki (arī dīleri - juridiski reģistrēti īpašnieki). */
+  total: number;
+  dealers: number;
+  /** total - dealers (privātpersonas, uzņēmumi, līzings). */
+  nonDealers: number;
+  /** Valsts (LV nosaukums), ja visi ieraksti vienā valstī; citādi tukšs. */
+  country: string;
+  /** No kā skaitīts: CARFAX „Owners” saraksts vai vēstures „New owner reported” ieraksti. */
+  basis: "owners_list" | "history" | "";
+};
+
+/**
+ * Īpašnieku skaits no CARFAX. Ja ir „Owners” saraksts - tas; citādi vēstures īpašnieka ieraksti.
+ * Valsts: notikumā minētā; ja nav, bet visā atskaitē minēta tikai viena valsts - tā (citādi nezināma).
+ */
+export function carfaxOwnerStats(r: CarfaxReport | null | undefined): CarfaxOwnerStats {
+  const empty: CarfaxOwnerStats = { total: 0, dealers: 0, nonDealers: 0, country: "", basis: "" };
+  if (!r) return empty;
+  if (r.owners.length > 0) {
+    const dealers = r.owners.filter((o) => o.ownerType === "dīleris").length;
+    const countries = [...new Set(r.owners.map((o) => o.country).filter(Boolean))];
+    return {
+      total: r.owners.length,
+      dealers,
+      nonDealers: r.owners.length - dealers,
+      country: countries.length === 1 ? countries[0]! : "",
+      basis: "owners_list",
+    };
+  }
+  const events = r.history.filter((e) => e.kind === "owner");
+  if (events.length === 0) return empty;
+  const dealers = events.filter((e) => ownerTypeOf(e) === "dīleris").length;
+  const reportCountries = [...new Set(r.history.map((e) => e.country).filter(Boolean))];
+  const eventCountries = [...new Set(events.map((e) => e.country).filter(Boolean))];
+  const allSame =
+    reportCountries.length === 1 && eventCountries.every((c) => c === reportCountries[0]) ? reportCountries[0]! : "";
+  return { total: events.length, dealers, nonDealers: events.length - dealers, country: allSame, basis: "history" };
+}
+
+/** „9 (t. sk. 4 dīleri)” / „3”. */
+export function formatCarfaxOwnerCount(st: CarfaxOwnerStats): string {
+  if (st.total === 0) return "";
+  if (st.dealers === 0) return String(st.total);
+  return `${st.total} (t. sk. ${st.dealers} ${st.dealers === 1 ? "dīleris" : "dīleri"})`;
+}
+
 export function carfaxPdfFactTexts(r: CarfaxReport | null | undefined): {
   ownersSummary: string;
   statusRecords: string;
@@ -355,9 +405,15 @@ export function carfaxPdfFactTexts(r: CarfaxReport | null | undefined): {
 } {
   if (!r) return { ownersSummary: "", statusRecords: "", autoNotes: "" };
   const owners: string[] = [];
+  const st = carfaxOwnerStats(r);
+  if (st.total > 0) {
+    // „Īpašnieku skaits: 9 (Zviedrija; t. sk. 4 dīleri)” - kopskaits pirmais (to lasa īpašnieku sintēze).
+    const countries = r.owners.length > 0 ? [...new Set(r.owners.map((o) => o.country).filter(Boolean))] : st.country ? [st.country] : [];
+    const dealerPart = st.dealers > 0 ? `t. sk. ${st.dealers} ${st.dealers === 1 ? "dīleris" : "dīleri"}` : "";
+    const paren = [countries.join(", "), dealerPart].filter(Boolean).join("; ");
+    owners.push(`Īpašnieku skaits: ${st.total}${paren ? ` (${paren})` : ""}`);
+  }
   if (r.owners.length > 0) {
-    const countries = [...new Set(r.owners.map((o) => o.country).filter(Boolean))];
-    owners.push(`Īpašnieku skaits: ${r.owners.length}${countries.length ? ` (${countries.join(", ")})` : ""}`);
     for (const o of r.owners) {
       const parts = [o.purchaseYear ? `no ${o.purchaseYear}` : "", o.lengthOfUse, o.ownerType].filter(Boolean);
       owners.push(`${o.index}. īpašnieks: ${[o.country, ...parts].filter(Boolean).join(", ")}`);
@@ -427,6 +483,12 @@ export function carfaxReportToPlainText(r: CarfaxReport | null | undefined): str
     if (mc.lastReadingKm) lines.push(`Pēdējais rādījums: ${mc.lastReadingKm} km (${mc.lastReadingDate || "-"})`);
     if (mc.projectionKm) lines.push(`CARFAX prognoze šodien: ~${mc.projectionKm} km`);
     if (mc.projectionSimilarKm) lines.push(`Līdzīgiem auto: ~${mc.projectionSimilarKm} km`);
+  }
+  const st = carfaxOwnerStats(r);
+  if (st.total > 0) {
+    lines.push(
+      `Īpašnieku skaits (CARFAX${st.basis === "history" ? " vēstures ieraksti" : " Owners"}): kopā ${st.total}, t. sk. dīleri ${st.dealers}, pārējie (privātpersonas / uzņēmumi) ${st.nonDealers}${st.country ? ` · ${st.country}` : ""}. Dīleris ir juridiski reģistrēts īpašnieks.`,
+    );
   }
   if (r.owners.length > 0 || r.ownersNote) {
     lines.push("ĪPAŠNIEKI (CARFAX BETA)");

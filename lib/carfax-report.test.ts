@@ -24,8 +24,10 @@ import {
 } from "@/lib/carfax-report-parse.fixtures";
 import {
   applyCarfaxReportToBlock,
+  carfaxOwnerStats,
   carfaxPdfFactTexts,
   carfaxReportToPlainText,
+  formatCarfaxOwnerCount,
   carfaxReportToVendorRows,
   carfaxTimelineDescription,
   normalizeCarfaxReport,
@@ -33,7 +35,14 @@ import {
 import { mileageSourceLabelToPdfKey } from "@/lib/pdf-mileage-source";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
-import { synthesizeOwnerCountsFromBlocks } from "@/lib/owner-count-synthesis";
+import {
+  formatOwnerCountAiContext,
+  formatOwnerCountTileFacts,
+  synthesizeOwnerCountsFromBlocks,
+  synthesizeOwnerCountsFromPdfInput,
+} from "@/lib/owner-count-synthesis";
+import { checkSourceConsistency } from "@/lib/source-consistency";
+import { isOwnerChangeDescription } from "@/lib/lifecycle-owner-change-text";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { sourceBlockPlainTextExcludingComments } from "@/lib/admin-source-comment-blocks";
 import { orderHasSourceDataForAi } from "@/lib/admin-ai-data-availability";
@@ -276,10 +285,38 @@ describe("carfaxReportToVendorRows / bloks", () => {
     });
   });
 
-  it("dīleris nav īpašnieks; citi - ar tipu", () => {
+  it("dīleris ir īpašnieka maiņa (laikjoslā ar tipu) un skaitās kopskaitā ar sadalījumu", () => {
     const r = parse(CARFAX_FIXTURE_SE);
     const owners = r.history.filter((e) => e.kind === "owner").map(carfaxTimelineDescription);
-    expect(owners).toEqual(["Dīleris kā īpašnieks", "Ziņots jaunais īpašnieks (uzņēmums)", "Ziņots jaunais īpašnieks (privātpersona)"]);
+    expect(owners).toEqual(["Īpašnieka maiņa · dīleris", "Īpašnieka maiņa · uzņēmums", "Īpašnieka maiņa · privātpersona"]);
+    expect(owners.every(isOwnerChangeDescription)).toBe(true);
+    const st = carfaxOwnerStats(r);
+    expect(st).toEqual({ total: 3, dealers: 1, nonDealers: 2, country: "Zviedrija", basis: "history" });
+    expect(formatCarfaxOwnerCount(st)).toBe("3 (t. sk. 1 dīleris)");
+    expect(carfaxPdfFactTexts(r).ownersSummary).toBe("Īpašnieku skaits: 3 (Zviedrija; t. sk. 1 dīleris)");
+    expect(carfaxReportToPlainText(r)).toContain("kopā 3, t. sk. dīleri 1, pārējie (privātpersonas / uzņēmumi) 2");
+  });
+
+  it("īpašnieku kartīte, AI konteksts un pretrunu pārbaude ar dīleru sadalījumu", () => {
+    const blocks = blocksWithCarfax(CARFAX_FIXTURE_SE);
+    const syn = synthesizeOwnerCountsFromBlocks(blocks);
+    const cf = syn.candidates.find((c) => c.source === "CARFAX")!;
+    expect(cf).toMatchObject({ country: "sweden", count: 3, dealerCount: 1 });
+    expect(syn.noteLine).toBe("Zviedrijā: 3 (t. sk. 1 dīleris)");
+    expect(formatOwnerCountTileFacts(syn.chosen).value).toBe("Zviedrijā 3 (t. sk. 1 dīleris)");
+    expect(formatOwnerCountAiContext(syn)).toContain("CARFAX → Zviedrijā: 3 (t. sk. dīleri 1, pārējie īpašnieki 2)");
+    // PDF ceļš (faktu karte) dod to pašu.
+    const pdfSyn = synthesizeOwnerCountsFromPdfInput({ manualVendorBlocks: toPdfManualVendorBlocks(blocks) });
+    expect(pdfSyn.candidates.find((c) => c.source === "CARFAX")).toMatchObject({ count: 3, dealerCount: 1 });
+    // Zviedrijas reģistrs saka 2 - pretrunā salīdzina kopskaitu (3 ar dīleri).
+    const withReg = { ...blocks, carinfo: { ...blocks.carinfo, ownersSummary: "Īpašnieku skaits: 2" } };
+    const issue = checkSourceConsistency({ sourceBlocks: withReg }).find((i) => i.id === "owners_foreign_sweden");
+    expect(issue?.values).toEqual([
+      { source: "CARFAX", value: "3 (t. sk. 1 dīleris)" },
+      { source: SOURCE_BLOCK_LABELS.carinfo, value: "2" },
+    ]);
+    const same = { ...blocks, carinfo: { ...blocks.carinfo, ownersSummary: "Īpašnieku skaits: 3" } };
+    expect(checkSourceConsistency({ sourceBlocks: same }).some((i) => i.id === "owners_foreign_sweden")).toBe(false);
   });
 
   it("bez bojājumu pārskata - negadījums no vēstures ar «Dati nav pieejami»", () => {
