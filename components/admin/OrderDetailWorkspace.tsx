@@ -6332,6 +6332,7 @@ export function OrderDetailWorkspace({
               }
               getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
               applyPatchedBlocks={applyCopilotPatchedBlocks}
+              orderVin={vinBar}
             />
           </div>
         ) : null}

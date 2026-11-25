@@ -411,7 +411,7 @@ function sourceHaystackFrom(blocks: WorkspaceSourceBlocks, extra: string[]): str
  * 21.11 (Nils): pirmā reģistrācija = agrākā jebkurā valstī, ar to pašu valsts loģiku kā „Vēstures kopsavilkums”.
  * CSDD „Iepriekšējās reģistrācijas valsts” ir valsts PIRMS Latvijas, ne izcelsme (BMW 740: LU → FI → LV).
  */
-function firstRegFromBlocks(blocks: WorkspaceSourceBlocks, listingUrl: string | null): CanonicalFirstReg {
+export function firstRegFromBlocks(blocks: WorkspaceSourceBlocks, listingUrl: string | null): CanonicalFirstReg {
   const csdd = blocks.csdd;
   const events = buildVehicleLifecycleEvents({
       csddForm: csdd,

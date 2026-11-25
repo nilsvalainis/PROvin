@@ -132,6 +132,8 @@ export type VinScanContext = {
   vin: string;
   plates: VinScanPlates;
   listingUrl: string;
+  /** Precīzs 1. reģistrācijas datums (DD.MM.YYYY), ja zināms - kfzgutachten.at meklēšanai. */
+  firstRegDate?: string;
 };
 
 export function buildVinScanIndicator(

@@ -53,6 +53,7 @@ import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
+import { probeKfzAt } from "@/lib/vin-scan/probe-kfz-at";
 
 function done(id: VinScanSourceId, ctx: VinScanContext, parsed: VinScanParse): VinScanIndicator {
   return buildVinScanIndicator(id, ctx.vin, parsed, ctx.plates);
@@ -328,6 +329,7 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   cz_rsv: probeCzRsv,
   dvsa_mot: probeDvsaMot,
   eu_safety_gate: probeEuSafetyGate,
+  kfz_at: probeKfzAt,
 };
 
 export function vinScanProbeFor(id: string): ((ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator) | null {

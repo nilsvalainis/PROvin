@@ -1,0 +1,219 @@
+"use client";
+
+import { ExternalLink, FileUp, Loader2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+
+import type { CitiAvotiBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  applyKfzAtToCitiAvoti,
+  findKfzAtSectionIndex,
+  parseKfzSearchListText,
+  readKfzAtStore,
+} from "@/lib/kfzgutachten/apply-citi";
+import { resolveKfzFirstRegistration } from "@/lib/kfzgutachten/first-registration";
+import {
+  KFZ_AT_GUTACHTEN_PRICE_EUR,
+  KFZ_AT_SECTION_LABEL,
+  kfzExactDateDdMmYyyy,
+  kfzgutachtenSearchUrl,
+} from "@/lib/kfzgutachten/kfzgutachten";
+import type { KfzGutachtenReport } from "@/lib/kfzgutachten/parse-gutachten";
+
+const inp =
+  "min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+const btn =
+  "inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-apple-text)] hover:bg-slate-50 disabled:opacity-50";
+
+type Props = {
+  vin: string;
+  value: CitiAvotiBlockState;
+  onChange: (next: CitiAvotiBlockState) => void;
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  disabled?: boolean;
+};
+
+/** Citi avoti: Austrijas §57a apskates - saite uz bezmaksas sarakstu, saraksta ielīmēšana, nopirkto atzinumu PDF. */
+export function AdminKfzGutachtenPanel({ vin, value, onChange, getSourceBlocks, disabled }: Props) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [manualDate, setManualDate] = useState<string | null>(null);
+  const [listPaste, setListPaste] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Bloki mainās nemainīgi (jauns objekts pie labojuma) - pārrēķinām tikai, kad mainās datuma avoti.
+  const blocks = getSourceBlocks?.();
+  const resolution = useMemo(() => {
+    if (!blocks) return null;
+    try {
+      return resolveKfzFirstRegistration({ ...blocks, citi_avoti: value });
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks?.csdd, blocks?.auto_records, blocks?.autodna, blocks?.carvertical, blocks?.cc_vin, blocks?.traficom_fi, blocks?.finnik, value]);
+
+  const store = useMemo(() => {
+    const idx = findKfzAtSectionIndex(value);
+    return idx >= 0 ? readKfzAtStore(value.sections[idx]) : null;
+  }, [value]);
+
+  const dateText = manualDate ?? resolution?.date ?? "";
+  const exact = kfzExactDateDdMmYyyy(dateText);
+  const chosen = resolution?.candidates.find((c) => c.date === exact);
+  const url = kfzgutachtenSearchUrl(vin, exact);
+
+  const apply = (add: { reports?: KfzGutachtenReport[]; list?: ReturnType<typeof parseKfzSearchListText> }) => {
+    const res = applyKfzAtToCitiAvoti(value, add, { vin });
+    onChange(res.block);
+    const parts = [
+      res.addedListRows > 0 ? `${res.addedListRows} apskates sarakstā` : "",
+      res.addedReports > 0 ? `${res.addedReports} atzinumi ielasīti` : "",
+    ].filter(Boolean);
+    setNotice(parts.length ? `${parts.join(" · ")}.` : "Jaunu ierakstu nav.");
+    setError(res.warnings.length ? res.warnings.join(" ") : null);
+  };
+
+  const uploadPdfs = async (files: File[]) => {
+    if (disabled || busy || files.length === 0) return;
+    setBusy(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const fd = new FormData();
+      for (const f of files) fd.append("files", f);
+      const res = await fetch("/api/admin/kfzgutachten/parse", { method: "POST", body: fd, credentials: "include" });
+      const data = (await res.json().catch(() => ({}))) as { reports?: KfzGutachtenReport[]; warnings?: string[]; detail?: string };
+      if (!res.ok) {
+        setError(data.detail || `Kļūda (HTTP ${res.status})`);
+        return;
+      }
+      if ((data.reports ?? []).length > 0) apply({ reports: data.reports });
+      if ((data.warnings ?? []).length > 0) setError((data.warnings ?? []).join(" "));
+    } catch {
+      setError("Neizdevās savienoties ar serveri");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!vin.trim()) return null;
+
+  return (
+    <div className="mb-3 rounded-lg border border-slate-300 bg-white/70 p-2 shadow-sm" aria-label={KFZ_AT_SECTION_LABEL}>
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-800">{KFZ_AT_SECTION_LABEL}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-[10px] font-medium text-[var(--color-provin-muted)]" htmlFor="kfz-at-first-reg">
+          1. reģistrācija
+        </label>
+        <input
+          id="kfz-at-first-reg"
+          type="text"
+          inputMode="numeric"
+          className={`${inp} w-[110px]`}
+          placeholder="TT.MM.GGGG"
+          value={dateText}
+          disabled={disabled}
+          onChange={(e) => setManualDate(e.target.value.slice(0, 10))}
+        />
+        {exact ? (
+          <a className={btn} href={url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            Atvērt sarakstu
+          </a>
+        ) : null}
+        <span className="text-[10px] text-[var(--color-provin-muted)]">Atzinums {KFZ_AT_GUTACHTEN_PRICE_EUR} gab.</span>
+      </div>
+      {!exact ? (
+        <p className="mt-1 text-[10px] font-medium text-red-600">
+          Vajag precīzu datumu{resolution?.partial ? ` (avotos tikai ${resolution.partial})` : ""}
+        </p>
+      ) : (
+        <p className="mt-1 text-[10px] text-[var(--color-provin-muted)]">
+          {chosen ? chosen.source : "Ievadīts ar roku"}
+          {chosen?.maybeNational ? <span className="text-amber-700"> - var būt Latvijas datums</span> : null}
+        </p>
+      )}
+      {(resolution?.candidates.length ?? 0) > 1 ? (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {resolution!.candidates
+            .filter((c) => c.date !== exact)
+            .map((c) => (
+              <button key={c.date} type="button" className={btn} disabled={disabled} onClick={() => setManualDate(c.date)} title={c.source}>
+                {c.date}
+              </button>
+            ))}
+        </div>
+      ) : null}
+
+      {store && (store.list.length > 0 || store.reports.length > 0) ? (
+        <p className="mt-1.5 text-[10px] font-medium text-slate-700">
+          {store.list.length > 0 ? `${store.list.length} apskates sarakstā` : ""}
+          {store.list.length > 0 && store.reports.length > 0 ? " · " : ""}
+          {store.reports.length > 0 ? `${store.reports.length} atzinumi ielasīti` : ""}
+        </p>
+      ) : null}
+
+      {!disabled ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div>
+            <textarea
+              className={`${inp} w-full min-h-[48px] resize-y`}
+              rows={2}
+              placeholder="Ielīmē sarakstu (Suchergebnisse)"
+              value={listPaste}
+              onChange={(e) => setListPaste(e.target.value.slice(0, 20_000))}
+              aria-label="kfzgutachten.at saraksts"
+            />
+            <button
+              type="button"
+              className={`${btn} mt-1`}
+              disabled={!listPaste.trim()}
+              onClick={() => {
+                const rows = parseKfzSearchListText(listPaste, vin);
+                if (rows.length === 0) {
+                  setError("Sarakstā nav atpazīta neviena apskate šim VIN.");
+                  return;
+                }
+                apply({ list: rows });
+                setListPaste("");
+              }}
+            >
+              Ielasīt sarakstu
+            </button>
+          </div>
+          <div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              className="sr-only"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                e.target.value = "";
+                void uploadPdfs(files);
+              }}
+            />
+            <button
+              type="button"
+              className="flex w-full min-h-[48px] items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-300/90 bg-slate-50/80 px-2 text-[11px] font-medium text-[var(--color-apple-text)] hover:border-slate-400 disabled:opacity-50"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                void uploadPdfs(Array.from(e.dataTransfer.files ?? []));
+              }}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileUp className="h-4 w-4" aria-hidden />}
+              Atzinumu PDF
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {notice ? <p className="mt-1 text-[10px] text-emerald-800/90" role="status">{notice}</p> : null}
+      {error ? <p className="mt-1 text-[10px] text-red-600" role="alert">{error}</p> : null}
+    </div>
+  );
+}

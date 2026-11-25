@@ -41,6 +41,8 @@ export type RunVinScanInput = {
   vin: string;
   plates?: VinScanPlates;
   listingUrl?: string;
+  /** Precīzs 1. reģistrācijas datums (kfzgutachten.at). */
+  firstRegDate?: string;
   sourceIds?: readonly string[];
   /** true: izsauc arī avotus ar atvērtu circuit breaker (force skenējums, ikdienas canary). */
   ignoreBreaker?: boolean;
@@ -98,6 +100,7 @@ export async function runVinScan(
     vin: input.vin.trim().toUpperCase(),
     plates: input.plates ?? emptyVinScanPlates(),
     listingUrl: input.listingUrl?.trim() ?? "",
+    ...(input.firstRegDate?.trim() ? { firstRegDate: input.firstRegDate.trim() } : {}),
   };
   const ids = input.sourceIds?.length
     ? input.sourceIds.filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id, input.allowPaid))
