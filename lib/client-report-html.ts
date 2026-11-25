@@ -1041,6 +1041,7 @@ function buildPdfTopHtml(args: {
     ccVinBlock: pVis.ccVinBlock ?? null,
     auctionsVisible: ccVisible,
     auctionsHaveData: payloadCcVinHasData(p, vis),
+    serviceLogoUri: pdfTopMakeLogoUri(resolvePdfReportMakeModelFromPayload(p)),
     lang,
   });
   const listing = tiles.filter((t) => t.id === "listing" && !(t.value === "Nav datu" && !t.note.trim()));

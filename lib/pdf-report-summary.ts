@@ -90,6 +90,8 @@ export type PdfSummaryTile = {
   readings?: number;
   /** Serviss: jaunākā ieraksta datums (1. lapas kartītei «Serviss»). */
   latestDate?: string;
+  /** Serviss: cik ierakstu no oficiālā dīlera datiem (>0 - kartītē «Serviss» markas logo). */
+  dealerRecords?: number;
 };
 
 export type PdfSummaryInput = {
@@ -380,6 +382,7 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
     .sort((a, b) => b.ms - a.ms)[0]?.date;
   return {
     latestDate: latest,
+    dealerRecords: dealer,
     id: "service",
     label: "Servisa vēsture",
     value: total === 0 ? "Nav ierakstu" : pluralLv(total, "ieraksts", "ieraksti"),
