@@ -422,9 +422,6 @@ describe("PDF design system", () => {
       formatBytes: () => "0 B",
     });
     expect(hidden).not.toContain("pdf-src-zone pdf-src-zone--carfax");
-    // Nila likums: CARFAX remonta izmaksu aplēse (EUR) klienta atskaitē netiek rakstīta.
-    expect(html).not.toMatch(/250\s*-\s*500|līdz 250|250 €/);
-    expect(applied.report.damages[0]?.repairCost).toBe("250 - 500 €");
   });
 
   it("renders every section head with the same icon bubble and title style", () => {

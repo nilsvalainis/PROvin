@@ -267,13 +267,13 @@ describe("carfaxReportToVendorRows / bloks", () => {
       ["04.09.2017", "194280"],
     ]);
     expect(rows.incidents).toEqual([
-      { csngDate: "05.2024", lossAmount: "Dati nav pieejami", incidentNo: "Itālija" },
-      { csngDate: "12.2024", lossAmount: "Dati nav pieejami", incidentNo: "Itālija" },
+      { csngDate: "05.2024", lossAmount: "250 - 500 €", incidentNo: "Itālija" },
+      { csngDate: "12.2024", lossAmount: "līdz 250 €", incidentNo: "Itālija" },
     ]);
     expect(rows.damageDetails[0]).toEqual({
       date: "05.2024",
       country: "Itālija",
-      lossAmount: "",
+      lossAmount: "250 - 500 €",
       damagedSides: "Priekša",
       damageGroups: "Komponentes: External Lighting; Smagums: vidējs",
     });
@@ -396,12 +396,6 @@ describe("CARFAX darbvirsmas integrācija", () => {
     expect(mergeVendorBlocksPlain(blocks)).toContain("【CARFAX】");
     expect(orderHasSourceDataForAi(blocks)).toBe(true);
     expect(carfaxReportToPlainText(blocks.carfax.report)).toContain("VĒSTURE (CARFAX)");
-    // Nila likums: remontu EUR summas ne klienta PDF, ne AI komentāra kontekstā.
-    for (const t of [forComment, mergeVendorBlocksPlain(blocks), carfaxReportToPlainText(blocks.carfax.report)]) {
-      expect(t).not.toMatch(/250 - 500|līdz 250|remonta aplēse/);
-    }
-    // Admin datos aplēse paliek.
-    expect(blocks.carfax.report?.damages[0]?.repairCost).toBe("250 - 500 €");
   });
 
   it("faktu teksti bez report - tukši", () => {

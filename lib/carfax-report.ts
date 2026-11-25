@@ -183,14 +183,10 @@ export function carfaxTimelineDescription(e: CarfaxHistoryEvent): string {
   return extra.length > 0 ? `${e.eventLv} (${extra.join(", ")})` : e.eventLv;
 }
 
-/**
- * Nila likums: remontu EUR summas klienta atskaitēs neraksta. CARFAX „Estimated repair cost” ir remonta
- * aplēse - paliek tikai `report.damages[].repairCost` (admin), negadījumu rindā / PDF / AI tās nav.
- */
 function damageToIncident(d: CarfaxDamage): VendorLike["incidents"][number] {
   return {
     csngDate: d.date,
-    lossAmount: ADMIN_INCIDENT_DATA_UNAVAILABLE,
+    lossAmount: d.repairCost || ADMIN_INCIDENT_DATA_UNAVAILABLE,
     incidentNo: d.country,
   };
 }
@@ -204,7 +200,7 @@ function damageToDetail(d: CarfaxDamage): CarVerticalDamageDetailRow {
   return {
     date: d.date,
     country: d.country,
-    lossAmount: "",
+    lossAmount: d.repairCost,
     damagedSides: d.areas.join(", "),
     damageGroups: groups.join("; "),
   };
@@ -471,6 +467,7 @@ export function carfaxReportToPlainText(r: CarfaxReport | null | undefined): str
         d.areas.length ? `zonas ${d.areas.join(", ")}` : "",
         d.components.length ? `komponentes ${d.components.join(", ")}` : "",
         d.severity ? `smagums ${d.severity}` : "",
+        d.repairCost ? `remonta aplēse ${d.repairCost}` : "",
       ]
         .filter(Boolean)
         .join(" · "),
