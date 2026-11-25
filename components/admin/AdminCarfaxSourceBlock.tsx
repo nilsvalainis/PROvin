@@ -1,13 +1,23 @@
 "use client";
 
 /**
- * CARFAX avota bloks: tā pati forma kā AutoDNA / CarVertical (nobraukums, negadījumi, laikposms,
- * komentāri, foto) + strukturētās atskaites kopsavilkums (`report`), ko aizpilda PDF parsētājs.
+ * CARFAX - patstāvīgs avota bloks (Nila norādījums 25.11): savs virsraksts, statuss, pogas («Pirkt CARFAX»,
+ * PDF augšupielāde, «Gaida PDF no pasta»), savas tabulas no strukturētās atskaites (`report`).
+ * Nav AutoDNA / CarVertical bloks un neizmanto to komponenti; kopējās tabulās CARFAX ieraksti iet ar avotu «CARFAX».
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
-import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import { AdminSourceCommentField } from "@/components/admin/AdminSourceCommentField";
+import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
+import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
+import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
+import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton";
+import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { adminProBtn } from "@/lib/admin-pro-tones";
@@ -19,10 +29,18 @@ import {
 } from "@/lib/carfax-inbox-logic";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
-import type { CarfaxBlockState, VendorAvotuBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  emptyCarfaxBlock,
+  SOURCE_BLOCK_LABELS,
+  type CarfaxBlockState,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
-import { carfaxOwnerStats, formatCarfaxOwnerCount, type CarfaxReport } from "@/lib/carfax-report";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
+import { formatAutoRecordsDateForOutput, sortAutoRecordsDescending } from "@/lib/auto-records-paste-parse";
+import { carfaxComponentLv, carfaxOwnerStats, formatCarfaxOwnerCount, type CarfaxReport } from "@/lib/carfax-report";
+import type { CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 
 type Props = {
@@ -47,37 +65,61 @@ const STATUS_CLASS: Record<string, string> = {
   unavailable: "text-red-700",
 };
 
-function Row({ k, v, tone }: { k: string; v: ReactNode; tone?: string }) {
-  return (
-    <tr className="border-b border-slate-100 last:border-b-0 align-top">
-      <td className="w-[38%] px-1.5 py-0.5 text-[var(--color-provin-muted)]">{k}</td>
-      <td className={`px-1.5 py-0.5 ${tone ?? "text-[var(--color-apple-text)]"}`}>{v}</td>
-    </tr>
-  );
-}
-
-function Table({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
-      <table className="w-full text-[11px]">
-        <tbody>{children}</tbody>
-      </table>
-    </div>
-  );
-}
+const cell = "px-1.5 py-0.5 align-top";
 
 function Sub({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-1 mt-2 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+    <p className="mb-1 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
       {children}
     </p>
   );
 }
 
-function km(v: string): string {
-  return v ? `${Number(v).toLocaleString("lv-LV").replace(/ /g, " ")} km` : "";
+function Wrap({ children, minW = 280 }: { children: ReactNode; minW?: number }) {
+  return (
+    <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
+      <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} text-[var(--color-apple-text)]`} style={{ minWidth: minW }}>
+        {children}
+      </table>
+    </div>
+  );
 }
 
+function Head({ cols }: { cols: string[] }) {
+  return (
+    <thead>
+      <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
+        {cols.map((c, i) => (
+          <th key={`${c}-${i}`} className={cell}>
+            {c}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  );
+}
+
+function KvRow({ k, v, tone }: { k: string; v: ReactNode; tone?: string }) {
+  return (
+    <tr className="border-b border-slate-100 last:border-b-0">
+      <td className={`${cell} w-[38%] text-[var(--color-provin-muted)]`}>{k}</td>
+      <td className={`${cell} ${tone ?? "text-[var(--color-apple-text)]"}`}>{v}</td>
+    </tr>
+  );
+}
+
+/** „194280” → „194 280”. */
+function kmNum(v: string): string {
+  const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
+  return Number.isFinite(n) && n > 0 ? n.toLocaleString("lv-LV").replace(/\s/g, " ") : "";
+}
+
+function km(v: string): string {
+  const n = kmNum(v);
+  return n ? `${n} km` : "";
+}
+
+/** Ātrā pārbaude, bojājumi, nobraukuma pārbaude, īpašnieki un tehniskie dati no CARFAX atskaites. */
 export function CarfaxReportPanel({ report }: { report: CarfaxReport }) {
   const mc = report.mileageCheck;
   const ownerStats = carfaxOwnerStats(report);
@@ -85,110 +127,190 @@ export function CarfaxReportPanel({ report }: { report: CarfaxReport }) {
     .filter(Boolean)
     .join(" · ");
   return (
-    <div className="mb-3" data-provin-carfax-report>
-      <Sub>
-        <AdminProvinLucide icon={SUBHEADING_LUCIDE.ltabCertificate} />
-        CARFAX atskaite
-      </Sub>
-      {head ? <p className="mb-1 text-[11px] text-[var(--color-apple-text)]">{head}</p> : null}
+    <div data-provin-carfax-report>
+      {head ? <p className="mt-1 text-[11px] font-medium text-[var(--color-apple-text)]">{head}</p> : null}
       {report.pdf ? (
-        <p className="mb-1 text-[10px] text-[var(--color-provin-muted)]">
+        <p className="text-[10px] text-[var(--color-provin-muted)]">
           Oriģināls: {report.pdf.name}
+          {report.pdf.via === "email" ? " · no pasta" : ""}
           {report.pdf.dropboxPath ? ` · Dropbox ${report.pdf.dropboxPath}` : ""}
         </p>
       ) : null}
-      {report.quickChecks.length > 0 ? (
-        <Table>
-          {report.quickChecks.map((q) => (
-            <Row key={q.title} k={q.titleLv} v={q.textLv} tone={STATUS_CLASS[q.status]} />
-          ))}
-          {mc.statusLv && !report.quickChecks.some((q) => q.title === "Mileage") ? (
-            <Row k="Nobraukuma pārbaude" v={mc.statusLv} tone={STATUS_CLASS[mc.status || "ok"]} />
-          ) : null}
-        </Table>
-      ) : null}
-      {report.damages.length > 0 ? (
+
+      {report.quickChecks.length > 0 || mc.statusLv ? (
         <>
-          <Sub>Bojājumu detaļas</Sub>
-          <Table>
+          <Sub>
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.ltabCertificate} />
+            Ātrā pārbaude
+          </Sub>
+          <Wrap>
+            <tbody>
+              {report.quickChecks.map((q) => (
+                <KvRow key={q.title} k={q.titleLv} v={q.textLv} tone={STATUS_CLASS[q.status]} />
+              ))}
+              {mc.statusLv && !report.quickChecks.some((q) => q.title === "Mileage") ? (
+                <KvRow k="Nobraukuma pārbaude" v={mc.statusLv} tone={STATUS_CLASS[mc.status || "ok"]} />
+              ) : null}
+            </tbody>
+          </Wrap>
+        </>
+      ) : null}
+
+      <Sub>
+        <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
+        Bojājumi (CARFAX)
+      </Sub>
+      {report.damages.length > 0 ? (
+        <Wrap minW={320}>
+          <Head cols={["Datums", "Remonta aplēse", "Valsts"]} />
+          <tbody data-provin-carfax-damages>
             {report.damages.map((d, i) => (
-              <Row
+              <DamageRows
                 key={`${d.date}-${i}`}
-                k={`${d.date}${d.country ? ` · ${d.country}` : ""}`}
-                tone="text-red-700"
-                v={
-                  [
-                    d.cause,
-                    d.areas.length ? `zonas: ${d.areas.join(", ")}` : "",
-                    d.components.length ? `komponentes: ${d.components.join(", ")}` : "",
-                    d.severity ? `smagums: ${d.severity}` : "",
-                    d.repairCost ? `aplēse: ${d.repairCost}` : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "detaļas nav norādītas"
-                }
+                date={d.date}
+                amount={d.repairCost}
+                country={d.country}
+                sides={d.areas.join(", ")}
+                groups={d.components.map(carfaxComponentLv).join(", ")}
+                note={[d.cause, d.severity ? `smagums: ${d.severity}` : ""].filter(Boolean).join(" · ")}
               />
             ))}
-          </Table>
-        </>
-      ) : null}
+          </tbody>
+        </Wrap>
+      ) : (
+        <p
+          className={`rounded-lg border border-dashed border-slate-200/90 bg-slate-50/60 px-3 py-2 text-[11px] ${
+            report.noDamageReported ? "text-emerald-700" : "text-[var(--color-provin-muted)]"
+          }`}
+        >
+          {report.noDamageReported ? "CARFAX bojājumus nav saņēmis" : "Bojājumu ierakstu nav"}
+        </p>
+      )}
+
       {mc.lastReadingKm || mc.projectionKm ? (
         <>
-          <Sub>Nobraukuma pārbaude</Sub>
-          <Table>
-            {mc.lastReadingKm ? (
-              <Row k="Pēdējais rādījums" v={[km(mc.lastReadingKm), mc.lastReadingDate].filter(Boolean).join(" · ")} />
-            ) : null}
-            {mc.projectionKm ? <Row k="Prognoze šodien" v={`~${km(mc.projectionKm)}`} /> : null}
-            {mc.projectionSimilarKm ? <Row k="Līdzīgiem auto" v={`~${km(mc.projectionSimilarKm)}`} /> : null}
-          </Table>
+          <Sub>
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
+            Nobraukuma pārbaude
+          </Sub>
+          <Wrap>
+            <tbody>
+              {mc.lastReadingKm ? (
+                <KvRow k="Pēdējais rādījums" v={[km(mc.lastReadingKm), mc.lastReadingDate].filter(Boolean).join(" · ")} />
+              ) : null}
+              {mc.projectionKm ? <KvRow k="Prognoze šodien" v={`~${km(mc.projectionKm)}`} /> : null}
+              {mc.projectionSimilarKm ? <KvRow k="Līdzīgiem auto" v={`~${km(mc.projectionSimilarKm)}`} /> : null}
+            </tbody>
+          </Wrap>
         </>
       ) : null}
+
       {ownerStats.total > 0 || report.ownersNote ? (
         <>
           <Sub>Īpašnieki</Sub>
-          <Table>
-            {ownerStats.total > 0 ? (
-              <Row
-                k={`Īpašnieku skaits${ownerStats.country ? ` · ${ownerStats.country}` : ""}`}
-                v={formatCarfaxOwnerCount(ownerStats)}
-              />
-            ) : null}
-            {report.ownersNote ? <Row k="Īpašnieki" v={report.ownersNote} tone="text-red-700" /> : null}
-            {report.owners.map((o) => (
-              <Row
-                key={o.index}
-                k={`${o.index}. ${o.country}`}
-                v={[o.purchaseYear ? `no ${o.purchaseYear}` : "", o.lengthOfUse, o.ownerType].filter(Boolean).join(" · ") || "-"}
-              />
-            ))}
-          </Table>
+          <Wrap>
+            <tbody>
+              {ownerStats.total > 0 ? (
+                <KvRow
+                  k={`Īpašnieku skaits${ownerStats.country ? ` · ${ownerStats.country}` : ""}`}
+                  v={formatCarfaxOwnerCount(ownerStats)}
+                />
+              ) : null}
+              {report.ownersNote ? <KvRow k="Īpašnieki" v={report.ownersNote} tone="text-red-700" /> : null}
+              {report.owners.map((o) => (
+                <KvRow
+                  key={o.index}
+                  k={`${o.index}. ${o.country}`}
+                  v={[o.purchaseYear ? `no ${o.purchaseYear}` : "", o.lengthOfUse, o.ownerType].filter(Boolean).join(" · ") || "-"}
+                />
+              ))}
+            </tbody>
+          </Wrap>
         </>
       ) : null}
+
       {report.vehicle.length + report.technical.length + report.equipment.length > 0 ? (
-        <details className="mt-2">
+        <details className="mt-3">
           <summary className="cursor-pointer text-[10px] font-medium uppercase tracking-wide text-slate-500">
             Tehniskie dati un komplektācija
           </summary>
           <div className="mt-1">
-            <Table>
-              {[...report.vehicle, ...report.technical.filter((t) => !report.vehicle.some((v) => v.label === t.label))].map(
-                (t) => (
-                  <Row key={t.label} k={t.label} v={t.value} />
-                ),
-              )}
-              {report.originalPrice.total ? (
-                <Row
-                  k="Jauna auto cena"
-                  v={`${report.originalPrice.total} (bāze ${report.originalPrice.base || "-"}, opcijas ${report.originalPrice.options || "-"})`}
-                />
-              ) : null}
-              {report.equipment.length > 0 ? <Row k={`Komplektācija (${report.equipment.length})`} v={report.equipment.join("; ")} /> : null}
-            </Table>
+            <Wrap>
+              <tbody>
+                {[...report.vehicle, ...report.technical.filter((t) => !report.vehicle.some((v) => v.label === t.label))].map(
+                  (t) => (
+                    <KvRow key={t.label} k={t.label} v={t.value} />
+                  ),
+                )}
+                {report.originalPrice.total ? (
+                  <KvRow
+                    k="Jauna auto cena"
+                    v={`${report.originalPrice.total} (bāze ${report.originalPrice.base || "-"}, opcijas ${report.originalPrice.options || "-"})`}
+                  />
+                ) : null}
+                {report.equipment.length > 0 ? (
+                  <KvRow k={`Komplektācija (${report.equipment.length})`} v={report.equipment.join("; ")} />
+                ) : null}
+              </tbody>
+            </Wrap>
           </div>
         </details>
       ) : null}
     </div>
+  );
+}
+
+/** Negadījuma rinda + zonu / grupu apakšrinda (tas pats izkārtojums kā CarVertical bojājumu detaļām). */
+function DamageRows({
+  date,
+  amount,
+  country,
+  sides,
+  groups,
+  note,
+  onRemove,
+}: {
+  date: string;
+  amount: string;
+  country: string;
+  sides: string;
+  groups: string;
+  note?: string;
+  onRemove?: () => void;
+}) {
+  const showSub = Boolean(sides || groups || note);
+  return (
+    <>
+      <tr className={showSub ? "" : "border-b border-slate-100 last:border-b-0"}>
+        <td className={`${cell} tabular-nums text-[var(--color-apple-text)]`}>{date || "-"}</td>
+        <td className={`${cell} font-medium text-red-700`}>{amount || "Dati nav pieejami"}</td>
+        <td className={cell}>
+          <CountryFlagWithCode countryLabel={country || "-"} />
+        </td>
+        {onRemove ? (
+          <td className={cell}>
+            <AdminFieldResetButton title="Nodzēst rindu" aria-label={`Nodzēst CARFAX negadījumu ${date}`} onClick={onRemove} />
+          </td>
+        ) : null}
+      </tr>
+      {showSub ? (
+        <tr className="border-b border-slate-100/80 bg-slate-50/80">
+          <td colSpan={onRemove ? 4 : 3} className={`${cell} py-1`}>
+            <div className="overflow-hidden rounded-md border border-slate-200/90 bg-white/90 shadow-sm">
+              <div className="grid grid-cols-2 gap-2 border-b border-slate-200/80 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-slate-500">
+                <span>Bojātā puse</span>
+                <span>Bojājumu grupas</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 px-2 py-1 text-[11px]">
+                <span className="font-medium text-[var(--color-apple-text)]">{sides || "-"}</span>
+                <span className="text-[var(--color-provin-muted)]">{groups || "-"}</span>
+              </div>
+              {note ? <p className="border-t border-slate-200/80 px-2 py-0.5 text-[10px] text-slate-600">{note}</p> : null}
+            </div>
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 
@@ -312,6 +434,151 @@ function CarfaxPurchasePanel({
   );
 }
 
+/** Nobraukuma rādījumi no CARFAX (kopējā nobraukuma tabulā - ar avotu «CARFAX»). */
+function CarfaxMileageTable({
+  value,
+  onChange,
+  editable,
+}: {
+  value: CarfaxBlockState;
+  onChange: (next: CarfaxBlockState) => void;
+  editable: boolean;
+}) {
+  const rows = sortAutoRecordsDescending([...(value.serviceHistory ?? [])]);
+  if (rows.length === 0) return null;
+  const remove = (row: (typeof rows)[number]) =>
+    onChange({ ...value, serviceHistory: (value.serviceHistory ?? []).filter((r) => r !== row) });
+  return (
+    <>
+      <Sub>
+        <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
+        Nobraukums (CARFAX)
+      </Sub>
+      <Wrap>
+        <Head cols={["Datums", "Odometrs (km)", "Valsts", ...(editable ? [""] : [])]} />
+        <tbody data-provin-carfax-mileage>
+          {rows.map((r, i) => (
+            <tr key={`${r.date}-${r.odometer}-${i}`} className="border-b border-slate-100 last:border-b-0">
+              <td className={`${cell} tabular-nums`}>{formatAutoRecordsDateForOutput(r.date) || "-"}</td>
+              <td className={`${cell} tabular-nums`}>{kmNum(r.odometer) || r.odometer || "-"}</td>
+              <td className={cell}>
+                <CountryFlagWithCode countryLabel={r.country || "-"} />
+              </td>
+              {editable ? (
+                <td className={cell}>
+                  <AdminFieldResetButton
+                    title="Nodzēst rindu"
+                    aria-label={`Nodzēst CARFAX nobraukumu ${r.date}`}
+                    onClick={() => remove(r)}
+                  />
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </Wrap>
+    </>
+  );
+}
+
+/** CARFAX vēstures ieraksti; ķeksis «PDF» - vai rinda iet klienta PDF laikposmā. */
+function CarfaxHistoryTable({
+  value,
+  onChange,
+  editable,
+}: {
+  value: CarfaxBlockState;
+  onChange: (next: CarfaxBlockState) => void;
+  editable: boolean;
+}) {
+  const rows = (value.vehicleHistoryTimeline ?? []).filter((r) => r.date.trim() || r.description.trim());
+  if (rows.length === 0) return null;
+  const toggle = (row: CarVerticalTimelineRow) =>
+    onChange({
+      ...value,
+      vehicleHistoryTimeline: (value.vehicleHistoryTimeline ?? []).map((r) =>
+        r === row ? { ...r, includeInPdf: r.includeInPdf === false } : r,
+      ),
+    });
+  return (
+    <details className="mt-3" open={rows.length <= 12}>
+      <summary className="cursor-pointer text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        Vēsture (CARFAX) · {rows.length}
+      </summary>
+      <div className="mt-1">
+        <Wrap minW={360}>
+          <Head cols={["Datums", "km", "Valsts", "Notikums", "PDF"]} />
+          <tbody data-provin-carfax-history>
+            {rows.map((r, i) => (
+              <tr key={`${r.date}-${i}`} className="border-b border-slate-100 last:border-b-0">
+                <td className={`${cell} whitespace-nowrap tabular-nums`}>{r.date || "-"}</td>
+                <td className={`${cell} whitespace-nowrap tabular-nums`}>{r.odometer ? kmNum(r.odometer) : ""}</td>
+                <td className={cell}>{r.country ? <CountryFlagWithCode countryLabel={r.country} /> : null}</td>
+                <td className={cell}>{r.description}</td>
+                <td className={cell}>
+                  <input
+                    type="checkbox"
+                    checked={r.includeInPdf !== false}
+                    disabled={!editable}
+                    onChange={() => toggle(r)}
+                    aria-label={`CARFAX vēstures rinda ${r.date} klienta PDF`}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Wrap>
+      </div>
+    </details>
+  );
+}
+
+/** Negadījumi bez strukturētās atskaites (vecie dati / Copilot rindas) - tajā pašā izkārtojumā. */
+function CarfaxIncidentRows({
+  value,
+  onChange,
+  editable,
+}: {
+  value: CarfaxBlockState;
+  onChange: (next: CarfaxBlockState) => void;
+  editable: boolean;
+}) {
+  const rows = (value.incidents ?? []).filter((r) => r.csngDate.trim() || r.lossAmount.trim() || r.incidentNo.trim());
+  if (rows.length === 0) return null;
+  const details = value.damageDetails ?? [];
+  return (
+    <>
+      <Sub>
+        <AdminProvinLucide icon={SUBHEADING_LUCIDE.incidents} />
+        Negadījumi (CARFAX)
+      </Sub>
+      <Wrap minW={320}>
+        <Head cols={["Datums", "Zaudējumu summa", "Valsts", ...(editable ? [""] : [])]} />
+        <tbody>
+          {rows.map((r, i) => {
+            const d = details.find((x) => x.date.trim() === r.csngDate.trim());
+            return (
+              <DamageRows
+                key={`${r.csngDate}-${i}`}
+                date={r.csngDate}
+                amount={r.lossAmount}
+                country={r.incidentNo}
+                sides={d?.damagedSides ?? ""}
+                groups={d?.damageGroups ?? ""}
+                onRemove={
+                  editable
+                    ? () => onChange({ ...value, incidents: (value.incidents ?? []).filter((x) => x !== r) })
+                    : undefined
+                }
+              />
+            );
+          })}
+        </tbody>
+      </Wrap>
+    </>
+  );
+}
+
 export function AdminCarfaxSourceBlock({
   value,
   onChange,
@@ -327,27 +594,34 @@ export function AdminCarfaxSourceBlock({
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
 }: Props) {
-  const report = value?.report;
+  const block: CarfaxBlockState = value && typeof value === "object" ? value : emptyCarfaxBlock();
+  const report = block.report;
+  const editable = !readOnly && !disabled;
+  const hasRows =
+    (block.serviceHistory ?? []).length > 0 ||
+    (block.incidents ?? []).length > 0 ||
+    (block.vehicleHistoryTimeline ?? []).length > 0;
+
   return (
-    <AdminVendorAvotuSourceBlock
-      blockKey="carfax"
-      value={value}
-      readOnly={readOnly}
-      disabled={disabled}
-      onChange={(next: VendorAvotuBlockState) => onChange(next as CarfaxBlockState)}
-      trafficFillLevel={trafficFillLevel}
+    <AdminCollapsibleShell
       sessionId={sessionId}
-      pdfInclude={pdfInclude}
-      onPdfIncludeChange={onPdfIncludeChange}
-      aiComment={aiComment}
-      getSourceBlocks={getSourceBlocks}
-      applyPatchedBlocks={applyPatchedBlocks}
-      photosPersistenceEnabled={photosPersistenceEnabled}
-      onPhotoGroupsStructuralCommit={onPhotoGroupsStructuralCommit}
-      extraPanel={
-        <>
+      blockId="carfax"
+      header={<AdminSourceBlockHeader blockKey="carfax" trafficFillLevel={trafficFillLevel} className="mb-0 shrink-0" />}
+      headerActions={
+        <AdminSourceBlockHeaderTools
+          sourceLabel={SOURCE_BLOCK_LABELS.carfax}
+          readOnly={readOnly}
+          disabled={disabled}
+          onClear={() => onChange(emptyCarfaxBlock())}
+        >
+          {onPdfIncludeChange ? <AdminPdfIncludeToggle checked={pdfInclude} onChange={onPdfIncludeChange} /> : null}
+        </AdminSourceBlockHeaderTools>
+      }
+    >
+      <div className={`flex min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`} data-provin-block="carfax">
+        <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
           <CarfaxPurchasePanel
-            value={value}
+            value={block}
             onChange={onChange}
             readOnly={readOnly}
             disabled={disabled}
@@ -355,9 +629,57 @@ export function AdminCarfaxSourceBlock({
             getSourceBlocks={getSourceBlocks}
             applyPatchedBlocks={applyPatchedBlocks}
           />
+          {getSourceBlocks && applyPatchedBlocks ? (
+            <AdminHistoryVendorPdfUpload
+              target="carfax"
+              sessionId={sessionId}
+              disabled={disabled}
+              readOnly={readOnly}
+              getSourceBlocks={getSourceBlocks}
+              applyPatchedBlocks={applyPatchedBlocks}
+            />
+          ) : null}
           {report ? <CarfaxReportPanel report={report} /> : null}
-        </>
-      }
-    />
+          {!report && !hasRows ? (
+            <p className="mt-2 rounded-lg border border-dashed border-slate-200/90 bg-slate-50/60 px-3 py-2 text-[11px] text-[var(--color-provin-muted)]">
+              CARFAX atskaite nav ielasīta
+            </p>
+          ) : null}
+          {!report ? <CarfaxIncidentRows value={block} onChange={onChange} editable={editable} /> : null}
+          <CarfaxMileageTable value={block} onChange={onChange} editable={editable} />
+          <CarfaxHistoryTable value={block} onChange={onChange} editable={editable} />
+        </div>
+
+        <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${trafficFillLevel ? "px-2 pb-2" : ""}`}>
+          {sessionId && onPhotoGroupsStructuralCommit ? (
+            <AdminSourceBlockPhotos
+              sessionId={sessionId}
+              photoGroups={block.photoGroups ?? []}
+              disabled={readOnly || !!disabled || !photosPersistenceEnabled}
+              onCommit={onPhotoGroupsStructuralCommit}
+              hidePhotoWatermarks={block.hidePhotoWatermarks === true}
+              onHidePhotoWatermarksChange={(next) => onChange({ ...block, hidePhotoWatermarks: next })}
+            />
+          ) : null}
+          <AdminSourceCommentField
+            label="Komentāri:"
+            value={block.comments ?? ""}
+            onChange={(next) => onChange({ ...block, comments: next })}
+            readOnly={readOnly}
+            disabled={disabled}
+            compact
+            ai={aiComment}
+            aria-label="CARFAX - komentāri"
+          />
+          <AdminAiContextRawField
+            value={block.aiContextRaw ?? ""}
+            onChange={(next) => onChange({ ...block, aiContextRaw: next })}
+            readOnly={readOnly}
+            disabled={disabled}
+            ariaLabel="CARFAX - AI papildu konteksts"
+          />
+        </div>
+      </div>
+    </AdminCollapsibleShell>
   );
 }

@@ -21,6 +21,7 @@ import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-sourc
 import { runCcVinPdfAgent, runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock } from "@/lib/finnik-report-parse";
 import { applyCarfaxReportToBlock } from "@/lib/carfax-report";
+import { looksLikeCarfaxReport } from "@/lib/carfax-report-parse";
 import { saveCarfaxOriginalPdf } from "@/lib/carfax-pdf-store";
 import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
@@ -303,6 +304,17 @@ export async function POST(req: Request) {
         patchedSourceBlocks: Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
         changedKeys,
       });
+    }
+
+    if (target === "autodna" || target === "carvertical") {
+      // CARFAX ir patstāvīgs avots - tā PDF nekad nenonāk AutoDNA / CarVertical blokā.
+      const probe = await extractPdfTextDetailed(buffer, { fileName });
+      if (looksLikeCarfaxReport(probe.text ?? "")) {
+        return NextResponse.json(
+          { error: "wrong_source", detail: "Šis ir CARFAX PDF - augšupielādē to CARFAX blokā." },
+          { status: 422 },
+        );
+      }
     }
 
     const agent = await runVendorPdfAgent({

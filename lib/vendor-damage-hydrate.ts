@@ -1,8 +1,11 @@
 /**
  * Bojājumu zonas no saglabātā AutoDNA / CarVertical RAW un portfeļa PDF teksta.
+ * CARFAX ir patstāvīgs avots - tā zonas nāk tikai no CARFAX parsētāja (`report.damages`), nekad no
+ * AutoDNA / CarVertical parsētājiem; CARFAX PDF teksts nekad nenonāk AutoDNA / CarVertical blokā.
  */
 import type { ClientManualVendorBlockPdf } from "@/lib/admin-source-blocks";
 import { parseAutodnaDamageDetails } from "@/lib/autodna-damage-parse";
+import { looksLikeCarfaxReport } from "@/lib/carfax-report-parse";
 import {
   parseCarverticalDamagesFromText,
   type CarVerticalDamageDetailRow,
@@ -22,9 +25,14 @@ export function parseDamageDetailsFromVendorRaw(raw: string): CarVerticalDamageD
   return parseCarverticalDamagesFromText(text).damageDetails.filter(damageDetailRowHasZones);
 }
 
+function isCarfaxTitle(title: string): boolean {
+  return /^carfax\b/i.test(title.trim());
+}
+
 export function parseDamageDetailsForVendorTitle(title: string, raw: string): CarVerticalDamageDetailRow[] {
   const text = raw.replace(/<[^>]+>/g, " ").trim();
   if (!text) return [];
+  if (isCarfaxTitle(title) || looksLikeCarfaxReport(text)) return [];
   if (/autodna/i.test(title)) return parseAutodnaDamageDetails(text).filter(damageDetailRowHasZones);
   if (/carvertical/i.test(title)) {
     return parseCarverticalDamagesFromText(text).damageDetails.filter(damageDetailRowHasZones);
@@ -82,7 +90,10 @@ export function attachPdfTextsToVendorBlocks(
 ): ClientManualVendorBlockPdf[] {
   if (texts.length === 0) return blocks;
   return blocks.map((b) => {
-    const parsed = texts.flatMap((t) => parseDamageDetailsForVendorTitle(b.title, t.text));
+    if (isCarfaxTitle(b.title)) return b;
+    const parsed = texts
+      .filter((t) => !looksLikeCarfaxReport(t.text))
+      .flatMap((t) => parseDamageDetailsForVendorTitle(b.title, t.text));
     if (parsed.length === 0) return b;
     return {
       ...b,

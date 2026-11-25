@@ -1,10 +1,9 @@
 /**
- * CARFAX avota bloks (admin: „CARFAX”).
+ * CARFAX - patstāvīgs avota bloks (admin: „CARFAX”, sava cilne; klienta PDF: sava sadaļa).
  *
- * Bloks izmanto to pašu formu kā AutoDNA / CarVertical (`VendorAvotuBlockState`: nobraukums,
- * negadījumi, laikposma ieraksti, bojājumu detaļas, komentāri, foto) + strukturēto
- * `report` (visi CARFAX lauki). `report` aizpilda PDF parsētājs (`parseCarfaxReportText`)
- * vai nākotnē automātika (carfax.eu) - abos gadījumos rindas veido `carfaxReportToVendorRows`.
+ * Galvenais ir strukturētā `report` (visi CARFAX lauki), ko aizpilda PDF parsētājs (`parseCarfaxReportText`)
+ * vai nākotnē automātika (carfax.eu). No tās `carfaxReportToVendorRows` atvasina rindas (nobraukums, negadījumi,
+ * laikposms, bojājumu zonas), kas nonāk kopējās tabulās ar avotu «CARFAX» - nekad AutoDNA / CarVertical blokos.
  */
 
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";

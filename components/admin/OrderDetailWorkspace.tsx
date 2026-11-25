@@ -53,7 +53,6 @@ import { mergeImportedPhotoGroups } from "@/lib/auction-photo-group-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
-import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminCarfaxSourceBlock } from "@/components/admin/AdminCarfaxSourceBlock";
 import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBlock";
@@ -100,10 +99,12 @@ import {
   autoRecordsBlockToPlainText,
   standardBlockToPlainText,
   vendorAvotuBlockToPlainText,
+  carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
+  toPdfCarfaxBlock,
   type SourceBlockKey,
   type ListingAnalysisBlockState,
   type AutoRecordsBlockState,
@@ -249,6 +250,7 @@ import {
   ltabTrafficLevel,
   type TrafficFillLevel,
   vendorAvotuTrafficLevel,
+  carfaxTrafficLevel,
   vinRegistryTrafficLevel,
 } from "@/lib/admin-block-traffic-status";
 import type { ListingAiSnapshot, ListingMarketSnapshot } from "@/lib/listing-scrape";
@@ -556,6 +558,8 @@ const workspaceSectionShell =
 
 /** Cilne "Kopsavilkums" (wizardStepsUi pēdējā). 17.11: bija 12 = "Sludinājums", tāpēc poga un FLASH MAX beigas atvēra nepareizo cilni. */
 const WIZARD_SUMMARY_STEP = 13;
+/** CARFAX - sava cilne (indekss beigās, lai esošie soļu numuri nemainās; vizuāli 1. rindā). */
+const WIZARD_CARFAX_STEP = 14;
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   empty: "bg-zinc-400",
@@ -625,9 +629,7 @@ function orderSourceBlockPlainText(key: SourceBlockKey, blocks: WorkspaceSourceB
     case "carvertical":
       return vendorAvotuBlockToPlainText(blocks[key] ?? null);
     case "carfax":
-      return [vendorAvotuBlockToPlainText(blocks.carfax ?? null), carfaxReportToPlainText(blocks.carfax?.report)]
-        .filter(Boolean)
-        .join("\n");
+      return carfaxBlockToPlainText(blocks.carfax ?? null);
     case "tjekbil":
     case "mnt_ee":
     case "lkf_ee":
@@ -3872,7 +3874,7 @@ export function OrderDetailWorkspace({
         csdd: csddTrafficLevel(b.csdd),
         autodna: vendorAvotuTrafficLevel(b?.autodna),
         carvertical: vendorAvotuTrafficLevel(b?.carvertical),
-        carfax: vendorAvotuTrafficLevel(b?.carfax),
+        carfax: carfaxTrafficLevel(b?.carfax),
         auto_records: autoRecordsTrafficLevel(b.auto_records),
         oneauto: oneautoTrafficLevel(b.oneauto),
         cc_vin: ccVinTrafficLevel(b.cc_vin),
@@ -3907,13 +3909,10 @@ export function OrderDetailWorkspace({
 
   const wizardStepLevels = useMemo((): TrafficFillLevel[] => {
     const dash = dashboardWizardTrafficLevel(payload);
-    // CARFAX ir papildu avots - tukšs CARFAX nepasliktina soļa statusu.
-    const vendorsBase = worstTrafficLevel(traffic.autodna, traffic.carvertical);
-    const vendors = traffic.carfax === "empty" ? vendorsBase : worstTrafficLevel(vendorsBase, traffic.carfax);
     return [
       dash,
       worstTrafficLevel(traffic.csdd, traffic.ltab),
-      vendors,
+      worstTrafficLevel(traffic.autodna, traffic.carvertical),
       traffic.auto_records,
       traffic.cc_vin,
       traffic.citi_avoti,
@@ -3925,6 +3924,8 @@ export function OrderDetailWorkspace({
       traffic.asv,
       traffic.listingSection,
       expertTraffic,
+      // 14: CARFAX - patstāvīgs avots ar savu cilni (Nila norādījums 25.11), ne «Datu serv.» daļa.
+      traffic.carfax,
     ];
   }, [payload, traffic, expertTraffic]);
 
@@ -3945,12 +3946,17 @@ export function OrderDetailWorkspace({
         { label: "ASV", Icon: Flag, row: 2 as const },
         { label: "Sludinājums", Icon: Newspaper, row: 2 as const },
         { label: "Kopsavilkums", Icon: ListChecks, row: 2 as const },
+        { label: "CARFAX", Icon: FileText, row: 1 as const },
       ] as const,
     [],
   );
 
   const wizardProgressPct = useMemo(
-    () => workspaceWizardProgressPct(wizardStepLevels),
+    // CARFAX ir papildu (maksas) avots - tukša CARFAX cilne nesamazina aizpildījuma procentu.
+    () =>
+      workspaceWizardProgressPct(
+        wizardStepLevels[WIZARD_CARFAX_STEP] === "empty" ? wizardStepLevels.slice(0, WIZARD_CARFAX_STEP) : wizardStepLevels,
+      ),
     [wizardStepLevels],
   );
 
@@ -4367,6 +4373,7 @@ export function OrderDetailWorkspace({
       csddForm: isolate ? undefined : blocksDisplaySafe.csdd,
       tirgusForm: isolate ? undefined : blocksDisplaySafe.tirgus,
       manualVendorBlocks,
+      carfaxBlock: isolate ? null : toPdfCarfaxBlock(blocksDisplaySafe.carfax),
       manualLtabBlock: isolate ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
       autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
       oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
@@ -5845,7 +5852,7 @@ export function OrderDetailWorkspace({
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
           <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
-              const cols = row === 1 ? "grid-cols-6" : "grid-cols-8";
+              const cols = row === 1 ? "grid-cols-7" : "grid-cols-8";
               return (
                 <div key={row} className={`provin-tabs grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, row: stepRow }, idx) => {
@@ -6300,23 +6307,26 @@ export function OrderDetailWorkspace({
                 }
               />
             </div>
-            <div id="admin-order-block-carfax" className="flex min-h-0 min-w-0 flex-col">
-              <AdminCarfaxSourceBlock
-                value={blocksDisplaySafe.carfax}
-                onChange={(next) => updateSourceBlock("carfax", next)}
-                trafficFillLevel={traffic.carfax}
-                sessionId={payload.sessionId}
-                pdfInclude={pdfVisibility.carfax}
-                onPdfIncludeChange={(next) => onPdfVisibilityChange({ carfax: next })}
-                aiComment={aiCommentSlot("carfax")}
-                getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
-                applyPatchedBlocks={applyCopilotPatchedBlocks}
-                photosPersistenceEnabled={orderDraftPersistenceEnabled}
-                onPhotoGroupsStructuralCommit={(next) =>
-                  void commitGenericSourcePhotoGroups("carfax", next)
-                }
-              />
-            </div>
+          </div>
+        ) : null}
+
+        {(phoneStack || wizardStep === WIZARD_CARFAX_STEP) ? (
+          <div id="admin-order-block-carfax" className="min-w-0 amx amx-src">
+            <AdminCarfaxSourceBlock
+              value={blocksDisplaySafe.carfax}
+              onChange={(next) => updateSourceBlock("carfax", next)}
+              trafficFillLevel={traffic.carfax}
+              sessionId={payload.sessionId}
+              pdfInclude={pdfVisibility.carfax}
+              onPdfIncludeChange={(next) => onPdfVisibilityChange({ carfax: next })}
+              aiComment={aiCommentSlot("carfax")}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
+              photosPersistenceEnabled={orderDraftPersistenceEnabled}
+              onPhotoGroupsStructuralCommit={(next) =>
+                void commitGenericSourcePhotoGroups("carfax", next)
+              }
+            />
           </div>
         ) : null}
 
