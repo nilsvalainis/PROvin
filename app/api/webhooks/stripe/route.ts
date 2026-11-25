@@ -261,7 +261,7 @@ async function fulfillPaidCheckoutSession(
     }
 
     await runStripeFulfillmentStepOnce("downstream", session.id, () =>
-      startPaidOrderDownstream(session, { order, email, phone }),
+      startPaidOrderDownstream(session, { order, email, phone, fulfillStartedAt }),
     );
 
     await sendCustomerConfirmation();
@@ -285,9 +285,11 @@ async function startPaidOrderDownstream(
     order: ReturnType<typeof getOrderFieldsFromSession>;
     email: string | null;
     phone: string | null;
+    /** Funkcijas sākums (webhook laika budžetam). */
+    fulfillStartedAt: number;
   },
 ): Promise<void> {
-  const { order, email, phone } = ctx;
+  const { order, email, phone, fulfillStartedAt } = ctx;
   const checkoutLine = getCheckoutLineFromSession(session);
   const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
   const partnerId = session.metadata?.partner_id?.trim() ?? "";
