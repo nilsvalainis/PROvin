@@ -26,6 +26,8 @@ import {
 } from "@/lib/autodna-auto-store";
 import type { AutodnaAutoStatus, AutodnaBalance, AutodnaSessionState } from "@/lib/autodna-auto-types";
 import { authorizeAutodnaBackgroundPurchase, type AutodnaBackgroundPurchaseRequest } from "@/lib/autodna-background-purchase";
+import { AUTODNA_PRECHECK_BLOCK_LV, autodnaPrecheckCountsLabel, type AutodnaPrecheckGuard } from "@/lib/autodna-purchase-guard";
+import { resolveAutodnaPurchaseGuard } from "@/lib/autodna-purchase-precheck";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { extractBearerToken } from "@/lib/iriss-aivars-api-token";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
@@ -86,9 +88,20 @@ async function saveStatus(sessionId: string, status: AutodnaAutoStatus): Promise
   return status;
 }
 
-export type StartAutodnaResult = { ok: boolean; started: boolean; status: AutodnaAutoStatus; reason?: string };
+export type StartAutodnaResult = {
+  ok: boolean;
+  started: boolean;
+  status: AutodnaAutoStatus;
+  reason?: string;
+  /** Pirkums atteikts priekšpārbaudes dēļ (Nila likums 25.11) - relejam netika sūtīts. */
+  precheck?: AutodnaPrecheckGuard;
+};
 
-async function startJob(sessionId: string, opts: { vin: string; kind: "purchase" | "report"; requestId: string }): Promise<StartAutodnaResult> {
+async function startJob(
+  sessionId: string,
+  opts: { vin: string; kind: "purchase" | "report"; requestId: string },
+  guard?: (config: AutodnaRelayConfig | null) => Promise<AutodnaPrecheckGuard>,
+): Promise<StartAutodnaResult> {
   const prev = await readAutodnaAutoStatus(sessionId);
   const decision = decideAutodnaStart(prev, opts);
   if (!decision.start) return { ok: true, started: false, status: decision.status, reason: decision.reason };
@@ -105,9 +118,36 @@ async function startJob(sessionId: string, opts: { vin: string; kind: "purchase"
     });
     return { ok: false, started: false, status };
   }
+  // Pirkuma aizsargs PIRMS releja izsaukuma: bez >0 arhīva foto vai vēstures ierakstu relejam nesūta.
+  let precheck: AutodnaPrecheckGuard | undefined;
+  if (guard) {
+    // Otrs klikšķis pārbaudes laikā redz aktīvu uzdevumu un jaunu nesāk.
+    await saveStatus(sessionId, { state: "queued", vin: opts.vin, kind: opts.kind, requestId: opts.requestId, updatedAt: nowIso(), message: "Pārbauda AutoDNA priekšpārbaudi" });
+    precheck = await guard(config).catch(
+      (): AutodnaPrecheckGuard => ({ allowed: false, code: "precheck_unavailable", photos: null, history: null }),
+    );
+    if (!precheck.allowed) {
+      const code = precheck.code ?? "precheck_unavailable";
+      const status = await saveStatus(sessionId, {
+        state: "error",
+        vin: opts.vin,
+        kind: opts.kind,
+        requestId: opts.requestId,
+        code,
+        message: `${AUTODNA_PRECHECK_BLOCK_LV[code]} (${autodnaPrecheckCountsLabel(precheck)})`,
+        precheck: { photos: precheck.photos, history: precheck.history, ...(precheck.checkedAt ? { checkedAt: precheck.checkedAt } : {}) },
+        updatedAt: nowIso(),
+      });
+      return { ok: false, started: false, status, reason: code, precheck };
+    }
+  }
+  const precheckField = precheck
+    ? { precheck: { photos: precheck.photos, history: precheck.history, ...(precheck.checkedAt ? { checkedAt: precheck.checkedAt } : {}) } }
+    : {};
+
   // Pieprasījums tiek pierakstīts PIRMS releja izsaukuma: otrs klikšķis to pašu requestId neatkārto.
   const requestedAt = nowIso();
-  await saveStatus(sessionId, { state: "queued", vin: opts.vin, kind: opts.kind, requestId: opts.requestId, requestedAt, updatedAt: requestedAt, message: "Gaida rindā" });
+  await saveStatus(sessionId, { state: "queued", vin: opts.vin, kind: opts.kind, requestId: opts.requestId, requestedAt, updatedAt: requestedAt, message: "Gaida rindā", ...precheckField });
   try {
     const { res, json } = await relayFetch(config, opts.kind === "purchase" ? "/purchase" : "/report", {
       method: "POST",
@@ -135,6 +175,7 @@ async function startJob(sessionId: string, opts: { vin: string; kind: "purchase"
       requestedAt,
       updatedAt: nowIso(),
       message: "Gaida rindā",
+      ...precheckField,
     });
     return { ok: true, started: true, status };
   } catch (e) {
@@ -164,7 +205,33 @@ export async function startAutodnaPurchase(
   const auth = authorizeAutodnaBackgroundPurchase(req);
   if (!auth.ok) return { ok: false, started: false, error: auth.code };
   const requestId = (req.requestId ?? "").trim().slice(0, 80) || randomUUID();
-  return startJob(sessionId, { vin: auth.vin, kind: "purchase", requestId });
+  return startJob(sessionId, { vin: auth.vin, kind: "purchase", requestId }, (config) => getAutodnaPurchasePrecheck(sessionId, auth.vin, { live: true, config }));
+}
+
+/** Releja priekšpārbaude ielogotajā pārlūkā (tikai lasīšana). */
+async function relayPrecheck(config: AutodnaRelayConfig, vin: string): Promise<unknown> {
+  const { res, json } = await relayFetch(config, "/precheck", { method: "POST", body: { vin }, timeoutMs: 45_000 });
+  return res.ok ? json : null;
+}
+
+/**
+ * Nila likums 25.11: pēdējā AutoDNA priekšpārbaude šim VIN (pirkuma pogai un aizsargam).
+ * `live: false` - tikai saglabātie VIN SCAN rezultāti (bez tīkla).
+ */
+export async function getAutodnaPurchasePrecheck(
+  sessionId: string,
+  vin: string,
+  opts: { live?: boolean; config?: AutodnaRelayConfig | null } = {},
+): Promise<AutodnaPrecheckGuard> {
+  const v = normalizeVin(vin);
+  if (!isValidVin(v)) return { allowed: false, code: "precheck_unavailable", photos: null, history: null };
+  const config = opts.config === undefined ? readAutodnaRelayConfig() : opts.config;
+  return resolveAutodnaPurchaseGuard({
+    sessionId,
+    vin: v,
+    live: opts.live !== false,
+    ...(config && opts.live !== false ? { askRelay: (x: string) => relayPrecheck(config, x) } : {}),
+  });
 }
 
 /** "Ielādēt nopirkto": jau nopirktas atskaites PDF no konta. Nekad nepērk. */
@@ -355,7 +422,7 @@ export async function handleAutodnaRelayEvent(
   if (typeof ev.credits === "number") await storeBalance(ev.credits);
   if (ev.state !== "result") {
     const status = await saveStatus(sessionId, reduceAutodnaProgress(prev, ev, nowIso()));
-    if (status.state === "error" && status.code === "turnstile") {
+    if (status.state === "error" && (status.code === "turnstile" || status.code === "precheck_unavailable")) {
       await sendAdminPush({
         title: "AutoDNA: apstiprini, ka esi cilvēks",
         body: `Atver ${autodnaVinPageUrl(ev.vin)}, nospied "Verificējiet, ka esat cilvēks", tad pasūtījumā vēlreiz "Pirkt AutoDNA (fonā)".`,

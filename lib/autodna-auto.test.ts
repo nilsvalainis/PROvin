@@ -47,6 +47,23 @@ vi.mock("@/lib/admin-order-draft-store", () => ({
   isSafeOrderDraftSessionId: (id: string) => /^[a-zA-Z0-9_]+$/.test(id),
 }));
 vi.mock("@/lib/dropbox-client", () => ({ getDropboxClient: () => null }));
+
+/** AutoDNA bezmaksas priekšpārbaude (VIN SCAN rinda / svaiga ielase). Noklusējums: vēsture 5, foto 0 -> drīkst. */
+const detailOf = (history: number, photos: number) =>
+  [`Kopā: ${history + photos}`, `Transportlīdzekļa vēsture: ${history > 0 ? "ir" : "nav"} · ${history}`, `Auto arhīva fotogrāfijas: ${photos > 0 ? "ir" : "nav"} · ${photos}`].join("\n");
+let liveIndicator: { status: string; summary: string; detail: string } = { status: "found", summary: "x", detail: detailOf(5, 0) };
+let snapshotIndicator: { id: string; status: string; detail: string; scannedAt?: string } | null = null;
+let liveCalls = 0;
+vi.mock("@/lib/vin-scan/probe-autodna-precheck", () => ({
+  probeAutodnaPrecheck: async () => {
+    liveCalls++;
+    return { id: "autodna_precheck", label: "AutoDNA", country: "EU", openUrl: null, ...liveIndicator };
+  },
+}));
+vi.mock("@/lib/vin-scan/store", () => ({
+  readVinScanSnapshot: async (vin: string) =>
+    snapshotIndicator ? { vin, plates: {}, scannedAt: snapshotIndicator.scannedAt ?? new Date().toISOString(), indicators: [snapshotIndicator] } : null,
+}));
 vi.mock("@/lib/ltab-auto", () => ({
   orderCarFromCsdd: (_c: unknown, plate: string, vin: string) => ({ vin, make: "", model: "", year: "", plate }),
 }));
@@ -70,6 +87,9 @@ function stubRelayFetch(handler?: (url: string) => Response) {
 }
 
 beforeEach(() => {
+  liveIndicator = { status: "found", summary: "x", detail: detailOf(5, 0) };
+  snapshotIndicator = null;
+  liveCalls = 0;
   store.clear();
   pdfs.clear();
   pushes.length = 0;
@@ -154,6 +174,127 @@ describe("AutoDNA fona pirkums: aizsardzība", () => {
     expect(out).toMatchObject({ ok: false, started: false });
     expect(store.get(SID)?.state).toBe("not_configured");
     expect(fetchCalls).toHaveLength(0);
+  });
+});
+
+describe("AutoDNA fona pirkums: priekšpārbaudes aizsargs (Nila likums 25.11)", () => {
+  const buy = async () => {
+    const { POST } = await import("@/app/api/admin/autodna/fona/route");
+    return POST(
+      new Request("http://x/api/admin/autodna/fona", {
+        method: "POST",
+        body: JSON.stringify({ action: "purchase", sessionId: SID, vin: VIN, confirm: true, requestId: `r-${Math.random()}` }),
+      }),
+    );
+  };
+  const purchaseCalls = () => fetchCalls.filter((c) => c.url.endsWith("/purchase"));
+
+  it("arhīva foto > 0 -> relejam iet pirkums, skaitļi stāvoklī", async () => {
+    liveIndicator = { status: "found", summary: "x", detail: detailOf(0, 4) };
+    const res = await buy();
+    expect(res.status).toBe(200);
+    expect(purchaseCalls()).toHaveLength(1);
+    expect(store.get(SID)?.precheck).toMatchObject({ photos: 4, history: 0 });
+  });
+
+  it("vēsture > 0 -> drīkst", async () => {
+    liveIndicator = { status: "found", summary: "x", detail: detailOf(2, 0) };
+    expect((await buy()).status).toBe(200);
+    expect(purchaseCalls()).toHaveLength(1);
+  });
+
+  it("abi 0 -> 409 precheck_no_records, relejam nesūta", async () => {
+    liveIndicator = { status: "none", summary: "x", detail: detailOf(0, 0) };
+    const res = await buy();
+    const data = (await res.json()) as { error: string; message: string };
+    expect(res.status).toBe(409);
+    expect(data.error).toBe("precheck_no_records");
+    expect(data.message).toMatch(/Pirkt nedrīkst/);
+    expect(fetchCalls).toHaveLength(0);
+    expect(store.get(SID)).toMatchObject({ state: "error", code: "precheck_no_records", precheck: { photos: 0, history: 0 } });
+  });
+
+  it("svaigs VIN SCAN rezultāts tiek lietots bez jaunas ielases", async () => {
+    snapshotIndicator = { id: "autodna_precheck", status: "none", detail: detailOf(0, 0) };
+    expect((await buy()).status).toBe(409);
+    expect(liveCalls).toBe(0);
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  it("vecs VIN SCAN rezultāts -> svaiga ielase", async () => {
+    snapshotIndicator = { id: "autodna_precheck", status: "none", detail: detailOf(0, 0), scannedAt: "2026-01-01T00:00:00Z" };
+    expect((await buy()).status).toBe(200);
+    expect(liveCalls).toBe(1);
+  });
+
+  it("pending / Turnstile -> prasa relejam; relejs arī nevar -> 409 precheck_unavailable, pirkums nesūtīts", async () => {
+    liveIndicator = { status: "unknown", summary: "AutoDNA: priekšpārbaude vēl nav sagatavota", detail: "" };
+    stubRelayFetch((url) =>
+      url.endsWith("/precheck")
+        ? new Response(JSON.stringify({ status: "ok", allowed: false, code: "precheck_unavailable", photos: null, history: null }), { status: 200 })
+        : new Response(JSON.stringify({ jobId: "11111111-1111-4111-8111-111111111111" }), { status: 202 }),
+    );
+    const res = await buy();
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { error: string }).error).toBe("precheck_unavailable");
+    expect(fetchCalls.map((c) => c.url)).toEqual(["https://relay.example/autodna/precheck"]);
+  });
+
+  it("nezināms formāts, relejs nesasniedzams -> 409, nekad «uz labu laimi»", async () => {
+    liveIndicator = { status: "found", summary: "x", detail: "kaut kas cits" };
+    stubRelayFetch(() => {
+      throw new Error("ECONNREFUSED");
+    });
+    expect((await buy()).status).toBe(409);
+    expect(purchaseCalls()).toHaveLength(0);
+  });
+
+  it("relejs priekšpārbaudē redz ierakstus -> pērk", async () => {
+    liveIndicator = { status: "unknown", summary: "x", detail: "" };
+    stubRelayFetch((url) =>
+      url.endsWith("/precheck")
+        ? new Response(JSON.stringify({ status: "ok", allowed: true, photos: 6, history: 0 }), { status: 200 })
+        : new Response(JSON.stringify({ jobId: "11111111-1111-4111-8111-111111111111" }), { status: 202 }),
+    );
+    expect((await buy()).status).toBe(200);
+    expect(purchaseCalls()).toHaveLength(1);
+  });
+
+  it("\"Ielādēt nopirkto\" priekšpārbaudi neprasa (nepērk)", async () => {
+    liveIndicator = { status: "none", summary: "x", detail: detailOf(0, 0) };
+    const { startAutodnaReportDownload } = await import("@/lib/autodna-auto");
+    await startAutodnaReportDownload(SID, VIN);
+    expect(liveCalls).toBe(0);
+    expect(fetchCalls[0]!.url).toBe("https://relay.example/autodna/report");
+  });
+
+  it("GET ar vin atdod priekšpārbaudi panelim; bez precheck=live tīklu neaiztiek", async () => {
+    stubRelayFetch(() => new Response(JSON.stringify({ session: { state: "active" }, purchaseLive: true }), { status: 200 }));
+    const { GET } = await import("@/app/api/admin/autodna/fona/route");
+    const cached = (await (await GET(new Request(`http://x/api/admin/autodna/fona?sessionId=${SID}&vin=${VIN}`))).json()) as { precheck: { code?: string } };
+    expect(cached.precheck).toMatchObject({ allowed: false, code: "precheck_unavailable" });
+    expect(liveCalls).toBe(0);
+    const live = (await (await GET(new Request(`http://x/api/admin/autodna/fona?sessionId=${SID}&vin=${VIN}&precheck=live`))).json()) as {
+      precheck: { allowed: boolean; history: number };
+    };
+    expect(live.precheck).toMatchObject({ allowed: true, history: 5 });
+  });
+
+  it("releja notikuma priekšpārbaudes skaitļi nonāk stāvoklī", async () => {
+    const { handleAutodnaRelayEvent } = await import("@/lib/autodna-auto");
+    store.set(SID, { state: "checking", vin: VIN, jobId: "j9", updatedAt: "x" });
+    await handleAutodnaRelayEvent({
+      kind: "job",
+      jobId: "j9",
+      ref: SID,
+      vin: VIN,
+      jobKind: "purchase",
+      state: "error",
+      code: "precheck_no_records",
+      precheck: { photos: 0, history: 0 },
+    });
+    expect(store.get(SID)).toMatchObject({ code: "precheck_no_records", precheck: { photos: 0, history: 0 } });
+    expect(store.get(SID)?.message).toMatch(/Pirkt nedrīkst/);
   });
 });
 

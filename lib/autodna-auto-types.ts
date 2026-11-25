@@ -42,6 +42,17 @@ export type AutodnaAutoStatus = {
   pdf?: AutodnaAutoPdf;
   /** Kad PDF dati ievietoti AutoDNA blokā (automātiski vienreiz vai ar pogu). */
   appliedAt?: string;
+  /** Pēdējā priekšpārbaude (PROVIN pārbaude pirms releja vai releja notikums). */
+  precheck?: AutodnaAutoPrecheck;
+};
+
+/** AutoDNA bezmaksas priekšpārbaudes skaitļi (Nila likums 25.11: pērk tikai, ja foto vai vēsture > 0). */
+export type AutodnaAutoPrecheck = {
+  /** «Auto arhīva fotogrāfijas» ierakstu skaits; null - nav zināms. */
+  photos: number | null;
+  /** «Transportlīdzekļa vēsture» ierakstu skaits; null - nav zināms. */
+  history: number | null;
+  checkedAt?: string;
 };
 
 /** Tā pati forma kā CarVertical atlikumam (kredīti, pārbaudes laiks, pēdējā zemā atlikuma push diena). */

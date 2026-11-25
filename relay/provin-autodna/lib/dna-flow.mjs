@@ -7,6 +7,8 @@
  *     tie paši pieprasījumi, ko sūta AutoDNA lapa pati;
  *   - "Manas atskaites" (/profile/history, meklēšana ?search=VIN) un nopirktās atskaites PDF (atskaites lapa ->
  *     "Lejupielādēt" -> "Atskaite PDF", tieši kā Nils to dara ar roku);
+ *   - priekšpārbaude /vin/<VIN> lapā (Nila likums 25.11): pērk TIKAI, ja «Auto arhīva fotogrāfijas» vai
+ *     «Transportlīdzekļa vēsture» rāda >0 ierakstu (./dna-precheck.mjs); pārbauda arī tieši pirms klikšķa;
  *   - pirkums ar KREDĪTU /vin/<VIN> lapā: tikai, ja redzama "maksāt ar kredītiem" izvēle, kopsumma 0 € un viena skaidra
  *     apmaksas poga. Kamēr AUTODNA_PURCHASE_LIVE nav "1", pirkuma solis ir sauss (viss pārbaudīts, poga netiek spiesta).
  * Ko relejs NEKAD nedara: neiet uz pakām / biznesa pakām / bankas vārtejām (navigācija bloķēta), neievada karti,
@@ -34,6 +36,7 @@ import {
   redact,
   totalLooksLikeCredit,
 } from "./dna-page.mjs";
+import { DNA_PRECHECK_MESSAGE_LV, decidePrecheck, parsePrecheckHtml } from "./dna-precheck.mjs";
 
 /** Pēc nepareizas paroles nemēģina atkal 6 h (konta bloķēšanas risks); citādi ne biežāk kā reizi 10 min. */
 const BAD_CREDENTIALS_COOLDOWN_MS = 6 * 3600_000;
@@ -398,6 +401,23 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     return { p, snap };
   }
 
+  /** Priekšpārbaude no jau atvērtās /vin/<VIN> lapas HTML (tā pati parsēšana kā PROVIN VIN SCAN). */
+  async function readPrecheck(p) {
+    const html = await p.content().catch(() => "");
+    const page = parsePrecheckHtml(html);
+    return { ...decidePrecheck(page), pageState: page.state };
+  }
+
+  /** Tikai lasīšana: AutoDNA bezmaksas priekšpārbaude šim VIN (arhīva foto / vēstures ierakstu skaits). */
+  async function precheck(vin) {
+    const v = normalizeVin(vin);
+    const { p, snap } = await openVinPage(v);
+    const out = await readPrecheck(p);
+    say(`priekšpārbaude ${v}: ${out.allowed ? "drīkst" : out.code} (lapa ${out.pageState}, foto ${out.photos ?? "?"}, vēsture ${out.history ?? "?"})`);
+    if (out.pageState !== "ready") await debugDump(p, `precheck-${out.pageState}`, { out, pending: snap.pending, turnstile: snap.turnstile });
+    return { ...out, turnstile: Boolean(snap.turnstile) };
+  }
+
   /** Tikai lasīšana: ko pirkuma lapa rāda šim VIN (galvenajam pirms AUTODNA_PURCHASE_LIVE=1). */
   async function probe(vin) {
     const { p, snap } = await openVinPage(vin);
@@ -413,6 +433,12 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
   async function purchase(vin, { creditsBefore = null } = {}) {
     const v = normalizeVin(vin);
     const { p, snap } = await openVinPage(v);
+    // Otrā priekšpārbaude tajā pašā lapā tieši pirms pirkuma soļa (ja AutoDNA lapa starp soļiem mainījusies).
+    const pre = await readPrecheck(p);
+    if (!pre.allowed) {
+      await debugDump(p, `purchase-${pre.code}`, { pre });
+      return { ok: false, clicked: false, code: pre.code, message: DNA_PRECHECK_MESSAGE_LV[pre.code], photos: pre.photos, history: pre.history };
+    }
     const first = analyzePurchasePage(snap, v);
     if (first.step !== "ready") {
       await debugDump(p, `purchase-${first.step}`, { first, snap });
@@ -495,6 +521,7 @@ export function createAutodnaBrowser({ getContext, email, password, log, debugDi
     listReports,
     downloadPdf,
     purchase,
+    precheck,
     probe,
     paymentArmed: () => paymentArmed,
   };

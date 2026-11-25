@@ -14,6 +14,7 @@ Uzbūve tā pati kā `relay/provin-carvertical` (port 8793, Xvfb :94, lietotājs
 | `lib/relay-core.mjs` | Rinda, pirkuma aizsardzība, VIN reģistrs (`state.json`), atlikuma kešs, PDF glabātuve (bez pārlūka, testējams) |
 | `lib/dna-flow.mjs` | Pārlūka soļi: pieteikšanās, konts (/ajax), "Manas atskaites", kredīta pirkums, PDF, `probe` |
 | `lib/dna-page.mjs` | Atbilžu / lapu atpazīšana, pirkuma lēmums, redakcija |
+| `lib/dna-precheck.mjs` | Bezmaksas priekšpārbaudes (`/vin/<VIN>`) parseris un pirkuma aizsargs (TS `parseAutodnaPrecheckHtml` kopija) |
 
 Testi (repo saknē): `npx vitest run lib/autodna-relay.test.ts lib/autodna-auto.test.ts`.
 
@@ -52,16 +53,24 @@ ieraksta `debug/` (teksts bez e-pastiem, cipari -> #).
    poga (nekad "karte", "paka", "bizness"). Galvenā loga navigācija tikai `autodna.lv`, nekad `/pakas`, `/biznesa-pakas`;
    `/payment/*` tikai pirkuma klikšķa logā; bankas / karšu vārtejas citos domēnos bloķētas.
 7. Turnstile / captcha / nezināma lapa -> kļūda, relejs neko neapiet. `AUTODNA_PURCHASE_LIVE` nav 1 -> sausais režīms.
+8. **Nila likums 25.11 (KATEGORISKS):** pirms jebkuras pirkuma darbības relejs tajā pašā pārlūkā atver `/vin/<VIN>` un
+   nolasa bezmaksas priekšpārbaudi. Pērk TIKAI, ja «Auto arhīva fotogrāfijas» vai «Transportlīdzekļa vēsture» rāda >0
+   ierakstu. Abi 0 -> `precheck_no_records`; lapa nav gatava (Turnstile «Meklē pieejamo informāciju…»), kļūda vai
+   nezināms formāts -> `precheck_unavailable`. Kredīts netiek tērēts, VIN reģistrā nepaliek. Pārbaude atkārtojas arī
+   pirkuma solī tieši pirms klikšķa. Jau nopirktu atskaiti (`report_bought`) lejupielādē bez priekšpārbaudes.
+   PROVIN (`/api/admin/autodna/fona`) to pašu pārbauda pirms sūtīt relejam (otrais līmenis).
 
 ## Plūsma
 
 ```
 admin "Pirkt AutoDNA (fonā)" -> POST /api/admin/autodna/fona {action:"purchase", confirm:true, requestId}
+PROVIN -> (ja nav svaigas priekšpārbaudes) POST /autodna/precheck {vin} -> {allowed, code?, photos, history}
 PROVIN -> POST /autodna/purchase {vin, ref, requestId, confirm:true} -> {jobId}
 relejs -> PROVIN /api/autodna/relay-callback:
    {kind:"job", state: checking | awaiting_login | purchasing | waiting_report | downloading}
    {kind:"job", state:"result", existing, credits, pdfSize}  -> PROVIN paņem GET /autodna/jobs/:id/pdf
-   {kind:"job", state:"error", code}   turnstile | insufficient_credits | dry_run | bad_credentials | ...
+   {kind:"job", state:"error", code}   precheck_no_records | precheck_unavailable | turnstile | insufficient_credits | dry_run | ...
+   (notikumos `precheck: {photos, history}` - priekšpārbaudes skaitļi)
    {kind:"session", state:"needs_human", code}  -> push Nilam (viens par katru iemeslu)
    {kind:"balance", credits}                    -> kešs; < 5 -> sarkans + viens push dienā
 PROVIN: PDF -> Blob + Dropbox `/_PROv/<auto>/AutoDNA - VIN.pdf`; admin panelis vienreiz ievieto blokā (esošais parseris).
