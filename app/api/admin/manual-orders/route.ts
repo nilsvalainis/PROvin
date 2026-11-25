@@ -26,10 +26,15 @@ import {
 } from "@/lib/atra-parbaude-manual-order";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
+import type { OrderDropboxCategory } from "@/lib/order-dropbox-folder";
 
-/** Dropbox pasūtījuma mape (AUDITI) uzreiz pēc izveides; kļūda pasūtījumu neaptur. */
-function dropboxFolderAfter(orderId: string, vin: string | null | undefined) {
-  after(() => ensureOrderDropboxFolderSafe(orderId, { category: "audits", createdMs: Date.now(), vin: vin ?? null }));
+/**
+ * Dropbox pasūtījuma mape uzreiz pēc izveides; kļūda pasūtījumu neaptur. Virsmape pēc produkta: dīlera pārbaude ->
+ * DILERA DATI, pārējie -> AUDITI. Ja produkts vēlāk mainās (admins sūta Business / Dīlera PDF), mapi pārvieto
+ * `notify-report-ready` (`moveOrderDropboxFolderToCategory`).
+ */
+function dropboxFolderAfter(orderId: string, vin: string | null | undefined, category: OrderDropboxCategory = "audits") {
+  after(() => ensureOrderDropboxFolderSafe(orderId, { category, createdMs: Date.now(), vin: vin ?? null }));
 }
 
 export const runtime = "nodejs";
@@ -107,7 +112,7 @@ export async function POST(req: Request) {
           console.error("[dealer-check] convert", err);
         });
       }
-      dropboxFolderAfter(created.orderId, parsed.input.vin);
+      dropboxFolderAfter(created.orderId, parsed.input.vin, "dealer");
       return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
     if (body && typeof body === "object" && "vin" in (body as Record<string, unknown>)) {
