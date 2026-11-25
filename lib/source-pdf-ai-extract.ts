@@ -14,9 +14,10 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import type {
-  CarVerticalDamageDetailRow,
-  CarVerticalTimelineRow,
+import {
+  vendorTimelineRowDefaultInPdf,
+  type CarVerticalDamageDetailRow,
+  type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
 import { extractCsddPdfWithAiStructured } from "@/lib/csdd-ai-structured";
 import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
@@ -97,12 +98,13 @@ function normalizeTimelineRow(raw: unknown): CarVerticalTimelineRow | null {
   const o = asRecord(raw);
   if (!o) return null;
   const odometer = asString(o.odometer, 12).replace(/\D/g, "");
+  const description = asString(o.description, 240);
   const row: CarVerticalTimelineRow = {
     date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
     country: normalizeCountryNameLv(asString(o.country, 80)),
-    description: asString(o.description, 240),
+    description,
     ...(odometer ? { odometer } : {}),
-    includeInPdf: false,
+    includeInPdf: vendorTimelineRowDefaultInPdf(description),
   };
   if (!row.date.trim() && !row.description.trim()) return null;
   return row;

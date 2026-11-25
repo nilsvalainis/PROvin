@@ -12,6 +12,7 @@ import {
   carVerticalTimelineRowHasData,
   carVerticalTimelineRowInPdf,
   normalizeCarVerticalTimelineRow,
+  vendorTimelineRowDefaultInPdf,
   type CarVerticalDamageDetailRow,
   type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
@@ -1825,7 +1826,8 @@ export function mergeVendorHistoryTimeline(
   );
   const out = [...have];
   for (const raw of incoming ?? []) {
-    const row = { ...normalizeCarVerticalTimelineRow(raw), includeInPdf: false };
+    const norm = normalizeCarVerticalTimelineRow(raw);
+    const row = { ...norm, includeInPdf: vendorTimelineRowDefaultInPdf(norm.description) };
     if (!carVerticalTimelineRowHasData(row)) continue;
     const key = `${row.date}|${row.description.replace(/\s+/g, " ").trim().toLowerCase()}`;
     if (seen.has(key)) continue;
