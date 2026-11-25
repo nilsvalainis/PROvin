@@ -6,6 +6,8 @@
  * (`upsertVendorPdfAiContext`): jaunāks tā paša avota PDF nomaina tikai šo bloku, operatora un
  * Copilot teksts paliek neskarts. RAW laukus šis ceļš neaizpilda.
  */
+import { createHash } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
@@ -187,7 +189,11 @@ export async function POST(req: Request) {
         vin: applied.report.vin,
         csdd: sourceBlocks.csdd,
       });
-      const block = saved.meta ? { ...applied.block, report: { ...applied.report, pdf: saved.meta } } : applied.block;
+      // md5 - lai tas pats PDF no pasta (`/api/carfax/pdf-inbox`) netiek ielikts otrreiz.
+      const md5 = createHash("md5").update(new Uint8Array(buffer)).digest("hex");
+      const block = saved.meta
+        ? { ...applied.block, report: { ...applied.report, pdf: { ...saved.meta, md5, via: "upload" as const } } }
+        : applied.block;
       return NextResponse.json({
         ok: true,
         vendor: "carfax",

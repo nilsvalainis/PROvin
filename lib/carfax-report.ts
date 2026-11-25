@@ -131,6 +131,8 @@ export function normalizeCarfaxReport(raw: unknown): CarfaxReport | null {
             savedAt: s(pdf.savedAt, 40),
             ...(s(pdf.blobPath) ? { blobPath: s(pdf.blobPath, 300) } : {}),
             ...(s(pdf.dropboxPath) ? { dropboxPath: s(pdf.dropboxPath, 600) } : {}),
+            ...(/^[a-f0-9]{32}$/.test(s(pdf.md5, 40)) ? { md5: s(pdf.md5, 40) } : {}),
+            ...(pdf.via === "email" || pdf.via === "upload" ? { via: pdf.via } : {}),
           },
         }
       : {}),

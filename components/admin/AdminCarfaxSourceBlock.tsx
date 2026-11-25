@@ -4,11 +4,20 @@
  * CARFAX avota bloks: tā pati forma kā AutoDNA / CarVertical (nobraukums, negadījumi, laikposms,
  * komentāri, foto) + strukturētās atskaites kopsavilkums (`report`), ko aizpilda PDF parsētājs.
  */
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
+import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
+import { adminProBtn } from "@/lib/admin-pro-tones";
+import {
+  CARFAX_PURCHASE_CONFIRM_LV,
+  carfaxPreviewUrl,
+  carfaxPurchasePending,
+  type CarfaxUnmatchedPdf,
+} from "@/lib/carfax-inbox-logic";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { CarfaxBlockState, VendorAvotuBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -183,6 +192,126 @@ export function CarfaxReportPanel({ report }: { report: CarfaxReport }) {
   );
 }
 
+type InboxState = { serverPdf: CarfaxReport["pdf"] | null; unmatched: CarfaxUnmatchedPdf[] };
+
+/**
+ * «Pirkt CARFAX»: pēc apstiprinājuma atver carfax.eu priekšskatījumu ar VIN (kredītu izlieto Nils savā pārlūkā) un
+ * pasūtījumā saglabā klikšķa laiku (`purchase`) - pasta ielase zina, kuram pasūtījumam PDF gaidīt.
+ * PDF pats ienāk no info@provin.lv pasta (`/api/carfax/pdf-inbox`); nepiesaistītos PDF ar šo VIN var pievienot šeit.
+ */
+function CarfaxPurchasePanel({
+  value,
+  onChange,
+  readOnly,
+  disabled,
+  sessionId,
+  getSourceBlocks,
+  applyPatchedBlocks,
+}: Pick<Props, "value" | "onChange" | "readOnly" | "disabled" | "sessionId" | "getSourceBlocks" | "applyPatchedBlocks">) {
+  const handoffVin = useAdminVinHandoff()?.vin ?? "";
+  const vin = normalizeVin(handoffVin || getSourceBlocks?.().csdd.vin || value?.report?.vin || "");
+  const ready = isValidVin(vin);
+  const [now, setNow] = useState(() => Date.now());
+  const [inbox, setInbox] = useState<InboxState | null>(null);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const pending = carfaxPurchasePending(value, now);
+  const localMd5 = value?.report?.pdf?.md5 ?? "";
+  const serverPdf = inbox?.serverPdf;
+  const receivedOnServer = Boolean(serverPdf?.md5 && serverPdf.via === "email" && serverPdf.md5 !== localMd5);
+
+  const refresh = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const qs = new URLSearchParams({ sessionId, vin: ready ? vin : "" });
+      const res = await fetch(`/api/admin/carfax/inbox?${qs.toString()}`, { cache: "no-store" });
+      if (res.ok) setInbox((await res.json()) as InboxState);
+    } catch {
+      /* nākamajā reizē */
+    }
+    setNow(Date.now());
+  }, [sessionId, vin, ready]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (!pending || receivedOnServer) return;
+    const t = window.setInterval(() => void refresh(), 60_000);
+    return () => window.clearInterval(t);
+  }, [pending, receivedOnServer, refresh]);
+
+  const onBuy = () => {
+    if (readOnly || disabled || !ready) return;
+    const url = carfaxPreviewUrl(vin);
+    if (!url) return;
+    const already = value?.report?.pdf && normalizeVin(value.report.vin) === vin;
+    const msg = already ? `Šim VIN CARFAX PDF jau ir pasūtījumā. ${CARFAX_PURCHASE_CONFIRM_LV}` : CARFAX_PURCHASE_CONFIRM_LV;
+    if (!window.confirm(msg)) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+    onChange({ ...value, purchase: { requestedAt: new Date().toISOString(), vin } });
+    setNow(Date.now());
+  };
+
+  const onAttach = async (md5: string) => {
+    if (readOnly || disabled || busy) return;
+    setBusy(md5);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/carfax/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, md5, sourceBlocks: getSourceBlocks?.() ?? {} }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
+        changedKeys?: CopilotSourceKey[];
+        error?: string;
+      };
+      if (!res.ok || !data.patchedSourceBlocks) {
+        setError(data.error === "duplicate" ? "Šis PDF jau ir pasūtījumā" : "Neizdevās pievienot");
+        return;
+      }
+      if (applyPatchedBlocks) applyPatchedBlocks(data.patchedSourceBlocks, data.changedKeys ?? ["carfax"]);
+      else if (data.patchedSourceBlocks.carfax) onChange(data.patchedSourceBlocks.carfax);
+      await refresh();
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return (
+    <div className="mb-2" data-provin-carfax-purchase>
+      <button type="button" disabled={readOnly || disabled || !ready} onClick={onBuy} className={adminProBtn("money")}>
+        Pirkt CARFAX
+      </button>
+      {receivedOnServer ? (
+        <p className="mt-1 text-[11px] text-emerald-700">CARFAX PDF saņemts no pasta - pārlādē lapu</p>
+      ) : pending ? (
+        <p className="mt-1 text-[11px] text-slate-600">Gaida CARFAX PDF no pasta…</p>
+      ) : null}
+      {(inbox?.unmatched ?? []).map((u) => (
+        <div key={u.md5} className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="text-red-700">
+            Pastā PDF bez pasūtījuma: {u.fileName}
+            {u.receivedAt ? ` · ${new Date(u.receivedAt).toLocaleString("lv-LV")}` : ""}
+          </span>
+          <button
+            type="button"
+            disabled={readOnly || disabled || Boolean(busy)}
+            onClick={() => void onAttach(u.md5)}
+            className={adminProBtn("neutral")}
+          >
+            {busy === u.md5 ? "Pievieno…" : "Pievienot šim pasūtījumam"}
+          </button>
+        </div>
+      ))}
+      {error ? <p className="mt-1 text-[11px] text-red-700">{error}</p> : null}
+    </div>
+  );
+}
+
 export function AdminCarfaxSourceBlock({
   value,
   onChange,
@@ -215,7 +344,20 @@ export function AdminCarfaxSourceBlock({
       applyPatchedBlocks={applyPatchedBlocks}
       photosPersistenceEnabled={photosPersistenceEnabled}
       onPhotoGroupsStructuralCommit={onPhotoGroupsStructuralCommit}
-      extraPanel={report ? <CarfaxReportPanel report={report} /> : null}
+      extraPanel={
+        <>
+          <CarfaxPurchasePanel
+            value={value}
+            onChange={onChange}
+            readOnly={readOnly}
+            disabled={disabled}
+            sessionId={sessionId}
+            getSourceBlocks={getSourceBlocks}
+            applyPatchedBlocks={applyPatchedBlocks}
+          />
+          {report ? <CarfaxReportPanel report={report} /> : null}
+        </>
+      }
     />
   );
 }

@@ -35,6 +35,7 @@ import {
   normalizeCarfaxReport,
   type CarfaxReport,
 } from "@/lib/carfax-report";
+import { normalizeCarfaxPurchaseRequest, type CarfaxPurchaseRequest } from "@/lib/carfax-inbox-logic";
 import { parseSpeckrOrderSnapshotRaw } from "@/lib/speckr-order";
 import {
   emptyOneautoIngest,
@@ -1189,7 +1190,11 @@ export type ListingAnalysisBlockState = {
  * CARFAX - tā pati forma kā AutoDNA / CarVertical + strukturētā atskaite (`report`), ko aizpilda
  * PDF parsētājs vai nākotnes automātika (sk. `lib/carfax-report.ts`).
  */
-export type CarfaxBlockState = VendorAvotuBlockState & { report?: CarfaxReport };
+export type CarfaxBlockState = VendorAvotuBlockState & {
+  report?: CarfaxReport;
+  /** Pēdējais «Pirkt CARFAX» klikšķis - pasta ielase zina, kuram pasūtījumam gaidīt PDF. */
+  purchase?: CarfaxPurchaseRequest;
+};
 
 export type WorkspaceSourceBlocks = {
   csdd: CsddFormFields;
@@ -2732,14 +2737,16 @@ function repairVendorBlock(b: VendorAvotuBlockState | undefined): VendorAvotuBlo
 function repairCarfaxBlock(b: CarfaxBlockState | undefined): CarfaxBlockState {
   const v = repairVendorBlock(b);
   const report = normalizeCarfaxReport(b?.report);
-  return report ? { ...v, report } : v;
+  const purchase = normalizeCarfaxPurchaseRequest(b?.purchase);
+  return { ...v, ...(report ? { report } : {}), ...(purchase ? { purchase } : {}) };
 }
 
 function parseCarfaxBlockRaw(raw: Record<string, unknown>): CarfaxBlockState {
   const hasVendorShape = "serviceHistory" in raw || "incidents" in raw || "photos" in raw || "photoGroups" in raw;
   const v = hasVendorShape ? parseVendorAvotuBlockRaw(raw) : emptyVendorAvotuBlock();
   const report = normalizeCarfaxReport(raw.report);
-  return report ? { ...v, report } : v;
+  const purchase = normalizeCarfaxPurchaseRequest(raw.purchase);
+  return { ...v, ...(report ? { report } : {}), ...(purchase ? { purchase } : {}) };
 }
 
 function repairCitiSection(s: CitiAvotiSectionState | undefined): CitiAvotiSectionState {

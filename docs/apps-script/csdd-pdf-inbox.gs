@@ -15,6 +15,13 @@
  * Gmail, izvelk 6 zīmju kodu un sūta to uz PROVIN /api/carvertical/login-code (tas pats CSDD_PDF_INBOX_TOKEN).
  * PROVIN kodu nodod CarVertical relejam tikai, ja tas tieši tagad gaida kodu. Kods netiek logots nekur.
  *
+ * Trešais darbs (processCarfaxPdfInbox, ik 5 min): CARFAX atskaites PDF. Pēc kredīta izlietošanas carfax.eu sūta uz
+ * info@provin.lv vēstuli ar pielikumu "CARFAX - <VIN>.pdf". Skripts ņem TIKAI vēstules no carfax.eu ar šādu pielikuma
+ * nosaukumu un sūta PDF (daļās pa 2 MB) uz PROVIN /api/carfax/pdf-inbox (tas pats CSDD_PDF_INBOX_TOKEN). PROVIN atrod
+ * pasūtījumu pēc VIN un ieliek PDF CARFAX blokā; ja pasūtījuma nav - saglabā kā nepiesaistītu (adminā "Pievienot").
+ * Etiķetes: "PROVIN-carfax-ok" (nosūtīts) / "PROVIN-carfax-pārbaudīt" (PROVIN teica, ka nav CARFAX atskaite) /
+ * "PROVIN-carfax-nav-atskaite" (CARFAX vēstule bez atskaites PDF, piem. rēķins - netika sūtīts).
+ *
  * Script Properties (Project Settings -> Script Properties):
  *   CSDD_PDF_INBOX_TOKEN - tā pati vērtība kā Vercel env (nekad kodā);
  *   FORWARDED_FROM       - Nila Gmail adrese, no kuras pāradresē CSDD e-pastus (nekad kodā).
@@ -26,12 +33,22 @@ var INBOX_ADDRESS = "info@provin.lv";
 var LABEL_DONE = "PROVIN-apstrādāts";
 var LABEL_SKIP = "PROVIN-nav-CSDD";
 var LABEL_CHECK = "PROVIN-pārbaudīt";
-var QUERY = "has:attachment filename:pdf newer_than:7d";
+var QUERY = "has:attachment filename:pdf newer_than:7d -from:carfax.eu";
 var MAX_THREADS = 30;
 var MAX_PDF_BYTES = 8 * 1024 * 1024;
 /** LV numurzīme: 2-3 burti + 1-4 cipari (piem. RO8544, ABC123). */
 var PLATE_RE = /(^|[^A-Z0-9])[A-Z]{2,3}[ -]?\d{1,4}([^A-Z0-9]|$)/i;
 var SCAN_BYTES = 4096;
+
+var CARFAX_API_URL = "https://www.provin.lv/api/carfax/pdf-inbox";
+var CARFAX_QUERY = "from:carfax.eu has:attachment filename:pdf newer_than:3d";
+var LABEL_CARFAX_OK = "PROVIN-carfax-ok";
+var LABEL_CARFAX_CHECK = "PROVIN-carfax-pārbaudīt";
+var LABEL_CARFAX_SKIP = "PROVIN-carfax-nav-atskaite";
+/** Pielikums "CARFAX - <VIN>.pdf" (VIN 17 zīmes). */
+var CARFAX_FILE_RE = /^CARFAX\s*-\s*[A-HJ-NPR-Z0-9]{17}(\s*\(\d+\))?\.pdf$/i;
+var CARFAX_CHUNK_BYTES = 2 * 1024 * 1024;
+var CARFAX_MAX_BYTES = 20 * 1024 * 1024;
 
 var CV_CODE_API_URL = "https://www.provin.lv/api/carvertical/login-code";
 var CV_QUERY = "from:carvertical.com newer_than:1d";
@@ -46,6 +63,12 @@ function processCsddPdfInbox() {
     processCarverticalCodes();
   } catch (e) {
     console.warn("CarVertical kodi: " + e);
+  }
+  // Rezerve, ja CARFAX trigeris vēl nav uzstādīts (PROVIN to pašu PDF otrreiz neieliek).
+  try {
+    processCarfaxPdfInbox();
+  } catch (e) {
+    console.warn("CARFAX PDF: " + e);
   }
   var props = PropertiesService.getScriptProperties();
   var token = props.getProperty("CSDD_PDF_INBOX_TOKEN");
@@ -165,10 +188,126 @@ function getOrCreateLabel_(name) {
 function installTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     var fn = t.getHandlerFunction();
-    if (fn === "processCsddPdfInbox" || fn === "processCarverticalCodes") ScriptApp.deleteTrigger(t);
+    if (fn === "processCsddPdfInbox" || fn === "processCarverticalCodes" || fn === "processCarfaxPdfInbox") ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger("processCsddPdfInbox").timeBased().everyMinutes(5).create();
   ScriptApp.newTrigger("processCarverticalCodes").timeBased().everyMinutes(1).create();
+  ScriptApp.newTrigger("processCarfaxPdfInbox").timeBased().everyMinutes(5).create();
+}
+
+/**
+ * CARFAX PDF (trigeris ik 5 min). Ņem tikai vēstules no carfax.eu (sūtītāja domēns) ar pielikumu "CARFAX - <VIN>.pdf".
+ * Citi pielikumi un sūtītāji netiek sūtīti nekur. PDF iet daļās (Vercel pieprasījuma limits ~4,5 MB).
+ */
+function processCarfaxPdfInbox() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    var token = PropertiesService.getScriptProperties().getProperty("CSDD_PDF_INBOX_TOKEN");
+    if (!token || token.length < 24) {
+      console.error("Nav CSDD_PDF_INBOX_TOKEN (Script Properties)");
+      return;
+    }
+    var threads = GmailApp.search(CARFAX_QUERY, 0, 20);
+    for (var i = 0; i < threads.length; i++) {
+      var thread = threads[i];
+      var has = thread.getLabels().some(function (l) {
+        var n = l.getName();
+        return n === LABEL_CARFAX_OK || n === LABEL_CARFAX_CHECK || n === LABEL_CARFAX_SKIP;
+      });
+      if (has) continue;
+      var outcome = processCarfaxThread_(thread, token);
+      // "retry" (PROVIN nav sasniedzams) - etiķeti neliek, nākamajā reizē vēlreiz.
+      if (outcome === "ok") thread.addLabel(getOrCreateLabel_(LABEL_CARFAX_OK));
+      else if (outcome === "check") thread.addLabel(getOrCreateLabel_(LABEL_CARFAX_CHECK));
+      else if (outcome === "none") thread.addLabel(getOrCreateLabel_(LABEL_CARFAX_SKIP));
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** -> "ok" | "check" | "retry" | "none" */
+function processCarfaxThread_(thread, token) {
+  var outcome = "none";
+  thread.getMessages().forEach(function (msg) {
+    if (!isCarfaxSender_(msg.getFrom() || "")) return;
+    msg.getAttachments({ includeInlineImages: false }).forEach(function (att) {
+      var name = att.getName() || "";
+      if (!CARFAX_FILE_RE.test(name)) return;
+      var bytes = att.getBytes();
+      if (!bytes || bytes.length < 100 || bytes.length > CARFAX_MAX_BYTES) {
+        if (outcome !== "retry") outcome = "check";
+        return;
+      }
+      var res = postCarfaxPdf_(token, bytes, name, msg);
+      if (res === "retry") outcome = "retry";
+      else if (outcome !== "retry" && outcome !== "check") outcome = res;
+    });
+  });
+  return outcome;
+}
+
+/** Sūtītājs: ...@carfax.eu vai ...@<apakšdomēns>.carfax.eu. */
+function isCarfaxSender_(from) {
+  var m = String(from).toLowerCase().match(/@([a-z0-9.-]+)>?\s*$/);
+  if (!m) return false;
+  return m[1] === "carfax.eu" || /\.carfax\.eu$/.test(m[1]);
+}
+
+function md5Hex_(bytes) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, bytes)
+    .map(function (b) {
+      var h = (b & 255).toString(16);
+      return h.length === 1 ? "0" + h : h;
+    })
+    .join("");
+}
+
+/** PDF daļās -> "ok" (pieņemts / jau bija / nepiesaistīts), "check" (nav CARFAX atskaite), "retry". */
+function postCarfaxPdf_(token, bytes, name, msg) {
+  var md5 = md5Hex_(bytes);
+  var count = Math.ceil(bytes.length / CARFAX_CHUNK_BYTES);
+  for (var i = 0; i < count; i++) {
+    var part = bytes.slice(i * CARFAX_CHUNK_BYTES, Math.min(bytes.length, (i + 1) * CARFAX_CHUNK_BYTES));
+    var json;
+    try {
+      var resp = UrlFetchApp.fetch(CARFAX_API_URL, {
+        method: "post",
+        contentType: "application/json",
+        headers: { Authorization: "Bearer " + token },
+        payload: JSON.stringify({
+          md5: md5,
+          fileName: name,
+          chunkIndex: i,
+          chunkCount: count,
+          chunkBase64: Utilities.base64Encode(part),
+          messageId: msg.getId(),
+          receivedAt: msg.getDate().toISOString(),
+        }),
+        muteHttpExceptions: true,
+      });
+      var code = resp.getResponseCode();
+      if (code >= 500 || code === 401 || code === 429) {
+        console.warn("PROVIN CARFAX API " + code);
+        return "retry";
+      }
+      if (code === 400) return "check";
+      json = JSON.parse(resp.getContentText() || "{}");
+    } catch (e) {
+      console.warn("PROVIN API nav sasniedzams: " + e);
+      return "retry";
+    }
+    if (i < count - 1) {
+      if (json.status !== "chunk_saved") return "retry";
+      continue;
+    }
+    console.log("CARFAX PDF: " + json.status);
+    if (json.status === "attached" || json.status === "duplicate" || json.status === "unmatched") return "ok";
+    if (json.status === "not_carfax") return "check";
+    return "retry";
+  }
+  return "retry";
 }
 
 /**
