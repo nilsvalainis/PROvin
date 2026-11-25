@@ -79,7 +79,7 @@ function scanFromDraftWorkspace(draft: NonNullable<Awaited<ReturnType<typeof rea
   const summaryInput = {
     csddForm: blocks.csdd,
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
-    manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+    manualLtabBlock: toPdfLtabManualBlock(blocks.ltab, { csdd: blocks.csdd }),
     ccVinBlock: blocks.cc_vin,
     asvBlock: blocks.asv,
   };

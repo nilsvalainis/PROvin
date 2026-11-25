@@ -75,6 +75,8 @@ import {
   LTAB_CERTIFICATE_TITLE,
   ltabCertificateClaimHasData,
   ltabCertificateHasContent,
+  ltabCertificateIsNoClaims,
+  LTAB_NO_CLAIMS_STATUS_LV,
   sumLtabCertificateAmountCents,
 } from "@/lib/ltab-report-extract";
 import {
@@ -568,6 +570,7 @@ function payloadLtabHasData(p: ClientReportPayload, vis: PdfVisibilitySettings):
   if (!vis.ltab) return false;
   const b = p.manualLtabBlock;
   if (!b) return false;
+  // `statusNote` (piem. «nav Latvijas numura») nav pārbaudīts avots - avotu skaitā neskaita.
   return b.rows.length > 0 || b.comments.trim().length > 0 || ltabCertificateHasContent(b.certificate);
 }
 
@@ -2409,6 +2412,10 @@ function buildLtabCertificateHtml(cert: NonNullable<ClientManualLtabBlockPdf["ce
     ? `${LTAB_CERTIFICATE_TITLE} uz ${cert.issuedAt.trim()}`
     : LTAB_CERTIFICATE_TITLE;
   const facts: string[] = [];
+  // Bez negadījumiem: skaidrs, neitrāls (grafīts) statuss - ne sarkans, ne tukšs.
+  if (ltabCertificateIsNoClaims(cert)) {
+    facts.push(`<p class="pdf-ltab-izzi-status">${escapeHtml(LTAB_NO_CLAIMS_STATUS_LV)}</p>`);
+  }
   if (cert.vehicleLine.trim()) {
     facts.push(`<p class="pdf-ltab-izzi-line">${escapeHtml(cert.vehicleLine.trim())}</p>`);
   }
@@ -2471,13 +2478,17 @@ function buildLtabAvotuSubsection(
   const photosHtml = b
     ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeSourceBlockPhotoGroups)
     : "";
-  if (!hasComments && !certHtml && !photosHtml && !sparkHtml) return "";
+  const statusNote = !certHtml ? (b?.statusNote ?? "").trim() : "";
+  const statusHtml = statusNote
+    ? `<div class="pdf-ltab-izzi pdf-ltab-izzi--muted"><p class="pdf-ltab-izzi-status">${escapeHtml(statusNote)}</p></div>`
+    : "";
+  if (!hasComments && !certHtml && !photosHtml && !sparkHtml && !statusHtml) return "";
   const head = sectionHeadBrand(
     ltabSectionIconHtml(),
     SOURCE_BLOCK_LABELS.ltab,
     sourceRecordCountBadgeHtml(b ? b.rows.filter(ltabRowHasData).length : 0),
   );
-  const inner = [sparkHtml, certHtml, photosHtml, hasComments && b ? pdfAvotuCommentIsland(b.comments) : ""]
+  const inner = [sparkHtml, certHtml, statusHtml, photosHtml, hasComments && b ? pdfAvotuCommentIsland(b.comments) : ""]
     .filter(Boolean)
     .join("");
   const body = `<div class="pdf-source-section-body">${inner}</div>`;
@@ -3104,6 +3115,8 @@ ${clientReportPageChromeCss(running)}
       }
       .pdf-ltab-izzi .pdf-ltab-loss-history{margin:12px 0 0;}
       .pdf-ltab-izzi-line{margin:0 0 4px;font-size:var(--pdf-fs-base);line-height:1.5;color:#0f172a;}
+      .pdf-ltab-izzi-status{margin:0 0 8px;font-size:var(--pdf-fs-base);line-height:1.45;font-weight:600;color:#334155;}
+      .pdf-ltab-izzi--muted .pdf-ltab-izzi-status{margin:0;font-weight:500;color:#64748b;}
       .pdf-ltab-izzi-footer{margin:10px 0 0;font-size:9px;line-height:1.4;color:#94a3b8;}
       /* Viens apakšvirsrakstu stils visās sadaļās (CSDD, dīleris, LTAB, sludinājums, foto). */
       .pdf-subhead{

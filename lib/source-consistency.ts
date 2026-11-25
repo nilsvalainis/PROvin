@@ -11,6 +11,7 @@
  * - `warn` - avoti nesakrīt, jāpaskatās;
  * - `info` - zināma avotu dabiska atšķirība (skaitā neietilpst, sarakstā pelēks).
  */
+import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
   mergeSourceBlocksWithDefaults,
@@ -966,7 +967,7 @@ function checkDamages(blocks: WorkspaceSourceBlocks, lots: Lot[], nowMs: number,
   // CSNg: e.csdd «Informācija no apdrošinātājiem / policijas» pret LTAB.
   const signals = parseCsddRegistrySignals(blocks.csdd, nowMs);
   const ltabRows = (blocks.ltab.rows ?? []).filter((r) => r.csngDate.trim() || r.incidentNo.trim());
-  const ltabChecked = Boolean(blocks.ltab.certificate) || ltabRows.length > 0;
+  const ltabChecked = Boolean(blocks.ltab.certificate) || ltabRows.length > 0 || ltabNoClaimsConfirmed(blocks.ltab);
   const csdd = signals.csngInsurers;
   if (csdd.state === "none" && ltabRows.length > 0) {
     push(out, {

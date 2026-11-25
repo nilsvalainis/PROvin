@@ -122,6 +122,52 @@ export function ltabCertificateHasContent(c: LtabCertificate | null | undefined)
   );
 }
 
+/** Klienta PDF / admin: neitrāls statuss, kad LTAB izziņā negadījumu nav. */
+export const LTAB_NO_CLAIMS_STATUS_LV = "LTAB datubāzē negadījumi nav reģistrēti";
+/** Klienta PDF: LTAB meklē tikai pēc LV numurzīmes - ārzemju / noņemtam auto pārbaude nav iespējama. */
+export const LTAB_NOT_POSSIBLE_NO_LV_PLATE_LV = "LTAB pārbaude nav iespējama - nav Latvijas numura";
+
+/** Izziņa ir nolasīta un tajā nav neviena negadījuma ("Negadījumu skaits: 0", nav CSNg rindu). */
+export function ltabCertificateIsNoClaims(c: LtabCertificate | null | undefined): boolean {
+  if (!c || !ltabCertificateHasContent(c)) return false;
+  if (c.claims.some(ltabCertificateClaimHasData)) return false;
+  const n = Number.parseInt(c.accidentCount.trim(), 10);
+  return Number.isFinite(n) && n === 0;
+}
+
+/** `2026-11-25T09:29:16Z` -> `25.11.2026 11:29:16` (Rīgas laiks, kā LTAB izziņā). */
+export function formatLtabIssuedAtFromIso(iso: string): string {
+  const d = new Date(iso);
+  if (!iso || Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Riga",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("day")}.${get("month")}.${get("year")} ${get("hour")}:${get("minute")}:${get("second")}`;
+}
+
+/**
+ * Rezerves izziņa, ja LTAB lapa rādīja "nav reģistrēts neviens negadījums", bet PDF neizdevās nolasīt:
+ * tikai tas, ko LTAB tiešām apstiprināja (numurs, laiks, 0 negadījumu) - bez izdomātiem auto datiem.
+ */
+export function buildLtabNoClaimsCertificate(plate: string, checkedAtIso: string): LtabCertificate {
+  const p = plate.trim().toUpperCase();
+  return {
+    ...emptyLtabCertificate(),
+    issuedAt: formatLtabIssuedAtFromIso(checkedAtIso),
+    plate: p,
+    vehicleLine: p ? `Valsts numura zīme ${p}.` : "",
+    accidentCount: "0",
+  };
+}
+
 export function looksLikeLtabCertificate(text: string): boolean {
   const t = text.slice(0, 20_000);
   if (/Transportlīdzekļa\s+zaudējumu\s+dati/i.test(t)) return true;

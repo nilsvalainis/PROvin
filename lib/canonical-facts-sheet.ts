@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import {
   extractListingSellerClaims,
   formatListingSellerClaimLines,
@@ -243,6 +244,8 @@ export type CanonicalFacts = {
   reportIncidentCount: number;
   /** Visi bojājumu pierādījumi, arī bez summas (izsoles, reģistru izņemšana bojājuma dēļ). */
   damageEvidence: DamageEvidence;
+  /** LTAB pārbaudīts pēc LV numura, OCTA negadījumu nav (pozitīvs fakts, attiecas tikai uz Latviju). */
+  ltabNoClaims?: boolean;
   /** Automātisko brīdinājumu (sarkano/dzelteno baneru) teksti, kas nonāk atskaitē. */
   alertBannerTexts: string[];
   ta: TechnicalInspectionCoverage;
@@ -587,6 +590,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
     incidents,
     damageEvidence: collectDamageEvidence(blocks),
+    ltabNoClaims: ltabNoClaimsConfirmed(blocks.ltab),
     reportIncidentCount,
     alertBannerTexts: computeProvinAlertBannersFromWorkspace(blocks).map((b) => b.text.trim()).filter(Boolean),
     ta,
@@ -749,6 +753,9 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     );
   }
   if (facts.incidents.length > 8) lines.push(`- … vēl ${facts.incidents.length - 8}`);
+  if (facts.ltabNoClaims) {
+    lines.push("LTAB (OCTA, Latvija): pārbaudīts pēc LV numura - negadījumi nav reģistrēti (attiecas tikai uz Latviju)");
+  }
   if (facts.damageEvidence.total > 0) {
     lines.push(
       `Bojājumu avotu ieraksti (arī bez summas): ${facts.damageEvidence.total} - bojājumi IR fiksēti; aizliegts rakstīt, ka bojājumu nav; skaitu tekstā ņem no rindas „Negadījumi atskaitē”`,
