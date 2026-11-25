@@ -55,6 +55,11 @@ export function orderDropboxCategory(args: {
   return "audits";
 }
 
+/** Manuālais pasūtījums (`manual_order_*`, sk. `MANUAL_ORDER_ID_PREFIX`) - bez smagā krātuves importa. */
+export function isManualOrderSessionId(id: string): boolean {
+  return typeof id === "string" && id.startsWith("manual_order_") && /^[a-zA-Z0-9_]+$/.test(id);
+}
+
 /**
  * Manuālajam pasūtījumam produkts kļūst zināms tikai, kad admins ģenerē / sūta PDF (Business, Dīlera dati, AUDITS).
  * PDF nosaukums -> virsmape. ASV / izsoļu arhīvs / nezināms - null (mapi nepārvieto).
