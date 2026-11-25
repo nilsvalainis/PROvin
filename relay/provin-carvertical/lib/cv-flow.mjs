@@ -25,6 +25,7 @@ import {
   parseQuotas,
   parseReportsList,
   pickCreditUseHref,
+  buildDebugBody,
   redact,
 } from "./cv-page.mjs";
 import {
@@ -129,7 +130,7 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
         )
         .catch(() => []);
       await fs.mkdir(debugDir, { recursive: true, mode: 0o700 });
-      const body = redact(JSON.stringify({ url: s.url, labels, text: s.text.slice(0, 6000), ...(extra ? { extra } : {}) }, null, 1), allSecrets).replace(/\d/g, "#");
+      const body = buildDebugBody({ url: s.url, labels, text: s.text.slice(0, 6000) }, extra, allSecrets);
       await fs.writeFile(path.join(debugDir, `${tag}-${Date.now()}.json`), body, { mode: 0o600 });
     } catch {
       /* debug nav kritisks */
@@ -143,6 +144,41 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
       await p.waitForTimeout(1200);
       say("tirgus: palikt Latvijā");
     }
+  }
+
+  /**
+   * Sīkdatņu logs («Piekrist visam / Konfigurēt») var parādīties vēlu un aizsegt pogas (kā AutoDNA #1200).
+   * Secība: noraidīt / tikai nepieciešamās -> «Konfigurēt» + saglabāt (noklusējums = tikai nepieciešamās) -> «Piekrist visam».
+   */
+  async function dismissCookies(p) {
+    const btn = (re) => p.locator("button, [role=button], a").filter({ hasText: re }).first();
+    const visible = async (loc) => loc.isVisible().catch(() => false);
+    const reject = btn(/Noraid|Tikai nepiecie|Reject|Decline|Only necessary|Necessary only/i);
+    if (await visible(reject)) {
+      await reject.click({ timeout: 4_000 }).catch(() => undefined);
+      await p.waitForTimeout(800);
+      return "noraidīts";
+    }
+    const accept = btn(/Piekrist visam|Accept all/i);
+    if (!(await visible(accept))) return "nav";
+    const configure = btn(/Konfigur|Customi[sz]e|Cookie settings|Sīkdatņu iestat/i);
+    if (await visible(configure)) {
+      await configure.click({ timeout: 4_000 }).catch(() => undefined);
+      await p.waitForTimeout(1_000);
+      const save = btn(/Saglab|Apstiprin|Save|Confirm|Tikai nepiecie|Only necessary/i);
+      if (await visible(save)) {
+        await save.click({ timeout: 4_000 }).catch(() => undefined);
+        await p.waitForTimeout(800);
+        if (!(await visible(btn(/Piekrist visam|Accept all/i)))) return "konfigurēts";
+      }
+    }
+    const acceptAgain = btn(/Piekrist visam|Accept all/i);
+    if (await visible(acceptAgain)) {
+      await acceptAgain.click({ timeout: 4_000 }).catch(() => undefined);
+      await p.waitForTimeout(800);
+      return "piekrists";
+    }
+    return "nezināms";
   }
 
   async function classifyNow(p) {
@@ -369,7 +405,22 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
     if (!bearer || !p.url().startsWith(CV_ORIGIN)) await account().catch(() => undefined);
     if (!bearer) return { ok: false, code: "no_session_token" };
     const apiHost = new URL(CV_API).hostname;
-    const trace = { direct: [], reportHref: "", reportLinks: [], network: [], keyPaths: [], nextData: false, domImgs: 0, opened: "" };
+    const trace = {
+      direct: [],
+      cookies: "",
+      rowPage: 0,
+      clickTarget: "",
+      clickError: "",
+      modal: "",
+      candidates: [],
+      reportHref: "",
+      reportLinks: [],
+      network: [],
+      keyPaths: [],
+      nextData: false,
+      domImgs: 0,
+      opened: "",
+    };
     const entries = [];
     const seenUrl = new Set();
     const addEntries = (list) => {
@@ -408,7 +459,8 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
       )
       .catch(() => []);
     for (const d of direct) {
-      trace.direct.push(`GET /reports/{id}${d.suffix} -> ${d.status}`);
+      const keys = d.json && typeof d.json === "object" ? Object.keys(d.json).slice(0, 25).join(",") : "";
+      trace.direct.push(`GET /reports/{id}${d.suffix} -> ${d.status}${keys ? ` keys: ${keys}` : ""}`);
       if (d.json) addJson(d.json, `api /reports/{id}${d.suffix}`);
     }
 
@@ -444,26 +496,89 @@ export function createCarverticalBrowser({ getContext, email, password, log, deb
             }
           });
         let href = pickReportPageHref(links, reportId, CV_ORIGIN);
+        trace.cookies = await dismissCookies(p);
         if (!href && vin) {
-          // Rinda ar šo VIN -> "Priekšskatījums": saite vai poga (atver jaunu cilni vai pāriet tajā pašā).
-          const row = p.locator("tr, li, [role=row], div").filter({ hasText: vin }).filter({ hasText: /Priekšskat|Preview/i }).last();
+          // Rinda ar šo VIN -> "Priekšskatījums" (saite vai poga). Sarakstam ir lappuses - meklē līdz 8 lapām uz priekšu.
+          const findRow = () =>
+            p.locator("tr, [role=row], li").filter({ hasText: vin }).filter({ hasText: /Priekšskat|Preview/i }).first();
+          let row = findRow();
+          for (let pg = 1; pg <= 8 && !(await row.isVisible().catch(() => false)); pg++) {
+            const next = p.locator("button, a, [role=button]").filter({ hasText: /nākamo lapu|next page/i }).first();
+            const nextAria = p.locator('[aria-label*="nākamo" i], [aria-label*="next" i]').first();
+            const target = (await next.isVisible().catch(() => false)) ? next : nextAria;
+            if (!(await target.isVisible().catch(() => false)) || (await target.isDisabled().catch(() => true))) break;
+            await target.click({ timeout: 5_000 }).catch(() => undefined);
+            await p.waitForTimeout(2_500);
+            trace.rowPage = pg;
+            row = findRow();
+          }
           const prev = row.locator("a, button, [role=button]").filter({ hasText: /Priekšskat|Preview/i }).first();
           if (await prev.isVisible().catch(() => false)) {
             const rowHref = await prev.getAttribute("href").catch(() => null);
             if (rowHref) href = new URL(rowHref, CV_ORIGIN).href;
             else {
-              const popupP = p.context().waitForEvent("page", { timeout: 8_000 }).catch(() => null);
-              await prev.click({ timeout: 5_000 }).catch(() => undefined);
-              const popup = await popupP;
+              await prev.scrollIntoViewIfNeeded().catch(() => undefined);
+              trace.cookies += `/${await dismissCookies(p)}`;
+              // Kas ir pogas vietā (vai to neaizsedz logs).
+              const box = await prev.boundingBox().catch(() => null);
+              if (box) {
+                trace.clickTarget = await p
+                  .evaluate(({ x, y }) => {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return "nav";
+                    const cls = typeof el.className === "string" ? el.className.slice(0, 80) : "";
+                    return `${el.tagName.toLowerCase()} .${cls} «${(el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 60)}»`;
+                  }, { x: box.x + box.width / 2, y: box.y + box.height / 2 })
+                  .catch(() => "?");
+              }
+              const before = p.url();
+              const popupP = p.context().waitForEvent("page", { timeout: 12_000 }).catch(() => null);
+              await prev.click({ timeout: 8_000 }).catch((e) => {
+                trace.clickError = String(e?.message ?? "").split("\n")[0].slice(0, 200);
+              });
+              const popup = await Promise.race([popupP, p.waitForURL((u) => u.href !== before, { timeout: 12_000 }).then(() => null).catch(() => null)]);
               if (popup) {
                 await popup.waitForLoadState("domcontentloaded").catch(() => undefined);
                 href = popup.url();
                 await popup.close().catch(() => undefined);
+                trace.opened = "jauna cilne";
+              } else if (p.url() !== before && p.url().startsWith(CV_ORIGIN)) {
+                href = p.url();
+                trace.opened = "tā pati cilne";
               } else {
-                await p.waitForTimeout(3_000);
-                if (p.url() !== `${CV_ORIGIN}/lv/user/reports` && p.url().startsWith(CV_ORIGIN)) href = p.url();
+                // Modālais logs (priekšskatījums lapā): saites / iframe tajā.
+                const dialog = p.locator('[role=dialog], [aria-modal="true"], .modal').first();
+                if (await dialog.isVisible().catch(() => false)) {
+                  trace.modal = ((await dialog.innerText().catch(() => "")) || "").replace(/\s+/g, " ").slice(0, 200);
+                  const inner = await dialog
+                    .evaluate((el) => [
+                      ...[...el.querySelectorAll("a[href]")].map((a) => ({ href: a.href, text: (a.innerText || "").trim().slice(0, 60) })),
+                      ...[...el.querySelectorAll("iframe[src]")].map((f) => ({ href: f.src, text: "iframe" })),
+                    ])
+                    .catch(() => []);
+                  href = pickReportPageHref(inner, reportId, CV_ORIGIN) || (inner.find((x) => x.text === "iframe")?.href ?? "");
+                  trace.opened = "modālais logs";
+                } else trace.opened = "nekas neatvērās";
               }
-              trace.opened = "poga";
+            }
+          } else trace.opened = "rinda nav atrasta";
+        }
+        // Rezerve: zināmie atskaites lapas ceļu varianti (tikai GET navigācija).
+        if (!href) {
+          for (const cand of [`/lv/report/${encodeURIComponent(reportId)}`, `/lv/user/reports/${encodeURIComponent(reportId)}`, `/report/${encodeURIComponent(reportId)}`]) {
+            const resp = await p.goto(`${CV_ORIGIN}${cand}`, { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => null);
+            await p.waitForTimeout(3_000);
+            const finalPath = (() => {
+              try {
+                return new URL(p.url()).pathname;
+              } catch {
+                return "";
+              }
+            })();
+            trace.candidates.push(`${cand.replace(reportId, "{id}")} -> ${resp ? resp.status() : 0} -> ${finalPath.replace(reportId, "{id}")}`);
+            if (resp && resp.ok() && finalPath.includes(reportId)) {
+              href = p.url();
+              break;
             }
           }
         }
