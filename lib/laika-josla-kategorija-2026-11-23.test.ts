@@ -332,10 +332,10 @@ describe("eļļas intervālu piezīme", () => {
 
   it("dīlera / Business variantā bez ieteikumiem; Mercedes piemērs tikai Mercedes; bez „spēkrata”", () => {
     const business = oilClaimCautionHtml({ omitRecommendation: true, makeModel: "Opel Vivaro" });
-    expect(business).not.toMatch(/Rekomendācija|ieteicams|Pirmspirkuma/);
+    expect(business).not.toMatch(/Ieteikums|Rekomendācija|ieteicams|pirms pirkuma/i);
     expect(business).not.toContain("Mercedes");
     const audits = oilClaimCautionHtml({ makeModel: "Opel Vivaro" });
-    expect(audits).toContain("Rekomendācija pilnīgai pārbaudei.");
+    expect(audits).toContain("Ieteikums.");
     expect(audits).not.toMatch(/spēkrat/);
     expect(oilClaimCautionHtml({ makeModel: "Mercedes-Benz Vito" })).toContain("Mercedes-Benz „Apkope A”");
   });

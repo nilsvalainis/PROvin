@@ -376,18 +376,36 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
     en: " The black mark on the bar is this interval.",
     ru: " Чёрная отметка на полосе - этот интервал.",
   },
-  "Svarīga piezīme par apkopes datu interpretāciju": {
-    en: "Important note on how service data is interpreted",
-    ru: "Важное замечание по интерпретации данных обслуживания",
+  "Svarīgi par apkopes datiem": {
+    en: "Important: how to read service data",
+    ru: "Важно о данных обслуживания",
   },
-  "Lūdzam ņemt vērā:": { en: "Please note:", ru: "Просим учесть:" },
-  "Ierakstu robežas.": { en: "Limits of the records.", ru: "Границы записей." },
-  "Iztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
-  "Vispārīgi apmeklējumi.": { en: "Generic visits.", ru: "Общие визиты." },
-  "Secinājums.": { en: "Conclusion.", ru: "Вывод." },
-  "Rekomendācija pilnīgai pārbaudei.": {
-    en: "Recommendation for a complete check.",
-    ru: "Рекомендация для полной проверки.",
+  "Apkopes ierakstus sniedz autorizētie dīleri un lieli servisu tīkli. Neatkarīgie servisi šos datus nesūta.": {
+    en: "Service records come from authorised dealers and large service networks. Independent garages do not send this data.",
+    ru: "Записи об обслуживании передают официальные дилеры и крупные сервисные сети. Независимые сервисы эти данные не передают.",
+  },
+  "Trūkstošs ieraksts.": { en: "Missing record.", ru: "Отсутствующая запись." },
+  "Ja starp ierakstiem ir ilgāks laiks vai nobraukums, nekā paredz ražotājs, tas nepierāda, ka apkope nav veikta - tikai to, ka šajā datubāzē par to nav datu.": {
+    en: "A longer time or mileage gap between records than the manufacturer specifies does not prove that a service was skipped - only that this database has no data on it.",
+    ru: "Если между записями прошло больше времени или пробега, чем предусматривает производитель, это не доказывает, что ТО не проводилось, - лишь то, что в этой базе данных о нём нет.",
+  },
+  "Vispārīgi ieraksti.": { en: "Generic records.", ru: "Общие записи." },
+  "Ierakstus „apkope” vai „serviss” bez eļļas nosaukuma neskaitām kā eļļas maiņu, ja ražotāja plāns to neietver vai nav zināms.": {
+    en: "Records such as “service” or “maintenance” without an oil name are not counted as an oil change if the manufacturer plan does not include one or is unknown.",
+    ru: "Записи „ТО” или „сервис” без названия масла не считаются заменой масла, если план производителя её не включает или неизвестен.",
+  },
+  "Plānotās apkopes, kas vienmēr ietver eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), skaitām.": {
+    en: "Scheduled services that always include an oil change (e.g. Mercedes-Benz “Service A” / “Service B”) are counted.",
+    ru: "Плановые ТО, которые всегда включают замену масла (напр. Mercedes-Benz „Service A” / „Service B”), учитываются.",
+  },
+  "Plānotās apkopes, kas vienmēr ietver eļļas maiņu, skaitām.": {
+    en: "Scheduled services that always include an oil change are counted.",
+    ru: "Плановые ТО, которые всегда включают замену масла, учитываются.",
+  },
+  "Ieteikums.": { en: "Recommendation.", ru: "Рекомендация." },
+  "Salīdziniet ar servisa grāmatiņu un čekiem, un pirms pirkuma veiciet diagnostiku neatkarīgā servisā.": {
+    en: "Compare with the service book and receipts, and have a pre-purchase inspection done at an independent garage.",
+    ru: "Сверьте с сервисной книжкой и чеками, а перед покупкой пройдите диагностику в независимом сервисе.",
   },
   Veids: { en: "Type", ru: "Тип" },
   Dati: { en: "Data", ru: "Данные" },
@@ -743,13 +761,22 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   " Gaišā zona ir pieļaujamās robežas, melnā atzīme ir augšējā robeža.":
     " Die helle Zone ist der zulässige Bereich, die schwarze Markierung die Obergrenze.",
   " Melnā atzīme joslā ir šis intervāls.": " Die schwarze Markierung auf dem Balken ist dieses Intervall.",
-  "Svarīga piezīme par apkopes datu interpretāciju": "Wichtiger Hinweis zur Auslegung der Servicedaten",
-  "Lūdzam ņemt vērā:": "Bitte beachten:",
-  "Ierakstu robežas.": "Grenzen der Einträge.",
-  "Iztrūkstošas apkopes.": "Fehlende Wartungen.",
-  "Vispārīgi apmeklējumi.": "Allgemeine Besuche.",
-  "Secinājums.": "Schlussfolgerung.",
-  "Rekomendācija pilnīgai pārbaudei.": "Empfehlung für eine vollständige Prüfung.",
+  "Svarīgi par apkopes datiem": "Wichtig: so lesen Sie die Servicedaten",
+  "Apkopes ierakstus sniedz autorizētie dīleri un lieli servisu tīkli. Neatkarīgie servisi šos datus nesūta.":
+    "Serviceeinträge stammen von Vertragshändlern und großen Werkstattnetzen. Freie Werkstätten übermitteln diese Daten nicht.",
+  "Trūkstošs ieraksts.": "Fehlender Eintrag.",
+  "Ja starp ierakstiem ir ilgāks laiks vai nobraukums, nekā paredz ražotājs, tas nepierāda, ka apkope nav veikta - tikai to, ka šajā datubāzē par to nav datu.":
+    "Ein längerer Zeit- oder Kilometerabstand zwischen Einträgen als vom Hersteller vorgesehen beweist nicht, dass eine Wartung ausgelassen wurde - nur, dass diese Datenbank dazu keine Daten hat.",
+  "Vispārīgi ieraksti.": "Allgemeine Einträge.",
+  "Ierakstus „apkope” vai „serviss” bez eļļas nosaukuma neskaitām kā eļļas maiņu, ja ražotāja plāns to neietver vai nav zināms.":
+    "Einträge wie „Wartung” oder „Service” ohne Ölangabe zählen wir nicht als Ölwechsel, wenn der Herstellerplan keinen vorsieht oder unbekannt ist.",
+  "Plānotās apkopes, kas vienmēr ietver eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), skaitām.":
+    "Planmäßige Wartungen, die immer einen Ölwechsel enthalten (z. B. Mercedes-Benz „Wartung A” / „Wartung B”), zählen wir.",
+  "Plānotās apkopes, kas vienmēr ietver eļļas maiņu, skaitām.":
+    "Planmäßige Wartungen, die immer einen Ölwechsel enthalten, zählen wir.",
+  "Ieteikums.": "Empfehlung.",
+  "Salīdziniet ar servisa grāmatiņu un čekiem, un pirms pirkuma veiciet diagnostiku neatkarīgā servisā.":
+    "Vergleichen Sie mit dem Serviceheft und den Belegen und lassen Sie vor dem Kauf eine Diagnose in einer freien Werkstatt durchführen.",
   Veids: "Art",
   Dati: "Daten",
   "ASV VĒSTURE": "US-HISTORIE",
