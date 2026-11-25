@@ -33,7 +33,7 @@ import {
   toPdfManualVendorBlocks,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
-import { computeLatviaRegistrationTenure } from "@/lib/latvia-registration-tenure";
+import { computeLatviaRegistrationTenure, formatLatviaTenureShort } from "@/lib/latvia-registration-tenure";
 import {
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
   ccVinAlertChecks,
@@ -704,12 +704,11 @@ export function computeProvinInfoBannersFromPayloadSlice(
     referenceDate,
   });
   if (tenure) {
-    const days = tenure.daysRegistered;
     out.push({
       kind: "lv_registration_tenure",
       text: tenure.sentence,
       label: "Reģistrācija Latvijā",
-      value: `${days} ${days === 1 ? "diena" : "dienas"}`,
+      value: formatLatviaTenureShort(tenure.daysRegistered, tenure.monthsRegistered),
       note: tenure.firstDateDisplay ? `Kopš ${tenure.firstDateDisplay}` : "",
     });
   }

@@ -4807,6 +4807,19 @@ export function OrderDetailWorkspace({
               lang: reportLang,
               ...fileOpts,
             });
+    // Telefonā (Nils 25.11, iPhone): «Ģenerēt PDF» = servera PDF (tas pats, ko sūta klientam), nevis Safari druka
+    // (tā pievieno URL/datuma galveni un savu lapas platumu). Ja serveris neizdodas - rezerves ceļš ir druka.
+    if (phoneStack && !opts?.serverPdf && phonePre?.window && !phonePre.window.closed) {
+      try {
+        const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });
+        bumpPdf(100);
+        phonePre.navigate(r.downloadUrl);
+        phonePreUsed = true;
+        return;
+      } catch (e) {
+        console.warn("[pdf] telefona servera PDF neizdevās, atver drukas skatu", e);
+      }
+    }
     if (opts?.serverPdf) {
       try {
         const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });

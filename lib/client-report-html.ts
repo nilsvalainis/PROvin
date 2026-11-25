@@ -139,6 +139,7 @@ import { salesWithAuctionFinalPrice } from "@/lib/thecarapi-sale-price";
 import { auctionArchiveModelTitle, auctionArchiveVehicleRows } from "@/lib/auction-archive-facts";
 import {
   PDF_TOP6_CSS,
+  pdfTop6FitScriptBody,
   buildPdfTopBarOnlyHtml,
   buildPdfTopKeyCards,
   buildPdfTopSectionHtml,
@@ -2878,7 +2879,10 @@ function reportFontGuardScript(): string {
       })(blocks[i]);
     }
   }
-  var ready=loadInter().catch(function(){});
+  ${pdfTop6FitScriptBody()}
+  var ready=loadInter().catch(function(){}).then(function(){
+    try{provinFitTop6();}catch(e){}
+  });
   window.__provinReportReady=ready;
   ready.then(function(){
     document.documentElement.setAttribute("data-provin-fonts","ready");
@@ -2892,6 +2896,18 @@ function reportFontGuardScript(): string {
 })();
 </script>`;
 }
+
+/**
+ * Priekšskatījums ekrānā = A4 lapa (Nils 25.11, iPhone): saturs 186 mm kā PDF (210 mm - 2 × 12 mm malas),
+ * telefonā viewport 794 px, ko Safari mērogo uz ekrāna platumu - izkārtojums identisks PDF, nekas nepārplūst.
+ * Drukā (`@media print`) nemainās nekas.
+ */
+export const CLIENT_REPORT_A4_VIEWPORT_META = '<meta name="viewport" content="width=794"/>';
+export const CLIENT_REPORT_SCREEN_A4_CSS = `
+      @media screen{
+        body.provin-report-doc{width:210mm;max-width:none;padding:10mm 12mm;margin:0 auto;}
+      }
+`;
 
 /** Admin iframe priekšskatam - pilns PDF drukas CSS (izolēts iframe). */
 export function getClientReportPrintCss(): string {
@@ -4415,11 +4431,12 @@ export function buildClientReportDocumentHtml(args: {
     footerNote: izvilkums ? izvilkumsFooterNote(lang) : undefined,
   });
   const html = `<!DOCTYPE html><html lang="lv"${htmlClass}><head><meta charset="utf-8"/>
+${CLIENT_REPORT_A4_VIEWPORT_META}
 <meta name="color-scheme" content="light"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(docTitle)}</title><style>${runningCss}${PDF_TOP6_CSS}${izvilkums ? PDF_IZVILKUMS_CSS : ""}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${izvilkums ? buildIzvilkumsWatermarkHtml(lang) : ""}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<title>${escapeHtml(docTitle)}</title><style>${runningCss}${CLIENT_REPORT_SCREEN_A4_CSS}${PDF_TOP6_CSS}${izvilkums ? PDF_IZVILKUMS_CSS : ""}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${izvilkums ? buildIzvilkumsWatermarkHtml(lang) : ""}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

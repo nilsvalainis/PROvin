@@ -3,8 +3,13 @@ import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/c
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { createDefaultSourceBlocks, emptyAutoRecordsBlock, emptyCsddFields } from "@/lib/admin-source-blocks";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
+import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
+import { formatLatviaTenureShort } from "@/lib/latvia-registration-tenure";
 import {
   PDF_SOURCE_LOGO_TONE,
+  PDF_TOP6_CSS,
+  PDF_TOP_TITLE_SAFETY,
+  pdfTopTextEm,
   buildPdfTopKeyCards,
   buildPdfTopSectionHtml,
   pdfSymmetricGridPlacement,
@@ -313,3 +318,72 @@ function docPayload(): Partial<ClientReportPayload> {
     cenasAtbilstiba: "",
   };
 }
+
+describe("iPhone 25.11: tituls kolonnā, A4 priekšskatījums, reģistrācijas ilgums", () => {
+  const LONG = ["BMW 530D XDRIVE", "MERCEDES-BENZ GLE 350 D 4MATIC", "VOLKSWAGEN PASSAT VARIANT"];
+
+  it.each(LONG.flatMap((m) => [[m, true], [m, false]] as const))("tituls «%s» (foto: %s) ietilpst ar rezervi", (model, foto) => {
+    const html = buildPdfTopSectionHtml({
+      lang: "lv",
+      logoSvg: "",
+      kindTitle: "Audits",
+      kindSub: "",
+      dateLabel: "25.11.2026",
+      makeModel: model,
+      vin: "WBAJN51050G000001",
+      specLine: "",
+      photo: foto ? { src: AUC, kind: "auction", where: "Openlane", date: "01.10.2026" } : null,
+      odometer: { value: "195 501 km", sub: "" },
+      age: "",
+      firstReg: null,
+      cards: [],
+      sources: [],
+      totals: { paid: 0, pub: 0, other: 0 },
+      wordmarkHtml: "PROVIN",
+    } as unknown as Parameters<typeof buildPdfTopSectionHtml>[0]);
+    const W = foto ? 246 : 330;
+    const m = /<h1 class="pdf-top6__model" data-fit-min="18" style="font-size:([\d.]+)px(;white-space:nowrap)?"/.exec(html);
+    expect(m).not.toBeNull();
+    const px = Number(m![1]);
+    const lines = m![2] ? 1 : 2;
+    // Aplēstais platums (vienā vai divās rindās) nepārsniedz kolonnu ar 8 % rezervi.
+    expect((pdfTopTextEm(model) * px) / lines).toBeLessThanOrEqual(W * PDF_TOP_TITLE_SAFETY + 0.5);
+  });
+
+  it("CSS: kolonnas minmax(0,1fr), min-width:0, tituls lūzt drošā vietā", () => {
+    expect(PDF_TOP6_CSS).toContain(".pdf-top6__hero--nophoto{grid-template-columns:minmax(0,1fr) minmax(0,1fr)");
+    expect(PDF_TOP6_CSS).toContain(".pdf-top6__id,.pdf-top6__photo{min-width:0;}");
+    expect(PDF_TOP6_CSS).toMatch(/\.pdf-top6__model\{[^}]*overflow-wrap:anywhere/);
+  });
+
+  it("dokumentā: A4 viewport, ekrāna platums 210 mm, pielāgošana pirms «fonts ready»", () => {
+    const html = doc({ csddForm: { ...emptyCsddFields(), makeModel: "BMW 530D XDRIVE", registrationStatus: "Reģistrēts" } }, "lv");
+    expect(html).toContain('<meta name="viewport" content="width=794"/>');
+    expect(html).toMatch(/@media screen\{\s*body\.provin-report-doc\{width:210mm;max-width:none;padding:10mm 12mm/);
+    const fit = html.indexOf("try{provinFitTop6();}");
+    expect(fit).toBeGreaterThan(0);
+    expect(fit).toBeLessThan(html.indexOf('setAttribute("data-provin-fonts","ready")'));
+  });
+
+  it("reģistrācijas ilgums: dienas līdz 1 mēn., tālāk mēn./g.", () => {
+    expect(formatLatviaTenureShort(1, 0)).toBe("1 diena");
+    expect(formatLatviaTenureShort(27, 0)).toBe("27 dienas");
+    expect(formatLatviaTenureShort(163, 5)).toBe("5 mēn.");
+    expect(formatLatviaTenureShort(400, 13)).toBe("1 g. 1 mēn.");
+    expect(formatLatviaTenureShort(731, 24)).toBe("2 g.");
+  });
+
+  it.each([
+    ["en", "1 yrs 3 mos", "5 mos", "12 days"],
+    ["ru", "1 г. 3 мес.", "5 мес.", "12 дн."],
+    ["de", "1 J. 3 Mon.", "5 Mon.", "12 Tage"],
+  ] as const)("ilguma tulkojums %s", (lang, ym, mo, d) => {
+    const html = `<body><p class="pdf-top6-card__v">1 g. 3 mēn.</p><p>5 mēn.</p><p>12 dienas</p><p>Ilgums 5 mēn. kopš</p></body>`;
+    const out = applyClientReportDynamicTranslations(html, lang);
+    expect(out).toContain(`>${ym}<`);
+    expect(out).toContain(`>${mo}<`);
+    expect(out).toContain(`>${d}<`);
+    // Tikai viss teksta mezgls - teikumi netiek aiztikti.
+    expect(out).toContain(">Ilgums 5 mēn. kopš<");
+  });
+});
