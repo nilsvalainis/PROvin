@@ -505,8 +505,8 @@ describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
       ltab("19.08.2016", "380 €", Date.UTC(2016, 7, 19)),
       ltab("11.02.2018", "900 €", Date.UTC(2018, 1, 11)),
       ltab("03.06.2020", "1 200 €", Date.UTC(2020, 5, 3)),
-      cv("04.2016", "1 500 - 2 000 €", Date.UTC(2016, 3, 1)),
-      cv("08.2016", "1 000 - 1 500 €", Date.UTC(2016, 7, 1)),
+      cv("04.2016", "400 - 450 €", Date.UTC(2016, 3, 1)),
+      cv("08.2016", "", Date.UTC(2016, 7, 1)),
     ]);
     expect(agg.rawCount).toBe(7);
     expect(agg.uniqueCount).toBe(5);
@@ -539,5 +539,13 @@ describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
       cv("02.05.2016", "9 000 €", Date.UTC(2016, 4, 2)),
     ]);
     expect(dayConflict.uniqueCount).toBe(2);
+  });
+
+  it("mēneša ieraksts ar pretrunīgu summu (iespējams KASKO) paliek atsevišķi", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      cv("04.2016", "3 000 - 4 000 €", Date.UTC(2016, 3, 1)),
+    ]);
+    expect(agg.uniqueCount).toBe(2);
   });
 });

@@ -617,7 +617,7 @@ function clusterHasLtab(c: UnifiedIncidentCluster): boolean {
  * - tajā ir tikai carVertical / autoDNA (bez LTAB), valsts saderīga ar LTAB notikumu;
  * - laiks ±30 dienas (mēneša precizitātei - no mēneša sākuma vai beigām);
  * - LTAB notikumā šī avota vēl nav (viens avota ieraksts = viens notikums);
- * - dienas precizitātei summas nedrīkst būt pretrunā (abām zināmām summām jāpārklājas ar pielaidi).
+ * - summas nedrīkst būt pretrunā: ja abiem ir summa, intervāliem jāpārklājas (ar pielaidi); ja vienam summas nav - apvieno.
  * Ja vairāki LTAB kandidāti, ņem to, kura summa pārklājas, tad - tuvāko laikā.
  */
 function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): UnifiedIncidentCluster[] {
@@ -648,7 +648,8 @@ function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): U
       if (days > VENDOR_LTAB_MERGE_MAX_DAYS) continue;
       const tBounds = clusterAmountBounds(t);
       const amountMatch = boundsOverlap(cBounds, tBounds, true);
-      if (!clusterIsMonthPrecision(c) && cBounds && tBounds && !amountMatch && days > 0) continue;
+      // Koordinatora lēmums 25.11: abām pusēm summa un intervāli nepārklājas -> divi ieraksti (KASKO nedrīkst paslēpt).
+      if (cBounds && tBounds && !amountMatch) continue;
       const rank = (amountMatch ? 0 : 1000) + days;
       if (rank < bestRank) {
         bestRank = rank;
