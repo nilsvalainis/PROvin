@@ -203,3 +203,17 @@ export function redact(text, secrets = []) {
   }
   return out.replace(EMAIL_RE, "***@***").replace(/Bearer\s+[A-Za-z0-9._~+/=-]{8,}/g, "Bearer ***");
 }
+
+/**
+ * Debug faila saturs: lapas tekstā un etiķetēs cipari -> # (personas dati, VIN), `extra` (HTTP statusi, ceļi,
+ * JSON atslēgas) bez cipariem maskas, lai statusus var nolasīt. Noslēpumi (tokens, e-pasts, parole) izņemti abos.
+ */
+export function buildDebugBody(page, extra, secrets = []) {
+  const mask = (v) => redact(v, secrets).replace(/\d/g, "#");
+  const masked = {
+    url: mask(page?.url ?? ""),
+    labels: (Array.isArray(page?.labels) ? page.labels : []).map(mask),
+    text: mask(page?.text ?? ""),
+  };
+  return JSON.stringify({ ...masked, ...(extra ? { extra: JSON.parse(redact(JSON.stringify(extra), secrets)) } : {}) }, null, 1);
+}

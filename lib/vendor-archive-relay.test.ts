@@ -32,6 +32,7 @@ import {
   photoKeyPathsSummary,
   pickReportPageHref,
 } from "@/relay/provin-carvertical/lib/archive-photos.mjs";
+import { buildDebugBody } from "@/relay/provin-carvertical/lib/cv-page.mjs";
 import { createRelayCore as createCvCore } from "@/relay/provin-carvertical/lib/relay-core.mjs";
 import { createRelayCore as createDnaCore } from "@/relay/provin-autodna/lib/relay-core.mjs";
 
@@ -177,6 +178,25 @@ function cvBrowser(reports: { id: string; vin: string; status: number; createdAt
     },
   };
 }
+
+describe("CarVertical debug fails", () => {
+  it("lapas tekstā cipari aizkrāsoti, `extra` statusi redzami; tokens un e-pasts izņemti visur", () => {
+    const body = JSON.parse(
+      buildDebugBody(
+        { url: "https://www.carvertical.com/lv/user/reports?p=2", labels: ["WAUZZZ4G5JN018732", "x\u0007y"], text: "Audi A6 WAUZZZ4G5JN018732 n@x.lv" },
+        { direct: ["GET /reports/{id} -> 404", "GET /reports/{id}/data -> 200 keys: id,vin"], token: "Bearer abcdefghijklmnop", mail: "n@x.lv", secret: "SLEPENS-1234" },
+        ["SLEPENS-1234"],
+      ),
+    );
+    expect(body.text).toBe("Audi A# WAUZZZ#G#JN###### ***@***");
+    expect(body.labels[0]).toBe("WAUZZZ#G#JN######");
+    expect(body.url).toContain("p=#");
+    expect(body.extra.direct).toEqual(["GET /reports/{id} -> 404", "GET /reports/{id}/data -> 200 keys: id,vin"]);
+    expect(body.extra.token).toBe("Bearer ***");
+    expect(body.extra.mail).toBe("***@***");
+    expect(body.extra.secret).toBe("***");
+  });
+});
 
 describe("releja arhīva foto: nekad nepērk", () => {
   it("CarVertical: nopirkta atskaite -> foto; nav atskaites -> not_found, pirkums netiek saukts", async () => {
