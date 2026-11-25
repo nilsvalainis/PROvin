@@ -109,8 +109,23 @@ export function mergeKfzAtStore(prev: KfzAtStore, add: { reports?: KfzGutachtenR
  */
 export function parseKfzSearchListText(raw: string, vin?: string): KfzSearchListRow[] {
   const out: KfzSearchListRow[] = [];
-  const text = raw.replace(/\r\n?/g, "\n").replace(/(Marke und Type|Gutachtendatum|Kennzeichen|FIN):/gi, " ");
   const want = (vin ?? "").trim().toUpperCase();
+  // Tabulas rinda ar tabulācijām (ielīmēts no tabulas vai PROVIN skripts): Modelis | Datums | Numurzīme | VIN.
+  // Numurzīmi ņemam no šūnas kā ir (arī «W-12345A», «GU 123 AB»), nevis tikai pēc parauga.
+  const rest: string[] = [];
+  for (const line of raw.replace(/\r\n?/g, "\n").split("\n")) {
+    const cells = line.split("\t").map((c) => c.replace(/\s+/g, " ").trim());
+    if (cells.length >= 4) {
+      const date = kfzExactDateDdMmYyyy(cells[1]);
+      const rowVin = (cells[3] ?? "").replace(/\s/g, "").toUpperCase();
+      if (date && /^[A-HJ-NPR-Z0-9]{17}$/.test(rowVin) && cells[2]) {
+        if (!want || rowVin === want) out.push({ date, plate: normalizeAtPlate(cells[2]), vin: rowVin, model: cells[0] ?? "" });
+        continue;
+      }
+    }
+    rest.push(line);
+  }
+  const text = rest.join("\n").replace(/(Marke und Type|Gutachtendatum|Kennzeichen|FIN):/gi, " ");
   // Viens ieraksts: … datums … numurzīme … VIN (17 zīmes). Strādā arī, ja viss vienā rindā.
   const re = /([^\n]*?)\s*(\d{2}\.\d{2}\.\d{4})\s+([A-ZÄÖÜ]{1,2}\s?\d[A-Z0-9]*)\s+([A-HJ-NPR-Z0-9]{17})/g;
   for (const m of text.matchAll(re)) {

@@ -158,6 +158,7 @@ export function AdminCitiAvotiSourceBlock({
           {orderVin && !readOnly ? (
             <AdminKfzGutachtenPanel
               vin={orderVin}
+              sessionId={sessionId}
               value={value}
               onChange={onChange}
               getSourceBlocks={getSourceBlocks}

@@ -39,7 +39,7 @@ export function AdminUserscriptUpdateHint({
   if (version && vinScanUserscriptUpdateNeeded(version)) {
     return (
       <p className={box}>
-        PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādētos no jūsu pārlūka. Izsoļu arhīvs un Zviedrijas reģistrs joprojām importējas no atvērtās cilnes.{" "}
+        PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādētos no jūsu pārlūka. Ar jauno versiju kfzgutachten.at saraksts pasūtījumā nonāk automātiski. Izsoļu arhīvs un Zviedrijas reģistrs joprojām importējas no atvērtās cilnes.{" "}
         <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
           Lejupielādēt {min}
         </a>

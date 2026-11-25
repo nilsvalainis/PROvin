@@ -472,20 +472,20 @@ describe("Zviedrijas reģistra imports: avota cilne -> pasūtījuma lapa", () =>
 });
 
 describe("minimālā paneļa versija", () => {
-  it("minimālā paneļa versija ir 1.26 (admin tilta drošības labojums)", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.26");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 26 });
+  it("minimālā paneļa versija ir 1.27 (kfzgutachten.at saraksts pasūtījumam)", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.27");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 27 });
     expect(vinScanUserscriptMeetsMin("1.25.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.26.0")).toBe(true);
-    expect(vinScanUserscriptMeetsMin("1.26.1")).toBe(true);
-    expect(vinScanUserscriptMeetsMin("1.26")).toBe(true);
-    expect(vinScanUserscriptMeetsMin("1.27.1")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.26.3")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.27.0")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.27")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.28.1")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.24.2")).toBe(true);
-    expect(vinScanUserscriptUpdateNeeded("1.25.0")).toBe(true);
-    expect(vinScanUserscriptUpdateNeeded("1.26.0")).toBe(false);
-    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.26.3")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.27.1")).toBe(false);
   });
 
   it("importa kļūda 'lapa nav gatava' operatoram ir saprotama", () => {
