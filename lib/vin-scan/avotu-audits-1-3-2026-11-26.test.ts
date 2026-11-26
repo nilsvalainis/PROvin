@@ -50,7 +50,7 @@ describe("1. saišu avoti (0 trāpījumu / CapSolver bez rezultāta / dublikāts
     expect(links.every((l) => /^https:\/\//.test(l.href))).toBe(true);
     expect(links.some((l) => /auchistory|epolicija/.test(l.href))).toBe(false);
     expect(vinScanManualLinks("")).toEqual([]);
-    expect(VIN_SCAN_LINK_ONLY_IDS.length).toBe(15);
+    expect(VIN_SCAN_LINK_ONLY_IDS.length).toBe(23);
   });
 
   it("veca momentuzņēmuma «pārlūks» rinda neskaitās, rinda ar reāliem datiem (pārlūka imports) paliek", () => {

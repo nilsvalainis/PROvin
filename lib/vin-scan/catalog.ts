@@ -6,6 +6,17 @@
 import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { kfzgutachtenSearchUrl } from "@/lib/kfzgutachten/kfzgutachten";
 import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
+import { czPoliceSearchUrl } from "@/lib/vin-scan/cz-police";
+import {
+  audiRecallCheckUrl,
+  cpicStolenVehicleUrl,
+  fordRecallCheckUrl,
+  ibcVinVerifyUrl,
+  kiaRecallCheckUrl,
+  seatRecallCheckUrl,
+  skodaRecallCheckUrl,
+  stellantisRecallCheckUrl,
+} from "@/lib/vin-scan/oem-recall-links";
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates, normalizeScanPlate } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
@@ -46,6 +57,16 @@ export const VIN_SCAN_SOURCE_IDS = [
   "dvsa_mot",
   "eu_safety_gate",
   "kfz_at",
+  "cz_patrani",
+  "nhtsa_complaints",
+  "recall_kia",
+  "recall_skoda",
+  "recall_audi",
+  "recall_seat",
+  "recall_stellantis",
+  "recall_ford",
+  "ca_cpic",
+  "ca_ibc",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -521,6 +542,97 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     // Meklēšanu sargā reCAPTCHA: saite atver formu ar VIN (un datumu, ja zināms), «Suchen» spiež cilvēks.
     openUrl: (vin) => kfzgutachtenSearchUrl(vin),
   },
+  {
+    id: "cz_patrani",
+    label: "CZ policija",
+    country: "CZ",
+    category: "zadziba",
+    hint: "Čehijas policijas zagto auto meklēšana (Pátrání po vozidlech) pēc VIN",
+    needs: ["vin"],
+    openUrl: (vin) => czPoliceSearchUrl(vin),
+  },
+  {
+    id: "nhtsa_complaints",
+    label: "NHTSA sūdzības",
+    country: "US",
+    category: "razotajs",
+    hint: "Tipiskās kaites / sūdzības: ASV īpašnieku sūdzības pēc markas, modeļa un gada (ASV auto vai ja modelis sakrīt)",
+    needs: ["vin"],
+    // Publiskā NHTSA meklēšana pēc VIN; pēc vaicājuma rinda saņem modeļa lapu ar sūdzībām.
+    openUrl: (vin) => `https://www.nhtsa.gov/recalls?vin=${vinQuery(vin)}`,
+  },
+  {
+    id: "recall_kia",
+    label: "Kia atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Kia Europe atsaukumu pārbaude pārlūkā (VIN ievada lapā)",
+    needs: ["vin"],
+    openUrl: (vin) => kiaRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_skoda",
+    label: "Škoda atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Škoda atsaukumu kampaņu pārbaude (Latvija) pārlūkā",
+    needs: ["vin"],
+    openUrl: (vin) => skodaRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_audi",
+    label: "Audi atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Audi UK drošības spilvenu atsaukuma pārbaude pārlūkā; pārējie - VW Group (GOV.UK)",
+    needs: ["vin"],
+    openUrl: (vin) => audiRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_seat",
+    label: "SEAT atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "SEAT / Cupra UK drošības spilvenu atsaukuma pārbaude pārlūkā; pārējie - VW Group (GOV.UK)",
+    needs: ["vin"],
+    openUrl: (vin) => seatRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_stellantis",
+    label: "Stellantis atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Peugeot, Citroën/DS, Opel/Vauxhall, Fiat, Alfa Romeo, Jeep: atsaukumu pārbaude pārlūkā. Rezultāti var nebūt pilni",
+    needs: ["vin"],
+    openUrl: (vin) => stellantisRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_ford",
+    label: "Ford atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Ford atsaukumu pārbaude pārlūkā (Eiropas VIN - Ford UK, ASV VIN - ford.com)",
+    needs: ["vin"],
+    openUrl: (vin) => fordRecallCheckUrl(vin),
+  },
+  {
+    id: "ca_cpic",
+    label: "CPIC (Kanādas policija)",
+    country: "CA",
+    category: "zadziba",
+    hint: "Kanādas zagto auto meklēšana pēc VIN. Tikai Ziemeļamerikas VIN; noteikumi jāapstiprina pašam, rezultātu komerciāli nepārpublicē",
+    needs: ["vin"],
+    openUrl: (vin) => cpicStolenVehicleUrl(vin),
+  },
+  {
+    id: "ca_ibc",
+    label: "IBC VIN Verify",
+    country: "CA",
+    category: "apdrosinasana",
+    hint: "Kanādas apdrošinātāju plūdu / ugunsgrēka / salvage statuss pēc VIN. Tikai Ziemeļamerikas VIN; noteikumi jāapstiprina pašam",
+    needs: ["vin"],
+    openUrl: (vin) => ibcVinVerifyUrl(vin),
+  },
 ];
 
 export function vinScanCatalogItem(id: VinScanSourceId): VinScanCatalogItem {
@@ -590,6 +702,16 @@ export const VIN_SCAN_LINK_ONLY_IDS = [
   "carpass",
   "traficom",
   "regitra",
+  // 26.11 jaunie: ražotāju atsaukumi tikai attiecīgajai markai; CPIC/IBC noteikumi aizliedz
+  // komerciālu pārpublicēšanu / prasa personīgu piekrišanu - tikai saite Ziemeļamerikas VIN.
+  "recall_kia",
+  "recall_skoda",
+  "recall_audi",
+  "recall_seat",
+  "recall_stellantis",
+  "recall_ford",
+  "ca_cpic",
+  "ca_ibc",
 ] as const satisfies readonly VinScanSourceId[];
 
 export function vinScanSourceLinkOnly(id: string): boolean {

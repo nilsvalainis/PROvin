@@ -39,6 +39,7 @@ const AUCTION_ARCHIVE_IDS: ReadonlySet<string> = new Set([
 
 const RECALL_IDS: ReadonlySet<string> = new Set([
   "nhtsa_recalls",
+  "nhtsa_complaints",
   "recall_vw",
   "recall_bmw",
   "recall_mercedes",

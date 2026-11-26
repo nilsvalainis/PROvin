@@ -3,9 +3,9 @@ import { isUsWmiVin } from "@/lib/vin-scan/vin-decode";
 
 /**
  * Policijas meklēto (zagto) transportlīdzekļu avoti: «Meklēšanā» / «Nav meklēšanā» kartīte.
- * 26.11: Lietuvas policija (lt_itpr) izņemta pilnībā (reCAPTCHA + CapSolver).
+ * 26.11: Lietuvas policija (lt_itpr) izņemta pilnībā (reCAPTCHA + CapSolver); pievienota Čehijas policija.
  */
-export const VIN_SCAN_WANTED_SOURCE_IDS: readonly string[] = [];
+export const VIN_SCAN_WANTED_SOURCE_IDS: readonly string[] = ["cz_patrani"];
 
 export function isVinScanWantedSource(id: string): boolean {
   return VIN_SCAN_WANTED_SOURCE_IDS.includes(id);

@@ -54,6 +54,7 @@ import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/v
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
 import { probeKfzAt } from "@/lib/vin-scan/probe-kfz-at";
+import { probeCzPolice, probeLinkOnly, probeNhtsaComplaints } from "@/lib/vin-scan/probes-new-sources";
 
 function done(id: VinScanSourceId, ctx: VinScanContext, parsed: VinScanParse): VinScanIndicator {
   return buildVinScanIndicator(id, ctx.vin, parsed, ctx.plates);
@@ -336,6 +337,16 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   dvsa_mot: probeDvsaMot,
   eu_safety_gate: probeEuSafetyGate,
   kfz_at: probeKfzAt,
+  cz_patrani: probeCzPolice,
+  nhtsa_complaints: probeNhtsaComplaints,
+  recall_kia: (ctx) => probeLinkOnly("recall_kia", ctx),
+  recall_skoda: (ctx) => probeLinkOnly("recall_skoda", ctx),
+  recall_audi: (ctx) => probeLinkOnly("recall_audi", ctx),
+  recall_seat: (ctx) => probeLinkOnly("recall_seat", ctx),
+  recall_stellantis: (ctx) => probeLinkOnly("recall_stellantis", ctx),
+  recall_ford: (ctx) => probeLinkOnly("recall_ford", ctx),
+  ca_cpic: (ctx) => probeLinkOnly("ca_cpic", ctx),
+  ca_ibc: (ctx) => probeLinkOnly("ca_ibc", ctx),
 };
 
 export function vinScanProbeFor(id: string): ((ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator) | null {
