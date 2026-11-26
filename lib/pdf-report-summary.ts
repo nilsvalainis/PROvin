@@ -57,7 +57,7 @@ import {
   countChartMileageReadings,
   formatListingBelowShortLv,
   hasActiveRollbackAnomaly,
-  selectLatestConfirmedMileageRow,
+  resolveLatestConfirmedMileage,
   selectNewestChartMileageRow,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
@@ -250,13 +250,13 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
 export function resolvePdfLatestOdometerReading(
   input: PdfSummaryInput,
 ): { odometer: string; date: string; sourceLabel: string } | null {
-  const rows = prepareUnifiedMileageDisplayRows(collectPdfSummaryMileageRows(input));
-  const newest = selectLatestConfirmedMileageRow(rows);
-  if (!newest || !newest.odometer.trim() || parseOdometerKm(newest.odometer) == null) return null;
+  const latest = resolveLatestConfirmedMileage(collectPdfSummaryMileageRows(input));
+  const newest = latest?.row;
+  if (!latest || !newest || !newest.odometer.trim() || parseOdometerKm(newest.odometer) == null) return null;
   return {
     odometer: formatPdfOdometerDisplay(newest.odometer, true),
     date: newest.date.trim(),
-    sourceLabel: newest.sourceLabel,
+    sourceLabel: latest.sourceLabel,
   };
 }
 
