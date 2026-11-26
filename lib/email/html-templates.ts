@@ -560,9 +560,7 @@ export function auditCompletedEmailHtml(opts: {
     rows.push(emailRow(emailSmall(questionHtml), "18px 36px 0"));
   }
 
-  if (opts.includeGoogleReview && !b2bClient) {
-    rows.push(emailRow(googleReviewBlockHtml(GOOGLE_REVIEW_INTRO_HTML[lang]), "22px 36px 0"));
-  }
+  // 26.11 (Nils): atsauksmes lūgums atskaites e-pastā vairs netiek likts - atsevišķs e-pasts nākamajā darba dienā.
   rows.push(emailRow(clientSignOffHtml(b2bClient, lang), "22px 36px 0"));
 
   return emailDocument({

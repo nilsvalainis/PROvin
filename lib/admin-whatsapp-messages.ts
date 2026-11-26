@@ -4,7 +4,6 @@
  */
 import {
   clientMessageSignOff,
-  googleReviewPlainBlock,
   resolveReportReadyProductKind,
   type ReportReadyProductKind,
 } from "@/lib/email/report-ready-copy";
@@ -51,7 +50,7 @@ export function whatsappPrefillReportReady(
   } else {
     parts.push(`Jūsu PROVIN AUDITS atskaite${v} ir gatava.`);
   }
-  parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
+  parts.push("", whatsappQuestionsLine(opts.kind), "", clientMessageSignOff());
   return parts.join("\n");
 }
 

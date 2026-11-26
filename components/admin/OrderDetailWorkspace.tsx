@@ -979,7 +979,6 @@ export function OrderDetailWorkspace({
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
-  const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
   const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
@@ -3859,7 +3858,6 @@ export function OrderDetailWorkspace({
     setNotifyExtraPdfSaveBusy(false);
     setNotifyExtraPdfSaveMsg(null);
     setNotifyExtraPdfSaveOk(false);
-    setNotifyIncludeGoogleReview(false);
     setNotifyLang("lv");
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
@@ -3959,14 +3957,12 @@ export function OrderDetailWorkspace({
             customerEmail: email,
             uploads,
             extraAuditPdf: extraReport,
-            includeGoogleReview: notifyIncludeGoogleReview,
             lang: notifyLang,
           })
         : await (async () => {
             const fd = new FormData();
             fd.append("sessionId", payload.sessionId);
             fd.append("customerEmail", email);
-            if (notifyIncludeGoogleReview) fd.append("includeGoogleReview", "1");
             if (notifyLang !== "lv") fd.append("lang", notifyLang);
             if (extraReport) {
               fd.append("reportPdf", extraReport);
@@ -4011,7 +4007,6 @@ export function OrderDetailWorkspace({
     payload.vin,
     portfolio,
     portfolioBytes,
-    notifyIncludeGoogleReview,
     notifyLang,
   ]);
 
@@ -5986,21 +5981,6 @@ export function OrderDetailWorkspace({
                       </p>
                     ) : null}
                   </div>
-                  <label className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] dark:border-zinc-700 dark:bg-zinc-900/40">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]/30"
-                      checked={notifyIncludeGoogleReview}
-                      disabled={notifyPhase === "loading"}
-                      onChange={(e) => setNotifyIncludeGoogleReview(e.target.checked)}
-                    />
-                    <span>
-                      Pievienot Google atsauksmes lūgumu
-                      <span className="mt-0.5 block text-[10px] text-[var(--color-provin-muted)]">
-                        E-pasta beigās pirms paraksta.
-                      </span>
-                    </span>
-                  </label>
                   {notifyErr ? (
                     <p className="mt-2 text-[11px] leading-snug text-red-600">{notifyErr}</p>
                   ) : null}

@@ -15,7 +15,7 @@ describe("whatsapp report-ready prefills", () => {
     expect(t).toContain("(VIN WAUZZZF44LA062962)");
     expect(t).not.toContain("20%");
     expect(t).not.toContain("79,99");
-    expect(t).toContain("būsim pateicīgi par īsu atsauksmi");
+    expect(t).not.toContain("atsauksmi"); // 26.11: atsevišķa WhatsApp ziņa
     expect(t).not.toContain("Nils");
     expect(t).not.toMatch(/—/);
     expect(t).not.toMatch(/–/);
@@ -30,7 +30,7 @@ describe("whatsapp report-ready prefills", () => {
     const audits = whatsappPrefillReportReady({ kind: "audits", vin: "ABC" });
     expect(audits).toContain("PROVIN AUDITS atskaite");
     expect(audits).not.toContain("20%");
-    expect(audits).toContain("g.page/r/CamRaT51IPQ_EBM/review");
+    expect(audits).not.toContain("g.page");
   });
 });
 
