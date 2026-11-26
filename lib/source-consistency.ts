@@ -1207,7 +1207,28 @@ function checkFirstRegCountryConsistency(
   });
   const summary = vehicleFirstRegistrationSummary(events);
   const firstIso = (summary.countryIso || iso2(summary.country)).toUpperCase();
-  if (!firstIso || firstIso === "LV") return;
+  if (!firstIso) {
+    // 26.11 (Nils, BMW X5): 1. reģistrācijas valsts nav zināma - AI tekstā to nedrīkst «aprēķināt» (piem. no CSDD iepriekšējās valsts).
+    const unknownValues: SourceIssueValue[] = [];
+    for (const t of texts) {
+      const plain = adminRichHtmlToPlainText(t.text ?? "");
+      for (const m of plain.matchAll(FIRST_REG_PHRASE_RE)) {
+        const iso = locativeCountryIso(m[1]!);
+        if (!iso || iso === "LV") continue;
+        unknownValues.push({ source: t.label, value: `«${m[0].slice(0, 140)}»` });
+      }
+    }
+    if (unknownValues.length === 0) return;
+    push(out, {
+      id: "ai_first_reg_country",
+      kind: "ai_first_reg_country",
+      severity: "warn",
+      title: "AI tekstā 1. reģistrācijas valsts, bet tā nav pierādāma (1. lapā «Nav zināma»)",
+      values: [{ source: "1. lapa", value: "Nav zināma" }, ...unknownValues.slice(0, 6)],
+    });
+    return;
+  }
+  if (firstIso === "LV") return;
   const firstLabel = countryLv(firstIso);
   const prev = iso2(blocks.csdd.previousRegistrationCountry);
   if (prev && prev !== "LV" && prev !== firstIso) {

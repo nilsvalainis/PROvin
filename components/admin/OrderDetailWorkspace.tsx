@@ -235,6 +235,7 @@ import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
+import { lifecycleDatedCountryRecords } from "@/lib/vehicle-lifecycle-timeline";
 import {
   odometerAnomalyOverridesSnapshotField,
   type OdometerAnomalyOverride,
@@ -4161,6 +4162,26 @@ export function OrderDetailWorkspace({
     }
   }, [blocksDisplaySafe, payload.listingUrl]);
 
+  /** 26.11: ārvalstu perioda valsts blokā «Īpašnieki un nobraukums» - tikai no datētiem ierakstiem ar valsti. */
+  const ownerMileageCountryRecords = useMemo(() => {
+    try {
+      return lifecycleDatedCountryRecords({
+        csddForm: blocksDisplaySafe.csdd,
+        autoRecordsBlock: blocksDisplaySafe.auto_records,
+        oneautoBlock: blocksDisplaySafe.oneauto,
+        ccVinBlock: blocksDisplaySafe.cc_vin,
+        asvBlock: blocksDisplaySafe.asv,
+        manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+        manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
+        citiAvoti: blocksDisplaySafe.citi_avoti,
+        tirgusForm: blocksDisplaySafe.tirgus,
+        listingUrl: payload.listingUrl ?? null,
+      });
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe, payload.listingUrl]);
+
   const hasIncidentDataForAi = useMemo(() => {
     try {
       return orderHasIncidentDataForAi(blocksDisplaySafe);
@@ -6621,6 +6642,7 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("csdd", next)}
                 otherRecordDates={collectWorkspaceRecordDates(blocksDisplaySafe)}
                 ownerMileageRows={unifiedMileageDisplayRows}
+                ownerMileageCountryRecords={ownerMileageCountryRecords}
                 trafficFillLevel={traffic.csdd}
                 pdfIncludeBlock={pdfVisibility.csdd}
                 onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}

@@ -39,6 +39,7 @@ const TXT = {
   odometer: { lv: "Pēdējais odometra rādījums", en: "Latest odometer reading", ru: "Последние показания одометра", de: "Letzter Kilometerstand" },
   age: { lv: "Vecums", en: "Age", ru: "Возраст", de: "Alter" },
   firstReg: { lv: "Pirmā reģistrācija", en: "First registration", ru: "Первая регистрация", de: "Erstzulassung" },
+  firstRegCountryUnknown: { lv: "Valsts nav zināma", en: "Country unknown", ru: "Страна неизвестна", de: "Land unbekannt" },
   keyInfo: { lv: "Galvenā informācija", en: "Key information", ru: "Основная информация", de: "Wichtigste Informationen" },
   incidents: { lv: "Bojājumi", en: "Damage", ru: "Повреждения", de: "Schäden" },
   mileage: { lv: "Odometrs", en: "Odometer", ru: "Одометр", de: "Kilometerstand" },

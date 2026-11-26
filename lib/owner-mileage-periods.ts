@@ -12,6 +12,9 @@
  *   nobraukums gadā, bez rādījuma pirms datuma - no pirmā zināmā («~»). Pašreizējam - līdz pēdējam
  *   rādījumam. «-» tikai, ja odometrs periodā samazinās vai nav atbalsta vērtību.
  * - Ārvalstu periods: no pirmās reģistrācijas (vai izlaiduma gada) līdz ievešanai Latvijā.
+ *   26.11 (Nils, BMW X5): CSDD «Iepriekšējā reģistrācijas valsts» ir tikai pēdējā valsts pirms Latvijas.
+ *   Valsti periodam piešķir tikai no agrākā datētā ieraksta ar šo valsti («Austrija (pierādāms no 2015)»);
+ *   laiks pirms tam - «Iepriekš - valsts nav zināma». Bez neviena datēta ieraksta valsti nerāda.
  *
  * Paskaidrojumi (samazinājums, trūkstoši rādījumi, īsi periodi) blokā netiek rakstīti -
  * tie iet AI faktu lapā (`formatOwnerMileageFactLines`).
@@ -21,7 +24,7 @@ import type { CsddFormFields } from "@/lib/admin-source-blocks";
 import type { CsddOwnerChangeRow } from "@/lib/csdd-extended-parse";
 import { isCsddFirstRegistrationInLatviaLabel } from "@/lib/csdd-extended-parse";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
-import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { countryLabelToIso2, countryNameLvLocative, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import {
   analyzeUnifiedMileageAnomalies,
   isListingMileageSource,
@@ -46,7 +49,15 @@ export type OwnerMileageReading = {
   foreign?: boolean;
   /** Virtuāls 0 km pirmajā reģistrācijā (jauns auto). */
   origin?: boolean;
+  /** Rādījuma valsts (ISO2), ja avots to tieši norāda. */
+  iso?: string;
 };
+
+/** Datēts ieraksts ar avota norādītu valsti (arī bez odometra). */
+export type OwnerMileageCountryRecord = { t: number; iso: string };
+
+/** Ja valsts pierādāma ne vēlāk kā gadu pēc ārvalstu perioda sākuma - visu periodu rāda ar šo valsti. */
+const ABROAD_COUNTRY_SPLIT_MIN_MS = 365 * DAY_MS;
 
 export type OwnerMileageInput = {
   ownerEvents: readonly CsddOwnerChangeRow[];
@@ -57,6 +68,8 @@ export type OwnerMileageInput = {
   modelYear?: string;
   previousRegistrationCountry?: string;
   readings: readonly OwnerMileageReading[];
+  /** Datēti ieraksti ar valsti (laikjosla + avotu rindas bez km); rādījumu valstis pieskaita automātiski. */
+  countryRecords?: readonly OwnerMileageCountryRecord[];
   nowMs?: number;
 };
 
@@ -84,12 +97,24 @@ export type OwnerMileagePeriod = {
   /** Odometra vērtība perioda sākumā / beigās un kā tā iegūta (AI faktiem un pārbaudei). */
   start: OwnerMileageBoundary | null;
   end: OwnerMileageBoundary | null;
-  /** Ārvalstīm: valsts LV nosaukums (vai tukšs). */
+  /** Ārvalstīm: valsts LV nosaukums (vai tukšs) - tikai, ja tā pierādāma visam periodam / posmam. */
   country: string;
+  /** Ārvalstu posmam: valsts pierādāma tikai no šī datuma (agrākais ieraksts ar valsti). */
+  countryProvenFromT?: number;
+  /** Ārvalstu posms pirms pierādītās valsts - valsts nav zināma. */
+  countryUnknown?: boolean;
 };
 
 export type OwnerMileageResult = {
+  /** Viss ārvalstu periods (ilgums banerī, km). */
   abroad: OwnerMileagePeriod | null;
+  /**
+   * Ārvalstu kolonnas: viens posms (valsts pierādāma visam periodam vai nav zināma) vai divi -
+   * «Iepriekš - valsts nav zināma» + «<valsts> (pierādāms no GGGG)».
+   */
+  abroadSegments: OwnerMileagePeriod[];
+  /** CSDD iepriekšējā valsts (pēdējā pirms Latvijas), LV nosaukums vai tukšs. */
+  abroadLastCountry: string;
   owners: OwnerMileagePeriod[];
   ownerCount: number;
   /** Ievešana / pirmā reģistrācija Latvijā. */
@@ -148,7 +173,7 @@ export function ownerMileageReadingsFromUnifiedRows(rows: readonly UnifiedMileag
     const km = parseOdometerKm(r.odometer);
     if (km == null) continue;
     const iso = r.countryInferred ? null : countryLabelToIso2(r.country ?? "");
-    out.push({ t, km, foreign: iso != null && iso !== "LV" });
+    out.push({ t, km, foreign: iso != null && iso !== "LV", ...(iso ? { iso } : null) });
   }
   return out;
 }
@@ -158,6 +183,7 @@ export function ownerMileageInputFromCsdd(
   csdd: CsddFormFields | null | undefined,
   readings: readonly OwnerMileageReading[],
   nowMs?: number,
+  countryRecords?: readonly OwnerMileageCountryRecord[],
 ): OwnerMileageInput | null {
   if (!csdd) return null;
   return {
@@ -168,6 +194,7 @@ export function ownerMileageInputFromCsdd(
     modelYear: csdd.modelYear,
     previousRegistrationCountry: csdd.previousRegistrationCountry,
     readings: withCsddInspectionReading(csdd, readings),
+    ...(countryRecords ? { countryRecords } : null),
     nowMs,
   };
 }
@@ -398,6 +425,29 @@ function cleanAbroadCountry(raw: string | undefined): string {
   return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
 }
 
+/**
+ * Agrākais datētais ieraksts ar CSDD iepriekšējo valsti pirms ievešanas, pēc kura auto nav fiksēts
+ * citā ārvalstī. 0 - valsts nav pierādāma (nav neviena datēta ieraksta ar šo valsti).
+ */
+function abroadCountryProvenFrom(
+  input: OwnerMileageInput,
+  readings: readonly OwnerMileageReading[],
+  country: string,
+  abroadStartT: number,
+  importT: number,
+): number {
+  const lastIso = countryLabelToIso2(country);
+  if (!lastIso || lastIso === "LV") return 0;
+  const recs: OwnerMileageCountryRecord[] = [
+    ...(input.countryRecords ?? []),
+    ...readings.filter((r) => r.iso && !r.origin).map((r) => ({ t: r.t, iso: r.iso! })),
+  ].filter((r) => r.t > 0 && r.t < importT + OWNER_MILEAGE_SNAP_DAYS * DAY_MS && r.iso && r.iso !== "LV");
+  const lastOtherT = recs.filter((r) => r.iso !== lastIso).reduce((m, r) => Math.max(m, r.t), 0);
+  const known = recs.filter((r) => r.iso === lastIso && r.t > lastOtherT && r.t < importT);
+  if (known.length === 0) return 0;
+  return Math.max(abroadStartT, Math.min(...known.map((r) => r.t)));
+}
+
 /** Galvenais aprēķins. null - nav neviena īpašnieku maiņas datuma. */
 export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileageResult | null {
   const nowT = startOfDayUtc(input.nowMs ?? Date.now());
@@ -439,12 +489,16 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
     if (!series.some((r) => r.t <= originT)) series.unshift({ t: originT, km: 0, origin: true });
   }
 
+  const provenFromT = hasAbroad && abroadStartT ? abroadCountryProvenFrom(input, readings, country, abroadStartT, importT) : 0;
+  const splitT = provenFromT && provenFromT - abroadStartT > ABROAD_COUNTRY_SPLIT_MIN_MS ? provenFromT : 0;
+
   const bv = ownerMileageBoundaryValues(
-    [...(hasAbroad && abroadStartT ? [abroadStartT, importT] : []), ...evTs],
+    [...(hasAbroad && abroadStartT ? [abroadStartT, importT, ...(splitT ? [splitT] : [])] : []), ...evTs],
     series,
   );
 
   let abroad: OwnerMileagePeriod | null = null;
+  const abroadSegments: OwnerMileagePeriod[] = [];
   if (hasAbroad && abroadStartT) {
     const k = periodKm(bv.get(abroadStartT) ?? null, bv.get(importT) ?? null, false, series);
     const duration = startYearOnly
@@ -465,8 +519,37 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
       drop: k.drop,
       start: k.start,
       end: k.end,
-      country,
+      // Visam periodam valsti rāda tikai, ja tā pierādāma kopš perioda sākuma.
+      country: provenFromT && !splitT ? country : "",
     };
+    if (splitT) {
+      const segment = (t0: number, t1: number, extra: Partial<OwnerMileagePeriod>): OwnerMileagePeriod => {
+        const sk = periodKm(bv.get(t0) ?? null, bv.get(t1) ?? null, false, series);
+        const yearOnly = startYearOnly && t0 === abroadStartT;
+        return {
+          ...abroad!,
+          t0,
+          t1,
+          startYearOnly: yearOnly,
+          duration: yearOnly
+            ? { years: Math.max(1, Math.round((t1 - t0) / (365.25 * DAY_MS))), months: 0 }
+            : ownerMileageCalendarDuration(t0, t1),
+          durationApprox: yearOnly,
+          days: Math.round((t1 - t0) / DAY_MS),
+          km: sk.km,
+          kmApprox: sk.approx,
+          drop: sk.drop,
+          start: sk.start,
+          end: sk.end,
+          country: "",
+          ...extra,
+        };
+      };
+      abroadSegments.push(segment(abroadStartT, splitT, { countryUnknown: true }));
+      abroadSegments.push(segment(splitT, importT, { country, countryProvenFromT: splitT }));
+    } else {
+      abroadSegments.push(abroad);
+    }
   }
 
   const owners: OwnerMileagePeriod[] = [];
@@ -497,6 +580,8 @@ export function buildOwnerMileagePeriods(input: OwnerMileageInput): OwnerMileage
   const lastForeign = foreignBefore.length ? foreignBefore[foreignBefore.length - 1]!.t : null;
   return {
     abroad,
+    abroadSegments,
+    abroadLastCountry: country,
     owners,
     ownerCount: countParsed ?? owners.length,
     importT,
@@ -610,6 +695,19 @@ export function collectOwnerMileageFacts(r: OwnerMileageResult): OwnerMileageFac
   };
 }
 
+/** Ārvalstu perioda valsts AI faktiem: kas pierādāms un kas nav (nekad visu periodu vienai valstij bez ieraksta). */
+function formatAbroadCountryFactLine(r: OwnerMileageResult): string {
+  if (!r.abroad || !r.abroadLastCountry) return "";
+  const last = r.abroadLastCountry;
+  const lastLoc = countryNameLvLocative(last) || last;
+  const proven = r.abroadSegments.find((p) => p.countryProvenFromT);
+  if (proven) {
+    return `- Ārvalstu valsts: ${last} pierādāma tikai no ${fmtDate(proven.countryProvenFromT!)} (agrākais ieraksts ar šo valsti) līdz ievešanai; laikā pirms tam valsts nav zināma - NERAKSTĪT, ka auto visu ārvalstu laiku bijis ${lastLoc} vai tur pirmo reizi reģistrēts`;
+  }
+  if (r.abroad.country) return "";
+  return `- Ārvalstu valsts: CSDD iepriekšējā valsts ${last} ir tikai pēdējā valsts pirms Latvijas; datētu ierakstu ar šo valsti nav - NERAKSTĪT, cik ilgi auto bijis ${lastLoc} vai ka tur pirmo reizi reģistrēts`;
+}
+
 /**
  * AI faktu lapas rindas. Blokā šie paskaidrojumi netiek rakstīti, tāpēc komentāram tie jāpiemin.
  * Tukšs masīvs - nav ko pieminēt.
@@ -631,6 +729,8 @@ export function formatOwnerMileageFactLines(r: OwnerMileageResult | null): strin
     ...r.owners.map((o) => `${o.n}) ${m(o.t0)}-${o.current ? "šodien" : m(o.t1)} ${fmtDurLv(o)} ${kmBit(o)}`),
   ];
   lines.push(`- Periodi: ${periods.join("; ")}`);
+  const abroadCountryLine = formatAbroadCountryFactLine(r);
+  if (abroadCountryLine) lines.push(abroadCountryLine);
   const f = collectOwnerMileageFacts(r);
   for (const d of f.drops) {
     lines.push(

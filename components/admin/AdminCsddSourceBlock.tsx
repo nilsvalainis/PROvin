@@ -50,7 +50,7 @@ import {
   setCsddFieldManually,
 } from "@/lib/csdd-field-lock";
 import { buildCsddOwnerMileageBlockHtml, OWNER_MILEAGE_BLOCK_ADMIN_CSS } from "@/lib/owner-mileage-block-html";
-import { ownerMileageReadingsFromUnifiedRows } from "@/lib/owner-mileage-periods";
+import { ownerMileageReadingsFromUnifiedRows, type OwnerMileageCountryRecord } from "@/lib/owner-mileage-periods";
 import type { UnifiedMileageRow } from "@/lib/unified-mileage";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -228,6 +228,8 @@ type Props = {
   ecsddAuto?: boolean;
   /** Visu avotu nobraukuma rindas blokam «Īpašnieki un nobraukums» (ja nav - tikai CSDD rādījumi). */
   ownerMileageRows?: UnifiedMileageRow[];
+  /** Datēti ieraksti ar valsti - ārvalstu perioda valstij (26.11). */
+  ownerMileageCountryRecords?: OwnerMileageCountryRecord[];
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -253,15 +255,16 @@ export function AdminCsddSourceBlock({
   otherRecordDates,
   ecsddAuto = false,
   ownerMileageRows,
+  ownerMileageCountryRecords,
 }: Props) {
   const ownerMileageHtml = useMemo(() => {
     const html = buildCsddOwnerMileageBlockHtml(
       value,
       ownerMileageRows ? ownerMileageReadingsFromUnifiedRows(ownerMileageRows) : undefined,
-      { responsive: true },
+      { responsive: true, countryRecords: ownerMileageCountryRecords },
     );
     return html ? `<style>${OWNER_MILEAGE_BLOCK_ADMIN_CSS}</style>${html}` : "";
-  }, [value, ownerMileageRows]);
+  }, [value, ownerMileageRows, ownerMileageCountryRecords]);
   const firstRegWarnings = useMemo(
     () => collectCsddFirstRegistrationWarnings({ csdd: value, otherRecordDates }),
     [value, otherRecordDates],

@@ -970,6 +970,8 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
 export type OwnerMileageTextKey =
   | "title"
   | "abroad"
+  | "abroadUnknown"
+  | "provenFrom"
   | "latvia"
   | "imported"
   | "firstRegLv"
@@ -982,6 +984,13 @@ export type OwnerMileageTextKey =
 const OWNER_MILEAGE_TEXT: Record<OwnerMileageTextKey, Record<ClientReportLang, string>> = {
   title: { lv: "Īpašnieki un nobraukums", en: "Owners and mileage", ru: "Владельцы и пробег", de: "Halter und Laufleistung" },
   abroad: { lv: "Ārvalstīs", en: "Abroad", ru: "За рубежом", de: "Im Ausland" },
+  abroadUnknown: {
+    lv: "Iepriekš - valsts nav zināma",
+    en: "Earlier - country unknown",
+    ru: "Ранее - страна неизвестна",
+    de: "Zuvor - Land unbekannt",
+  },
+  provenFrom: { lv: "pierādāms no", en: "proven from", ru: "подтверждено с", de: "belegt ab" },
   latvia: { lv: "Latvijā", en: "In Latvia", ru: "В Латвии", de: "In Lettland" },
   imported: { lv: "Ievests Latvijā", en: "Imported to Latvia", ru: "Ввезён в Латвию", de: "Nach Lettland eingeführt" },
   firstRegLv: {
