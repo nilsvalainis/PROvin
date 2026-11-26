@@ -186,7 +186,9 @@ done
 
 Sagaidāms: `bid_cars found` (IAAI 2020 lots, HTML ~270 KB), `bid_cars none`, `carfax_eu found 10`.
 CARFAX.eu: jaunam Chrome profilam neredzamā reCAPTCHA v3 var atbildēt 403 (`kind:error`, «reCAPTCHA noraidīja»);
-tad VIN SCAN rinda paliek pārlūka joslā (Tampermonkey) un kešs neko nesaglabā.
+tad relejs tajā pašā Chrome sesijā pēc 2,5-4,5 s pauzes pārlādē sākumlapu un meklē vēlreiz (līdz 3 mēģinājumiem,
+cik ļauj 40 s; žurnālā «mēģ. N»). Captcha netiek risināta/klikšķināta. Ja visi mēģinājumi krīt, VIN SCAN rinda paliek
+pārlūka joslā (Tampermonkey) un kešs neko nesaglabā.
 
 ## Servera env (`/etc/provin-listings.env`)
 

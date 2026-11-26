@@ -435,7 +435,7 @@ const server = createServer(async (req, res) => {
         }
       });
       vinSourceCache.set(key, out);
-      log(`vinsource ${source} ${out.kind} ${out.elapsedMs} ms${out.note ? ` (${out.note})` : ""}`);
+      log(`vinsource ${source} ${out.kind} ${out.elapsedMs} ms${out.attempts > 1 ? ` mēģ. ${out.attempts}` : ""}${out.note ? ` (${out.note})` : ""}`);
       return sendJson(res, 200, { ok: true, source, vin, cached: false, ...out });
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";

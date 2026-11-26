@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  CARFAX_MAX_ATTEMPTS,
+  CARFAX_RETRY_MIN_LEFT_MS,
   carfaxRecordCheckMatches,
   createVinSourceCache,
+  isCarfaxCaptchaReject,
   readBidCarsSearch,
   readCarfaxRecordCheck,
+  shouldRetryCarfax,
   validBidCarsLotUrl,
   validVinSourceRequest,
   vinSourceLaneKey,
@@ -78,4 +82,17 @@ test("createVinSourceCache: 24 h tikai found/none, vecākie izkrīt", () => {
   cache.set("d", { kind: "none" });
   assert.equal(cache.size, 2);
   assert.equal(cache.get("b"), null);
+});
+
+test("shouldRetryCarfax: tikai reCAPTCHA 403, ar laika rezervi un ne vairāk par maksimumu", () => {
+  const reject = { status: 403, text: '{"error":"INVALID_CAPTCHA"}' };
+  assert.equal(isCarfaxCaptchaReject(reject.status, reject.text), true);
+  assert.equal(isCarfaxCaptchaReject(403, "Forbidden"), false);
+  assert.equal(shouldRetryCarfax({ ...reject, attempt: 1, leftMs: 30_000 }), true);
+  assert.equal(shouldRetryCarfax({ ...reject, attempt: CARFAX_MAX_ATTEMPTS - 1, leftMs: 30_000 }), true);
+  assert.equal(shouldRetryCarfax({ ...reject, attempt: CARFAX_MAX_ATTEMPTS, leftMs: 30_000 }), false);
+  assert.equal(shouldRetryCarfax({ ...reject, attempt: 1, leftMs: CARFAX_RETRY_MIN_LEFT_MS - 1 }), false);
+  assert.equal(shouldRetryCarfax({ status: 200, text: "{}", attempt: 1, leftMs: 30_000 }), false);
+  assert.equal(shouldRetryCarfax({ status: 422, text: "{}", attempt: 1, leftMs: 30_000 }), false);
+  assert.equal(shouldRetryCarfax({ status: 500, text: "INVALID_CAPTCHA", attempt: 1, leftMs: 30_000 }), false);
 });

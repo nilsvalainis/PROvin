@@ -82,6 +82,27 @@ export function readCarfaxRecordCheck(status, text) {
   return { kind: "error", note: `CARFAX.eu atbildēja HTTP ${status || 0}` };
 }
 
+/** CARFAX.eu backend noraidīja reCAPTCHA v3 tokenu (zems vērtējums). */
+export function isCarfaxCaptchaReject(status, text) {
+  return status === 403 && /INVALID_CAPTCHA/.test(String(text ?? ""));
+}
+
+/**
+ * reCAPTCHA v3 vērtējums katram tokenam ir atsevišķs: tajā pašā (jau sasildītajā) Chrome sesijā
+ * pēc pauzes un lapas pārlādes nākamais tokens bieži iziet. Captcha netiek risināta vai klikšķināta -
+ * tas ir tas pats, ko dara cilvēks, nospiežot «Meklēt» vēlreiz.
+ */
+export const CARFAX_MAX_ATTEMPTS = 3;
+/** Atkārtojumam vajag pārlādi + gaidīšanu + atbildi; ja laika mazāk, labāk atdot kļūdu laikā. */
+export const CARFAX_RETRY_MIN_LEFT_MS = 13_000;
+export const CARFAX_RETRY_PAUSE_MS = [2_500, 4_500];
+
+export function shouldRetryCarfax({ status, text, attempt, leftMs }) {
+  if (!isCarfaxCaptchaReject(status, text)) return false;
+  if (attempt >= CARFAX_MAX_ATTEMPTS) return false;
+  return leftMs >= CARFAX_RETRY_MIN_LEFT_MS;
+}
+
 export function carfaxRecordCheckMatches(url, vin) {
   try {
     const u = new URL(String(url ?? ""));
