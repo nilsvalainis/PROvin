@@ -314,7 +314,7 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(none.record.indicators[0]?.status).toBe("none");
   });
 
-  it("CARFAX, NICB un epolicija HTML no pārlūka kļūst par found vai none", () => {
+  it("CARFAX un NICB HTML no pārlūka kļūst par found vai none; izņemtā epolicija.lt - nē", () => {
     const carfax = applyBrowserArchiveHtml({
       record: record([]),
       id: "carfax_eu",
@@ -344,9 +344,7 @@ describe("pārlūka arhīva HTML imports", () => {
       pageUrl: `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${VIN}`,
       vin: VIN,
     });
-    expect(police.ok).toBe(true);
-    if (!police.ok) return;
-    expect(police.record.indicators[0]?.status).toBe("none");
+    expect(police.ok).toBe(false);
   });
 
   it("servera unknown nepārraksta jau importētu pārlūka rezultātu", () => {

@@ -32,7 +32,7 @@ describe("VIN SCAN ikdienas uzraudzība: zelta VIN", () => {
   it("nesauc maksas pirkuma avotus (izņemot TheCarApi abonementu) un pārlūka avotus", () => {
     for (const id of vinScanCanarySourceIds()) {
       if (id !== "thecarapi_eu") expect(isPaidVinScanSourceId(id)).toBe(false);
-      if (id !== "lt_itpr") expect((VIN_SCAN_BROWSER_FETCH_IDS as readonly string[]).includes(id)).toBe(false);
+      expect((VIN_SCAN_BROWSER_FETCH_IDS as readonly string[]).includes(id)).toBe(false);
     }
     for (const id of ["joj_copart_iaai", "carvertical", "autodna", "speckr", "oneauto", "stat_vin", "bid_cars"]) {
       expect(vinScanCanarySourceIds()).not.toContain(id);

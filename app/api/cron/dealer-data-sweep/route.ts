@@ -17,6 +17,7 @@ import {
 import { listUnfinishedDealerDataJobs, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 import { retryDealerNoVinFromPlate } from "@/lib/order-plate-vin-resolve";
+import { sweepQuickEvalSmartId } from "@/lib/quick-eval-auto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,8 +50,13 @@ export async function GET(req: Request) {
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   try {
+    // Ātrie vērtējumi: gaidošie e.csdd / LTAB, tiklīdz Smart-ID sesija aktīva (citādi viens releja vaicājums).
+    const quickEvalSmartId = await sweepQuickEvalSmartId().catch((err) => {
+      console.warn("[cron/dealer-data-sweep] quick-eval smart-id", err instanceof Error ? err.message : "unknown");
+      return null;
+    });
     const unfinished = await listUnfinishedDealerDataJobs();
-    if (unfinished.length === 0) return NextResponse.json({ ok: true, unfinished: 0, processed: [] });
+    if (unfinished.length === 0) return NextResponse.json({ ok: true, unfinished: 0, processed: [], quickEvalSmartId });
     const now = Date.now();
     const due = unfinished
       .filter((job) => job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS && dealerDataJobRetryDue(job, now))
@@ -87,6 +93,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      quickEvalSmartId,
       unfinished: unfinished.length,
       processed,
       /** Operatoram: šie gaida manuālu lēmumu (atmaksa vai atkārtots mēģinājums). */

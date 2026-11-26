@@ -379,9 +379,9 @@ function visibleText(html: string): string {
 }
 
 /**
- * Izsoļu arhīvi (AucHistory, BidFax, Poctra). Trāpījums TIKAI tad, ja meklētais VIN ir redzamajā tekstā
+ * Izsoļu arhīvi (BidFax, Poctra). Trāpījums TIKAI tad, ja meklētais VIN ir redzamajā tekstā
  * kopā ar lota datiem. Agrāk VIN no skripta (`current_url`) + „Featured cars” bloks + <img> skaits
- * deva viltus „ir izsole, N foto” (piem. AucHistory WAUZZZF50NA041246).
+ * deva viltus „ir izsole, N foto” (piem. WAUZZZF50NA041246).
  */
 const AUCTION_NOT_FOUND_RE =
   /not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found|no (auction )?records|vehicle not found|0 vehicles|no cars found/i;

@@ -4,7 +4,6 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
   "mnt_ee",
   "lkf_ee",
   "carinfo",
-  "auchistory",
   "regitra",
   "traficom",
   "biluppgifter",
@@ -21,9 +20,10 @@ export const VIN_SCAN_RELAY_PAGE_TIMEOUT_MS = 100_000;
 
 /**
  * esyn un dsb veic 2-3 secīgus HTTP pieprasījumus (katrs līdz 12 s), tāpēc 14 s nepietiek.
+ * nhtsa_complaints gaida vPIC vai reģistru modeli (≤8 s) un tad sūdzības; cz_patrani trāpījumam vēl detaļu lapu.
  */
 const MULTI_STEP_TIMEOUT_MS = 25_000;
-const MULTI_STEP_SOURCES = new Set<VinScanSourceId>(["esyn", "dsb"]);
+const MULTI_STEP_SOURCES = new Set<VinScanSourceId>(["esyn", "dsb", "nhtsa_complaints", "cz_patrani"]);
 
 /**
  * mnt_ee iet caur releju ar `MNT_RELAY_TIMEOUT_MS` (100 s). Ārējam limitam jābūt lielākam,
@@ -41,15 +41,12 @@ const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
 /**
  * stat_vin, checkcar_vin, plc_auction, bidfax, poctra un nicb tagad ir tikai
  * pārlūka avoti: zonde atgriež `browser_only` uzreiz bez tīkla, tāpēc tiem pietiek ar noklusējumu.
- * lt_itpr (epolicija.lt) risina reCAPTCHA v2 serverī, tāpēc tam CapSolver limits.
  */
 const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "lkf_ee",
   "carinfo",
-  "auchistory",
   "nummerplade",
   "carpass",
-  "lt_itpr",
 ]);
 
 /**

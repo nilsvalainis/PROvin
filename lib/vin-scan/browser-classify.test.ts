@@ -21,7 +21,9 @@ describe("pārlūka katalogs", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(VIN)).toBe(
       `https://plc.auction/?vin=${VIN}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(VIN)).toContain("epolicija.lt");
+    const browserIds: readonly string[] = VIN_SCAN_BROWSER_CATALOG.map((s) => s.id);
+    expect(browserIds).not.toContain("lt_itpr");
+    expect(browserIds).not.toContain("auchistory");
   });
 });
 
@@ -52,14 +54,9 @@ describe("classifyBrowserProbe", () => {
 
   it("captcha paliek gaidīšana, CheckCar foto skaita atsevišķi", () => {
     expect(browserProbeBlocker("Please complete the reCAPTCHA")).toBe("captcha");
-    expect(classifyBrowserProbe("auchistory", "I'm not a robot", VIN)).toBeNull();
-    expect(
-      classifyBrowserProbe(
-        "auchistory",
-        `Search Results for: ${VIN} It seems we can\u2019t find what you\u2019re looking for. original auction photos, damage, bids`,
-        VIN,
-      )?.status,
-    ).toBe("none");
+    expect(classifyBrowserProbe("bidfax", "I'm not a robot", VIN)).toBeNull();
+    // AucHistory izņemts (26.11): tā lapas vairs neklasificē.
+    expect(classifyBrowserProbe("auchistory", `Search Results for: ${VIN} auction damage bid`, VIN)).toBeNull();
     expect(
       classifyBrowserProbe(
         "bid_cars",

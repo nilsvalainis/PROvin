@@ -3,7 +3,6 @@ import "server-only";
 import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
-import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { browserFetchLane, type VinScanBrowserFetchId } from "@/lib/vin-scan/browser-fetch";
 import {
   bmwRecallCheckUrl,
@@ -20,16 +19,8 @@ import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan
 import { fetchThecarapiVinWithDetails } from "@/lib/vin-scan/thecarapi-api";
 import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-scan/thecarapi-flags";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
-import { currentVinScanDeadlineMs, scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
+import { currentVinScanDeadlineMs, scanFetch, scanFetchSmart } from "@/lib/vin-scan/http";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
-import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
-import {
-  LT_POLICE_API_URL,
-  LT_POLICE_PAGE_URL,
-  LT_POLICE_RECAPTCHA_SITE_KEY,
-  ltPoliceRequestBody,
-  parseLtPoliceResponse,
-} from "@/lib/vin-scan/lt-police";
 import {
   fetchVinSourceViaRelay,
   vinScanParseFromVinSource,
@@ -39,7 +30,6 @@ import {
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
   oemBrandForVin,
-  parseAuctionArchive,
   parseNhtsaRecalls,
   parseVpicMakeModelYear,
   parseOemRecallHtml,
@@ -54,7 +44,6 @@ import {
   mergeVinDecodeWithVpic,
   vinDecodeParseFromLocal,
 } from "@/lib/vin-scan/vin-decode";
-import { extractPageFromHtml, mergeCookieHeader } from "@/lib/vin-sources/html-extract";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
 function done(id: VinScanIndicator["id"], ctx: VinScanContext, parsed: VinScanParse): VinScanIndicator {
@@ -369,40 +358,6 @@ export async function probeTraficom(ctx: VinScanContext): Promise<VinScanIndicat
   });
 }
 
-/**
- * epolicija.lt meklēto TL reģistrs: parakstīts JSON POST + reCAPTCHA v2 (CapSolver).
- * Bez CapSolver atslēgas paliek pārlūka josla; CapSolver vai API kļūda ir `unknown` ar iemeslu.
- */
-export async function probeLtPolice(ctx: VinScanContext): Promise<VinScanIndicator> {
-  if (!hasCaptchaSolverKey()) return fromBrowser("lt_itpr", ctx);
-  try {
-    const solved = await solveScanRecaptcha(LT_POLICE_PAGE_URL, LT_POLICE_RECAPTCHA_SITE_KEY, "epolicija.lt");
-    if (!solved.ok) {
-      return done("lt_itpr", ctx, {
-        status: "unknown",
-        summary: `epolicija.lt: reCAPTCHA neizdevās atrisināt (${solved.reason.slice(0, 120)})`,
-        openUrl: LT_POLICE_PAGE_URL,
-      });
-    }
-    const res = await scanFetch(LT_POLICE_API_URL, {
-      method: "POST",
-      headers: {
-        accept: "application/json, text/plain, */*",
-        "content-type": "application/json",
-        origin: "https://www.epolicija.lt",
-        referer: LT_POLICE_PAGE_URL,
-        "user-agent": solved.ua,
-      },
-      body: ltPoliceRequestBody(ctx.vin, solved.token),
-      cookie: solved.cookie || undefined,
-      timeoutMs: 20_000,
-    });
-    return done("lt_itpr", ctx, parseLtPoliceResponse(res.status, res.text, ctx.vin));
-  } catch (e) {
-    return failed("lt_itpr", ctx, e);
-  }
-}
-
 export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
     return done("joj_copart_iaai", ctx, await fetchAuctionVinLots(ctx.vin, { listingUrl: ctx.listingUrl }));
@@ -487,41 +442,6 @@ async function fromRelayOrBrowser(id: VinSourceRelayId, ctx: VinScanContext): Pr
 
 export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicator> {
   return fromRelayOrBrowser("bid_cars", ctx);
-}
-
-export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndicator> {
-  const url = `https://auchistory.com/?s=${encodeURIComponent(ctx.vin)}`;
-  try {
-    // scanFetchSmart pats reCAPTCHA nerisina; vienīgais CapSolver izsaukums ir zemāk, un žetons iet POST formā.
-    const page = await scanFetchSmart(url, { timeoutMs: 25_000, solveUrl: "https://auchistory.com/", sourceLabel: "AucHistory" });
-    const key = scanCaptchaTokenPlaceholder(page.text);
-    let html = page.text;
-    if (key?.kind === "recaptcha_v2") {
-      const solved = await solveScanRecaptcha("https://auchistory.com/", key.siteKey, "AucHistory");
-      if (!solved.ok) {
-        return done("auchistory", ctx, { status: "unknown", summary: `AucHistory: reCAPTCHA neizdevās atrisināt (${solved.reason})` });
-      }
-      const posted = await scanFetch("https://auchistory.com/", {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-          origin: "https://auchistory.com",
-          referer: url,
-          "user-agent": solved.ua,
-        },
-        body: new URLSearchParams({ vin: ctx.vin, "g-recaptcha-response": solved.token }).toString(),
-        cookie: mergeCookieHeader(page.cookie, solved.cookie),
-        timeoutMs: 25_000,
-      });
-      html = posted.text;
-    }
-    const text = extractPageFromHtml(html).text;
-    const r = classifyBrowserProbe("auchistory", text, ctx.vin);
-    if (r) return done("auchistory", ctx, r);
-    return done("auchistory", ctx, parseAuctionArchive(page.status, html, ctx.vin, "AucHistory"));
-  } catch (e) {
-    return failed("auchistory", ctx, e);
-  }
 }
 
 export async function probeCarfaxEu(ctx: VinScanContext): Promise<VinScanIndicator> {

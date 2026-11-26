@@ -6,6 +6,17 @@
 import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { kfzgutachtenSearchUrl } from "@/lib/kfzgutachten/kfzgutachten";
 import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
+import { czPoliceSearchUrl } from "@/lib/vin-scan/cz-police";
+import {
+  audiRecallCheckUrl,
+  cpicStolenVehicleUrl,
+  fordRecallCheckUrl,
+  ibcVinVerifyUrl,
+  kiaRecallCheckUrl,
+  seatRecallCheckUrl,
+  skodaRecallCheckUrl,
+  stellantisRecallCheckUrl,
+} from "@/lib/vin-scan/oem-recall-links";
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates, normalizeScanPlate } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
@@ -32,12 +43,10 @@ export const VIN_SCAN_SOURCE_IDS = [
   "biluppgifter",
   "regitra",
   "traficom",
-  "lt_itpr",
   "stat_vin",
   "joj_copart_iaai",
   "thecarapi_eu",
   "bid_cars",
-  "auchistory",
   "carfax_eu",
   "checkcar_vin",
   "autodna_precheck",
@@ -48,6 +57,16 @@ export const VIN_SCAN_SOURCE_IDS = [
   "dvsa_mot",
   "eu_safety_gate",
   "kfz_at",
+  "cz_patrani",
+  "nhtsa_complaints",
+  "recall_kia",
+  "recall_skoda",
+  "recall_audi",
+  "recall_seat",
+  "recall_stellantis",
+  "recall_ford",
+  "ca_cpic",
+  "ca_ibc",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -74,10 +93,8 @@ export const VIN_SCAN_BROWSER_IDS = [
   "biluppgifter",
   "regitra",
   "traficom",
-  "lt_itpr",
   "stat_vin",
   "bid_cars",
-  "auchistory",
   "carfax_eu",
   "checkcar_vin",
   "plc_auction",
@@ -89,10 +106,28 @@ export type VinScanBrowserId = (typeof VIN_SCAN_BROWSER_IDS)[number];
 
 export type VinScanNeed = "vin" | "listing" | VinScanPlateKind;
 
+/**
+ * Avotu kategorijas (26.11, Nila secība): Reģistri → Vēsture → Izsoles → Apdrošināšana → Zādzība → Ražotājs → Atsaukumi.
+ * Datu modelis nākamajai VIN SCAN UI pārbūvei; pašreizējais izkārtojums tās vēl nelieto.
+ */
+export const VIN_SCAN_CATEGORIES = [
+  { id: "registri", label: "Reģistri" },
+  { id: "vesture", label: "Vēsture" },
+  { id: "izsoles", label: "Izsoles" },
+  { id: "apdrosinasana", label: "Apdrošināšana" },
+  { id: "zadziba", label: "Zādzība" },
+  { id: "razotajs", label: "Ražotājs" },
+  { id: "atsaukumi", label: "Atsaukumi" },
+] as const;
+
+export type VinScanCategory = (typeof VIN_SCAN_CATEGORIES)[number]["id"];
+
 export type VinScanCatalogItem = {
   id: VinScanSourceId;
   label: string;
   country: string;
+  /** Grupa VIN SCAN sarakstā (`VIN_SCAN_CATEGORIES` secībā). */
+  category: VinScanCategory;
   hint: string;
   /** Ko avots prasa. Tukšs = pietiek ar VIN. */
   needs: readonly VinScanNeed[];
@@ -153,6 +188,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "vin_decode",
     label: "WMI",
     country: "ISO",
+    category: "razotajs",
     hint: "Ražotājs, izcelsmes valsts, gads",
     needs: ["vin"],
     // Agrāk /decoder/Decoder?VIN= → bezgalīgs 302 uz /Error/NotFound (ERR_TOO_MANY_REDIRECTS). vPIC API JSON atveras droši.
@@ -162,6 +198,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "tjekbil",
     label: "tjekbil.dk",
     country: "DK",
+    category: "registri",
     hint: "Dānijas reģistrs (DMR)",
     needs: ["vin"],
     openUrl: (vin) => `https://www.tjekbil.dk/?vin=${vinQuery(vin)}`,
@@ -170,6 +207,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "esyn",
     label: "esyn.dk",
     country: "DK",
+    category: "vesture",
     hint: "Dānijas tehniskās apskates ar odometru",
     needs: ["vin"],
     openUrl: (vin) => `https://findsynsrapport.esyn.dk/?chassisNumber=${vinQuery(vin)}`,
@@ -178,6 +216,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "dsb",
     label: "Digital Servicebook",
     country: "EU",
+    category: "vesture",
     hint: "Servisa ierakstu skaits. Pilns pārskats ir maksas",
     needs: ["vin"],
     openUrl: (vin) => `https://app.digitalservicebog.dk/search?vin=${vinQuery(vin)}&country=eu`,
@@ -186,6 +225,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "carpass",
     label: "Car-Pass",
     country: "BE",
+    category: "atsaukumi",
     hint: "Beļģijas atsaukumi",
     needs: ["vin"],
     openUrl: (vin) => `https://public.car-pass.be/recalls?vin=${vinQuery(vin)}`,
@@ -194,6 +234,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "mnt_ee",
     label: "mnt.ee",
     country: "EE",
+    category: "registri",
     hint: "Igaunijas transportlīdzekļu reģistrs",
     needs: ["vin"],
     openUrl: (vin) => `https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=${vinQuery(vin)}`,
@@ -202,6 +243,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "csdd",
     label: "CSDD",
     country: "LV",
+    category: "registri",
     hint: "Latvijas reģistrs. VIN vai LV numurs",
     needs: ["vin", "lv"],
     needsAny: true,
@@ -214,6 +256,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "listing_history",
     label: "Sludinājuma vēsture",
     country: "LV",
+    category: "vesture",
     hint: "Adify / Tirgus Dati sludinājuma cenu vēsture",
     needs: ["listing"],
     openUrl: (_vin, _plates, listingUrl) => {
@@ -225,6 +268,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "nummerplade",
     label: "nummerplade.net",
     country: "DK",
+    category: "registri",
     hint: "Dānijas reģistrs. Publiskā lapa, Cloudflare caur CapSolver",
     needs: ["vin"],
     openUrl: (vin) => `https://www.nummerplade.net/stelnummer/${vin.trim().toLowerCase()}.html`,
@@ -233,6 +277,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "carinfo",
     label: "car.info",
     country: "SE",
+    category: "registri",
     hint: "Zviedrijas reģistrs pēc VIN. Numurs ir rezerve, ja VIN lapa auto neatrada",
     needs: ["vin"],
     openUrl: (vin) => carinfoSwedenVinUrl(vin),
@@ -241,6 +286,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "lkf_ee",
     label: "lkf.ee",
     country: "EE",
+    category: "apdrosinasana",
     hint: "Igaunijas OCTA atlīdzības",
     needs: ["vin"],
     openUrl: (vin) => `https://lkf.ee/et/kahjukontroll?vin=${vinQuery(vin)}`,
@@ -249,6 +295,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "rdw",
     label: "RDW",
     country: "NL",
+    category: "registri",
     hint: "Nīderlandes atvērtie dati: APK, NAP, atsaukumi. Vajag NL numuru",
     needs: ["nl"],
     openUrl: (vin, plates) => {
@@ -262,6 +309,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "vegvesen",
     label: "vegvesen.no",
     country: "NO",
+    category: "registri",
     hint: "Norvēģijas reģistrs pēc VIN",
     needs: ["vin"],
     disabled: true,
@@ -272,6 +320,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "nhtsa_recalls",
     label: "NHTSA atsaukumi",
     country: "US",
+    category: "atsaukumi",
     hint: "NHTSA recalls API pēc VIN",
     needs: ["vin"],
     openUrl: (vin) => `https://www.nhtsa.gov/recalls?vin=${vinQuery(vin)}`,
@@ -280,6 +329,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "nicb",
     label: "NICB VINCheck",
     country: "US",
+    category: "zadziba",
     hint: "ASV zagto un total loss pārbaude",
     needs: ["vin"],
     openUrl: (vin) => `https://www.nicb.org/vincheck?vin=${vinQuery(vin)}`,
@@ -288,6 +338,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_vw",
     label: "VW Group atsaukumi",
     country: "OEM",
+    category: "atsaukumi",
     hint: "Volkswagen, Audi, Škoda, SEAT, Cupra. Ne-ASV VIN: GOV.UK pārbaude pārlūkā",
     needs: ["vin"],
     openUrl: (vin) => vwGroupRecallCheckUrl(vin),
@@ -296,6 +347,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_bmw",
     label: "BMW atsaukumi",
     country: "OEM",
+    category: "atsaukumi",
     hint: "BMW / MINI atsaukumu pārbaude",
     needs: ["vin"],
     openUrl: (vin) => bmwRecallCheckUrl(vin),
@@ -304,6 +356,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_mercedes",
     label: "Mercedes atsaukumi",
     country: "OEM",
+    category: "atsaukumi",
     hint: "Mercedes-Benz atsaukumu pārbaude",
     needs: ["vin"],
     openUrl: (vin) => mercedesRecallCheckUrl(vin),
@@ -312,6 +365,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_volvo",
     label: "Volvo atsaukumi",
     country: "OEM",
+    category: "atsaukumi",
     hint: "Volvo atsaukumu pārbaude",
     needs: ["vin"],
     openUrl: (vin) => `https://www.volvocars.com/intl/support/car/recalls?vin=${vinQuery(vin)}`,
@@ -320,6 +374,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_toyota",
     label: "Toyota atsaukumi",
     country: "OEM",
+    category: "atsaukumi",
     hint: "Toyota / Lexus atsaukumu pārbaude",
     needs: ["vin"],
     openUrl: (vin) => `https://www.toyota.com/recall/?vin=${vinQuery(vin)}`,
@@ -328,6 +383,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "biluppgifter",
     label: "biluppgifter.se",
     country: "SE",
+    category: "registri",
     hint: "Zviedrijas reģistrs pēc VIN",
     needs: ["vin"],
     openUrl: (vin) => `https://biluppgifter.se/${vinQuery(vin)}`,
@@ -336,6 +392,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "regitra",
     label: "Regitra",
     country: "LT",
+    category: "registri",
     hint: "Lietuvas reģistrs pēc LT numura",
     needs: ["lt"],
     openUrl: () => regitraVehicleCheckUrl(),
@@ -344,23 +401,16 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "traficom",
     label: "Traficom",
     country: "FI",
+    category: "registri",
     hint: "Somijas reģistrs. Publiskā saite pēc VIN",
     needs: ["vin"],
     openUrl: (vin, plates) => traficomVehicleInfoUrl(vin, plates?.fi ?? ""),
   },
   {
-    id: "lt_itpr",
-    label: "LT policija",
-    country: "LT",
-    hint: "Lietuvas policija, ieškomos transporto priemonės",
-    needs: ["vin"],
-    // Kopš 2026 Angular lapa; VIN aizpilda userscript, meklēšanai vajag reCAPTCHA (serverī - CapSolver).
-    openUrl: (vin) => `https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=${vinQuery(vin)}`,
-  },
-  {
     id: "stat_vin",
     label: "stat.vin",
     country: "US",
+    category: "izsoles",
     hint: "Izsoles ieraksts",
     needs: ["vin"],
     openUrl: (vin) => `https://stat.vin/cars/${vinQuery(vin)}`,
@@ -369,6 +419,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "joj_copart_iaai",
     label: "Copart/IAAI (JoJ API)",
     country: "US",
+    category: "izsoles",
     hint: "Copart/IAAI US/CA",
     needs: ["vin"],
     openUrl: (vin) => `https://www.copart.com/lotSearchResults/?free=true&query=${vinQuery(vin)}`,
@@ -377,6 +428,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "thecarapi_eu",
     label: "EU izsoles (TheCarApi)",
     country: "EU",
+    category: "izsoles",
     hint: "AUTO1/Openlane/BCA/Autorola arhīvs",
     needs: ["vin"],
     openUrl: (vin) => `https://api.thecarapi.com/api/vin/${vinQuery(vin)}/history`,
@@ -385,22 +437,16 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "bid_cars",
     label: "bid.cars",
     country: "US",
+    category: "izsoles",
     hint: "Izsoļu arhīvs",
     needs: ["vin"],
     openUrl: (vin) => `https://bid.cars/en/search?q=${vinQuery(vin)}`,
   },
   {
-    id: "auchistory",
-    label: "AucHistory",
-    country: "US",
-    hint: "Izsoles foto un bojājumi",
-    needs: ["vin"],
-    openUrl: (vin) => `https://auchistory.com/?s=${vinQuery(vin)}`,
-  },
-  {
     id: "carfax_eu",
     label: "CARFAX.eu",
     country: "EU",
+    category: "vesture",
     hint: "Bezmaksas priekšskatījums: ierakstu skaits",
     needs: ["vin"],
     openUrl: (vin) => `https://www.carfax.eu/preview-page?vin=${vinQuery(vin)}`,
@@ -409,6 +455,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "checkcar_vin",
     label: "CheckCar.vin",
     country: "US",
+    category: "izsoles",
     hint: "Vai atskaitē ir foto",
     needs: ["vin"],
     openUrl: (vin) => `https://checkcar.vin/report/check/${vinQuery(vin)}`,
@@ -417,6 +464,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "autodna_precheck",
     label: "AutoDNA (priekšskatījums)",
     country: "EU",
+    category: "vesture",
     hint: "Bezmaksas: ierakstu skaits sadaļās, bez pirkuma",
     needs: ["vin"],
     openUrl: (vin) => `https://www.autodna.lv/vin/${vinQuery(vin)}`,
@@ -425,6 +473,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "plc_auction",
     label: "plc.auction",
     country: "EU",
+    category: "izsoles",
     hint: "Izsoles lots",
     needs: ["vin"],
     openUrl: (vin) => `https://plc.auction/?vin=${vinQuery(vin)}`,
@@ -433,6 +482,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "bidfax",
     label: "BidFax",
     country: "US",
+    category: "izsoles",
     hint: "Izsoles foto arhīvs",
     needs: ["vin"],
     openUrl: (vin) => `https://bidfax.info/?s=${vinQuery(vin)}`,
@@ -441,6 +491,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "poctra",
     label: "Poctra",
     country: "US",
+    category: "izsoles",
     hint: "Izsoles foto arhīvs",
     needs: ["vin"],
     openUrl: (vin) => poctraSearchUrl(vin),
@@ -449,6 +500,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "cz_rsv",
     label: "Datová kostka RSV",
     country: "CZ",
+    category: "registri",
     hint: "Čehijas reģistrs (MD ČR): pirmā reģistrācija, īpašnieku skaits, apskate. Vajag CZ_RSV_API_KEY",
     needs: ["vin"],
     // Publiskā lapa ir SPA; VIN saitē nodod operatoram, meklēšanu lapā var nākties palaist ar roku.
@@ -458,6 +510,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "dvsa_mot",
     label: "UK MOT (DVSA)",
     country: "UK",
+    category: "vesture",
     hint: "DVSA MOT vēsture: apskates, odometrs, defekti. Vajag UK numuru un DVSA API atslēgas",
     needs: ["uk"],
     openUrl: (vin, plates) => {
@@ -470,6 +523,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "eu_safety_gate",
     label: "ES Safety Gate",
     country: "EU",
+    category: "atsaukumi",
     hint: "ES brīdinājumi par bīstamiem auto (bij. RAPEX) pēc markas un modeļa. Modeļa līmenis, var neattiekties uz šo auto",
     needs: ["vin"],
     // Safety Gate nemeklē pēc VIN: saite atver meklēšanas lapu, marku ievada operators.
@@ -482,10 +536,102 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "kfz_at",
     label: "Austrija · §57a apskates (kfzgutachten.at)",
     country: "AT",
+    category: "vesture",
     hint: "Austrijas tehnisko apskašu saraksts bez maksas (vajag precīzu 1. reģ. datumu); atzinums 1,19 € gab. - pērk Nils",
     needs: ["vin"],
     // Meklēšanu sargā reCAPTCHA: saite atver formu ar VIN (un datumu, ja zināms), «Suchen» spiež cilvēks.
     openUrl: (vin) => kfzgutachtenSearchUrl(vin),
+  },
+  {
+    id: "cz_patrani",
+    label: "CZ policija",
+    country: "CZ",
+    category: "zadziba",
+    hint: "Čehijas policijas zagto auto meklēšana (Pátrání po vozidlech) pēc VIN",
+    needs: ["vin"],
+    openUrl: (vin) => czPoliceSearchUrl(vin),
+  },
+  {
+    id: "nhtsa_complaints",
+    label: "NHTSA sūdzības",
+    country: "US",
+    category: "razotajs",
+    hint: "Tipiskās kaites / sūdzības: ASV īpašnieku sūdzības pēc markas, modeļa un gada (ASV auto vai ja modelis sakrīt)",
+    needs: ["vin"],
+    // Publiskā NHTSA meklēšana pēc VIN; pēc vaicājuma rinda saņem modeļa lapu ar sūdzībām.
+    openUrl: (vin) => `https://www.nhtsa.gov/recalls?vin=${vinQuery(vin)}`,
+  },
+  {
+    id: "recall_kia",
+    label: "Kia atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Kia Europe atsaukumu pārbaude pārlūkā (VIN ievada lapā)",
+    needs: ["vin"],
+    openUrl: (vin) => kiaRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_skoda",
+    label: "Škoda atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Škoda atsaukumu kampaņu pārbaude (Latvija) pārlūkā",
+    needs: ["vin"],
+    openUrl: (vin) => skodaRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_audi",
+    label: "Audi atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Audi UK drošības spilvenu atsaukuma pārbaude pārlūkā; pārējie - VW Group (GOV.UK)",
+    needs: ["vin"],
+    openUrl: (vin) => audiRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_seat",
+    label: "SEAT atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "SEAT / Cupra UK drošības spilvenu atsaukuma pārbaude pārlūkā; pārējie - VW Group (GOV.UK)",
+    needs: ["vin"],
+    openUrl: (vin) => seatRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_stellantis",
+    label: "Stellantis atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Peugeot, Citroën/DS, Opel/Vauxhall, Fiat, Alfa Romeo, Jeep: atsaukumu pārbaude pārlūkā. Rezultāti var nebūt pilni",
+    needs: ["vin"],
+    openUrl: (vin) => stellantisRecallCheckUrl(vin),
+  },
+  {
+    id: "recall_ford",
+    label: "Ford atsaukumi",
+    country: "OEM",
+    category: "atsaukumi",
+    hint: "Ford atsaukumu pārbaude pārlūkā (Eiropas VIN - Ford UK, ASV VIN - ford.com)",
+    needs: ["vin"],
+    openUrl: (vin) => fordRecallCheckUrl(vin),
+  },
+  {
+    id: "ca_cpic",
+    label: "CPIC (Kanādas policija)",
+    country: "CA",
+    category: "zadziba",
+    hint: "Kanādas zagto auto meklēšana pēc VIN. Tikai Ziemeļamerikas VIN; noteikumi jāapstiprina pašam, rezultātu komerciāli nepārpublicē",
+    needs: ["vin"],
+    openUrl: (vin) => cpicStolenVehicleUrl(vin),
+  },
+  {
+    id: "ca_ibc",
+    label: "IBC VIN Verify",
+    country: "CA",
+    category: "apdrosinasana",
+    hint: "Kanādas apdrošinātāju plūdu / ugunsgrēka / salvage statuss pēc VIN. Tikai Ziemeļamerikas VIN; noteikumi jāapstiprina pašam",
+    needs: ["vin"],
+    openUrl: (vin) => ibcVinVerifyUrl(vin),
   },
 ];
 
@@ -493,6 +639,35 @@ export function vinScanCatalogItem(id: VinScanSourceId): VinScanCatalogItem {
   const item = VIN_SCAN_CATALOG.find((s) => s.id === id);
   if (!item) throw new Error(`unknown_vin_scan_source:${id}`);
   return item;
+}
+
+export function vinScanSourceCategory(id: string): VinScanCategory | null {
+  return VIN_SCAN_CATALOG.find((item) => item.id === id)?.category ?? null;
+}
+
+export function vinScanCategoryLabel(category: VinScanCategory): string {
+  return VIN_SCAN_CATEGORIES.find((c) => c.id === category)?.label ?? category;
+}
+
+export type VinScanCategoryGroup<T> = { category: VinScanCategory; label: string; items: T[] };
+
+/**
+ * Sagrupē avotus (vai rindas ar `id`) pēc kategorijas `VIN_SCAN_CATEGORIES` secībā.
+ * Kategorijas iekšienē paliek ievades secība; tukšas grupas izlaiž; id, kas nav katalogā (izņemti avoti), izlaiž.
+ */
+export function groupVinScanByCategory<T extends { id: string }>(rows: readonly T[]): VinScanCategoryGroup<T>[] {
+  const buckets = new Map<VinScanCategory, T[]>();
+  for (const row of rows) {
+    const category = vinScanSourceCategory(row.id);
+    if (!category) continue;
+    const list = buckets.get(category) ?? [];
+    list.push(row);
+    buckets.set(category, list);
+  }
+  return VIN_SCAN_CATEGORIES.flatMap((c) => {
+    const items = buckets.get(c.id);
+    return items?.length ? [{ category: c.id, label: c.label, items }] : [];
+  });
 }
 
 export function isVinScanSourceId(v: string): v is VinScanSourceId {
@@ -508,13 +683,10 @@ export function vinScanSourceDisabled(id: string): boolean {
 }
 
 /**
- * 26.11 avotu audits: 0 trāpījumu 40 skenējumos, CapSolver maksa bez rezultāta (lt_itpr, auchistory)
- * vai dublikāts (nummerplade = tjekbil). Kods paliek, bet serveris tos automātiski neprasa:
+ * 26.11 avotu audits: 0 trāpījumu 40 skenējumos vai dublikāts (nummerplade = tjekbil). Kods paliek, bet serveris tos automātiski neprasa:
  * VIN SCAN rāda tikai saiti «Atvērt pārlūkā», un tie neskaitās statusa rindā «N/M OK».
  */
 export const VIN_SCAN_LINK_ONLY_IDS = [
-  "lt_itpr",
-  "auchistory",
   "nummerplade",
   "biluppgifter",
   "stat_vin",
@@ -530,6 +702,16 @@ export const VIN_SCAN_LINK_ONLY_IDS = [
   "carpass",
   "traficom",
   "regitra",
+  // 26.11 jaunie: ražotāju atsaukumi tikai attiecīgajai markai; CPIC/IBC noteikumi aizliedz
+  // komerciālu pārpublicēšanu / prasa personīgu piekrišanu - tikai saite Ziemeļamerikas VIN.
+  "recall_kia",
+  "recall_skoda",
+  "recall_audi",
+  "recall_seat",
+  "recall_stellantis",
+  "recall_ford",
+  "ca_cpic",
+  "ca_ibc",
 ] as const satisfies readonly VinScanSourceId[];
 
 export function vinScanSourceLinkOnly(id: string): boolean {
@@ -618,4 +800,7 @@ export const VIN_SCAN_REMOVED_IDS = [
   "outvin",
   "vp_wanted",
   "uk_mot",
+  // 26.11 Nila lēmums: Lietuvas policija (epolicija.lt, reCAPTCHA caur CapSolver) un AucHistory izņemti pilnībā.
+  "lt_itpr",
+  "auchistory",
 ] as const;

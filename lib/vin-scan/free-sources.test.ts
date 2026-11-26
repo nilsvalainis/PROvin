@@ -33,7 +33,7 @@ describe("free VIN SCAN avoti", () => {
     );
     expect(free).not.toContain("vegvesen");
     expect(isFreeVinScanSourceId("vegvesen")).toBe(true);
-    // 26.11 audits: stat.vin, AucHistory, LT policija u.c. tikai kā saite, automātiski netiek prasīti.
+    // 26.11 audits: stat.vin u.c. tikai kā saite; AucHistory un LT policija izņemti pilnībā.
     expect(free).not.toContain("stat_vin");
     expect(free).not.toContain("auchistory");
     expect(free).not.toContain("lt_itpr");

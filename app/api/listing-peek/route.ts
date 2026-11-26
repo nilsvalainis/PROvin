@@ -9,10 +9,13 @@ import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-peek-store";
 import { getAdminSession } from "@/lib/admin-auth";
-import { seedQuickEval } from "@/lib/quick-eval-service";
+import { runQuickEvalAuto } from "@/lib/quick-eval-auto";
 
 export const runtime = "nodejs";
-/** Bezmaksas avotu ielase un pilnais VIN SCAN katalogs notiek fonā pēc atbildes klientam. */
+/**
+ * Automātika fonā pēc atbildes klientam: numurs -> VIN, bezmaksas avoti, VIN SCAN (kešs 24 h), izsoles,
+ * priekšskatījumi, e.csdd / LTAB (tikai ar aktīvu Smart-ID), pretrunas un «Ieteicams piedāvāt». Nekādu pirkumu.
+ */
 export const maxDuration = 300;
 
 const BURST_WINDOW_MS = 15 * 60 * 1000;
@@ -98,10 +101,10 @@ export async function POST(req: Request) {
   const peekId = created.entry.id;
   after(async () => {
     try {
-      const doc = await seedQuickEval(peekId);
-      console.info("[listing-peek] free sources", { peekId, parts: doc?.seed?.parts });
+      const r = await runQuickEvalAuto(peekId);
+      console.info("[listing-peek] auto", { peekId, ...r });
     } catch (err) {
-      console.error("[listing-peek] free sources failed:", err);
+      console.error("[listing-peek] auto failed:", err);
     }
   });
 

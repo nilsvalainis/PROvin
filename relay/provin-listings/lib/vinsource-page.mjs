@@ -10,6 +10,7 @@ import {
   bidCarsSearchApiUrl,
   carfaxRecordCheckMatches,
   clipHtml,
+  isCarfaxCaptchaReject,
   readBidCarsSearch,
   readCarfaxRecordCheck,
   VINSOURCE_TIMEOUT_MS,
@@ -88,30 +89,47 @@ async function readBidCars(page, vin, deadline) {
   return { kind: "found", search: { results: search.results, lotUrl: search.lotUrl }, html: clipHtml(html), finalUrl };
 }
 
-async function readCarfax(page, vin, deadline) {
+/** Viens meklējums sākumlapā: forma -> `record-check` atbilde (vai null, ja nepienāca). */
+async function submitCarfaxOnce(page, vin, deadline, { dwellMs }) {
   await goto(page, "https://www.carfax.eu/", deadline);
-  if (!(await waitPastChallenge(page, deadline, 8_000))) {
-    return { kind: "blocked", note: "CARFAX.eu: Cloudflare izaicinājums nenokrita" };
-  }
+  if (!(await waitPastChallenge(page, deadline, 8_000))) return { blocked: true };
   // Neredzamā reCAPTCHA v3 vērtē lapas lietojumu: ar pārāk ātru ievadi backend atbild 403 INVALID_CAPTCHA.
-  await page.waitForTimeout(Math.min(4_000, Math.max(0, left(deadline) - 20_000)));
-  // Sīkdatņu logs aizsedz formu. «Disagree» - tikai nepieciešamās sīkdatnes.
-  await page.click("#onetrust-reject-all-handler", { timeout: stepTimeout(deadline, 4_000) }).catch(() => undefined);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(Math.min(dwellMs, Math.max(0, left(deadline) - 12_000)));
+  // Sīkdatņu logs aizsedz formu. «Disagree» - tikai nepieciešamās sīkdatnes (ja profils jau atcerējās, loga nav).
+  const consent = await page.$("#onetrust-reject-all-handler").catch(() => null);
+  if (consent && (await consent.isVisible().catch(() => false))) {
+    await consent.click({ timeout: stepTimeout(deadline, 3_000) }).catch(() => undefined);
+    await page.waitForTimeout(800);
+  }
   const input = await page.waitForSelector("#vin-search", { timeout: stepTimeout(deadline, 8_000) }).catch(() => null);
-  if (!input) return { kind: "error", note: "CARFAX.eu: VIN lauks nav atrasts" };
+  if (!input) return { noInput: true };
   const waitCheck = page
-    .waitForResponse((r) => carfaxRecordCheckMatches(r.url(), vin), { timeout: stepTimeout(deadline, 25_000) })
+    .waitForResponse((r) => carfaxRecordCheckMatches(r.url(), vin), { timeout: stepTimeout(deadline, 20_000) })
     .catch(() => null);
   await input.click({ timeout: stepTimeout(deadline, 3_000) }).catch(() => undefined);
+  await input.fill("").catch(() => undefined);
   await input.type(vin, { delay: 40 }).catch(() => undefined);
   await page.waitForTimeout(500);
   await page.keyboard.press("Enter").catch(() => undefined);
   const res = await waitCheck;
-  if (!res) return { kind: "error", note: "CARFAX.eu: pārbaudes atbilde nepienāca laikā" };
-  const text = await res.text().catch(() => "");
-  const read = readCarfaxRecordCheck(res.status(), text);
-  if (read.kind === "error") return { ...read, note: /INVALID_CAPTCHA/.test(text) ? "CARFAX.eu: reCAPTCHA noraidīja (403)" : read.note };
+  if (!res) return { timeout: true };
+  return { status: res.status(), text: await res.text().catch(() => "") };
+}
+
+/**
+ * CARFAX.eu bezmaksas pieejamības pārbaude, viens mēģinājums. Captcha netiek risināta, klikšķināta vai apieta.
+ * Pēc 403 INVALID_CAPTCHA uzreiz NEatkārto (tas tikai pazemina vērtējumu) - atdzišanu vada server.mjs.
+ */
+async function readCarfax(page, vin, deadline) {
+  const got = await submitCarfaxOnce(page, vin, deadline, { dwellMs: 4_000 });
+  if (got.blocked) return { kind: "blocked", note: "CARFAX.eu: Cloudflare izaicinājums nenokrita" };
+  if (got.noInput) return { kind: "error", note: "CARFAX.eu: VIN lauks nav atrasts" };
+  if (got.timeout) return { kind: "error", note: "CARFAX.eu: pārbaudes atbilde nepienāca laikā" };
+  const read = readCarfaxRecordCheck(got.status, got.text);
+  if (read.kind === "error") {
+    if (isCarfaxCaptchaReject(got.status, got.text)) return { ...read, note: "CARFAX.eu: reCAPTCHA noraidīja (403)", captcha: true };
+    return read;
+  }
   return { kind: read.kind, json: read.json };
 }
 

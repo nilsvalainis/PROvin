@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/ltab-flow.mjs && node --check lib/ltab-page.mjs"
+    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/ltab-flow.mjs && node --check lib/ltab-page.mjs && node --check lib/session-state.mjs"
   },
   "dependencies": {
     "playwright": "^1.59.1"

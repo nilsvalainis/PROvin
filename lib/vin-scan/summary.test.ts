@@ -67,29 +67,22 @@ describe("vin scan summary", () => {
     expect(json.mileage).toHaveLength(2);
   });
 
-  it("policijas avotam eksportā raksta meklēšanā / nav meklēšanā", () => {
+  it("avots ar zādzības karogu eksportā dod «Meklēšanā / zagts»", () => {
     const text = formatVinScanExportText({
       vin: VIN,
       scannedAt: "2026-10-12T09:00:00.000Z",
       rows: [
         {
-          id: "lt_itpr",
-          label: "LT policija",
-          country: "LT",
+          id: "csdd",
+          label: "CSDD",
+          country: "LV",
           status: "found",
-          summary: "Meklēšanā",
-        },
-        {
-          id: "lt_itpr",
-          label: "LT policija",
-          country: "LT",
-          status: "none",
-          summary: "Nav meklēšanā",
+          summary: "Reģistrā",
+          flags: { wanted: true },
         },
       ],
     });
-    expect(text).toContain("meklēšanā");
-    expect(text).toContain("nav meklēšanā");
+    expect(text).toContain("Meklēšanā / zagts: CSDD");
   });
 });
 

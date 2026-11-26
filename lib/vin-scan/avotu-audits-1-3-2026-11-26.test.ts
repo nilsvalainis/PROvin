@@ -24,7 +24,7 @@ function factsFor(vin: string, rows: AtraFactRow[]) {
 
 describe("1. saišu avoti (0 trāpījumu / CapSolver bez rezultāta / dublikāts)", () => {
   it("netiek palaisti automātiski: ne VIN SCAN, ne Ātrā pārbaude, ne pasūtījuma auto-scan", () => {
-    for (const id of ["lt_itpr", "auchistory", "nummerplade", "biluppgifter", "stat_vin", "checkcar_vin", "plc_auction", "bidfax", "poctra", "carpass", "traficom", "regitra", "recall_vw", "recall_bmw", "recall_mercedes", "recall_volvo", "recall_toyota"]) {
+    for (const id of ["nummerplade", "biluppgifter", "stat_vin", "checkcar_vin", "plc_auction", "bidfax", "poctra", "carpass", "traficom", "regitra", "recall_vw", "recall_bmw", "recall_mercedes", "recall_volvo", "recall_toyota"]) {
       expect(vinScanSourceLinkOnly(id), id).toBe(true);
       expect(freeVinScanSourceIds(), id).not.toContain(id);
       expect(vinScanPipelineSourceIds(), id).not.toContain(id);
@@ -40,21 +40,22 @@ describe("1. saišu avoti (0 trāpījumu / CapSolver bez rezultāta / dublikāts
   it("paliek kā saites «Atvērt pārlūkā»: ražotāja atsaukums tikai pēc WMI markas, nummerplade bez dublēšanas", () => {
     const links = vinScanManualLinks(VOLVO_VIN);
     const ids = links.map((l) => l.id);
-    expect(ids).toContain("auchistory");
-    expect(ids).toContain("lt_itpr");
+    // 26.11 Nila lēmums: LT policija un AucHistory izņemti pilnībā - arī kā saites.
+    expect(ids).not.toContain("auchistory");
+    expect(ids).not.toContain("lt_itpr");
     expect(ids).toContain("stat_vin");
     expect(ids).toContain("recall_volvo");
     expect(ids).not.toContain("recall_bmw");
     expect(ids).not.toContain("recall_vw");
     expect(links.every((l) => /^https:\/\//.test(l.href))).toBe(true);
-    expect(links.find((l) => l.id === "auchistory")?.href).toContain("auchistory.com");
+    expect(links.some((l) => /auchistory|epolicija/.test(l.href))).toBe(false);
     expect(vinScanManualLinks("")).toEqual([]);
-    expect(VIN_SCAN_LINK_ONLY_IDS.length).toBe(17);
+    expect(VIN_SCAN_LINK_ONLY_IDS.length).toBe(23);
   });
 
   it("veca momentuzņēmuma «pārlūks» rinda neskaitās, rinda ar reāliem datiem (pārlūka imports) paliek", () => {
     expect(vinScanLinkOnlyRowVisible("stat_vin", "browser_only")).toBe(false);
-    expect(vinScanLinkOnlyRowVisible("lt_itpr", "unknown")).toBe(false);
+    expect(vinScanLinkOnlyRowVisible("nummerplade", "unknown")).toBe(false);
     expect(vinScanLinkOnlyRowVisible("stat_vin", "found")).toBe(true);
     expect(vinScanLinkOnlyRowVisible("csdd", "unknown")).toBe(true);
   });
@@ -91,9 +92,9 @@ describe("2. NICB tikai ASV auto", () => {
     expect(buildVinScanFacts([NICB_OVERVIEW], US_VIN).wanted).toEqual(["NICB"]);
   });
 
-  it("citi avoti (tjekbil, lt_itpr) uz VIN valsti neattiecas", () => {
+  it("citi avoti (tjekbil, csdd) uz VIN valsti neattiecas", () => {
     expect(vinScanSourceAppliesToVin("tjekbil", VW_DE_VIN)).toBe(true);
-    expect(vinScanSourceAppliesToVin("lt_itpr", VW_DE_VIN)).toBe(true);
+    expect(vinScanSourceAppliesToVin("csdd", VW_DE_VIN)).toBe(true);
   });
 });
 

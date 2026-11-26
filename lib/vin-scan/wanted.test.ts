@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
+import { isVinScanSourceId, VIN_SCAN_REMOVED_IDS } from "@/lib/vin-scan/catalog";
 import {
-  classifyPoliceWanted,
   isVinScanWantedSource,
   vinScanWantedDotClass,
   vinScanWantedStatusLabel,
@@ -11,52 +11,21 @@ import {
 
 const VIN = "WVWZZZ3CZWE123456";
 
-const LT_FORM = `
-Paieška Ieškomų transporto priemonių registre
-Valstybinis numeris:
-Kėbulo numeris:
-Variklio numeris:
-Ieškoti
-`;
-
 describe("policijas meklētie TL", () => {
-  it("LT forma vien vēl nav rezultāts", () => {
-    expect(classifyPoliceWanted("lt_itpr", LT_FORM, VIN)).toBeNull();
-    expect(classifyBrowserProbe("lt_itpr", LT_FORM, VIN)).toBeNull();
-  });
-
-  it("nav sarakstā ir none, ne sarkans trūkums", () => {
-    expect(classifyPoliceWanted("lt_itpr", "Pagal Jūsų nurodytus kriterijus duomenų nerasta.", VIN)).toMatchObject({
-      status: "none",
-      summary: "Nav meklēšanā",
-    });
-    expect(classifyPoliceWanted("lt_itpr", "Transportlīdzeklis nav meklēšanā.", VIN)).toMatchObject({
-      status: "none",
-      summary: "Nav meklēšanā",
-    });
+  it("statusa teksti un krāsas", () => {
     expect(vinScanWantedStatusLabel("none")).toBe("Nav meklēšanā");
     expect(vinScanWantedDotClass("none")).toBe("bg-emerald-500");
-  });
-
-  it("meklēšanā ir found un sarkans", () => {
-    const lt = `Ieškoma transporto priemonė ${VIN}. Paieškos priežastis: vagystė. Paiešką paskelbusi valstybė: Lietuva.`;
-    expect(classifyBrowserProbe("lt_itpr", lt, VIN)).toMatchObject({
-      status: "found",
-      summary: expect.stringContaining("Meklēšanā"),
-    });
-    const lv = `VIN ${VIN} izsludināts meklēšanā. Meklēšanas iemesls: zādzība.`;
-    expect(classifyPoliceWanted("lt_itpr", lv, VIN)?.status).toBe("found");
     expect(vinScanWantedStatusLabel("found")).toBe("Meklēšanā");
     expect(vinScanWantedDotClass("found")).toBe("bg-rose-600");
-    expect(vinScanWantedTileClass("lt_itpr", "found")).toContain("rose");
-    expect(isVinScanWantedSource("lt_itpr")).toBe(true);
-    expect(isVinScanWantedSource("plc_auction")).toBe(false);
+    expect(vinScanWantedStatusLabel("unknown")).toBe("");
   });
 
-  it("404 nav apgalvojums, ka nav meklēšanā", () => {
-    expect(classifyPoliceWanted("lt_itpr", "Lapa netika atrasta. Page not found.", VIN)).toMatchObject({
-      status: "unknown",
-      summary: "Publiskā lapa nav pieejama",
-    });
+  it("Lietuvas policija (lt_itpr) izņemta pilnībā", () => {
+    expect(isVinScanSourceId("lt_itpr")).toBe(false);
+    expect((VIN_SCAN_REMOVED_IDS as readonly string[]).includes("lt_itpr")).toBe(true);
+    expect(isVinScanWantedSource("lt_itpr")).toBe(false);
+    expect(vinScanWantedTileClass("lt_itpr", "found")).toBe("");
+    expect(classifyBrowserProbe("lt_itpr", `Ieškoma transporto priemonė ${VIN}. Paieškos priežastis: vagystė.`, VIN)).toBeNull();
+    expect(isVinScanWantedSource("plc_auction")).toBe(false);
   });
 });

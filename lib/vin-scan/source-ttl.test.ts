@@ -23,7 +23,7 @@ describe("vinScanRowTtlMs", () => {
   });
 
   it("izsoļu arhīvi: found 30 d, none 3 d", () => {
-    for (const id of ["stat_vin", "bid_cars", "bidfax", "poctra", "checkcar_vin", "plc_auction", "carfax_eu", "auchistory"]) {
+    for (const id of ["stat_vin", "bid_cars", "bidfax", "poctra", "checkcar_vin", "plc_auction", "carfax_eu"]) {
       expect(vinScanRowTtlMs(id, "found")).toBe(30 * D);
       expect(vinScanRowTtlMs(id, "none")).toBe(3 * D);
     }

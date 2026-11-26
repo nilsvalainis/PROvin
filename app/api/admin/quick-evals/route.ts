@@ -2,7 +2,7 @@
  * Ātrā vērtējuma darba zona: bezmaksas avotu kopsavilkums, atjaunošana, eksports uz pasūtījumu,
  * iepriekš nopirkto datu atkārtota izmantošana pēc VIN.
  */
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { getListingPeekById } from "@/lib/listing-peek-store";
@@ -14,6 +14,7 @@ import {
   setQuickEvalCcVin,
   setQuickEvalLtabMark,
 } from "@/lib/quick-eval-service";
+import { runQuickEvalAuto } from "@/lib/quick-eval-auto";
 import { readQuickEval } from "@/lib/quick-eval-store";
 import { findVinHistory, reuseVehicleData } from "@/lib/vin-history";
 
@@ -66,6 +67,17 @@ export async function POST(req: Request) {
     const only = String(b.only ?? "").trim();
     const doc = await seedQuickEval(peek.id, only ? { only } : { refresh: true });
     return NextResponse.json({ ok: Boolean(doc), parts: doc?.seed?.parts ?? null });
+  }
+  if (action === "auto_retry") {
+    // «Atkārtot»: tā pati automātika fonā (savs 300 s budžets); kartīte rāda «Apstrādā…».
+    after(async () => {
+      try {
+        await runQuickEvalAuto(peek.id, { retry: true });
+      } catch (err) {
+        console.error("[quick-evals] auto retry failed", err instanceof Error ? err.message : "unknown");
+      }
+    });
+    return NextResponse.json({ ok: true, queued: true }, { status: 202 });
   }
   if (action === "ltab") {
     const mark = b.mark === "clean" || b.mark === "claims" ? b.mark : null;

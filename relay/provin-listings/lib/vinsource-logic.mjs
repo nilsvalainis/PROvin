@@ -82,6 +82,53 @@ export function readCarfaxRecordCheck(status, text) {
   return { kind: "error", note: `CARFAX.eu atbildēja HTTP ${status || 0}` };
 }
 
+/** CARFAX.eu backend noraidīja reCAPTCHA v3 tokenu (zems vērtējums). */
+export function isCarfaxCaptchaReject(status, text) {
+  return status === 403 && /INVALID_CAPTCHA/.test(String(text ?? ""));
+}
+
+/**
+ * Atdzišana pēc reCAPTCHA atteikuma. Mērījums 26.11: atkārtojot uzreiz (tajā pašā vai jaunā sesijā),
+ * Google vērtējums šim IP krīt vēl zemāk un nākamās ~10+ min krīt VISI vaicājumi. Tāpēc pēc 403
+ * relejs CARFAX.eu kādu laiku neatver (atgriež `blocked`, VIN SCAN paliek pārlūka josla),
+ * ar katru nākamo atteikumu pauze dubultojas līdz maksimumam; pirmā veiksme atiestata.
+ */
+export const CARFAX_COOLDOWN_BASE_MS = 20 * 60 * 1000;
+export const CARFAX_COOLDOWN_MAX_MS = 3 * 60 * 60 * 1000;
+/** CARFAX ierakstu skaiti mainās lēni: found/none glabā 7 dienas (mazāk vaicājumu = mazāk captcha). */
+export const CARFAX_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function createCarfaxCooldown(opts = {}) {
+  const base = Number.isFinite(opts.baseMs) ? opts.baseMs : CARFAX_COOLDOWN_BASE_MS;
+  const max = Number.isFinite(opts.maxMs) ? opts.maxMs : CARFAX_COOLDOWN_MAX_MS;
+  const now = typeof opts.now === "function" ? opts.now : () => Date.now();
+  let strikes = 0;
+  let until = 0;
+  return {
+    /** 0, ja drīkst vaicāt; citādi atlikušās ms. */
+    remainingMs() {
+      return Math.max(0, until - now());
+    },
+    untilIso() {
+      return until > now() ? new Date(until).toISOString() : "";
+    },
+    record(out) {
+      if (out && (out.kind === "found" || out.kind === "none")) {
+        strikes = 0;
+        until = 0;
+        return;
+      }
+      if (out && out.captcha) {
+        strikes += 1;
+        until = now() + Math.min(max, base * 2 ** (strikes - 1));
+      }
+    },
+    get strikes() {
+      return strikes;
+    },
+  };
+}
+
 export function carfaxRecordCheckMatches(url, vin) {
   try {
     const u = new URL(String(url ?? ""));
@@ -99,6 +146,12 @@ export function clipHtml(html) {
 /** 24 h kešs tikai galīgiem rezultātiem (found/none). Kļūdas un bloķējumus nekešo. */
 export function createVinSourceCache(opts = {}) {
   const ttlMs = Number.isFinite(opts.ttlMs) ? opts.ttlMs : VINSOURCE_CACHE_MS;
+  /** Avotam savs derīgums (piem. carfax_eu 7 d); atslēga ir vinSourceLaneKey. */
+  const ttlFor = (key) => {
+    const src = String(key).split("/")[3] ?? "";
+    const own = opts.ttlBySource?.[src];
+    return Number.isFinite(own) ? own : ttlMs;
+  };
   const max = Number.isFinite(opts.max) ? opts.max : CACHE_MAX;
   const now = typeof opts.now === "function" ? opts.now : () => Date.now();
   /** @type {Map<string, { at: number, value: any }>} */
@@ -107,7 +160,7 @@ export function createVinSourceCache(opts = {}) {
     get(key) {
       const hit = map.get(key);
       if (!hit) return null;
-      if (now() - hit.at > ttlMs) {
+      if (now() - hit.at > ttlFor(key)) {
         map.delete(key);
         return null;
       }

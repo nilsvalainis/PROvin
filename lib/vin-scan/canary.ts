@@ -8,7 +8,7 @@
  * Pārlūka (Tampermonkey) avotus cron nevar pārbaudīt - tos uzrauga pēc faktiskās lietošanas
  * (`browser-usage.ts`). JoJ, CarVertical, AutoDNA u.c. maksas avoti netiek saukti.
  * TheCarApi (abonements, 100 000 pieprasījumu/mēn.) - viens VIN 1×/dienā.
- * mnt.ee, lkf.ee, nummerplade, car.info un epolicija.lt var risināt captcha caur CapSolver (~0,001 $ par reizi).
+ * mnt.ee, lkf.ee, nummerplade un car.info var risināt captcha caur CapSolver (~0,001 $ par reizi).
  */
 
 import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
@@ -31,7 +31,6 @@ export const VIN_SCAN_CANARY_BATCHES: readonly VinScanCanaryBatch[] = [
       { id: "vin_decode", expect: "found" },
       { id: "mnt_ee", expect: "found" },
       { id: "lkf_ee", expect: "found" },
-      { id: "auchistory", expect: "any" },
     ],
   },
   {
@@ -45,7 +44,6 @@ export const VIN_SCAN_CANARY_BATCHES: readonly VinScanCanaryBatch[] = [
       { id: "carinfo", expect: "found" },
       { id: "csdd", expect: "found" },
       { id: "eu_safety_gate", expect: "found" },
-      { id: "lt_itpr", expect: "any" },
     ],
   },
   {
