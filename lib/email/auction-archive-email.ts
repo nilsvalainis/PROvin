@@ -94,7 +94,7 @@ function foreignWhere(s: AuctionArchiveSummary, f: AuctionArchiveEmailFacts, l: 
 }
 
 function foreignSign(c: AuctionArchiveEmailCopy): string[] {
-  return [c.regards, "Nils Valainis", "PROVIN.LV"];
+  return [c.regards, "PROVIN.LV"];
 }
 
 /* ---------- Piedāvājums ---------- */
@@ -162,7 +162,6 @@ export function auctionArchiveOfferText(
     "Kamēr neizvēlaties, neko nesūtām.",
     "",
     "Ar cieņu,",
-    "Nils Valainis",
     "PROVIN.LV",
   ].join("\n");
 }
@@ -189,7 +188,7 @@ export function auctionArchiveOfferWhatsappText(
       c.waOption1,
       c.waOption2(refund || c.refundFallback),
       c.waReply,
-      "Nils, PROVIN.LV",
+      "PROVIN.LV",
     ].join("\n");
   }
   const car = s.title ? `Jūsu ${s.title} (VIN ${s.vin})` : `auto VIN ${s.vin}`;
@@ -207,7 +206,7 @@ export function auctionArchiveOfferWhatsappText(
     "1 - nomainīt uz izsoļu arhīvu (bez piemaksas)",
     `2 - atgriezt ${refund || "samaksāto summu"}`,
     "Atbildiet ar 1 vai 2. Kamēr neizvēlaties, neko nesūtām.",
-    "Nils, PROVIN.LV",
+    "PROVIN.LV",
   ].join("\n");
 }
 
@@ -396,7 +395,6 @@ export function auctionArchiveReminderText(
     "Kamēr neizvēlaties, neko nesūtām.",
     "",
     "Ar cieņu,",
-    "Nils Valainis",
     "PROVIN.LV",
   ].join("\n");
 }
@@ -411,13 +409,13 @@ export function auctionArchiveReminderWhatsappText(
   const refund = formatEurCents(paidCents);
   const fl = foreign(lang);
   if (fl) {
-    return [fl.c.waReminder(s.vin, refund || fl.c.refundFallback), fl.c.waReminderChoose, choiceUrl, "Nils, PROVIN.LV"].join("\n");
+    return [fl.c.waReminder(s.vin, refund || fl.c.refundFallback), fl.c.waReminderChoose, choiceUrl, "PROVIN.LV"].join("\n");
   }
   return [
     `Labdien! Atgādinu par auto VIN ${s.vin} - izsoļu arhīvs ar bildēm (bez piemaksas) vai atmaksa ${refund || "samaksātās summas"}?`,
     "Atbildiet ar 1 (arhīvs) vai 2 (atmaksa), vai izvēlieties šeit:",
     choiceUrl,
-    "Nils, PROVIN.LV",
+    "PROVIN.LV",
   ].join("\n");
 }
 
@@ -447,15 +445,14 @@ export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = f
     "Piemaksa nav jāveic.",
     "",
     "Ar cieņu,",
-    "Nils Valainis",
     "PROVIN.LV",
   ].join("\n");
 }
 
 export function auctionArchiveReadyWhatsappText(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
   const fl = foreign(lang);
-  if (fl) return `${fl.c.waReady(s.vin)}\nNils, PROVIN.LV`;
-  return `Labdien! Paldies par izvēli - nosūtu izsoļu arhīvu auto VIN ${s.vin} (PDF). Piemaksa nav jāveic.\nNils, PROVIN.LV`;
+  if (fl) return `${fl.c.waReady(s.vin)}\nPROVIN.LV`;
+  return `Labdien! Paldies par izvēli - nosūtām izsoļu arhīvu auto VIN ${s.vin} (PDF). Piemaksa nav jāveic.\nPROVIN.LV`;
 }
 
 export function auctionArchiveReadyEmailHtml(o: {

@@ -6,7 +6,7 @@ import Stripe from "stripe";
 import { sendB2bWalletTopupInvoiceEmail, sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import { renderB2bTopupInvoiceEmail } from "@/lib/b2b-topup-invoice";
-import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
+import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { attachB2bWalletTopupInvoice, applyB2bWalletTopup, formatB2bWalletEuro } from "@/lib/b2b-wallet";
 import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
@@ -225,13 +225,13 @@ async function fulfillPaidCheckoutSession(
                 atlikums: formatB2bWalletEuro(wallet?.balanceCents ?? amountCents),
                 rekins: persistedInvoice?.invoiceNumber ?? "-",
                 uznemums: partner?.companyName ?? "",
-              }, session.locale ?? null);
+              }, checkoutSessionSiteLang(session));
               await sendB2bWalletTopupInvoiceEmail({
                 to: email,
                 subject: rendered.subject,
                 text: rendered.text,
                 invoiceAttachment,
-                lang: resolveClientEmailLang(session.locale),
+                lang: checkoutSessionSiteLang(session),
               });
               console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id });
             } else {
@@ -241,7 +241,7 @@ async function fulfillPaidCheckoutSession(
                 amountTotal: payload.amountTotal,
                 currency: payload.currency,
                 vin: payload.vin,
-                lang: session.locale ?? null,
+                lang: checkoutSessionSiteLang(session),
                 invoiceAttachment,
               });
               console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id });

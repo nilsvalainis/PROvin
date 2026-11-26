@@ -15,8 +15,8 @@ describe("whatsapp report-ready prefills", () => {
     expect(t).toContain("(VIN WAUZZZF44LA062962)");
     expect(t).not.toContain("20%");
     expect(t).not.toContain("79,99");
-    expect(t).toContain("būšu pateicīgs par īsu atsauksmi");
-    expect(t).toContain("Nils");
+    expect(t).toContain("būsim pateicīgi par īsu atsauksmi");
+    expect(t).not.toContain("Nils");
     expect(t).not.toMatch(/—/);
     expect(t).not.toMatch(/–/);
   });
@@ -25,7 +25,7 @@ describe("whatsapp report-ready prefills", () => {
     const mini = whatsappPrefillReportReady({ kind: "mini", vin: "ABC" });
     expect(mini).toContain("PROVIN MINI atskaite");
     expect(mini).not.toContain("20%");
-    expect(mini).toContain("Nils");
+    expect(mini).not.toContain("Nils");
 
     const audits = whatsappPrefillReportReady({ kind: "audits", vin: "ABC" });
     expect(audits).toContain("PROVIN AUDITS atskaite");
@@ -38,7 +38,7 @@ describe("dealer no-data WhatsApp", () => {
   it("keeps refund copy and the new sign-off", () => {
     const t = whatsappPrefillDealerNoDataRefunded("WDB1400511A032828", "24,99 €");
     expect(t).toContain("(VIN WDB1400511A032828)");
-    expect(t).toContain("Nils");
+    expect(t).not.toContain("Nils");
     expect(t).toContain("PROVIN.LV");
     expect(t).not.toMatch(/—/);
   });

@@ -32,7 +32,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.text).toMatch(/atcelta rezervētā summa/);
     expect(d.text).toContain("PROVIN AUDITS");
     expect(d.text).toContain(`Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`);
-    expect(d.text).toContain("Nils");
+    expect(d.text).not.toContain("Nils");
     expect(d.text).not.toMatch(/—/);
   });
 
@@ -51,11 +51,11 @@ describe("dealer-data-client-email drafts", () => {
   it("keeps the retail dealer-ready template unchanged", () => {
     const d = buildDealerReadyEmailDraft({ vin: "WVWZZZ3CZME138258" });
     expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
-    expect(d.text).toContain("Nils");
+    expect(d.text).not.toContain("Nils");
     expect(d.text).toContain("PROVIN.LV");
     expect(d.text).toContain("info@provin.lv");
     const html = dealerDataOperatorMessageEmailHtml({ text: d.text });
-    expect(html).toContain("Nils");
+    expect(html).not.toContain("Nils");
     expect(html).toContain("PROVIN.LV");
     expect(html).not.toContain('letter-spacing:0.12em;text-transform:uppercase;color:#0061D2;font-weight:700;">PROVIN<');
   });
@@ -125,7 +125,7 @@ describe("B2B dealer-ready email", () => {
     for (const lang of B2B_WALLET_REPORT_LANGS) {
       const d = buildDealerReadyEmailDraft({ vin: "WVWZZZ3CZME138258", lang });
       expect(d.kind).toBe("ready");
-      expect(d.text).toContain("Nils");
+      expect(d.text).not.toContain("Nils");
       expect(d.text).toContain("PROVIN.LV");
       if (lang === "lv") {
         expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
