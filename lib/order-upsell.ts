@@ -4,6 +4,8 @@ import { normalizeUpsellLang, upsellPageCopy, upsellStripeProductNameFor } from 
  * Piepirkums esošam pasūtījumam.
  * Dīlera dati -> pilnais audits: B2C kopā vienmēr 99,99 €, B2B kopā 69,99 €
  * (piemaksa = mērķis - jau samaksātais; ja samaksāts >= mērķis, piedāvājuma nav).
+ * Black Friday dīlera datu pasūtījumam (17,49 €) piemaksa līdz AUDITS ir fiksēti 79,99 €
+ * (Nila lēmums 26.11.2026), arī ja piedāvājumu sūta pēc akcijas beigām.
  * MINI pasūtījumam dīlera dati par 19,99 €. Jaunam klientam atlaides nav.
  */
 
@@ -23,6 +25,12 @@ import { buildUpsellEmailVars, buildUpsellWaVars } from "@/lib/messages/template
 import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
+import {
+  BLACK_FRIDAY_END_EXCLUSIVE_MS,
+  BLACK_FRIDAY_PRICES,
+  BLACK_FRIDAY_PROMO_ID,
+  BLACK_FRIDAY_START_MS,
+} from "@/lib/promo/black-friday";
 
 export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -33,6 +41,11 @@ export const MINI_CATALOG_CENTS = 3999;
 export const B2B_AUDIT_TARGET_CENTS = 6999;
 /** MINI pasūtījumam dīlera dati lētāk nekā atsevišķs jaunais pasūtījums. */
 export const MINI_DEALER_ADDON_CENTS = 1999;
+/**
+ * Black Friday dīlera dati (17,49 €) -> AUDITS: piemaksa 79,99 € (Nila lēmums 26.11.2026,
+ * apaļāka summa e-pastā; pēc formulas būtu 82,50 €). Kopā klients samaksā 97,48 €.
+ */
+export const BF_DEALER_TO_AUDIT_CHARGE_CENTS = 7999;
 
 export const ORDER_UPSELL_KINDS = ["dealer_to_audit", "mini_to_dealer", "mini_to_audit"] as const;
 export type OrderUpsellKind = (typeof ORDER_UPSELL_KINDS)[number];
@@ -79,11 +92,57 @@ export type UpsellOrderSnapshot = {
   amountTotalCents?: number | null;
   /** B2B partnera pasūtījums: AUDITS mērķis 69,99 €, nevis 99,99 €. */
   b2b?: boolean;
+  /** Stripe `metadata.promo` (piem. `bf2026`). */
+  promo?: string | null;
+  /** Pasūtījuma laiks (Stripe `created`, sekundes) - BF atpazīšanai pēc summas. */
+  createdUnix?: number | null;
 };
 
 /** Dīlera dati -> AUDITS: kopējā mērķa cena centos (B2C 99,99 €, B2B 69,99 €). */
 export function dealerToAuditTargetCents(b2b?: boolean): number {
   return b2b ? B2B_AUDIT_TARGET_CENTS : AUDIT_PRICE_CENTS;
+}
+
+const BF_DEALER_PROMO_CENTS = BLACK_FRIDAY_PRICES.dealer?.promoCents ?? 1749;
+
+/**
+ * Vai dīlera datu pasūtījums bija Black Friday akcijā: Stripe `promo=bf2026`
+ * vai samaksāts tieši 17,49 € akcijas periodā (vecākām kešatmiņas rindām bez metadata).
+ */
+export function isBlackFridayDealerOrder(order: {
+  promo?: string | null;
+  amountTotalCents?: number | null;
+  createdUnix?: number | null;
+}): boolean {
+  if ((order.promo ?? "").trim() === BLACK_FRIDAY_PROMO_ID) return true;
+  if (order.amountTotalCents == null || Math.round(order.amountTotalCents) !== BF_DEALER_PROMO_CENTS) return false;
+  const created = order.createdUnix;
+  if (created == null || !Number.isFinite(created) || created <= 0) return false;
+  const ms = created * 1000;
+  return ms >= BLACK_FRIDAY_START_MS && ms < BLACK_FRIDAY_END_EXCLUSIVE_MS;
+}
+
+/**
+ * Dīlera dati -> AUDITS cena: B2C piemaksa = 99,99 € - samaksātais, B2B līdz 69,99 €,
+ * Black Friday (ne B2B) fiksēti 79,99 €. Kopā = samaksātais + piemaksa (sakrīt ar Stripe).
+ */
+export function dealerToAuditPricing(opts: {
+  priorCents: number;
+  b2b?: boolean;
+  promo?: string | null;
+  createdUnix?: number | null;
+}): { priorCents: number; chargeCents: number; targetCents: number } | null {
+  const prior = Math.round(opts.priorCents);
+  if (
+    !opts.b2b &&
+    isBlackFridayDealerOrder({ promo: opts.promo, amountTotalCents: prior, createdUnix: opts.createdUnix })
+  ) {
+    return { priorCents: prior, chargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS, targetCents: prior + BF_DEALER_TO_AUDIT_CHARGE_CENTS };
+  }
+  const target = dealerToAuditTargetCents(opts.b2b);
+  const charge = target - prior;
+  if (charge <= 0) return null;
+  return { priorCents: prior, chargeCents: charge, targetCents: target };
 }
 
 export type UpsellOfferSnapshot = {
@@ -151,17 +210,14 @@ export function quoteOrderUpsell(
 
   if (kind === "dealer_to_audit") {
     if (!isDealerHighlightAdminOrder(order) || isMiniHighlightAdminOrder(order)) return null;
-    const prior = priorCents(order.amountTotalCents, DEALER_CATALOG_CENTS);
-    const target = dealerToAuditTargetCents(order.b2b);
-    const charge = target - prior;
-    if (charge <= 0) return null;
-    return {
-      kind,
-      chargeCents: charge,
-      priorCents: prior,
-      targetCents: target,
-      targetLine: "audit",
-    };
+    const pricing = dealerToAuditPricing({
+      priorCents: priorCents(order.amountTotalCents, DEALER_CATALOG_CENTS),
+      b2b: order.b2b,
+      promo: order.promo,
+      createdUnix: order.createdUnix,
+    });
+    if (!pricing) return null;
+    return { kind, ...pricing, targetLine: "audit" };
   }
 
   if (!isMiniHighlightAdminOrder(order)) return null;
