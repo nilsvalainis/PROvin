@@ -114,6 +114,8 @@ export type LifecycleEvent = {
   country: string;
   /** Tikai `import`: iepriekšējā valsts (mērķa valsts paliek `country`). */
   fromCountry?: string;
+  /** Tikai `import`: iepriekšējā valsts nav pierādīta («Nav zināma → Austrija», 26.11). */
+  fromCountryUnknown?: boolean;
   odometer: string;
   sources: string[];
   tone: LifecycleEventTone;
@@ -159,12 +161,24 @@ export function lifecycleEventKnownCountryIso(
 }
 
 /**
+ * 26.11 (Nils, BMW X5): «Citi avoti» sadaļa ar oficiālu valsts reģistru (Austrijas §57a apskates /
+ * kfzgutachten.at) ir reģistra ieraksti ar valsti, ne informatīva laikposma rinda.
+ */
+const OFFICIAL_REGISTRY_SECTION_TITLE_RE = /§\s*57\s*a|kfzgutachten/i;
+
+/**
  * „Laikposma ieraksti” (AutoDNA, CarVertical, Citi avoti) ir informatīvi.
- * Publisko reģistru hronoloģija paliek stipra un drīkst dzīt valsts maiņu.
+ * Publisko reģistru hronoloģija (arī «Citi avoti» oficiāls reģistrs) paliek stipra un drīkst dzīt valsts maiņu.
  */
 export function vendorTimelineIsInformational(sourceTitle: string): boolean {
+  if (OFFICIAL_REGISTRY_SECTION_TITLE_RE.test(sourceTitle)) return false;
   return !REGISTRY_STYLE_BLOCK_KEYS.some((k) => SOURCE_BLOCK_LABELS[k] === sourceTitle);
 }
+
+/** «Nav zināma → Austrija»: no-valsts puse pārejā, kad agrākā valsts nav pierādīta. */
+export const LIFECYCLE_UNKNOWN_COUNTRY_LV = "Nav zināma";
+/** Agrākie ieraksti bez valsts vismaz tik ilgi pirms pirmā valsts ieraksta - tad rāda «Nav zināma → <valsts>». */
+const UNKNOWN_COUNTRY_TRANSITION_MIN_MS = 365 * 24 * 60 * 60 * 1000;
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
 const GAP_MONTHS_THRESHOLD = 24;
@@ -1655,6 +1669,8 @@ function addDerivedEvents(
   const previousCountryNorm =
     normalizeCountryNameLv(previousRegistrationCountry) || previousRegistrationCountry.trim();
   const previousIso = countryLabelToIso2(previousCountryNorm);
+  // Agrākais ieraksts (piem. pirmā reģistrācija bez valsts) - lai pirmajai pierādītajai ārvalstij rādītu «Nav zināma → X».
+  const earliestT = sorted.find((x) => x.time > 0 && x.kind !== "gap")?.time ?? 0;
   for (const [i, e] of sorted.entries()) {
     const prev = i > 0 ? sorted[i - 1]! : null;
     if (prev && prev.time > 0 && e.time > 0) {
@@ -1703,6 +1719,32 @@ function addDerivedEvents(
             tone: "warn",
           });
         }
+      }
+      // 26.11: pirmais pierādītais ārvalsts ieraksts pēc ilga laika bez valsts - «Nav zināma → <valsts>».
+      // Maiņu nekad nezīmē NO nepierādītas valsts uz citu; tikai atzīmē, no kura brīža valsts pierādāma.
+      if (
+        hard &&
+        !fromIso &&
+        nextIso !== "LV" &&
+        earliestT > 0 &&
+        e.time > 0 &&
+        e.time - earliestT >= UNKNOWN_COUNTRY_TRANSITION_MIN_MS
+      ) {
+        const toLabel = normalizeCountryNameLv(e.country) || e.country;
+        out.push({
+          kind: "import",
+          date: e.date,
+          time: e.time - 1,
+          year: e.year,
+          title: `${LIFECYCLE_UNKNOWN_COUNTRY_LV} → ${toLabel}`,
+          detail: `${LIFECYCLE_UNKNOWN_COUNTRY_LV} → ${toLabel}`,
+          country: toLabel,
+          fromCountry: LIFECYCLE_UNKNOWN_COUNTRY_LV,
+          fromCountryUnknown: true,
+          odometer: "",
+          sources: [...e.sources],
+          tone: "info",
+        });
       }
       prevCountry = normalizeCountryNameLv(e.country) || e.country;
       prevIso = nextIso;

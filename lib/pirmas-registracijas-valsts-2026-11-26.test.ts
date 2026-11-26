@@ -77,12 +77,21 @@ function x5Blocks(): WorkspaceSourceBlocks {
             { date: "04.08.2016", odometer: "", country: "Austrija" },
             { date: "13.11.2015", odometer: "", country: "Austrija" },
           ],
+          // Nila ievadītā Austrijas reģistra laikposma josla (26.11).
+          vehicleHistoryTimeline: [
+            { date: "13.11.2015", country: "Austrija", description: "Veikta tehniskā apskate", includeInPdf: true },
+            { date: "04.08.2016", country: "Austrija", description: "Veikta tehniskā apskate", includeInPdf: true },
+            { date: "05.10.2017", country: "Austrija", description: "Veikta tehniskā apskate", includeInPdf: true },
+            { date: "30.10.2018", country: "Austrija", description: "Veikta tehniskā apskate", includeInPdf: true },
+            { date: "29.10.2019", country: "Austrija", description: "Veikta tehniskā apskate", odometer: "270476", includeInPdf: true },
+            { date: "23.11.2020", country: "Austrija", description: "Veikta tehniskā apskate", odometer: "278597", includeInPdf: true },
+          ],
           incidents: [],
           comments: "",
           aiContextRaw: "",
           photoGroups: [],
           photos: [],
-          label: "",
+          label: "Austrija · §57a apskates",
         },
       ],
     },
@@ -119,6 +128,30 @@ describe("pirmās reģistrācijas valsts (BMW X5, CSDD iepriekšējā - Austrija
     expect(first?.country).toBe("");
     expect(vehicleFirstRegistrationSummary(events).country).toBe("");
     expect(events.some((e) => e.kind === "import" && e.title === "Austrija → Latvija")).toBe(true);
+  });
+
+  it("Austrijas reģistra laikposma rindas ir stipras (nav pelēkas); «Nav zināma → Austrija» 13.11.2015", () => {
+    const events = buildVehicleLifecycleEvents(lifecycleInput(x5Blocks()));
+    const at = events.filter((e) => e.kind === "inspection" && e.country === "Austrija");
+    expect(at.map((e) => e.date)).toEqual(["13.11.2015", "04.08.2016", "05.10.2017", "30.10.2018", "29.10.2019", "23.11.2020"]);
+    expect(at.every((e) => !e.timelineInformational && !e.countryUnverified)).toBe(true);
+    const imports = events.filter((e) => e.kind === "import");
+    expect(imports.map((e) => [e.date, e.title, e.fromCountryUnknown === true])).toEqual([
+      ["13.11.2015", "Nav zināma → Austrija", true],
+      ["26.11.2021", "Austrija → Latvija", false],
+    ]);
+  });
+
+  it("valsts ieraksts gada laikā pēc 1. reģistrācijas - «Nav zināma →» nerāda", () => {
+    const b = x5Blocks();
+    b.auto_records = { ...b.auto_records, serviceHistory: [] };
+    b.carvertical = { ...b.carvertical, serviceHistory: [] };
+    b.citi_avoti.sections[0]!.vehicleHistoryTimeline = [
+      { date: "10.02.2005", country: "Austrija", description: "Veikta tehniskā apskate", includeInPdf: true },
+    ];
+    b.citi_avoti.sections[0]!.serviceHistory = [];
+    const imports = buildVehicleLifecycleEvents(lifecycleInput(b)).filter((e) => e.kind === "import");
+    expect(imports.map((e) => e.title)).toEqual(["Austrija → Latvija"]);
   });
 
   it("AI faktu lapā valsts «nav zināma», CSDD iepriekšējā valsts - tikai pēdējā pirms Latvijas", () => {
@@ -246,5 +279,8 @@ describe("pirmās reģistrācijas valsts (BMW X5, CSDD iepriekšējā - Austrija
     expect(card).toContain("20.08.2004");
     expect(card).toContain("Valsts nav zināma");
     expect(card).not.toContain("Austrija");
+    // Laikjoslā pāreja «Nav zināma → Austrija» ar karogu tikai pierādītajai pusei.
+    expect(html).toContain('aria-label="Nav zināma → Austrija"');
+    expect(html).toContain('aria-label="Austrija → Latvija"');
   });
 });
