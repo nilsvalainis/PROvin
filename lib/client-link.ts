@@ -3,6 +3,7 @@ import { provinEmailSubject } from "@/lib/email/email-subject";
 import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVin, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { clientLinkCopy, normalizeClientLinkLang } from "@/lib/client-link-i18n";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,32}$/;
@@ -41,6 +42,8 @@ export type ClientLinkRecord = {
   prefillVin: string;
   prefillListingUrl: string;
   require: ClientLinkRequiredFields;
+  /** Klienta valoda (saites lapa, Stripe, e-pasts). Nav = LV (vecie ieraksti). */
+  lang?: ClientReportLang;
   paidAt?: string;
   paidStripeSessionId?: string;
   lastStripeCheckoutSessionId?: string;
@@ -55,6 +58,7 @@ export type ClientLinkPublicView = {
   prefillListingUrl: string;
   prefillEmail: string;
   prefillPhone: string;
+  lang: ClientReportLang;
 };
 
 export type ClientLinkAdminInput = {
@@ -66,6 +70,8 @@ export type ClientLinkAdminInput = {
   prefillListingUrl: string;
   require: ClientLinkRequiredFields;
   validityHours: number;
+  /** Klienta valoda; noklusēti LV. */
+  lang?: ClientReportLang;
 };
 
 export function isClientLinkPath(pathname: string): boolean {
@@ -181,6 +187,7 @@ export function clientLinkPublicView(record: ClientLinkRecord): ClientLinkPublic
     prefillListingUrl: record.prefillListingUrl,
     prefillEmail: record.require.email ? email : "",
     prefillPhone: record.require.phone ? phone : "",
+    lang: normalizeClientLinkLang(record.lang),
   };
 }
 
@@ -225,6 +232,7 @@ export function normalizeClientLinkAdminInput(raw: Partial<ClientLinkAdminInput>
     prefillListingUrl,
     require,
     validityHours,
+    lang: normalizeClientLinkLang(raw?.lang),
   };
 }
 
@@ -302,17 +310,20 @@ export function buildClientLinkWhatsAppText(opts: {
   expiresAt: string;
   amountCents: number;
   vin?: string | null;
+  /** Klienta valoda; noklusēti LV. */
+  lang?: ClientReportLang | null;
 }): string {
   const until = formatClientLinkExpiryLong(opts.expiresAt);
   const vin = clientVin(opts.vin);
+  const c = clientLinkCopy(opts.lang);
   return [
-    "Sveiki!",
+    c.waHello,
     "",
-    `Jūsu personīgā ${opts.productName} saite${vin ? ` (VIN ${vin})` : ""} - ${formatClientLinkAmount(opts.amountCents)}, derīga līdz ${until}:`,
+    c.waLine(opts.productName, vin, formatClientLinkAmount(opts.amountCents), until),
     "",
     opts.url,
     "",
-    "Ievadiet datus un veiciet apmaksu. Pasūtījums tiks izveidots pēc apmaksas.",
+    c.waTail,
   ].join("\n");
 }
 
@@ -412,6 +423,7 @@ export function parseClientLinkRecord(raw: unknown): ClientLinkRecord | null {
       listingUrl: reqRaw.listingUrl === true,
       phone: reqRaw.phone === true,
     },
+    ...(normalizeClientLinkLang(o.lang) !== "lv" ? { lang: normalizeClientLinkLang(o.lang) } : {}),
     ...(typeof o.paidAt === "string" && o.paidAt ? { paidAt: o.paidAt } : {}),
     ...(typeof o.paidStripeSessionId === "string" && o.paidStripeSessionId
       ? { paidStripeSessionId: o.paidStripeSessionId }
@@ -433,6 +445,7 @@ export function applyAdminInputToRecord(record: ClientLinkRecord, input: ClientL
     prefillListingUrl: input.prefillListingUrl,
     require: input.require,
     expiresAt: expiresAtFromCreated(record.createdAt, input.validityHours),
+    lang: normalizeClientLinkLang(input.lang),
   };
 }
 
@@ -480,7 +493,7 @@ export type ClientLinkCheckoutSessionParams = {
   cancel_url: string;
   phone_number_collection: { enabled: false };
   metadata: Record<string, string>;
-  locale: "lv";
+  locale: ClientReportLang;
 };
 
 export function buildClientLinkCheckoutSessionParams(opts: {
@@ -493,10 +506,13 @@ export function buildClientLinkCheckoutSessionParams(opts: {
   vin: string;
   listingUrl: string;
   phone: string;
+  /** Saites valoda: Stripe lapa, «paldies» lapa un pasūtījuma `locale` (klienta e-pasti). */
+  lang?: ClientReportLang | null;
 }): ClientLinkCheckoutSessionParams {
   const origin = opts.origin.replace(/\/$/, "");
+  const lang = normalizeClientLinkLang(opts.lang);
   const back = `${origin}${clientLinkPublicPath(opts.token)}`;
-  const thanks = `${origin}/lv/paldies?session_id={CHECKOUT_SESSION_ID}`;
+  const thanks = `${origin}/${lang}/paldies?session_id={CHECKOUT_SESSION_ID}`;
   const params: ClientLinkCheckoutSessionParams = {
     mode: "payment",
     line_items: [
@@ -505,7 +521,7 @@ export function buildClientLinkCheckoutSessionParams(opts: {
           currency: "eur",
           product_data: {
             name: opts.productName,
-            description: "Pasūtījums tiks izveidots pēc apmaksas.",
+            description: clientLinkCopy(lang).stripeDescription,
           },
           unit_amount: opts.amountCents,
         },
@@ -521,7 +537,7 @@ export function buildClientLinkCheckoutSessionParams(opts: {
       listingUrl: opts.listingUrl,
       phone: opts.phone,
     }),
-    locale: "lv",
+    locale: lang,
   };
   if (opts.email) params.customer_email = opts.email;
   return params;

@@ -231,7 +231,8 @@ export async function POST(req: Request) {
       const r = await prepareAuctionArchiveOffer({
         sessionId,
         channel,
-        locale: "lv",
+        // Klienta valoda (sūtīšanas logs) vai pasūtījuma valoda (`resolveOrderClientLang`).
+        ...(typeof body.lang === "string" && body.lang.trim() ? { locale: resolveAuctionArchiveLocale(body.lang) } : {}),
         previewIds,
         manualSources: sanitizeManualSources(body.manualSources),
         deadline: startedAt + PREPARE_BUDGET_MS,
@@ -245,8 +246,16 @@ export async function POST(req: Request) {
       const sent = await trySendAuctionArchiveClientEmail({
         to,
         subject,
-        text: auctionArchiveOfferPlainText(text, r.choiceUrl),
-        html: auctionArchiveOfferEmailHtml({ summary: r.doc.summary, paidCents: r.doc.paidCents, text, choiceUrl: r.choiceUrl, previews, showPrices }),
+        text: auctionArchiveOfferPlainText(text, r.choiceUrl, r.doc.locale),
+        html: auctionArchiveOfferEmailHtml({
+          summary: r.doc.summary,
+          paidCents: r.doc.paidCents,
+          text,
+          choiceUrl: r.choiceUrl,
+          previews,
+          showPrices,
+          lang: r.doc.locale,
+        }),
       });
       if (!sent) {
         // Klients neko nesaņēma - saite nedrīkst palikt «Gaida klienta izvēli».
@@ -279,7 +288,12 @@ export async function POST(req: Request) {
         to,
         subject,
         text,
-        html: auctionArchiveReadyEmailHtml({ summary: cur.summary, text, attachment: { filename: built.filename, bytes: built.pdf.length } }),
+        html: auctionArchiveReadyEmailHtml({
+          summary: cur.summary,
+          text,
+          attachment: { filename: built.filename, bytes: built.pdf.length },
+          lang: cur.locale,
+        }),
         attachments: [{ filename: built.filename, content: built.pdf, contentType: "application/pdf" }],
       });
       if (!sent) return bad("email_failed", 502);

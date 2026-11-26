@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { readCarverticalAutoStatus, readCarverticalPdf } from "@/lib/carvertical-auto-store";
 import { getDropboxClient } from "@/lib/dropbox-client";
+import { downloadOrderDropboxFile } from "@/lib/order-dropbox";
 import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
     const client = getDropboxClient();
     if (client) {
       try {
-        bytes = new Uint8Array((await client.download(path)).bytes);
+        bytes = (await downloadOrderDropboxFile(client, sessionId, path))?.bytes ?? null;
       } catch {
         bytes = null;
       }

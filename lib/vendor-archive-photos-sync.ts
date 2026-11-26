@@ -13,7 +13,7 @@ import { readCcVinPhotoJpeg } from "@/lib/admin-cc-vin-photo-store";
 import { makeListingAnalysisPhotoId, writeListingAnalysisPhotoJpeg } from "@/lib/admin-listing-analysis-photo-store";
 import { readSourceBlockPhotoJpeg } from "@/lib/admin-source-block-photo-store";
 import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
-import { ensureOrderDropboxFolder } from "@/lib/order-dropbox";
+import { currentOrderDropboxFolderPath, ensureOrderDropboxFolder } from "@/lib/order-dropbox";
 import sharp from "sharp";
 
 import { archiveCoverAllowed, archiveCoverCandidates, pickArchiveCoverPhotoId } from "@/lib/vendor-archive-cover";
@@ -71,7 +71,10 @@ export async function mirrorVendorArchivePhotosToDropbox(args: {
   if (!folders.length) return { uploaded: 0, failed: 0, folder: null };
   const rec = await ensureOrderDropboxFolder(args.sessionId, { client });
   if (!rec || rec.state !== "ok" || !rec.path) return { uploaded: 0, failed: 0, folder: null };
-  const root = `${rec.path}/${ARCHIVE_DROPBOX_ROOT}`;
+  // Ceļš pēc mapes id (ne ieraksta `path`): ja mapi tikko pārdēvēja, foto nedrīkst izveidot otru mapi ar veco nosaukumu.
+  const orderFolder = await currentOrderDropboxFolderPath(client, rec);
+  if (!orderFolder) return { uploaded: 0, failed: 0, folder: null };
+  const root = `${orderFolder}/${ARCHIVE_DROPBOX_ROOT}`;
   const existing = new Map<string, Set<string>>();
   for (const f of folders) {
     try {

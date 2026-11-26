@@ -1087,6 +1087,8 @@ export async function sendB2bWalletRefundEmail(opts: {
   to: string;
   subject: string;
   text: string;
+  /** Partnera atskaites valoda (HTML kājene, `lang`); noklusēti LV. */
+  lang?: ClientReportLang;
 }): Promise<void> {
   const paragraphs = opts.text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   await sendSmtpMail({
@@ -1094,7 +1096,7 @@ export async function sendB2bWalletRefundEmail(opts: {
     from: getB2bMailFromAddress(),
     subject: opts.subject,
     text: opts.text,
-    html: b2bWalletRefundEmailHtml({ title: opts.subject, paragraphs }),
+    html: b2bWalletRefundEmailHtml({ title: opts.subject, paragraphs, lang: opts.lang }),
   });
 }
 
@@ -1102,6 +1104,7 @@ export async function trySendB2bWalletRefundEmail(opts: {
   to: string;
   subject: string;
   text: string;
+  lang?: ClientReportLang;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[b2b] SMTP nav iestatīts, maka atmaksas e-pasts nav nosūtīts");
@@ -1248,6 +1251,8 @@ export async function sendB2bWalletTopupInvoiceEmail(opts: {
     content: Buffer;
     contentType: string;
   } | null;
+  /** B2B portāla valoda papildinot (Stripe `session.locale`); noklusēti LV. */
+  lang?: ClientReportLang;
 }): Promise<void> {
   const paragraphs = opts.text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   await sendSmtpMail({
@@ -1255,7 +1260,7 @@ export async function sendB2bWalletTopupInvoiceEmail(opts: {
     from: getB2bMailFromAddress(),
     subject: opts.subject,
     text: opts.text,
-    html: b2bProvinEmailHtml({ title: opts.subject, paragraphs }),
+    html: b2bProvinEmailHtml({ title: opts.subject, paragraphs, lang: opts.lang }),
     ...(opts.invoiceAttachment
       ? {
           attachments: [
@@ -1301,6 +1306,8 @@ export async function sendUnpaidOrderReminderEmail(opts: {
   to: string;
   subject: string;
   text: string;
+  /** Klienta valoda (HTML `lang`); noklusēti LV. */
+  lang?: ClientReportLang;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const text = opts.text.trim();
@@ -1309,7 +1316,7 @@ export async function sendUnpaidOrderReminderEmail(opts: {
     to: opts.to,
     subject,
     text,
-    html: unpaidReminderEmailHtml(text),
+    html: unpaidReminderEmailHtml(text, opts.lang),
     headers: { "Auto-Submitted": "no" },
   });
 }
@@ -1345,6 +1352,7 @@ export async function trySendUnpaidOrderReminderEmail(opts: {
   to: string;
   subject: string;
   text: string;
+  lang?: ClientReportLang;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[email] SMTP nav iestatīts, neapmaksātā atgādinājums nav nosūtīts");

@@ -439,3 +439,56 @@ describe("izsoļu arhīva PDF klienta valodā (EN/RU/DE)", () => {
     expect(prompt).toContain("into English");
   });
 });
+
+describe("izsoļu arhīva PDF avota vērtības EN/RU/DE (Nils 26.11)", () => {
+  const photos = [{ id: ph(1), auctionKey: "openlane:11719692", date: "2026-10-21", caption: "" }];
+  const dataUrls = new Map(photos.map((p) => [p.id, "data:image/jpeg;base64,AA"]));
+  const build = (lang: "lv" | "en" | "ru" | "de", translations = new Map<string, string>()) =>
+    buildAuctionArchivePdfHtml({ summary, records: [bca, openlane], photos, dataUrls, translations, generatedAt: new Date("2026-11-23T08:20:00Z"), showPrices: true, lang });
+
+  it("pārnesumkārba, piedziņa, krāsa, virsbūve, izcelsme, atskaites, aprīkojuma grupas - bez AI vārdnīca", () => {
+    const lv = build("lv");
+    for (const v of ["Priekšējā", "Pelēka, metālika", "Līzinga auto", "Pamata tehniskās pārbaudes atskaite", "Komforts un salons"]) expect(lv).toContain(v);
+    const en = build("en");
+    for (const v of ["Front-wheel drive", "Grey, metallic", "Leased car", "Basic technical inspection report", "Comfort and interior", "7 gears", "Estate"]) {
+      expect(en).toContain(v);
+    }
+    for (const v of ["Priekšējā", "Pelēka", "metālika", "Līzinga auto", "Pamata tehniskās", "Komforts un salons", "pārnesumi", "Universālis"]) {
+      expect(en).not.toContain(v);
+    }
+    const de = build("de");
+    expect(de).toContain("Frontantrieb");
+    expect(de).toContain("Grau, Metallic");
+    expect(de).toContain("Leasingfahrzeug");
+    expect(build("ru")).toContain("Серый, металлик");
+  });
+
+  it("LV aprīkojuma nosaukumi un vērtības, ko vārdnīca nezina - AI tulkojums no tā paša izsaukuma", () => {
+    const texts = auctionArchiveTextsToTranslate([bca, openlane], "en");
+    // LV saraksts nemainās; EN/RU/DE papildus - mūsu LV teksti.
+    expect(texts.slice(0, 2)).toEqual(auctionArchiveTextsToTranslate([bca, openlane]));
+    const lvEquip = auctionArchiveEquipment([bca, openlane]).groups.flatMap((g) => g.items).find((x) => /[āēīūčšžņļķģ]/i.test(x));
+    expect(lvEquip).toBeTruthy();
+    expect(texts).toContain(lvEquip);
+    const html = build("en", new Map([[lvEquip!, "TRANSLATED EQUIPMENT"]]));
+    expect(html).toContain("TRANSLATED EQUIPMENT");
+    expect(html).not.toContain(`>${lvEquip}<`);
+  });
+
+  it("EN/RU/DE tulkošana - līdz 3 izsaukumiem pa 40 rindām; LV - viens", async () => {
+    const texts = Array.from({ length: 95 }, (_, i) => `Text number ${i}`);
+    let calls = 0;
+    const gen = async (a: { userPrompt: string }) => {
+      calls += 1;
+      const arr = JSON.parse(a.userPrompt.slice(a.userPrompt.indexOf("["), a.userPrompt.lastIndexOf("]") + 1)) as string[];
+      return JSON.stringify({ items: arr.map((x) => `T ${x}`) });
+    };
+    const out = await translateAuctionArchiveTexts(texts, gen, "de");
+    expect(calls).toBe(3);
+    expect(out.size).toBe(95);
+    expect(out.get("Text number 94")).toBe("T Text number 94");
+    calls = 0;
+    expect((await translateAuctionArchiveTexts(texts, gen, "lv")).size).toBe(40);
+    expect(calls).toBe(1);
+  });
+});

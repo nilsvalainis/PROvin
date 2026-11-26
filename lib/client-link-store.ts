@@ -131,6 +131,7 @@ export async function createClientLink(
     prefillVin: input.prefillVin,
     prefillListingUrl: input.prefillListingUrl,
     require: input.require,
+    ...(input.lang && input.lang !== "lv" ? { lang: input.lang } : {}),
   };
   const saved = await writeJson(tokenHash, record);
   if (!saved) return { ok: false, error: "store_failed" };

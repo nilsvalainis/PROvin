@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
+import { upsellPageCopy } from "@/lib/order-upsell-i18n";
 
-export function OrderUpsellPayButton({ token, label }: { token: string; label: string }) {
+export function OrderUpsellPayButton({ token, label, lang = "lv" }: { token: string; label: string; lang?: string }) {
+  const c = upsellPageCopy(lang);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +21,7 @@ export function OrderUpsellPayButton({ token, label }: { token: string; label: s
           void fetch("/api/checkout/upsell", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, lang }),
           })
             .then(async (res) => {
               const data = (await res.json().catch(() => ({}))) as {
@@ -29,18 +31,18 @@ export function OrderUpsellPayButton({ token, label }: { token: string; label: s
                 error?: string;
               };
               if (!res.ok || !followStripeCheckoutUrl(data)) {
-                setError("Apmaksas saiti šobrīd neizdevās atvērt. Uzrakstiet uz info@provin.lv.");
+                setError(c.errOpen);
                 setBusy(false);
                 return;
               }
             })
             .catch(() => {
-              setError("Tīkla kļūda. Mēģiniet vēlreiz.");
+              setError(c.errNetwork);
               setBusy(false);
             });
         }}
       >
-        {busy ? "Atver…" : label}
+        {busy ? c.opening : label}
       </button>
       {error ? <p className="mt-3 text-sm text-red-700">{error}</p> : null}
     </div>

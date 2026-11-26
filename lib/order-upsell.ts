@@ -1,4 +1,5 @@
 import { provinEmailSubject } from "@/lib/email/email-subject";
+import { normalizeUpsellLang, upsellPageCopy, upsellStripeProductNameFor } from "@/lib/order-upsell-i18n";
 /**
  * Piepirkums esošam pasūtījumam.
  * Dīlera dati -> pilnais audits: B2C kopā vienmēr 99,99 €, B2B kopā 69,99 €
@@ -229,9 +230,8 @@ export function upsellKindButtonLabel(quote: UpsellQuote): string {
   return MINI_TO_AUDITS_RECOMMENDATION_LABEL;
 }
 
-export function upsellStripeProductName(kind: OrderUpsellKind): string {
-  if (kind === "mini_to_dealer") return "Oficiālā dīlera dati (papildinājums)";
-  return "PROVIN AUDITS papildinājums";
+export function upsellStripeProductName(kind: OrderUpsellKind, lang?: ClientReportLang | null): string {
+  return upsellStripeProductNameFor(kind, lang);
 }
 
 export type OrderUpsellStripeMetaInput = {
@@ -275,7 +275,7 @@ export type OrderUpsellCheckoutSessionParams = {
   success_url: string;
   cancel_url: string;
   metadata: Record<string, string>;
-  locale: "lv";
+  locale: ClientReportLang;
 };
 
 export function buildOrderUpsellCheckoutSessionParams(opts: {
@@ -288,10 +288,14 @@ export function buildOrderUpsellCheckoutSessionParams(opts: {
   phone?: string | null;
   email: string;
   origin: string;
+  /** Klienta valoda: Stripe lapa, apraksts, atgriešanās lapa. Noklusēti LV. */
+  lang?: ClientReportLang | null;
 }): OrderUpsellCheckoutSessionParams {
   const vin = (opts.vin ?? "").trim();
   const origin = opts.origin.replace(/\/$/, "");
-  const back = `${origin}${upsellPublicPath(opts.token)}`;
+  const lang = normalizeUpsellLang(opts.lang);
+  const back = `${origin}${upsellPublicPath(opts.token, lang)}`;
+  const description = upsellPageCopy(lang).stripeDescription;
   return {
     mode: "payment",
     customer_email: opts.email.trim(),
@@ -300,10 +304,8 @@ export function buildOrderUpsellCheckoutSessionParams(opts: {
         price_data: {
           currency: "eur",
           product_data: {
-            name: upsellStripeProductName(opts.kind),
-            description: vin
-              ? `Papildinājums jau apmaksātam pasūtījumam. VIN ${vin}.`
-              : "Papildinājums jau apmaksātam pasūtījumam.",
+            name: upsellStripeProductName(opts.kind, lang),
+            description: vin ? `${description} VIN ${vin}.` : description,
           },
           unit_amount: opts.chargeCents,
         },
@@ -313,7 +315,7 @@ export function buildOrderUpsellCheckoutSessionParams(opts: {
     success_url: `${back}?paid=1`,
     cancel_url: back,
     metadata: buildOrderUpsellStripeMetadata(opts),
-    locale: "lv",
+    locale: lang,
   };
 }
 
@@ -515,6 +517,7 @@ export function buildUpsellPaidEmail(opts: {
   };
 }
 
-export function upsellPublicPath(token: string): string {
-  return `/lv/papildinajums/${token}`;
+/** Papildinājuma lapa klienta valodā (vietnē ir /lv /en /ru /de). */
+export function upsellPublicPath(token: string, lang?: ClientReportLang | null): string {
+  return `/${normalizeUpsellLang(lang)}/papildinajums/${token}`;
 }

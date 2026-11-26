@@ -17,6 +17,7 @@ vi.mock("@/lib/admin-listing-analysis-photo-store", () => ({
 }));
 vi.mock("@/lib/order-dropbox", () => ({
   ensureOrderDropboxFolder: async () => ({ state: "ok", path: "/PROVIN/Pasutijumi/2026-11-25 Audi A6" }),
+  currentOrderDropboxFolderPath: async (_c: unknown, rec: { path?: string }) => rec.path ?? "",
 }));
 
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";

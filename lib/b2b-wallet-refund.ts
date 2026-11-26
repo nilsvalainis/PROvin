@@ -102,7 +102,7 @@ export async function notifyB2bWalletRefundEmail(orderId: string): Promise<boole
     },
     lang,
   );
-  const sent = await trySendB2bWalletRefundEmail({ to, subject: rendered.subject, text: rendered.text });
+  const sent = await trySendB2bWalletRefundEmail({ to, subject: rendered.subject, text: rendered.text, lang });
   if (!sent) return false;
   await upsertDealerDataJob(orderId, {
     vin: vin || job.vin,

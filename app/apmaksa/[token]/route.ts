@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { unpaidMatchesPaidIdentity } from "@/lib/admin-unpaid-orders-core";
 import { paidIdentitiesForUnpaidFilter } from "@/lib/admin-unpaid-orders";
 import { findUnpaidReminderRecord, listUnpaidReminderRecords } from "@/lib/admin-unpaid-reminder-store";
-import { isSafeUnpaidPaymentToken, unpaidReminderOrderUrl } from "@/lib/admin-unpaid-payment-link";
+import { isSafeUnpaidPaymentToken, unpaidPaymentLinkMessages, unpaidReminderOrderUrl } from "@/lib/admin-unpaid-payment-link";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
@@ -41,8 +41,9 @@ export async function GET(req: Request, ctx: Ctx) {
   if (!rec || rec.hidden) {
     return plain(404, "Saite nav derīga.");
   }
+  const msg = unpaidPaymentLinkMessages(rec.lang);
   if (rec.expiresAt && Date.parse(rec.expiresAt) < Date.now()) {
-    return plain(410, "Šī apmaksas saite vairs nav derīga.");
+    return plain(410, msg.expired);
   }
 
   const paid = await paidIdentitiesForUnpaidFilter().catch(() => []);
@@ -61,9 +62,9 @@ export async function GET(req: Request, ctx: Ctx) {
       paid,
     )
   ) {
-    return plain(410, "Šis pasūtījums jau ir apmaksāts.");
+    return plain(410, msg.paid);
   }
 
-  const orderUrl = unpaidReminderOrderUrl(rec.vin, getPublicSiteOrigin());
+  const orderUrl = unpaidReminderOrderUrl(rec.vin, getPublicSiteOrigin(), rec.lang);
   return NextResponse.redirect(orderUrl, { status: 302 });
 }

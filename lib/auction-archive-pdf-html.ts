@@ -22,8 +22,14 @@ import {
 } from "@/lib/auction-archive-offer";
 import { buildAuctionArchivePdfFilename } from "@/lib/audit-report-pdf-filename";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
-import { auctionArchiveEquipment, auctionArchiveModelTitle, auctionArchiveVersion } from "@/lib/auction-archive-facts";
-import { auctionArchivePdfNote, auctionCardCount, auctionCardText } from "@/lib/auction-lot-cards-i18n";
+import {
+  auctionArchiveEquipment,
+  auctionArchiveLotFacts,
+  auctionArchiveModelTitle,
+  auctionArchiveVehicleRows,
+  auctionArchiveVersion,
+} from "@/lib/auction-archive-facts";
+import { auctionArchiveKvLeftovers, auctionArchivePdfNote, auctionCardCount, auctionCardText } from "@/lib/auction-lot-cards-i18n";
 import { applyClientReportSweepTranslations } from "@/lib/client-report-dynamic-i18n";
 import { getClientReportPrintCss } from "@/lib/client-report-html";
 import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
@@ -165,10 +171,25 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
 const FONT_READY_SCRIPT = `<script>(function(){function done(){document.documentElement.setAttribute("data-provin-fonts","ready")}if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load("400 12px Inter"),document.fonts.load("700 12px Inter")]).then(done,done)}else done()})();</script>`;
 
 /** Teksti, kas jātulko pirms PDF: apraksti + aprīkojums, ko vārdnīca nezina. */
-export function auctionArchiveTextsToTranslate(records: readonly ThecarapiAdminRecord[]): string[] {
-  // I18n atslēgu apraksti jau ir LV (`thecarapiFreeText`) - AI tulkošanai nesūta.
-  const descriptions = records.flatMap((r) => auctionArchiveDescriptionItems(r).filter((d) => !d.fromKey).map((d) => d.text));
-  return [...new Set([...descriptions, ...auctionArchiveEquipment(records).untranslated])];
+export function auctionArchiveTextsToTranslate(records: readonly ThecarapiAdminRecord[], lang: ClientReportLang = "lv"): string[] {
+  // LV PDF: i18n atslēgu apraksti jau ir LV (`thecarapiFreeText`) - AI tulkošanai nesūta.
+  const items = records.flatMap((r) => auctionArchiveDescriptionItems(r));
+  const descriptions = items.filter((d) => !d.fromKey).map((d) => d.text);
+  const equipment = auctionArchiveEquipment(records);
+  const base = [...descriptions, ...equipment.untranslated];
+  if (lang === "lv") return [...new Set(base)];
+  // EN/RU/DE (Nils 26.11): mūsu LV teksti, ko bez-AI vārdnīca nezina - atslēgu apraksti, aprīkojuma nosaukumi,
+  // transportlīdzekļa / izsoles vērtības. Tas pats Gemini Flash izsaukums ar mērķvalodu.
+  const untranslated = new Set(equipment.untranslated);
+  const lvEquipment = equipment.groups.flatMap((g) => g.items).filter((x) => !untranslated.has(x));
+  const kv = [
+    ...auctionArchiveKvLeftovers(auctionArchiveVehicleRows(records), lang),
+    ...records.flatMap((r) => {
+      const f = auctionArchiveLotFacts(r, { showPrices: true });
+      return auctionArchiveKvLeftovers([...f.sale, ...f.condition, ...f.prices], lang);
+    }),
+  ];
+  return [...new Set([...base, ...items.filter((d) => d.fromKey).map((d) => d.text), ...kv, ...lvEquipment])];
 }
 
 export function auctionArchivePdfFilename(vin: string, lang?: ClientReportLang | null): string {
