@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { lvCount } from "@/lib/lv-plural";
 import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import {
   extractListingSellerClaims,
@@ -698,7 +699,7 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     );
     if (facts.owners.latviaOwners != null) {
       lines.push(
-        `- Latvijā: ${facts.owners.latviaOwners} īpašnieki, ${facts.owners.latviaChanges ?? ownerChangesFromCount(facts.owners.latviaOwners)} maiņas`,
+        `- Latvijā: ${lvCount(facts.owners.latviaOwners, "īpašnieks", "īpašnieki")}, ${lvCount(facts.owners.latviaChanges ?? ownerChangesFromCount(facts.owners.latviaOwners), "maiņa", "maiņas")}`,
       );
     }
   } else {

@@ -9,12 +9,12 @@
   "ss.lv": 1
  },
  "rindasSavaktas": 44,
- "rindasTabula": 19,
+ "rindasTabula": 18,
  "tabula": [
   "01.12.2016 | 17 | Dānija | AutoDNA",
   "01.12.2016 | 17 | Dānija | CarVertical | mēnesis",
   "19.12.2016 | 17 | Dānija | OFICIĀLĀ DĪLERA DATI",
-  "05.01.2017 | 0 | Dānija | DĀNIJAS REĢISTRI",
+  "05.01.2017 | 0 | Dānija | DĀNIJAS REĢISTRI | secināta valsts",
   "12.12.2017 | 26034 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
   "01.04.2018 | 49416 | Dānija | CarVertical | mēnesis",
   "04.12.2018 | 49456 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI",
@@ -26,7 +26,6 @@
   "22.11.2022 | 151000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
   "16.08.2023 | 179148 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
   "16.10.2024 | 214992 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
-  "16.10.2024 | 214000 | Dānija | DĀNIJAS REĢISTRI",
   "06.02.2025 | 215117 | Latvija | CarVertical + CSDD + AutoDNA",
   "14.10.2025 | 216 000 | Latvija | CarVertical + ss.lv",
   "26.02.2026 | 216076 | Latvija | CarVertical + CSDD + AutoDNA"

@@ -23,6 +23,11 @@ export type LatviaRegistrationTenure = {
   monthsRegistered: number;
   sentence: string;
   sourceLabels: string[];
+  /**
+   * false - CSDD «Pirmā reģistrācija Latvijā» nav; datums ir agrākais LV signāls (apskate, OCTA), ne reģistrācija.
+   * 26.11 (Mercedes SE→DK→LV): «0 dienas, kopš 26.11.2026» no šodienas apskates bija maldinoši.
+   */
+  exact: boolean;
 };
 
 export type LatviaRegistrationTenureInput = {
@@ -88,6 +93,14 @@ const TENURE_UNITS: Record<ClientReportLang, { y: string; m: string; day: (n: nu
  * Kartītes «Reģistrācija Latvijā» vērtība (Nils 25.11): līdz 1 mēn. - «N dienas», tālāk «5 mēn.», «1 g. 3 mēn.», «2 g.».
  * Ar `lang` - uzreiz atskaites valodā: EN «1 yr 5 mo», RU «1 г. 5 мес.», DE «1 J. 5 Mon.».
  */
+/** Kartītes vērtība, ja precīza LV reģistrācijas datuma nav un agrākais LV ieraksts ir šodien. */
+export const LATVIA_TENURE_NO_EXACT_DATE: Record<ClientReportLang, string> = {
+  lv: "Nav precīza datuma",
+  en: "No exact date",
+  ru: "Нет точной даты",
+  de: "Kein genaues Datum",
+};
+
 export function formatLatviaTenureShort(days: number, months: number, lang: ClientReportLang = "lv"): string {
   const u = TENURE_UNITS[lang] ?? TENURE_UNITS.lv;
   const d = Math.max(0, Math.floor(days));
@@ -130,7 +143,19 @@ function collectLatviaFixedDates(input: LatviaRegistrationTenureInput): DateCand
     pushCandidate(out, r.csngDate, "LTAB");
   }
 
+  // LTAB izziņa meklē pēc LV numura: OCTA perioda sākums ir LV signāls (agrāks par šodienas apskati).
+  const insuredFrom = input.manualLtabBlock?.certificate?.insuredFrom?.trim() ?? "";
+  if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(insuredFrom) || /^\d{4}-\d{2}-\d{2}$/.test(insuredFrom)) {
+    pushCandidate(out, insuredFrom, "LTAB");
+  }
+
   return out;
+}
+
+function hasExactLatviaRegistrationDate(csdd: CsddFormFields | null | undefined): boolean {
+  if (csdd?.firstRegistrationLatvia?.trim()) return true;
+  if (ownerFirstRegistrationInLatvia(csdd?.ownerRegistrationEvents)) return true;
+  return (csdd?.ownerRegistrationEvents ?? []).some((e) => Boolean(e.date?.trim()));
 }
 
 /** Aprēķina reģistrācijas ilgumu Latvijā; `null`, ja nav datu. */
@@ -149,7 +174,11 @@ export function computeLatviaRegistrationTenure(
   const firstDateDisplay = formatDisplayDate(oldest.dateRaw);
   const usedSources = [...new Set(candidates.map((c) => c.source))];
 
-  const sentence = `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts ${days} ${lvDienaLabel(days)} (${months} ${lvMenesisForm(months)}).`;
+  const exact = hasExactLatviaRegistrationDate(input.csddForm);
+  const sentence =
+    !exact && days === 0
+      ? `Precīzs reģistrācijas datums Latvijā nav zināms; agrākais Latvijas ieraksts ir ${firstDateDisplay}.`
+      : `Saskaņā ar mūsu rīcībā esošajiem datiem transportlīdzeklis Latvijā ir reģistrēts ${days} ${lvDienaLabel(days)} (${months} ${lvMenesisForm(months)}).`;
 
   return {
     firstDateDisplay,
@@ -157,5 +186,6 @@ export function computeLatviaRegistrationTenure(
     monthsRegistered: months,
     sentence,
     sourceLabels: usedSources,
+    exact,
   };
 }

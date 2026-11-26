@@ -8,7 +8,7 @@
   "ss.lv": 1
  },
  "rindasSavaktas": 54,
- "rindasTabula": 30,
+ "rindasTabula": 29,
  "tabula": [
   "01.04.2013 | 11 | Vācija | CarVertical | mēnesis",
   "06.08.2013 | 1740 | Francija | OFICIĀLĀ DĪLERA DATI + CarVertical",
@@ -38,8 +38,7 @@
   "08.12.2025 | 195526 | Francija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "27.01.2026 | 197760 | Francija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "01.05.2026 | 202013 | Francija | AutoDNA",
-  "17.08.2026 | 202114 | Latvija | CSDD + AutoDNA",
-  "17.08.2026 | 202 000 | Latvija | CarVertical + CSDD + AutoDNA + ss.lv"
+  "17.08.2026 | 202114 | Latvija | CSDD + AutoDNA + CarVertical + ss.lv"
  ],
  "sarkanaJosla": true,
  "klases": [

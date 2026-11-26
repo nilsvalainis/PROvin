@@ -549,6 +549,53 @@ function isCrossSourceMonthDuplicate(
   return !shareSourceLabel(earlier, later);
 }
 
+function trailingZeroDigits(n: number): number {
+  let z = 0;
+  let v = Math.abs(Math.round(n));
+  while (v > 0 && v % 10 === 0 && z < 6) {
+    v /= 10;
+    z += 1;
+  }
+  return z;
+}
+
+function sameUtcDay(a: number, b: number): boolean {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  return new Date(a).toISOString().slice(0, 10) === new Date(b).toISOString().slice(0, 10);
+}
+
+/**
+ * 26.11 (Mercedes SE→DK→LV): tās pašas dienas noapaļots rādījums nav atsevišķs nolasījums - Motorstyrelsen glabā tūkstošos
+ * (357 000 pie DMR apskates 357 628), car.info - desmitos (357 630). Apvieno arī viena avota rindas.
+ * Precīzākais (mazāk nuļļu beigās) rādījums paliek tabulā.
+ */
+export function isRoundedSameDayDuplicate(a: UnifiedMileageDisplayRow, b: UnifiedMileageDisplayRow): boolean {
+  if (a.datePrecision === "month" || b.datePrecision === "month") return false;
+  const kmA = parseOdometerKm(a.odometer);
+  const kmB = parseOdometerKm(b.odometer);
+  if (kmA === null || kmB === null || kmA === kmB) return false;
+  if (!sameUtcDay(a.sortableTime, b.sortableTime)) return false;
+  const za = trailingZeroDigits(kmA);
+  const zb = trailingZeroDigits(kmB);
+  if (za === zb) return false;
+  // Viena avota tuvas rindas (dīlera vizītes 40 630 / 40 633) ir atsevišķi ieraksti - tikai tūkstošu noapaļojums.
+  if (shareSourceLabel(a, b) && Math.max(za, zb) < 3) return false;
+  const tolerance = Math.min(UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM, 10 ** Math.max(za, zb));
+  return Math.abs(kmA - kmB) < tolerance;
+}
+
+function moreSignificantDigits(a: UnifiedMileageDisplayRow, b: UnifiedMileageDisplayRow): UnifiedMileageDisplayRow | null {
+  const kmA = parseOdometerKm(a.odometer);
+  const kmB = parseOdometerKm(b.odometer);
+  if (kmA === null || kmB === null || !sameUtcDay(a.sortableTime, b.sortableTime)) return null;
+  // Mēneša precizitātes rindās (AutoDNA / CarVertical «01.08.2010») rādījumu izvēli nemaina.
+  if (a.datePrecision === "month" || b.datePrecision === "month") return null;
+  const za = trailingZeroDigits(kmA);
+  const zb = trailingZeroDigits(kmB);
+  if (za === zb) return null;
+  return za < zb ? a : b;
+}
+
 /** Patur vēlāko (precīzi datēto) rindu un tās rādījumu, bet abu avotu etiķetes. */
 function mergeCrossSourceRows(
   earlier: UnifiedMileageDisplayRow,
@@ -566,7 +613,9 @@ function mergeCrossSourceRows(
   const countries = dropGenericRegionCountries([...new Set([later.country.trim(), earlier.country.trim()].filter(Boolean))]);
   const documentValue = later.documentValue === true && earlier.documentValue === true;
   const countryUnverified = later.countryUnverified === true && earlier.countryUnverified === true;
-  const dayRow = later.datePrecision !== "month" ? later : earlier.datePrecision !== "month" ? earlier : later;
+  const dayRow =
+    moreSignificantDigits(earlier, later) ??
+    (later.datePrecision !== "month" ? later : earlier.datePrecision !== "month" ? earlier : later);
   return {
     ...dayRow,
     country: countries.length <= 1 ? (countries[0] ?? later.country) : countries.join(" / "),
@@ -586,7 +635,7 @@ export function mergeCrossSourceMonthDuplicates(
   const out: UnifiedMileageDisplayRow[] = [];
   for (const row of rows) {
     const prev = out[out.length - 1];
-    if (prev && isCrossSourceMonthDuplicate(prev, row, maxKmDiff)) {
+    if (prev && (isCrossSourceMonthDuplicate(prev, row, maxKmDiff) || isRoundedSameDayDuplicate(prev, row))) {
       out[out.length - 1] = mergeCrossSourceRows(prev, row);
       continue;
     }
@@ -1531,14 +1580,31 @@ export function inferMissingMileageCountries<T extends UnifiedMileageRow>(rows: 
   const timeline = buildCountryTimeline(
     evidence.map((r) => ({ date: formatAutoRecordsDateForOutput(r.date) || r.date, country: r.country })),
   );
+  const firstEvidence = [...evidence]
+    .filter((r) => Number.isFinite(r.sortableTime) && r.sortableTime !== Number.NEGATIVE_INFINITY)
+    .sort((a, b) => a.sortableTime - b.sortableTime)[0];
   return rows.map((r) => {
     if (!isUnknownMileageCountry(r.country)) return r;
     const country = resolveCountryForDate(timeline, formatAutoRecordsDateForOutput(r.date) || r.date, {
       extrapolateAfterLast: false,
     });
-    return country ? { ...r, country, countryInferred: true } : r;
+    if (country) return { ...r, country, countryInferred: true };
+    // 26.11 (Mercedes SE→DK→LV): pirmās reģistrācijas 0 km rinda (valsts nav zināma, DMR datums ir „jebkurā valstī”) -
+    // valsts, kurā auto pirmo reizi fiksēts gada laikā pēc tam (SE dīleris 2011), tāpat kā laikjoslā.
+    if (
+      r.odometer.replace(/\D/g, "") !== "" && Number(r.odometer.replace(/\D/g, "")) === 0 &&
+      firstEvidence &&
+      r.sortableTime < firstEvidence.sortableTime &&
+      firstEvidence.sortableTime - r.sortableTime <= FIRST_REGISTRATION_COUNTRY_MAX_GAP_MS
+    ) {
+      return { ...r, country: firstEvidence.country, countryInferred: true };
+    }
+    return r;
   });
 }
+
+/** Pirmās reģistrācijas 0 km rindai valsti ņem no pirmā zināmā rādījuma tikai, ja tas ir gada laikā. */
+const FIRST_REGISTRATION_COUNTRY_MAX_GAP_MS = 400 * 24 * 60 * 60 * 1000;
 
 function odometerReplacementNotedIn(p: UnifiedMileageSourcePayload): boolean {
   const works = (p.autoRecordsBlock?.serviceWorks ?? []).map((w) => w.works).join("\n");

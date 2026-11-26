@@ -38,9 +38,35 @@ function monthLabel(t: number): string {
   return `${String(d.getUTCMonth() + 1).padStart(2, "0")}.${d.getUTCFullYear()}`;
 }
 
+const FIRST_REGISTRATION_RE = /pirm\p{L}*\s+reģistrācij|first\s+registration/iu;
+const IMPORT_EVENT_RE = /imports?\b|ievest|importēt/iu;
+
 function eventTimes(rows: readonly VinRegistryTimelineRow[], re: RegExp): number[] {
   return rows
     .filter((r) => re.test(r.event ?? ""))
+    .map((r) => parseMileageDateForSort(r.date ?? ""))
+    .filter((t) => Number.isFinite(t) && t !== Number.NEGATIVE_INFINITY);
+}
+
+/**
+ * 26.11 (Mercedes SE→DK→LV): DMR „Pirmā reģistrācija” 08.12.2010 ir pirmā reģistrācija jebkurā valstī - auto Dānijā
+ * ievests 27.10.2016 (muitas apskate). Rinda ar citu valsti vai pirmā reģistrācija pirms šī reģistra importa
+ * nav šīs valsts posma sākums.
+ */
+function registrationStartTimes(rows: readonly VinRegistryTimelineRow[], country: string): number[] {
+  const own = rows.filter((r) => {
+    const c = (r.country ?? "").trim();
+    return !c || c === country;
+  });
+  const imports = eventTimes(own, IMPORT_EVENT_RE);
+  const firstImport = imports.length > 0 ? Math.min(...imports) : null;
+  return own
+    .filter((r) => REGISTRATION_EVENT_RE.test(r.event ?? ""))
+    .filter((r) => {
+      if (firstImport == null || !FIRST_REGISTRATION_RE.test(r.event ?? "")) return true;
+      const t = parseMileageDateForSort(r.date ?? "");
+      return !(t < firstImport);
+    })
     .map((r) => parseMileageDateForSort(r.date ?? ""))
     .filter((t) => Number.isFinite(t) && t !== Number.NEGATIVE_INFINITY);
 }
@@ -50,7 +76,7 @@ export function collectRegistryCountryPeriods(sourceBlocks: WorkspaceSourceBlock
   const periods: RegistryCountryPeriod[] = [];
   for (const { key, country } of REGISTRY_COUNTRY) {
     const timeline = blocks[key]?.timeline ?? [];
-    const starts = eventTimes(timeline, REGISTRATION_EVENT_RE);
+    const starts = registrationStartTimes(timeline, country);
     if (starts.length === 0) continue;
     const from = Math.min(...starts);
     const ends = eventTimes(timeline, EXPORT_EVENT_RE).filter((t) => t >= from);
