@@ -1,4 +1,5 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
+import { REVIEW_ASK_COPY } from "@/lib/review-ask";
 
 /**
  * Klientu e-pastu / WhatsApp šablonu tulkojumi EN / RU / DE (Nils 25.11: «nav tulkojumi, pārbaudi visas valodas»).
@@ -330,38 +331,18 @@ function dealerCancelled(lang: ForeignLang, channel: "email" | "whatsapp"): Loca
   return channel === "email" ? { subject: c.subject, body } : { body };
 }
 
-/* ---------- Google atsauksmes lūgums ---------- */
-
-const REVIEW_COPY: Record<ForeignLang, { subject: string; greeting: string; thanks: string; ask: string; helps: string }> = {
-  en: {
-    subject: "PROVIN · Thank you for your order{{#vin}} · {{vin}}{{/vin}}",
-    greeting: "Hello,",
-    thanks: "Thank you for choosing PROVIN.LV to check the vehicle{{#vin}} with VIN {{vin}}{{/vin}}.",
-    ask: "If our work was useful to you, we would be grateful for a short Google review: {{atsauksmes_saite}}",
-    helps: "It also helps other buyers find a reliable vehicle check.",
-  },
-  ru: {
-    subject: "PROVIN · Спасибо за заказ{{#vin}} · {{vin}}{{/vin}}",
-    greeting: "Здравствуйте!",
-    thanks: "Спасибо, что для проверки автомобиля{{#vin}} с VIN {{vin}}{{/vin}} Вы выбрали PROVIN.LV.",
-    ask: "Если наша работа была Вам полезна, будем благодарны за короткий отзыв в Google: {{atsauksmes_saite}}",
-    helps: "Он также помогает другим покупателям найти надёжную проверку автомобиля.",
-  },
-  de: {
-    subject: "PROVIN · Vielen Dank für Ihre Bestellung{{#vin}} · {{vin}}{{/vin}}",
-    greeting: "Guten Tag,",
-    thanks: "vielen Dank, dass Sie sich für die Prüfung des Fahrzeugs{{#vin}} mit der FIN {{vin}}{{/vin}} für PROVIN.LV entschieden haben.",
-    ask: "Wenn Ihnen unsere Arbeit geholfen hat, wären wir für eine kurze Google-Bewertung dankbar: {{atsauksmes_saite}}",
-    helps: "Sie hilft auch anderen Käufern, eine zuverlässige Fahrzeugprüfung zu finden.",
-  },
-};
+/* ---------- Google atsauksmes lūgums (teksti - `lib/review-ask.ts`) ---------- */
 
 function reviewRequest(lang: ForeignLang, channel: "email" | "whatsapp"): LocalizedTemplate {
-  const c = REVIEW_COPY[lang];
+  const c = REVIEW_ASK_COPY[lang];
+  // {{auto}} jau satur klienta valodas formu (`reviewCarObject`).
   if (channel === "whatsapp") {
-    return { body: [c.greeting, "", c.thanks, "", c.ask, "", "PROVIN.LV"].join("\n") };
+    return { body: [c.greeting, "", c.waBody("{{auto}}"), "{{atsauksmes_saite}}", "", c.waThanks, "PROVIN.LV"].join("\n") };
   }
-  return { subject: c.subject, body: [c.greeting, "", c.thanks, "", c.ask, "", c.helps, "", "{{paraksts}}"].join("\n") };
+  return {
+    subject: c.askSubject("{{auto}}"),
+    body: [c.greeting, "", c.askBody("{{auto}}"), "", `${c.button}: {{atsauksmes_saite}}`, "", c.questions, "", "{{paraksts}}"].join("\n"),
+  };
 }
 
 /* ---------- Neapmaksāta pasūtījuma atgādinājums (valoda - Stripe session.locale) ---------- */

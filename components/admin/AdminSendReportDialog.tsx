@@ -56,7 +56,8 @@ export type SendReportResult = {
 /**
  * "Sūtīt atskaiti" (2. posms, Nils 17.11): veids, valoda, pielikumu ķekši -> PDF serverī -> "Skatīt PDF" -> sūtīt.
  * Pēc sūtīšanas: versija, Dropbox, "Izpildīts" ar 30 s "Atsaukt", WhatsApp ziņa.
- * Valodas izvēle dīlera datiem, B2B (G2), AUDITS un BUSINESS (19.11); Google atsauksme noklusējumā izslēgta (G6).
+ * Valodas izvēle dīlera datiem, B2B (G2), AUDITS un BUSINESS (19.11). Google atsauksmes lūgums atskaites e-pastā vairs
+ * nav (Nils 26.11): to sūta atsevišķs e-pasts nākamajā darba dienā (`lib/review-ask.ts`).
  */
 export function AdminSendReportDialog({
   open,
@@ -99,7 +100,6 @@ export function AdminSendReportDialog({
   const [kind, setKind] = useState<SendReportKind>(defaultKind);
   const [lang, setLang] = useState<ClientReportLang>("lv");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
-  const [google, setGoogle] = useState(false);
   const [markComplete, setMarkComplete] = useState(true);
   const [saveDropbox, setSaveDropbox] = useState(true);
   const [phase, setPhase] = useState<"idle" | "preparing" | "ready" | "sending" | "sent">("idle");
@@ -117,7 +117,6 @@ export function AdminSendReportDialog({
     setKind(defaultKind);
     setLang("lv");
     setPicked(new Set(attachments.map((a) => a.id)));
-    setGoogle(false);
     setMarkComplete(true);
     setSaveDropbox(true);
     setPhase("idle");
@@ -179,7 +178,7 @@ export function AdminSendReportDialog({
         prepared,
         lang: effLang,
         attachmentIds: [...picked],
-        includeGoogleReview: google,
+        includeGoogleReview: false,
         markComplete,
         saveDropbox,
         ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
@@ -362,10 +361,6 @@ export function AdminSendReportDialog({
               </div>
 
               <div className="space-y-1.5 text-[13px] text-[var(--color-apple-text)]">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled={busy || b2b} checked={google && !b2b} onChange={(e) => setGoogle(e.target.checked)} />
-                  Lūgt Google atsauksmi
-                </label>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" disabled={busy} checked={saveDropbox} onChange={(e) => setSaveDropbox(e.target.checked)} />
                   Kopija Dropbox /_PROv/

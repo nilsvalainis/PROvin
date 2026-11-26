@@ -10,6 +10,7 @@ import { dealerSendWhatsappUrl } from "@/lib/dealer-send-message";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { GOOGLE_REVIEW_URL } from "@/lib/messages/shared-blocks";
 import { reportReadyVinVar } from "@/lib/messages/template-vars";
+import { reviewCarLabel, reviewCarObject } from "@/lib/review-ask";
 import { daysAgoLabel, formatRigaDayTime, isAwaitingReviewRequest, REVIEW_REQUEST_MAX_AGE_MS } from "@/lib/order-client-marks";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 
@@ -108,9 +109,14 @@ export function AdminReviewRequestQueue({
     setNotice(null);
     if (channel === "whatsapp") {
       const doc = await loadAdminMessageTemplatesDoc();
+      const vin = reportReadyVinVar(order.vin);
+      const car = reviewCarLabel(order.makeModel, null);
       const text =
-        renderTemplateById("wa.review_request", { vin: reportReadyVinVar(order.vin), atsauksmes_saite: GOOGLE_REVIEW_URL }, doc)
-          ?.text ?? "";
+        renderTemplateById(
+          "wa.review_request",
+          { vin, auto: reviewCarObject("lv", car, vin), atsauksmes_saite: GOOGLE_REVIEW_URL },
+          doc,
+        )?.text ?? "";
       window.open(
         dealerSendWhatsappUrl(normalizeWhatsAppPhoneDigits(order.customerPhone), text),
         "_blank",

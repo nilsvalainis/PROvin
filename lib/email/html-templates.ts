@@ -488,6 +488,32 @@ function googleReviewBlockHtml(introText: string, href: string = GOOGLE_REVIEW_U
 
 const MAIL_LINK_HTML = emailLink("mailto:info@provin.lv", "info@provin.lv");
 
+/**
+ * Atsevišķs Google atsauksmes lūgums (Nila makets 26.11, variants A): 2 teikumi, viena liela poga
+ * «Novērtēt Google», jautājumu rinda, paraksts PROVIN.LV. Atgādinājumam tas pats izkārtojums.
+ */
+export function reviewAskEmailHtml(opts: {
+  greeting: string;
+  body: string;
+  button: string;
+  href: string;
+  questions: string;
+  preheader?: string;
+  lang?: ClientReportLang;
+}): string {
+  const lang = opts.lang ?? "lv";
+  const rows = [
+    emailRow(
+      emailParagraph(esc(opts.greeting)) + emailParagraph(esc(opts.body), "margin:0;"),
+      "22px 36px 0",
+    ),
+    emailRow(`${emailButton(opts.href, esc(opts.button))}`, "22px 36px 0"),
+    emailRow(emailSmall(esc(opts.questions)), "18px 36px 0"),
+    emailRow(clientSignOffHtml(false, lang), "22px 36px 0"),
+  ].join("\n");
+  return emailDocument({ rows, lang, preheader: opts.preheader ?? null });
+}
+
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
@@ -560,9 +586,7 @@ export function auditCompletedEmailHtml(opts: {
     rows.push(emailRow(emailSmall(questionHtml), "18px 36px 0"));
   }
 
-  if (opts.includeGoogleReview && !b2bClient) {
-    rows.push(emailRow(googleReviewBlockHtml(GOOGLE_REVIEW_INTRO_HTML[lang]), "22px 36px 0"));
-  }
+  // 26.11 (Nils): atsauksmes lūgums atskaites e-pastā vairs netiek likts - atsevišķs e-pasts nākamajā darba dienā.
   rows.push(emailRow(clientSignOffHtml(b2bClient, lang), "22px 36px 0"));
 
   return emailDocument({

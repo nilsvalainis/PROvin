@@ -33,6 +33,8 @@ const REVIEW: MessageTemplateVar = {
   sample: "https://g.page/r/…/review",
 };
 
+const AUTO: MessageTemplateVar = { key: "auto", label: "Auto (marka modelis vai «Jūsu auto (VIN …1234)»)", sample: "VW Golf", required: true };
+
 const EMAIL_SIGN = ["Ar cieņu,", "{{zimols}}"].join("\n");
 const WA_SIGN = "{{zimols}}";
 
@@ -199,23 +201,25 @@ export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
     vars: [VIN, SUMMA, KARTE, ATLIKUMS, ZIMOLS],
   },
   {
+    // Teksts = `lib/review-ask.ts` (LV). Faktisko e-pastu ar pogu «Novērtēt Google» veido kods (cron / admina poga).
     id: "email.review_request",
     channel: "email",
     group: GROUP,
     title: "E-pasts: Google atsauksmes lūgums",
-    subject: "PROVIN · Paldies par pasūtījumu{{#vin}} · {{vin}}{{/vin}}",
+    description: "Sūta automātiski nākamajā darba dienā pēc atskaites. {{auto}} - «VW Golf» vai «Jūsu auto (VIN …1234)».",
+    subject: "Kā Jums noderēja atskaite par {{auto}}?",
     body: [
       "Labdien!",
       "",
-      "Paldies, ka auto{{#vin}} VIN {{vin}}{{/vin}} pārbaudei izvēlējāties PROVIN.LV.",
+      "Pirms dažām dienām nosūtījām Jums PROVIN atskaiti par {{auto}}. Būsim pateicīgi, ja veltīsiet minūti un novērtēsiet mūsu darbu Google - Jūsu godīgais viedoklis palīdz citiem auto pircējiem.",
       "",
-      "Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google: {{atsauksmes_saite}}",
+      "Novērtēt Google: {{atsauksmes_saite}}",
       "",
-      "Tā palīdz arī citiem pircējiem atrast drošu auto pārbaudi.",
+      "Jautājumi par atskaiti? Atbildiet uz šo e-pastu.",
       "",
       "{{paraksts}}",
     ].join("\n"),
-    vars: [VIN, { ...REVIEW, required: true }, { key: "paraksts", label: "Paraksts", sample: "Ar cieņu,\nPROVIN.LV", required: true }],
+    vars: [AUTO, VIN, { ...REVIEW, required: true }, { key: "paraksts", label: "Paraksts", sample: "Ar cieņu,\nPROVIN.LV", required: true }],
     htmlKind: "dealer_operator",
   },
   {
@@ -223,15 +227,16 @@ export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "whatsapp",
     group: GROUP,
     title: "WhatsApp: Google atsauksmes lūgums",
+    description: "Atsevišķa īsa ziņa - sūta Nils ar pogu pasūtījumā. Saite atsevišķā rindā.",
     body: [
       "Labdien!",
       "",
-      "Paldies, ka auto{{#vin}} VIN {{vin}}{{/vin}} pārbaudei izvēlējāties PROVIN.LV.",
+      "Ceram, ka PROVIN atskaite par {{auto}} noderēja. Būsim pateicīgi, ja veltīsiet minūti un novērtēsiet mūsu darbu Google:",
+      "{{atsauksmes_saite}}",
       "",
-      "Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google: {{atsauksmes_saite}}",
-      "",
+      "Paldies!",
       "PROVIN.LV",
     ].join("\n"),
-    vars: [VIN, { ...REVIEW, required: true }],
+    vars: [AUTO, VIN, { ...REVIEW, required: true }],
   },
 ];

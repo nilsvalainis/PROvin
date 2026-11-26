@@ -57,7 +57,7 @@ describe("report-ready product emails", () => {
     expect(html).not.toContain("Nils");
   });
 
-  it("adds Google review HTML only when asked", () => {
+  it("never adds the Google review to the report HTML (separate email since 26.11)", () => {
     const off = auditCompletedEmailHtml({
       carVin: "ABC",
       attachmentLines: [],
@@ -71,8 +71,8 @@ describe("report-ready product emails", () => {
       productKind: "audits",
       includeGoogleReview: true,
     });
-    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
-    expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
+    expect(on).not.toContain("atsauksmi");
+    expect(on).not.toContain("g.page");
   });
 
   it("rebrands B2B client report-ready mail to PROVIN without Nils or IRISS", () => {
@@ -114,7 +114,7 @@ describe("report-ready product emails", () => {
     expect(retail).toContain("PROVIN.LV");
   });
 
-  it("adds Google review only when asked", () => {
+  it("never adds the Google review to the report text (separate email since 26.11)", () => {
     const off = buildReportReadyPlainText({
       kind: "mini",
       vin: "ABC",
@@ -128,10 +128,9 @@ describe("report-ready product emails", () => {
       attachmentLines: [],
       includeGoogleReview: true,
     });
-    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
-    expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
+    expect(on).not.toContain("g.page");
     expect(on).not.toContain("Nils");
-    expect(on.indexOf("g.page")).toBeLessThan(on.lastIndexOf("PROVIN.LV"));
+    expect(on.trim().endsWith("PROVIN.LV")).toBe(true);
   });
 
   it("omits VIN parentheses when the VIN is missing or invalid", () => {

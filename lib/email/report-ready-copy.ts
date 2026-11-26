@@ -12,7 +12,6 @@ import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import {
   CLIENT_MESSAGE_SIGN_OFF_LINES,
   GOOGLE_REVIEW_URL,
-  defaultGoogleReviewBlock,
   defaultSignOffBlock,
 } from "@/lib/messages/shared-blocks";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
@@ -28,18 +27,6 @@ const SIGN_OFF_GREETING: Record<ClientReportLang, string> = {
   ru: "С уважением,",
   de: "Mit freundlichen Grüßen,",
 };
-
-const GOOGLE_REVIEW_INTRO: Record<ClientReportLang, string> = {
-  lv: "Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google:",
-  en: "If our work was useful to you, we would be grateful for a short Google review:",
-  ru: "Если наша работа была вам полезна, будем благодарны за короткий отзыв в Google:",
-  de: "Wenn Ihnen unsere Arbeit geholfen hat, wären wir für eine kurze Google-Bewertung dankbar:",
-};
-
-export function googleReviewPlainBlock(lang: ClientReportLang = "lv"): string {
-  if (lang === "lv") return defaultGoogleReviewBlock();
-  return `${GOOGLE_REVIEW_INTRO[lang]} ${GOOGLE_REVIEW_URL}`;
-}
 
 export function clientMessageSignOff(lang: ClientReportLang = "lv"): string {
   if (lang === "lv") return defaultSignOffBlock();
@@ -148,15 +135,9 @@ const REPORT_READY_AUDITS_BULLETS: Record<ClientReportLang, readonly [string, st
   de: ["Zusammenfassenden PDF-Bericht", "Zusätzliche Materialien und Anhänge"],
 };
 
-function reportReadyClosingLines(
-  includeGoogleReview?: boolean,
-  b2bClient?: boolean,
-  lang: ClientReportLang = "lv",
-): string[] {
+/** Atskaites e-pasta beigas: tikai paraksts. Atsauksmes lūgums ir atsevišķs e-pasts nākamajā darba dienā (Nils 26.11, `lib/review-ask.ts`). */
+function reportReadyClosingLines(b2bClient?: boolean, lang: ClientReportLang = "lv"): string[] {
   const lines: string[] = [];
-  if (includeGoogleReview && !b2bClient) {
-    lines.push(googleReviewPlainBlock(lang), "");
-  }
   lines.push(
     ...(b2bClient
       ? b2bClientMessageSignOff(lang).split("\n")
@@ -170,6 +151,7 @@ export function buildReportReadyPlainText(
     kind: ReportReadyProductKind;
     vin: string;
     attachmentLines: string[];
+    /** Novecojis (26.11): atskaites e-pastā atsauksmes lūguma vairs nav; vērtība tiek ignorēta. */
     includeGoogleReview?: boolean;
     b2bClient?: boolean;
     lang?: ClientReportLang;
@@ -179,13 +161,13 @@ export function buildReportReadyPlainText(
   const b2bClient = opts.b2bClient === true;
   const lang = opts.lang ?? "lv";
   if (!b2bClient && lang === "lv") {
-    const vars = buildReportReadyEmailVars(opts);
+    const vars = buildReportReadyEmailVars({ ...opts, includeGoogleReview: false });
     const rendered = resolveMessageSync(reportReadyTemplateId(opts.kind), vars, { doc: templatesDoc });
     if (rendered?.text) return rendered.text;
   }
 
   const files = opts.attachmentLines.filter((n) => n.trim());
-  const closing = reportReadyClosingLines(opts.includeGoogleReview, b2bClient, lang);
+  const closing = reportReadyClosingLines(b2bClient, lang);
   const greeting = REPORT_READY_GREETING[lang];
   const mainLine = REPORT_READY_MAIN_LINE[opts.kind][lang];
   const questionLine = REPORT_READY_QUESTION_LINE[opts.kind][lang];
