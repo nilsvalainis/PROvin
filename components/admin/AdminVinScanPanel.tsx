@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
 import { AdminVinScanSourceTable, type SourceTableItem } from "@/components/admin/AdminVinScanSourceTable";
+import { AdminVinScanV4, VIN_SCAN_V4_BTN, type VinScanV4Row } from "@/components/admin/vin-scan-v4/AdminVinScanV4";
 
 // Rezultātu kartītes vajag tikai pēc pārbaudes — atsevišķs gabals, nav sākuma JS.
 const AdminVinScanResultCards = dynamic(
@@ -319,6 +320,7 @@ export function AdminVinScanPanel({
   sourceIds,
   paidSourceIds,
   layout = "tiles",
+  v4,
 }: {
   vin: string;
   plates: VinScanPlates;
@@ -334,8 +336,13 @@ export function AdminVinScanPanel({
   sourceIds?: readonly string[];
   /** «Ātrā pārbaude»: maksas VIN SCAN avoti ar admina ķeksi (JoJ). Skrien pēc bezmaksas, bez force. */
   paidSourceIds?: readonly string[];
-  /** `table`: «Ātrā pārbaude» datorā - viena kompakta avotu tabula grupās. Telefons paliek ar flīzēm. */
-  layout?: "tiles" | "table";
+  /**
+   * `table`: vecā kompaktā avotu tabula. `tiles`: vecās flīzes.
+   * `v4`: Nila makets v4 (26.11) - viena komponente visās VIN SCAN vietās (`AdminVinScanV4`).
+   */
+  layout?: "tiles" | "table" | "v4";
+  /** v4 papildu dati un sloti (CSDD API, Smart-ID, SMS izziņa, maksas pakalpojumi). */
+  v4?: Omit<React.ComponentProps<typeof AdminVinScanV4>, "vin" | "rows" | "busy" | "scannedAt" | "onRetry" | "links">;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -540,6 +547,19 @@ export function AdminVinScanPanel({
     }
   }
 
+  async function retryIds(ids: string[]) {
+    if (!canScan || busy || !ids.length) return;
+    setBusy(true);
+    setError("");
+    try {
+      await scanServer({ force: true, sources: ids });
+    } catch {
+      setError("Servera skenēšana neizdevās");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function copyExport(kind: "text" | "json") {
     const payload =
       kind === "json"
@@ -654,6 +674,77 @@ export function AdminVinScanPanel({
 
   const exportBtn =
     "rounded-[8px] border border-[#e5e5ea] bg-white px-2.5 py-1 text-[12.5px] font-semibold text-[#111] hover:bg-[#f7f7f9] disabled:opacity-45";
+
+  if (layout === "v4") {
+    const v4Rows: VinScanV4Row[] = tiles.map((item) => {
+      const row = displayById[item.id];
+      const status = busy && (!row || row.status === "unknown") ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
+      return {
+        ...(row ?? {}),
+        id: item.id,
+        label: item.label,
+        country: item.country,
+        status,
+        summary: row?.summary ?? "",
+        detail: row?.detail ?? "",
+        openUrl: canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates, listing) : "",
+        mileage: row?.mileage ?? [],
+        ...(importNotes[item.id] ? { note: importNotes[item.id] } : {}),
+      } as VinScanV4Row;
+    });
+    const started = busy || rows.length > 0 || Boolean(v4?.csdd);
+    return (
+      <>
+        {!busy && scannedAt ? <AdminVinScanBrowserFetchHandoff vin={clean} at={scannedAt} rows={Object.values(byId)} /> : null}
+        <AdminUserscriptUpdateHint />
+        {historyOpen ? (
+          <div className="flex flex-wrap gap-1" aria-label="Iepriekšējās pārbaudes">
+            {history.length === 0 ? <span className="text-[12px] text-[#86868b]">Vēsture tukša vai ielādējas…</span> : null}
+            {history.map((entry) => (
+              <a
+                key={`${entry.vin}-${entry.scannedAt}`}
+                href={`/admin/vin-scan?vin=${encodeURIComponent(entry.vin)}`}
+                className={`rounded-md border px-1.5 py-0.5 font-mono text-[11px] ${
+                  entry.vin === clean ? "border-[#1d1d1f] bg-[#f5f5f7]" : "border-[#d2d2d7] text-[#424245] hover:bg-[#f5f5f7]"
+                }`}
+              >
+                {entry.vin} · {entry.found}
+              </a>
+            ))}
+          </div>
+        ) : null}
+        {error ? <p className="text-[12.5px] text-[#b3261e]">{error}</p> : null}
+        {started ? (
+          <AdminVinScanV4
+            {...v4}
+            vin={clean}
+            rows={v4Rows}
+            busy={busy}
+            scannedAt={scannedAt}
+            onRetry={(ids) => void retryIds(ids)}
+            links={nordicLinks}
+            toolbar={
+              <>
+                {v4?.toolbar}
+                {canRetry ? (
+                  <button type="button" onClick={() => void retryUnknown()} className={VIN_SCAN_V4_BTN}>
+                    Atkārtot neizdevušos
+                  </button>
+                ) : null}
+                <button type="button" disabled={rows.length === 0} onClick={() => void copyExport("text")} className={VIN_SCAN_V4_BTN}>
+                  Kopēt tekstu
+                </button>
+                <button type="button" disabled={rows.length === 0} onClick={() => void copyExport("json")} className={VIN_SCAN_V4_BTN}>
+                  JSON
+                </button>
+                {copyNote ? <span className="text-[12px] text-[#86868b]">{copyNote}</span> : null}
+              </>
+            }
+          />
+        ) : null}
+      </>
+    );
+  }
 
   if (layout === "table") {
     const items: SourceTableItem[] = tiles.map((item) => {

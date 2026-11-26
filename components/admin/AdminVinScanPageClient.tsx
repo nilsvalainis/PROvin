@@ -39,12 +39,10 @@ import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
 import { vinScanCountBreakdown } from "@/lib/vin-scan/types";
-import {
-  AdminAtraCopyButton,
-  AdminAtraFactCards,
-  AdminAtraPotential,
-  AdminAtraPreviewBanners,
-} from "@/components/admin/AdminAtraParbaudeFacts";
+import { AdminAtraCopyButton, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
+import { useVinScanSmartId } from "@/components/admin/vin-scan-v4/useVinScanSmartId";
+import { VinScanV4CsddSms, VinScanV4PaidServices } from "@/components/admin/vin-scan-v4/VinScanV4Paid";
+import { vinScanV4PaidServices } from "@/lib/vin-scan/v4-paid-services";
 import { ECSDD_URL, atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 import { useSettledWhileBusy } from "@/lib/use-settled-while-busy";
 
@@ -83,8 +81,11 @@ const dockInp =
 export function AdminVinScanPageClient({
   initialVin = "",
   footer,
+  isAdmin = false,
 }: {
   initialVin?: string;
+  /** e.csdd / LTAB (Smart-ID), CSDD SMS izziņa un maksas pakalpojumi - tikai adminam. */
+  isAdmin?: boolean;
   /** Avotu stāvoklis — pašā apakšā (straumēts no servera). */
   footer?: React.ReactNode;
 }) {
@@ -192,6 +193,9 @@ export function AdminVinScanPageClient({
   }, [glass, valid, hasScanResult, scanSnapshot, plate, vin, plates.lv, csddData, listingUrl]);
   // Kamēr avoti ielādējas, kartītes paliek iepriekšējās - jaunās parādās vienā reizē, bez lēcieniem.
   const atra = useSettledWhileBusy(atraLive, scanBusy, vin);
+  const smartIdPlate = plates.lv || csddData?.registrationNumber || "";
+  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
+  const paidServices = useMemo(() => (isAdmin && valid ? vinScanV4PaidServices(vin) : []), [isAdmin, valid, vin]);
   const onSnapshot = useCallback((snapshot: VinScanPanelSnapshot) => {
     setScanSnapshot(snapshot);
   }, []);
@@ -595,8 +599,6 @@ export function AdminVinScanPageClient({
       {atra ? (
         <div className="space-y-2.5 px-4 md:hidden" data-atra-phone>
           <AdminAtraPotential score={atra.score} glass />
-          <AdminAtraPreviewBanners previews={atra.facts.previews} glass />
-          <AdminAtraFactCards facts={atra.facts} vin={vin} glass />
           <AdminAtraCopyButton
             text={atra.text}
             className="h-11 w-full rounded-full bg-[var(--am-s1)] text-[15px] font-semibold text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
@@ -611,6 +613,17 @@ export function AdminVinScanPageClient({
         scanForce={scanForce}
         onSnapshot={onSnapshot}
         historyOpen={historyOpen}
+        layout="v4"
+        v4={{
+          plate: smartIdPlate,
+          title: plate?.ok ? [plate.make, plate.model].filter(Boolean).join(" ") : "",
+          csdd: csddData,
+          smartId: smartId.state,
+          onSmartIdRetry: smartId.retry,
+          smsStep: isAdmin && valid ? <VinScanV4CsddSms vin={vin} plate={smartIdPlate} /> : undefined,
+          paidServices: paidServices.length ? <VinScanV4PaidServices services={paidServices} /> : undefined,
+          hasListing: isPlausibleListingUrl(listingUrl),
+        }}
       />
       {atra ? (
         <p className="px-4 text-[13px] md:hidden" data-atra-ecsdd>
