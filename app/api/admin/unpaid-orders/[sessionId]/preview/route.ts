@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeCheckoutSessionId } from "@/lib/admin-unpaid-orders-core";
 import { listUnpaidAdminOrders, stripeCheckoutSessionDashboardUrl } from "@/lib/admin-unpaid-orders";
@@ -27,12 +28,14 @@ export async function GET(_req: Request, ctx: Ctx) {
     vin: row.vin,
     paymentUrl: "{{maksājuma_saite}}",
     doc: getCachedMessageTemplatesDoc(),
+    locale: row.locale,
   });
   return NextResponse.json({
     to: row.email,
     vin: row.vin,
     attemptCount: row.attemptCount,
     remindable: row.remindable,
+    lang: resolveClientEmailLang(row.locale),
     stripeDashboardUrl: stripeCheckoutSessionDashboardUrl(row.sessionId),
     subject: copy.subject,
     text: copy.text.replaceAll("{{maksājuma_saite}}", "{{maksājuma_saite}}"),

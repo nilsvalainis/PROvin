@@ -14,6 +14,7 @@ import {
   sortCsddInspectionRows,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
+import { csddDateKey } from "@/lib/csdd-measurements-carry";
 import {
   csddInspectionHasNoLatvianRating,
   parseCsddRegistrySignals,
@@ -88,8 +89,8 @@ export const CSDD_BLOKI_TX = {
   coHigh: { lv: "paaugst. apgr.", en: "high idle", ru: "повыш. обороты", de: "erhöhte Drehzahl" },
   hc: { lv: "HC", en: "HC", ru: "HC", de: "HC" },
   lambda: { lv: "Lambda", en: "Lambda", ru: "Лямбда", de: "Lambda" },
-  smoke: { lv: "Dūmainība", en: "Smoke opacity", ru: "Дымность", de: "Trübung" },
-  particles: { lv: "Daļiņas", en: "Particle number", ru: "Число частиц", de: "Partikelanzahl" },
+  smoke: { lv: "Dūmainības koeficients", en: "Smoke opacity", ru: "Коэффициент дымности", de: "Trübungskoeffizient" },
+  particles: { lv: "Atgāzu cietās daļiņas", en: "Exhaust particle count", ru: "Твёрдые частицы в выхлопе", de: "Partikel im Abgas" },
   ta: { lv: "TA", en: "Inspection", ru: "Техосмотр", de: "HU" },
   taTitle: {
     lv: "Tehnisko apskašu defektu analīze",
@@ -457,27 +458,24 @@ export function parseCsddBrakes(text: string): CsddBrakeRow[] {
 /** Brīdinājuma slieksnis bremžu starpībai vienas ass ietvaros (CSDD defekts 1.2.1 - virs 30 %). */
 export const CSDD_BRAKE_DIFF_WARN_PCT = 30;
 
-export function parseCsddMeasurements(csdd: Pick<CsddFormFields, "rawUnprocessedData" | "emissionStandard" | "prevInspectionBlock" | "prevInspectionDate" | "technicalInspectionHistory">): CsddMeasurements {
-  const text = normalizeCsddRawText(csdd.rawUnprocessedData ?? "");
+type CsddMeasurementValues = Omit<CsddMeasurements, "taDate">;
+
+/** Mērījumi no viena teksta. `withEmissionLines` - arī dūmainība / daļiņas no teksta (tikai carry tekstam bez TA vēstures). */
+function measurementsFromText(raw: string, withEmissionLines: boolean): CsddMeasurementValues {
+  const text = normalizeCsddRawText(raw ?? "");
   const co2 = firstMatch(text, /(?:^|\n)\s*CO2(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
   const cons = firstMatch(text, /Degviela\s?s\s+patēriņš(?:[ \t]+(WLTP|NEDC))?[ \t]*:[ \t]*([\d.,]+)/i);
-  const city = firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:[ \t]*([\d.,]+)/i);
+  const city =
+    firstMatch(text, /patēriņš\s+pie\s+maza\s+ātruma[^:\n]*:[ \t]*([\d.,]+)/i) ??
+    firstMatch(text, /(?:^|\n)[ \t]*-[ \t]*pilsētā[ \t:]*([\d.,]+)/i);
   const co = firstMatch(text, /(?:^|\n)\s*CO[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
   const coHigh = firstMatch(text, /CO\s+paaugst\.?[ \t]*\(%\)[ \t]*:[ \t]*([\d.,]+)/i);
   const hc = firstMatch(text, /HC[ \t]*\(ppm\)[ \t]*:[ \t]*([\d.,]+)/i);
   const lambda = firstMatch(text, /Lambda[ \t]*:[ \t]*([\d.,]+)/i);
-  const euro = String(csdd.emissionStandard ?? "").trim() || (firstMatch(text, /Emisiju\s+standarts\s*:[ \t]*([^\n]+)/i)?.[1] ?? "").trim();
-
-  const prev = csdd.prevInspectionBlock;
-  const firstRowWithSmoke = (csdd.technicalInspectionHistory ?? []).find((r) => r.smokeCoefficient.trim());
-  const smoke = (prev?.smokeCoefficient ?? "").trim() || (firstRowWithSmoke?.smokeCoefficient ?? "").trim();
-  const particles = (prev?.particleNumber ?? "").trim();
-
-  const iso = String(csdd.prevInspectionDate ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const taDate = iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : (prev?.inspectionDateText ?? "").trim();
-
+  const euro = (firstMatch(text, /Emisiju\s+standarts\s*:[ \t]*([^\n]+)/i)?.[1] ?? "").trim();
+  const smoke = withEmissionLines ? firstMatch(text, /Dūmainības\s+koeficients[^:\n]*:[ \t]*([\d.,]+)/i) : null;
+  const particles = withEmissionLines ? firstMatch(text, /Atgāzu\s+cietās\s+daļiņas[^:\n]*:[ \t]*(\d[\d \t]*)/i) : null;
   return {
-    taDate,
     co2: cleanNum(co2?.[2]),
     co2Cycle: (co2?.[1] ?? "").toUpperCase(),
     consumption: cleanNum(cons?.[2]),
@@ -488,10 +486,63 @@ export function parseCsddMeasurements(csdd: Pick<CsddFormFields, "rawUnprocessed
     coHigh: cleanNum(coHigh?.[1]),
     hc: cleanNum(hc?.[1]),
     lambda: cleanNum(lambda?.[1]),
-    smoke,
-    particles,
+    smoke: cleanNum(smoke?.[1]),
+    particles: (particles?.[1] ?? "").replace(/[ \t]+/g, " ").trim(),
     brakes: parseCsddBrakes(text),
   };
+}
+
+/** Auto konstantes (tipa apstiprinājums) - nav atkarīgas no TA; pārējie lauki ir konkrētās TA mērījumi. */
+const VEHICLE_CONSTANT_KEYS = ["co2", "co2Cycle", "consumption", "consumptionCycle", "consumptionCity", "euro"] as const;
+const TA_MEASUREMENT_KEYS = ["co", "coHigh", "hc", "lambda", "smoke", "particles"] as const;
+
+/**
+ * Divi avoti vienā blokā (Nils 25.11): aizpildītu vērtību nekad neaizstāj ar tukšu; ja abiem ir atšķirīga vērtība -
+ * jaunākās TA vērtība. TA mērījumus (CO/HC/Lambda/dūmainība/daļiņas/bremzes) no citas (vecākas) TA nejauc klāt.
+ */
+export function mergeCsddMeasurements(primary: CsddMeasurements, secondary: CsddMeasurements | null): CsddMeasurements {
+  if (!secondary) return primary;
+  const pk = csddDateKey(primary.taDate);
+  const sk = csddDateKey(secondary.taDate);
+  const sameTa = !pk || !sk || pk === sk;
+  const secondaryNewer = sk > pk && pk > 0;
+  const out: CsddMeasurements = { ...primary, brakes: [...primary.brakes] };
+  const pick = (a: string, b: string, preferB: boolean) => (a && b ? (preferB ? b : a) : a || b);
+  for (const k of VEHICLE_CONSTANT_KEYS) out[k] = pick(primary[k], secondary[k], secondaryNewer);
+  if (sameTa) {
+    for (const k of TA_MEASUREMENT_KEYS) out[k] = pick(primary[k], secondary[k], false);
+    if (!out.brakes.length) out.brakes = [...secondary.brakes];
+  } else if (secondaryNewer) {
+    for (const k of TA_MEASUREMENT_KEYS) out[k] = secondary[k];
+    out.brakes = [...secondary.brakes];
+  }
+  out.taDate = secondaryNewer || !primary.taDate ? secondary.taDate || primary.taDate : primary.taDate;
+  return out;
+}
+
+export function parseCsddMeasurements(
+  csdd: Pick<
+    CsddFormFields,
+    "rawUnprocessedData" | "emissionStandard" | "prevInspectionBlock" | "prevInspectionDate" | "technicalInspectionHistory" | "measurementsCarry"
+  >,
+): CsddMeasurements {
+  const fromRaw = measurementsFromText(csdd.rawUnprocessedData ?? "", false);
+  const euro = String(csdd.emissionStandard ?? "").trim() || fromRaw.euro;
+
+  const iso = String(csdd.prevInspectionDate ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const prev = csdd.prevInspectionBlock;
+  const taDate = iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : (prev?.inspectionDateText ?? "").trim();
+
+  // Dūmainība / daļiņas tikai no TĀS PAŠAS TA (agrāk ņēma pirmo vēstures rindu ar dūmainību - citas, vecākas TA vērtību).
+  const history = csdd.technicalInspectionHistory ?? [];
+  const sameTaRow = taDate ? history.find((r) => r.date.trim() === taDate) : history[0];
+  const smoke = (prev?.smokeCoefficient ?? "").trim() || (sameTaRow?.smokeCoefficient ?? "").trim();
+  const particles = (prev?.particleNumber ?? "").trim() || (sameTaRow?.particleNumber ?? "").trim();
+
+  const primary: CsddMeasurements = { ...fromRaw, taDate, euro, smoke, particles };
+  const carry = csdd.measurementsCarry;
+  const secondary = carry?.text.trim() ? { ...measurementsFromText(carry.text, true), taDate: carry.taDate.trim() } : null;
+  return mergeCsddMeasurements(primary, secondary);
 }
 
 export function csddMeasurementsHasData(m: CsddMeasurements): boolean {

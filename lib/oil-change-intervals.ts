@@ -39,7 +39,25 @@ export const PDF_OIL_NEUTRAL_HEX = "#7A828C";
 export const PDF_OIL_HATCH_CSS =
   "repeating-linear-gradient(-55deg,#F3F4F6 0 3px,#C5CBD3 3px 4px)";
 
-export const OIL_CLAIM_CAUTION_TITLE = "Svarīga piezīme par apkopes datu interpretāciju";
+export const OIL_CLAIM_CAUTION_TITLE = "Svarīgi par apkopes datiem";
+
+/** Teksta teikumi atsevišķi - katrs ir tulkojuma atslēga (`client-report-i18n.ts`). */
+export const OIL_CLAIM_CAUTION_TEXT = {
+  sources:
+    "Apkopes ierakstus sniedz autorizētie dīleri un lieli servisu tīkli. Neatkarīgie servisi šos datus nesūta.",
+  missingLabel: "Trūkstošs ieraksts.",
+  missing:
+    "Ja starp ierakstiem ir ilgāks laiks vai nobraukums, nekā paredz ražotājs, tas nepierāda, ka apkope nav veikta - tikai to, ka šajā datubāzē par to nav datu.",
+  generalLabel: "Vispārīgi ieraksti.",
+  general:
+    "Ierakstus „apkope” vai „serviss” bez eļļas nosaukuma neskaitām kā eļļas maiņu, ja ražotāja plāns to neietver vai nav zināms.",
+  generalPlannedMercedes:
+    "Plānotās apkopes, kas vienmēr ietver eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), skaitām.",
+  generalPlanned: "Plānotās apkopes, kas vienmēr ietver eļļas maiņu, skaitām.",
+  recommendationLabel: "Ieteikums.",
+  recommendation:
+    "Salīdziniet ar servisa grāmatiņu un čekiem, un pirms pirkuma veiciet diagnostiku neatkarīgā servisā.",
+} as const;
 
 export type OilClaimCautionOpts = {
   /** Dīlera datu / Business PDF: bez ieteikumiem (Nils 22.11 - ieteikumi ir tikai AUDITS). */
@@ -51,48 +69,18 @@ export type OilClaimCautionOpts = {
 const MERCEDES_MAKE_RE = /mercedes|\bbenz\b|\bmb\b/i;
 
 export function oilClaimCautionHtml(opts: OilClaimCautionOpts = {}): string {
+  const T = OIL_CLAIM_CAUTION_TEXT;
   const p = (html: string) => `<p>${html}</p>`;
   const b = (label: string, body: string) =>
     p(`<b>${escapeHtml(label)}</b> ${escapeHtml(body)}`);
   const mercedes = MERCEDES_MAKE_RE.test(opts.makeModel ?? "");
-  const generalVisits =
-    "Dažiem ražotājiem eļļas maiņa dīlera žurnālā paliek zem virsraksta „apkope”, „serviss” vai „service”, bez eļļas, filtra vai viskozitātes nosaukuma. Ja ražotāja servisa veids pēc plāna neietver eļļas maiņu vai tas nav zināms, tādus ierakstus tabulā neskaitām kā fiksētu eļļas maiņu - tas nav apgalvojums, ka eļļa nav mainīta. " +
-    (mercedes
-      ? "Ražotāja apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu (piem. Mercedes-Benz „Apkope A” / „Apkope B”), tabulā skaitām."
-      : "Ražotāja plānotās apkopes, kas pēc plāna vienmēr ietver dzinēja eļļas maiņu, tabulā skaitām.");
-  const recommendation = opts.omitRecommendation
-    ? ""
-    : `${p(escapeHtml("Rekomendācija pilnīgai pārbaudei."))}
-    ${p(
-      escapeHtml(
-        "Lai gūtu objektīvu priekšstatu par automašīnas faktisko tehnisko stāvokli un apkopes vēsturi, elektronisko atskaiti ieteicams kombinēt ar:",
-      ),
-    )}
-    <ul>
-      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čekiem no servisiem.")}</li>
-      <li>${escapeHtml("Pirmspirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
-    </ul>`;
+  const general = `${T.general} ${mercedes ? T.generalPlannedMercedes : T.generalPlanned}`;
+  const recommendation = opts.omitRecommendation ? "" : b(T.recommendationLabel, T.recommendation);
   return `<aside class="pdf-oil-int__caution">
     <p class="pdf-oil-int__caution-title">${escapeHtml(OIL_CLAIM_CAUTION_TITLE)}</p>
-    ${p(
-      escapeHtml(
-        "Dati par transportlīdzekļa tehniskajām apkopēm PROVIN datubāzēs tiek apkopoti galvenokārt no autorizētajiem dīleru centriem un atsevišķiem liela mēroga servisu tīkliem.",
-      ),
-    )}
-    ${p(escapeHtml("Lūdzam ņemt vērā:"))}
-    ${b(
-      "Ierakstu robežas.",
-      "Neatkarīgie autoservisi neiesūta datus starptautiskajās vai dīleru reģistru sistēmās.",
-    )}
-    ${b(
-      "Iztrūkstošas apkopes.",
-      "Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.",
-    )}
-    ${b("Vispārīgi apmeklējumi.", generalVisits)}
-    ${b(
-      "Secinājums.",
-      "Ieraksta trūkums atskaitē norāda tikai uz oficiālu datu neesamību konkrētajā datubāzē, nevis uz faktisko servisa kavējumu.",
-    )}
+    ${p(escapeHtml(T.sources))}
+    ${b(T.missingLabel, T.missing)}
+    ${b(T.generalLabel, general)}
     ${recommendation}
   </aside>`;
 }

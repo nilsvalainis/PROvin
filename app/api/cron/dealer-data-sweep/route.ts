@@ -16,6 +16,7 @@ import {
 } from "@/lib/dealer-data-job-types";
 import { listUnfinishedDealerDataJobs, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
+import { retryDealerNoVinFromPlate } from "@/lib/order-plate-vin-resolve";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,12 @@ export async function GET(req: Request) {
 
     const processed: Array<{ sessionId: string; status: string; reason: string }> = [];
     for (const job of due) {
+      if (job.status === "no_vin") {
+        // CSDD nebija sasniedzams pasūtījuma brīdī (26.11 EB5020) - vēlreiz numurzīme → VIN.
+        const r = await retryDealerNoVinFromPlate(job);
+        processed.push({ sessionId: job.sessionId, ...r });
+        continue;
+      }
       const r = await runDealerDataJob({
         sessionId: job.sessionId,
         vin: job.vin,
@@ -69,7 +76,7 @@ export async function GET(req: Request) {
 
     // Neviens klients nepamanīts: gala kļūdas (arī iestrēgušas «running») -> admina paziņojums, vienreiz.
     for (const job of unfinished) {
-      if (job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) continue;
+      if (job.status === "no_vin" || job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) continue;
       if (job.status === "running") {
         const started = Date.parse(job.startedAt ?? job.updatedAt);
         if (Number.isFinite(started) && now - started < DEALER_DATA_STALE_RUNNING_MS) continue;

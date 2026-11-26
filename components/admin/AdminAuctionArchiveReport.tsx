@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
@@ -42,6 +43,8 @@ export type AuctionArchiveReportState = {
   statusLine: string;
   pdfUrl: string | null;
   filename: string;
+  /** Klienta valoda (B2B atskaites valoda / vietnes valoda pasūtot); nav = LV. */
+  lang?: ClientReportLang;
 };
 
 async function postReport(body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
@@ -412,10 +415,11 @@ export function AdminAuctionArchiveSendDialog({
       offer: opts.offer ? offer : null,
       review: opts.review,
       doc,
+      lang: state.lang ?? "lv",
     });
     setSubject(m.subject ?? "");
     setText(m.text);
-  }, [open, channel, situation, b2b, state.vin, state.summary, showPrices, paidCents, opts, offer, doc]);
+  }, [open, channel, situation, b2b, state.vin, state.summary, state.lang, showPrices, paidCents, opts, offer, doc]);
 
   const toggleOffer = async (checked: boolean) => {
     setErr(null);

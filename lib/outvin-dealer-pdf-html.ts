@@ -18,6 +18,7 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
+import { splitEquipmentText } from "@/lib/report-language-fixes";
 
 /** „1950 cc” - capitalize padarīja par „1950 Cc” (23.11.2026); tilpuma vienība paliek ar mazo burtu. */
 export function keepVolumeUnitLowercase(v: string): string {
@@ -106,10 +107,12 @@ export function buildOutvinDealerEquipmentPdfHtml(
     pdfSubLabel(translateClientReportStatic("Aprīkojums", lang)),
     `<ul class="pdf-dealer-eq">${equip
       .map((line) => {
-        const code = line.code.trim();
-        const desc = line.description.trim();
-        const label = code ? `<b>${escapeHtml(code)}</b>${escapeHtml(desc)}` : escapeHtml(desc);
-        return `<li>${label}</li>`;
+        // 24.11 audits #34: «S0» atliekas un salipušas rindas - atsevišķas pozīcijas.
+        const code = line.code.trim().replace(/^S0?(?=[0-9][0-9A-Z]{2}$)/, "");
+        const descParts = splitEquipmentText(line.description);
+        const [first = "", ...rest] = descParts;
+        const label = code ? `<b>${escapeHtml(code)}</b>${escapeHtml(first)}` : escapeHtml(first);
+        return [`<li>${label}</li>`, ...rest.map((d) => `<li>${escapeHtml(d)}</li>`)].join("");
       })
       .join("")}</ul>`,
   ].join("\n");

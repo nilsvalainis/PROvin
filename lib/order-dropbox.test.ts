@@ -5,17 +5,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DropboxApiError, type DropboxClient, type DropboxEntry } from "@/lib/dropbox-client";
 
-const h = vi.hoisted(() => ({ dir: "", drafts: new Map<string, unknown>() }));
+const h = vi.hoisted(() => ({ dir: "", drafts: new Map<string, unknown>(), client: null as unknown, blobFail: false }));
 
 vi.mock("@/lib/admin-order-draft-store", () => ({
-  getOrderDraftBlobConfig: () => null,
+  getOrderDraftBlobConfig: () => (h.blobFail ? { prefix: "p/", token: "t" } : null),
   getOrderDraftStorageDir: () => h.dir,
   isSafeOrderDraftSessionId: (id: string) => /^[A-Za-z0-9_]{4,200}$/.test(id),
   readOrderDraft: async (id: string) => h.drafts.get(id) ?? null,
 }));
-vi.mock("@/lib/dropbox-client", async (orig) => ({ ...(await orig<typeof import("@/lib/dropbox-client")>()), getDropboxClient: () => null }));
+vi.mock("@vercel/blob", () => ({
+  get: async () => {
+    throw new Error("blob 503");
+  },
+  put: async () => {
+    throw new Error("blob 503");
+  },
+}));
+vi.mock("@/lib/dropbox-client", async (orig) => ({ ...(await orig<typeof import("@/lib/dropbox-client")>()), getDropboxClient: () => h.client ?? null }));
 
-import { ensureOrderDropboxFolder, readOrderDropboxRecord } from "@/lib/order-dropbox";
+import {
+  ensureOrderDropboxFolder,
+  moveOrderDropboxFolderToCategory,
+  readOrderDropboxRecord,
+  saveFileToOrderFolderOrLegacy,
+} from "@/lib/order-dropbox";
 
 function entry(tag: DropboxEntry["tag"], p: string, id: string): DropboxEntry {
   return { tag, id, name: p.split("/").pop()!, pathLower: p.toLowerCase(), pathDisplay: p, rev: "", size: 0, contentHash: "", serverModified: "" };
@@ -24,7 +37,7 @@ function entry(tag: DropboxEntry["tag"], p: string, id: string): DropboxEntry {
 function fakeDropbox() {
   const byId = new Map<string, string>();
   let seq = 0;
-  const calls = { create: 0, move: 0 };
+  const calls = { create: 0, move: 0, upload: [] as string[] };
   const client = {
     async ensureFolder(p: string) {
       calls.create++;
@@ -36,6 +49,10 @@ function fakeDropbox() {
     async getMetadata(idOrPath: string) {
       const p = byId.get(idOrPath);
       return p ? entry("folder", p, idOrPath) : null;
+    },
+    async upload(p: string) {
+      calls.upload.push(p);
+      return entry("file", p, `id:u${++seq}`);
     },
     async move(from: string, to: string) {
       calls.move++;
@@ -54,6 +71,9 @@ const created = Date.parse("2026-11-23T10:00:00+02:00");
 beforeEach(async () => {
   h.dir = await fs.mkdtemp(path.join(os.tmpdir(), "order-dropbox-"));
   h.drafts.clear();
+  h.client = null;
+  h.blobFail = false;
+  vi.unstubAllEnvs();
 });
 afterEach(async () => {
   await fs.rm(h.dir, { recursive: true, force: true });
@@ -106,5 +126,97 @@ describe("ensureOrderDropboxFolder", () => {
   it("Dropbox nav konfigurēts", async () => {
     const r = await ensureOrderDropboxFolder("cs_test_nocfg", { category: "audits", createdMs: created, client: null });
     expect(r?.error).toBe("not_configured");
+  });
+});
+
+describe("viena mape uz pasūtījumu (Nils 25.11: divas mapes)", () => {
+  it("CarVertical/AutoDNA/LTAB/atskaite: jaunam pasūtījumam fails tā mapē, nevis otra mape /_PROv saknē", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("cs_test_one", { category: "audits", createdMs: created, vin: "WAUZZZ4G5JN000001", client: dbx.client });
+    h.drafts.set("cs_test_one", { workspace: { sourceBlocks: { csdd: { makeModel: "AUDI A6", vin: "WAUZZZ4G5JN000001" } } } });
+    const legacy = vi.fn(async () => ({ path: "/_PROv/Auto WAUZZZ4G5JN000001/CarVertical.pdf" }));
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_one", "CarVertical - WAUZZZ4G5JN000001.pdf", new Uint8Array([1]), legacy);
+    expect(legacy).not.toHaveBeenCalled();
+    expect(saved.legacy).toBe(false);
+    // Tā pati mape (pārdēvēta, kad parādījās marka), jauna netiek veidota.
+    expect(saved.path).toBe("/_PROv/AUDITI/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS/CarVertical - WAUZZZ4G5JN000001.pdf");
+    expect(dbx.calls.create).toBe(1);
+    expect(dbx.byId.get(r1!.folderId!)).toBe("/_PROv/AUDITI/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS");
+  });
+
+  it("ja pasūtījuma mapē saglabāt neizdodas - kļūda, nevis otra mape", async () => {
+    await ensureOrderDropboxFolder("cs_test_err2", { category: "audits", createdMs: created, vin: "AB1234", client: null });
+    const legacy = vi.fn(async () => ({ path: "/_PROv/x.pdf" }));
+    await expect(saveFileToOrderFolderOrLegacy("cs_test_err2", "x.pdf", new Uint8Array([1]), legacy)).rejects.toThrow();
+    expect(legacy).not.toHaveBeenCalled();
+  });
+
+  it("vecs pasūtījums bez mapes ieraksta - kā līdz šim mape pēc VIN /_PROv saknē", async () => {
+    const legacy = vi.fn(async () => ({ path: "/_PROv/BMW 530 2012 WBAMW91010DV00001/AutoDNA.pdf" }));
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_old", "AutoDNA.pdf", new Uint8Array([1]), legacy);
+    expect(legacy).toHaveBeenCalledOnce();
+    expect(saved).toEqual({ path: "/_PROv/BMW 530 2012 WBAMW91010DV00001/AutoDNA.pdf", duplicate: false, legacy: true });
+  });
+});
+
+describe("ieraksta krātuve neatbild", () => {
+  it("nelasāms ieraksts - jaunu (otru) mapi neveido", async () => {
+    const dbx = fakeDropbox();
+    h.blobFail = true;
+    vi.stubEnv("VERCEL", "1");
+    expect(await ensureOrderDropboxFolder("cs_test_blob", { category: "audits", createdMs: created, vin: "AB1234", client: dbx.client })).toBeNull();
+    expect(dbx.calls.create).toBe(0);
+    await expect(saveFileToOrderFolderOrLegacy("cs_test_blob", "x.pdf", new Uint8Array([1]), async () => ({ path: "/x" }))).rejects.toThrow(
+      "order_dropbox_record_unreadable",
+    );
+  });
+});
+
+describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
+  it("manuālais pasūtījums AUDITI -> BUSINESS: tā pati mape (id), jauns ceļš un nosaukums; atskaite nonāk tur", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("manual_order_t1", { category: "audits", createdMs: created, vin: "WBA00000000000001", client: dbx.client });
+    h.drafts.set("manual_order_t1", { workspace: { sourceBlocks: { csdd: { makeModel: "BMW 325", vin: "WBA00000000000001" } } } });
+    const moved = await moveOrderDropboxFolderToCategory("manual_order_t1", "business", dbx.client);
+    expect(moved?.category).toBe("business");
+    expect(moved?.folderId).toBe(r1?.folderId);
+    expect(moved?.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS");
+    expect(dbx.byId.get(r1!.folderId!)).toBe(moved?.path);
+    expect(dbx.calls.create).toBe(1);
+    expect((await readOrderDropboxRecord("manual_order_t1"))?.category).toBe("business");
+
+    const saved = await saveFileToOrderFolderOrLegacy("manual_order_t1", "PROVIN_BUSINESS_WBA00000000000001.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS/PROVIN_BUSINESS_WBA00000000000001.pdf");
+    expect(dbx.calls.create).toBe(1);
+
+    // Tā pati kategorija vēlreiz - nekas nenotiek.
+    await moveOrderDropboxFolderToCategory("manual_order_t1", "business", dbx.client);
+    expect(dbx.calls.move).toBe(1);
+  });
+
+  it("pārvietošana neizdodas (mērķis aizņemts) - paliek vecā virsmape, nākamreiz mēģina vēlreiz", async () => {
+    const dbx = fakeDropbox();
+    const r1 = await ensureOrderDropboxFolder("manual_order_t2", { category: "audits", createdMs: created, vin: "WBA00000000000002", client: dbx.client });
+    const failing = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      move: async () => {
+        throw new DropboxApiError(409, "to/conflict/folder");
+      },
+    } as unknown as DropboxClient;
+    const r2 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", failing);
+    expect(r2?.category).toBe("audits");
+    expect(r2?.path).toBe(r1?.path);
+    expect((await readOrderDropboxRecord("manual_order_t2"))?.category).toBe("audits");
+    const r3 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", dbx.client);
+    expect(r3?.path).toBe("/_PROv/DILERA DATI/WBA00000000000002_2026-11-23_DILERA DATI");
+  });
+
+  it("vecs pasūtījums bez mapes ieraksta - neko neveido", async () => {
+    const dbx = fakeDropbox();
+    expect(await moveOrderDropboxFolderToCategory("manual_order_old", "business", dbx.client)).toBeNull();
+    expect(dbx.calls.create).toBe(0);
   });
 });

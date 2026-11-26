@@ -28,3 +28,8 @@ export function dedupeAsync<T>(key: string, run: () => Promise<T>, ttlMs = DEFAU
 export function resetVinFetchDedupe(): void {
   slots.clear();
 }
+
+/** Izmet vienu atslēgu (piem. pārejoša kļūda nedrīkst 60 s atkārtoties no keša). */
+export function forgetVinFetchDedupe(key: string): void {
+  slots.delete(key);
+}

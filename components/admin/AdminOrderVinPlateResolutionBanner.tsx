@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import {
+  orderVinPlateFailLabel,
   orderVinPlateResolutionIsFailed,
-  VIN_PLATE_RESOLVE_FAILED_LABEL,
   type OrderVinPlateResolution,
 } from "@/lib/order-vin-plate-resolution";
 
@@ -42,12 +42,18 @@ export function AdminOrderVinPlateResolutionBanner({
       const body = (await res.json().catch(() => ({}))) as {
         effectiveVin?: string | null;
         error?: string;
+        reason?: string;
       };
       if (!res.ok) {
         setError(body.error ?? "Neizdevās atkārtot CSDD pieprasījumu.");
         return;
       }
-      if (body.effectiveVin) onResolved?.();
+      if (body.reason === "in_progress") {
+        setError("CSDD vaicājums jau notiek - pārbaudi pēc minūtes.");
+        return;
+      }
+      // Atrasts VIN vai jauns kļūdas iemesls - lapa no servera (VIN lauks, avoti, dīlera ielase).
+      if (body.effectiveVin && onResolved) onResolved();
       else window.location.reload();
     } catch {
       setError("Neizdevās atkārtot CSDD pieprasījumu.");
@@ -62,10 +68,8 @@ export function AdminOrderVinPlateResolutionBanner({
       role="status"
     >
       <div className="min-w-0 text-[11px] leading-snug text-red-800">
-        <span className="font-semibold uppercase tracking-wide text-red-700">{VIN_PLATE_RESOLVE_FAILED_LABEL}</span>
-        <span className="mt-0.5 block">
-          Numurzīme: <span className="font-mono font-medium">{plate}</span>
-        </span>
+        <span className="font-semibold text-red-700">{orderVinPlateFailLabel(plate, resolution?.failKind)}</span>
+        {resolution?.message ? <span className="mt-0.5 block">{resolution.message}</span> : null}
         {error ? <span className="mt-1 block text-red-700">{error}</span> : null}
       </div>
       <button

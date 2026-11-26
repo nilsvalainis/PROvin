@@ -6,7 +6,12 @@
  */
 
 export const ARCHIVE_PHOTO_MAX = 100;
-export const ARCHIVE_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
+/** Viena bilde no releja (oriģināli mēdz būt 3-6 MB; lietotne pēc tam normalizē līdz 1600 px). */
+export const ARCHIVE_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+/** Cik variantus (lielais -> sīktēls) mēģina vienai bildei. */
+export const ARCHIVE_PHOTO_MAX_CANDIDATES = 6;
+/** Lejupielādes laika budžets (lietotne releju gaida 180 s); pēc tā mēģina tikai vienu variantu. */
+export const ARCHIVE_PHOTOS_BUDGET_MS = 110_000;
 export const ARCHIVE_PHOTOS_TOTAL_MAX_BYTES = 60 * 1024 * 1024;
 
 const IMG_EXT_RE = /\.(jpe?g|png|webp)(\?|#|$)/i;
@@ -150,9 +155,50 @@ export function collectJsonPhotoEntries(json, { dateStyle = "month", max = ARCHI
   return out;
 }
 
+const SIZE_QUERY_KEY_RE = /^(w|h|width|height|size|s|resize|fit|q|quality|thumb|thumbnail|dpr|crop|max_?w|max_?h|maxwidth|maxheight|mw|mh)$/i;
+const THUMB_DIR_RE = /\/(thumbs?|thumbnails?|small|mini|preview|min|medium|tn)\//i;
+const THUMB_SUFFIX_RE = /([_-](thumb|thumbnail|small|mini|min|preview|tn|sm|md|s|t|m)|[_-]\d{2,4}x\d{2,4}|@\dx)(\.(jpe?g|png|webp))$/i;
+const SIZE_DIR_RE = /\/(\d{2,4}x\d{2,4}|[wh]_?\d{2,4}(,[a-z]_?[a-z0-9]+)*)\//i;
+
 /**
- * AutoDNA lapas DOM secībā: [{type:"date", text} | {type:"img", href, dataFull, dataSrc, srcset, src}] -> [{url, date}].
- * Bilde pieder pēdējam datumam virs tās. Lielākais variants: saite uz bildi > data-full > srcset > data-src > src.
+ * Sīktēla saite -> iespējamās lielā (oriģinālā) varianta saites, svarīgākā pirmā (bez pašas sākotnējās saites).
+ * Izmēra parametri vaicājumā (?w=300&h=200), sīktēlu mapes (/thumb/, /small/), sufiksi (_thumb, -300x200), izmēra mapes (/300x200/).
+ */
+export function upgradedImageUrls(raw) {
+  let u;
+  try {
+    u = new URL(String(raw ?? ""));
+  } catch {
+    return [];
+  }
+  if (!isAllowedPhotoUrl(u.href)) return [];
+  const out = [];
+  const add = (x) => {
+    if (x.href !== u.href && !out.includes(x.href)) out.push(x.href);
+  };
+  const base = new URL(u.href);
+  const sizeKeys = [...base.searchParams.keys()].filter((k) => SIZE_QUERY_KEY_RE.test(k));
+  for (const k of sizeKeys) base.searchParams.delete(k);
+  const pth = base.pathname;
+  const p1 = pth.replace(THUMB_SUFFIX_RE, "$3");
+  const paths = [];
+  if (THUMB_DIR_RE.test(p1)) for (const rep of ["/original/", "/"]) paths.push(p1.replace(THUMB_DIR_RE, rep));
+  if (SIZE_DIR_RE.test(p1)) paths.push(p1.replace(SIZE_DIR_RE, "/"));
+  if (p1 !== pth) paths.push(p1);
+  if (THUMB_DIR_RE.test(p1)) paths.push(p1.replace(THUMB_DIR_RE, "/large/"));
+  for (const np of paths) {
+    const x = new URL(base.href);
+    x.pathname = np.replace(/\/{2,}/g, "/");
+    add(x);
+  }
+  if (sizeKeys.length) add(base);
+  return out.slice(0, ARCHIVE_PHOTO_MAX_CANDIDATES - 1);
+}
+
+/**
+ * AutoDNA lapas DOM secībā: [{type:"date", text} | {type:"img", href, dataRemote, dataFull, dataSrc, srcset, src}] -> [{url, date, fallbacks}].
+ * Bilde pieder pēdējam datumam virs tās. Kandidāti no lielākā: saite uz bildi > lightbox data-remote > data-full > srcset >
+ * sīktēla «paaugstinātie» varianti > data-src > src. `url` - pirmais, `fallbacks` - pārējie (ja lielais nav pieejams).
  */
 export function collectDomPhotoEntries(items, { dateStyle = "day", max = ARCHIVE_PHOTO_MAX } = {}) {
   const out = [];
@@ -167,13 +213,57 @@ export function collectDomPhotoEntries(items, { dateStyle = "day", max = ARCHIVE
       continue;
     }
     if (it?.type !== "img") continue;
-    const candidates = [it.href, it.dataFull, largestFromSrcset(it.srcset), it.dataSrc, it.src];
-    const url = candidates.find((c, i) => typeof c === "string" && looksLikeImageUrl(c, i === 0 ? "" : "src"));
+    const small = [it.dataSrc, it.src].filter((c) => typeof c === "string" && looksLikeImageUrl(c, "src"));
+    const raw = [
+      [it.href, ""],
+      [it.dataRemote, "src"],
+      [it.dataFull, "src"],
+      [largestFromSrcset(it.srcset), "src"],
+      ...small.flatMap((c) => upgradedImageUrls(c).map((x) => [x, "src"])),
+      ...small.map((c) => [c, "src"]),
+    ];
+    const cands = [];
+    for (const [c, hint] of raw) {
+      if (typeof c === "string" && !cands.includes(c) && looksLikeImageUrl(c, hint)) cands.push(c);
+    }
+    // Sākotnējā (mazā) bilde vienmēr paliek sarakstā kā pēdējā rezerve.
+    const keep = cands.filter((c) => small.includes(c));
+    const big = cands.filter((c) => !small.includes(c)).slice(0, Math.max(0, ARCHIVE_PHOTO_MAX_CANDIDATES - keep.length));
+    const list = [...big, ...keep].slice(0, ARCHIVE_PHOTO_MAX_CANDIDATES);
+    const url = list[0];
     if (!url || seen.has(url)) continue;
     seen.add(url);
-    out.push({ url, date });
+    out.push({ url, date, fallbacks: list.slice(1) });
   }
   return out;
+}
+
+/** Debug: saites forma bez vērtībām - hosts + ceļš (gari ID -> *), vaicājuma atslēgas. */
+export function photoUrlShape(raw) {
+  try {
+    const u = new URL(String(raw ?? ""));
+    const path = u.pathname
+      .split("/")
+      .map((seg) => (seg.length >= 12 && /[0-9]/.test(seg) ? seg.replace(/^[^.]*/, "*") : seg))
+      .join("/");
+    const keys = [...u.searchParams.keys()].join("&");
+    return `${u.hostname}${path.slice(0, 120)}${keys ? `?${keys}` : ""}`;
+  } catch {
+    return String(raw ?? "").startsWith("data:") ? "data:" : "";
+  }
+}
+
+/** Debug: DOM bilžu ierakstu formas (kuri atribūti aizpildīti un kā izskatās saites), lai redzētu, kur lielais variants. */
+export function domPhotoShapesSummary(items, max = 12) {
+  return (Array.isArray(items) ? items : [])
+    .filter((it) => it?.type === "img")
+    .slice(0, max)
+    .map((it) =>
+      ["href", "dataRemote", "dataFull", "srcset", "dataSrc", "src", "attrs"]
+        .filter((k) => it[k])
+        .map((k) => `${k}=${k === "srcset" ? String(it[k]).split(",").map((x) => photoUrlShape(x.trim().split(/\s+/)[0])).join(" | ") : k === "attrs" ? String(it[k]) : photoUrlShape(it[k])}`)
+        .join(" ; "),
+    );
 }
 
 /** [{url, date}] -> [{date, urls}] secībā, vienāds datums -> viena grupa. */
@@ -240,55 +330,104 @@ export function acceptDownloadedPhoto({ contentType, size }) {
   return /^image\/(jpeg|jpg|png|webp)/.test(ct) && size > 1000 && size <= ARCHIVE_PHOTO_MAX_BYTES;
 }
 
+async function fetchInPage(page, url, auth) {
+  return page
+    .evaluate(
+      async ({ url, auth, maxBytes }) => {
+        try {
+          const r = await fetch(url, { method: "GET", credentials: "include", ...(auth ? { headers: { Authorization: auth } } : {}) });
+          if (!r.ok) return { ok: false, status: r.status };
+          const contentType = r.headers.get("content-type") || "";
+          const buf = new Uint8Array(await r.arrayBuffer());
+          if (buf.length > maxBytes) return { ok: false, status: 413 };
+          let bin = "";
+          for (let k = 0; k < buf.length; k += 0x8000) bin += String.fromCharCode(...buf.subarray(k, k + 0x8000));
+          return { ok: true, contentType, size: buf.length, base64: btoa(bin) };
+        } catch {
+          return { ok: false, status: 0 };
+        }
+      },
+      { url, auth, maxBytes: ARCHIVE_PHOTO_MAX_BYTES },
+    )
+    .catch(() => ({ ok: false, status: -1 }));
+}
+
+/** Rezerve, ja lapas fetch neiet (CORS uz cita hosta bildēm): pārlūka konteksta pieprasījums ar tām pašām sīkdatnēm. */
+async function fetchViaContext(page, url, auth) {
+  const req = typeof page?.context === "function" ? page.context()?.request : null;
+  if (!req || typeof req.get !== "function") return { ok: false, status: -2 };
+  try {
+    let referer = "";
+    try {
+      referer = page.url();
+    } catch {
+      /* nav */
+    }
+    const r = await req.get(url, {
+      timeout: 30_000,
+      maxRedirects: 5,
+      headers: { ...(referer.startsWith("https://") ? { Referer: referer } : {}), ...(auth ? { Authorization: auth } : {}) },
+    });
+    if (!r.ok()) return { ok: false, status: r.status() };
+    const contentType = r.headers()["content-type"] || "";
+    const buf = await r.body();
+    if (buf.length > ARCHIVE_PHOTO_MAX_BYTES) return { ok: false, status: 413 };
+    return { ok: true, contentType, size: buf.length, base64: Buffer.from(buf).toString("base64") };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+
 /**
  * Lejupielāde lapas kontekstā (tās pašas sīkdatnes / sesija kā lapā), pa vienai, GET.
+ * Katram ierakstam mēģina `url`, tad `fallbacks` (lielais -> sīktēls); pirmā derīgā bilde paliek.
+ * Ja lapas fetch neizdodas (CORS), mēģina caur pārlūka konteksta pieprasījumu.
  * `authHeader` sūta tikai uz `authHost` (piem. CarVertical API), nekad uz svešiem hostiem.
  * Atgriež [{date, photos:[{base64, contentType, url}]}].
  */
-export async function downloadArchivePhotos(page, entries, { authHeader = "", authHost = "", log = () => undefined } = {}) {
+export async function downloadArchivePhotos(page, entries, { authHeader = "", authHost = "", log = () => undefined, budgetMs = ARCHIVE_PHOTOS_BUDGET_MS, now = Date.now } = {}) {
   const groups = [];
   let total = 0;
   let failed = 0;
+  let viaFallback = 0;
+  const deadline = now() + budgetMs;
+  // Kandidātu saraksti vienā lapā ir vienādas formas: kas nostrādāja iepriekšējai bildei, to mēģina pirmo (ja tas nav mazākais).
+  let okIndex = -1;
   for (const e of entries.slice(0, ARCHIVE_PHOTO_MAX)) {
-    if (!isAllowedPhotoUrl(e.url)) continue;
     if (total >= ARCHIVE_PHOTOS_TOTAL_MAX_BYTES) break;
-    let host = "";
-    try {
-      host = new URL(e.url).hostname;
-    } catch {
-      continue;
+    const all = [e.url, ...(Array.isArray(e.fallbacks) ? e.fallbacks : [])].filter((c, i, a) => isAllowedPhotoUrl(c) && a.indexOf(c) === i).slice(0, ARCHIVE_PHOTO_MAX_CANDIDATES);
+    let order = all.map((_, i) => i);
+    if (okIndex > 0 && okIndex < all.length) order = [okIndex, ...order.filter((i) => i !== okIndex)];
+    // Laiks beidzies -> tikai mazāk riskantie: iepriekš strādājušais vai pēdējais (sākotnējais) variants.
+    if (now() > deadline) order = [...new Set([okIndex >= 0 && okIndex < all.length ? okIndex : all.length - 1])];
+    let got = null;
+    let gotUrl = "";
+    for (const idx of order) {
+      const url = all[idx];
+      if (!url) continue;
+      const auth = authHeader && new URL(url).hostname === authHost ? authHeader : "";
+      let out = await fetchInPage(page, url, auth);
+      if (!out.ok && out.status !== 404 && out.status !== 410 && out.status !== 413) out = await fetchViaContext(page, url, auth);
+      if (out.ok && acceptDownloadedPhoto(out)) {
+        got = out;
+        gotUrl = url;
+        if (idx < all.length - 1 || all.length === 1) okIndex = idx;
+        break;
+      }
     }
-    const out = await page
-      .evaluate(
-        async ({ url, auth, maxBytes }) => {
-          try {
-            const r = await fetch(url, { method: "GET", credentials: "include", ...(auth ? { headers: { Authorization: auth } } : {}) });
-            if (!r.ok) return { ok: false, status: r.status };
-            const contentType = r.headers.get("content-type") || "";
-            const buf = new Uint8Array(await r.arrayBuffer());
-            if (buf.length > maxBytes) return { ok: false, status: 413 };
-            let bin = "";
-            for (let k = 0; k < buf.length; k += 0x8000) bin += String.fromCharCode(...buf.subarray(k, k + 0x8000));
-            return { ok: true, contentType, size: buf.length, base64: btoa(bin) };
-          } catch {
-            return { ok: false, status: 0 };
-          }
-        },
-        { url: e.url, auth: authHeader && host === authHost ? authHeader : "", maxBytes: ARCHIVE_PHOTO_MAX_BYTES },
-      )
-      .catch(() => ({ ok: false, status: -1 }));
-    if (!out.ok || !acceptDownloadedPhoto(out)) {
+    if (!got) {
       failed++;
       continue;
     }
-    total += out.size;
+    if (gotUrl !== e.url) viaFallback++;
+    total += got.size;
     let g = groups.find((x) => x.date === e.date);
     if (!g) {
       g = { date: e.date, photos: [] };
       groups.push(g);
     }
-    g.photos.push({ base64: out.base64, contentType: out.contentType, url: e.url });
+    g.photos.push({ base64: got.base64, contentType: got.contentType, url: gotUrl });
   }
-  log(`arhīva foto: ${groups.reduce((n, g) => n + g.photos.length, 0)} lejupielādēti, ${failed} neizdevās`);
+  log(`arhīva foto: ${groups.reduce((n, g) => n + g.photos.length, 0)} lejupielādēti (${viaFallback} ar mazāku variantu), ${failed} neizdevās`);
   return groups;
 }

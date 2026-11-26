@@ -329,14 +329,15 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
       {
         id: "recommendation-neiesakam",
         tone: "concern",
-        label: "Neiesakām",
-        text: "Pamatojoties uz šobrīd pieejamo informāciju, konkrētās automašīnas iegādi neiesakām. Ieteicams turpināt meklēšanu un apsvērt citus, drošākus piedāvājumus.",
+        label: "Būtiski riski",
+        // 25.11: PROVIN dod ieteikumus, lēmumu pieņem klients - bez «neiesakām iegādāties» verdikta.
+        text: "Pamatojoties uz šobrīd pieejamo informāciju, šajā piedāvājumā redzam būtiskus riskus. Ieteicams turpināt meklēšanu un apsvērt citus, drošākus piedāvājumus.",
       },
       {
         id: "recommendation-neiesakam-ar-turpinajumu",
         tone: "critical",
-        label: "Neiesakām, bet var turpināt",
-        text: "Pamatojoties uz šobrīd pieejamo informāciju, konkrētās automašīnas iegādi neiesakām. Ja tomēr vēlaties turpināt, ieteicams to darīt tikai ar pilnu skaidrību par potenciālajiem riskiem.",
+        label: "Būtiski riski, ja turpināt",
+        text: "Pamatojoties uz šobrīd pieejamo informāciju, šajā piedāvājumā redzam būtiskus riskus. Ja tomēr vēlaties turpināt, ieteicams to darīt tikai ar pilnu skaidrību par potenciālajiem riskiem.",
       },
     ],
   },

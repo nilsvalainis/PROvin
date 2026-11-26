@@ -29,6 +29,8 @@ import { buildClientReportCommentSnapshot } from "@/lib/client-report-comment-sn
 import { dropboxReportFilename } from "@/lib/client-report-sends-core";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
+import { moveOrderDropboxFolderToCategory, saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
+import { isManualOrderSessionId, orderDropboxCategoryFromReportFilename } from "@/lib/order-dropbox-folder";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
@@ -436,7 +438,15 @@ export async function POST(req: Request) {
       try {
         const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
         const car = orderCarFromCsdd(csdd, "", notifyVin);
-        const saved = await saveFileToProvOrderFolder(client, car, dropboxReportFilename(serverSend.version, serverPdf.filename), bytes);
+        const reportName = dropboxReportFilename(serverSend.version, serverPdf.filename);
+        // Manuālais pasūtījums: produkts zināms tikai tagad (PROVIN_BUSINESS_*, OFICIALA_DILERA_DATI_*) -
+        // esošo mapi pārvieto uz pareizo virsmapi (AUDITI -> BUSINESS / DILERA DATI), nevis veido jaunu.
+        const productCategory = isManualOrderSessionId(sessionId) ? orderDropboxCategoryFromReportFilename(serverPdf.filename) : null;
+        if (productCategory) await moveOrderDropboxFolderToCategory(sessionId, productCategory, client).catch(() => null);
+        // Jaunie pasūtījumi: tikai sava mape (AUDITI/..., DILERA DATI/...); vecajiem - mape pēc VIN `/_PROv` saknē.
+        const saved = await saveFileToOrderFolderOrLegacy(sessionId, reportName, bytes, () =>
+          saveFileToProvOrderFolder(client, car, reportName, bytes),
+        );
         dropboxPath = saved.path;
         serverSend.dropboxPath = saved.path;
       } catch (e) {

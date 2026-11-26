@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
 import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
@@ -56,7 +57,9 @@ async function loadContext(sessionId: string) {
     notes: order.notes,
   });
   const snapshot = { checkoutLine: order.checkoutLine, amountTotalCents: order.amountTotal, b2b };
-  return { order, offers, email: email.trim(), phone, customerName, vin, car, snapshot };
+  /** Piedāvājuma valoda: B2B partnera atskaites valoda / vietnes valoda pasūtot / LV. */
+  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
+  return { order, offers, email: email.trim(), phone, customerName, vin, car, snapshot, lang };
 }
 
 export async function GET(req: Request) {
@@ -131,8 +134,11 @@ export async function POST(req: Request) {
     priorCents: quote.priorCents,
     chargeCents: quote.chargeCents,
     targetCents: quote.targetCents,
+    lang: ctx.lang,
+    b2b: ctx.snapshot.b2b,
   });
   return NextResponse.json({
+    lang: ctx.lang,
     url,
     email: ctx.email,
     phone: ctx.phone,

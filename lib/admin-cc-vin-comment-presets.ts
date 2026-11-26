@@ -7,7 +7,7 @@ import {
 export const CC_VIN_AUCTION_CHECK_HEADING = "Datu pārbaude izsoļu reģistros";
 
 export const CC_VIN_AUCTION_CHECK_BODY =
-  "Šis avots veic specifisku pārbaudi Eiropas un Amerikas izsoļu datubāzēs, lai identificētu iespējamos ierakstus par automašīnas pārdošanu, t.s. pēc smagiem negadījumiem vai pilnīgas bojāejas. Konkrētajai automašīnai mūsu reģistros ieraksti netika atrasti.";
+  "Šis avots veic specifisku pārbaudi Eiropas un Amerikas izsoļu datubāzēs, lai identificētu iespējamos ierakstus par automašīnas pārdošanu, tostarp pēc smagiem negadījumiem vai pilnīgas bojāejas. Konkrētajai automašīnai mūsu reģistros ieraksti netika atrasti.";
 
 export const CC_VIN_AUCTION_CHECK_PLAIN = `${CC_VIN_AUCTION_CHECK_HEADING}\n${CC_VIN_AUCTION_CHECK_BODY}`;
 

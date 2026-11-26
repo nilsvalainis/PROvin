@@ -70,6 +70,8 @@ export type DealerDataJob = {
   archived?: DealerDataJobArchive[];
   /** Pasūtījuma numurzīme (ja klients ievadīja numuru, ne VIN). */
   plate?: string;
+  /** «Nav VIN»: cik reizes numurzīme → VIN konversija jau mēģināta (cron griesti). */
+  plateAttempts?: number;
   /** Pēdējais admina paziņojums par šo darbu (push + e-pasts) - viens paziņojums uz problēmu. */
   alert?: DealerDataAlertRecord;
   /** Ēnu režīms (Nils 22.11): kvalitātes pārbaudes spriedums - klientam nekas netiek sūtīts. */
@@ -462,10 +464,15 @@ export function dealerDataAlertText(
   const who = job.vin ? `VIN ${job.vin}` : job.plate ? `Numurs ${job.plate}` : "Pasūtījums";
   switch (key) {
     case "no_vin":
-      return {
-        title: "Dīlera dati: nav VIN",
-        body: `${who} - CSDD neatrada VIN. Ievadi VIN pasūtījumā un palaid ielasi.`,
-      };
+      return dealerNoVinIsTransient({ status: "no_vin", error: job.error })
+        ? {
+            title: "Dīlera dati: CSDD nebija sasniedzams",
+            body: `${who} - VIN vēl nav iegūts (CSDD nebija sasniedzams). Sistēma atkārtos automātiski; ja neizdodas - pasūtījumā «Palaist ar VIN».`,
+          }
+        : {
+            title: "Dīlera dati: nav VIN",
+            body: `${who} - CSDD neatrada VIN. Ievadi VIN pasūtījumā un palaid ielasi.`,
+          };
     case "draft_write_failed":
       return {
         title: "Dīlera dati: rezultāts nav melnrakstā",
@@ -687,6 +694,9 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(commentLang ? { commentLang } : {}),
     ...(oneautoResults ? { oneautoResults } : {}),
     ...(plate ? { plate } : {}),
+    ...(typeof o.plateAttempts === "number" && Number.isFinite(o.plateAttempts) && o.plateAttempts > 0
+      ? { plateAttempts: Math.floor(o.plateAttempts) }
+      : {}),
     ...(alert ? { alert } : {}),
     ...(shadowGate ? { shadowGate } : {}),
     ...(shadowFeedback ? { shadowFeedback } : {}),
@@ -732,6 +742,42 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
       if (job.error === "pending" || job.error === "http_202") return "OneAuto apstrādā - atkārtos pēc dažām min";
       return `Kļūda: ${job.error ?? "nezināma"}`;
     case "no_vin":
-      return job.plate ? `Nav VIN (numurs ${job.plate})` : "Nav VIN";
+      return describeDealerNoVin(job);
   }
+}
+
+/** «Nav VIN» konversijas cron griesti (webhook mēģinājums ieskaitot). */
+export const DEALER_NO_VIN_MAX_PLATE_ATTEMPTS = 3;
+/** Vecākus «Nav VIN» darbus cron automātiski neatkārto - tikai operatora poga. */
+export const DEALER_NO_VIN_AUTO_RETRY_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** CSDD nebija sasniedzams (relejs/VPN/taimauts), nevis «VIN nav atrasts». */
+export function dealerNoVinIsTransient(job: Pick<DealerDataJob, "status" | "error">): boolean {
+  if (job.status !== "no_vin") return false;
+  const err = job.error ?? "";
+  return err === "csdd_unreachable" || /neatbildēja|noildza|sasniegt|tukša|csdd_error/i.test(err);
+}
+
+/** Vai cron drīkst vēlreiz mēģināt numurzīme → VIN (pārejoša kļūda, nav atmaksāts, griesti nav sasniegti). */
+export function dealerNoVinAutoRetryable(
+  job: Pick<DealerDataJob, "status" | "error" | "plate" | "plateAttempts" | "refund" | "createdAt" | "vin">,
+  nowMs: number = Date.now(),
+): boolean {
+  if (job.status !== "no_vin" || job.vin.trim() || !job.plate?.trim() || job.refund) return false;
+  if (!dealerNoVinIsTransient(job)) return false;
+  if ((job.plateAttempts ?? 1) >= DEALER_NO_VIN_MAX_PLATE_ATTEMPTS) return false;
+  const created = Date.parse(job.createdAt);
+  return Number.isFinite(created) && nowMs - created < DEALER_NO_VIN_AUTO_RETRY_MAX_AGE_MS;
+}
+
+/** Sarkanais statuss adminā (Nils 26.11: skaidrs iemesls, nevis klusā apstāšanās). */
+export function describeDealerNoVin(job: Pick<DealerDataJob, "status" | "error" | "plate" | "plateAttempts" | "refund" | "createdAt" | "vin">): string {
+  const plate = job.plate?.trim() || "";
+  if (!plate) return "Nav VIN";
+  if (dealerNoVinIsTransient(job)) {
+    return dealerNoVinAutoRetryable(job)
+      ? `CSDD nebija sasniedzams - VIN numuram ${plate} vēl nav (atkārtos automātiski)`
+      : `CSDD nebija sasniedzams - VIN numuram ${plate} nav iegūts`;
+  }
+  return `CSDD neatrada VIN numuram ${plate}`;
 }

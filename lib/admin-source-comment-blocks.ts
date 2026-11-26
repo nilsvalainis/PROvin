@@ -18,12 +18,12 @@ import {
   type SourceBlockKey,
   tirgusFormToPlainText,
   vendorAvotuBlockToPlainText,
+  carfaxBlockToPlainText,
   type WorkspaceSourceBlocks,
   oneautoBlockToPlainText,
 } from "@/lib/admin-source-blocks";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
-import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { autoRecordsServiceWorkRowsToPlainText } from "@/lib/auto-records-service-works";
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { appendAiContextRawSection } from "@/lib/admin-ai-context-raw";
@@ -110,12 +110,7 @@ export function sourceBlockPlainTextExcludingComments(
       return appendAiContextRawSection(base, blocks[blockKey].aiContextRaw);
     case "carfax":
       // Strukturētā atskaite (ātrā pārbaude, bojājumu zonas, īpašnieki, vēsture) - AI komentāram viss.
-      base = [
-        vendorAvotuBlockToPlainText({ ...blocks.carfax, comments: "" }).trim(),
-        carfaxReportToPlainText(blocks.carfax.report),
-      ]
-        .filter(Boolean)
-        .join("\n");
+      base = carfaxBlockToPlainText({ ...blocks.carfax, comments: "" }).trim();
       return appendAiContextRawSection(base, blocks.carfax.aiContextRaw);
     case "citi_avoti":
       return citiAvotiToPlainText({

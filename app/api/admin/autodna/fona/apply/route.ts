@@ -15,6 +15,7 @@ import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
+import { extractAutodnaPreviousSearches } from "@/lib/autodna-previous-searches-pdf";
 import { tryImportVendorArchivePhotosFromPdf } from "@/lib/vendor-archive-photos-import";
 
 export const runtime = "nodejs";
@@ -80,6 +81,12 @@ export async function POST(req: Request) {
       result.sourceBlocks = { ...result.sourceBlocks, autodna: filled };
       if (!changedKeys.includes("autodna")) changedKeys.push("autodna");
     }
+    // «Iepriekšējie meklējumi» (IP maskēts, karte no PDF) -> klienta PDF kartīte.
+    const searches = await extractAutodnaPreviousSearches(bytes, extracted.text ?? "");
+    if (searches.length) {
+      result.sourceBlocks = { ...result.sourceBlocks, autodna: { ...result.sourceBlocks.autodna, previousSearches: searches } };
+      if (!changedKeys.includes("autodna")) changedKeys.push("autodna");
+    }
     // Arhīva foto «Sludinājuma vēsturē» - tikai pirmajā automātiskajā ievietošanā; vēlāk ar pogu «Ielādēt arhīva foto».
     const archive = status.appliedAt
       ? null
@@ -92,8 +99,13 @@ export async function POST(req: Request) {
       patchedSourceBlocks: {
         ...Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
         ...(archive?.changed ? { tirgus: archive.tirgus } : {}),
+        ...(archive?.listingAnalysis ? { listing_analysis: archive.listingAnalysis } : {}),
       },
-      changedKeys: archive?.changed ? [...changedKeys, "tirgus"] : changedKeys,
+      changedKeys: [
+        ...changedKeys,
+        ...(archive?.changed ? ["tirgus" as const] : []),
+        ...(archive?.listingAnalysis ? ["listing_analysis" as const] : []),
+      ],
       ...(archive ? { archivePhotos: { added: archive.added, duplicates: archive.duplicates, notes: archive.notes } } : {}),
       status: next,
     });

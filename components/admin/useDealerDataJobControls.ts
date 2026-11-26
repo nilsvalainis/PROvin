@@ -149,9 +149,15 @@ export function useDealerDataJobControls({
       const body = (await res.json().catch(() => ({}))) as {
         job?: DealerDataJob | null;
         reason?: string;
+        message?: string;
+        error?: string;
+        plateVin?: string;
       };
-      setJob(body.job ?? null);
-      setNotice(body.reason ?? null);
+      // Kļūdas atbildē darba var nebūt - esošo statusu nenometam.
+      if (body.job !== undefined) setJob(body.job);
+      setNotice(body.message ?? body.reason ?? (body.error === "invalid_vin" ? "Nav derīga VIN vai LV numurzīmes." : null));
+      // Numurzīme → VIN atrasts: VIN lauks un avoti jāparāda no servera.
+      if (body.plateVin) window.location.reload();
     } catch {
       setNotice("Neizdevās sazināties ar serveri.");
     } finally {

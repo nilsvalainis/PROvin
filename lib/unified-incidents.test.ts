@@ -491,3 +491,108 @@ Aptuvenā iepriekš gūto bojājumu vērtība
     expect(agg.clusters[0]?.sourceValuations[0]?.amountEur).toBeNull();
   });
 });
+
+describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
+  const ltab = (date: string, amount: string, ms: number) =>
+    row({ date, lossAmount: amount, sourceLabel: "LTAB", sortableTime: ms, sourceOrder: 1 });
+  const cv = (date: string, amount: string, ms: number) =>
+    row({ date, lossAmount: amount, sourceLabel: "CarVertical", sortableTime: ms, sourceOrder: 0 });
+
+  it("case1: 5 LTAB + 2 carVertical (04.2016, 08.2016) = 5 notikumi, nevis 7", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      ltab("05.04.2016", "610 €", Date.UTC(2016, 3, 5)),
+      ltab("19.08.2016", "380 €", Date.UTC(2016, 7, 19)),
+      ltab("11.02.2018", "900 €", Date.UTC(2018, 1, 11)),
+      ltab("03.06.2020", "1 200 €", Date.UTC(2020, 5, 3)),
+      cv("04.2016", "400 - 450 €", Date.UTC(2016, 3, 1)),
+      cv("08.2016", "", Date.UTC(2016, 7, 1)),
+    ]);
+    expect(agg.rawCount).toBe(7);
+    expect(agg.uniqueCount).toBe(5);
+    const aug = agg.clusters.find((c) => c.date === "19.08.2016")!;
+    expect(aug.sourceValuations.map((v) => v.sourceLabel).sort()).toEqual(["CarVertical", "LTAB"]);
+    expect(aug.kindLabel).toBe("Negadījums");
+  });
+
+  it("±30 dienas pāri mēneša robežai apvieno, tālāk - nē", () => {
+    const near = aggregateUnifiedIncidents([
+      ltab("28.03.2019", "500 €", Date.UTC(2019, 2, 28)),
+      cv("04.2019", "", Date.UTC(2019, 3, 1)),
+    ]);
+    expect(near.uniqueCount).toBe(1);
+    const far = aggregateUnifiedIncidents([
+      ltab("10.01.2019", "500 €", Date.UTC(2019, 0, 10)),
+      cv("04.2019", "", Date.UTC(2019, 3, 1)),
+    ]);
+    expect(far.uniqueCount).toBe(2);
+  });
+
+  it("cita valsts vai dienas datums ar pretrunīgu summu paliek atsevišķi", () => {
+    const otherCountry = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      row({ date: "04.2016", lossAmount: "", sourceLabel: "AutoDNA", country: "Vācija", sortableTime: Date.UTC(2016, 3, 1) }),
+    ]);
+    expect(otherCountry.uniqueCount).toBe(2);
+    const dayConflict = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      cv("02.05.2016", "9 000 €", Date.UTC(2016, 4, 2)),
+    ]);
+    expect(dayConflict.uniqueCount).toBe(2);
+  });
+
+  it("26.11: precīzs summas trāpījums pārī pirms pielaides (LTAB 767,64 € <-> carVertical 751 - 1 000 €)", () => {
+    const agg = aggregateUnifiedIncidents([
+      // LTAB jūnijā, carVertical tikai mēnesis (05.2019): 720 € ir tuvāk laikā, bet 767,64 € ietilpst 751 - 1 000 €.
+      ltab("03.06.2019", "720 €", Date.UTC(2019, 5, 3)),
+      ltab("25.06.2019", "767,64 €", Date.UTC(2019, 5, 25)),
+      cv("05.2019", "751 - 1 000 €", Date.UTC(2019, 4, 1)),
+      cv("05.2019", "501 - 750 €", Date.UTC(2019, 4, 1)),
+    ]);
+    expect(agg.rawCount).toBe(4);
+    expect(agg.uniqueCount).toBe(2);
+    const ltabAmount = (c: (typeof agg.clusters)[number]) =>
+      c.sourceValuations.find((v) => v.sourceLabel === "LTAB")?.displayAmount ?? "";
+    const cvAmount = (c: (typeof agg.clusters)[number]) =>
+      c.sourceValuations.find((v) => v.sourceLabel === "CarVertical")?.displayAmount ?? "";
+    const a767 = agg.clusters.find((c) => /767/.test(ltabAmount(c)))!;
+    const a720 = agg.clusters.find((c) => /720/.test(ltabAmount(c)))!;
+    expect(cvAmount(a767)).toMatch(/751/);
+    expect(cvAmount(a720)).toMatch(/501/);
+  });
+
+  it("26.11: tajā pašā mēnesī precīzs summas trāpījums pirms pielaides (aggregateUnifiedIncidents)", () => {
+    // AutoDNA 1 000 € ir pielaidē ar jaunāko LTAB 1 040 €, bet precīzi sakrīt ar LTAB 1 000 €.
+    const rows = [
+      ltab("20.06.2019", "1 040 €", Date.UTC(2019, 5, 20)),
+      row({ date: "15.06.2019", lossAmount: "1 000 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2019, 5, 15) }),
+      ltab("10.06.2019", "1 000 €", Date.UTC(2019, 5, 10)),
+    ];
+    const agg = aggregateUnifiedIncidents(rows);
+    expect(agg.rawCount).toBe(3);
+    expect(agg.uniqueCount).toBe(2);
+    const amount = (c: (typeof agg.clusters)[number], src: string) =>
+      c.sourceValuations.find((v) => v.sourceLabel === src)?.displayAmount ?? "";
+    const l1000 = agg.clusters.find((c) => /^1\s000/.test(amount(c, "LTAB")))!;
+    const l1040 = agg.clusters.find((c) => /1\s040/.test(amount(c, "LTAB")))!;
+    expect(amount(l1000, "AutoDNA")).toMatch(/1\s000/);
+    expect(amount(l1040, "AutoDNA")).toBe("");
+  });
+
+  it("26.11: pielaides trāpījums joprojām apvieno, ja precīza pāra nav", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("20.06.2019", "1 040 €", Date.UTC(2019, 5, 20)),
+      row({ date: "15.06.2019", lossAmount: "1 000 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2019, 5, 15) }),
+    ]);
+    expect(agg.uniqueCount).toBe(1);
+    expect(agg.clusters[0]!.sourceValuations.map((v) => v.sourceLabel).sort()).toEqual(["AutoDNA", "LTAB"]);
+  });
+
+  it("mēneša ieraksts ar pretrunīgu summu (iespējams KASKO) paliek atsevišķi", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),
+      cv("04.2016", "3 000 - 4 000 €", Date.UTC(2016, 3, 1)),
+    ]);
+    expect(agg.uniqueCount).toBe(2);
+  });
+});

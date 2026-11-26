@@ -10,6 +10,7 @@ import { DropboxApiError, getDropboxClient, type DropboxClient } from "@/lib/dro
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import {
   orderDropboxFolderName,
+  orderDropboxNameWithCategory,
   orderDropboxParentPath,
   orderDropboxShouldRename,
   parseOrderDropboxRecord,
@@ -26,27 +27,44 @@ import {
 const LOG = "[order-dropbox]";
 const DIR = "order_dropbox";
 
-export async function readOrderDropboxRecord(sessionId: string): Promise<OrderDropboxRecord | null> {
-  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+/**
+ * Ieraksts + vai lasīšana izdevās. `readError` - krātuve neatbildēja (nevis "nav ieraksta"): tad jaunu mapi NEVEIDO,
+ * citādi pārejoša Blob kļūda radītu otru mapi ar citu nosaukumu (marka jau zināma) un pārrakstītu ierakstu.
+ */
+export async function readOrderDropboxRecordResult(
+  sessionId: string,
+): Promise<{ record: OrderDropboxRecord | null; readError: boolean }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { record: null, readError: false };
   const file = `${DIR}/${sessionId}.json`;
   const blob = getOrderDraftBlobConfig();
   if (blob) {
     try {
       const res = await get(`${blob.prefix}${file}`, { access: "private", token: blob.token, useCache: false });
-      if (res?.statusCode === 200 && res.stream) return parseOrderDropboxRecord(JSON.parse(await new Response(res.stream).text()));
-    } catch {
-      /* nav ieraksta */
+      if (res?.statusCode === 200 && res.stream) {
+        return { record: parseOrderDropboxRecord(JSON.parse(await new Response(res.stream).text())), readError: false };
+      }
+      // `get` atgriež null tikai 404 gadījumā - ieraksta nav.
+      if (!res) return { record: null, readError: false };
+    } catch (e) {
+      if (process.env.VERCEL === "1") {
+        console.warn(`${LOG} record read failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+        return { record: null, readError: true };
+      }
     }
   }
   const dir = getOrderDraftStorageDir();
   if (dir && process.env.VERCEL !== "1") {
     try {
-      return parseOrderDropboxRecord(JSON.parse(await fs.readFile(path.join(dir, file), "utf8")));
+      return { record: parseOrderDropboxRecord(JSON.parse(await fs.readFile(path.join(dir, file), "utf8"))), readError: false };
     } catch {
       /* nav ieraksta */
     }
   }
-  return null;
+  return { record: null, readError: false };
+}
+
+export async function readOrderDropboxRecord(sessionId: string): Promise<OrderDropboxRecord | null> {
+  return (await readOrderDropboxRecordResult(sessionId)).record;
 }
 
 async function writeRecord(rec: OrderDropboxRecord): Promise<void> {
@@ -101,11 +119,21 @@ function errCode(e: unknown): string {
  */
 export async function ensureOrderDropboxFolder(
   sessionId: string,
-  opts: { category?: OrderDropboxCategory | null; createdMs?: number; vin?: string | null; plate?: string | null; client?: DropboxClient | null } = {},
+  opts: {
+    category?: OrderDropboxCategory | null;
+    createdMs?: number;
+    vin?: string | null;
+    plate?: string | null;
+    client?: DropboxClient | null;
+    /** Produkts mainījies (manuālais pasūtījums: AUDITI -> BUSINESS): `category` ir noteicošā, esošo mapi pārvieto. */
+    recategorize?: boolean;
+  } = {},
 ): Promise<OrderDropboxRecord | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
-  const prev = await readOrderDropboxRecord(sessionId);
-  const category = prev?.category ?? opts.category ?? null;
+  const { record: prev, readError } = await readOrderDropboxRecordResult(sessionId);
+  // Nevar nolasīt ierakstu - nezinām, vai mape jau ir. Labāk šoreiz neko nedarīt nekā izveidot otru mapi.
+  if (readError) return null;
+  const category = (opts.recategorize ? opts.category : null) ?? prev?.category ?? opts.category ?? null;
   if (!category) return null;
   const now = new Date().toISOString();
   const orderCreatedMs = prev?.orderCreatedMs ?? opts.createdMs ?? Date.now();
@@ -134,17 +162,24 @@ export async function ensureOrderDropboxFolder(
       const meta = await client.getMetadata(prev.folderId);
       if (meta && meta.tag === "folder") {
         let current = meta.pathDisplay || prev.path || "";
-        if (orderDropboxShouldRename(meta.name, desiredName)) {
+        // Produkta maiņa: tā pati mape (ar visiem failiem) uz citu virsmapi - nevis otra mape.
+        const categoryChange = prev.category !== category;
+        let finalCategory = category;
+        // Jaunajā virsmapē nosaukums nedrīkst kļūt nabadzīgāks (marka / VIN, kas jau bija nosaukumā, paliek).
+        const swapped = categoryChange ? orderDropboxNameWithCategory(meta.name, prev.category, category) : meta.name;
+        const targetName = orderDropboxShouldRename(swapped, desiredName) ? desiredName : swapped;
+        if (categoryChange || targetName !== meta.name) {
           try {
-            const moved = await client.move(current, `${parent}/${desiredName}`, { autorename: false });
-            current = moved.pathDisplay || `${parent}/${desiredName}`;
+            const moved = await client.move(current, `${parent}/${targetName}`, { autorename: false });
+            current = moved.pathDisplay || `${parent}/${targetName}`;
           } catch (e) {
-            // Ja tāda mape jau ir (cits pasūtījums ar to pašu auto un dienu) - paliek vecais nosaukums.
-            console.warn(`${LOG} rename skipped`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+            // Ja tāda mape jau ir (cits pasūtījums ar to pašu auto un dienu) - paliek vecais nosaukums / virsmape.
+            if (categoryChange) finalCategory = prev.category;
+            console.warn(`${LOG} ${categoryChange ? "move" : "rename"} skipped`, { sessionId: sessionId.slice(-8), error: errCode(e) });
           }
         }
-        if (current === prev.path) return prev;
-        const rec = { ...base, state: "ok" as const, path: current };
+        if (current === prev.path && finalCategory === prev.category) return prev;
+        const rec = { ...base, category: finalCategory, state: "ok" as const, path: current };
         delete (rec as Partial<OrderDropboxRecord>).error;
         await writeRecord(rec);
         return rec;
@@ -158,7 +193,13 @@ export async function ensureOrderDropboxFolder(
     return rec;
   } catch (e) {
     console.error(`${LOG} ensure failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
-    const rec = { ...base, state: prev?.state === "ok" ? ("ok" as const) : ("error" as const), error: errCode(e) };
+    // Kategoriju maina tikai pēc veiksmīgas pārvietošanas - nākamreiz mēģina vēlreiz.
+    const rec = {
+      ...base,
+      category: prev?.category ?? category,
+      state: prev?.state === "ok" ? ("ok" as const) : ("error" as const),
+      error: errCode(e),
+    };
     await writeRecord(rec).catch(() => undefined);
     return rec;
   }
@@ -189,6 +230,22 @@ export async function saveFileToOrderDropboxFolder(
   }
 }
 
+/**
+ * Produkts mainījies pēc mapes izveides (manuālais pasūtījums kļūst par Business / Dīlera datiem): esošo mapi
+ * pārvieto uz pareizo virsmapi. Ja ieraksta nav (vecie pasūtījumi) vai kategorija tā pati - neko nedara.
+ */
+export async function moveOrderDropboxFolderToCategory(
+  sessionId: string,
+  category: OrderDropboxCategory,
+  client?: DropboxClient | null,
+): Promise<OrderDropboxRecord | null> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return null;
+  const { record, readError } = await readOrderDropboxRecordResult(sessionId);
+  if (readError || !record) return null;
+  if (record.category === category) return record;
+  return ensureOrderDropboxFolder(sessionId, { category, recategorize: true, ...(client !== undefined ? { client } : {}) });
+}
+
 /** Pēc apmaksas / izveides: tikai fona solis, kļūda neaptur pasūtījumu. */
 export function ensureOrderDropboxFolderSafe(
   sessionId: string,
@@ -198,4 +255,29 @@ export function ensureOrderDropboxFolderSafe(
     () => undefined,
     (e) => console.error(`${LOG} ensure crashed`, e instanceof Error ? e.message.slice(0, 120) : "unknown"),
   );
+}
+
+/**
+ * Fails pasūtījuma mapē visiem avotiem (CarVertical, AutoDNA, LTAB, CARFAX, atskaites PDF kopija):
+ *  - pasūtījumam ir mapes ieraksts (jaunie, no 23.11) -> TIKAI tā mape (`AUDITI/...`, `DILERA DATI/...`);
+ *    ja saglabāt neizdodas - kļūda (nevis otra mape `/_PROv` saknē);
+ *  - ieraksta nav (vecie pasūtījumi) -> `legacy()` (mape pēc VIN `/_PROv` saknē kā līdz šim).
+ */
+export async function saveFileToOrderFolderOrLegacy<T extends { path: string }>(
+  sessionId: string,
+  fileName: string,
+  bytes: Uint8Array,
+  legacy: () => Promise<T>,
+): Promise<{ path: string; duplicate: boolean; legacy: boolean }> {
+  const { record, readError } = isSafeOrderDraftSessionId(sessionId)
+    ? await readOrderDropboxRecordResult(sessionId)
+    : { record: null, readError: false };
+  if (readError) throw new Error("order_dropbox_record_unreadable");
+  if (record) {
+    const saved = await saveFileToOrderDropboxFolder(sessionId, fileName, bytes);
+    if (!saved) throw new Error("order_dropbox_save_failed");
+    return { ...saved, legacy: false };
+  }
+  const saved = await legacy();
+  return { path: saved.path, duplicate: false, legacy: true };
 }

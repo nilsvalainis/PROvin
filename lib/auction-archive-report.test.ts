@@ -25,7 +25,7 @@ const S: AuctionArchiveSummary = {
 describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
   it("faila nosaukums IZSOLU_ARHIVS_<VIN>.pdf", () => {
     expect(auctionArchiveReportPdfFilename("wauzzzf43pa018831")).toBe("IZSOLU_ARHIVS_WAUZZZF43PA018831.pdf");
-    expect(auctionArchiveReportPdfFilename("")).toBe("IZSOLU_ARHIVS_VIN.pdf");
+    expect(auctionArchiveReportPdfFilename("")).toBe("IZSOLU_ARHIVS_NAV_VIN.pdf");
   });
 
   it("saturs: vērtības teikums, cenas tikai ar ķeksi", () => {
@@ -81,7 +81,7 @@ describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
     expect(wa.subject).toBeUndefined();
     expect(wa.text).toContain("Atcēlām Jūsu izsoļu arhīva pasūtījumu");
     expect(wa.text).toContain("PROVIN konta atlikumā");
-    expect(wa.text).toContain("Nils, PROVIN");
+    expect(wa.text.endsWith("\nPROVIN")).toBe(true); // B2B bez «Nils» (Nils 25.11)
   });
 
   it("žurnāls: «Nosūtīts klientam: …» kā dīlera datiem; parse atmet nederīgo", () => {
@@ -98,5 +98,20 @@ describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
     expect(parsed.sends).toHaveLength(1);
     expect(parsed.showPrices).toBe(true);
     expect(parsed.photos).toBe(84);
+  });
+});
+
+describe("izsoļu arhīva PDF atkārtota sūtīšana tikai tajā pašā valodā", () => {
+  it("cita valoda vai cenu izvēle - jāģenerē no jauna", async () => {
+    const { auctionArchiveReportPdfReusable, parseAuctionArchiveReportDoc } = await import("@/lib/auction-archive-report");
+    const lv = parseAuctionArchiveReportDoc({ generatedAt: "2026-11-26T10:00:00Z" }, "cs_x");
+    expect(auctionArchiveReportPdfReusable(lv, { showPrices: false, lang: "lv" })).toBe(true);
+    expect(auctionArchiveReportPdfReusable(lv, { showPrices: false, lang: "en" })).toBe(false);
+    const en = parseAuctionArchiveReportDoc({ generatedAt: "2026-11-26T10:00:00Z", lang: "en", showPrices: true }, "cs_x");
+    expect(en.lang).toBe("en");
+    expect(auctionArchiveReportPdfReusable(en, { showPrices: true, lang: "en" })).toBe(true);
+    expect(auctionArchiveReportPdfReusable(en, { showPrices: false, lang: "en" })).toBe(false);
+    expect(parseAuctionArchiveReportDoc({ lang: "xx" }, "cs_x").lang).toBeUndefined();
+    expect(auctionArchiveReportPdfReusable({}, { showPrices: false, lang: "lv" })).toBe(false);
   });
 });

@@ -25,6 +25,7 @@ import {
   extractVehicleDrivetrain,
   findDrivetrainContradictions,
 } from "@/lib/registry-drivetrain";
+import { findPurchaseVerdictHits } from "@/lib/provin-banned-vocabulary";
 
 export type ContradictionCheckInput = {
   text: string;
@@ -741,6 +742,18 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     }
   }
 
+  // 5c) 25.11: PROVIN dod ieteikumus, lēmumu pieņem klients - pirkuma verdikta vārdi klienta tekstā.
+  for (const hit of findPurchaseVerdictHits(text)) {
+    const needle = hit.match.toLowerCase();
+    push({
+      id: hit.code,
+      kind: "purchase_verdict",
+      level: "W",
+      message: `Pirkuma verdikts „${hit.match}” - PROVIN dod ieteikumus, lēmumu pieņem klients.`,
+      sentence: sentences.find((x) => x.toLowerCase().includes(needle)) ?? hit.match,
+    });
+  }
+
   // 6) atsavināšanai, ja nav avotā.
   if (ATSAVINASANAI_RE.test(text) && !ATSAVINASANAI_RE.test(facts.sourceHaystack)) {
     push({
@@ -814,6 +827,27 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
           sentence,
         });
       }
+    }
+  }
+
+  // 8b) 24.11 audits #2: sludinājuma km nosaukts par jaunāko / reģistrēto rādījumu.
+  const lm = facts.listingMileage;
+  if (lm && facts.latestKm != null && Math.abs(lm.km - facts.latestKm) > 1_500) {
+    const listingKmRe = new RegExp(`(?<!\\d)${formatForensicsInt(lm.km).replace(/\s/g, "[\\s\\u00a0]?")}\\s*km`, "i");
+    for (const sentence of sentences) {
+      if (!listingKmRe.test(sentence)) continue;
+      if (!/jaunāk|pēdēj|reģistrēt|fiksēt|apstiprināt|csdd|tehniskās\s+apskates/iu.test(sentence)) continue;
+      // Teikums, kas pats saka «sludinājumā», ir pareizs, ja vien sludinājuma km nav tieši nosaukts par jaunāko / reģistrēto.
+      const kmSrc = listingKmRe.source;
+      const qualifiedRe = new RegExp(`(?:jaunāk|pēdēj|reģistrēt|fiksēt)\\p{L}*\\s+(?:\\p{L}+\\s+){0,2}${kmSrc}`, "iu");
+      if (/sludinājum/iu.test(sentence) && !qualifiedRe.test(sentence) && !/atbilst\s+(?:jaunākajam|pēdējam)/iu.test(sentence)) continue;
+      push({
+        id: "listing_km_as_latest",
+        kind: "contradiction",
+        level: "W",
+        message: `${formatForensicsInt(lm.km)} km ir tikai sludinājumā (${lm.date}); jaunākais apstiprinātais rādījums ir ${formatForensicsInt(facts.latestKm)} km.`,
+        sentence,
+      });
     }
   }
 
@@ -960,6 +994,13 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       countryIso,
     },
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
+    listingMileage: (() => {
+      const m = sheet.match(/Sludinājumā norādīts:\s*([\d\s]+?)\s*km\s*\(([^)\n]*)\)/);
+      if (!m) return null;
+      const km = parseSpacedInt(m[1] ?? "0");
+      const latest = latestKmRaw ? parseSpacedInt(latestKmRaw) : null;
+      return { date: (m[2] ?? "").split(",")[0]!.trim(), km, source: "", diffFromConfirmedKm: latest != null ? km - latest : null };
+    })(),
     // Promptā ir visi avotu dati - visi km lieluma skaitļi ir „avota rādījumi”.
     mileageKms: extractKmLikeNumbers(t).filter((n) => n >= 1000 && n < 2_000_000),
     rollbacks,

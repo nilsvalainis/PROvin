@@ -469,7 +469,7 @@ describe("dealer alerts (Nils 20.11)", () => {
     );
     expect(dealerDataListAlertLabel({ status: "done", attempts: 1 })).toBeNull();
     expect(describeDealerDataJob({ ...normalizeDealerDataJob({ status: "no_vin", plate: "ab1234" }, "s")! })).toBe(
-      "Nav VIN (numurs AB1234)",
+      "CSDD neatrada VIN numuram AB1234",
     );
   });
   it("nextRetryAt - cron atkārto tikai, kad laiks pienācis", () => {

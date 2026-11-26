@@ -3,9 +3,30 @@
  * Nesadalām decimālos („2.0 TDI”) un kārtas skaitļus pirms mazā burta („2013. gadā”).
  */
 
+/** Datums ar atstarpēm: „31.10. 2012”, „31. 10. 2012”, „31.10 .2012” nav teikuma beigas. */
+const SPACED_DATE_RE = /(?<!\d)\d{1,2}\.\s?\d{1,2}\.\s?\d{4}(?!\d)/g;
+
+/** Vai punkts `punctIndex` ir datuma DD.MM.GGGG (arī ar atstarpēm) iekšpusē. */
+export function isDateInternalDot(text: string, punctIndex: number): boolean {
+  if (text[punctIndex] !== ".") return false;
+  const from = Math.max(0, punctIndex - 10);
+  const window = text.slice(from, punctIndex + 14);
+  SPACED_DATE_RE.lastIndex = 0;
+  for (let m = SPACED_DATE_RE.exec(window); m; m = SPACED_DATE_RE.exec(window)) {
+    const start = from + m.index;
+    const end = start + m[0].length;
+    // Tikai punkti datuma VIDŪ (pēc dienas un mēneša) - punkts aiz gada var beigt teikumu.
+    if (punctIndex >= start && punctIndex < end) return true;
+  }
+  return false;
+}
+
 export function isRealSentencePunctuation(text: string, punctIndex: number): boolean {
   const ch = text[punctIndex];
   if (!ch || !".!?".includes(ch)) return false;
+  // 25.11.2026 (WP0ZZZ99ZBS735146): „Pēdējais ieraksts 17.07. 2024 ar …” sadalījās pie „17.07.” -
+  // virsraksts „… 17.07” un rindkopa sākās ar „2024 ar nobraukumu …”.
+  if (isDateInternalDot(text, punctIndex)) return false;
   let end = punctIndex + 1;
   while (end < text.length && ".!?".includes(text[end]!)) end++;
   if (end < text.length && !/\s/.test(text[end]!)) return false;

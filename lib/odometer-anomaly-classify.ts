@@ -12,6 +12,7 @@ import {
   isTrailingSameDaySourcePair,
   parseChartOdometerKm,
   parseOdometerKm,
+  prepareUnifiedMileageDisplayRows,
   sortMileageChronological,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
@@ -383,6 +384,46 @@ export function countChartMileageReadings(rows: UnifiedMileageRow[]): number {
     n += 1;
   }
   return n;
+}
+
+/**
+ * Jaunākais APSTIPRINĀTAIS rādījums (reģistrs / dīleris / TA / vēstures avoti; ne sludinājums, ne izslēgtais
+ * izlēcējs). Bez rezerves uz sludinājumu - ja apstiprināta nav, `null`. Viena izvēle faktu lapai un PDF 1. lapai
+ * (26.11 regresija: kartītē bija ss.lv km, faktu lapā «nav»).
+ */
+export function selectLatestConfirmedMileageRow<T extends UnifiedMileageRow>(rows: T[]): T | null {
+  const exclude = analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
+  const visible = sortMileageChronological(rows).filter((r) => {
+    if (exclude.has(r.sourceOrder)) return false;
+    if (parseOdometerKm(r.odometer) == null) return false;
+    if (r.sortableTime === Number.NEGATIVE_INFINITY) return false;
+    return !isListingMileageSource(r);
+  }) as T[];
+  return visible[visible.length - 1] ?? null;
+}
+
+const LATEST_CONFIRMED_LABEL_WINDOW_MS = 62 * 24 * 60 * 60 * 1000;
+
+/**
+ * Jaunākais apstiprinātais rādījums no AVOTU rindām (km un datums - no paša apstiprinātā ieraksta, ne no
+ * sludinājuma, ar ko tabulā tas apvienots) + viens avota nosaukums: tabulas rindas pirmais ne-sludinājuma avots.
+ * Vienīgā izvēle faktu lapai («Jaunākais rādījums») un PDF 1. lapas odometra kartītei (26.11).
+ */
+export function resolveLatestConfirmedMileage(
+  rows: UnifiedMileageRow[],
+): { row: UnifiedMileageRow; sourceLabel: string } | null {
+  const raw = selectLatestConfirmedMileageRow(rows);
+  if (!raw) return null;
+  const km = parseOdometerKm(raw.odometer);
+  const own = raw.sourceLabel.trim().toLowerCase();
+  const display = prepareUnifiedMileageDisplayRows(rows).find(
+    (d) =>
+      d.sourceLabels.some((l) => l.trim().toLowerCase() === own) &&
+      Math.abs(d.sortableTime - raw.sortableTime) <= LATEST_CONFIRMED_LABEL_WINDOW_MS &&
+      (parseOdometerKm(d.odometer) === km || d.date.trim() === raw.date.trim()),
+  );
+  const label = display?.sourceLabels.find((l) => !isListingMileageSource({ sourceLabel: l })) ?? raw.sourceLabel;
+  return { row: raw, sourceLabel: label };
 }
 
 /** Pēdējais grafika / verificētais punkts (ne sludinājums, ne izslēgtais izlēcējs). */

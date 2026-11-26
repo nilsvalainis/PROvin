@@ -299,22 +299,19 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).toContain("pdf-oil-int__kpis");
     expect(html).toContain("pdf-oil-int__cov");
     expect(html).toContain("pdf-oil-int__caution");
-    expect(html).toContain("Svarīga piezīme par apkopes datu interpretāciju");
-    expect(html).toContain("PROVIN datubāzēs");
-    expect(html).toContain("Neatkarīgie autoservisi neiesūta");
+    expect(html).toContain("Svarīgi par apkopes datiem");
+    expect(html).toContain("autorizētie dīleri un lieli servisu tīkli");
+    expect(html).toContain("Neatkarīgie servisi šos datus nesūta");
     expect(html).toContain("nepierāda, ka apkope nav veikta");
-    expect(html).toContain("Vispārīgi apmeklējumi");
-    expect(html).toContain("apkope");
-    expect(html).toContain("serviss");
+    expect(html).toContain("Vispārīgi ieraksti.");
+    expect(html).toContain("„apkope” vai „serviss”");
+    expect(html).toContain("Trūkstošs ieraksts.");
+    expect(html).toContain("servisa grāmatiņu un čekiem");
+    expect(html).toContain("pirms pirkuma veiciet diagnostiku");
     expect(html).not.toContain("CarVertical");
     expect(html).not.toContain("AutoDNA");
     expect(html).not.toContain("apdrošinātājiem");
-    expect(html).toContain("oficiālu datu neesamību");
-    expect(html).toContain("Fiziskās servisa grāmatiņas");
-    expect(html).toContain("Pirmspirkuma diagnostiku");
-    expect(html).toContain("Iztrūkstošas apkopes.");
-    expect(html).toContain("izrakstiem/čekiem");
-    expect(html).not.toMatch(/Neiztrūkstoš|Pirmsipirkuma|čakiem/);
+    expect(html).not.toMatch(/slēdzien/);
     expect(html).toContain("<th>Intervāls</th><th>Periods</th>");
     expect(html).toContain("31 400 km");
     expect(html).toContain("29 800 km");
@@ -364,5 +361,19 @@ describe("buildOilChangeIntervalPdfHtml", () => {
         buildOilChangeIntervalSeries([row("01.01.2020", "10000", "Bremžu kluči")]),
       ),
     ).toBe("");
+  });
+});
+
+describe("apkopes datu piezīme - tulkojumi", () => {
+  it("visi piezīmes teikumi ir EN/RU/DE sweep atslēgas", async () => {
+    const { applyClientReportStaticTranslations } = await import("@/lib/client-report-i18n");
+    const { oilClaimCautionHtml: caution } = await import("@/lib/oil-change-intervals");
+    for (const makeModel of ["Opel Vivaro", "Mercedes-Benz Vito"]) {
+      const lv = `<html lang="lv"><body>${caution({ makeModel })}</body></html>`;
+      for (const lang of ["en", "ru", "de"] as const) {
+        const out = applyClientReportStaticTranslations(lv, lang);
+        expect(out, `${lang} ${makeModel}`).not.toMatch(/[āēīūčšžņļķģ]/i);
+      }
+    }
   });
 });

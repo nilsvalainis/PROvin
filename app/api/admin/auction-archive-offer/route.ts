@@ -121,13 +121,16 @@ export async function GET(req: Request) {
   if (url.searchParams.get("pdf") === "1") {
     const pdf = await readAuctionArchivePdf(sessionId).catch(() => null);
     if (!pdf) return bad("not_found", 404);
-    const doc = await readAuctionArchiveOffer(sessionId).catch(() => null);
-    const vin = doc?.summary.vin || (await loadAuctionArchiveOrderContext(sessionId).catch(() => null))?.vin || "VIN";
+    const [doc, ctx] = await Promise.all([
+      readAuctionArchiveOffer(sessionId).catch(() => null),
+      loadAuctionArchiveOrderContext(sessionId).catch(() => null),
+    ]);
+    const vin = doc?.summary.vin || ctx?.vin || "VIN";
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `${url.searchParams.get("dl") === "1" ? "attachment" : "inline"}; filename="${auctionArchivePdfFilename(vin)}"`,
+        "Content-Disposition": `${url.searchParams.get("dl") === "1" ? "attachment" : "inline"}; filename="${auctionArchivePdfFilename(vin, ctx?.lang)}"`,
         "Cache-Control": "private, no-store",
       },
     });

@@ -9,6 +9,9 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
+import { parsePartnerCompanyFromNotes, parsePartnerIdFromNotes } from "@/lib/b2b-partner-orders";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
+import { isB2bDealerReadyEmailOrder } from "@/lib/dealer-data-client-email";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
 import { dealerSendRecordFromInput, isDealerSendSituation } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
@@ -76,10 +79,23 @@ export async function POST(req: Request) {
   // Statusa karte pēc situācijas (datu nav / atcelts / gatavs); bez situācijas - tikai teksts rāmī.
   const situation = isDealerSendSituation(o.situation) ? o.situation : null;
   const vinRaw = (order.vin ?? "").trim() || (draft?.orderEdits?.vin ?? "").trim();
+  // Klienta valoda (galvene/kājene) un B2B zīmols - tāpat kā «Dati gatavi» (send-pdf).
+  const langRaw = String(o.lang ?? "").trim().toLowerCase();
+  const lang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(langRaw)
+    ? (langRaw as ClientReportLang)
+    : "lv";
+  const mergedNotes = draft?.orderEdits?.notes || order.notes || "";
+  const b2bClient = isB2bDealerReadyEmailOrder({
+    notes: mergedNotes,
+    partnerId: order.partnerId || parsePartnerIdFromNotes(mergedNotes),
+    partnerCompanyName: parsePartnerCompanyFromNotes(mergedNotes) || order.companyName,
+  });
   const emailSent = await trySendDealerDataOperatorEmail({
     to,
     subject,
     text,
+    lang,
+    b2bClient,
     context: situation ? { situation, productKind: "dealer", vin: vinRaw || null } : null,
   });
   if (!emailSent) {

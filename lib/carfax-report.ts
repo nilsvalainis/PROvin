@@ -1,10 +1,9 @@
 /**
- * CARFAX avota bloks (admin: „CARFAX”).
+ * CARFAX - patstāvīgs avota bloks (admin: „CARFAX”, sava cilne; klienta PDF: sava sadaļa).
  *
- * Bloks izmanto to pašu formu kā AutoDNA / CarVertical (`VendorAvotuBlockState`: nobraukums,
- * negadījumi, laikposma ieraksti, bojājumu detaļas, komentāri, foto) + strukturēto
- * `report` (visi CARFAX lauki). `report` aizpilda PDF parsētājs (`parseCarfaxReportText`)
- * vai nākotnē automātika (carfax.eu) - abos gadījumos rindas veido `carfaxReportToVendorRows`.
+ * Galvenais ir strukturētā `report` (visi CARFAX lauki), ko aizpilda PDF parsētājs (`parseCarfaxReportText`)
+ * vai nākotnē automātika (carfax.eu). No tās `carfaxReportToVendorRows` atvasina rindas (nobraukums, negadījumi,
+ * laikposms, bojājumu zonas), kas nonāk kopējās tabulās ar avotu «CARFAX» - nekad AutoDNA / CarVertical blokos.
  */
 
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
@@ -21,6 +20,7 @@ import {
 } from "@/lib/carfax-report-parse";
 import { ADMIN_INCIDENT_DATA_UNAVAILABLE } from "@/lib/admin-incident-field-presets";
 import { mergeAutoRecordsServiceHistory } from "@/lib/auto-records-pdf-parse";
+import { dropFutureDatedRows, isImpossibleFutureDate } from "@/lib/future-date-guard";
 
 export type { CarfaxReport } from "@/lib/carfax-report-parse";
 
@@ -485,7 +485,8 @@ export function carfaxReportToPlainText(r: CarfaxReport | null | undefined): str
   }
   lines.push("BOJĀJUMI");
   if (r.noDamageReported) lines.push("CARFAX bojājumus nav saņēmis (No issues reported)");
-  for (const d of r.damages) {
+  // 25.11: ieraksti ar datumu nākotnē (23.11 likums) nav fakts - AI kontekstā neiet.
+  for (const d of r.damages.filter((x) => !isImpossibleFutureDate(x.date ?? ""))) {
     lines.push(
       [
         d.date,
@@ -504,7 +505,9 @@ export function carfaxReportToPlainText(r: CarfaxReport | null | undefined): str
   if (mc.statusLv || mc.lastReadingKm) {
     lines.push("NOBRAUKUMA PĀRBAUDE");
     if (mc.statusLv) lines.push(mc.statusLv);
-    if (mc.lastReadingKm) lines.push(`Pēdējais rādījums: ${mc.lastReadingKm} km (${mc.lastReadingDate || "-"})`);
+    if (mc.lastReadingKm && !isImpossibleFutureDate(mc.lastReadingDate ?? "")) {
+      lines.push(`Pēdējais rādījums: ${mc.lastReadingKm} km (${mc.lastReadingDate || "-"})`);
+    }
     if (mc.projectionKm) lines.push(`CARFAX prognoze šodien: ~${mc.projectionKm} km`);
     if (mc.projectionSimilarKm) lines.push(`Līdzīgiem auto: ~${mc.projectionSimilarKm} km`);
   }
@@ -521,9 +524,10 @@ export function carfaxReportToPlainText(r: CarfaxReport | null | undefined): str
       lines.push(`${o.index}. ${o.country} · iegāde ${o.purchaseYear || "-"} · ${o.lengthOfUse || "-"} · ${o.ownerType || "-"}`);
     }
   }
-  if (r.history.length > 0) {
+  const history = dropFutureDatedRows(r.history, { source: "carfax_ai_context" });
+  if (history.length > 0) {
     lines.push("VĒSTURE (CARFAX)");
-    for (const e of r.history) {
+    for (const e of history) {
       lines.push(
         [e.date, e.odometerKm ? `${e.odometerKm} km` : "", e.country, carfaxTimelineDescription(e)].filter(Boolean).join("\t"),
       );

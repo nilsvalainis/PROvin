@@ -292,8 +292,9 @@ export function AdminCsddBlokiPanel({
               if (m.co || m.coHigh) cells.push({ k: "CO %", v: [m.co ? n(m.co) : "", m.coHigh ? `${csddBlokiT("coHigh", lv)} ${n(m.coHigh)}` : ""].filter(Boolean).join(" · ") });
               if (m.hc) cells.push({ k: "HC ppm", v: n(m.hc) });
               if (m.lambda) cells.push({ k: csddBlokiT("lambda", lv), v: n(m.lambda) });
-              if (m.smoke) cells.push({ k: csddBlokiT("smoke", lv), v: n(m.smoke) });
-              if (m.particles) cells.push({ k: csddBlokiT("particles", lv), v: m.particles });
+              // Divi dažādi CSDD mērījumi: dūmainības koeficients (m⁻¹, vecā metode) vai atgāzu cietās daļiņas (skaits cm⁻³).
+              if (m.smoke) cells.push({ k: csddBlokiT("smoke", lv), v: `${n(m.smoke)} m⁻¹` });
+              if (m.particles) cells.push({ k: csddBlokiT("particles", lv), v: `${m.particles} cm⁻³` });
               return (
                 <>
                   <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">

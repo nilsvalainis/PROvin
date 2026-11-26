@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   makeModelPart,
   orderDropboxCategory,
+  orderDropboxCategoryFromReportFilename,
   orderDropboxFolderName,
   orderDropboxFolderPath,
+  orderDropboxNameWithCategory,
   orderDropboxShouldRename,
   parseOrderDropboxRecord,
 } from "@/lib/order-dropbox-folder";
@@ -70,5 +72,33 @@ describe("ieraksts", () => {
   it("parse", () => {
     expect(parseOrderDropboxRecord({ sessionId: "x", category: "audits", state: "ok", path: "/p", orderCreatedMs: 5 })?.orderCreatedMs).toBe(5);
     expect(parseOrderDropboxRecord({ sessionId: "x", category: "iriss" })).toBeNull();
+  });
+});
+
+describe("manuālā pasūtījuma produkts pēc atskaites PDF nosaukuma", () => {
+  it("Business / Dīlera dati / AUDITS / MINI visās valodās un ar v2- priedēkli", () => {
+    expect(orderDropboxCategoryFromReportFilename("PROVIN_BUSINESS_WBA00000000000001.pdf")).toBe("business");
+    expect(orderDropboxCategoryFromReportFilename("v2-PROVIN_BUSINESS_WBA00000000000001_EN.pdf")).toBe("business");
+    expect(orderDropboxCategoryFromReportFilename("OFICIALA_DILERA_DATI_WBA00000000000001.pdf")).toBe("dealer");
+    expect(orderDropboxCategoryFromReportFilename("OFFIZIELLE_HAENDLERDATEN_WBA00000000000001_DE.pdf")).toBe("dealer");
+    expect(orderDropboxCategoryFromReportFilename("PROVIN_AUDITS_WBA00000000000001.pdf")).toBe("audits");
+    expect(orderDropboxCategoryFromReportFilename("PROVIN_AUDIT_IZVILKUMS_WBA00000000000001_RU.pdf")).toBe("audits");
+    expect(orderDropboxCategoryFromReportFilename("PROVIN_MINI_WBA00000000000001.pdf")).toBe("mini");
+  });
+  it("nezināms / ASV / izsoļu arhīvs - mapi nepārvieto", () => {
+    expect(orderDropboxCategoryFromReportFilename("PROVIN_ASV_WBA00000000000001.pdf")).toBeNull();
+    expect(orderDropboxCategoryFromReportFilename("IZSOLU_ARHIVS_WBA00000000000001.pdf")).toBeNull();
+    expect(orderDropboxCategoryFromReportFilename("Atskaite.pdf")).toBeNull();
+    expect(orderDropboxCategoryFromReportFilename("")).toBeNull();
+  });
+});
+
+describe("produkta vārds mapes nosaukumā", () => {
+  it("nomaina tikai produkta daļu", () => {
+    expect(orderDropboxNameWithCategory("BMW 325_WBA00000000000001_2026-11-23_AUDITS", "audits", "business")).toBe(
+      "BMW 325_WBA00000000000001_2026-11-23_BUSINESS",
+    );
+    expect(orderDropboxNameWithCategory("AB1234_2026-11-23_AUDITS_abc123", "audits", "dealer")).toBe("AB1234_2026-11-23_DILERA DATI_abc123");
+    expect(orderDropboxNameWithCategory("Veca mape", "audits", "business")).toBe("Veca mape_BUSINESS");
   });
 });

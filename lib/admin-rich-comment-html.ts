@@ -5,6 +5,7 @@ import {
   applyProvinHumanDashes,
   toExpertHeadingBodyPlain,
 } from "@/lib/source-summary-comment-format";
+import { applyReportLanguageFixes } from "@/lib/report-language-fixes";
 
 /**
  * Dekodē biežākos HTML entītiju fragmentus pēc tagu noņemšanas
@@ -529,5 +530,6 @@ export function adminRichHtmlToPdfSafeHtml(html: string): string {
   s = s.replace(/\r?\n/g, "<br />");
   s = s.replace(/(<br\s*\/?>\s*){2,}/gi, "<br />");
   s = s.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "");
-  return applyProvinHumanDashes(s.trim());
+  // 24.11 audits: avotu rakstība, neiztulkoti avotu vārdi, «t.s.», «2016.gāda», «~9.5 mēn.» - arī saglabātiem tekstiem.
+  return applyProvinHumanDashes(applyReportLanguageFixes(s.trim()));
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import {
@@ -16,7 +16,7 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
-import type { CarfaxBlockState, LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
+import type { LtabIncidentRow, VendorAvotuBlockState } from "@/lib/admin-source-blocks";
 import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   NEGADIJUMU_VESTURE_TITLE,
@@ -32,6 +32,7 @@ import {
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { AdminSourcePdfChecklist } from "@/components/admin/AdminSourcePdfChecklist";
+import { AdminAutodnaPreviousSearches } from "@/components/admin/AdminAutodnaPreviousSearches";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 import {
@@ -73,7 +74,7 @@ import { AdminCarVerticalAutoPanel } from "@/components/admin/AdminCarVerticalAu
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-type BlockKey = "autodna" | "carvertical" | "carfax" | "citi_avoti";
+type BlockKey = "autodna" | "carvertical" | "citi_avoti";
 
 function vendorOdometerSourceLabel(
   blockKey: BlockKey,
@@ -115,8 +116,6 @@ type Props = {
   ) => void;
   photosPersistenceEnabled?: boolean;
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
-  /** Papildu panelis zem PDF augšupielādes (CARFAX strukturētā atskaite). */
-  extraPanel?: ReactNode;
 };
 
 export function AdminVendorAvotuSourceBlock({
@@ -136,13 +135,8 @@ export function AdminVendorAvotuSourceBlock({
   applyPatchedBlocks,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
-  extraPanel,
 }: Props) {
-  // CARFAX strukturētā atskaite (`report`) jāsaglabā pie katras rindas labošanas - coerce to izmet.
-  const carfaxReport = blockKey === "carfax" ? (value as CarfaxBlockState | undefined)?.report : undefined;
-  const block: VendorAvotuBlockState = carfaxReport
-    ? ({ ...coerceVendorAvotuBlock(value), report: carfaxReport } as CarfaxBlockState)
-    : coerceVendorAvotuBlock(value);
+  const block = coerceVendorAvotuBlock(value);
   const serviceHistory = block.serviceHistory ?? [];
   const incidents = block.incidents ?? [];
   const incidentsHaveData = incidents.some(ltabRowHasData);
@@ -244,7 +238,7 @@ export function AdminVendorAvotuSourceBlock({
             applyPatchedBlocks={applyPatchedBlocks}
           />
         ) : null}
-        {blockKey === "carvertical" || blockKey === "autodna" || blockKey === "carfax" ? (
+        {blockKey === "carvertical" || blockKey === "autodna" ? (
           getSourceBlocks && applyPatchedBlocks ? (
             <AdminHistoryVendorPdfUpload
               target={blockKey}
@@ -256,7 +250,6 @@ export function AdminVendorAvotuSourceBlock({
             />
           ) : null
         ) : null}
-        {extraPanel}
         <div
           className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90"
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
@@ -397,7 +390,7 @@ export function AdminVendorAvotuSourceBlock({
               Laikposma ieraksti
             </p>
             <p className="mb-1.5 text-[10px] text-slate-500">
-              Pēc ielasīšanas izslēgti. Atzīmē PDF, lai rādītu laikposma joslā. Var labot, dzēst vai atstāt ārā.
+              Pēc ielasīšanas izslēgti (tehniskās apskates - ieslēgtas). Atzīmē PDF, lai rādītu laikposma joslā. Var labot, dzēst vai atstāt ārā.
               Sludinājuma, izsoles un vēsturiskās cenas rindas nav fiziska valstu maiņa.
             </p>
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
@@ -712,7 +705,14 @@ export function AdminVendorAvotuSourceBlock({
       </div>
 
       <div className={`mt-auto w-full min-w-0 shrink-0 pt-2 ${embedded ? "" : trafficFillLevel ? "px-2 pb-2" : ""}`}>
-        {blockKey === "autodna" || blockKey === "carvertical" || blockKey === "carfax" ? (
+        {blockKey === "autodna" ? (
+          <AdminAutodnaPreviousSearches
+            rows={block.previousSearches}
+            readOnly={readOnly || !!disabled}
+            onRemove={() => onChange({ ...block, previousSearches: undefined })}
+          />
+        ) : null}
+        {blockKey === "autodna" || blockKey === "carvertical" ? (
           <AdminSourcePdfChecklist
             idPrefix={idBase}
             value={block.pdfChecklist}

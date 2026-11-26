@@ -123,6 +123,7 @@ export type FactCheckFlag = {
     | "no_recalls_claim"
     | "leak_phrase"
     | "atsavinasanai"
+    | "purchase_verdict"
     | "unsourced_date"
     | "powertrain_fuel"
     | "powertrain_engine";

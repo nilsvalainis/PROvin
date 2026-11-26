@@ -368,9 +368,9 @@ SATURA PRASĪBAS:
 - ZIEMAS SĀLS / RŪSA: ja kontekstā ir bloks „Ziemas sāls / rūsas ekspozīcija” ar Statuss: OBLIGĀTI — viena rindkopa (klimata risks no ziemas sāls, ne pierādīts defekts; cinkojums un svaiga/tīra TA neatceļ). Nosauc vietas no brīfa. Bagāžnieka vāku / numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Plastmasa, stiklašķiedra, kompozīts, alumīnijs vai „materiāls nav droši zināms” - to šablonu NERAKSTI. Neizdomā, ka rūsa jau ir.
 
 DALĪJUMS:
-- Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un NEKOPSAVILKUMA VERDIKTS.
+- Šī sadaļa = agregātu slimības / stiprās puses / kas NAV risks — BEZ EUR tāmēm, NEAPSKATES CHECKLIST un bez pirkuma lēmuma (buy / do-not-buy verdict).
 - TA nosegtie nodiluma mezgli (sviras, bukses, lodbalsti, bremzes) NAV šīs sadaļas saturs, ja noseguma LĪMENIS to aizliedz.
-- Klātienes soļus atstāj „2. Ieteikumi…”. „3. Kopsavilkums” = apspriestie fakti + ja vajag servisa pārbaude, ne pirkuma verdikts.
+- Klātienes soļus atstāj „2. Ieteikumi…”. „3. Kopsavilkums” = apspriestie fakti + ja vajag servisa pārbaude, ne pirkuma lēmums (PROVIN dod ieteikumus, lēmumu pieņem klients).
 
 AVOTI (šādā secībā, VISI ražotāji): (1) šī auto dzinēja kods / CSDD / Outvin / aprīkojums; (2) web meklēšana šim kodam; (3) agregātu paka tikai ja nosauc to pašu kodu; vēsturiskie auditi = stils, ne sveša motora fakti.
 
@@ -424,7 +424,7 @@ Ja norādīts papildus pārdevēja/uzņēmuma nosaukums:
 - Meklē sudzibas.lv un Google atsauksmes / Google Reviews, plus citus atklātus avotus par šo firmu.
 - Konstatē, kas publiski atrodams: nosaukums, adrese, darbības joma, atsauksmju saturs. Neizdomā atsauksmes.
 - Neapgalvo, ka negatīvā vai pozitīvā atsauksme ir autentiska — tu tikai fiksē, ka tāds teksts publiski parādās.
-- „Paaugstināta riska darījums” TIKAI tad, ja publiski ir sistemātiskas sūdzības (vairāki neatkarīgi avoti, atkārtots tas pats modelis). Viena sūdzība vai jaukti viedokļi ≠ paaugstināts risks. Tad saki, ka tas ir iemesls piesardzībai un dokumentu pārbaudei, ne verdikts par šo auto.
+- „Paaugstināta riska darījums” TIKAI tad, ja publiski ir sistemātiskas sūdzības (vairāki neatkarīgi avoti, atkārtots tas pats modelis). Viena sūdzība vai jaukti viedokļi ≠ paaugstināts risks. Tad saki, ka tas ir iemesls piesardzībai un dokumentu pārbaudei, ne galīgs vērtējums par šo auto.
 - Neko neizpušķo: bez „ko tas nozīmē šim darījumam”, bez kopsavilkuma esejas, kas atkārto iepriekšējo rindkopu.
 
 Ja papildus nosaukums NAV norādīts:
@@ -479,11 +479,11 @@ export const AI_SUMMARY_ANALYSIS_SYSTEM = `${PROVIN_FIELD_AGENT_SYSTEM}
 
 ACTIVE FIELD: CLIENT SUMMARY (3. Kopsavilkums — gala ziņa klientam, PDF „APPROVED BY IRISS”)
 
-Uzdevums: uzrakstīt **apspriestos faktus** no atskaites un, **tikai ja vajag**, īsu slēdzienu ar rekomendāciju uz **pārbaudi servisā** — lauks „3. Kopsavilkums”.
+Uzdevums: uzrakstīt **apspriestos faktus** no atskaites un, **tikai ja vajag**, īsus ieteikumus ar **pārbaudi servisā** — lauks „3. Kopsavilkums”.
 
 KAS ŠIS IR (obligāti):
 - Fakti, kas datos ir fiksēti un jau apspriesti (datums, km, servisa rinda, pretensija, TA). Bez atmosfēras ievada.
-- Ja kāds punkts datos NAV droši pierādīts: viens slēdziens - ko pārbaudīt servisā / klātienē. Neapgalvo, ka defekts ir.
+- Ja kāds punkts datos NAV droši pierādīts: viens ieteikums - ko pārbaudīt servisā / klātienē. Neapgalvo, ka defekts ir.
 - Šī ir **vienīgā** sadaļa, kur avotu kopsakarības drīkst sasaistīt. Pārējos laukos avoti pastāsta savu daļu.
 
 KAS ŠIS NAV (obligāti):
@@ -491,7 +491,7 @@ KAS ŠIS NAV (obligāti):
 - NEKĀDĀ GADĪJUMĀ nepārraksti / neapkopo jau ģenerētos teikumus no avotu komentāriem, nobraukuma, negadījumiem, tehnisko risku, apskates vai cenas.
 - Neveido punktu-pa-punktam kopsavilkumu („CSDD saka… AutoDNA saka… CarVertical saka…”).
 - Nedetalizē katru faktu, km līniju, negadījumu vai tipisko slimību — tas jau ir citās sadaļās.
-- Nav pirkuma verdikta eseja („pirkt / nepirkt”) un nav nepierādītu apgalvojumu par slēptiem defektiem.
+- Nav pirkuma lēmuma (buy / do-not-buy verdict) - PROVIN dod ieteikumus, lēmumu pieņem klients; nav nepierādītu apgalvojumu par slēptiem defektiem.
 
 OPERATORA KOMANDAS (obligāti):
 - Ja promptā ir sadaļa „OPERATORA KOMANDAS” — izpildi AI_OPERATOR_NOTES_EXECUTION_RULES: visām tēmām, bez cherry-pick, bez liekām rindām ja operators ierobežoja apjomu.
@@ -795,7 +795,7 @@ Rezultāts (šī lauka mandāts - atšķirībā no avotu komentāriem):
 - Salīdzini avotu km līknes un reģistrācijas/īpašniecības/dīlera atskaites punktus; izceļ tikai būtiskas pretrunas
 - Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
 - Follow ODOMETER DROP: nosauc abus rādījumus, datumus, avotu un starpību km un sauc to par odometra manipulāciju; vainīgo nenosauc.
-- Ja kontekstā ir nobraukuma forenzikas brief: lieto tos ciparus; ja temps UN tukšums abi nav ticami, saki, ka līdz galam izskaidrot nevaram, un dod interpretācijas, ne vienu verdiktu
+- Ja kontekstā ir nobraukuma forenzikas brief: lieto tos ciparus; ja temps UN tukšums abi nav ticami, saki, ka līdz galam izskaidrot nevaram, un dod interpretācijas, ne vienu galīgu vērtējumu
 - Bez virsraksta un bez meta-komentāriem par AI
 - GARUMS: šis ir vienīgais lauks pilnai nobraukuma sintēzei, tāpēc drīkst būt nedaudz plašāks par avota komentāru — tipiski **3–5 rindkopas**, ne eseja`,
 );
@@ -813,10 +813,10 @@ IZEJA — tikai JSON, bez Markdown:
 
 - letter = komentāra daļa e-pastā (šablons jau sākas ar „Labdien!”). NESĀC ar „Sveiki”, „Labdien” vai citu uzrunu. Sagataves + operatora papildinājumi ir VIENA rindkopa: katrs nākamais teikums turpina iepriekšējo caur punktu un vienu atstarpi. NEKAD jauna rinda, tukša rinda vai 1. 2. 3. saraksts starp sagatavēm. Closer (ja closer=true) tikai pēc tam, atsevišķā rindkopā.
 - Ja promptā ir esošais melnraksts / operatora teikumi — tie ir AVOTS: saglabā faktus, specifiškos teikumus, VIN, cenas, km, gadu. Drīksti pārkārtot PROVIN stilā, NEDRĪKSTI izmest operatora detaļas.
-- odometer / incidents / technical / seller / photos / dealer / recommendation — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter). Vienā tēmā drīkst vairākas sagataves secīgi. recommendation = kuru PROVIN pakalpojumu (MINI, AUDITS, DĪLERA DATI) vai "neiesakām iegādāties" variantu operators iesaka — aizpildi tikai ja sagatavju frāzes to atbalsta, neizdomā ieteikumu pats.
+- odometer / incidents / technical / seller / photos / dealer / recommendation — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter). Vienā tēmā drīkst vairākas sagataves secīgi. recommendation = kuru PROVIN pakalpojumu (MINI, AUDITS, DĪLERA DATI) operators iesaka un ko pārbaudīt — aizpildi tikai ja sagatavju frāzes to atbalsta, neizdomā ieteikumu pats. Nekad pirkuma lēmumu (buy / do-not-buy): PROVIN dod ieteikumus, lēmumu pieņem klients.
 - closer: pēc noklusējuma true (AUDITS teikums beigās). false tikai ja operators to izņēmis.
 
-TONIS: atturīgs, pārdod AUDITS bez panikas. Sagatavju frāzes (arī smagākās) drīkst ņemt vārds vārdā, ja sludinājums to attaisno. Aizliegti paša izdomāti: anomālija, katastrofāls, nepērc, izsaukuma zīmes.
+TONIS: atturīgs, pārdod AUDITS bez panikas. Sagatavju frāzes (arī smagākās) drīkst ņemt vārds vārdā, ja sludinājums to attaisno. Aizliegti paša izdomāti: anomālija, katastrofāls, pirkuma lēmums (buy / do-not-buy), izsaukuma zīmes.
 Neizdomā faktus ārpus nolasītā sludinājuma un operatora piezīmēm.`,
 );
 

@@ -11,9 +11,9 @@
 
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
-import { ccVinSaleRowHasData } from "@/lib/cc-vin-report";
+import { CC_VIN_PDF_SOURCE_LABEL, ccVinSaleRowHasData } from "@/lib/cc-vin-report";
 import { PDF_DEALER_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
-import { pdfDealerBrandFileKey } from "@/lib/pdf-source-brand-logos";
+import { pdfDealerBrandFileKey, pdfDealerBrandFileKeyFromVin } from "@/lib/pdf-source-brand-logos";
 import { PDF_SOURCE_LOGO_SVG, type PdfSourceLogoKey } from "@/lib/pdf-source-logo-svgs";
 import type { PdfSummaryTile } from "@/lib/pdf-report-summary";
 
@@ -49,6 +49,8 @@ const TXT = {
   mileageRollback: { lv: "Nobraukuma kritums", en: "Mileage decrease", ru: "Снижение пробега", de: "Rückgang km-Stand" },
   mileageListingBelow: { lv: "Sludinājumā mazāk", en: "Lower in listing", ru: "В объявлении меньше", de: "Im Inserat weniger" },
   noData: { lv: "Nav datu", en: "No data", ru: "Нет данных", de: "Keine Daten" },
+  dealerName: { lv: "Dīleris", en: "Dealer", ru: "Дилер", de: "Händler" },
+  odoListing: { lv: "sludinājumā {km}", en: "in listing {km}", ru: "в объявлении {km}", de: "im Inserat {km}" },
   auctionsNone: { lv: "Nav atrastas", en: "None found", ru: "Не найдены", de: "Keine gefunden" },
   auctionsNoneNote: { lv: "Izsoļu arhīvos nav ierakstu", en: "No auction archive records", ru: "Записей в архивах аукционов нет", de: "Keine Einträge in Auktionsarchiven" },
   serviceLatest: { lv: "Pēdējais", en: "Latest", ru: "Последний", de: "Letzter" },
@@ -81,6 +83,71 @@ export function isPdfTopTextKey(key: string): key is PdfTopTextKey {
 
 export function pdfTopText(key: PdfTopTextKey, lang: Lang): string {
   return TXT[key][lang] ?? TXT[key].lv;
+}
+
+/**
+ * Odometra rādījuma avota nosaukums - viens visur (PDF 1. lapas kartīte un AI faktu lapa «Jaunākais rādījums»),
+ * lai vienam ierakstam būtu viens avots (26.11 regresija).
+ */
+export function pdfTopOdometerSourceName(
+  label: string,
+  date: string,
+  cc: CcVinBlockState | null | undefined,
+  lang: Lang,
+): string {
+  const l = label.trim();
+  if (l === CC_VIN_PDF_SOURCE_LABEL) {
+    const sale = collectPdfTopAuctions(cc).find((a) => a.date === pdfTopDay(date));
+    return sale?.venue ? pdfTopText("auctionAt", lang).replace("{v}", sale.venue) : pdfTopText("catAuctions", lang);
+  }
+  if (l === "OFICIĀLĀ DĪLERA DATI") return pdfTopText("catDealer", lang);
+  if (l === "AutoDNA") return "autoDNA";
+  if (l === "CarVertical") return "carVertical";
+  return l;
+}
+
+const DEALER_MAKE_DISPLAY: Record<string, string> = {
+  bmw: "BMW",
+  mini: "MINI",
+  mg: "MG",
+  seat: "SEAT",
+  mercedes: "Mercedes-Benz",
+  "land-rover": "Land Rover",
+  "alfa-romeo": "Alfa Romeo",
+  "aston-martin": "Aston Martin",
+  "rolls-royce": "Rolls-Royce",
+  skoda: "Škoda",
+  citroen: "Citroën",
+};
+
+function dealerMakeDisplay(key: string): string {
+  return DEALER_MAKE_DISPLAY[key] ?? key.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+/**
+ * Dīlera avota flīze 1. lapā: nosaukums pēc markas (26.11 regresija: flīzē bija modelis «Touran»).
+ * Marka - no markas/modeļa teksta (ja tā ir zināma marka ar logo) vai no VIN (WMI); ja markas nav - «Dīleris».
+ */
+export function pdfTopDealerSourceName(
+  makeModel: string,
+  vin: string,
+  lang: Lang,
+): { name: string; logoUri: string | null } {
+  const mm = makeModel.trim();
+  const uri = mm ? pdfTopMakeLogoUri(mm) : null;
+  if (uri) return { name: mm.split(/\s+/)[0] ?? "", logoUri: uri };
+  const vinKey = pdfDealerBrandFileKeyFromVin(vin ?? "");
+  if (vinKey) return { name: dealerMakeDisplay(vinKey), logoUri: pdfTopMakeLogoUri(vinKey) };
+  return { name: pdfTopText("dealerName", lang), logoUri: null };
+}
+
+/**
+ * 26.11: sludinājuma km nav odometra rādījums - kartītē tikai kā skaidri atzīmēta piezīme
+ * («sludinājumā 196 000 km · 14.08.2026»), nekad kā lielais skaitlis.
+ */
+export function pdfTopListingOdometerNote(km: string, date: string, lang: Lang): string {
+  const kmText = /\b(km|mi|км)\s*$/i.test(km.trim()) ? km.trim() : `${km.trim()} km`;
+  return [pdfTopText("odoListing", lang).replace("{km}", kmText), date.trim()].filter(Boolean).join(" · ");
 }
 
 /** «PROVIN atskaites ģenerēšanā izmantotie avoti» - zīmols vārda vietā katrā valodā. */
@@ -467,7 +534,15 @@ export function pdfTopPhotoCaption(photo: PdfTopPhoto, lang: Lang): string {
 // Kartītes
 
 export type PdfTopCardTone = "risk" | "none" | "plain";
-export type PdfTopCard = { id: string; label: string; value: string; note: string; tone: PdfTopCardTone };
+export type PdfTopCard = {
+  id: string;
+  label: string;
+  value: string;
+  note: string;
+  tone: PdfTopCardTone;
+  /** Markas logo pie etiķetes (tikai «Serviss», ja ir oficiālā dīlera ieraksti; Nils 25.11, makets A). */
+  labelLogoUri?: string;
+};
 
 const DEFAULT_TILE_LABEL: Record<string, string> = {
   incidents: "Negadījumi un bojājumi",
@@ -499,6 +574,8 @@ export function buildPdfTopKeyCards(args: {
   /** Izsoļu portālu arhīvs iekļauts PDF (citādi kartītes «Izsoles» nav). */
   auctionsVisible: boolean;
   auctionsHaveData: boolean;
+  /** Markas logo (`pdfTopMakeLogoUri`) - kartītei «Serviss», ja tās datos ir oficiālā dīlera ieraksti. */
+  serviceLogoUri?: string | null;
   lang: Lang;
 }): PdfTopCard[] {
   const { lang } = args;
@@ -553,7 +630,8 @@ export function buildPdfTopKeyCards(args: {
   const svc = byId.get("service");
   if (svc) {
     const note = !ov.has("service") && svc.latestDate ? `${pdfTopText("serviceLatest", lang)} ${svc.latestDate}` : tileNote(svc);
-    out.push({ id: "service", label: label(svc, "service"), value: svc.value, note, tone: toneOf(svc, true) });
+    const logo = args.serviceLogoUri && (svc.dealerRecords ?? 0) > 0 ? { labelLogoUri: args.serviceLogoUri } : {};
+    out.push({ id: "service", label: label(svc, "service"), value: svc.value, note, tone: toneOf(svc, true), ...logo });
   }
   return out;
 }
@@ -601,7 +679,8 @@ export type PdfTopModel = {
   vin: string;
   specLine: string;
   photo: PdfTopPhoto | null;
-  odometer: { value: string; sub: string } | null;
+  /** `none`: apstiprināta rādījuma nav - mierīgs «Nav datu» (sludinājuma km tikai `sub` ar atzīmi). */
+  odometer: { value: string; sub: string; none?: boolean } | null;
   age: string;
   firstReg: { date: string; sub: string } | null;
   cards: PdfTopCard[];
@@ -631,6 +710,22 @@ export function buildPdfTopBarHtml(m: Pick<PdfTopModel, "logoSvg" | "kindTitle" 
   return `<div class="pdf-top6__bar"><span class="pdf-top6__logo">${m.logoSvg}</span><span class="pdf-top6__kind">${right}</span></div>`;
 }
 
+/** Etiķetes logo: augstums px un atstarpe līdz tekstam (makets A). */
+const LABEL_LOGO_H = 13;
+const LABEL_LOGO_GAP = 6;
+
+/** SVG data URI platuma/augstuma attiecība (no width/height vai viewBox); nezināma - 1. */
+export function pdfTopSvgAspect(uri: string): number {
+  const b64 = /^data:image\/svg\+xml;base64,(.+)$/.exec(uri)?.[1];
+  if (!b64) return 1;
+  const head = /^<svg\b[^>]*>/.exec(fromBase64(b64))?.[0] ?? "";
+  const w = Number(/\bwidth="([\d.]+)"/.exec(head)?.[1]);
+  const h = Number(/\bheight="([\d.]+)"/.exec(head)?.[1]);
+  if (w > 0 && h > 0) return w / h;
+  const vb = /\bviewBox="[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+([\d.]+)"/.exec(head);
+  return vb && Number(vb[1]) > 0 && Number(vb[2]) > 0 ? Number(vb[1]) / Number(vb[2]) : 1;
+}
+
 function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
   if (cards.length === 0) return "";
   const { cols, cells } = pdfSymmetricGridPlacement(cards.length);
@@ -643,13 +738,18 @@ function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
   const items = cards
     .map((c, i) => {
       const cell = cells[i]!;
-      const labPx = pdfTopFitPx(c.label, inner, 7.5, 6.25, { upper: true, tracking: 0.14 });
+      const logoW = c.labelLogoUri ? Math.min(LABEL_LOGO_H * pdfTopSvgAspect(c.labelLogoUri), LABEL_LOGO_H * 2.5) : 0;
+      const labW = c.labelLogoUri ? inner - logoW - LABEL_LOGO_GAP : inner;
+      const labPx = pdfTopFitPx(c.label, labW, 7.5, 6.25, { upper: true, tracking: 0.14 });
       const vCls = c.tone === "risk" ? " s-alert" : c.tone === "none" ? " s-none" : "";
       const valueHtml = c.value
         ? `<p class="pdf-top6-card__v${vCls}" style="${fitStyle(fits[i] == null ? null : shared, 8.5)}">${esc(c.value)}</p>`
         : "";
       const noteHtml = c.note ? `<p class="pdf-top6-card__sub">${keepNumbers(esc(c.note))}</p>` : "";
-      return `<div class="pdf-top6-card pdf-top6-card--${esc(c.id.replace(/[^a-z0-9-]/gi, "-"))}" style="grid-row:${cell.row};grid-column:${cell.col} / span 2"><p class="pdf-top6__lab" style="${fitStyle(labPx, 6.25)}">${esc(c.label)}</p>${valueHtml}${noteHtml}</div>`;
+      const labelHtml = c.labelLogoUri
+        ? `<p class="pdf-top6__lab" style="display:flex;align-items:center;gap:${LABEL_LOGO_GAP}px;${fitStyle(labPx, 6.25)}"><img src="${esc(c.labelLogoUri)}" alt="" style="height:${LABEL_LOGO_H}px;width:auto;max-width:${LABEL_LOGO_H * 2.5}px;flex:none;margin:-2px 0">${esc(c.label)}</p>`
+        : `<p class="pdf-top6__lab" style="${fitStyle(labPx, 6.25)}">${esc(c.label)}</p>`;
+      return `<div class="pdf-top6-card pdf-top6-card--${esc(c.id.replace(/[^a-z0-9-]/gi, "-"))}" style="grid-row:${cell.row};grid-column:${cell.col} / span 2">${labelHtml}${valueHtml}${noteHtml}</div>`;
     })
     .join("");
   return `<div class="pdf-top6__kc"><p class="pdf-top6__hd">${esc(pdfTopText("keyInfo", lang))}</p><div class="pdf-top6__grid" style="grid-template-columns:repeat(${cols * 2},minmax(0,1fr))">${items}</div></div>`;
@@ -686,6 +786,12 @@ function sourcesHtml(m: PdfTopModel): string {
   return `<div class="pdf-top6__src"><div class="pdf-top6__shead"><p class="pdf-top6__hd">${sourcesHeadingHtml(lang, m.wordmarkHtml)}</p>${parts.length ? `<p class="pdf-top6__tot">${parts.join(" · ")}</p>` : ""}</div><div class="pdf-top6__scan"></div><div class="pdf-top6__cells" style="grid-template-columns:repeat(${cols * 2},minmax(0,1fr))">${items}</div></div>`;
 }
 
+/**
+ * Inter 800 ar lielajiem burtiem ir platāks par `pdfTopTextEm` vidējo (iPhone 25.11: «BMW 530D XDRIVE»
+ * pārklājās ar odometru). Titulam rezerve 8 %; precīzo izmēru pēc fontu ielādes pielāgo `PDF_TOP6_FIT_SCRIPT`.
+ */
+export const PDF_TOP_TITLE_SAFETY = 0.92;
+
 /** Visa 1. lapas augšdaļa vienā blokā, kas lapu pārrāvumā nepārtrūkst. */
 export function buildPdfTopSectionHtml(m: PdfTopModel): string {
   const { lang } = m;
@@ -697,14 +803,18 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
     : "";
   const model = m.makeModel.trim();
   const maxTitle = hasPhoto ? 32 : 40;
-  const one = model ? pdfTopFitPx(model, W, maxTitle, 22) : maxTitle;
-  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${Math.max(18, Math.min(hasPhoto ? 26 : 32, Math.floor((2 * W) / Math.max(1, pdfTopTextEm(model)))))}px`;
+  const one = model ? pdfTopFitPx(model, W * PDF_TOP_TITLE_SAFETY, maxTitle, 22) : maxTitle;
+  const twoLinePx = Math.max(18, Math.min(hasPhoto ? 26 : 32, Math.floor((2 * W * PDF_TOP_TITLE_SAFETY) / Math.max(1, pdfTopTextEm(model)))));
+  // `data-fit-min`: pēc fontu ielādes skripts samazina izmēru, līdz ietilpst kolonnā; ja nē - lūzt 2 rindās.
+  const titleStyle = one != null ? `font-size:${one}px;white-space:nowrap` : `font-size:${twoLinePx}px`;
   const vin = m.vin.trim() ? `<p class="pdf-top6__vin"><b>VIN</b>${esc(m.vin.trim())}</p>` : "";
   const spec = m.specLine.trim()
     ? `<p class="pdf-top6__spec" style="${fitStyle(pdfTopFitPx(m.specLine, W, 9, 7), 7)}">${esc(m.specLine)}</p>`
     : "";
   let odo = "";
-  if (m.odometer) {
+  if (m.odometer?.none) {
+    odo = `<div class="pdf-top6__odo"><p class="pdf-top6__lab">${esc(pdfTopText("odometer", lang))}</p><p class="pdf-top6__big pdf-top6__big--none s-none" style="font-size:22px">${esc(m.odometer.value)}</p>${m.odometer.sub ? `<p class="pdf-top6__sub">${keepNumbers(esc(m.odometer.sub))}</p>` : ""}</div>`;
+  } else if (m.odometer) {
     const mm = /^(.*?)\s*(km|mi|км)$/i.exec(m.odometer.value.trim());
     const num = mm ? mm[1]! : m.odometer.value.trim();
     const unit = mm ? mm[2]! : "";
@@ -718,7 +828,7 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
       : "",
   ].filter(Boolean);
   const pairHtml = pair.length ? `<div class="pdf-top6__pair">${pair.join("")}</div>` : "";
-  const ident = `<p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}`;
+  const ident = `<p class="pdf-top6__lab">${esc(pdfTopText("vehicle", lang))}</p>${model ? `<h1 class="pdf-top6__model" data-fit-min="18" style="${titleStyle}">${esc(model)}</h1>` : ""}${vin}${spec}`;
   const hero = hasPhoto
     ? `<div class="pdf-top6__hero"><div class="pdf-top6__photo">${photo}</div><div class="pdf-top6__id">${ident}${odo}${pairHtml}</div></div>`
     : `<div class="pdf-top6__hero pdf-top6__hero--nophoto"><div class="pdf-top6__id">${ident}</div><div class="pdf-top6__id">${odo}${pairHtml}</div></div>`;
@@ -728,6 +838,28 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
 /** Atsevišķa josla dīlera atskaitei (tai nav 1. lapas kopsavilkuma). */
 export function buildPdfTopBarOnlyHtml(m: Pick<PdfTopModel, "logoSvg" | "kindTitle" | "kindSub" | "dateLabel">): string {
   return `<section class="pdf-top6 pdf-top6--bar-only" role="region">${buildPdfTopBarHtml(m)}</section>`;
+}
+
+/**
+ * Pēc fontu ielādes: katrs vienrindas teksts 1. lapas augšdaļā (tituls, odometrs, kartītes, avoti) nedrīkst
+ * iziet ārpus savas kolonnas. Samazina burtu izmēru pa 0,25 px līdz `data-fit-min` (noklusēti 60 %);
+ * ja neietilpst arī tad - atļauj lūzt. Serverī (Chromium) un pārlūkā strādā vienādi.
+ */
+export function pdfTop6FitScriptBody(): string {
+  return `function provinFitTop6(){
+  var els=document.querySelectorAll(".pdf-top6 .pdf-top6__model,.pdf-top6 .pdf-top6__big,.pdf-top6 .pdf-top6-card__v,.pdf-top6 .pdf-top6__lab,.pdf-top6 .pdf-top6__pv,.pdf-top6 .pdf-top6__vin,.pdf-top6 .pdf-top6__spec,.pdf-top6 .pdf-top6-src__nm,.pdf-top6 .pdf-top6__kind");
+  for(var i=0;i<els.length;i++){
+    var el=els[i];
+    if(!el.clientWidth) continue;
+    var cs=getComputedStyle(el);
+    var fs=parseFloat(cs.fontSize);
+    if(!(fs>0)) continue;
+    var min=parseFloat(el.getAttribute("data-fit-min")||"")||fs*0.6;
+    var n=0;
+    while(el.scrollWidth>el.clientWidth+0.5&&fs-0.25>=min&&n++<200){fs-=0.25;el.style.fontSize=fs+"px";}
+    if(el.scrollWidth>el.clientWidth+0.5){el.style.whiteSpace="normal";el.style.overflowWrap="anywhere";}
+  }
+}`;
 }
 
 /** Bloka stils (A4, px kā maketā; drukā melnbaltā lasāms - risks treknāks). */
@@ -747,10 +879,11 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__hero{display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:26px;}
 .pdf-top6__hero--nophoto{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;}
 .pdf-top6__hero--nophoto .pdf-top6__odo{margin-top:0;}
+.pdf-top6__id,.pdf-top6__photo{min-width:0;}
 .pdf-top6__ph{position:relative;overflow:hidden;background:var(--t6-soft);height:272px;}
 .pdf-top6__ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%;transform:scale(1.06);transform-origin:50% 100%;}
 .pdf-top6__cap{margin-top:7px!important;font-size:8px;color:var(--t6-mute);letter-spacing:.02em;}
-.pdf-top6__model{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1.02;color:var(--t6-ink);}
+.pdf-top6__model{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1.02;color:var(--t6-ink);max-width:100%;overflow-wrap:anywhere;}
 .pdf-top6__vin{margin-top:10px!important;font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6__vin b{font-weight:800;letter-spacing:-0.01em;color:var(--t6-blue);margin-right:8px;}
 .pdf-top6__spec{margin-top:10px!important;color:var(--t6-mute);letter-spacing:.02em;white-space:nowrap;}
@@ -758,7 +891,7 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__big{margin-top:6px!important;font-weight:800;letter-spacing:-0.035em;line-height:1;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6__big small{font-size:.42em;font-weight:500;letter-spacing:0;color:var(--t6-mute);margin-left:4px;}
 .pdf-top6__sub{margin-top:6px!important;font-size:8.5px;color:var(--t6-mute);}
-.pdf-top6__pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;padding-top:12px;border-top:.5px solid var(--t6-hair);}
+.pdf-top6__pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:20px;padding-top:12px;border-top:.5px solid var(--t6-hair);}
 .pdf-top6__pv{margin-top:4px!important;font-size:13px;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;}
 .pdf-top6__pair .pdf-top6__sub{margin-top:2px!important;}
 .pdf-top6__kc{margin-top:28px;}

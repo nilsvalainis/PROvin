@@ -6,6 +6,29 @@ const mocks = vi.hoisted(() => ({
   readOrderDraft: vi.fn(),
   upsertOrderDraftVinPlateResolution: vi.fn(),
   patchStripePaidIndexVin: vi.fn(),
+  readDealerDataJob: vi.fn(),
+  upsertDealerDataJob: vi.fn(),
+  enqueueDealerDataJob: vi.fn(),
+  seed: vi.fn(),
+  scan: vi.fn(),
+  dropbox: vi.fn(),
+}));
+
+vi.mock("@/lib/dealer-data-job-store", () => ({
+  readDealerDataJob: mocks.readDealerDataJob,
+  upsertDealerDataJob: mocks.upsertDealerDataJob,
+}));
+
+vi.mock("@/lib/dealer-data-job", () => ({
+  enqueueDealerDataJob: mocks.enqueueDealerDataJob,
+}));
+
+vi.mock("@/lib/order-dropbox", () => ({
+  ensureOrderDropboxFolderSafe: mocks.dropbox,
+}));
+
+vi.mock("@/lib/csdd-tech-data-counted", () => ({
+  fetchCsddTechDataCounted: vi.fn(),
 }));
 
 vi.mock("@/lib/admin-order-draft-store", () => ({
@@ -20,11 +43,11 @@ vi.mock("@/lib/admin-stripe-paid-index", () => ({
 }));
 
 vi.mock("@/lib/admin-paid-order-source-seed", () => ({
-  seedPaidOrderAutoSources: vi.fn(),
+  seedPaidOrderAutoSources: mocks.seed,
 }));
 
 vi.mock("@/lib/order-vin-scan-run", () => ({
-  runOrderFreeVinScan: vi.fn(),
+  runOrderFreeVinScan: mocks.scan,
 }));
 
 vi.mock("@/lib/admin-orders", () => ({
@@ -32,7 +55,12 @@ vi.mock("@/lib/admin-orders", () => ({
 }));
 
 import { emptyCsddTechData } from "@/lib/csdd-tech-data";
-import { ensureOrderDraftEditsFromCheckoutFields, resolveOrderVinFromPlate } from "@/lib/order-plate-vin-resolve";
+import {
+  ensureOrderDraftEditsFromCheckoutFields,
+  resolveOrderVinFromPlate,
+  usableResolvedVin,
+} from "@/lib/order-plate-vin-resolve";
+import { hasIso3779CheckDigit } from "@/lib/vin-iso3779";
 
 const VALID_VIN = "WVWZZZ1JZ3W386752";
 
@@ -58,6 +86,12 @@ describe("resolveOrderVinFromPlate", () => {
     mocks.patchOrderDraft.mockResolvedValue({ ok: true });
     mocks.upsertOrderDraftVinPlateResolution.mockResolvedValue({ ok: true });
     mocks.patchStripePaidIndexVin.mockResolvedValue(undefined);
+    mocks.readDealerDataJob.mockResolvedValue(null);
+    mocks.upsertDealerDataJob.mockResolvedValue(null);
+    mocks.enqueueDealerDataJob.mockResolvedValue(true);
+    mocks.seed.mockResolvedValue({ ok: true });
+    mocks.scan.mockResolvedValue({ ok: true });
+    mocks.dropbox.mockResolvedValue(undefined);
   });
 
   it("atrisinā numurzīmi uz VIN caur mock CSDD", async () => {
@@ -162,7 +196,12 @@ describe("resolveOrderVinFromPlate", () => {
     const result = await resolveOrderVinFromPlate("cs_test_123", { stripeVin: "KG982", fetchCsdd });
     expect(result.ok).toBe(true);
     expect(result.effectiveVin).toBeNull();
-    expect(result.resolution).toMatchObject({ status: "failed", plate: "KG982", message: "CSDD atbildē nav VIN" });
+    expect(result.resolution).toMatchObject({
+      status: "failed",
+      plate: "KG982",
+      failKind: "not_found",
+      message: "CSDD atgrieztais VIN nav derīgs",
+    });
     expect(mocks.patchStripePaidIndexVin).not.toHaveBeenCalled();
   });
 });
@@ -220,3 +259,137 @@ describe("ensureOrderDraftEditsFromCheckoutFields", () => {
   });
 });
 
+
+describe("numurzīme → VIN → ielase (Nils 26.11, EB5020)", () => {
+  const noSleep = vi.fn(async () => undefined);
+  const delays = [0, 8_000, 20_000];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.patchOrderDraft.mockResolvedValue({ ok: true });
+    mocks.upsertOrderDraftVinPlateResolution.mockResolvedValue({ ok: true });
+    mocks.patchStripePaidIndexVin.mockResolvedValue(undefined);
+    mocks.readDealerDataJob.mockResolvedValue(null);
+    mocks.upsertDealerDataJob.mockResolvedValue(null);
+    mocks.enqueueDealerDataJob.mockResolvedValue(true);
+    mocks.seed.mockResolvedValue({ ok: true });
+    mocks.scan.mockResolvedValue({ ok: true });
+    mocks.dropbox.mockResolvedValue(undefined);
+    mocks.readOrderDraft.mockResolvedValue({ orderEdits: { licensePlate: "EB5020", vin: "" }, vinPlateResolution: null });
+  });
+
+  it("atrastais VIN palaiž to pašu plūsmu kā VIN pasūtījumam: avoti, VIN SCAN, dīlera dati, Dropbox", async () => {
+    mocks.readDealerDataJob.mockResolvedValue({ sessionId: "cs_x", vin: "", status: "no_vin", attempts: 0, plate: "EB5020" });
+    const fetchCsdd = vi.fn(foundCsdd({ registrationNumber: "EB5020" }));
+    const r = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, runDownstream: true, sleep: noSleep });
+    expect(r.effectiveVin).toBe(VALID_VIN);
+    expect(fetchCsdd).toHaveBeenCalledTimes(1);
+    expect(mocks.enqueueDealerDataJob).toHaveBeenCalledWith({ sessionId: "cs_x", vin: VALID_VIN, cronAfterMs: 0 });
+    expect(mocks.seed).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN }));
+    expect(mocks.scan).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN }));
+    expect(mocks.dropbox).toHaveBeenCalledWith("cs_x", { vin: VALID_VIN });
+    expect(mocks.patchOrderDraft).toHaveBeenLastCalledWith(
+      "cs_x",
+      { orderEdits: expect.objectContaining({ vin: VALID_VIN, licensePlate: "EB5020" }) },
+      { force: true },
+    );
+  });
+
+  it("pasūtījumam bez dīlera darba dīlera ielasi nepalaiž (citi maksas avoti netiek aiztikti)", async () => {
+    const r = await resolveOrderVinFromPlate("cs_x", {
+      stripeVin: "EB5020",
+      fetchCsdd: vi.fn(foundCsdd()),
+      runDownstream: true,
+      sleep: noSleep,
+    });
+    expect(r.effectiveVin).toBe(VALID_VIN);
+    expect(mocks.enqueueDealerDataJob).not.toHaveBeenCalled();
+    expect(mocks.seed).toHaveBeenCalled();
+  });
+
+  it("CSDD relejs 502 (VPN pārslēgšanās) - atkārto un atrod VIN", async () => {
+    const fetchCsdd = vi
+      .fn<(nr: string) => Promise<CsddTechDataResult>>()
+      .mockResolvedValueOnce({ found: false, message: "CSDD neatbildēja (HTTP 502)" })
+      .mockImplementationOnce(foundCsdd());
+    const r = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, retryDelaysMs: delays, sleep: noSleep });
+    expect(r.effectiveVin).toBe(VALID_VIN);
+    expect(fetchCsdd).toHaveBeenCalledTimes(2);
+    expect(noSleep).toHaveBeenCalledWith(8_000);
+    expect(r.resolution).toMatchObject({ status: "resolved", attempts: 2 });
+  });
+
+  it("CSDD visu laiku nesasniedzams - failKind unreachable, dīlera darbā csdd_unreachable", async () => {
+    mocks.readDealerDataJob.mockResolvedValue({ sessionId: "cs_x", vin: "", status: "no_vin", attempts: 0, plate: "EB5020", plateAttempts: 1 });
+    const fetchCsdd = vi.fn(async (): Promise<CsddTechDataResult> => ({ found: false, message: "CSDD neatbildēja (HTTP 502)" }));
+    const r = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, retryDelaysMs: delays, sleep: noSleep });
+    expect(r.effectiveVin).toBeNull();
+    expect(fetchCsdd).toHaveBeenCalledTimes(3);
+    expect(r.resolution).toMatchObject({ status: "failed", failKind: "unreachable", plate: "EB5020", attempts: 3 });
+    expect(mocks.upsertDealerDataJob).toHaveBeenCalledWith(
+      "cs_x",
+      expect.objectContaining({ status: "no_vin", error: "csdd_unreachable", plateAttempts: 2 }),
+    );
+    expect(mocks.enqueueDealerDataJob).not.toHaveBeenCalled();
+  });
+
+  it("CSDD neatrod numuru - viens vaicājums, failKind not_found, ielase netiek palaista", async () => {
+    mocks.readDealerDataJob.mockResolvedValue({ sessionId: "cs_x", vin: "", status: "no_vin", attempts: 0, plate: "EB5020" });
+    const fetchCsdd = vi.fn(async (): Promise<CsddTechDataResult> => ({
+      found: false,
+      message: "CSDD reģistrā šāds numurs netika atrasts",
+    }));
+    const r = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, runDownstream: true, retryDelaysMs: delays, sleep: noSleep });
+    expect(r.effectiveVin).toBeNull();
+    expect(fetchCsdd).toHaveBeenCalledTimes(1);
+    expect(r.resolution).toMatchObject({ status: "failed", failKind: "not_found" });
+    expect(mocks.upsertDealerDataJob).toHaveBeenCalledWith("cs_x", expect.objectContaining({ error: "vin_not_found" }));
+    expect(mocks.seed).not.toHaveBeenCalled();
+    expect(mocks.enqueueDealerDataJob).not.toHaveBeenCalled();
+  });
+
+  it("dubulta palaišana: svaigs «pending» vai «resolved» - otrs CSDD vaicājums netiek sūtīts", async () => {
+    const fetchCsdd = vi.fn(foundCsdd());
+    const now = Date.parse("2026-11-26T08:05:40.000Z");
+    mocks.readOrderDraft.mockResolvedValue({
+      orderEdits: { licensePlate: "EB5020", vin: "" },
+      vinPlateResolution: { plate: "EB5020", status: "pending", updatedAt: "2026-11-26T08:05:30.000Z" },
+    });
+    const busy = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, force: true, nowMs: () => now });
+    expect(busy).toMatchObject({ skipped: true, reason: "in_progress", effectiveVin: null });
+
+    mocks.readOrderDraft.mockResolvedValue({
+      orderEdits: { licensePlate: "EB5020", vin: VALID_VIN },
+      vinPlateResolution: { plate: "EB5020", status: "resolved", updatedAt: "2026-11-26T08:05:35.000Z" },
+    });
+    const done = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, force: true });
+    expect(done).toMatchObject({ skipped: true, reason: "already_resolved", effectiveVin: VALID_VIN });
+    expect(fetchCsdd).not.toHaveBeenCalled();
+
+    // Iestrēdzis «pending» (>3 min) vairs nebloķē.
+    mocks.readOrderDraft.mockResolvedValue({
+      orderEdits: { licensePlate: "EB5020", vin: "" },
+      vinPlateResolution: { plate: "EB5020", status: "pending", updatedAt: "2026-11-26T07:55:00.000Z" },
+    });
+    const stale = await resolveOrderVinFromPlate("cs_x", { stripeVin: "EB5020", fetchCsdd, nowMs: () => now });
+    expect(stale.effectiveVin).toBe(VALID_VIN);
+    expect(fetchCsdd).toHaveBeenCalledTimes(1);
+  });
+
+  it("nederīgs VIN no CSDD (Ziemeļamerikas VIN ar nepareizu kontrolciparu, 16 zīmes) netiek saglabāts", async () => {
+    expect(hasIso3779CheckDigit("1HGCM82643A004352")).toBe(false);
+    for (const bad of ["1HGCM82643A004352", "WVWZZZ1JZ3W38675", "00000000000000000"]) {
+      mocks.patchStripePaidIndexVin.mockClear();
+      const r = await resolveOrderVinFromPlate("cs_x", {
+        stripeVin: "EB5020",
+        fetchCsdd: vi.fn(foundCsdd({ vin: bad })),
+        sleep: noSleep,
+      });
+      expect(r.effectiveVin).toBeNull();
+      expect(r.resolution?.status).toBe("failed");
+      expect(mocks.patchStripePaidIndexVin).not.toHaveBeenCalled();
+    }
+    expect(usableResolvedVin("1HGCM82633A004352")).toBe("1HGCM82633A004352");
+    expect(usableResolvedVin("WVWZZZ3CZME138258")).toBe("WVWZZZ3CZME138258");
+  });
+});

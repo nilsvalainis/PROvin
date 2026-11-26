@@ -10,7 +10,6 @@ import {
   formatEurWhole,
   formatIsoDayLv,
   formatKm,
-  lvCount,
   type AuctionArchiveAuction,
   type AuctionArchiveOperatorMark,
   type AuctionArchivePhoto,
@@ -29,6 +28,19 @@ import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { splitEquipmentText } from "@/lib/report-language-fixes";
+import { isI18nKey, thecarapiFreeText } from "@/lib/thecarapi-i18n-lv";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
+import {
+  auctionCardCount,
+  auctionCardOrdinal,
+  auctionCardPieces,
+  auctionCardPlatformTitle,
+  auctionCardText,
+  translateAuctionFindings,
+  translateAuctionKvLabel,
+  translateAuctionKvRows,
+} from "@/lib/auction-lot-cards-i18n";
 
 export function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -102,6 +114,7 @@ const ZONE_LABEL: Record<string, string> = {
 export function auctionArchiveDamageBlockHtml(
   damages: readonly ThecarapiPdfDamage[],
   marks: readonly AuctionArchiveOperatorMark[],
+  lang: ClientReportLang = "lv",
 ): string {
   if (damages.length === 0 && marks.length === 0) return "";
   const counts = new Map<string, { slot: PaintMapSlot; n: number }>();
@@ -122,26 +135,26 @@ export function auctionArchiveDamageBlockHtml(
   }
   const readings: PaintMapReading[] = [...counts.values()].map((c) => ({
     slot: c.slot,
-    text: c.n > 0 ? `${c.n} bojāj.` : "Redzams bildē",
+    text: c.n > 0 ? auctionCardCount(c.n, "bojāj.", lang) : auctionCardText("Redzams bildē", lang),
     tone: c.n > 0 ? "alert" : "warn",
   }));
   const svg = readings.length ? `<div class="aa-scheme">${buildPaintMapSvg(readings)}</div>` : "";
   const rows = [
     ...damages.map(
       (d) =>
-        `<li><b>${esc([d.zone, d.part].filter(Boolean).join(", ") || "Virsbūve")}</b><span>${esc(
-          [d.type, d.size, Number.parseInt(d.quantity, 10) > 1 ? `${d.quantity} gab.` : "", d.repair, d.notes].filter(Boolean).join(" · "),
+        `<li><b>${esc([d.zone, d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
+          [d.type, d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
         )}</span></li>`,
     ),
     ...marks.map(
       (m) =>
-        `<li class="aa-dmg--seen"><b>${esc([ZONE_LABEL[m.zone] ?? m.zone, m.part ?? ""].filter(Boolean).join(", "))}</b><span>Redzams bildē (PROVIN atzīme)${
+        `<li class="aa-dmg--seen"><b>${esc([ZONE_LABEL[m.zone] ?? m.zone, m.part ?? ""].filter(Boolean).join(", "))}</b><span>${esc(auctionCardText("Redzams bildē (PROVIN atzīme)", lang))}${
           m.note ? ` · ${esc(m.note)}` : ""
         }</span></li>`,
     ),
   ].join("");
-  const count = damages.length ? ` · ${lvCount(damages.length, "bojājums", "bojājumi")}` : "";
-  return `<div class="aa-block aa-block--alert">${subhead(`Bojājumi un defekti${count}`)}<div class="aa-dmg${svg ? "" : " aa-dmg--list"}">${svg}<ul class="aa-dmg__list">${rows}</ul></div></div>`;
+  const count = damages.length ? ` · ${auctionCardCount(damages.length, "bojājums", lang)}` : "";
+  return `<div class="aa-block aa-block--alert">${subhead(`${auctionCardText("Bojājumi un defekti", lang)}${count}`)}<div class="aa-dmg${svg ? "" : " aa-dmg--list"}">${svg}<ul class="aa-dmg__list">${rows}</ul></div></div>`;
 }
 
 /* ---------- Mērījumi (laka, riepas, bremzes) ---------- */
@@ -150,10 +163,10 @@ export function auctionArchiveDamageBlockHtml(
  * Krāsas biezuma mērījumi pa paneļiem - tikai avota vērtības µm, BEZ interpretācijas un krāsu kodiem (Nils 23.11).
  * Ja avots pats dod atzīmi (piem. «repainted»), tā ir paneļa nosaukumā/vērtībā no modeļa.
  */
-export function auctionLotPaintBlockHtml(model: Pick<ThecarapiPdfModel, "paint">): string {
+export function auctionLotPaintBlockHtml(model: Pick<ThecarapiPdfModel, "paint">, lang: ClientReportLang = "lv"): string {
   if (model.paint.length === 0) return "";
   const rows: ArchiveKv[] = model.paint.map((p) => ({ k: p.label, v: /^\d+([.,]\d+)?$/.test(p.value.trim()) ? `${p.value} µm` : p.value }));
-  return `<div class="aa-block">${subhead(`Krāsas biezuma mērījumi · ${lvCount(rows.length, "mērījums", "mērījumi")}`)}${kvGrid(rows)}</div>`;
+  return `<div class="aa-block">${subhead(`${auctionCardText("Krāsas biezuma mērījumi", lang)} · ${auctionCardCount(rows.length, "mērījums", lang)}`)}${kvGrid(rows)}</div>`;
 }
 
 function gridHtml(title: string, grid: ThecarapiPdfGrid | null): string {
@@ -167,10 +180,10 @@ function gridHtml(title: string, grid: ThecarapiPdfGrid | null): string {
 }
 
 /** Riepas/diski un bremzes no izsoles pārbaudes (ja avots tās dod). */
-export function auctionLotInspectionBlocksHtml(model: Pick<ThecarapiPdfModel, "wheels" | "brakes">): string {
+export function auctionLotInspectionBlocksHtml(model: Pick<ThecarapiPdfModel, "wheels" | "brakes">, lang: ClientReportLang = "lv"): string {
   return [
-    ...model.wheels.map((w) => gridHtml(`Riepas un diski · ${w.title}`, w.grid)),
-    gridHtml("Bremzes", model.brakes),
+    ...model.wheels.map((w) => gridHtml(`${auctionCardText("Riepas un diski", lang)} · ${w.title}`, w.grid)),
+    gridHtml(auctionCardText("Bremzes", lang), model.brakes),
   ].join("");
 }
 
@@ -178,36 +191,50 @@ export function auctionLotInspectionBlocksHtml(model: Pick<ThecarapiPdfModel, "w
 
 const DESC_KEY = /(^|[._])(description|comments?|remarks?|condition_?(text|report)|notes?|seller_?comments?|damage_?description)$/i;
 
-/** Izsoles brīvā teksta apraksti (ne virsraksti, ne atskaišu nosaukumi). */
-export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
-  const out: string[] = [];
+export type AuctionArchiveDescription = {
+  text: string;
+  /** Avotā bija i18n atslēga (`global.damages-v3.description.*`) - teksts jau ir LV, AI tulkojums nav vajadzīgs. */
+  fromKey: boolean;
+};
+
+/** Izsoles brīvā teksta apraksti (ne virsraksti, ne atskaišu nosaukumi); i18n atslēgas pārtulkotas LV. */
+export function auctionArchiveDescriptionItems(r: ThecarapiAdminRecord): AuctionArchiveDescription[] {
+  const out: AuctionArchiveDescription[] = [];
   const seen = new Set<string>();
   for (const f of r.fields) {
-    const v = f.value.replace(/\s+/g, " ").trim();
+    const raw = f.value.replace(/\s+/g, " ").trim();
     // Openlane anketas jautājumi (CountryMessages) - atbildes ir «Stāvoklis un dokumenti» rindās, ne aprakstā.
     if (/CountryMessages\[/i.test(f.key)) continue;
-    if (!DESC_KEY.test(f.key) || v.length < 12 || v.length > 2000 || /^https?:\/\//.test(v) || !/\p{L}{3}/u.test(v)) continue;
+    if (!DESC_KEY.test(f.key)) continue;
+    const fromKey = isI18nKey(raw);
+    // Nekad nerāda pašu atslēgu (`global.damages-v3.description.depth.deep-to-primer`) - tikai tās tulkojumu.
+    const v = fromKey ? thecarapiFreeText(raw) : raw;
+    if (!v || (!fromKey && v.length < 12) || v.length > 2000 || /^https?:\/\//.test(v) || !/\p{L}{3}/u.test(v)) continue;
     const k = v.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push(v);
+    out.push({ text: v, fromKey });
     if (out.length >= 6) break;
   }
   return out;
 }
 
-function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<string, string>): string {
+export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
+  return auctionArchiveDescriptionItems(r).map((d) => d.text);
+}
+
+function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<string, string>, lang: ClientReportLang = "lv"): string {
   if (texts.length === 0) return "";
   const items = texts
     .map((t) => {
       const lv = translations.get(t)?.trim() ?? "";
       const same = !lv || lv.toLowerCase() === t.toLowerCase();
       return `<div class="aa-desc">${
-        same ? `<p class="aa-desc__lv">${esc(t)}</p>` : `<p class="aa-desc__lv">${esc(lv)}</p><p class="aa-desc__orig"><span>(oriģināls)</span> ${esc(t)}</p>`
+        same ? `<p class="aa-desc__lv">${esc(t)}</p>` : `<p class="aa-desc__lv">${esc(lv)}</p><p class="aa-desc__orig"><span>${esc(auctionCardText("(oriģināls)", lang))}</span> ${esc(t)}</p>`
       }</div>`;
     })
     .join("");
-  return `<div class="aa-block">${subhead("Izsoles apraksts")}${items}</div>`;
+  return `<div class="aa-block">${subhead(auctionCardText("Izsoles apraksts", lang))}${items}</div>`;
 }
 
 /* ---------- Galerija ---------- */
@@ -245,6 +272,7 @@ export function galleryHtml(
   photos: readonly AuctionArchivePhoto[],
   dataUrls: ReadonlyMap<string, string>,
   num?: number,
+  lang: ClientReportLang = "lv",
 ): string {
   const list = photos.filter((p) => dataUrls.get(p.id));
   if (list.length === 0) return "";
@@ -263,7 +291,7 @@ export function galleryHtml(
         )}</span></figcaption></figure>`;
       })
       .join("");
-    const badge = `${lvCount(list.length, "bilde", "bildes")}${pageCount > 1 ? ` · ${pageNo}/${pageCount}` : ""}`;
+    const badge = `${auctionCardCount(list.length, "bilde", lang)}${pageCount > 1 ? ` · ${pageNo}/${pageCount}` : ""}`;
     pages.push(`<section class="aa-gallery">${secHead(title, num != null ? { num, badge } : { icon: "camera", badge })}<div class="aa-grid">${figs}</div></section>`);
   }
   return pages.join("\n");
@@ -366,6 +394,12 @@ type Lot = {
 };
 
 
+/** Faktu rindas un valsts atskaites valodā (LV - nemainīti). */
+function translateLotFacts(f: ArchiveLotFacts, lang: ClientReportLang): ArchiveLotFacts {
+  if (lang === "lv") return f;
+  return { ...f, sale: translateAuctionKvRows(f.sale, lang), condition: translateAuctionKvRows(f.condition, lang), prices: translateAuctionKvRows(f.prices, lang) };
+}
+
 export function auctionLotRecordKey(r: ThecarapiAdminRecord): string {
   return `${(r.site || "thecarapi").toLowerCase()}:${r.id}`.slice(0, 120);
 }
@@ -378,6 +412,8 @@ export type AuctionLotsHtmlInput = {
   translations?: ReadonlyMap<string, string>;
   marks?: readonly AuctionArchiveOperatorMark[];
   showPrices?: boolean;
+  /** Atskaites valoda - kartīšu etiķetes un fiksētās vērtības (26.11: EN/RU/DE PDF palika «Izsoles Nr.», «1. izsole»). */
+  lang?: ClientReportLang;
 };
 
 export type AuctionLotsHtml = {
@@ -396,6 +432,8 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
   const showPrices = input.showPrices === true;
   const translations = input.translations ?? new Map<string, string>();
   const marks = input.marks ?? [];
+  const lang: ClientReportLang = input.lang ?? "lv";
+  const T = (lv: string) => auctionCardText(lv, lang);
   const byKey = new Map(s.auctions.map((a) => [a.key, a]));
   const records = [...input.records].sort((a, b) =>
     (byKey.get(auctionLotRecordKey(a))?.date || "9999").localeCompare(byKey.get(auctionLotRecordKey(b))?.date || "9999"),
@@ -416,10 +454,10 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
       n: i + 1,
       record: r,
       auction: a,
-      platform: a?.platform || r.venue || r.site || "Izsole",
+      platform: a?.platform || r.venue || r.site || T("Izsole"),
       date: a?.date || r.date || "",
       km: a?.km ?? null,
-      facts: auctionArchiveLotFacts(r, { showPrices }),
+      facts: translateLotFacts(auctionArchiveLotFacts(r, { showPrices }), lang),
       damages,
       model,
       photos: input.photos.filter((p) => p.auctionKey === key && input.dataUrls.has(p.id)),
@@ -430,14 +468,15 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
   const catalog = lots
     .map((l) => {
       const cells: [string, string][] = [
-        ["Nobraukums", formatKm(l.km) || "-"],
-        ["Bildes", l.photos.length ? String(l.photos.length) : "nav"],
+        [T("Nobraukums"), formatKm(l.km) || "-"],
+        [T("Bildes"), l.photos.length ? String(l.photos.length) : T("nav")],
       ];
-      if (showPrices && l.auction?.priceEur != null) cells.push([thecarapiSalePriceFromFields(l.record.fields).label || "Cena", formatEurWhole(l.auction.priceEur)]);
-      if (l.facts.lotNo) cells.push(["Izsoles Nr.", l.facts.lotNo]);
+      if (showPrices && l.auction?.priceEur != null)
+        cells.push([translateAuctionKvLabel(thecarapiSalePriceFromFields(l.record.fields).label || "Cena", lang), formatEurWhole(l.auction.priceEur)]);
+      if (l.facts.lotNo) cells.push([T("Izsoles Nr."), l.facts.lotNo]);
       const country = l.facts.country || l.auction?.country || "";
-      const headTxt = `<div class="aa-cat__head"><p class="aa-cat__n">${l.n}. izsole</p><p class="aa-cat__date">${esc(
-        formatIsoDayLv(l.date) || "Datums nav zināms",
+      const headTxt = `<div class="aa-cat__head"><p class="aa-cat__n">${esc(auctionCardOrdinal(l.n, lang))}</p><p class="aa-cat__date">${esc(
+        formatIsoDayLv(l.date) || T("Datums nav zināms"),
       )}</p><p class="aa-cat__where"><b>${esc(l.platform)}</b>${country ? ` · ${esc(country)}` : ""}</p></div>`;
       const cellsHtml = `<dl class="aa-cat__cells">${cells.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
       const coverPhoto = l.photos[0];
@@ -446,10 +485,10 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
       return `<article class="aa-cat__item"><img class="aa-cat__img" src="${input.dataUrls.get(coverPhoto.id)!}" alt=""/><div class="aa-cat__panel">${headTxt}${cellsHtml}</div></article>`;
     })
     .join("");
-  const timeline = lots.length ? card("Izsoļu hronoloģija", `<div class="aa-cat">${catalog}</div>`, { icon: "history" }) : "";
+  const timeline = lots.length ? card(T("Izsoļu hronoloģija"), `<div class="aa-cat">${catalog}</div>`, { icon: "history" }) : "";
 
   /* --- Galvenie fakti --- */
-  const findingsList = auctionArchiveKeyFindings(
+  const findingsList = translateAuctionFindings(auctionArchiveKeyFindings(
     lots.map((l) => ({
       platform: l.platform,
       date: l.date,
@@ -457,54 +496,55 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
       facts: l.facts,
       damageCount: l.damages.length + marks.filter((m) => m.auctionKey === l.key).length,
     })),
-  );
+  ), lang);
   const findings = findingsList.length
-    ? card("Galvenie fakti", `<ul class="aa-findings">${findingsList.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`, {
+    ? card(T("Galvenie fakti"), `<ul class="aa-findings">${findingsList.map((f) => `<li${f.alert ? ' class="aa-red"' : ""}>${esc(f.text)}</li>`).join("")}</ul>`, {
         icon: "listChecks",
       })
     : "";
 
   /* --- Transportlīdzeklis --- */
-  const vehicle = records.length ? card("Transportlīdzekļa dati", kvGrid(auctionArchiveVehicleRows(records)), { icon: "car" }) : "";
+  const vehicle = records.length ? card(T("Transportlīdzekļa dati"), kvGrid(translateAuctionKvRows(auctionArchiveVehicleRows(records), lang)), { icon: "car" }) : "";
 
   /* --- Katra izsole --- */
   const lotHtml = lots.map((l) => {
     const badge = [formatIsoDayLv(l.date), l.facts.country].filter(Boolean).join(" · ");
     // Izsoles Nr. ir hronoloģijā - šeit neatkārto.
-    const sale = l.facts.sale.filter((r) => r.k !== "Izsoles Nr.");
+    const sale = l.facts.sale.filter((r) => r.k !== T("Izsoles Nr."));
     const left = [
-      sale.length ? subhead("Izsoles dati") + kvGrid(sale, 1) : "",
-      showPrices && l.facts.prices.length ? subhead("Cenas (avota dati)") + kvGrid(l.facts.prices, 1) : "",
+      sale.length ? subhead(T("Izsoles dati")) + kvGrid(sale, 1) : "",
+      showPrices && l.facts.prices.length ? subhead(T("Cenas (avota dati)")) + kvGrid(l.facts.prices, 1) : "",
     ].join("");
-    const right = l.facts.condition.length ? subhead("Stāvoklis un dokumenti") + kvGrid(l.facts.condition, 1) : "";
+    const right = l.facts.condition.length ? subhead(T("Stāvoklis un dokumenti")) + kvGrid(l.facts.condition, 1) : "";
     const cols = left && right ? `<div class="aa-cols"><div>${left}</div><div>${right}</div></div>` : left || right ? `<div>${left}${right}</div>` : "";
-    const dmg = auctionArchiveDamageBlockHtml(l.damages, marks.filter((m) => m.auctionKey === l.key));
-    const paint = l.model ? auctionLotPaintBlockHtml(l.model) : "";
-    const inspection = l.model ? auctionLotInspectionBlocksHtml(l.model) : "";
-    const desc = descriptionBlock(auctionArchiveDescriptions(l.record), translations);
-    return card(`${l.platform} izsole`, `${cols}${dmg}${paint}${inspection}${desc}`, { num: l.n, badge });
+    const dmg = auctionArchiveDamageBlockHtml(l.damages, marks.filter((m) => m.auctionKey === l.key), lang);
+    const paint = l.model ? auctionLotPaintBlockHtml(l.model, lang) : "";
+    const inspection = l.model ? auctionLotInspectionBlocksHtml(l.model, lang) : "";
+    const desc = descriptionBlock(auctionArchiveDescriptions(l.record), translations, lang);
+    return card(auctionCardPlatformTitle(l.platform, lang), `${cols}${dmg}${paint}${inspection}${desc}`, { num: l.n, badge });
   });
 
   /* --- Galerijas --- */
-  const galleries = lots.map((l) => galleryHtml(`Bildes · ${l.platform}`, l.platform, l.photos, input.dataUrls, l.n)).join("\n");
+  const galleries = lots.map((l) => galleryHtml(`${T("Bildes")} · ${l.platform}`, l.platform, l.photos, input.dataUrls, l.n, lang)).join("\n");
   const knownKeys = new Set(lots.map((l) => l.key));
   const manualPhotos = input.photos.filter((p) => !knownKeys.has(p.auctionKey));
-  const manualGallery = galleryHtml("Bildes · citi izsoļu avoti", "", manualPhotos, input.dataUrls);
+  const manualGallery = galleryHtml(`${T("Bildes")} · ${T("citi izsoļu avoti")}`, "", manualPhotos, input.dataUrls, undefined, lang);
 
   /* --- Aprīkojums --- */
   const eqGroups = auctionArchiveEquipment(records, translations).groups;
   const equipment = eqGroups.length
     ? `<div class="aa-tail">${card(
-        "Aprīkojums",
+        T("Aprīkojums"),
         `<div class="aa-equip">${eqGroups
           .map(
             (g, i) =>
               `<div class="aa-equip__g${eqGroups.length % 2 === 1 && i === eqGroups.length - 1 ? " aa-equip__g--wide" : ""}">${subhead(g.group)}<div class="aa-chips">${g.items
+                .flatMap((x) => splitEquipmentText(x))
                 .map((x) => `<span class="aa-chip">${esc(x)}</span>`)
                 .join("")}</div></div>`,
           )
           .join("")}</div>`,
-        { icon: "layers", badge: "pēc izsoļu datiem" },
+        { icon: "layers", badge: T("pēc izsoļu datiem") },
       )}</div>`
     : "";
 

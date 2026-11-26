@@ -31,8 +31,10 @@ describe("FLASH MAX jobs", () => {
       "csdd",
       "autodna",
       "carvertical",
+      "carfax",
       "cc_vin",
       "dealer_comments",
+      "dealer_service",
       "dealer_oil",
       "tirgus",
       "seller",
@@ -42,16 +44,19 @@ describe("FLASH MAX jobs", () => {
       "summary",
       "sources_comparison",
     ]);
-    expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service")).toBe(false);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service" && j.group === "daily")).toBe(true);
+    expect(FLASH_MAX_JOBS.some((j) => j.id === "carfax" && j.group === "daily")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("gemini-flash");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "finnik" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "tirgus" && j.group === "daily")).toBe(true);
+    // 17.11: noklusējumā atzīmēti visi darbi (arī «Citas sadaļas»), izņemot avotu salīdzinājumu.
     expect(defaultFlashMaxSelection().selectedIds).toEqual(
-      FLASH_MAX_DAILY_JOB_IDS.filter((id) => id !== "sources_comparison"),
+      FLASH_MAX_JOBS.map((j) => j.id).filter((id) => id !== "sources_comparison"),
     );
+    expect(defaultFlashMaxSelection().selectedIds).toEqual(expect.arrayContaining(["ltab", "tjekbil", "asv", "citi_avoti", "listing_sales"]));
     expect(defaultFlashMaxSelection().selectedIds).not.toContain("sources_comparison");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);

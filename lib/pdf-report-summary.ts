@@ -57,6 +57,7 @@ import {
   countChartMileageReadings,
   formatListingBelowShortLv,
   hasActiveRollbackAnomaly,
+  resolveLatestConfirmedMileage,
   selectNewestChartMileageRow,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
@@ -90,6 +91,8 @@ export type PdfSummaryTile = {
   readings?: number;
   /** Serviss: jaunākā ieraksta datums (1. lapas kartītei «Serviss»). */
   latestDate?: string;
+  /** Serviss: cik ierakstu no oficiālā dīlera datiem (>0 - kartītē «Serviss» markas logo). */
+  dealerRecords?: number;
 };
 
 export type PdfSummaryInput = {
@@ -240,32 +243,52 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
-/** Jaunākais odometra rādījums 1. lapas augšdaļai (tā pati izvēle kā kartītē «Nobraukums»). */
+/**
+ * Jaunākais APSTIPRINĀTAIS odometra rādījums 1. lapas augšdaļai - tā pati izvēle kā faktu lapā
+ * («Jaunākais rādījums»). Sludinājuma km par rādījumu neskaitās: ja apstiprināta nav, `null`.
+ */
 export function resolvePdfLatestOdometerReading(
   input: PdfSummaryInput,
 ): { odometer: string; date: string; sourceLabel: string } | null {
-  const rows = prepareUnifiedMileageDisplayRows(
-    collectUnifiedMileageRows({
-      csddForm: input.csddForm ?? undefined,
-      autoRecordsBlock: input.autoRecordsBlock ?? undefined,
-      oneautoBlock: input.oneautoBlock ?? undefined,
-      ccVinBlock: input.ccVinBlock ?? null,
-      asvBlock: input.asvBlock ?? null,
-      manualVendorBlocks: input.manualVendorBlocks ?? undefined,
-      citiAvotiBlock: input.citiAvoti ?? null,
-      tirgusForm: input.tirgusForm ?? null,
-      listingUrl: input.listingUrl ?? null,
-    }),
-  );
-  if (rows.length === 0) return null;
-  const newest =
-    selectNewestChartMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
-  if (!newest.odometer.trim() || parseOdometerKm(newest.odometer) == null) return null;
+  const latest = resolveLatestConfirmedMileage(collectPdfSummaryMileageRows(input));
+  const newest = latest?.row;
+  if (!latest || !newest || !newest.odometer.trim() || parseOdometerKm(newest.odometer) == null) return null;
   return {
     odometer: formatPdfOdometerDisplay(newest.odometer, true),
     date: newest.date.trim(),
-    sourceLabel: newest.sourceLabel,
+    sourceLabel: latest.sourceLabel,
   };
+}
+
+/** Jaunākais sludinājumā norādītais km (pārdevēja norāde, NAV rādījums) - tikai ar atzīmi «sludinājumā». */
+export function resolvePdfListingOdometer(
+  input: PdfSummaryInput,
+): { odometer: string; date: string; sourceLabel: string } | null {
+  const rows = prepareUnifiedMileageDisplayRows(collectPdfSummaryMileageRows(input));
+  const listing = rows
+    .filter((r) => isListingMileageSource(r) && parseOdometerKm(r.odometer) != null)
+    .sort((a, b) => a.sortableTime - b.sortableTime)
+    .at(-1);
+  if (!listing) return null;
+  return {
+    odometer: formatPdfOdometerDisplay(listing.odometer, true),
+    date: listing.date.trim(),
+    sourceLabel: listing.sourceLabel,
+  };
+}
+
+function collectPdfSummaryMileageRows(input: PdfSummaryInput) {
+  return collectUnifiedMileageRows({
+    csddForm: input.csddForm ?? undefined,
+    autoRecordsBlock: input.autoRecordsBlock ?? undefined,
+    oneautoBlock: input.oneautoBlock ?? undefined,
+    ccVinBlock: input.ccVinBlock ?? null,
+    asvBlock: input.asvBlock ?? null,
+    manualVendorBlocks: input.manualVendorBlocks ?? undefined,
+    citiAvotiBlock: input.citiAvoti ?? null,
+    tirgusForm: input.tirgusForm ?? null,
+    listingUrl: input.listingUrl ?? null,
+  });
 }
 
 function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
@@ -380,6 +403,7 @@ function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
     .sort((a, b) => b.ms - a.ms)[0]?.date;
   return {
     latestDate: latest,
+    dealerRecords: dealer,
     id: "service",
     label: "Servisa vēsture",
     value: total === 0 ? "Nav ierakstu" : pluralLv(total, "ieraksts", "ieraksti"),

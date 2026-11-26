@@ -1,4 +1,5 @@
 import { isTelegramGroupPayment } from "@/lib/admin-customer-identity";
+import { reportPdfKindFromFilename } from "@/lib/audit-report-pdf-filename";
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 
@@ -52,6 +53,31 @@ export function orderDropboxCategory(args: {
   if (line === "mini" || line === "plus" || line === "listing_filter") return "mini";
   if (line === "business") return "business";
   return "audits";
+}
+
+/** Manuālais pasūtījums (`manual_order_*`, sk. `MANUAL_ORDER_ID_PREFIX`) - bez smagā krātuves importa. */
+export function isManualOrderSessionId(id: string): boolean {
+  return typeof id === "string" && id.startsWith("manual_order_") && /^[a-zA-Z0-9_]+$/.test(id);
+}
+
+/**
+ * Manuālajam pasūtījumam produkts kļūst zināms tikai, kad admins ģenerē / sūta PDF (Business, Dīlera dati, AUDITS).
+ * PDF nosaukums -> virsmape. ASV / izsoļu arhīvs / nezināms - null (mapi nepārvieto).
+ */
+export function orderDropboxCategoryFromReportFilename(filename: string): OrderDropboxCategory | null {
+  switch (reportPdfKindFromFilename(filename)) {
+    case "audits":
+      return "audits";
+    case "mini":
+      return "mini";
+    case "business":
+      return "business";
+    case "dealer":
+    case "oem_dealer":
+      return "dealer";
+    default:
+      return null;
+  }
 }
 
 export type OrderDropboxNameInput = {
@@ -122,6 +148,20 @@ export function orderDropboxParentPath(category: OrderDropboxCategory, env: Reco
 
 export function orderDropboxFolderPath(input: OrderDropboxNameInput, env: Record<string, string | undefined> = process.env): string {
   return `${orderDropboxParentPath(input.category, env)}/${orderDropboxFolderName(input)}`;
+}
+
+/**
+ * Produkta maiņa: esošās mapes nosaukumā nomaina produkta vārdu («…_AUDITS» -> «…_BUSINESS»), lai nezustu
+ * marka / numurs / VIN, kas nosaukumā jau bija. Ja vārda nav - pievieno galā.
+ */
+export function orderDropboxNameWithCategory(currentName: string, from: OrderDropboxCategory, to: OrderDropboxCategory): string {
+  const oldLabel = `_${CATEGORY_LABEL[from]}`;
+  const at = currentName.lastIndexOf(oldLabel);
+  const next =
+    at >= 0
+      ? `${currentName.slice(0, at)}_${CATEGORY_LABEL[to]}${currentName.slice(at + oldLabel.length)}`
+      : `${currentName}_${CATEGORY_LABEL[to]}`;
+  return sanitizeDropboxName(next, 200);
 }
 
 /** Mape jāpārdēvē tikai uz bagātāku nosaukumu (parādījās marka/VIN/numurs), nekad "atpakaļ". */

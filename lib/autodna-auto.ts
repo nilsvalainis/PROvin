@@ -32,6 +32,7 @@ import { getDropboxClient } from "@/lib/dropbox-client";
 import { extractBearerToken } from "@/lib/iriss-aivars-api-token";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
+import { saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /**
@@ -366,7 +367,10 @@ async function saveResult(sessionId: string, prev: AutodnaAutoStatus | null, ev:
       const draft = await readOrderDraft(sessionId);
       const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
       const car = orderCarFromCsdd(csdd, "", vin || draft?.orderEdits?.vin || "");
-      const saved = await saveFileToProvOrderFolder(client, { ...car, vin: vin || car.vin }, name, bytes);
+      // Jaunie pasūtījumi: tikai sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē.
+      const saved = await saveFileToOrderFolderOrLegacy(sessionId, name, bytes, () =>
+        saveFileToProvOrderFolder(client, { ...car, vin: vin || car.vin }, name, bytes),
+      );
       dropboxPath = saved.path;
     } catch (e) {
       console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");

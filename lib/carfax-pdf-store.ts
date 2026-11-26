@@ -7,7 +7,7 @@ import { readVendorAutoRaw, writeVendorAutoRaw } from "@/lib/carvertical-auto-st
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
-import { readOrderDropboxRecord, saveFileToOrderDropboxFolder } from "@/lib/order-dropbox";
+import { saveFileToOrderFolderOrLegacy } from "@/lib/order-dropbox";
 import { normalizeVin } from "@/lib/order-field-validation";
 
 /**
@@ -55,16 +55,11 @@ export async function saveCarfaxOriginalPdf(args: {
     notes.push("Dropbox nav konfigurēts");
   } else {
     try {
-      const orderFolder = await readOrderDropboxRecord(sessionId).catch(() => null);
-      const inOrder =
-        orderFolder?.state === "ok" ? await saveFileToOrderDropboxFolder(sessionId, name, bytes).catch(() => null) : null;
-      if (inOrder) {
-        dropboxPath = inOrder.path;
-      } else {
-        const car = orderCarFromCsdd(args.csdd, "", args.vin);
-        const saved = await saveFileToProvOrderFolder(client, { ...car, vin: normalizeVin(args.vin) || car.vin }, name, bytes);
-        dropboxPath = saved.path;
-      }
+      const car = orderCarFromCsdd(args.csdd, "", args.vin);
+      const saved = await saveFileToOrderFolderOrLegacy(sessionId, name, bytes, () =>
+        saveFileToProvOrderFolder(client, { ...car, vin: normalizeVin(args.vin) || car.vin }, name, bytes),
+      );
+      dropboxPath = saved.path;
     } catch (e) {
       console.error(`${LOG} dropbox save failed`, e instanceof Error ? e.message.slice(0, 200) : "unknown");
       notes.push("Dropbox neizdevās");

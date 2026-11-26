@@ -20,7 +20,8 @@ import {
 import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
 import { computeReportIncidentCount, collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
-import { classifyOdometerAnomalies } from "@/lib/odometer-anomaly-classify";
+import { classifyOdometerAnomalies, resolveLatestConfirmedMileage } from "@/lib/odometer-anomaly-classify";
+import { pdfTopOdometerSourceName } from "@/lib/pdf-report-top";
 import {
   ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
@@ -55,11 +56,11 @@ import {
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
   vendorAvotuBlockToPlainText,
+  carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { asvBlockToPlainText } from "@/lib/asv-report";
-import { carfaxReportToPlainText } from "@/lib/carfax-report";
 import { isoDateToLvDisplay } from "@/lib/csdd-extended-parse";
 import {
   buildVehicleLifecycleEvents,
@@ -213,13 +214,24 @@ const DEALER_ROW_MAX_CHARS = 140;
 
 export type SuspectedEntryError = { date: string; km: number; source: string };
 
+/** Sludinājuma km pret jaunāko apstiprināto rādījumu. */
+export type ListingMileageFact = { date: string; km: number; source: string; diffFromConfirmedKm: number | null };
+
+/** Sludinājuma km atšķiras no pēdējā apstiprinātā vairāk par šo - atsevišķs brīdinājums AI faktos. */
+export const LISTING_VS_CONFIRMED_WARN_KM = 5_000;
+
 export type CanonicalFacts = {
   vin: string;
   makeModel: string;
   year: string;
   owners: CanonicalOwnerFacts;
   firstReg: CanonicalFirstReg;
+  /** 24.11 audits #2: jaunākais APSTIPRINĀTAIS rādījums (bez sludinājumiem). */
   latestKm: number | null;
+  latestKmDate?: string;
+  latestKmSource?: string;
+  /** 24.11 audits #2: sludinājumā norādītais km (nav apstiprināts rādījums). */
+  listingMileage?: ListingMileageFact | null;
   /** 24.11 audits: visu nobraukuma rindu km (teksta km salīdzina ar visiem, ne tikai jaunāko). */
   mileageKms?: number[];
   /** 24.11 audits: nobraukuma rindu datumi (datēts vēsturisks rādījums tekstā nav pretruna). */
@@ -392,8 +404,7 @@ function sourceHaystackFrom(blocks: WorkspaceSourceBlocks, extra: string[]): str
     csddFormToPlainText(blocks.csdd),
     vendorAvotuBlockToPlainText(blocks.autodna),
     vendorAvotuBlockToPlainText(blocks.carvertical),
-    vendorAvotuBlockToPlainText(blocks.carfax),
-    carfaxReportToPlainText(blocks.carfax.report),
+    carfaxBlockToPlainText(blocks.carfax),
     ltabBlockToPlainText(blocks.ltab),
     tirgusFormToPlainText(blocks.tirgus),
     listingAnalysisToPlainText(blocks.listing_analysis),
@@ -503,8 +514,25 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     hasAnyOdometerAnomaly(anomalyMap) && !(allDrops.length > 0 && rollbacks.length === 0);
   const carverticalMileageWarning = collectCarverticalMileageWarning(blocks);
   const chrono = sortMileageChronological(mileageRows);
-  const lastWithKm = [...chrono].reverse().find((r) => parseOdometerKm(r.odometer) != null);
+  // 24.11 audits #2: «jaunākais rādījums» = jaunākais APSTIPRINĀTAIS (reģistrs / dīleris / TA / vēstures avoti);
+  // sludinājuma km ir tikai pārdevēja norāde - atsevišķi, salīdzinājumam.
+  const withKm = [...chrono].reverse().filter((r) => parseOdometerKm(r.odometer) != null);
+  // 26.11: tā pati izvēle (rinda + avota nosaukums) kā PDF 1. lapas odometra kartītē - vienam ierakstam viens avots.
+  const latestConfirmed = resolveLatestConfirmedMileage(mileageRows);
+  const lastConfirmed = latestConfirmed?.row ?? null;
+  const lastListing = withKm.find((r) => isListingMileageSource(r));
+  const lastWithKm = lastConfirmed ?? null;
   const latestKm = lastWithKm ? parseOdometerKm(lastWithKm.odometer) : null;
+  const listingKm = lastListing ? parseOdometerKm(lastListing.odometer) : null;
+  const listingMileage: ListingMileageFact | null =
+    lastListing && listingKm != null
+      ? {
+          date: lastListing.date,
+          km: listingKm,
+          source: lastListing.sourceLabel,
+          diffFromConfirmedKm: latestKm != null ? listingKm - latestKm : null,
+        }
+      : null;
 
   const drivetrainRes = resolveVehicleDrivetrain(blocks);
   const synth = synthesizeOwnerCountsFromBlocks(blocks);
@@ -577,6 +605,9 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     owners,
     firstReg,
     latestKm,
+    latestKmDate: lastWithKm?.date ?? "",
+    latestKmSource: lastWithKm && latestConfirmed ? pdfTopOdometerSourceName(latestConfirmed.sourceLabel, lastWithKm.date, blocks.cc_vin, "lv") : "",
+    listingMileage,
     mileageKms: mileageRows.map((r) => parseOdometerKm(r.odometer)).filter((n): n is number => n != null && n > 0),
     mileageDates: mileageRows.map((r) => r.date).filter(Boolean),
     rollbacks,
@@ -699,8 +730,23 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
 
   lines.push("Nobraukums:");
   lines.push(
-    `- Jaunākais rādījums: ${facts.latestKm != null ? `${formatForensicsInt(facts.latestKm)} km` : "nav"}`,
+    `- Jaunākais rādījums: ${facts.latestKm != null ? `${formatForensicsInt(facts.latestKm)} km` : "nav"}${
+      facts.latestKm != null && (facts.latestKmDate || facts.latestKmSource)
+        ? ` (apstiprināts: ${[facts.latestKmDate, facts.latestKmSource].filter(Boolean).join(", ")})`
+        : ""
+    }`,
   );
+  const lm = facts.listingMileage;
+  if (lm) {
+    lines.push(
+      `- Sludinājumā norādīts: ${formatForensicsInt(lm.km)} km (${[lm.date, lm.source].filter(Boolean).join(", ")}) - pārdevēja norāde, NAV apstiprināts rādījums. „Jaunākais / pēdējais / reģistrētais rādījums” tekstā ir tikai apstiprinātais; sludinājuma km raksti kā „sludinājumā norādīts”.`,
+    );
+    if (lm.diffFromConfirmedKm != null && Math.abs(lm.diffFromConfirmedKm) > LISTING_VS_CONFIRMED_WARN_KM) {
+      lines.push(
+        `- BRĪDINĀJUMS: sludinājuma km atšķiras no jaunākā apstiprinātā par ${formatForensicsInt(Math.abs(lm.diffFromConfirmedKm))} km (${lm.diffFromConfirmedKm > 0 ? "vairāk" : "mazāk"}). Tā ir pretruna (iespējama sludinājuma kļūda), ko nosauc vienu reizi nobraukuma laukā; riskus un kopsavilkumu balsti uz apstiprināto rādījumu, ne uz sludinājuma skaitli.`,
+      );
+    }
+  }
   if (facts.csddUndatedOdometer) {
     lines.push(`- ${formatCsddUndatedOdometerLine(facts.csddUndatedOdometer)}`);
   }

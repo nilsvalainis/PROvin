@@ -3,6 +3,7 @@
  * Hibrīds: objektīvs konteksts + skaidri atzīmētas datu neatbilstības.
  */
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
+import { applyReportLanguageFixes } from "@/lib/report-language-fixes";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -546,6 +547,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
   });
   out = replaceCrankshaftDamperWording(out);
+  out = applyReportLanguageFixes(out);
   out = groupClientNumberThousands(out);
   out = stripInternalClientLeaks(out);
   return stripForbiddenPersonaNouns(out);
@@ -677,6 +679,14 @@ function looksLikeHeadingLine(line: string): boolean {
   return true;
 }
 
+/**
+ * Teikums ar datumu (DD.MM.GGGG) vai nobraukumu (… km) ir fakts, nevis virsraksts.
+ * 25.11.2026: „Pirmais ieraksts fiksēts 31.10.2012 ar nobraukumu 20 927 km.” kļuva par treknu virsrakstu.
+ */
+function looksLikeFactSentence(heading: string): boolean {
+  return /(?<!\d)\d{1,2}\.\s?\d{1,2}(?:\.\s?\d{2,4})?(?!\d)/.test(heading) || /\d\s?km(?![\p{L}])/u.test(heading);
+}
+
 function lineToHeadingBody(line: string): string {
   const t = line.trim();
   const wrapped = t.match(/^\*{1,2}\s*([^*\n]+?)\s*\*{1,2}\.?\s*(.*)$/);
@@ -698,7 +708,7 @@ function lineToHeadingBody(line: string): string {
     const heading = plain.slice(0, end).replace(/[.!?]\s*$/, "").trim();
     const rest = plain.slice(end + 1).trim();
     const wordCount = heading.split(/\s+/).filter(Boolean).length;
-    if (rest && wordCount >= 2 && wordCount <= 12 && !/^\d/.test(heading)) {
+    if (rest && wordCount >= 2 && wordCount <= 12 && !/^\d/.test(heading) && !looksLikeFactSentence(heading)) {
       return `${heading}\n${rest}`;
     }
   }
@@ -1016,7 +1026,7 @@ export const AI_TECHNICAL_RISKS_FLAGSHIP_RULES = `TEHNISKO RISKU KVALITĀTES LAT
 - VĀRDU PRINCIPS (ne šablons, bet darbnīcas valoda): raksti kā vecāks meistars, kas lasa tabulu. Labie vārdi, kad tie atbilst faktam: „fiksēts”, „pēc dīlera datiem”, „starpība ir”, „jālūdz uzrādīt dokumenti”, „ja šajā periodā apkope datos nav fiksēta”. Sliktie: tukša „signāla/faktora” piedeva, „ko tas nozīmē šim darījumam”, near-term-investment padding, teikuma piepūšana bez jauna fakta. Datumi un km paliek; atmosfēras teikumi ne.
 - APRĪKOJUMA DISCIPLĪNA: lasi dīlera SA/aprīkojuma sarakstu. Dārgs, šajā vecumā riskants ekstraprīkojums **maina TCO** - ja tas datos IR, raksti par to. Ja saraksts ir īss/nepilnīgs vai pozīcijas nav - par trūkstošo NERAKSTI. Neizdomā, ka kaut kā „nav”, un neveido nolieguma sadaļu.
 - NOBRAUKUMA KALIBRĀCIJAS PIEMĒRI (loģika, ne šablons visiem modeļiem): M57 pie ~300 tūkst. km ar blīvu DE servisu var būt ierasts darba mūžs; N57 pie ~180 tūkst. km ķēde jau var būt pirkuma risks; D5244T5/T14 ~136 kW viena turbo ar labu eļļu - ierasts darba mūžs; **D5244T11 ~158 kW biturbo** - bloka plaisas/dzesēšana ir aktuāls risks, NE „bez bloka problēmām”; **OM651.913 ~100 kW pie ~300 tūkst. km** ar ritmisku eļļu: ja kārba ir **722.6**, aktuāli ir eļļa/elektroplāksne un **EGR dzesētājs**. Nekad nepārnes citas dzinēja versijas stāstu tikai tāpēc, ka marka sakrīt. Ja paka CONFLICTĒ ar šī auto kW/kodu - **meklē**, tad raksti.
-- Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez verdikta „pērc/nepērc” (tas ir 3. sadaļā), bez klātienes checklista (tas ir 2. sadaļā), bez eļļas maiņas intervālu tabulas (tas ir „Eļļas maiņas intervāli” — šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks).
+- Katra rindkopa = viens mezgls + kāpēc šajā posmā + 1 teikums, ko saka ŠĪ auto dati. Bez orientējošām EUR joslām, bez ūdens, bez pirkuma lēmuma (buy / do-not-buy) - PROVIN dod ieteikumus, lēmumu pieņem klients, bez klātienes checklista (tas ir 2. sadaļā), bez eļļas maiņas intervālu tabulas (tas ir „Eļļas maiņas intervāli” — šeit maksimums viens teikums, ja long-life pret pilsētu ir pirkuma risks).
 - TA COVERED WEAR: ja promptā LĪMENIS ir SVAIGA vai SPĒKĀ — sviras/bukses/lodbalsti/bremzes NAV riska sadaļa. Unknown history is a one-line inspection note, not a risk.
 - WINTER SALT RUST: ja promptā „Ziemas sāls / rūsas ekspozīcija” saka OBLIGĀTI — viena atsevišķa īsa rindkopa (klimata risks, ne pierādīts defekts; cinkojums un tīra TA neatceļ). Tipiskās vietas nosauc vārdā. Bez garas „rada paaugstinātu risku” esejas.`;
 

@@ -88,7 +88,8 @@ export function applyClientReportTranslatedTexts(
   texts: TranslatableFieldMap,
 ): ClientReportPayload {
   const get = (id: string, fallback: string): string => texts[id] ?? fallback;
-  const out: ClientReportPayload = { ...payload };
+  // Fakti (īpašnieku skaits u.c.) PDF tiek aprēķināti no oriģināla, ne no AI teksta (25.11).
+  const out: ClientReportPayload = { ...payload, factsSource: payload.factsSource ?? payload };
 
   for (const key of TOP_LEVEL_TEXT_FIELDS) {
     const v = payload[key];

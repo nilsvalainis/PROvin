@@ -32,6 +32,13 @@ const TONE: Record<PaintMapTone, { ink: string; fill: string }> = {
 };
 const RANK: Record<PaintMapTone, number> = { ok: 0, warn: 1, alert: 2 };
 
+/**
+ * PDF shēmā «Labā puse» / «Kreisā puse» etiķetes tieši virs / zem µm etiķešu rindas, pie silueta
+ * (siluets bildē aizņem y ≈ 154-489; maketa etiķetes y 28 / 612 bija tālu no auto). Ja sānā nav mērījumu - µm rindas vietā.
+ * IRISS `PdPaintMap` ģeometrija nemainās.
+ */
+export const PAINT_MAP_SVG_SIDE_LABEL_Y: Record<"left" | "right", number> = { right: 88, left: 556 };
+
 /** Avota detaļas nosaukums (`front-left-door`, `bonnet`, `global.paint.rearLeftSidePanel`) -> vieta shēmā. */
 export function paintMapSlotOf(area: string): PaintMapSlot | null {
   const last = area.includes(".") ? area.slice(area.lastIndexOf(".") + 1) : area;
@@ -102,7 +109,9 @@ export function buildPaintMapSvg(readings: readonly PaintMapReading[], opts: { c
     return `<rect data-zone="${id}" data-tone="${tone ?? "neutral"}" x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" rx="14" ${style}/>`;
   }).join("");
   const labels = PAINT_MAP_ZONE_ORDER.map((id) => {
-    const [lx, ly] = PAINT_MAP_ZONES[id].label;
+    const [lx, zoneLy] = PAINT_MAP_ZONES[id].label;
+    // Sānā bez mērījumiem etiķete ieņem µm rindas vietu - vēl tuvāk siluetam.
+    const ly = id === "left" || id === "right" ? (worst.has(id) ? PAINT_MAP_SVG_SIDE_LABEL_Y[id] : PAINT_MAP_SIDE[id].chip) : zoneLy;
     return chip(lx, ly, IRISS_PD_PAINT_ZONE_LV[id], "#6e6e73", { size: 16, pill: true });
   }).join("");
   const seen = new Set<string>();

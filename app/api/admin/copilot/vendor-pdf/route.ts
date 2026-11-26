@@ -21,11 +21,13 @@ import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-sourc
 import { runCcVinPdfAgent, runLtabPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock } from "@/lib/finnik-report-parse";
 import { applyCarfaxReportToBlock } from "@/lib/carfax-report";
+import { looksLikeCarfaxReport } from "@/lib/carfax-report-parse";
 import { saveCarfaxOriginalPdf } from "@/lib/carfax-pdf-store";
 import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
+import { extractAutodnaPreviousSearches } from "@/lib/autodna-previous-searches-pdf";
 import { tryImportVendorArchivePhotosFromPdf, type VendorArchiveImportResult } from "@/lib/vendor-archive-photos-import";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
@@ -305,6 +307,17 @@ export async function POST(req: Request) {
       });
     }
 
+    if (target === "autodna" || target === "carvertical") {
+      // CARFAX ir patstāvīgs avots - tā PDF nekad nenonāk AutoDNA / CarVertical blokā.
+      const probe = await extractPdfTextDetailed(buffer, { fileName });
+      if (looksLikeCarfaxReport(probe.text ?? "")) {
+        return NextResponse.json(
+          { error: "wrong_source", detail: "Šis ir CARFAX PDF - augšupielādē to CARFAX blokā." },
+          { status: 422 },
+        );
+      }
+    }
+
     const agent = await runVendorPdfAgent({
       target: target!,
       fileName,
@@ -345,6 +358,14 @@ export async function POST(req: Request) {
         result.sourceBlocks = { ...result.sourceBlocks, [target]: filled };
         if (!changedKeys.includes(target)) changedKeys.push(target);
       }
+      if (target === "autodna") {
+        // «Iepriekšējie meklējumi» (IP maskēts, karte no PDF) -> klienta PDF kartīte.
+        const searches = await extractAutodnaPreviousSearches(new Uint8Array(buffer), extracted.text ?? "");
+        if (searches.length) {
+          result.sourceBlocks = { ...result.sourceBlocks, autodna: { ...result.sourceBlocks.autodna, previousSearches: searches } };
+          if (!changedKeys.includes("autodna")) changedKeys.push("autodna");
+        }
+      }
     }
     const notes = aiBlocked
       ? [
@@ -372,8 +393,13 @@ export async function POST(req: Request) {
       patchedSourceBlocks: {
         ...Object.fromEntries(changedKeys.map((k) => [k, result.sourceBlocks[k]])),
         ...(archive?.changed ? { tirgus: archive.tirgus } : {}),
+        ...(archive?.listingAnalysis ? { listing_analysis: archive.listingAnalysis } : {}),
       },
-      changedKeys: archive?.changed ? [...changedKeys, "tirgus"] : changedKeys,
+      changedKeys: [
+        ...changedKeys,
+        ...(archive?.changed ? ["tirgus" as const] : []),
+        ...(archive?.listingAnalysis ? ["listing_analysis" as const] : []),
+      ],
       ...(archive ? { archivePhotos: { added: archive.added, duplicates: archive.duplicates, notes: archive.notes } } : {}),
     });
   } catch (e) {
