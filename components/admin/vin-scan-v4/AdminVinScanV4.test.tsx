@@ -4,6 +4,9 @@ import { AdminVinScanV4, type VinScanV4Row, type VinScanV4SmartId } from "@/comp
 import { VinScanV4CsddSms, VinScanV4PaidRow, VinScanV4PaidServices } from "@/components/admin/vin-scan-v4/VinScanV4Paid";
 import { vinScanV4PaidServices } from "@/lib/vin-scan/v4-paid-services";
 import { renderHtml, renderText } from "@/lib/test-render";
+import { emptyCsddTechData } from "@/lib/csdd-tech-data";
+import { LTAB_SKIP_REASON_LV } from "@/lib/ltab-query-target";
+import { ECSDD_RAW_LONG_HISTORY } from "@/lib/vin-scan/__fixtures__/ecsdd-smartid-2026-11-26";
 
 const VIN = "WAUZZZF2XKN104417";
 const row = (p: Partial<VinScanV4Row> & { id: string }): VinScanV4Row => ({ label: p.id, country: "", status: "found", summary: "", ...p });
@@ -129,5 +132,34 @@ describe("AdminVinScanV4 - saliktais saraksts", () => {
     const html = renderHtml(<AdminVinScanV4 vin={VIN} rows={rows} busy={false} scannedAt="2026-11-26T17:57:00Z" />);
     expect(html).not.toContain("data-v4-kfz-alert");
     expect(html).toMatch(/kļūdas (?:<!-- -->)?1</);
+  });
+
+  it("26.11: e.csdd ielasīts -> nobraukums, TA defekti, CSNg kopsavilkumā; LTAB «nav reģistrēts Latvijā» pretrunā ar CSDD netiek rādīts", () => {
+    const smart: VinScanV4SmartId = {
+      ...SMART,
+      ecsdd: { state: "found", rawText: ECSDD_RAW_LONG_HISTORY, updatedAt: "2026-11-26T19:25:16Z", checkedAt: "2026-11-26T19:25:16Z" },
+      ltab: { state: "skipped", message: LTAB_SKIP_REASON_LV.not_registered_lv, updatedAt: "2026-11-26T19:25:11Z" },
+    };
+    const csdd = { ...emptyCsddTechData(), registrationNumber: "CD5678", vin: VIN, make: "BMW", model: "X5", inspectionValidUntilIso: "2027-02-24" };
+    // busy=true: lēnais pieprasījums vēl vaļā, bet visi avoti jau atbildējuši -> nekāda «lasa…».
+    const text = renderText(<AdminVinScanV4 vin={VIN} rows={[row({ id: "mnt_ee", label: "mnt.ee", status: "none" })]} busy scannedAt="2026-11-26T19:25:00Z" csdd={csdd} smartId={smart} />);
+    expect(text).not.toContain("lasa…");
+    expect(text).toContain("489 009");
+    expect(text).toContain("24.02.2026 · e.csdd");
+    expect(text).toContain("23 ieraksti");
+    expect(text).toContain("Visi 23 rādījumi");
+    expect(text).not.toContain("- km");
+    expect(text).toContain("Nav reģistrēti");
+    expect(text).toContain("e.csdd CSNg");
+    expect(text).toContain("2 defekti");
+    expect(text).toContain("TA defekts (1): Virspusēja rāmja vai nesošā elementa korozija.");
+    expect(text).not.toContain(LTAB_SKIP_REASON_LV.not_registered_lv);
+    expect(text).toContain("CSDD: reģistrēts Latvijā (CD5678)");
+  });
+
+  it("26.11: nav nobraukuma datu un skenēšana beigusies -> sarkans «nav datu», nekad «- km»", () => {
+    const text = renderText(<AdminVinScanV4 vin={VIN} rows={[row({ id: "mnt_ee", label: "mnt.ee", status: "none" })]} busy={false} scannedAt="2026-11-26T19:25:00Z" />);
+    expect(text).toContain("nav datu");
+    expect(text).not.toContain("- km");
   });
 });

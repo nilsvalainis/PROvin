@@ -69,6 +69,8 @@ export function resolveLtabQueryTarget(
   if (!plate) return { kind: "skip", reason: status ? "no_plate" : "no_csdd_data" };
   if (!isValidPlateNumber(plate)) return { kind: "skip", reason: "no_plate" };
   // Bez API: vajag skaidru CSDD statusu "Uzskaitē" / "Reģistrēts", citādi nezinām, vai auto ir LV.
+  // 26.11: tukšs statuss nozīmē «CSDD vēl nav atbildējis», nevis «nav LV» (VIN SCAN rādīja pretrunu ar CSDD API).
+  if (!status) return { kind: "skip", reason: "no_csdd_data" };
   if (!REGISTERED_RE.test(status)) return { kind: "skip", reason: "not_registered_lv" };
   const formVin = normalizeVin(csdd.vin ?? "");
   if (orderHasVin && isValidVin(formVin) && formVin !== order) return { kind: "skip", reason: "vin_mismatch" };

@@ -26,7 +26,8 @@ export type AtraFactRow = {
   detail?: string;
   openUrl?: string;
   vehicle?: { make?: string; model?: string; year?: string };
-  mileage?: { date: string; odometer: string; source?: string }[];
+  /** `country` (ISO2) - punkta valsts, ja tā atšķiras no rindas (piem. e.csdd «Nobraukums ārvalstīs»). */
+  mileage?: { date: string; odometer: string; source?: string; country?: string }[];
   media?: { photoUrl?: string; photoCount?: number };
   flags?: {
     wanted?: boolean;
@@ -165,7 +166,13 @@ function mileageFact(input: AtraFactsInput): AtraMileageFact {
     const km = parseKm(odo);
     if (!d || km <= 0) return;
     const key = `${d}|${km}`;
-    if (seen.has(key)) return;
+    const same = seen.has(key) ? points.find((p) => p.date === d && p.km === km) : undefined;
+    if (same) {
+      // Tas pats rādījums vairākos avotos: avotus apvieno («e.csdd · AutoDNA»), punktu nedublē.
+      if (source && !same.source.split(" · ").includes(source)) same.source = `${same.source} · ${source}`;
+      if (!same.country && country) same.country = country;
+      return;
+    }
     seen.add(key);
     points.push({ date: d, km, source, country });
   };
@@ -173,7 +180,10 @@ function mileageFact(input: AtraFactsInput): AtraMileageFact {
     if (row.status !== "found") continue;
     // WMI (vin_decode) valsts ir ražotājvalsts - nobraukuma punktiem valsti nedod.
     const c = isManufactureCountrySource(row.id) ? "" : vinScanRowRegistrationCountry(row) || row.country;
-    for (const m of row.mileage ?? []) push(m.date, m.odometer, m.source || row.label, COUNTRY_OK.test(c) ? c : "");
+    for (const m of row.mileage ?? []) {
+      const pc = String(m.country ?? "").trim().toUpperCase();
+      push(m.date, m.odometer, m.source || row.label, COUNTRY_OK.test(pc) ? pc : COUNTRY_OK.test(c) ? c : "");
+    }
     for (const i of row.inspections ?? []) push(i.date, i.odometer ?? "", row.label, COUNTRY_OK.test(c) ? c : "");
   }
   for (const m of input.dealer?.mileageRows ?? []) push(m.date, m.odometer, m.source || "Dīleris", "");
