@@ -125,7 +125,7 @@ describe("AdminVinScanV4 - saliktais saraksts", () => {
       <AdminVinScanV4 vin={VIN} rows={rows} busy={false} scannedAt="2026-11-26T17:57:00Z" kfz={{ previousCountry: "AUSTRIJA", orderId: "cs_live_test123" }} />,
     );
     expect(text).toContain("kļūdas 1");
-    expect(text).toContain("Austrija · §57a apskates: vajag 1. reģ. datumu (CSDD iepriekšējā valsts Austrija)");
+    expect(text).toContain("Austrija · §57a apskates: nav pārbaudīts (CSDD iepriekšējā valsts Austrija)");
     const html = renderHtml(<AdminVinScanV4 vin={VIN} rows={rows} busy={false} scannedAt="2026-11-26T17:57:00Z" />);
     expect(html).not.toContain("data-v4-kfz-alert");
     expect(html).toMatch(/kļūdas (?:<!-- -->)?1</);

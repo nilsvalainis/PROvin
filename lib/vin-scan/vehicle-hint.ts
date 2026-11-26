@@ -53,3 +53,40 @@ export function createVinScanVehicleHint(
     },
   };
 }
+
+/** Ilgāk par CSDD avota limitu negaida (kfz_at kopējais limits to ietver). */
+export const VIN_SCAN_FIRST_REG_HINT_WAIT_MS = 15_000;
+
+/**
+ * kfzgutachten.at datums no tā paša skenējuma CSDD rindas: pirmais `report` atbrīvo gaidītājus
+ * (tukšs - datuma nav). Bez CSDD skenējumā - uzreiz "".
+ */
+export function createVinScanFirstRegHint(
+  hasCsdd: boolean,
+  opts: { waitMs?: number } = {},
+): { report: (date: string) => void; wait: () => Promise<string> } {
+  let value = "";
+  let settled = !hasCsdd;
+  let release: () => void = () => {};
+  const done = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  if (settled) release();
+  return {
+    report(date) {
+      if (settled) return;
+      settled = true;
+      value = String(date ?? "").trim();
+      release();
+    },
+    async wait() {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, opts.waitMs ?? VIN_SCAN_FIRST_REG_HINT_WAIT_MS);
+      });
+      await Promise.race([done, timeout]);
+      if (timer) clearTimeout(timer);
+      return value;
+    },
+  };
+}

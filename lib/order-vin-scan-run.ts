@@ -19,6 +19,8 @@ import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcom
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { writeVinScanSnapshot } from "@/lib/vin-scan/store";
+import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { orderVinScanKfzContext } from "@/lib/kfzgutachten/order-kfz-context";
 
 export type RunOrderFreeVinScanInput = {
   vin?: string | null;
@@ -40,6 +42,15 @@ export type RunOrderFreeVinScanResult = {
   none?: number;
   error?: number;
 };
+
+/** Precīzs 1. reģ. datums no pasūtījuma blokiem (tā pati ķēde kā Citi avoti «Austrija») vai "". */
+function orderDraftKfzFirstRegDate(sourceBlocks: unknown, sessionId: string): string {
+  try {
+    return orderVinScanKfzContext(mergeSourceBlocksWithDefaults(sourceBlocks), sessionId).firstRegDate;
+  } catch {
+    return "";
+  }
+}
 
 function skip(reason: string): RunOrderFreeVinScanResult {
   return { ok: true, skipped: true, reason };
@@ -72,7 +83,10 @@ async function runOrderFreeVinScanOnce(
   const order = await getCheckoutSessionDetail(sessionId).catch(() => null);
   if (order?.checkoutLine === "provin_select") return skip("consultation");
 
-  const prev = parseOrderVinScanRecord((await readOrderDraft(sessionId))?.vinScan);
+  const draft = await readOrderDraft(sessionId);
+  const prev = parseOrderVinScanRecord(draft?.vinScan);
+  // kfzgutachten.at (26.11 - visiem auto ar CSDD 1. reģ. datumu): datums no pasūtījuma blokiem, ja nav padots.
+  const firstRegDate = opts.firstRegDate?.trim() || orderDraftKfzFirstRegDate(draft?.workspace?.sourceBlocks, sessionId);
   if (prev?.vin === vin && prev.status === "running" && orderVinScanRunningIsStuck(prev.at)) {
     const stuck: OrderVinScanRecord = {
       ...prev,
@@ -117,7 +131,7 @@ async function runOrderFreeVinScanOnce(
       vin,
       plates,
       listingUrl: opts.listingUrl?.trim() || "",
-      ...(opts.firstRegDate?.trim() ? { firstRegDate: opts.firstRegDate.trim() } : {}),
+      ...(firstRegDate ? { firstRegDate } : {}),
       sourceIds,
     });
     const base = prev?.vin === vin ? prev.indicators : [];

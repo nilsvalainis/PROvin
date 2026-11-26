@@ -197,7 +197,7 @@ async function runOrderAutoIntakeLocked(
   let auctionSales = 0;
   const imported = indicators.length
     ? await patchDraftSourceBlocks(sessionId, (blocks) => {
-        const applied = applyVinScanImportsToBlocks(blocks, indicators);
+        const applied = applyVinScanImportsToBlocks(blocks, indicators, { vin });
         auctionSales = applied.sales;
         return applied.changed ? applied.blocks : null;
       })

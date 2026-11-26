@@ -141,8 +141,16 @@ function asInspection(v: unknown): VinScanInspection | null {
   const date = typeof o.date === "string" ? o.date.trim().slice(0, 32) : "";
   const result = typeof o.result === "string" ? o.result.trim().slice(0, 80) : "";
   const odometer = typeof o.odometer === "string" ? o.odometer.trim().slice(0, 40) : "";
+  const plate = typeof o.plate === "string" ? o.plate.trim().slice(0, 20) : "";
+  const model = typeof o.model === "string" ? o.model.trim().slice(0, 80) : "";
   if (!date && !result && !odometer) return null;
-  return { date, ...(result ? { result } : {}), ...(odometer ? { odometer } : {}) };
+  return {
+    date,
+    ...(result ? { result } : {}),
+    ...(odometer ? { odometer } : {}),
+    ...(plate ? { plate } : {}),
+    ...(model ? { model } : {}),
+  };
 }
 
 export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {

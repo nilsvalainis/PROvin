@@ -27,6 +27,8 @@
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/vinsource              {source, vin}  bid.cars / CARFAX.eu pēc VIN (Chrome ≤40 s, kešs 24 h)
+ *                                         {source: "kfz_at", vin, date: TT.MM.GGGG}  kfzgutachten.at §57a saraksts
+ *                                         (≤1 vaicājums / 2 min, rinda, reCAPTCHA atdzišana 20 min -> 3 h, kešs 7 d)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
  *   POST /listings/detail                 {platform, url}  j56: viena Auto1/Openlane auto detaļu lapa
  *   POST /listings/lot-vins               {platform: openlane|autobid, urls[<=12]}  VIN no ielogotām lotes lapām
@@ -66,8 +68,10 @@ import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } fro
 import {
   CARFAX_CACHE_MS,
   createCarfaxCooldown,
+  createKfzScheduler,
   createVinSourceCache,
   validVinSourceRequest,
+  KFZ_MIN_INTERVAL_MS,
   VINSOURCE_TIMEOUT_MS,
   vinSourceLaneKey,
 } from "./lib/vinsource-logic.mjs";
@@ -86,8 +90,11 @@ const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MA
 const LOTVIN_MAX_PER_DAY = envPositiveInt(process.env.LISTINGS_LOTVIN_MAX_PER_DAY, 300);
 const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
-const vinSourceCache = createVinSourceCache({ ttlBySource: { carfax_eu: CARFAX_CACHE_MS } });
+const vinSourceCache = createVinSourceCache({ ttlBySource: { carfax_eu: CARFAX_CACHE_MS, kfz_at: CARFAX_CACHE_MS } });
 const carfaxCooldown = createCarfaxCooldown();
+/** kfzgutachten.at: tā pati atdzišana kā CARFAX (20 min -> dubulto līdz 3 h), + ≥2 min starp vaicājumiem un rinda. */
+const kfzCooldown = createCarfaxCooldown();
+const kfzScheduler = createKfzScheduler();
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
 
@@ -125,6 +132,115 @@ async function readJson(req, limitBytes = 256_000) {
   }
   const text = Buffer.concat(chunks).toString("utf8").trim();
   return text ? JSON.parse(text) : {};
+}
+
+function rigaTime(iso) {
+  return new Date(iso).toLocaleTimeString("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit" });
+}
+
+/** Viens īsts kfzgutachten.at vaicājums (Chrome josla kopā ar pārējiem vinsource avotiem). */
+async function runKfzQuery(key, vin, date) {
+  kfzScheduler.markRun();
+  const out = await vinScanLanes.run(key, async () => {
+    const started = Date.now();
+    const { page, close } = await openProfile("vinsource-kfz_at", { headless: false, timeoutMs: 20_000 });
+    try {
+      const budget = Math.max(5_000, VINSOURCE_TIMEOUT_MS - (Date.now() - started));
+      const got = await readVinSource(page, "kfz_at", vin, { timeoutMs: budget, date });
+      return { ...got, elapsedMs: Date.now() - started };
+    } finally {
+      await close();
+    }
+  });
+  vinSourceCache.set(key, out);
+  kfzCooldown.record(out);
+  log(`vinsource kfz_at ${out.kind} ${out.elapsedMs} ms${out.rows ? ` ${out.rows.length} rindas` : ""}${out.note ? ` (${out.note})` : ""}`);
+  return out;
+}
+
+/** Fona rinda: kad intervāls pagājis un nav atdzišanas, nolasa nākamo (rezultāts nonāk kešā). */
+let kfzWorkerBusy = false;
+setInterval(async () => {
+  if (kfzWorkerBusy) return;
+  const job = kfzScheduler.takeNext(kfzCooldown.remainingMs());
+  if (!job) return;
+  if (vinSourceCache.get(job.key)) return;
+  if (state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
+    log("vinsource kfz_at rinda: dienas limits, darbs izmests");
+    return;
+  }
+  kfzWorkerBusy = true;
+  try {
+    log(`vinsource kfz_at rinda -> vaicājums (atlikušas ${kfzScheduler.size})`);
+    await runKfzQuery(job.key, job.vin, job.date);
+  } catch (e) {
+    log(`vinsource kfz_at rinda kļūda: ${e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma"}`);
+  } finally {
+    kfzWorkerBusy = false;
+  }
+}, 15_000).unref();
+
+/**
+ * kfz_at pieprasījums: kešs -> (atdzišana | intervāls) -> rinda, citādi viens vaicājums uzreiz.
+ * Atbilde vienmēr 200 ar `kind`: found | none | queued | blocked | error.
+ */
+async function handleKfzVinSource(res, vin, date) {
+  const key = vinSourceLaneKey("kfz_at", vin, date);
+  const base = { ok: true, source: "kfz_at", vin, date };
+  const hit = vinSourceCache.get(key);
+  if (hit) {
+    log(`vinsource kfz_at kešs ${hit.kind}`);
+    return sendJson(res, 200, { ...base, ...hit });
+  }
+  if (vinScanLanes.peek(key)) {
+    // Tas pats VIN + datums jau tiek lasīts - gaidām to pašu rezultātu (otru vaicājumu nesūtām).
+    const out = await vinScanLanes.run(key, async () => vinSourceCache.get(key) ?? { kind: "error", note: "kfzgutachten.at: dalītais vaicājums bez rezultāta" });
+    return sendJson(res, 200, { ...base, cached: false, ...out });
+  }
+  const cooldownMs = kfzCooldown.remainingMs();
+  const waitMs = kfzScheduler.waitMs();
+  if (cooldownMs > 0 || waitMs > 0 || kfzWorkerBusy) {
+    const pos = kfzScheduler.enqueue(key, vin, date);
+    if (cooldownMs > 0) {
+      const until = kfzCooldown.untilIso();
+      log(`vinsource kfz_at atdziest līdz ${until} (reCAPTCHA), rindā ${pos || "pilna"}`);
+      return sendJson(res, 200, {
+        ...base,
+        cached: false,
+        kind: "blocked",
+        note: `kfzgutachten.at: pēc reCAPTCHA atteikuma pauze līdz ${rigaTime(until)}${pos ? ` (rindā ${pos}.)` : ""} - izmanto pārlūka joslu`,
+        cooldownUntil: until,
+        queued: pos > 0,
+        elapsedMs: 0,
+      });
+    }
+    if (!pos) return sendJson(res, 200, { ...base, cached: false, kind: "error", note: "kfzgutachten.at: rinda pilna", elapsedMs: 0 });
+    const eta = new Date(Date.now() + waitMs + (pos - 1) * KFZ_MIN_INTERVAL_MS).toISOString();
+    log(`vinsource kfz_at rindā ${pos}. (ap ${eta})`);
+    return sendJson(res, 200, {
+      ...base,
+      cached: false,
+      kind: "queued",
+      note: `kfzgutachten.at: rindā ${pos}. - nolasīs ap ${rigaTime(eta)}`,
+      position: pos,
+      etaIso: eta,
+      elapsedMs: 0,
+    });
+  }
+  if (vinScanLanes.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
+  if (state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
+    return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
+  }
+  kfzScheduler.forget(key);
+  log(`vinsource kfz_at (rinda ${vinScanLanes.queueLength})`);
+  try {
+    const out = await runKfzQuery(key, vin, date);
+    return sendJson(res, 200, { ...base, cached: false, ...out });
+  } catch (e) {
+    const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+    log(`vinsource kfz_at kļūda: ${note}`);
+    return sendJson(res, 500, { ok: false, error: note });
+  }
 }
 
 function stripPrefix(pathname) {
@@ -338,6 +454,7 @@ const server = createServer(async (req, res) => {
         credentials: Object.fromEntries(PLATFORMS.map((p) => [p, platforms[p].hasCredentials()])),
         queue: { length: browserQueue.queueLength, current: browserQueue.current },
         vinscan: { waiting: vinScanLanes.queueLength, running: vinScanLanes.runningCount, limit: VINSCAN_CONCURRENCY },
+        kfzAt: { pending: kfzScheduler.size, nextInMs: kfzScheduler.waitMs(), cooldownUntil: kfzCooldown.untilIso(), strikes: kfzCooldown.strikes },
         manualLogin: manual.close
           ? { platform: manual.platform, startedAt: manual.startedAt, vncReady: manual.vncReady }
           : null,
@@ -411,6 +528,7 @@ const server = createServer(async (req, res) => {
   if (path === "/vinsource") {
     const reqd = validVinSourceRequest(body);
     if (!reqd.ok) return sendJson(res, 400, { ok: false, error: reqd.error });
+    if (reqd.source === "kfz_at") return handleKfzVinSource(res, reqd.vin, reqd.date);
     const { source, vin } = reqd;
     const key = vinSourceLaneKey(source, vin);
     const hit = vinSourceCache.get(key);

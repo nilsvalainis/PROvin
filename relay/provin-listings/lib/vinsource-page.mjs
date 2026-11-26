@@ -4,15 +4,19 @@
  *    (pārdošanas vēsture, bojājumi, nobraukums, bildes ir lota HTML).
  *  - CARFAX.eu: sākumlapas forma -> `web-backend.carfax.eu/api/v1/record-check/{VIN}` JSON
  *    (bezmaksas pieejamības pārbaude, nekas netiek pirkts).
- * Captcha/Turnstile te neklikšķina: ja Cloudflare paliek, atgriež `blocked`.
+ *  - kfzgutachten.at: sākumlapas forma (VIN + 1. reģ. datums -> «Suchen») -> `POST /Home/Search` JSON
+ *    (bezmaksas saraksts; atzinumus NEKAD nepērk - «Bestellen» neklikšķina).
+ * Captcha/Turnstile/reCAPTCHA te neklikšķina, nerisina un neapiet: ja lapa atsaka, atgriež `blocked`/`captcha`.
  */
 import {
   bidCarsSearchApiUrl,
   carfaxRecordCheckMatches,
   clipHtml,
   isCarfaxCaptchaReject,
+  kfzSearchResponseMatches,
   readBidCarsSearch,
   readCarfaxRecordCheck,
+  readKfzSearch,
   VINSOURCE_TIMEOUT_MS,
 } from "./vinsource-logic.mjs";
 
@@ -134,12 +138,56 @@ async function readCarfax(page, vin, deadline) {
 }
 
 /**
+ * kfzgutachten.at bezmaksas saraksts, viens mēģinājums. Saite ar `?vin=&date=` lapā pāradresē uz login,
+ * tāpēc atveram tīru sākumlapu un aizpildām formu kā cilvēks. Neredzamā reCAPTCHA Enterprise vērtē pati;
+ * ja tā atsaka - neatkārtojam (atdzišanu vada server.mjs). Pēc atbildes lapu aizver (nekas netiek pasūtīts).
+ */
+async function readKfz(page, vin, date, deadline) {
+  await goto(page, "https://kfzgutachten.at/", deadline);
+  if (!(await waitPastChallenge(page, deadline, 8_000))) return { kind: "blocked", note: "kfzgutachten.at: izaicinājums nenokrita" };
+  const vinInput = await page.waitForSelector("#vehicleIdInput", { timeout: stepTimeout(deadline, 8_000) }).catch(() => null);
+  if (!vinInput) return { kind: "error", note: "kfzgutachten.at: FIN lauks nav atrasts" };
+  // reCAPTCHA vērtē lapas lietojumu - neskrienam uzreiz.
+  await page.waitForTimeout(Math.min(4_000, Math.max(0, left(deadline) - 20_000)));
+  await vinInput.click({ timeout: stepTimeout(deadline, 3_000) }).catch(() => undefined);
+  await vinInput.fill("").catch(() => undefined);
+  await vinInput.type(vin, { delay: 45 }).catch(() => undefined);
+  const dateInput = await page.$("#regDtInput").catch(() => null);
+  if (!dateInput) return { kind: "error", note: "kfzgutachten.at: datuma lauks nav atrasts" };
+  await dateInput.click({ timeout: stepTimeout(deadline, 3_000) }).catch(() => undefined);
+  await dateInput.fill("").catch(() => undefined);
+  await dateInput.type(date, { delay: 45 }).catch(() => undefined);
+  // Datuma izvēlnes logs (datepicker) aizveras ar Escape; tad «Suchen».
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.waitForTimeout(600);
+  const button = await page.$("#searchButton").catch(() => null);
+  if (!button) return { kind: "error", note: "kfzgutachten.at: «Suchen» poga nav atrasta" };
+  const waitSearch = page
+    .waitForResponse((r) => kfzSearchResponseMatches(r.url(), typeof r.request === "function" ? r.request().method() : "POST"), {
+      timeout: stepTimeout(deadline, 20_000),
+    })
+    .catch(() => null);
+  await button.click({ timeout: stepTimeout(deadline, 3_000) }).catch(() => undefined);
+  const res = await waitSearch;
+  if (!res) {
+    const err = await page
+      .$eval("#searchError", (el) => (el && getComputedStyle(el).display !== "none" ? el.textContent || "" : ""))
+      .catch(() => "");
+    return { kind: "error", note: err.trim() ? `kfzgutachten.at: ${err.trim().slice(0, 120)}` : "kfzgutachten.at: meklēšanas atbilde nepienāca laikā" };
+  }
+  const text = await res.text().catch(() => "");
+  const read = readKfzSearch(res.status(), text, vin);
+  return read;
+}
+
+/**
  * @param {import("playwright").Page} page
- * @returns {Promise<{kind: "found"|"none"|"blocked"|"error", note?: string, html?: string, finalUrl?: string, json?: any, search?: any}>}
+ * @returns {Promise<{kind: "found"|"none"|"blocked"|"error", note?: string, html?: string, finalUrl?: string, json?: any, search?: any, rows?: any[], captcha?: boolean}>}
  */
 export async function readVinSource(page, source, vin, opts = {}) {
   const deadline = Date.now() + (opts.timeoutMs ?? VINSOURCE_TIMEOUT_MS);
   if (source === "bid_cars") return readBidCars(page, vin, deadline);
   if (source === "carfax_eu") return readCarfax(page, vin, deadline);
+  if (source === "kfz_at") return readKfz(page, vin, String(opts.date ?? ""), deadline);
   return { kind: "error", note: "nezināms avots" };
 }

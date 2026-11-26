@@ -25,6 +25,8 @@ const REGISTRY_IDS: ReadonlySet<string> = new Set([
   "carpass",
   "biluppgifter",
   "vegvesen",
+  // Austrijas §57a saraksts (relejs to pats kešo 7 d uz VIN + datums).
+  "kfz_at",
 ]);
 
 const AUCTION_ARCHIVE_IDS: ReadonlySet<string> = new Set([
