@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   enqueueDealerDataJob: vi.fn(),
   seed: vi.fn(),
   scan: vi.fn(),
+  intake: vi.fn(),
   dropbox: vi.fn(),
 }));
 
@@ -48,6 +49,10 @@ vi.mock("@/lib/admin-paid-order-source-seed", () => ({
 
 vi.mock("@/lib/order-vin-scan-run", () => ({
   runOrderFreeVinScan: mocks.scan,
+}));
+
+vi.mock("@/lib/order-auto-intake", () => ({
+  startOrderAutoIntake: mocks.intake,
 }));
 
 vi.mock("@/lib/admin-orders", () => ({
@@ -91,6 +96,7 @@ describe("resolveOrderVinFromPlate", () => {
     mocks.enqueueDealerDataJob.mockResolvedValue(true);
     mocks.seed.mockResolvedValue({ ok: true });
     mocks.scan.mockResolvedValue({ ok: true });
+    mocks.intake.mockResolvedValue("background");
     mocks.dropbox.mockResolvedValue(undefined);
   });
 
@@ -274,6 +280,7 @@ describe("numurzīme → VIN → ielase (Nils 26.11, EB5020)", () => {
     mocks.enqueueDealerDataJob.mockResolvedValue(true);
     mocks.seed.mockResolvedValue({ ok: true });
     mocks.scan.mockResolvedValue({ ok: true });
+    mocks.intake.mockResolvedValue("background");
     mocks.dropbox.mockResolvedValue(undefined);
     mocks.readOrderDraft.mockResolvedValue({ orderEdits: { licensePlate: "EB5020", vin: "" }, vinPlateResolution: null });
   });
@@ -286,7 +293,10 @@ describe("numurzīme → VIN → ielase (Nils 26.11, EB5020)", () => {
     expect(fetchCsdd).toHaveBeenCalledTimes(1);
     expect(mocks.enqueueDealerDataJob).toHaveBeenCalledWith({ sessionId: "cs_x", vin: VALID_VIN, cronAfterMs: 0 });
     expect(mocks.seed).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN }));
-    expect(mocks.scan).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN }));
+    // VIN SCAN iet caur automātiku pēc apmaksas (tā pati plūsma kā webhook), pēc CSDD sēklas; dīlerim bez push.
+    expect(mocks.scan).not.toHaveBeenCalled();
+    expect(mocks.intake).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN, skipPush: true }));
+    expect(mocks.seed.mock.invocationCallOrder[0]).toBeLessThan(mocks.intake.mock.invocationCallOrder[0]!);
     expect(mocks.dropbox).toHaveBeenCalledWith("cs_x", { vin: VALID_VIN });
     expect(mocks.patchOrderDraft).toHaveBeenLastCalledWith(
       "cs_x",
@@ -305,6 +315,7 @@ describe("numurzīme → VIN → ielase (Nils 26.11, EB5020)", () => {
     expect(r.effectiveVin).toBe(VALID_VIN);
     expect(mocks.enqueueDealerDataJob).not.toHaveBeenCalled();
     expect(mocks.seed).toHaveBeenCalled();
+    expect(mocks.intake).toHaveBeenCalledWith("cs_x", expect.objectContaining({ vin: VALID_VIN, skipPush: false }));
   });
 
   it("CSDD relejs 502 (VPN pārslēgšanās) - atkārto un atrod VIN", async () => {

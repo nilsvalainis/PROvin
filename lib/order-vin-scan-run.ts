@@ -17,7 +17,7 @@ import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
 import { runVinScan } from "@/lib/vin-scan/run";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
-import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
+import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { writeVinScanSnapshot } from "@/lib/vin-scan/store";
 
 export type RunOrderFreeVinScanInput = {
@@ -25,6 +25,10 @@ export type RunOrderFreeVinScanInput = {
   listingUrl?: string | null;
   force?: boolean;
   sourceIds?: readonly string[];
+  /** 25.11: pēc CSDD sēklas - LV numurzīme (numurzīmju avotiem un saitēm). */
+  plates?: VinScanPlates;
+  /** 25.11: precīzs 1. reģistrācijas datums (kfzgutachten.at saitei). */
+  firstRegDate?: string;
 };
 
 export type RunOrderFreeVinScanResult = {
@@ -108,9 +112,12 @@ async function runOrderFreeVinScanOnce(
     const sourceIds = vinScanAutoSourceIds({
       sourceIds: opts.sourceIds?.length ? opts.sourceIds : retryIds.length && !opts.force ? retryIds : undefined,
     });
+    const plates = opts.plates ?? emptyVinScanPlates();
     const scanned = await runVinScan({
       vin,
+      plates,
       listingUrl: opts.listingUrl?.trim() || "",
+      ...(opts.firstRegDate?.trim() ? { firstRegDate: opts.firstRegDate.trim() } : {}),
       sourceIds,
     });
     const base = prev?.vin === vin ? prev.indicators : [];
@@ -120,7 +127,7 @@ async function runOrderFreeVinScanOnce(
     const saved = await persistOrderVinScan(sessionId, done);
     await writeVinScanSnapshot({
       vin,
-      plates: emptyVinScanPlates(),
+      plates,
       scannedAt,
       indicators: saved.indicators,
     }).catch((err) => {
