@@ -37,7 +37,7 @@ export type DealerClientEmailDraft = {
 /** Soft CTA bloks (pirms auto iegādes → PROVIN AUDITS). */
 export function dealerNoDataAuditCtaBlock(): string {
   return [
-    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
+    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
     "",
     `Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`,
   ].join("\n");
@@ -75,7 +75,7 @@ export function buildDealerNoDataEmailDraft(
     "",
     dealerNoDataAuditCtaBlock(),
     "",
-    "Ja rodas jautājumi, rakstiet uz info@provin.lv.",
+    "Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.",
     "",
     clientMessageSignOff(),
   ].join("\n");
@@ -136,28 +136,28 @@ const B2B_DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
     "",
     "Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.",
     "",
-    "Ja rodas jautājumi, atbildiet uz šo e-pastu.",
+    "Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.",
   ],
   en: [
     "Hello!",
     "",
     "We are sending the official dealer service history for your order. The document is attached as a PDF.",
     "",
-    "If you have any questions, please reply to this email.",
+    "If you have any questions, simply reply to this email.",
   ],
   de: [
     "Guten Tag!",
     "",
     "Wir senden Ihnen die offizielle Händlerservicehistorie zu Ihrer Bestellung. Das Dokument ist als PDF angehängt.",
     "",
-    "Bei Fragen antworten Sie bitte auf diese E-Mail.",
+    "Bei Fragen antworten Sie einfach auf diese E-Mail.",
   ],
   ru: [
     "Здравствуйте!",
     "",
     "Направляем официальную сервисную историю дилера по вашему заказу. Документ приложен в формате PDF.",
     "",
-    "Если возникнут вопросы, ответьте на это письмо.",
+    "Если у Вас есть вопросы, просто ответьте на это письмо.",
   ],
 };
 
@@ -170,28 +170,28 @@ const DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
     "",
     "Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).",
     "",
-    "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
+    "Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.",
   ],
   en: [
     "Hello!",
     "",
     "Please find attached the official dealer data you ordered (PDF).",
     "",
-    "If you have any questions, please reply to this email (info@provin.lv).",
+    "If you have any questions, simply reply to this email.",
   ],
   de: [
     "Guten Tag!",
     "",
     "Im Anhang finden Sie die von Ihnen bestellten offiziellen Händlerdaten (PDF).",
     "",
-    "Bei Fragen antworten Sie bitte auf diese E-Mail (info@provin.lv).",
+    "Bei Fragen antworten Sie einfach auf diese E-Mail.",
   ],
   ru: [
     "Здравствуйте!",
     "",
     "Во вложении направляем заказанные вами официальные данные дилера (PDF).",
     "",
-    "Если возникнут вопросы, ответьте на это письмо (info@provin.lv).",
+    "Если у Вас есть вопросы, просто ответьте на это письмо.",
   ],
 };
 
@@ -267,7 +267,7 @@ export function buildDealerReadyEmailDraft(
       "",
       "Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).",
       "",
-      "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
+      "Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.",
       "",
       clientMessageSignOff(),
     ].join("\n"),

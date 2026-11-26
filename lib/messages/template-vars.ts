@@ -158,7 +158,7 @@ export function buildUpsellWaVars(opts: {
     };
   }
   const vin = reportReadyVinVar(opts.vin);
-  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin ? ` (VIN ${vin})` : ""} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
+  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin ? ` (VIN ${vin})` : ""} varam sagatavot pilno PROVIN AUDITU tajā pašā pasūtījumā.`;
   return {
     lead,
     jau_samaksats: formatEurFromCents(opts.priorCents),

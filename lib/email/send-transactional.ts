@@ -843,7 +843,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
       comment,
       ...(photos.length > 0 ? ["", fotoPiezime] : []),
       "",
-      `Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS: ${auditsUrl}`,
+      `Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITU: ${auditsUrl}`,
       "",
       "Ar cieņu,",
       "PROVIN.LV",

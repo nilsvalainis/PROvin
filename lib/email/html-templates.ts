@@ -1,6 +1,7 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { GOOGLE_REVIEW_URL, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+import { CLIENT_EMAIL_QUESTION_LINE } from "@/lib/email/client-email-contact";
 import {
   emailAttachmentsRow,
   emailBorderedBox,
@@ -362,7 +363,7 @@ ${photoCids
 ${listingBlock}
 ${bodyHtml}
 ${photoBlock}
-<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS.</p>
+<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITU.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
 ${cta}
 <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:${INK};">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
@@ -379,26 +380,6 @@ const REPORT_READY_HTML_GREETING: Record<ClientReportLang, string> = {
   de: "Guten Tag!",
 };
 
-const REPORT_READY_HTML_QUESTION: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
-  dealer: {
-    lv: "Ja rodas jautājumi, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
-    en: "If you have any questions, please write to {mailLink}. We're happy to help.",
-    ru: "Если у вас есть вопросы, напишите на {mailLink}. Будем рады помочь.",
-    de: "Bei Fragen schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
-  },
-  mini: {
-    lv: "Ja rodas jautājumi, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
-    en: "If you have any questions, please write to {mailLink}. We're happy to help.",
-    ru: "Если у вас есть вопросы, напишите на {mailLink}. Будем рады помочь.",
-    de: "Bei Fragen schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
-  },
-  audits: {
-    lv: "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
-    en: "If you have any questions or need additional consultation, please write to {mailLink}. We're happy to help.",
-    ru: "Если у вас есть вопросы или нужна дополнительная консультация, напишите на {mailLink}. Будем рады помочь.",
-    de: "Bei Fragen oder wenn Sie eine weitere Beratung benötigen, schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
-  },
-};
 
 const REPORT_READY_HTML_ATTACHMENTS_INTRO: Record<ClientReportLang, string> = {
   lv: "Pielikumā atradīsiet:",
@@ -486,8 +467,6 @@ function googleReviewBlockHtml(introText: string, href: string = GOOGLE_REVIEW_U
   )}`;
 }
 
-const MAIL_LINK_HTML = emailLink("mailto:info@provin.lv", "info@provin.lv");
-
 /**
  * Atsevišķs Google atsauksmes lūgums (Nila makets 26.11, variants A): 2 teikumi, viena liela poga
  * «Novērtēt Google», jautājumu rinda, paraksts PROVIN.LV. Atgādinājumam tas pats izkārtojums.
@@ -538,7 +517,7 @@ export function auditCompletedEmailHtml(opts: {
   const greeting = esc(REPORT_READY_HTML_GREETING[lang]);
   // VIN jau ir statusa kartē - teikumā to neatkārto.
   const mainLineHtml = esc(REPORT_READY_HTML_MAIN_LINE[kind][lang].replace("{vin}", ""));
-  const questionHtml = esc(REPORT_READY_HTML_QUESTION[kind][lang]).replace("{mailLink}", MAIL_LINK_HTML);
+  const questionHtml = esc(CLIENT_EMAIL_QUESTION_LINE[lang]);
 
   const sized = opts.attachments?.length
     ? opts.attachments
@@ -731,7 +710,7 @@ export function partnerPasswordResetEmailHtml(opts: {
 /** Pogas pēc nolūka (Nils 06.11 C1): tikai skaidri nosauktas rindas „<Nolūks>: https://…”. */
 const EMAIL_INTENT_BUTTONS: Array<{ re: RegExp; label: string }> = [
   { re: /^apmaksāt$/i, label: "Apmaksāt" },
-  { re: /^pasūtīt(?:\s+provin\s+audits)?$/i, label: "Pasūtīt PROVIN AUDITS" },
+  { re: /^pasūtīt(?:\s+provin\s+audit(?:s|u))?$/i, label: "Pasūtīt PROVIN AUDITU" },
   { re: /^atvērt\s+atskaiti$/i, label: "Atvērt atskaiti" },
   { re: /^lejupielādēt\s+rēķinu$/i, label: "Lejupielādēt rēķinu" },
   // Tulkotie klientu šabloni (Nils 25.11): poga klienta valodā.
@@ -1000,7 +979,7 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
     first = false;
     return p;
   };
-  // «Pasūtīt PROVIN AUDITS: https://…» rindkopa kopā ar iepriekšējo tekstu - ietvarā (kā maketā).
+  // «Pasūtīt PROVIN AUDITU: https://…» rindkopa kopā ar iepriekšējo tekstu - ietvarā (kā maketā).
   const isOrderButton = (p: string | undefined): boolean =>
     Boolean(p && /^pasūtīt(?:\s+provin\s+audits)?\s*:\s*https?:\/\/\S+$/i.test(p.trim()) && emailIntentButton(p));
   const boxedWithPrev = new Set<number>();
@@ -1065,9 +1044,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
     { value: amount, label: "atmaksāts uz karti" },
     { value: "1-7", label: "dienas bankā" },
   ]);
-  const question = emailSmall(
-    `Ja rodas jautājumi, ${opts.cancelled ? "atbildiet uz šo e-pastu" : "rakstiet uz"} ${MAIL_LINK_HTML}.`,
-  );
+  const question = emailSmall(esc(CLIENT_EMAIL_QUESTION_LINE.lv));
 
   if (opts.cancelled) {
     const rows = [
@@ -1105,10 +1082,10 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
       emailBorderedBox(
         emailParagraph("Auto vēl tikai plānojat pirkt?", "margin:0 0 4px;font-weight:600;") +
           emailSmall(
-            "Iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
+            "Iesakām PROVIN AUDITU: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
             "margin:0 0 16px;",
           ) +
-          emailButton("https://provin.lv", "Pasūtīt PROVIN AUDITS"),
+          emailButton("https://provin.lv", "Pasūtīt PROVIN AUDITU"),
       ),
       "22px 36px 0",
     ),

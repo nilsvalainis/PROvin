@@ -34,7 +34,7 @@ describe("B2B wallet refund email template", () => {
   it("builds PROVIN HTML in blue without .LV", () => {
     const html = b2bWalletRefundEmailHtml({ title: "PROVIN: atmaksa", paragraphs: ["Summa 19,99 €."] });
     expect(html).toContain(">PROVIN<");
-    expect(html).toContain("#0061D2");
+    expect(html).toContain('href="tel:+37129502039"');
     expect(html).not.toContain("PROVIN.LV");
     expect(html).not.toContain("#F26522");
   });

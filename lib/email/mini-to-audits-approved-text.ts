@@ -20,7 +20,7 @@ Tikai PROVIN AUDITS ietver:
 
 Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.
 
-Iesakām PROVIN AUDITS. Starpību ({starpiba} €) varat apmaksāt šeit:
+Iesakām PROVIN AUDITU. Starpību ({starpiba} €) varat apmaksāt šeit:
 {maksajuma_saite}
 
 Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.

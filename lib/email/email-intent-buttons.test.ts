@@ -16,7 +16,7 @@ describe("e-pasta pogas pēc nolūka", () => {
         "Lejupielādēt rēķinu: https://provin.lv/api/invoice/download?session_id=cs_1",
       ].join("\n\n"),
     });
-    expect(buttons(html)).toEqual(["Apmaksāt", "Pasūtīt PROVIN AUDITS", "Atvērt atskaiti", "Lejupielādēt rēķinu"]);
+    expect(buttons(html)).toEqual(["Apmaksāt", "Pasūtīt PROVIN AUDITU", "Atvērt atskaiti", "Lejupielādēt rēķinu"]);
   });
 
   it("sludinājuma saite paliek par saiti, nevis „Apmaksāt”", () => {
@@ -29,7 +29,7 @@ describe("e-pasta pogas pēc nolūka", () => {
 
   it("saite pēc „… apmaksāt šeit:” ir poga „Apmaksāt”", () => {
     const html = dealerDataOperatorMessageEmailHtml({
-      text: "Iesakām PROVIN AUDITS. Starpību (60,00 €) varat apmaksāt šeit:\nhttps://buy.stripe.com/xyz",
+      text: "Iesakām PROVIN AUDITU. Starpību (60,00 €) varat apmaksāt šeit:\nhttps://buy.stripe.com/xyz",
     });
     expect(buttons(html)).toEqual(["Apmaksāt"]);
   });

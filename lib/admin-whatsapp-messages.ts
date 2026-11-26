@@ -105,7 +105,7 @@ Atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.
 
 Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
-Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
+Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
 Pasūtīt: https://provin.lv
 

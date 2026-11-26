@@ -21,7 +21,7 @@ export function defaultGoogleReviewBlock(): string {
 
 export function defaultAuditsCtaBlock(): string {
   return [
-    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
+    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
     "",
     `Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`,
   ].join("\n");

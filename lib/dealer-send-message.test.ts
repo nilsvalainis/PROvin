@@ -65,7 +65,7 @@ describe("dealer send texts", () => {
         "",
         `Jūsu pasūtītie oficiālā dīlera dati auto VIN ${VIN} ir gatavi - PDF pielikumā.`,
         "",
-        "Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.",
+        "Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.",
         "",
         "Ar cieņu,",
         "PROVIN.LV",
