@@ -30,6 +30,7 @@ import {
   validateClientLinkSubmission,
 } from "@/lib/client-link";
 import { clientLinkHashesEqual, hashClientLinkToken, newClientLinkToken } from "@/lib/client-link-crypto";
+import { clientLinkCopy, clientLinkLegalHrefs, normalizeClientLinkLang } from "@/lib/client-link-i18n";
 
 describe("client link token", () => {
   it("is at least 128 bits, unique, URL-safe, and stored only as sha256", () => {
@@ -253,5 +254,86 @@ describe("public view, stripe and messages", () => {
     expect(next.tokenHash).toBe(record!.tokenHash);
     expect(next.amountCents).toBe(7999);
     expect(Date.parse(next.expiresAt) - Date.parse(next.createdAt)).toBe(24 * 60 * 60 * 1000);
+  });
+});
+
+describe("client link klienta valodā (Nils 26.11)", () => {
+  const base = {
+    tokenHash: "d".repeat(64),
+    createdAt: "2026-11-26T10:00:00.000Z",
+    expiresAt: "2026-11-28T10:00:00.000Z",
+    status: "open",
+    productName: CLIENT_LINK_DEFAULT_PRODUCT,
+    amountCents: 9999,
+    recipientChannel: "email",
+    recipient: "a@b.lv",
+    prefillVin: "",
+    prefillListingUrl: "",
+    require: { email: true, vin: true, listingUrl: true, phone: false },
+  };
+
+  it("valoda: noklusēti LV, saglabājas ierakstā un publiskajā skatā", () => {
+    expect(normalizeClientLinkLang(undefined)).toBe("lv");
+    expect(normalizeClientLinkLang("xx")).toBe("lv");
+    expect(normalizeClientLinkLang("DE")).toBe("de");
+    const input = normalizeClientLinkAdminInput({ lang: "ru" });
+    expect("error" in input ? null : input.lang).toBe("ru");
+    expect("error" in normalizeClientLinkAdminInput({}) ? null : (normalizeClientLinkAdminInput({}) as { lang?: string }).lang).toBe("lv");
+    const old = parseClientLinkRecord(base);
+    expect(old?.lang).toBeUndefined();
+    expect(clientLinkPublicView(old!).lang).toBe("lv");
+    const en = parseClientLinkRecord({ ...base, lang: "en" });
+    expect(clientLinkPublicView(en!).lang).toBe("en");
+    const next = applyAdminInputToRecord(old!, { ...defaultClientLinkAdminInput(), lang: "de" });
+    expect(next.lang).toBe("de");
+  });
+
+  it("Stripe un «paldies» lapa saites valodā; LV kā līdz šim", () => {
+    const common = {
+      origin: "https://www.provin.lv",
+      token: "k70mTokenValue______",
+      tokenHash: "c".repeat(64),
+      productName: CLIENT_LINK_DEFAULT_PRODUCT,
+      amountCents: 9999,
+      email: "",
+      vin: "",
+      listingUrl: "",
+      phone: "",
+    };
+    const lv = buildClientLinkCheckoutSessionParams(common);
+    expect(lv.locale).toBe("lv");
+    expect(lv.success_url).toContain("/lv/paldies");
+    for (const lang of ["en", "ru", "de"] as const) {
+      const p = buildClientLinkCheckoutSessionParams({ ...common, lang });
+      expect(p.locale).toBe(lang);
+      expect(p.success_url).toContain(`/${lang}/paldies?session_id=`);
+      expect(p.line_items[0].price_data.product_data.description).toBe(clientLinkCopy(lang).stripeDescription);
+      expect(p.line_items[0].price_data.product_data.description).not.toContain("Pasūtījums");
+    }
+  });
+
+  it("WhatsApp, e-pasts, saites lapa un juridiskās saites klienta valodā", () => {
+    const url = "https://www.provin.lv/s/k70mTokenValue______";
+    const opts = { url, productName: CLIENT_LINK_DEFAULT_PRODUCT, expiresAt: "2026-10-16T16:50:00.000Z", amountCents: 9999, vin: "WBAFF41030L065449" };
+    expect(buildClientLinkWhatsAppText(opts)).toBe(buildClientLinkWhatsAppText({ ...opts, lang: "lv" }));
+    const hello = { en: "Hello!", ru: "Здравствуйте!", de: "Guten Tag!" } as const;
+    for (const lang of ["en", "ru", "de"] as const) {
+      const wa = buildClientLinkWhatsAppText({ ...opts, lang });
+      expect(wa.startsWith(hello[lang])).toBe(true);
+      expect(wa).toContain(url);
+      expect(wa).toContain("99,99 €");
+      expect(wa).toContain("WBAFF41030L065449");
+      expect(wa).not.toMatch(/Sveiki|saite|derīga|[\u2012\u2013\u2014\u2015\u2212]/);
+      const mail = buildClientLinkEmailCopy({ ...opts, lang });
+      expect(mail.text).toContain(url);
+      expect(mail.text).not.toMatch(/Labdien|Apmaksāt/);
+      const c = clientLinkCopy(lang);
+      for (const t of [c.intro, c.submit, c.consent.join(""), c.invalidBody, ...Object.values(c.errors)]) {
+        expect(t).not.toMatch(/[āēīūčšžņļķģ]|[\u2013\u2014]/i);
+        expect(t).not.toMatch(/eksperts|expert/i);
+      }
+      expect(clientLinkLegalHrefs(lang)).toEqual({ terms: `/${lang}/lietosanas-noteikumi`, privacy: `/${lang}/privatuma-politika` });
+    }
+    expect(clientLinkLegalHrefs(undefined).terms).toBe("/lv/lietosanas-noteikumi");
   });
 });
