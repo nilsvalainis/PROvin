@@ -406,15 +406,15 @@ function buildAvgNote(ringSteps: number, gapSteps: number, changeCount: number):
     return "Fiksēta viena eļļas maiņa. Intervālu nevar rēķināt.";
   }
   if (ringSteps === 0) {
-    return "Vidējo intervālu nevar rēķināt. Starp fiksētajām maiņām soļi ir pārāk gari vai neregulāri, lai tos uzskatītu par dīlera eļļas intervālu.";
+    return "Vidējo intervālu nevar rēķināt. Intervāli starp fiksētajām maiņām ir pārāk gari vai neregulāri, lai tos uzskatītu par dīlera eļļas intervālu.";
   }
   if (gapSteps === 0) {
     return ringSteps === 1
-      ? "Vidējais rāda vienīgo soli ar nepārtrauktiem dīlera datiem."
-      : `Vidējais no visiem ${ringSteps} soļiem ar dīlera datiem.`;
+      ? "Vidējais rāda vienīgo intervālu ar nepārtrauktiem dīlera datiem."
+      : `Vidējais no visiem ${ringSteps} intervāliem ar dīlera datiem.`;
   }
-  const ringLabel = ringSteps === 1 ? "1 soļa" : `${ringSteps} soļiem`;
-  const gapLabel = gapSteps === 1 ? "1 solis nav iekļauts" : `${gapSteps} soļi nav iekļauti`;
+  const ringLabel = ringSteps === 1 ? "1 intervāla" : `${ringSteps} intervāliem`;
+  const gapLabel = gapSteps === 1 ? "1 intervāls nav iekļauts" : `${gapSteps} intervāli nav iekļauti`;
   return `Vidējie rādītāji rēķināti tikai no ${ringLabel}, kur dīlera eļļas maiņas seko cita citai. ${gapLabel}, jo starp tiem ir datu iztrūkums.`;
 }
 
@@ -793,17 +793,17 @@ export function oilIntervalStepRange(series: Pick<OilChangeIntervalSeries, "poin
   return { steps, minKm: Math.min(...steps), maxKm: Math.max(...steps) };
 }
 
-/** Viena faktu rinda AI promptam: precīzais soļu diapazons un visi soļi tabulas secībā. */
+/** Viena faktu rinda AI promptam: precīzais intervālu diapazons un visi intervāli tabulas secībā. */
 export function formatOilStepRangeFactLine(series: Pick<OilChangeIntervalSeries, "points">): string {
   const r = oilIntervalStepRange(series);
   if (!r) return "";
   const all = r.steps.map((s) => `${groupOilKm(s)} km`).join(", ");
-  return `Soļi starp dzinēja eļļas maiņām (tā pati tabula kā PDF): no ${groupOilKm(r.minKm)} km līdz ${groupOilKm(r.maxKm)} km; visi soļi: ${all}. Cits diapazons AIZLIEGTS; ja raksti diapazonu, tas ir tieši ${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)} km.`;
+  return `Intervāli starp dzinēja eļļas maiņām (tā pati tabula kā PDF): no ${groupOilKm(r.minKm)} km līdz ${groupOilKm(r.maxKm)} km; visi intervāli: ${all}. Cits diapazons AIZLIEGTS; ja raksti diapazonu, tas ir tieši ${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)} km.`;
 }
 
-/** Īsā faktu lapas rinda: «Dzinēja eļļas soļi (tabula): 7 607-47 560 km». */
+/** Īsā faktu lapas rinda: «Intervāli starp dzinēja eļļas maiņām (tabula): 7 607-47 560 km». */
 export function formatOilStepRangeShortLv(series: Pick<OilChangeIntervalSeries, "points">): string {
   const r = oilIntervalStepRange(series);
   if (!r) return "";
-  return `Dzinēja eļļas soļi (tabula): ${r.minKm === r.maxKm ? groupOilKm(r.minKm) : `${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)}`} km`;
+  return `Intervāli starp dzinēja eļļas maiņām (tabula): ${r.minKm === r.maxKm ? groupOilKm(r.minKm) : `${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)}`} km`;
 }

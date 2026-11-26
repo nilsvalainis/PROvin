@@ -5,7 +5,7 @@
  *    „Datu iztrūkums”), komentārā VIENMĒR jābūt teikumam, ka tas nenozīmē, ka eļļas maiņa nav
  *    veikta - tā var būt veikta neatkarīgā servisā.
  * 2. Ja pārsniegtajā periodā ir dīlera ieraksti bez detalizēta darbu apraksta („Apkope”, „Serviss”,
- *    „Apmeklējums”), pievieno teikumu, ka uz eļļas maiņu teorētiski var norādīt kāds no tiem.
+ *    „Apmeklējums”), pievieno teikumu, ka tie teorētiski var liecināt par eļļas maiņu (vienreiz, visi datumi kopā).
  *
  * Teikumus pievieno tieši pēc rindkopas par pārsniegumu (vai sadaļas „Eļļas maiņu regularitāte”
  * beigās), vienā rindkopā, un nekad divreiz. Bez verdikta un bez ieteikumiem.
@@ -31,13 +31,21 @@ import {
 export type OilNoteLang = "lv" | "en" | "ru" | "de";
 
 export const OIL_NOT_SKIPPED_NOTE: Record<OilNoteLang, string> = {
-  lv: "Tas nenozīmē, ka eļļas maiņa nav veikta - tā var būt veikta neatkarīgā servisā, kas datus dīlera sistēmai nenodod.",
-  en: "This does not mean the oil change was not done - it may have been done at an independent workshop that does not pass data to the dealer system.",
-  ru: "Это не означает, что замена масла не проводилась - она могла быть выполнена в независимом сервисе, который не передаёт данные в дилерскую систему.",
-  de: "Das bedeutet nicht, dass kein Ölwechsel durchgeführt wurde - er kann in einer freien Werkstatt erfolgt sein, die keine Daten an das Händlersystem übermittelt.",
+  lv: "Tas nenozīmē, ka eļļas maiņa nav veikta - tā var būt veikta neatkarīgā servisā, kas datus oficiālajā dīlera sistēmā neievada.",
+  en: "This does not mean the oil change was not done - it may have been done at an independent workshop that does not enter data into the official dealer system.",
+  ru: "Это не означает, что замена масла не проводилась - её могли выполнить в независимом сервисе, который не вносит данные в официальную дилерскую систему.",
+  de: "Das bedeutet nicht, dass kein Ölwechsel durchgeführt wurde - er kann in einer freien Werkstatt erfolgt sein, die keine Daten in das offizielle Händlersystem einträgt.",
 };
 
-/** Datumus rādām tikai, ja to ir maz (teikums paliek īss). */
+/** #1286 formulējums (26.11) - atpazīst un aizvieto, lai pēc pārģenerēšanas nekas nedublējas. */
+const OIL_NOT_SKIPPED_NOTE_V1: readonly string[] = [
+  "Tas nenozīmē, ka eļļas maiņa nav veikta - tā var būt veikta neatkarīgā servisā, kas datus dīlera sistēmai nenodod.",
+  "This does not mean the oil change was not done - it may have been done at an independent workshop that does not pass data to the dealer system.",
+  "Это не означает, что замена масла не проводилась - она могла быть выполнена в независимом сервисе, который не передаёт данные в дилерскую систему.",
+  "Das bedeutet nicht, dass kein Ölwechsel durchgeführt wurde - er kann in einer freien Werkstatt erfolgt sein, die keine Daten an das Händlersystem übermittelt.",
+];
+
+/** Datumus rādām tikai, ja to ir maz (teikums paliek īss); citādi tikai skaitu. */
 export const OIL_GENERIC_DATES_MAX = 4;
 
 export type OilExceededInterval = {
@@ -47,44 +55,24 @@ export type OilExceededInterval = {
   genericDates: string[];
 };
 
-function genericCountLabel(n: number, dates: string[]): string {
-  return dates.length > 0 && dates.length <= OIL_GENERIC_DATES_MAX ? `${n}: ${dates.join(", ")}` : String(n);
-}
-
-/** 2. piebilde: viens teikums vienam periodam. `period` - ja pārsniegto periodu ir vairāki. */
-export function oilGenericRecordsNote(
-  lang: OilNoteLang,
-  dates: string[],
-  period?: { fromDate: string; toDate: string } | null,
-): string {
+/**
+ * 2. piebilde: VIENS teikums visiem pārsniegtajiem periodiem kopā (Nils 26.11, #1291).
+ * `periodCount` - cik pārsniegto periodu ir ar šādiem ierakstiem (1 -> «Šajā periodā»).
+ */
+export function oilGenericRecordsNote(lang: OilNoteLang, dates: readonly string[], periodCount = 1): string {
   const n = dates.length;
-  const label = genericCountLabel(n, dates);
-  const range = period ? `${period.fromDate}-${period.toDate}` : "";
+  const label = n <= OIL_GENERIC_DATES_MAX ? dates.join(", ") : String(n);
+  const many = periodCount > 1;
+  const one = n === 1;
   switch (lang) {
-    case "en": {
-      const head = period ? `In the period ${range}` : "In this period";
-      return n === 1
-        ? `${head} there is also a dealer record without a detailed description of work (${label}) - in theory it could also indicate an oil change, but we cannot confirm it.`
-        : `${head} there are also dealer records without a detailed description of work (${label}) - in theory one of them could also indicate an oil change, but we cannot confirm it.`;
-    }
-    case "ru": {
-      const head = period ? `В период ${range}` : "В этот период";
-      return n === 1
-        ? `${head} есть также запись дилера без подробного описания работ (${label}) - теоретически она может указывать и на замену масла, но подтвердить это мы не можем.`
-        : `${head} есть также записи дилера без подробного описания работ (${label}) - теоретически на замену масла может указывать и одна из них, но подтвердить это мы не можем.`;
-    }
-    case "de": {
-      const head = period ? `Im Zeitraum ${range}` : "In diesem Zeitraum";
-      return n === 1
-        ? `${head} gibt es auch einen Händlereintrag ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch könnte auch er auf einen Ölwechsel hinweisen, das können wir aber nicht bestätigen.`
-        : `${head} gibt es auch Händlereinträge ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch könnte auch einer davon auf einen Ölwechsel hinweisen, das können wir aber nicht bestätigen.`;
-    }
-    default: {
-      const head = period ? `Periodā ${range}` : "Šajā periodā";
-      return n === 1
-        ? `${head} ir arī dīlera ieraksts bez detalizēta darbu apraksta (${label}) - uz eļļas maiņu teorētiski var norādīt arī tas, bet to nevaram apliecināt.`
-        : `${head} ir arī dīlera ieraksti bez detalizēta darbu apraksta (${label}) - uz eļļas maiņu teorētiski var norādīt arī kāds no tiem, bet to nevaram apliecināt.`;
-    }
+    case "en":
+      return `${many ? "In these periods" : "In this period"} there ${one ? "is also a dealer record" : "are also dealer records"} without a detailed description of work (${label}) - in theory ${one ? "it" : "they"} could indicate an oil change, but we cannot confirm this.`;
+    case "ru":
+      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "запись дилера" : "записи дилера"} без подробного описания работ (${label}) - теоретически ${one ? "она может" : "они могут"} свидетельствовать о замене масла, но подтвердить это мы не можем.`;
+    case "de":
+      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Händlereintrag" : "Händlereinträge"} ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch ${one ? "kann er" : "können sie"} auf einen Ölwechsel hindeuten, das können wir aber nicht bestätigen.`;
+    default:
+      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "dīlera ieraksts" : "dīlera ieraksti"} bez detalizēta darbu apraksta (${label}) - ${one ? "tas" : "tie"} teorētiski var liecināt par eļļas maiņu, bet to nevaram apliecināt.`;
   }
 }
 
@@ -164,9 +152,12 @@ const NOT_SKIPPED_PRESENT_RE = [
   /(?:не\s+означает|не\s+доказывает|не\s+является\s+доказательством)[^.!?]{0,140}?(?:масл|обслуж|замен)/iu,
   /(?:bedeutet\s+nicht|beweist\s+nicht|kein\s+Beweis)[^.!?]{0,140}?(?:Öl|Wartung|Service|Inspektion)/iu,
 ];
+/** Tajā pašā teikumā jābūt arī neatkarīgajam servisam - citādi piebilde nav pilna (Nils 26.11). */
+const INDEPENDENT_SERVICE_RE =
+  /neatkarīg|citā\s+servis|cit(?:ur|os)\s+servis|ārpus\s+(?:oficiālā\s+)?dīler|independent|elsewhere|outside\s+(?:the\s+)?(?:official\s+)?dealer|независим|друг(?:ом|ой)\s+(?:сервис|мастерск)|вне\s+дилер|freien\s+Werkstatt|unabhängig|anderswo|außerhalb/iu;
 
 const GENERIC_PRESENT_RE =
-  /bez\s+detalizēta\s+darbu\s+apraksta|without\s+a\s+detailed\s+description\s+of\s+work|без\s+подробного\s+описания\s+работ|ohne\s+detaillierte\s+Arbeitsbeschreibung/iu;
+  /bez\s+detalizēt\p{L}*\s+darb\p{L}*\s+aprakst\p{L}*|without\s+(?:a\s+)?detailed\s+(?:description\s+of\s+work|work\s+description)|без\s+(?:подробного|детального)\s+описания\s+работ|ohne\s+(?:detaillierte|genaue)\s+Arbeitsbeschreibung/iu;
 
 function plainForCheck(text: string): string {
   return text
@@ -178,14 +169,23 @@ function plainForCheck(text: string): string {
 
 export function oilNotSkippedNotePresent(text: string): boolean {
   const plain = plainForCheck(text);
-  return NOT_SKIPPED_PRESENT_RE.some((re) => re.test(plain));
+  return NOT_SKIPPED_PRESENT_RE.some((re) => {
+    const m = new RegExp(re.source, "giu");
+    for (const hit of plain.matchAll(m)) {
+      const from = Math.max(plain.lastIndexOf(". ", hit.index ?? 0), plain.lastIndexOf("\n", hit.index ?? 0), 0);
+      const endDot = plain.slice((hit.index ?? 0) + hit[0].length).search(/[.!?](?=\s|$)/u);
+      const to = endDot < 0 ? plain.length : (hit.index ?? 0) + hit[0].length + endDot;
+      if (INDEPENDENT_SERVICE_RE.test(plain.slice(from, to + 1))) return true;
+    }
+    return false;
+  });
 }
 
 export function oilGenericRecordsNotePresent(text: string): boolean {
   return GENERIC_PRESENT_RE.test(plainForCheck(text));
 }
 
-/** Rindkopa, kas runā par pārsniegumu (pirmā). */
+/** Rindkopa, kas runā par pārsniegumu (ņem pēdējo). */
 const EXCEED_RE =
   /pārsniedz|pārsniegum|pārsniegt|garāks\s+par\s+ražotāja|virs\s+(?:ražotāja\s+)?intervāla|datu\s+iztrūkum|exceed|longer\s+than\s+the\s+manufacturer|above\s+the\s+(?:manufacturer\s+)?interval|data\s+gap|превыша|дольше|пробел\s+в\s+данных|überschreit|überschritt|länger\s+als|Datenlücke/iu;
 
@@ -224,42 +224,127 @@ export function detectOilNoteLang(text: string): OilNoteLang {
   return "en";
 }
 
+/** Teikuma beigas: punkts, aiz kura atstarpe / rindas beigas / HTML (ne datums „02.02.2011”). */
+const SENTENCE_END_RE = /[.!?](?=\s|$|<|&nbsp;)/gu;
+/** Teikuma sākums pirms indeksa: iepriekšējā teikuma beigas, `<br>`, `<p>`, jauna rinda vai sākums. */
+function sentenceStartBefore(text: string, at: number): number {
+  const head = text.slice(0, at);
+  let start = 0;
+  for (const m of head.matchAll(/[.!?](?:\s|&nbsp;)+|<br\s*\/?>|<p[^>]*>|<\/strong>|\n/giu)) {
+    start = (m.index ?? 0) + m[0].length;
+  }
+  return start;
+}
+
+function sentenceEndAfter(text: string, at: number): number {
+  SENTENCE_END_RE.lastIndex = at;
+  const m = SENTENCE_END_RE.exec(text);
+  return m ? m.index + 1 : text.length;
+}
+
+/** Atsevišķs 1. piebildes teikums (kanoniskais, vecais vai tulkots) - sākas ar piebildes frāzi. */
+const NOT_SKIPPED_SENTENCE_START_RE =
+  /(?:Tas\s+nenozīmē|Tas\s+nepierāda|This\s+does\s+not\s+mean|This\s+doesn['’]t\s+mean|Это\s+не\s+означает|Das\s+bedeutet\s+nicht|Dies\s+bedeutet\s+nicht)\b/giu;
+
 /**
- * Pievieno trūkstošās piebildes eļļas komentāram. Nemaina tekstu, ja pārsniegumu nav
- * vai piebildes jau ir. Strādā gan ar HTML (`<br><br>`), gan ar vienkāršu tekstu (tukša rinda).
+ * Izņem jau ievietotās piebildes (abos formulējumos, arī tulkotas un atkārtotas pie katra perioda),
+ * lai tās ieliktu no jauna VIENREIZ. Paša AI teikuma daļu („…, bet nenozīmē, ka…”) neaiztiek.
+ */
+export function stripInsertedOilNotes(text: string): string {
+  let out = text;
+  for (const exact of [...Object.values(OIL_NOT_SKIPPED_NOTE), ...OIL_NOT_SKIPPED_NOTE_V1]) {
+    out = out.split(exact).join("");
+  }
+  const cut = (re: RegExp, fromMarker: boolean) => {
+    for (let guard = 0; guard < 50; guard++) {
+      re.lastIndex = 0;
+      const m = re.exec(out);
+      if (!m) return;
+      const start = fromMarker ? sentenceStartBefore(out, m.index) : m.index;
+      if (!fromMarker && start !== sentenceStartBefore(out, m.index)) {
+        // Frāze ir teikuma vidū - tā ir paša teksta daļa, ne piebilde.
+        return;
+      }
+      const end = sentenceEndAfter(out, m.index + m[0].length);
+      out = out.slice(0, start) + out.slice(end);
+    }
+  };
+  cut(new RegExp(GENERIC_PRESENT_RE.source, "iu"), true);
+  cut(NOT_SKIPPED_SENTENCE_START_RE, false);
+  return out
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/(?:&nbsp;|[ \t])+(<br\s*\/?>)/gi, "$1")
+    .replace(/(?:<br\s*\/?>(?:\s|&nbsp;)*){3,}/gi, "<br><br>")
+    .replace(/\n[ \t]*(?:\n[ \t]*){2,}/g, "\n\n")
+    .replace(/(?:\s|&nbsp;|<br\s*\/?>)+$/gi, "");
+}
+
+/**
+ * Pievieno piebildes eļļas komentāram: VIENREIZ, atsevišķā rindkopā tieši pēc (pēdējās) rindkopas
+ * par pārsniegumu, vai sadaļas „Eļļas maiņu regularitāte” beigās. Nemaina tekstu, ja pārsniegumu nav.
+ * Strādā gan ar HTML (`<br><br>`), gan ar vienkāršu tekstu (tukša rinda).
  */
 export function ensureOilIntervalNotes(
   text: string,
   intervals: readonly OilExceededInterval[],
   lang: OilNoteLang,
 ): string {
-  const src = text ?? "";
-  if (!src.trim() || intervals.length === 0) return src;
+  const original = text ?? "";
+  if (!original.trim() || intervals.length === 0) return original;
+  const src = stripInsertedOilNotes(original);
   const sentences: string[] = [];
   if (!oilNotSkippedNotePresent(src)) sentences.push(OIL_NOT_SKIPPED_NOTE[lang]);
   const withGeneric = intervals.filter((iv) => iv.genericDates.length > 0);
   if (withGeneric.length > 0 && !oilGenericRecordsNotePresent(src)) {
-    const multi = intervals.length > 1;
-    for (const iv of withGeneric) {
-      sentences.push(oilGenericRecordsNote(lang, iv.genericDates, multi ? iv : null));
-    }
+    const dates = [...new Set(withGeneric.flatMap((iv) => iv.genericDates))];
+    sentences.push(oilGenericRecordsNote(lang, dates, withGeneric.length));
   }
-  if (sentences.length === 0) return src;
+  if (sentences.length === 0) {
+    const norm = (t: string) => t.replace(/\s|&nbsp;|<br\s*\/?>/gi, "");
+    return norm(src) === norm(original) ? original : src;
+  }
 
   const isHtml = /<br\s*\/?>|<\/?(?:p|strong|b|div)\b/i.test(src);
   const addition = isHtml ? escapeHtmlText(sentences.join(" ")) : sentences.join(" ");
+  const sep = isHtml ? "<br><br>" : "\n\n";
 
   let anchor = -1;
-  const exceed = EXCEED_RE.exec(src);
-  if (exceed) anchor = exceed.index;
-  else {
+  for (const m of src.matchAll(new RegExp(EXCEED_RE.source, "giu"))) anchor = m.index ?? anchor;
+  if (anchor < 0) {
     const heading = REGULARITY_HEADING_RE.exec(src);
     if (heading) anchor = heading.index + heading[0].length;
   }
-  if (anchor < 0) {
-    const end = trimInsertPoint(src, src.length);
-    return `${src.slice(0, end)}${isHtml ? "<br><br>" : "\n\n"}${addition}`;
-  }
+  if (anchor < 0) return `${src}${sep}${addition}`;
   const end = trimInsertPoint(src, paragraphEndAfter(src, anchor));
-  return `${src.slice(0, end)} ${addition}${src.slice(end)}`;
+  const rest = src.slice(end).replace(/^(?:\s|&nbsp;)*(?:<br\s*\/?>(?:\s|&nbsp;)*){1,2}|^\s*\n\s*\n?/i, "");
+  return rest.trim() ? `${src.slice(0, end)}${sep}${addition}${sep}${rest}` : `${src.slice(0, end)}${sep}${addition}`;
+}
+
+/** LV «solis» locījumi -> «intervāls» tajā pašā locījumā (abi vīriešu dzimtē, saskaņojums nemainās). */
+const LV_STEP_TO_INTERVAL: Record<string, string> = {
+  solis: "intervāls",
+  soļa: "intervāla",
+  solim: "intervālam",
+  soli: "intervālu",
+  solī: "intervālā",
+  soļi: "intervāli",
+  soļu: "intervālu",
+  soļiem: "intervāliem",
+  soļus: "intervālus",
+  soļos: "intervālos",
+};
+
+const LV_STEP_RE = /(?<!\p{L})(?:(nobraukuma|Nobraukuma)\s+)?(solis|soļa|solim|soli|solī|soļi|soļu|soļiem|soļus|soļos|Solis|Soļa|Solim|Soli|Solī|Soļi|Soļu|Soļiem|Soļus|Soļos)(?!\p{L})/gu;
+
+/**
+ * Nils 26.11 (#1291): eļļas tekstos «solis / soļi / soļu diapazons / nobraukuma solis» neizklausās labi -
+ * vienmēr «intervāls / intervāli (starp eļļas maiņām)». Deterministisks labojums AI un rediģētam tekstam.
+ */
+export function replaceOilStepWordingLv(text: string): string {
+  return (text ?? "").replace(LV_STEP_RE, (_m, prefix: string | undefined, word: string) => {
+    const lower = word.toLowerCase();
+    const repl = LV_STEP_TO_INTERVAL[lower] ?? word;
+    const capital = (prefix ? prefix[0] === "N" : word[0] !== lower[0]);
+    return capital ? repl[0]!.toUpperCase() + repl.slice(1) : repl;
+  });
 }

@@ -215,7 +215,7 @@ export type CanonicalFirstReg = {
 export type DealerComponentCount = {
   label: string;
   dates: string[];
-  /** Papildu fakts zem skaita (piem. eļļas tabulas soļu diapazons). */
+  /** Papildu fakts zem skaita (piem. eļļas tabulas intervālu diapazons). */
   note?: string;
 };
 
