@@ -20,6 +20,8 @@ function fixtureBlocks() {
     previousRegistrationCountry: "Vācija",
     ownerCountLatvia: "3",
     mileageHistory: [
+      // 26.11: 1. reģistrācijas valsts tikai no datēta ieraksta pie datuma, ne no CSDD iepriekšējās valsts.
+      { date: "15.02.2016", odometer: "40", country: "Vācija" },
       { date: "01.01.2020", odometer: "185000", country: "Vācija" },
       { date: "15.06.2020", odometer: "92000", country: "Latvija" },
     ],

@@ -64,6 +64,7 @@ import { formatListingPriceDelta } from "@/lib/listing-price-lifecycle";
 import {
   buildVehicleLifecycleEvents,
   lifecycleCountryIsSoft,
+  lifecycleDatedCountryRecords,
   lifecycleDetailDuplicatesCountry,
   PDF_LIFECYCLE_TITLE,
   type LifecycleEvent,
@@ -312,7 +313,11 @@ import {
   clientReportRunningPageCss,
 } from "@/lib/pdf-running-page";
 import { buildCsddOwnerMileageBlockHtml, OWNER_MILEAGE_BLOCK_CSS } from "@/lib/owner-mileage-block-html";
-import { ownerMileageReadingsFromUnifiedRows, type OwnerMileageReading } from "@/lib/owner-mileage-periods";
+import {
+  ownerMileageReadingsFromUnifiedRows,
+  type OwnerMileageCountryRecord,
+  type OwnerMileageReading,
+} from "@/lib/owner-mileage-periods";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
@@ -1092,7 +1097,8 @@ function buildPdfTopHtml(args: {
     photo: args.photo,
     odometer,
     age: first ? pdfTopAgeLabel(first.ms, args.now.getTime(), lang) : "",
-    firstReg: first ? { date: first.date, sub: first.country } : null,
+    // 26.11 (Nils): valsts tikai, ja to tieši nosaka avots; CSDD iepriekšējā valsts nav pirmās reģistrācijas valsts.
+    firstReg: first ? { date: first.date, sub: first.country || pdfTopText("firstRegCountryUnknown", lang) } : null,
     cards: [...cards, ...extra],
     sources: pdfTopSources(p, vis, lang).map((s) => ({
       ...s,
@@ -1729,6 +1735,26 @@ function collectOwnerMileageRows(p: ClientReportPayload): UnifiedMileageDisplayR
   }
 }
 
+/** Ārvalstu perioda valstij - visi datētie ieraksti ar valsti (laikjosla + rindas bez km). */
+function ownerMileageCountryRecordsFromPayload(p: ClientReportPayload): OwnerMileageCountryRecord[] {
+  try {
+    return lifecycleDatedCountryRecords({
+      csddForm: p.csddForm ?? null,
+      autoRecordsBlock: p.autoRecordsBlock ?? null,
+      oneautoBlock: p.oneautoBlock ?? null,
+      ccVinBlock: p.ccVinBlock ?? null,
+      asvBlock: p.asvBlock ?? null,
+      manualVendorBlocks: p.manualVendorBlocks ?? null,
+      manualLtabBlock: p.manualLtabBlock ?? null,
+      citiAvoti: p.citiAvoti ?? null,
+      tirgusForm: p.tirgusForm ?? null,
+      listingUrl: p.listingUrl ?? null,
+    });
+  } catch {
+    return [];
+  }
+}
+
 /** CSDD - strukturētie lauki + komentāri (viena PDF zona, kā audita atskaitē). */
 export function buildCsddAvotuZoneHtml(
   form: CsddFormFields,
@@ -1739,6 +1765,8 @@ export function buildCsddAvotuZoneHtml(
     bloki?: CsddBlokiPdfParts;
     /** Visu avotu rādījumi «Īpašnieki un nobraukums» periodiem; ja nav - tikai CSDD rādījumi. */
     ownerReadings?: OwnerMileageReading[];
+    /** Datēti ieraksti ar valsti - ārvalstu perioda valstij (26.11). */
+    ownerCountryRecords?: OwnerMileageCountryRecord[];
     lang?: ClientReportLang;
     nowMs?: number;
   } = {},
@@ -1828,6 +1856,7 @@ export function buildCsddAvotuZoneHtml(
   const ownerTimelineHtml = buildCsddOwnerMileageBlockHtml(form, opts.ownerReadings, {
     lang: opts.lang ?? "lv",
     nowMs: opts.nowMs,
+    countryRecords: opts.ownerCountryRecords,
   });
 
   const prevBlock = form.prevInspectionBlock;
@@ -1898,7 +1927,7 @@ function buildCsddAvotuSubsection(
   if (!hasStruct && !hasRaw && !sparkHtml) return "";
 
   if (hasStruct && form) {
-    const zoneOpts = { orderVin: p.vin, bloki, ownerReadings, lang };
+    const zoneOpts = { orderVin: p.vin, bloki, ownerReadings, ownerCountryRecords: ownerMileageCountryRecordsFromPayload(p), lang };
     const zone = buildCsddAvotuZoneHtml(form, sparkHtml, photoDataUrls, zoneOpts);
     if (zone) return zone;
     if (hasRaw) return csddAvotuRawZoneHtml(p.csdd, sparkHtml);
@@ -3374,6 +3403,7 @@ ${clientReportPageChromeCss(running)}
       }
       .pdf-dealer-cover-curve{display:block;width:100%;height:auto;margin:10px 0 0;}
       .pdf-dealer-cover-ax{font-size:10px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-unit{font-size:11px;font-weight:600;fill:#475569;}
       .pdf-dealer-cover-pl{font-size:11px;font-weight:650;fill:#0f172a;}
       .pdf-dealer-cover-year-heading{font-size:10.5px;font-weight:650;fill:#475569;letter-spacing:0.06em;}
       .pdf-dealer-cover-year{font-size:8.5px;fill:#64748b;font-variant-numeric:tabular-nums;}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PDF_DEALER_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { createDefaultSourceBlocks, emptyAutoRecordsBlock, emptyCsddFields } from "@/lib/admin-source-blocks";
@@ -17,6 +18,8 @@ import {
   pdfTopAgeLabel,
   pdfTopFitPx,
   pdfTopMakeLogoUri,
+  pdfTopSvgProblem,
+  pdfTopDealerSourceName,
   recolorSvgToTone,
   resolvePdfTopPhoto,
 } from "@/lib/pdf-report-top";
@@ -385,5 +388,47 @@ describe("iPhone 25.11: tituls kolonnā, A4 priekšskatījums, reģistrācijas i
     expect(out).toContain(`>${d}<`);
     // Tikai viss teksta mezgls - teikumi netiek aiztikti.
     expect(out).toContain(">Ilgums 5 mēn. kopš<");
+  });
+});
+
+describe("markas logo - derīgs SVG katrai markai (26.11 Peugeot salauzta ikona)", () => {
+  const decode = (uri: string) => Buffer.from(uri.replace(/^data:image\/svg\+xml;base64,/, ""), "base64").toString("utf8");
+  const keys = Object.keys(PDF_DEALER_LOGO_DATA_URI);
+
+  it("saraksts nav tukšs", () => {
+    expect(keys.length).toBeGreaterThan(40);
+    expect(keys).toEqual(expect.arrayContaining(["peugeot", "ds", "land-rover", "porsche"]));
+  });
+
+  it.each(keys)("%s: apgrieztais logo ir derīgs SVG ar viewBox un saturu", (key) => {
+    const uri = pdfTopMakeLogoUri(key);
+    expect(uri, key).toMatch(/^data:image\/svg\+xml;base64,/);
+    const svg = decode(uri!);
+    expect(pdfTopSvgProblem(svg), key).toBeNull();
+    const root = /^<svg\b[^>]*>/.exec(svg)![0];
+    const vb = /\bviewBox="([^"]+)"/.exec(root)![1]!.split(/\s+/).map(Number);
+    expect(vb).toHaveLength(4);
+    expect(vb[2]).toBeGreaterThan(0);
+    expect(vb[3]).toBeGreaterThan(0);
+    // Ja izmanto xlink:href, saknē jābūt xmlns:xlink (tieši tas salūza Peugeot/DS/Land Rover/Porsche).
+    if (svg.includes("xlink:")) expect(root).toContain('xmlns:xlink="http://www.w3.org/1999/xlink"');
+  });
+
+  it("pārbaude noķer nedeklarētu prefiksu, tukšu un salauztu SVG", () => {
+    const ok = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0h10v10z"/></svg>';
+    expect(pdfTopSvgProblem(ok)).toBeNull();
+    expect(pdfTopSvgProblem(ok.replace("<path", '<use xlink:href="#a"/><path'))).toMatch(/prefikss xlink/);
+    expect(pdfTopSvgProblem('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>')).toMatch(/tukšs/);
+    expect(pdfTopSvgProblem('<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>')).toMatch(/viewBox/);
+    expect(pdfTopSvgProblem(ok.replace("</svg>", ""))).toMatch(/neaizvērts/);
+    expect(pdfTopSvgProblem(ok.replace("<path", "<g><path"))).toMatch(/neatbilstošs|neaizvērts/);
+    expect(pdfTopSvgProblem(ok.replace('d="', 'd="a&b '))).toMatch(/entītija/);
+    expect(pdfTopSvgProblem(ok.replace('viewBox="0 0 10 10"', 'viewBox="0 0 10 10" viewBox="0 0 1 1"'))).toMatch(/dublēts/);
+  });
+
+  it("Peugeot dīlera flīzei ir logo un markas nosaukums", () => {
+    const d = pdfTopDealerSourceName("Peugeot 308", "", "lv");
+    expect(d.logoUri).toBeTruthy();
+    expect(d.name).toBe("Peugeot");
   });
 });

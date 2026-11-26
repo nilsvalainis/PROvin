@@ -464,11 +464,26 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
     en: "Mileage history and mileage by calendar year",
     ru: "История пробега и пробег по календарным годам",
   },
-  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
-    {
-      en: "Year-end mileage is linearly interpolated between the nearest precise records. Hatched bars are an approximate split of a multi-year interval, not a precise annual mileage. {y0}: from {d0}; {y1}: until {d1} - not annualized to a full year.",
-      ru: "Пробег на границах года линейно интерполирован между ближайшими точными записями. Штрихованные столбцы - приблизительное деление многолетнего интервала, а не точный годовой пробег. {y0}: с {d0}; {y1}: до {d1} - без пересчёта на полный год.",
-    },
+  "{y0} un {y1} ir nepilni gadi (dati no {d0} līdz {d1}), nobraukums sadalīts proporcionāli dienām.": {
+    en: "{y0} and {y1} are incomplete years (data from {d0} to {d1}); mileage is split in proportion to the days.",
+    ru: "{y0} и {y1} - неполные годы (данные с {d0} по {d1}), пробег распределён пропорционально дням.",
+  },
+  "{y} ir nepilns gads (dati no {d0}), nobraukums sadalīts proporcionāli dienām.": {
+    en: "{y} is an incomplete year (data from {d0}); mileage is split in proportion to the days.",
+    ru: "{y} - неполный год (данные с {d0}), пробег распределён пропорционально дням.",
+  },
+  "{y} ir nepilns gads (dati līdz {d1}), nobraukums sadalīts proporcionāli dienām.": {
+    en: "{y} is an incomplete year (data until {d1}); mileage is split in proportion to the days.",
+    ru: "{y} - неполный год (данные по {d1}), пробег распределён пропорционально дням.",
+  },
+  "{y} ir nepilns gads (dati no {d0} līdz {d1}).": {
+    en: "{y} is an incomplete year (data from {d0} to {d1}).",
+    ru: "{y} - неполный год (данные с {d0} по {d1}).",
+  },
+  "Svītrotie stabiņi - aptuvens sadalījums, jo starp rādījumiem ir vairāki gadi.": {
+    en: "Hatched bars - approximate split, because there are several years between readings.",
+    ru: "Штрихованные столбцы - приблизительное распределение, так как между показаниями несколько лет.",
+  },
   "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.": {
     en: "1 record with an artificial drop is not shown on the chart - same as in the existing report.",
     ru: "1 запись с искусственным падением на графике не показана - как и в существующем отчёте.",
@@ -829,8 +844,15 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "nepilns gads": "unvollständiges Jahr",
   "Nobraukuma vēsture un nobraukums pa kalendāra gadiem":
     "Laufleistungshistorie und Laufleistung nach Kalenderjahr",
-  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
-    "Der Jahresgrenzen-km wird linear zwischen den nächsten präzisen Einträgen interpoliert. Schraffierte Balken sind eine ungefähre Aufteilung eines mehrjährigen Intervalls, keine präzise Jahreslaufleistung. {y0}: ab {d0}; {y1}: bis {d1} - ohne Hochrechnung auf ein volles Jahr.",
+  "{y0} un {y1} ir nepilni gadi (dati no {d0} līdz {d1}), nobraukums sadalīts proporcionāli dienām.":
+    "{y0} und {y1} sind unvollständige Jahre (Daten vom {d0} bis {d1}), die Laufleistung ist anteilig nach Tagen aufgeteilt.",
+  "{y} ir nepilns gads (dati no {d0}), nobraukums sadalīts proporcionāli dienām.":
+    "{y} ist ein unvollständiges Jahr (Daten ab {d0}), die Laufleistung ist anteilig nach Tagen aufgeteilt.",
+  "{y} ir nepilns gads (dati līdz {d1}), nobraukums sadalīts proporcionāli dienām.":
+    "{y} ist ein unvollständiges Jahr (Daten bis {d1}), die Laufleistung ist anteilig nach Tagen aufgeteilt.",
+  "{y} ir nepilns gads (dati no {d0} līdz {d1}).": "{y} ist ein unvollständiges Jahr (Daten vom {d0} bis {d1}).",
+  "Svītrotie stabiņi - aptuvens sadalījums, jo starp rādījumiem ir vairāki gadi.":
+    "Schraffierte Balken - ungefähre Aufteilung, da zwischen den Ablesungen mehrere Jahre liegen.",
   "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.":
     "1 Eintrag mit künstlichem Rückgang wird im Diagramm nicht gezeigt - wie im bestehenden Bericht.",
   "{n} ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.":
@@ -970,6 +992,8 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
 export type OwnerMileageTextKey =
   | "title"
   | "abroad"
+  | "abroadUnknown"
+  | "provenFrom"
   | "latvia"
   | "imported"
   | "firstRegLv"
@@ -982,6 +1006,13 @@ export type OwnerMileageTextKey =
 const OWNER_MILEAGE_TEXT: Record<OwnerMileageTextKey, Record<ClientReportLang, string>> = {
   title: { lv: "Īpašnieki un nobraukums", en: "Owners and mileage", ru: "Владельцы и пробег", de: "Halter und Laufleistung" },
   abroad: { lv: "Ārvalstīs", en: "Abroad", ru: "За рубежом", de: "Im Ausland" },
+  abroadUnknown: {
+    lv: "Iepriekš - valsts nav zināma",
+    en: "Earlier - country unknown",
+    ru: "Ранее - страна неизвестна",
+    de: "Zuvor - Land unbekannt",
+  },
+  provenFrom: { lv: "pierādāms no", en: "proven from", ru: "подтверждено с", de: "belegt ab" },
   latvia: { lv: "Latvijā", en: "In Latvia", ru: "В Латвии", de: "In Lettland" },
   imported: { lv: "Ievests Latvijā", en: "Imported to Latvia", ru: "Ввезён в Латвию", de: "Nach Lettland eingeführt" },
   firstRegLv: {

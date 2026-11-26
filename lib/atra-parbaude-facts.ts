@@ -10,7 +10,9 @@ import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
 import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
+import { vinScanRowHasLien } from "@/lib/vin-scan/lien-flag";
 import { vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
+import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
 export const ECSDD_URL = "https://e.csdd.lv/";
 
@@ -26,7 +28,16 @@ export type AtraFactRow = {
   vehicle?: { make?: string; model?: string; year?: string };
   mileage?: { date: string; odometer: string; source?: string }[];
   media?: { photoUrl?: string; photoCount?: number };
-  flags?: { wanted?: boolean; stolen?: boolean; registrationCountry?: string; countries?: string[]; photoCount?: number };
+  flags?: {
+    wanted?: boolean;
+    stolen?: boolean;
+    /** Reģistrēta ķīla / parāds (DK Bilbogen) - apgrūtinājums, ne negadījums. */
+    lien?: boolean;
+    registrationCountry?: string;
+    manufactureCountry?: string;
+    countries?: string[];
+    photoCount?: number;
+  };
   inspections?: { date: string; result?: string; odometer?: string }[];
   recalls?: { title: string; date?: string }[];
   incidents?: { date?: string; summary: string }[];
@@ -78,6 +89,8 @@ export type AtraDealerFact = {
 export type AtraFacts = {
   mileage: AtraMileageFact;
   wanted: string[];
+  /** Avoti ar reģistrētu ķīlu / parādu (DK Bilbogen). 26.11: tas nav negadījums. */
+  liens?: string[];
   incidents: { count: number; items: string[]; sources: string[] };
   auctions: AtraAuctionFact;
   countries: string[];
@@ -158,7 +171,8 @@ function mileageFact(input: AtraFactsInput): AtraMileageFact {
   };
   for (const row of input.rows) {
     if (row.status !== "found") continue;
-    const c = row.flags?.registrationCountry || row.country;
+    // WMI (vin_decode) valsts ir ražotājvalsts - nobraukuma punktiem valsti nedod.
+    const c = isManufactureCountrySource(row.id) ? "" : vinScanRowRegistrationCountry(row) || row.country;
     for (const m of row.mileage ?? []) push(m.date, m.odometer, m.source || row.label, COUNTRY_OK.test(c) ? c : "");
     for (const i of row.inspections ?? []) push(i.date, i.odometer ?? "", row.label, COUNTRY_OK.test(c) ? c : "");
   }
@@ -234,6 +248,7 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   const found = input.rows.filter((r) => r.status === "found");
   const mileage = mileageFact(input);
   const wanted = found.filter((r) => r.flags?.wanted || r.flags?.stolen).map((r) => r.label);
+  const liens = found.filter(vinScanRowHasLien).map((r) => r.label);
   const incidentItems: string[] = [];
   const incidentSources = new Set<string>();
   for (const r of found) {
@@ -244,7 +259,9 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   }
   const countries = new Set<string>();
   for (const r of found) {
-    const c = r.flags?.registrationCountry || "";
+    // 26.11: WMI ražotājvalsts nav valsts, kur auto bijis.
+    if (isManufactureCountrySource(r.id)) continue;
+    const c = vinScanRowRegistrationCountry(r);
     if (COUNTRY_OK.test(c)) countries.add(c);
     for (const extra of r.flags?.countries ?? []) {
       const code = String(extra).trim().toUpperCase();
@@ -283,6 +300,7 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   return {
     mileage,
     wanted,
+    liens,
     incidents: { count: incidentItems.length, items: incidentItems, sources: [...incidentSources] },
     auctions: auctionFact(found),
     countries: [...countries].sort(),
@@ -393,6 +411,7 @@ export function atraSummaryText(input: Pick<AtraFactsInput, "vin" | "title" | "y
     lines.push(`Nobraukums: ${formatKm(m.last.km)} km (${atraLvDate(m.last.date)})`);
   }
   if (f.wanted.length) lines.push(`Meklēšanā: ${f.wanted.join(", ")}`);
+  if (f.liens?.length) lines.push(`Ķīla / parāds: ${f.liens.join(", ")}`);
   if (f.incidents.count) lines.push(`Negadījumi: ${f.incidents.count}`);
   if (f.auctions.count || f.auctions.photoCount) {
     const parts = [f.auctions.years.join(", "), f.auctions.venues.join(", "), f.auctions.photoCount ? `${f.auctions.photoCount} bildes` : ""];

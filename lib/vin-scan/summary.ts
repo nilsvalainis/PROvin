@@ -1,5 +1,6 @@
 import type { VinScanIndicator, VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
 import { isVinScanWantedSource, vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
+import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
 export type VinScanOverviewRow = {
   id: string;
@@ -186,7 +187,8 @@ export function buildVinScanFacts(allRows: readonly VinScanOverviewRow[], vin?: 
     if (recallN > 0) recalls.push(`${row.label || row.id}: ${recallN}`);
     const photos = row.flags?.photoCount ?? row.media?.photoCount ?? 0;
     if (photos > 0) auctionPhotos.push(`${row.label || row.id}: ${photos} foto`);
-    const country = row.flags?.registrationCountry || row.country;
+    // 26.11: WMI ražotājvalsts nav reģistrācija.
+    const country = isManufactureCountrySource(row.id) ? "" : vinScanRowRegistrationCountry(row) || row.country;
     if (country && ["LV", "LT", "EE", "DK", "SE", "FI", "NO", "NL", "UK", "BE", "CZ"].includes(country)) {
       countries.add(country);
     }

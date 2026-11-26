@@ -84,7 +84,9 @@ describe("CSDD izdrukas piemēri (anonimizēti)", () => {
   it("9 īpašnieki + Vācija: ilgumi, interpolācija, samazinājums → «-»", () => {
     const { r } = fromFixture(OWNER_MILEAGE_FIXTURE_GJ);
     expect(r.ownerCount).toBe(9);
-    expect(r.abroad?.country).toBe("Vācija");
+    // 26.11: CSDD iepriekšējā valsts ir tikai pēdējā pirms Latvijas - bez datēta ieraksta periodam valsti nerāda.
+    expect(r.abroad?.country).toBe("");
+    expect(r.abroadLastCountry).toBe("Vācija");
     expect(rowsOf(r)).toEqual([
       "2000-02.2007 | ~7 g. | ~117 340 km",
       "02.2007 | 13 d. | ~630 km",
@@ -102,7 +104,9 @@ describe("CSDD izdrukas piemēri (anonimizēti)", () => {
 
   it("4 īpašnieki + Itālija: km starp maiņām no visiem rādījumiem (arī pēdējās TA), 3. - ekstrapolēts", () => {
     const { r } = fromFixture(OWNER_MILEAGE_FIXTURE_OP);
-    expect(r.abroad?.country).toBe("Itālija");
+    // 26.11: CSDD iepriekšējā valsts ir tikai pēdējā pirms Latvijas - bez datēta ieraksta periodam valsti nerāda.
+    expect(r.abroad?.country).toBe("");
+    expect(r.abroadLastCountry).toBe("Itālija");
     expect(rowsOf(r)).toEqual([
       "2006-05.2017 | ~11 g. | 254 471 km",
       "05.2017 | 9 d. | ~550 km",

@@ -67,6 +67,8 @@ describe("(b) viena 1. reģistrācijas valsts", () => {
   function nlDe() {
     return blocks({
       csdd: { makeModel: "AUDI A3", firstRegistration: "2016-12-01", previousRegistrationCountry: "Vācija" },
+      // 26.11: valsts no datēta ieraksta pie 1. reģistrācijas (CSDD iepriekšējā valsts vien to nenosaka).
+      auto_records: { serviceHistory: [{ date: "10.12.2016", odometer: "15", country: "Vācija" }] },
       finnik: {
         timeline: [{ date: "01.12.2016", event: "Pirmā reģistrācija" }],
         mileage: [{ date: "01.12.2018", odometer: "40000" }],
@@ -90,6 +92,26 @@ describe("(b) viena 1. reģistrācijas valsts", () => {
       nowMs: NOW,
     });
     expect(ok.some((i) => i.id === "ai_first_reg_country")).toBe(false);
+  });
+
+  it("26.11: tikai CSDD iepriekšējā valsts - 1. reģistrācijas valsts nav zināma, AI «pirmoreiz reģistrēta Austrijā» -> brīdinājums", () => {
+    const sb = blocks({
+      csdd: {
+        makeModel: "BMW X5",
+        firstRegistration: "2004-08-20",
+        firstRegistrationLatvia: "2021-11-26",
+        previousRegistrationCountry: "AUSTRIJA",
+      },
+    });
+    const issues = checkSourceConsistency({
+      sourceBlocks: sb,
+      texts: [{ label: "Kopsavilkums", text: "Automašīna pirmoreiz reģistrēta Austrijā 2004. gadā." }],
+      nowMs: NOW,
+    });
+    const first = issues.find((i) => i.id === "ai_first_reg_country");
+    expect(first?.severity).toBe("warn");
+    expect(first?.values[0]).toEqual({ source: "1. lapa", value: "Nav zināma" });
+    expect(issues.some((i) => i.id === "first_reg_vs_csdd_prev")).toBe(false);
   });
 
   it("«pirmā reģistrācija Latvijā» nav pretruna", () => {

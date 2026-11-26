@@ -10,11 +10,12 @@ export function oneautoPowertrainFromVinScanParse(parsed: VinScanParse): Oneauto
   const make = parsed.vehicle?.make?.trim() ?? "";
   const model = parsed.vehicle?.model?.trim() ?? "";
   const year = parsed.vehicle?.year?.trim() ?? "";
-  const country = parsed.flags?.registrationCountry?.trim() ?? "";
+  // 26.11: WMI valsts = ražotājvalsts, ne reģistrācijas valsts.
+  const country = (parsed.flags?.manufactureCountry || parsed.flags?.registrationCountry || "").trim();
   if (year) rows.push({ label: "Gads (fallback)", value: year });
   if (make) rows.push({ label: "Marka (fallback)", value: make });
   if (model) rows.push({ label: "Modelis (fallback)", value: model });
-  if (country) rows.push({ label: "Valsts (fallback)", value: country });
+  if (country) rows.push({ label: "Ražots (fallback)", value: country });
   if (parsed.summary.trim() && !rows.some((r) => r.value === parsed.summary.trim())) {
     rows.push({ label: "Dekodējums (fallback)", value: parsed.summary.trim() });
   }

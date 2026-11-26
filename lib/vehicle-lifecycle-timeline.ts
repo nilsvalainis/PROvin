@@ -114,6 +114,8 @@ export type LifecycleEvent = {
   country: string;
   /** Tikai `import`: iepriekšējā valsts (mērķa valsts paliek `country`). */
   fromCountry?: string;
+  /** Tikai `import`: iepriekšējā valsts nav pierādīta («Nav zināma → Austrija», 26.11). */
+  fromCountryUnknown?: boolean;
   odometer: string;
   sources: string[];
   tone: LifecycleEventTone;
@@ -159,12 +161,24 @@ export function lifecycleEventKnownCountryIso(
 }
 
 /**
+ * 26.11 (Nils, BMW X5): «Citi avoti» sadaļa ar oficiālu valsts reģistru (Austrijas §57a apskates /
+ * kfzgutachten.at) ir reģistra ieraksti ar valsti, ne informatīva laikposma rinda.
+ */
+const OFFICIAL_REGISTRY_SECTION_TITLE_RE = /§\s*57\s*a|kfzgutachten/i;
+
+/**
  * „Laikposma ieraksti” (AutoDNA, CarVertical, Citi avoti) ir informatīvi.
- * Publisko reģistru hronoloģija paliek stipra un drīkst dzīt valsts maiņu.
+ * Publisko reģistru hronoloģija (arī «Citi avoti» oficiāls reģistrs) paliek stipra un drīkst dzīt valsts maiņu.
  */
 export function vendorTimelineIsInformational(sourceTitle: string): boolean {
+  if (OFFICIAL_REGISTRY_SECTION_TITLE_RE.test(sourceTitle)) return false;
   return !REGISTRY_STYLE_BLOCK_KEYS.some((k) => SOURCE_BLOCK_LABELS[k] === sourceTitle);
 }
+
+/** «Nav zināma → Austrija»: no-valsts puse pārejā, kad agrākā valsts nav pierādīta. */
+export const LIFECYCLE_UNKNOWN_COUNTRY_LV = "Nav zināma";
+/** Agrākie ieraksti bez valsts vismaz tik ilgi pirms pirmā valsts ieraksta - tad rāda «Nav zināma → <valsts>». */
+const UNKNOWN_COUNTRY_TRANSITION_MIN_MS = 365 * 24 * 60 * 60 * 1000;
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
 const GAP_MONTHS_THRESHOLD = 24;
@@ -505,8 +519,17 @@ function vendorTimelineTitleAndDetail(
 const LIFECYCLE_EXPORT_EVENT_RE = /eksport|\bexport/i;
 
 /** Stipra rezidence: atpazīstama valsts, ne sludinājums un ne laikposma tabula. */
+/**
+ * 26.11 (Nils): «Ražots» (CarVertical/AutoDNA laikposms, WMI) dod tikai ražotājvalsti.
+ * Tā nav valsts, kur auto bijis: nedrīkst sākt valstu ķēdi vai radīt «Francija → Vācija» pāreju.
+ */
+export function lifecycleEventIsProduction(e: Pick<LifecycleEvent, "title" | "detail">): boolean {
+  return /ražot|izgatavot|manufactur|produced|\bbuilt\b/i.test(`${e.title} ${e.detail}`);
+}
+
 export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
   if (lifecycleCountryIsSoft(e)) return false;
+  if (lifecycleEventIsProduction(e)) return false;
   // j26: eksports / izņemšana no uzskaites eksportam ir izbraukšana, ne rezidence (citādi
   // tās pašas dienas jaunās valsts reģistrācija rada viltus lēcienus FI -> SE -> FI).
   if (LIFECYCLE_EXPORT_EVENT_RE.test(`${e.title} ${e.detail} ${e.body ?? ""}`)) return false;
@@ -519,6 +542,7 @@ export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boole
  * Maiņu ģenerē tikai stiprs notikums (nobraukums, reģistrs, negadījums).
  */
 function lifecycleEventCountryChainIso(e: LifecycleEvent, prevIso: string): string | null {
+  if (lifecycleEventIsProduction(e)) return null;
   const iso = lifecycleEventKnownCountryIso(e);
   if (!iso) return null;
   if (lifecycleEventProvidesCountryResidence(e)) return iso;
@@ -1504,12 +1528,10 @@ function eventCountryIso(e: LifecycleEvent): string | null {
   return countryLabelToIso2(e.country);
 }
 
-const PRODUCTION_EVENT_RE = /ražot|izgatavot|manufactur|produced|\bbuilt\b/i;
-
 function isFirstRegistrationEvidence(e: LifecycleEvent): boolean {
   if (e.kind === "first_registration" || e.kind === "import" || e.kind === "gap") return false;
   if (e.nationalRegistration) return false;
-  if (PRODUCTION_EVENT_RE.test(`${e.title} ${e.detail}`)) return false;
+  if (lifecycleEventIsProduction(e)) return false;
   return lifecycleEventProvidesCountryResidence(e);
 }
 
@@ -1539,15 +1561,12 @@ function hasEarlierForeignEvidence(events: LifecycleEvent[], card: LifecycleEven
 }
 
 /**
- * Pirmās reģistrācijas valsts, ja pats reģistrs to nezina: CSDD iepriekšējā valsts vai tuvākais
- * stiprais ieraksts (dīlera piegāde, reģistrs, nobraukums) ap datumu - tikai pirms pirmās nacionālās
- * reģistrācijas. Ja nav droši, valsts paliek tukša (karogu nerāda).
+ * Pirmās reģistrācijas valsts, ja pats reģistrs to nezina: tikai tuvākais stiprais ieraksts ar valsti
+ * (dīlera piegāde, reģistrs, nobraukums) ap datumu - pirms pirmās nacionālās reģistrācijas.
+ * 26.11 (Nils, BMW X5): CSDD «Iepriekšējā reģistrācijas valsts» ir tikai PĒDĒJĀ valsts pirms Latvijas -
+ * tā nekad nenosaka pirmās reģistrācijas valsti. Ja nav droši, valsts paliek tukša («Nav zināma»).
  */
-function resolveFirstRegistrationCountry(
-  events: LifecycleEvent[],
-  card: LifecycleEvent,
-  previousRegistrationCountry: string,
-): string {
+function resolveFirstRegistrationCountry(events: LifecycleEvent[], card: LifecycleEvent): string {
   const firstNational = events
     .filter((e) => e.nationalRegistration && e.time > card.time)
     .reduce((min, e) => Math.min(min, e.time), Number.POSITIVE_INFINITY);
@@ -1559,18 +1578,7 @@ function resolveFirstRegistrationCountry(
       isFirstRegistrationEvidence(e) &&
       eventCountryIso(e) != null,
   );
-  // 1) CSDD iepriekšējā valsts, ja neviens ārvalstu ieraksts tai nerunā pretī (visi ārvalstu ieraksti tajā pašā valstī).
-  const prevIso = countryLabelToIso2(previousRegistrationCountry);
-  const foreignIsos = new Set(
-    evidence
-      .filter((e) => e.time >= card.time - FIRST_REG_COUNTRY_BEFORE_MS)
-      .map((e) => eventCountryIso(e)!)
-      .filter((iso) => iso !== "LV"),
-  );
-  if (prevIso && prevIso !== "LV" && [...foreignIsos].every((iso) => iso === prevIso)) {
-    return iso2ToLvDisplayName(prevIso);
-  }
-  // 2) Tuvākais ieraksts ap datumu.
+  // Tuvākais ieraksts ap datumu.
   let best: LifecycleEvent | null = null;
   let bestDt = Number.POSITIVE_INFINITY;
   for (const e of evidence) {
@@ -1645,7 +1653,7 @@ function resolveFirstRegistration(events: LifecycleEvent[], previousRegistration
     world.title = FIRST_REGISTRATION_TITLE;
     world.detail = /^1\.\s*reģistrācija/i.test(world.detail) ? "" : world.detail;
     if (!countryLabelToIso2(world.country)) {
-      world.country = resolveFirstRegistrationCountry(events, world, previousRegistrationCountry);
+      world.country = resolveFirstRegistrationCountry(events, world);
       world.countryUnverified = false;
     }
   }
@@ -1669,6 +1677,8 @@ function addDerivedEvents(
   const previousCountryNorm =
     normalizeCountryNameLv(previousRegistrationCountry) || previousRegistrationCountry.trim();
   const previousIso = countryLabelToIso2(previousCountryNorm);
+  // Agrākais ieraksts (piem. pirmā reģistrācija bez valsts) - lai pirmajai pierādītajai ārvalstij rādītu «Nav zināma → X».
+  const earliestT = sorted.find((x) => x.time > 0 && x.kind !== "gap")?.time ?? 0;
   for (const [i, e] of sorted.entries()) {
     const prev = i > 0 ? sorted[i - 1]! : null;
     if (prev && prev.time > 0 && e.time > 0) {
@@ -1717,6 +1727,32 @@ function addDerivedEvents(
             tone: "warn",
           });
         }
+      }
+      // 26.11: pirmais pierādītais ārvalsts ieraksts pēc ilga laika bez valsts - «Nav zināma → <valsts>».
+      // Maiņu nekad nezīmē NO nepierādītas valsts uz citu; tikai atzīmē, no kura brīža valsts pierādāma.
+      if (
+        hard &&
+        !fromIso &&
+        nextIso !== "LV" &&
+        earliestT > 0 &&
+        e.time > 0 &&
+        e.time - earliestT >= UNKNOWN_COUNTRY_TRANSITION_MIN_MS
+      ) {
+        const toLabel = normalizeCountryNameLv(e.country) || e.country;
+        out.push({
+          kind: "import",
+          date: e.date,
+          time: e.time - 1,
+          year: e.year,
+          title: `${LIFECYCLE_UNKNOWN_COUNTRY_LV} → ${toLabel}`,
+          detail: `${LIFECYCLE_UNKNOWN_COUNTRY_LV} → ${toLabel}`,
+          country: toLabel,
+          fromCountry: LIFECYCLE_UNKNOWN_COUNTRY_LV,
+          fromCountryUnknown: true,
+          odometer: "",
+          sources: [...e.sources],
+          tone: "info",
+        });
       }
       prevCountry = normalizeCountryNameLv(e.country) || e.country;
       prevIso = nextIso;
@@ -1877,4 +1913,39 @@ export function vehicleFirstRegistrationSummary(events: LifecycleEvent[]): Vehic
       .filter((e) => e.nationalRegistration && e.kind === "registration")
       .map((e) => ({ date: e.date, country: e.country, title: e.title })),
   };
+}
+
+/** Datēts ieraksts, kurā avots tieši norāda valsti (ar vai bez odometra). */
+export type LifecycleDatedCountryRecord = { t: number; iso: string; source: string };
+
+/**
+ * 26.11 (Nils, BMW X5): ārvalstu perioda valsti drīkst rādīt tikai no datētiem ierakstiem ar valsti.
+ * Laikjoslas notikumi (bez sludinājumiem, pārejām, informatīvām atzīmēm) + avotu rindas ar valsti,
+ * kurām nav odometra (piem. Austrijas §57a apskates 2015-2018 bez km - laikjoslā tās neparādās).
+ */
+export function lifecycleDatedCountryRecords(
+  input: LifecycleInput,
+  events: readonly LifecycleEvent[] = buildVehicleLifecycleEvents(input),
+): LifecycleDatedCountryRecord[] {
+  const out: LifecycleDatedCountryRecord[] = [];
+  for (const e of events) {
+    if (e.time <= 0 || e.kind === "import" || e.kind === "gap" || e.kind === "listed" || e.kind === "anomaly") continue;
+    if (lifecycleCountryIsSoft(e) || isListingOnlySourceSet(e.sources)) continue;
+    if (lifecycleEventIsProduction(e)) continue;
+    const iso = lifecycleEventKnownCountryIso(e);
+    if (iso) out.push({ t: e.time, iso, source: e.sources[0] ?? e.title });
+  }
+  const pushRow = (date: string, country: string, source: string) => {
+    const iso = countryLabelToIso2(country);
+    const t = date.trim() ? parseLifecycleTimeMs(date) : 0;
+    if (iso && t > 0) out.push({ t, iso, source });
+  };
+  for (const r of input.autoRecordsBlock?.serviceHistory ?? []) pushRow(r.date, r.country, "OFICIĀLĀ DĪLERA DATI");
+  for (const b of input.manualVendorBlocks ?? []) for (const r of b.mileageRows ?? []) pushRow(r.date, r.country, b.title);
+  const sections = input.citiAvoti?.sections ?? [];
+  sections.forEach((s, i) => {
+    const label = citiAvotiSectionLabel(s, i, sections.length);
+    for (const r of s.serviceHistory ?? []) pushRow(r.date, r.country, label);
+  });
+  return out.sort((a, b) => a.t - b.t);
 }

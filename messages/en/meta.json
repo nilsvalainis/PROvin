@@ -32,7 +32,7 @@
     "offerAuditsName": "PROVIN AUDITS",
     "offerAuditsDesc": "Car history check for imported cars: at least 2 paid history sources, listing audit and technical risk analysis.",
     "offerDealerName": "Dealer service data",
-    "offerDealerDesc": "Official dealer service history by VIN, without an expert conclusion.",
+    "offerDealerDesc": "Official dealer service history by VIN or licence plate.",
     "thanksTitle": "Thank you for your order",
     "thanksDescription": "Order received. A short confirmation after successful payment via Stripe."
   }

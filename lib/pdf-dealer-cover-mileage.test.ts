@@ -3,6 +3,8 @@ import {
   buildDealerCoverMileageChartHtml,
   collectDealerCoverMileagePoints,
   computeDealerCoverYearlyMileage,
+  dealerCoverLegendKeys,
+  dealerCoverYearlyExplanation,
   filterDealerCoverPrecisePoints,
   interpolateDealerCoverBoundary,
   parseDealerCoverOdometerKm,
@@ -265,6 +267,9 @@ describe("buildDealerCoverMileageChartHtml", () => {
     expect(html).toContain("precīzs ieraksts");
     expect(html).toContain("nepārtraukta līnija savieno precīzos ierakstus");
     expect(html).toContain("aptuveni (nav precīzu datu)");
+    expect(html).toContain("precīzs gada nobraukums");
+    expect(html).toContain("nepilns gads");
+    expect(html).toContain("Svītrotie stabiņi - aptuvens sadalījums, jo starp rādījumiem ir vairāki gadi.");
     expect(html).toContain("15 km");
     expect(html).toContain("305 048 km");
     expect(html).toContain("91 rādījumi");
@@ -330,5 +335,174 @@ describe("buildDealerSectionCoverHtml mileage chart", () => {
     expect(html).not.toContain("vizītes");
     expect(html).not.toMatch(/vidēji/i);
     expect(html).toContain("pdf-dealer-cover-curve-path");
+  });
+});
+
+/** Nila 26.11 piemērs: 2 rādījumi, abi gadi nepilni, nav svītroto stabiņu. */
+const NILS_TSV = `03.07.2018	12438
+01.11.2019	36336`;
+
+function legendSpans(html: string): string[] {
+  const leg = html.match(/<div class="pdf-dealer-cover-leg">([\s\S]*?)<\/div>/);
+  if (!leg) return [];
+  return [...leg[1]!.matchAll(/<span>[\s\S]*?<\/span>/g)].map((m) => m[0].replace(/<[^>]+>/g, "").trim());
+}
+
+function noteText(html: string): string {
+  return html.match(/<div class="pdf-dealer-cover-note">([\s\S]*?)<\/div>/)?.[1] ?? "";
+}
+
+describe("dealer cover legend filter (Nils 26.11)", () => {
+  it("lists only the elements that are drawn", () => {
+    const pts = parseTsv(NILS_TSV);
+    const years = computeDealerCoverYearlyMileage(pts);
+    expect(dealerCoverLegendKeys(pts.length, years)).toEqual({
+      dot: true,
+      line: true,
+      precise: false,
+      estimate: false,
+      partial: true,
+    });
+    const html = buildDealerCoverMileageChartHtml({ precise: pts, excludedCount: 0 });
+    expect(legendSpans(html)).toEqual([
+      "precīzs ieraksts",
+      "nepārtraukta līnija savieno precīzos ierakstus",
+      "nepilns gads",
+    ]);
+  });
+
+  it("shows hatched key only when an estimate bar exists", () => {
+    const pts = parseTsv(`01.06.2015	20000
+15.03.2016	31000
+10.05.2019	78000
+01.09.2020	95500`);
+    const html = buildDealerCoverMileageChartHtml({ precise: pts, excludedCount: 0 });
+    expect(html).toContain('data-status="estimate"');
+    expect(legendSpans(html)).toEqual([
+      "precīzs ieraksts",
+      "nepārtraukta līnija savieno precīzos ierakstus",
+      "aptuveni (nav precīzu datu)",
+      "nepilns gads",
+    ]);
+  });
+
+  it("shows only the point key for a single reading (no line, no bars)", () => {
+    const html = buildDealerCoverMileageChartHtml({ precise: parseTsv("03.07.2018	12438"), excludedCount: 0 });
+    expect(legendSpans(html)).toEqual(["precīzs ieraksts"]);
+  });
+
+  it("shows precise annual key and no text when every bar is precise", () => {
+    const pts = parseTsv(`01.01.2018	10000
+01.07.2018	15000
+01.01.2019	22000`);
+    const html = buildDealerCoverMileageChartHtml({ precise: pts, excludedCount: 0 });
+    expect(html).toContain('data-status="precise"');
+    expect(html).not.toContain('data-status="partial"');
+    expect(legendSpans(html)).toEqual([
+      "precīzs ieraksts",
+      "nepārtraukta līnija savieno precīzos ierakstus",
+      "precīzs gada nobraukums",
+    ]);
+    expect(html).not.toContain("pdf-dealer-cover-note");
+  });
+});
+
+describe("dealer cover explanation text (Nils 26.11)", () => {
+  it("uses Nils' wording for two incomplete years and drops the technical text", () => {
+    const html = buildDealerCoverMileageChartHtml({ precise: parseTsv(NILS_TSV), excludedCount: 0 });
+    expect(noteText(html)).toBe(
+      "2018 un 2019 ir nepilni gadi (dati no 03.07.2018 līdz 01.11.2019), nobraukums sadalīts proporcionāli dienām.",
+    );
+    expect(html).not.toMatch(/interpol|lineār/i);
+    expect(html).not.toContain("Svītrotie");
+  });
+
+  it("covers single incomplete year variants", () => {
+    const firstOnly = parseTsv(`01.06.2018	10000
+01.01.2019	15000
+01.01.2020	25000`);
+    const y1 = computeDealerCoverYearlyMileage(firstOnly);
+    expect(dealerCoverYearlyExplanation(y1, firstOnly[0]!, firstOnly[2]!, "lv")).toBe(
+      "2018 ir nepilns gads (dati no 01.06.2018), nobraukums sadalīts proporcionāli dienām.",
+    );
+    const lastOnly = parseTsv(`01.01.2018	10000
+01.01.2019	20000
+01.06.2019	25000`);
+    const y2 = computeDealerCoverYearlyMileage(lastOnly);
+    expect(dealerCoverYearlyExplanation(y2, lastOnly[0]!, lastOnly[2]!, "lv")).toBe(
+      "2019 ir nepilns gads (dati līdz 01.06.2019), nobraukums sadalīts proporcionāli dienām.",
+    );
+    const sameYear = parseTsv(`01.03.2018	10000
+01.09.2018	15000`);
+    const y3 = computeDealerCoverYearlyMileage(sameYear);
+    expect(dealerCoverYearlyExplanation(y3, sameYear[0]!, sameYear[1]!, "lv")).toBe(
+      "2018 ir nepilns gads (dati no 01.03.2018 līdz 01.09.2018).",
+    );
+  });
+
+  it("keeps the artificial-drop note next to the new text", () => {
+    const html = buildDealerCoverMileageChartHtml({ precise: parseTsv(NILS_TSV), excludedCount: 2 });
+    expect(noteText(html)).toBe(
+      "2018 un 2019 ir nepilni gadi (dati no 03.07.2018 līdz 01.11.2019), nobraukums sadalīts proporcionāli dienām. 2 ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.",
+    );
+  });
+
+  it.each([
+    [
+      "en",
+      "2018 and 2019 are incomplete years (data from 03.07.2018 to 01.11.2019); mileage is split in proportion to the days.",
+      "Hatched bars - approximate split, because there are several years between readings.",
+      ["precise record", "unbroken line connects the precise records", "incomplete year"],
+      "thous. km",
+    ],
+    [
+      "ru",
+      "2018 и 2019 - неполные годы (данные с 03.07.2018 по 01.11.2019), пробег распределён пропорционально дням.",
+      "Штрихованные столбцы - приблизительное распределение, так как между показаниями несколько лет.",
+      ["точная запись", "непрерывная линия соединяет точные записи", "неполный год"],
+      "тыс. км",
+    ],
+    [
+      "de",
+      "2018 und 2019 sind unvollständige Jahre (Daten vom 03.07.2018 bis 01.11.2019), die Laufleistung ist anteilig nach Tagen aufgeteilt.",
+      "Schraffierte Balken - ungefähre Aufteilung, da zwischen den Ablesungen mehrere Jahre liegen.",
+      ["präziser Eintrag", "ununterbrochene Linie verbindet die präzisen Einträge", "unvollständiges Jahr"],
+      "Tsd. km",
+    ],
+  ] as const)("translates legend and text to %s", (lang, partialText, hatchedText, legend, unit) => {
+    const html = buildDealerCoverMileageChartHtml({ precise: parseTsv(NILS_TSV), excludedCount: 0 }, lang);
+    expect(noteText(html)).toBe(partialText);
+    expect(legendSpans(html)).toEqual([...legend]);
+    expect(html).toContain(`class="pdf-dealer-cover-unit">${unit}<`);
+    expect(html).not.toMatch(/[āēīūčšžņļķģ]/);
+    const hatched = buildDealerCoverMileageChartHtml(
+      {
+        precise: parseTsv(`01.06.2015	20000
+15.03.2016	31000
+10.05.2019	78000
+01.09.2020	95500`),
+        excludedCount: 0,
+      },
+      lang,
+    );
+    expect(noteText(hatched)).toContain(hatchedText);
+  });
+
+  it("does not change bar values (Nils 26.11)", () => {
+    const pts = parseTsv(NILS_TSV);
+    const years = computeDealerCoverYearlyMileage(pts);
+    expect(years.map((r) => [r.year, r.km, r.flag])).toEqual([
+      [2018, 8949, "partial"],
+      [2019, 14949, "partial"],
+    ]);
+    expect(years.reduce((n, r) => n + r.km, 0)).toBe(36336 - 12438);
+  });
+});
+
+describe("dealer cover Y axis units (Nils 26.11)", () => {
+  it("renders both units as readable axis labels on the left", () => {
+    const html = buildDealerCoverMileageChartHtml({ precise: parseTsv(NILS_TSV), excludedCount: 0 });
+    expect(html).toContain('<text x="2" y="12" class="pdf-dealer-cover-unit">tūkst. km</text>');
+    expect(html).toContain('<text x="2" y="207" class="pdf-dealer-cover-unit">tūkst. km gadā</text>');
   });
 });

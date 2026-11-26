@@ -12,6 +12,7 @@ import {
   translateTextLv,
   translateTextLvChecked,
 } from "@/lib/vin-sources/translate-lv";
+import { formatDkLienLine, parseTjekbilLiens, type DkLien } from "@/lib/vin-sources/dk-liens";
 import type { VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 
 export type TjekbilDmrResponse = {
@@ -427,19 +428,16 @@ export function tjekbilFaultLv(fault: { title?: unknown; description?: unknown }
 /**
  * Negadījumu / zaudējumu rindas. 21.11: neizturēta tehniskā apskate NAV negadījums - tā ir laika joslā
  * kā TA notikums ar trūkumiem (`inspectionEvent`), citādi PDF to rāda kā avāriju.
+ * 26.11: Bilbogen ķīla / parāds arī NAV negadījums - tā ir statusu rindās (`buildTjekbilStatusRecords`).
+ * tjekbil.dk negadījumu / zaudējumu datus nepublicē, tāpēc rindu nav.
  */
-export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, _inspections: TjekbilInspection[]): VinSourceIncidentRow[] {
-  const rows: VinSourceIncidentRow[] = [];
-  const debts = asArray(dmr.debtData?.laaneDokumenter).map(asRecord);
-  for (const d of debts) {
-    rows.push({
-      date: isoDay(d.dato ?? d.date),
-      amount: str(d.beloeb ?? d.amount),
-      country: DK_COUNTRY_LV,
-      note: `Ķīla / parāds (Bilbogen)${str(d.kreditor ?? d.creditor) ? ` - ${str(d.kreditor ?? d.creditor)}` : ""}`,
-    });
-  }
-  return rows;
+export function buildTjekbilIncidents(_dmr: TjekbilDmrResponse, _inspections: TjekbilInspection[]): VinSourceIncidentRow[] {
+  return [];
+}
+
+/** Bilbogen ķīlas / parādi (apgrūtinājumi) no `debtData.laaneDokumenter`. */
+export function tjekbilLiens(dmr: TjekbilDmrResponse): DkLien[] {
+  return parseTjekbilLiens(dmr.debtData?.laaneDokumenter);
 }
 
 export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): TjekbilTimelineRow[] {
@@ -595,6 +593,8 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const permissions = asArray(basic.permissions).map(asRecord);
   const specialUse = detectSpecialUseLabels([use, secondary, ...permissions.map((p) => str(p.typeNavn))].join(" "));
   if (specialUse.length > 0) lines.push(`Īpašie statusi: ${specialUse.join(", ")}`);
+
+  for (const lien of tjekbilLiens(dmr)) lines.push(formatDkLienLine(lien));
 
   return { text: lines.join("\n"), specialUse };
 }

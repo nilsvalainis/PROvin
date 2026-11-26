@@ -32,7 +32,7 @@
     "offerAuditsName": "PROVIN AUDITS",
     "offerAuditsDesc": "Fahrzeughistorie für Importfahrzeuge: mindestens 2 kostenpflichtige Historienquellen, Inseratsprüfung und technische Risikoanalyse.",
     "offerDealerName": "Händler-Servicedaten",
-    "offerDealerDesc": "Offizielle Händler-Servicehistorie per VIN, ohne Expertenbewertung.",
+    "offerDealerDesc": "Offizielle Händler-Servicehistorie per FIN oder Kennzeichen.",
     "thanksTitle": "Danke für Ihre Bestellung",
     "thanksDescription": "Bestellung eingegangen. Kurze Bestätigung nach erfolgreicher Stripe-Zahlung."
   }

@@ -65,8 +65,10 @@ import { isoDateToLvDisplay } from "@/lib/csdd-extended-parse";
 import {
   buildVehicleLifecycleEvents,
   lifecycleCountryIsSoft,
+  lifecycleDatedCountryRecords,
   lifecycleEventKnownCountryIso,
   vehicleFirstRegistrationSummary,
+  type LifecycleInput,
 } from "@/lib/vehicle-lifecycle-timeline";
 import { ccVinBlockToPlainText } from "@/lib/cc-vin-report";
 import {
@@ -78,7 +80,7 @@ import {
   ADMIN_SOURCES_COMPARISON_LABEL,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
-import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { formatVendorOwnerEventFactLines } from "@/lib/owner-claims-check";
 import {
   formatCatalogDrivetrainHintLine,
@@ -204,6 +206,8 @@ export type CanonicalFirstReg = {
   countryIso: string;
   /** Valstu nacionālās reģistrācijas pēc pirmās (Somijā, Latvijā u.c.) - tās NAV pirmā reģistrācija. */
   national?: { date: string; country: string; title: string }[];
+  /** CSDD «Iepriekšējā reģistrācijas valsts» - tikai pēdējā valsts pirms Latvijas (26.11). */
+  csddPreviousCountryLv?: string;
 };
 
 export type DealerComponentCount = { label: string; dates: string[] };
@@ -292,10 +296,12 @@ export type CanonicalFacts = {
 function buildOwnerMileageFactLinesFromRows(
   csdd: WorkspaceSourceBlocks["csdd"],
   mileageRows: UnifiedMileageRow[],
+  lifecycleInput?: LifecycleInput,
 ): string[] {
   try {
     const readings = ownerMileageReadingsFromUnifiedRows(prepareUnifiedMileageDisplayRows(mileageRows));
-    const input = ownerMileageInputFromCsdd(csdd, readings);
+    const records = lifecycleInput ? lifecycleDatedCountryRecords(lifecycleInput) : undefined;
+    const input = ownerMileageInputFromCsdd(csdd, readings, undefined, records);
     return input ? formatOwnerMileageFactLines(buildOwnerMileagePeriods(input)) : [];
   } catch {
     return [];
@@ -428,19 +434,23 @@ function sourceHaystackFrom(blocks: WorkspaceSourceBlocks, extra: string[]): str
  * 21.11 (Nils): pirmā reģistrācija = agrākā jebkurā valstī, ar to pašu valsts loģiku kā „Vēstures kopsavilkums”.
  * CSDD „Iepriekšējās reģistrācijas valsts” ir valsts PIRMS Latvijas, ne izcelsme (BMW 740: LU → FI → LV).
  */
+function lifecycleInputFromBlocks(blocks: WorkspaceSourceBlocks, listingUrl: string | null): LifecycleInput {
+  return {
+    csddForm: blocks.csdd,
+    autoRecordsBlock: blocks.auto_records,
+    oneautoBlock: blocks.oneauto,
+    ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    citiAvoti: blocks.citi_avoti,
+    tirgusForm: blocks.tirgus,
+    listingUrl,
+  };
+}
+
 export function firstRegFromBlocks(blocks: WorkspaceSourceBlocks, listingUrl: string | null): CanonicalFirstReg {
   const csdd = blocks.csdd;
-  const events = buildVehicleLifecycleEvents({
-      csddForm: csdd,
-      autoRecordsBlock: blocks.auto_records,
-      oneautoBlock: blocks.oneauto,
-      ccVinBlock: blocks.cc_vin,
-      asvBlock: blocks.asv,
-      manualVendorBlocks: toPdfManualVendorBlocks(blocks),
-      citiAvoti: blocks.citi_avoti,
-      tirgusForm: blocks.tirgus,
-      listingUrl,
-  });
+  const events = buildVehicleLifecycleEvents(lifecycleInputFromBlocks(blocks, listingUrl));
   const summary = vehicleFirstRegistrationSummary(events);
   const csddDate = csdd.firstRegistration.trim() || csdd.registry?.data.firstRegistrationIso.trim() || "";
   const date = summary.date || (csddDate ? isoDateToLvDisplay(csddDate) : "");
@@ -460,6 +470,7 @@ export function firstRegFromBlocks(blocks: WorkspaceSourceBlocks, listingUrl: st
     countryLv: country ? countryLv(country) : "",
     countryIso: (summary.countryIso || (lvByCsdd ? "LV" : "")).toUpperCase(),
     national: summary.national,
+    csddPreviousCountryLv: csdd.previousRegistrationCountry.trim() ? countryLv(csdd.previousRegistrationCountry) : "",
   };
 }
 
@@ -629,7 +640,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     dealerComponentCounts,
     registryStatusLines,
     csddSignalLines: input.omitCsddRegistrySignals ? [] : buildCsddRegistrySignalFactLines(csdd),
-    ownerMileageLines: buildOwnerMileageFactLinesFromRows(csdd, mileageRows),
+    ownerMileageLines: buildOwnerMileageFactLinesFromRows(csdd, mileageRows, lifecycleInputFromBlocks(blocks, input.listingUrl ?? null)),
     vendorOwnerEventLines: formatVendorOwnerEventFactLines(blocks),
     drivetrain: drivetrainRes.drivetrain,
     drivetrainCatalogHint: drivetrainRes.catalogHint,
@@ -709,10 +720,16 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
 
   const countryBit = facts.firstReg.countryLv
     ? `izcelsmes valsts: ${facts.firstReg.countryLv}${facts.firstReg.countryIso ? ` (${facts.firstReg.countryIso})` : facts.firstReg.countryRaw && facts.firstReg.countryRaw !== facts.firstReg.countryLv ? ` (${facts.firstReg.countryRaw})` : ""}`
-    : "izcelsmes valsts datos nav";
+    : "izcelsmes valsts nav zināma - NERAKSTĪT, kurā valstī auto pirmo reizi reģistrēts";
   lines.push(
     `Pirmā reģistrācija: ${facts.firstReg.date || "datums nav"} | ${countryBit}`,
   );
+  const prevLv = facts.firstReg.csddPreviousCountryLv ?? "";
+  if (prevLv && countryLabelToIso2(prevLv) !== "LV" && countryLabelToIso2(prevLv) !== facts.firstReg.countryIso) {
+    lines.push(
+      `CSDD iepriekšējā reģistrācijas valsts: ${prevLv} - tikai PĒDĒJĀ valsts pirms Latvijas, NE pirmās reģistrācijas valsts un NE visa ārvalstu perioda valsts`,
+    );
+  }
   const national = (facts.firstReg.national ?? []).filter((r) => r.date && r.country);
   if (national.length > 0) {
     lines.push(
