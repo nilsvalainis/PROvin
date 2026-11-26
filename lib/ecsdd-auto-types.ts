@@ -34,6 +34,21 @@ export type EcsddAutoStatus = {
   rawText?: string;
   /** Kad teksts ievietots CSDD blokā (automātiski vai ar pogu). */
   appliedAt?: string;
+  /** `auto` - serveris ievietoja pats (releja atzvanā); `manual` - poga «Ievietot e.csdd datus». */
+  appliedBy?: "auto" | "manual";
+  /** CSDD RAW teksts pirms e.csdd ievietošanas (atjaunojams ar pogu «Atjaunot iepriekšējo RAW»). */
+  previousRawText?: string;
+  previousRawSavedAt?: string;
+  /** Pēdējā ievietotā e.csdd teksta īsais hash - lai vecāku e.csdd tekstu nesaglabātu kā «iepriekšējo RAW». */
+  appliedRawHash?: string;
+  /** Kad iepriekšējais RAW atjaunots (pēc tam e.csdd tekstu automātiski vairs neievieto). */
+  restoredAt?: string;
+  /** Kad šim pasūtījumam pirmo reizi prasīts Smart-ID (5 min taimauts, viens pieprasījums uz pasūtījumu). */
+  smartIdAskedAt?: string;
+  /** Releja kļūdas kods (`smartid_timeout`, `smartid_refused`, ...). */
+  errorCode?: string;
+  /** `awaiting_login` iemesls: night | yield | blocked | off | busy */
+  waitReason?: string;
   trigger?: "auto" | "manual";
 };
 

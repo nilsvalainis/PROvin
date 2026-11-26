@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { CsddFormFields } from "@/lib/admin-source-blocks";
-import { ecsddAutoCanApply, ecsddSessionSummaryLv } from "@/lib/ecsdd-auto-logic";
+import {
+  ecsddCanApplyManually,
+  ecsddCanRestorePrevious,
+  ecsddClientShouldSync,
+  ecsddNeedsSmartIdRetry,
+  ecsddSessionSummaryLv,
+} from "@/lib/ecsdd-auto-logic";
 import { isEcsddAutoActive, type EcsddAutoStatus, type EcsddRelaySession } from "@/lib/ecsdd-auto-types";
 
 const btn =
@@ -34,7 +40,8 @@ type Props = {
 
 /**
  * e.csdd automātika CSDD blokā: uzziņas stāvoklis, servera e.csdd sesija, Smart-ID kods, pogas.
- * Tukšā RAW laukā teksts tiek ievietots automātiski vienreiz; citādi ar pogu (aizvieto RAW).
+ * e.csdd teksts tiek ievietots automātiski (serveris releja atzvanā; atvērtā cilne to pārņem ar to pašu parseri).
+ * Iepriekšējais RAW saglabāts statusā - «Atjaunot iepriekšējo RAW». Poga «Ievietot e.csdd datus» paliek manuālai lietošanai.
  * Ja relejs nav pieslēgts un pieprasījumu nav bijis, neko nerāda.
  */
 export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, readOnly, onApplyRaw }: Props) {
@@ -65,6 +72,7 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
   }, [load]);
 
   const active = isEcsddAutoActive(status);
+  const needsRetry = ecsddNeedsSmartIdRetry(status);
   const sessionBusy = session?.state === "logging_in" || session?.state === "awaiting_smartid";
   // Ja relejs pazudis (nav ziņu 15 min), ļauj pieprasīt vēlreiz.
   const stale = active && Date.now() - Date.parse(status?.updatedAt ?? "") > 15 * 60_000;
@@ -74,14 +82,13 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
     return () => clearInterval(t);
   }, [active, sessionBusy, load]);
 
-  const apply = useCallback(
-    async (raw: string) => {
-      onApplyRaw(raw);
+  const postApply = useCallback(
+    async (body: Record<string, unknown>) => {
       try {
         const res = await fetch("/api/admin/ecsdd/apply", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
+          body: JSON.stringify({ sessionId, ...body }),
         });
         const data = (await res.json()) as { status?: EcsddAutoStatus };
         if (data.status) setStatus(data.status);
@@ -89,17 +96,44 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
         /* teksts jau blokā; atzīme tiks mēģināta nākamreiz */
       }
     },
-    [onApplyRaw, sessionId],
+    [sessionId],
   );
+
+  /** Ievieto e.csdd tekstu; iepriekšējais RAW aiziet uz serveri (atjaunojams), tāpēc apstiprinājums nav vajadzīgs. */
+  const apply = useCallback(
+    async (raw: string) => {
+      const previousRawText = valueRef.current.rawUnprocessedData ?? "";
+      onApplyRaw(raw);
+      await postApply({ previousRawText });
+    },
+    [onApplyRaw, postApply],
+  );
+
+  const restore = useCallback(async () => {
+    const prev = status?.previousRawText ?? "";
+    if (!prev.trim()) return;
+    onApplyRaw(prev);
+    await postApply({ action: "restore" });
+  }, [onApplyRaw, postApply, status?.previousRawText]);
 
   useEffect(() => {
     if (readOnly || disabled || !status?.rawText) return;
-    const key = `${status.jobId ?? ""}:${status.checkedAt ?? ""}`;
+    const key = `${status.jobId ?? ""}:${status.checkedAt ?? ""}:${status.appliedAt ?? ""}`;
     if (autoAppliedFor.current === key) return;
-    if (!ecsddAutoCanApply(status, valueRef.current)) return;
-    autoAppliedFor.current = key;
-    void apply(status.rawText);
-  }, [status, readOnly, disabled, apply]);
+    if (ecsddClientShouldSync(status, valueRef.current)) {
+      // Serveris jau ievietoja (un saglabāja iepriekšējo RAW) - cilne pārņem to pašu tekstu.
+      autoAppliedFor.current = key;
+      onApplyRaw(status.rawText);
+      return;
+    }
+    // Serveris neievietoja (konflikts / statuss pirms 26.11) - ievieto cilne, iepriekšējais RAW aiziet uz serveri.
+    // Tikai svaigam rezultātam (24 h): veci pasūtījumi netiek aiztikti.
+    const fresh = Date.now() - Date.parse(status.checkedAt ?? status.updatedAt ?? "") < 24 * 3_600_000;
+    if (fresh && status.state === "found" && !status.appliedAt && !status.restoredAt && ecsddCanApplyManually(status, valueRef.current)) {
+      autoAppliedFor.current = key;
+      void apply(status.rawText);
+    }
+  }, [status, readOnly, disabled, apply, onApplyRaw]);
 
   const request = async () => {
     setBusy(true);
@@ -108,7 +142,7 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
       const res = await fetch("/api/admin/ecsdd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, vin: orderVin, force: stale }),
+        body: JSON.stringify({ sessionId, vin: orderVin, force: stale || needsRetry }),
       });
       const data = (await res.json()) as { status?: EcsddAutoStatus };
       if (data.status) setStatus(data.status);
@@ -143,7 +177,8 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
   if (!status && !relayConfigured) return null;
 
   const done = status?.state === "found" || status?.state === "not_found";
-  const canReplace = status?.state === "found" && Boolean(status.rawText) && !status.appliedAt && Boolean(value.rawUnprocessedData.trim());
+  const canReplace = ecsddCanApplyManually(status, value);
+  const canRestore = ecsddCanRestorePrevious(status, value);
   const when = fmtWhen(status?.checkedAt ?? status?.updatedAt);
   const code = status?.state === "awaiting_smartid" ? status.verificationCode : session?.state === "awaiting_smartid" ? session.verificationCode : undefined;
   const loggedIn = session?.state === "active";
@@ -152,7 +187,7 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
     <div className="mb-2 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1.5 text-[11px] text-slate-700">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="font-semibold">e.csdd automātika</span>
-        <span>{status?.message ?? "Nav pieprasīts"}</span>
+        <span className={needsRetry || status?.state === "error" ? "text-red-700" : undefined}>{status?.message ?? "Nav pieprasīts"}</span>
         {status?.query ? <span className="text-slate-500">· {status.query}</span> : null}
         {when ? <span className="text-slate-500">· {when}</span> : null}
       </div>
@@ -166,9 +201,9 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
       {error ? <p className="mt-1 text-red-700">{error}</p> : null}
       {!readOnly ? (
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {relayConfigured && (!active || stale) ? (
+          {relayConfigured && (!active || stale || needsRetry) ? (
             <button type="button" className={btn} disabled={disabled || busy} onClick={() => void request()}>
-              {done || stale || status?.state === "error" ? "Pieprasīt vēlreiz" : "Ņemt no e.csdd"}
+              {needsRetry || stale || status?.state === "error" ? "Mēģināt vēlreiz" : done ? "Pieprasīt vēlreiz" : "Ņemt no e.csdd"}
             </button>
           ) : null}
           {canReplace && status?.rawText ? (
@@ -176,11 +211,21 @@ export function AdminEcsddAutoPanel({ sessionId, orderVin, value, disabled, read
               type="button"
               className={btn}
               disabled={disabled || busy}
-              onClick={() => {
-                if (window.confirm("Aizvietot CSDD RAW tekstu ar e.csdd datiem?")) void apply(status.rawText ?? "");
-              }}
+              title="Iepriekšējais RAW tiek saglabāts - to var atjaunot"
+              onClick={() => void apply(status.rawText ?? "")}
             >
               Ievietot e.csdd datus
+            </button>
+          ) : null}
+          {canRestore ? (
+            <button
+              type="button"
+              className={btn}
+              disabled={disabled || busy}
+              title="Atgriež CSDD RAW tekstu, kas bija pirms e.csdd datu ievietošanas"
+              onClick={() => void restore()}
+            >
+              Atjaunot iepriekšējo RAW
             </button>
           ) : null}
           {relayConfigured && session && !loggedIn && !sessionBusy ? (

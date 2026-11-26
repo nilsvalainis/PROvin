@@ -33,7 +33,8 @@ personas kodu nav iespējamas. Tāpēc dizains ir tāds, lai **Nils vienmēr izl
    Automātiskās uzziņas gaida ("e.csdd tagad lieto tu"); Nila poga "Pieslēgt e.csdd" strādā vienmēr.
 3. Poga **"Atbrīvot e.csdd"**: serveris iziet un 60 min nepiesakās - Nils var strādāt savā pārlūkā.
 4. Naktī (ārpus 08:00-20:00) automātika Smart-ID neprasa un sesiju neuztur.
-5. Pēc neapstiprināta / atteikta Smart-ID automātika vairs pati neprasa, līdz Nils nospiež pogu (nav Smart-ID noguruma).
+5. Pēc atteikta Smart-ID automātika vairs pati neprasa, līdz Nils nospiež pogu (nav Smart-ID noguruma). Pēc neapstiprināta
+   (taimauts) tie paši pasūtījumi vairs neprasa, bet jauns pasūtījums drīkst prasīt vienreiz (`loginTried` uzdevumā, 26.11).
 
 Variants bez konflikta (nav ieviests, Nila lēmums): serverim cita persona ar savu Smart-ID (piem. uzņēmuma pilnvarots
 pārstāvis e-CSDD juridiskās personas kontā) - tad Nila sesija nekad netiek aiztikta.
