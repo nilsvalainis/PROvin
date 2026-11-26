@@ -56,7 +56,14 @@ async function loadContext(sessionId: string) {
     partnerCompanyName: order.companyName,
     notes: order.notes,
   });
-  const snapshot = { checkoutLine: order.checkoutLine, amountTotalCents: order.amountTotal, b2b };
+  const snapshot = {
+    checkoutLine: order.checkoutLine,
+    amountTotalCents: order.amountTotal,
+    b2b,
+    /** Black Friday dīlera dati: AUDITS piemaksa 79,99 €. */
+    promo: order.promo ?? null,
+    createdUnix: order.created,
+  };
   /** Piedāvājuma valoda: B2B partnera atskaites valoda / vietnes valoda pasūtot / LV. */
   const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
   return { order, offers, email: email.trim(), phone, customerName, vin, car, snapshot, lang };

@@ -120,7 +120,7 @@ type Props = {
   /** «Izsoļu arhīvs» kā atsevišķs PDF/pakalpojums (23.11): klienta e-pasts, B2B, tālrunis + samaksātais. */
   customerEmail?: string | null;
   b2bClient?: boolean;
-  archiveBridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents"> | null;
+  archiveBridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents" | "orderCreatedUnix"> | null;
   /** Palielina apakšējās joslas «Ģenerēt izsoļu arhīva PDF» pēc ģenerēšanas. */
   archiveRefreshKey?: number;
   /** AutoDNA / CarVertical arhīva foto grupa -> atpakaļ uz «Sludinājuma vēsture» (kļūdas teksts vai null). */

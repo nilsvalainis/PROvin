@@ -44,7 +44,12 @@ export async function POST(req: Request) {
   if (!existing) {
     const quote = quoteOrderUpsell(
       kindRaw,
-      { checkoutLine: order.checkoutLine, amountTotalCents: order.amountTotal },
+      {
+        checkoutLine: order.checkoutLine,
+        amountTotalCents: order.amountTotal,
+        promo: order.promo ?? null,
+        createdUnix: order.created,
+      },
       offers,
     );
     if (!quote) return NextResponse.json({ error: "not_available" }, { status: 400 });

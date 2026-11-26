@@ -31,7 +31,7 @@ import {
 } from "@/lib/auction-archive-report";
 import { dealerSendWhatsappUrl, type DealerSendChannel, type DealerSendOffer } from "@/lib/dealer-send-message";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
-import { dealerToAuditTargetCents, formatEurFromCents } from "@/lib/order-upsell";
+import { dealerToAuditPricing, formatEurFromCents } from "@/lib/order-upsell";
 
 const API = "/api/admin/auction-archive-report";
 
@@ -231,7 +231,7 @@ export function AdminAuctionArchiveReportStrip({
   customerEmail?: string | null;
   b2bClient?: boolean;
   /** Tālrunis WhatsApp un samaksātā summa (AUDITS piedāvājumam) - tas pats, ko saņem dīlera bloks. */
-  bridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents"> | null;
+  bridge?: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents" | "orderCreatedUnix"> | null;
   /** Palielina, kad PDF ģenerēts no apakšējās joslas (atjauno «Skatīt PDF»). */
   refreshKey?: number;
 }) {
@@ -364,7 +364,7 @@ export function AdminAuctionArchiveSendDialog({
   state: AuctionArchiveReportState;
   b2b: boolean;
   customerEmail: string;
-  bridge: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents"> | null;
+  bridge: Pick<DealerSendBridge, "customerPhoneDigits" | "paidCents" | "orderCreatedUnix"> | null;
   showPrices: boolean;
   onShowPrices: (v: boolean) => void;
   onSent: (next: AuctionArchiveReportState, notice: string) => void;
@@ -395,8 +395,7 @@ export function AdminAuctionArchiveSendDialog({
   const offerPreview = (() => {
     const prior = paidCents != null && paidCents > 0 ? paidCents : null;
     if (prior == null) return null;
-    const target = dealerToAuditTargetCents(b2b);
-    return prior < target ? { priorCents: prior, chargeCents: target - prior, targetCents: target } : null;
+    return dealerToAuditPricing({ priorCents: prior, b2b, createdUnix: bridge?.orderCreatedUnix ?? null });
   })();
   const priceBox = offer ?? offerPreview;
   const ready = situation === "ready";

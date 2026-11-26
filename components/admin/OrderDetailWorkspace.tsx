@@ -5596,6 +5596,7 @@ export function OrderDetailWorkspace({
   const dealerSendBridge: DealerSendBridge = {
     customerPhoneDigits: whatsappPhoneDigits ?? null,
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
+    orderCreatedUnix: payload.created,
     prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend }) => {
       const run = (confirmRecipientOverride: boolean) =>

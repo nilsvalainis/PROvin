@@ -167,6 +167,8 @@ export type AdminOrderDetail = AdminOrderRow & {
   selectDesiredEquipment?: string | null;
   /** Stripe `session.locale` - vietnes valoda pasūtot (klienta e-pastu valoda). */
   locale?: string | null;
+  /** Stripe `metadata.promo` (piem. `bf2026` - Black Friday dīlera dati). */
+  promo?: string | null;
 };
 
 /** Neļauj admin panelim gaidīt Stripe atbildi bezgalīgi (noklusējuma SDK ~80s ir par garu). */
@@ -459,6 +461,7 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
     locale: session.locale ?? null,
+    promo: session.metadata?.promo?.trim() || null,
     ...(select
       ? {
           selectBrandModel: select.selectBrandModel,

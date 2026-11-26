@@ -21,7 +21,7 @@ import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import { messageTemplatesDocFromOverrides } from "@/lib/messages/shared-block-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import type { OrderClientMarks } from "@/lib/order-client-marks";
-import { dealerToAuditTargetCents, formatEurFromCents } from "@/lib/order-upsell";
+import { dealerToAuditPricing, formatEurFromCents } from "@/lib/order-upsell";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow-types";
@@ -62,6 +62,8 @@ export type DealerSendBridge = {
   customerPhoneDigits: string | null;
   /** Samaksātais centos (Stripe / maks). */
   paidCents: number | null;
+  /** Pasūtījuma laiks (Stripe `created`, sekundes) - Black Friday piemaksai 79,99 €. */
+  orderCreatedUnix?: number | null;
   prepareDealerPdf: (lang: ClientReportLang) => Promise<SendReportPrepared>;
   /** Tas pats servera ceļš kā «Sūtīt atskaiti» (versijas, Dropbox, «Izpildīts»), ar admina tekstu. */
   sendDealerReport: (input: {
@@ -214,12 +216,12 @@ export function AdminDealerSendDialog({
   const recheckWithPdf = (prepared: SendReportPrepared) => shadowRef.current?.recheck("pdf", { pathname: prepared.pdfPathname });
 
   const paidCents = bridge?.paidCents ?? null;
+  const orderCreatedUnix = bridge?.orderCreatedUnix ?? null;
   const offerPreview = useMemo(() => {
     const prior = paidCents != null && paidCents > 0 ? paidCents : null;
     if (prior == null) return null;
-    const target = dealerToAuditTargetCents(b2b);
-    return prior < target ? { priorCents: prior, chargeCents: target - prior, targetCents: target } : null;
-  }, [paidCents, b2b]);
+    return dealerToAuditPricing({ priorCents: prior, b2b, createdUnix: orderCreatedUnix });
+  }, [paidCents, b2b, orderCreatedUnix]);
   const priceBox = offer ?? offerPreview;
 
   // Teksts pārģenerējas pēc katras izvēles (kanāls, situācija, ķekši).
