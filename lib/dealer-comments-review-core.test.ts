@@ -88,6 +88,26 @@ describe("dropDealerCommentsDuplicatingOil (Nils 22.11: komentāri dubulto apkop
     expect(out).toContain("Nomainīts kreisais lukturis.");
   });
 
+  it("nenogriež teikuma sākumu pirms datuma (26.11 TMBJW7NX0MY127517)", () => {
+    const comments = [
+      "Lielie mezgli un remonti",
+      "Ātrumkārbas eļļa dīlera datos mainīta 3 reizes, pēdējo reizi 03.12.2025 ar nobraukumu 187 902 km. Pēdējā servisa (03.12.2025, 187 902 km) ierakstā ir arī pozīcija: datu kopnes vadības bloks (darbība nav norādīta).",
+      "",
+      "Pārējie no 15 dīlera ierakstiem atspoguļo kārtējās apkopes un pārbaudes",
+      "Atsaukumu vai garantijas kampaņu ierakstu datubāzē nav.",
+    ].join("\n");
+    const out = dropDealerCommentsDuplicatingOil(comments, oil);
+    expect(out).toBe(comments);
+    expect(out).toContain("Ātrumkārbas eļļa dīlera datos mainīta 3 reizes, pēdējo reizi 03.12.2025");
+    expect(out).toContain("Pēdējā servisa (03.12.2025, 187 902 km)");
+  });
+
+  it("datums rindas sākumā un datums ar atstarpi paliek vesels", () => {
+    const comments =
+      "Lielie mezgli\n14.03.2014 ar nobraukumu 127 829 km nomainīts turbokompresors. Pēdējais ieraksts 17.07. 2024 ar nobraukumu 98 000 km.";
+    expect(dropDealerCommentsDuplicatingOil(comments, oil)).toBe(comments);
+  });
+
   it("tukšs vai bez dublikātiem paliek nemainīts", () => {
     expect(dropDealerCommentsDuplicatingOil("", oil)).toBe("");
     const clean = "Lielie mezgli\n2020. gadā nomainīts turbokompresors.";
