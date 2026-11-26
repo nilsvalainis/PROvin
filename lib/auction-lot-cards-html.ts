@@ -30,6 +30,7 @@ import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid,
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import { splitEquipmentText } from "@/lib/report-language-fixes";
+import { isI18nKey, thecarapiFreeText } from "@/lib/thecarapi-i18n-lv";
 
 export function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -179,22 +180,36 @@ export function auctionLotInspectionBlocksHtml(model: Pick<ThecarapiPdfModel, "w
 
 const DESC_KEY = /(^|[._])(description|comments?|remarks?|condition_?(text|report)|notes?|seller_?comments?|damage_?description)$/i;
 
-/** Izsoles brīvā teksta apraksti (ne virsraksti, ne atskaišu nosaukumi). */
-export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
-  const out: string[] = [];
+export type AuctionArchiveDescription = {
+  text: string;
+  /** Avotā bija i18n atslēga (`global.damages-v3.description.*`) - teksts jau ir LV, AI tulkojums nav vajadzīgs. */
+  fromKey: boolean;
+};
+
+/** Izsoles brīvā teksta apraksti (ne virsraksti, ne atskaišu nosaukumi); i18n atslēgas pārtulkotas LV. */
+export function auctionArchiveDescriptionItems(r: ThecarapiAdminRecord): AuctionArchiveDescription[] {
+  const out: AuctionArchiveDescription[] = [];
   const seen = new Set<string>();
   for (const f of r.fields) {
-    const v = f.value.replace(/\s+/g, " ").trim();
+    const raw = f.value.replace(/\s+/g, " ").trim();
     // Openlane anketas jautājumi (CountryMessages) - atbildes ir «Stāvoklis un dokumenti» rindās, ne aprakstā.
     if (/CountryMessages\[/i.test(f.key)) continue;
-    if (!DESC_KEY.test(f.key) || v.length < 12 || v.length > 2000 || /^https?:\/\//.test(v) || !/\p{L}{3}/u.test(v)) continue;
+    if (!DESC_KEY.test(f.key)) continue;
+    const fromKey = isI18nKey(raw);
+    // Nekad nerāda pašu atslēgu (`global.damages-v3.description.depth.deep-to-primer`) - tikai tās tulkojumu.
+    const v = fromKey ? thecarapiFreeText(raw) : raw;
+    if (!v || (!fromKey && v.length < 12) || v.length > 2000 || /^https?:\/\//.test(v) || !/\p{L}{3}/u.test(v)) continue;
     const k = v.toLowerCase();
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push(v);
+    out.push({ text: v, fromKey });
     if (out.length >= 6) break;
   }
   return out;
+}
+
+export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
+  return auctionArchiveDescriptionItems(r).map((d) => d.text);
 }
 
 function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<string, string>): string {
