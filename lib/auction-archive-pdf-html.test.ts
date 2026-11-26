@@ -364,3 +364,78 @@ describe("izsoļu arhīva tulkojums (rindu skaita pārbaude)", () => {
     expect(retry.get("A text")).toBe("A teksts");
   });
 });
+
+describe("izsoļu arhīva PDF klienta valodā (EN/RU/DE)", () => {
+  const photos = [{ id: ph(1), auctionKey: "openlane:11719692", date: "2026-10-21", caption: "" }];
+  const dataUrls = new Map(photos.map((p) => [p.id, "data:image/jpeg;base64,AA"]));
+  const build = (lang?: "lv" | "en" | "ru" | "de") =>
+    buildAuctionArchivePdfHtml({
+      summary,
+      records: [bca, openlane],
+      photos,
+      dataUrls,
+      translations: new Map([["Kratzer an der Stoßstange hinten, Service neu", "Scratch on the rear bumper, service new"]]),
+      generatedAt: new Date("2026-11-23T08:20:00Z"),
+      showPrices: true,
+      lang,
+    });
+
+  it("EN: virsraksts, vāks, skaitļu josla, kartītes, piezīme un kājene - angliski; nav LV etiķešu", () => {
+    const html = build("en");
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('<h1 class="pdf-v1-doc-title">AUCTION ARCHIVE</h1>');
+    expect(html).toContain("European auction archive");
+    expect(html).toContain("<span>Auctions</span>");
+    expect(html).toContain("<span>Last auction</span>");
+    expect(html).toContain("<span>Mileage</span>");
+    expect(html).toContain("2 auctions");
+    expect(html).toContain("Auction timeline");
+    expect(html).toContain("BCA auction");
+    expect(html).toContain("(original)</span> Kratzer");
+    expect(html).toContain("Data from the European auction portal archive");
+    expect(html).toContain("PROVIN.LV · AUCTION ARCHIVE");
+    expect(html).toContain("<title>AUCTION_ARCHIVE_WAUZZZF43PA018831_EN.pdf</title>");
+    for (const lv of ["IZSOĻU ARHĪVS", "Eiropas izsoļu arhīvs", "Pēdējā izsole", "Ģenerēts", "Izsoļu hronoloģija", "(oriģināls)", "Dati no Eiropas"]) {
+      expect(html).not.toContain(lv);
+    }
+  });
+
+  it("RU un DE: virsraksts un skaits savā valodā", () => {
+    expect(build("ru")).toContain("АРХИВ АУКЦИОНОВ");
+    expect(build("ru")).toContain("2 аукциона");
+    expect(build("de")).toContain("AUKTIONSARCHIV");
+    expect(build("de")).toContain("2 Auktionen");
+  });
+
+  it("LV (noklusējums) - nemainīts", () => {
+    const html = build();
+    expect(html).toBe(build("lv"));
+    expect(html).toContain('<html lang="lv">');
+    expect(html).toContain("<title>IZSOLU_ARHIVS_WAUZZZF43PA018831.pdf</title>");
+    expect(html).toContain("2 izsoles");
+  });
+
+  it("faila nosaukums klienta valodā (buildReportPdfFilename)", () => {
+    expect(auctionArchivePdfFilename("WAUZZZF43PA018831", "en")).toBe("AUCTION_ARCHIVE_WAUZZZF43PA018831_EN.pdf");
+    expect(auctionArchivePdfFilename("WAUZZZF43PA018831", "de")).toBe("AUKTIONSARCHIV_WAUZZZF43PA018831_DE.pdf");
+    expect(auctionArchivePdfFilename("WAUZZZF43PA018831")).toBe("IZSOLU_ARHIVS_WAUZZZF43PA018831.pdf");
+  });
+
+  it("avota teksti tulkoti klienta valodā (nevis LV)", async () => {
+    let sys = "";
+    let prompt = "";
+    const out = await translateAuctionArchiveTexts(
+      ["Kratzer an der Stoßstange"],
+      async (a) => {
+        sys = a.systemInstruction;
+        prompt = a.userPrompt;
+        return '{"items":["Scratch on the bumper"]}';
+      },
+      "en",
+    );
+    expect(out.get("Kratzer an der Stoßstange")).toBe("Scratch on the bumper");
+    expect(sys).toContain("English");
+    expect(sys).not.toContain("Latvian");
+    expect(prompt).toContain("into English");
+  });
+});

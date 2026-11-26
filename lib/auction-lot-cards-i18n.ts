@@ -39,6 +39,14 @@ const CARD_TEXT: Record<string, Tr> = {
   "Redzams bildē (PROVIN atzīme)": t("Visible in photo (PROVIN mark)", "Видно на фото (отметка PROVIN)", "Auf Foto sichtbar (PROVIN-Markierung)"),
   Virsbūve: t("Body", "Кузов", "Karosserie"),
   Izsole: t("Auction", "Аукцион", "Auktion"),
+  "(oriģināls)": t("(original)", "(оригинал)", "(Original)"),
+  /* Atsevišķais «Izsoļu arhīva» PDF (`auction-archive-pdf-html.ts`). */
+  "IZSOĻU ARHĪVS": t("AUCTION ARCHIVE", "АРХИВ АУКЦИОНОВ", "AUKTIONSARCHIV"),
+  "Eiropas izsoļu arhīvs": t("European auction archive", "Европейский архив аукционов", "Europäisches Auktionsarchiv"),
+  Izsoles: t("Auctions", "Аукционы", "Auktionen"),
+  "Pēdējā izsole": t("Last auction", "Последний аукцион", "Letzte Auktion"),
+  "Citi avoti": t("Other sources", "Другие источники", "Weitere Quellen"),
+  "Ģenerēts": t("Generated", "Сформировано", "Erstellt"),
 };
 
 /** Faktu un transportlīdzekļa rindu etiķetes (`auction-archive-facts.ts`). */
@@ -171,7 +179,7 @@ export function auctionCardPlatformTitle(platform: string, lang: ClientReportLan
   return `${platform} izsole`;
 }
 
-type CountWord = "bilde" | "bojājums" | "mērījums" | "bojāj.";
+type CountWord = "bilde" | "bojājums" | "mērījums" | "bojāj." | "izsole";
 
 function ruPlural(n: number, one: string, few: string, many: string): string {
   const m10 = n % 10;
@@ -200,12 +208,39 @@ export function auctionCardCount(n: number, word: CountWord, lang: ClientReportL
       if (lang === "ru") return `${n} ${ruPlural(n, "замер", "замера", "замеров")}`;
       if (lang === "de") return `${n} ${n === 1 ? "Messung" : "Messungen"}`;
       return `${n} ${lvOne ? "mērījums" : "mērījumi"}`;
+    case "izsole":
+      if (lang === "en") return `${n} ${n === 1 ? "auction" : "auctions"}`;
+      if (lang === "ru") return `${n} ${ruPlural(n, "аукцион", "аукциона", "аукционов")}`;
+      if (lang === "de") return `${n} ${n === 1 ? "Auktion" : "Auktionen"}`;
+      return `${n} ${lvOne ? "izsole" : "izsoles"}`;
     case "bojāj.":
       if (lang === "en") return `${n} dmg.`;
       if (lang === "ru") return `${n} повр.`;
       if (lang === "de") return `${n} Sch.`;
       return `${n} bojāj.`;
   }
+}
+
+/** Atsevišķā arhīva PDF beigu piezīme (avoti, cenas, PROVIN atzīmes) atskaites valodā. */
+export function auctionArchivePdfNote(opts: { showPrices: boolean; marks: boolean }, lang: ClientReportLang | undefined): string {
+  if (lang === "en") {
+    return `Data from the European auction portal archive on the auction day. Photos, ${opts.showPrices ? "prices, " : ""}mileage and descriptions are source data; translation and summary - PROVIN.${
+      opts.marks ? " «Visible in photo» - PROVIN mark based on the photo." : ""
+    }`;
+  }
+  if (lang === "ru") {
+    return `Данные из архива европейских аукционных порталов на день аукциона. Фото, ${opts.showPrices ? "цены, " : ""}пробег и описания - данные источника; перевод и сводка - PROVIN.${
+      opts.marks ? " «Видно на фото» - отметка PROVIN по фото." : ""
+    }`;
+  }
+  if (lang === "de") {
+    return `Daten aus dem Archiv europäischer Auktionsportale am Auktionstag. Fotos, ${opts.showPrices ? "Preise, " : ""}Laufleistung und Beschreibungen sind Quelldaten; Übersetzung und Zusammenfassung - PROVIN.${
+      opts.marks ? " «Auf Foto sichtbar» - PROVIN-Markierung nach Foto." : ""
+    }`;
+  }
+  return `Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, ${opts.showPrices ? "cenas, " : ""}nobraukums un apraksti ir avota dati; tulkojums un apkopojums - PROVIN.${
+    opts.marks ? " «Redzams bildē» - PROVIN atzīme pēc bildes." : ""
+  }`;
 }
 
 /** «2 gab.» → «2 pcs» / «2 шт.» / «2 Stk.». */

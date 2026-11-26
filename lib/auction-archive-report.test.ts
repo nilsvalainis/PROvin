@@ -100,3 +100,18 @@ describe("izsoļu arhīvs - atsevišķais pakalpojums", () => {
     expect(parsed.photos).toBe(84);
   });
 });
+
+describe("izsoļu arhīva PDF atkārtota sūtīšana tikai tajā pašā valodā", () => {
+  it("cita valoda vai cenu izvēle - jāģenerē no jauna", async () => {
+    const { auctionArchiveReportPdfReusable, parseAuctionArchiveReportDoc } = await import("@/lib/auction-archive-report");
+    const lv = parseAuctionArchiveReportDoc({ generatedAt: "2026-11-26T10:00:00Z" }, "cs_x");
+    expect(auctionArchiveReportPdfReusable(lv, { showPrices: false, lang: "lv" })).toBe(true);
+    expect(auctionArchiveReportPdfReusable(lv, { showPrices: false, lang: "en" })).toBe(false);
+    const en = parseAuctionArchiveReportDoc({ generatedAt: "2026-11-26T10:00:00Z", lang: "en", showPrices: true }, "cs_x");
+    expect(en.lang).toBe("en");
+    expect(auctionArchiveReportPdfReusable(en, { showPrices: true, lang: "en" })).toBe(true);
+    expect(auctionArchiveReportPdfReusable(en, { showPrices: false, lang: "en" })).toBe(false);
+    expect(parseAuctionArchiveReportDoc({ lang: "xx" }, "cs_x").lang).toBeUndefined();
+    expect(auctionArchiveReportPdfReusable({}, { showPrices: false, lang: "lv" })).toBe(false);
+  });
+});
