@@ -83,7 +83,7 @@ const REFUND: Record<ForeignLang, { noDataEvent: string; cancelledEvent: string;
     noData: "Unfortunately, official dealer data is not available for this vehicle.",
     cancelled: (a) => `We have cancelled your official dealer data order and refunded ${a} in full to the card you paid with.`,
     amount: (a) => `Amount: ${a} (refunded in full to the same card).`,
-    bank: "Depending on your bank, the money usually appears within 5 to 10 business days. It may show as a cancelled reservation rather than a new incoming payment.",
+    bank: "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     questions: "If you have any questions, please reply to this email.",
   },
   ru: {
@@ -93,7 +93,7 @@ const REFUND: Record<ForeignLang, { noDataEvent: string; cancelledEvent: string;
     noData: "К сожалению, официальные данные дилера для этого автомобиля недоступны.",
     cancelled: (a) => `Мы отменили ваш заказ официальных данных дилера и вернули ${a} в полном объёме на карту, которой вы платили.`,
     amount: (a) => `Сумма: ${a} (возвращена в полном объёме на ту же карту).`,
-    bank: "В зависимости от банка деньги обычно поступают в течение 5-10 рабочих дней. Возврат может отображаться как отменённое резервирование, а не как новый платёж.",
+    bank: "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     questions: "Если возникнут вопросы, ответьте на это письмо.",
   },
   de: {
@@ -103,7 +103,7 @@ const REFUND: Record<ForeignLang, { noDataEvent: string; cancelledEvent: string;
     noData: "Leider sind für dieses Fahrzeug keine offiziellen Händlerdaten verfügbar.",
     cancelled: (a) => `Wir haben Ihre Bestellung der offiziellen Händlerdaten storniert und ${a} vollständig auf die verwendete Karte erstattet.`,
     amount: (a) => `Betrag: ${a} (vollständig auf dieselbe Karte erstattet).`,
-    bank: "Je nach Bank erscheint das Geld in der Regel innerhalb von 5 bis 10 Werktagen. Die Erstattung kann als stornierte Reservierung statt als neue Gutschrift angezeigt werden.",
+    bank: "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     questions: "Bei Fragen antworten Sie bitte auf diese E-Mail.",
   },
 };

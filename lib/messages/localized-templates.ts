@@ -188,24 +188,21 @@ const REFUND_LINES: Record<ForeignLang, { card: string[]; balance: string }> = {
   en: {
     card: [
       "We have refunded {{summa}} in full to the card you paid with.",
-      "Depending on your bank, the money usually appears in your account within 5-10 business days.",
-      "On your bank statement the refund may appear not as a new payment but as a cancelled reserved amount.",
+      "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     ],
     balance: "We have returned {{summa}} to your PROVIN account balance.",
   },
   ru: {
     card: [
       "Мы вернули {{summa}} в полном объёме на карту, которой Вы оплатили.",
-      "В зависимости от банка деньги обычно поступают на счёт в течение 5-10 рабочих дней.",
-      "В банковской выписке возврат может отображаться не как новый платёж, а как отменённая зарезервированная сумма.",
+      "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     ],
     balance: "Сумму {{summa}} мы вернули на баланс Вашего счёта PROVIN.",
   },
   de: {
     card: [
       "Wir haben Ihnen {{summa}} vollständig auf die Karte erstattet, mit der Sie bezahlt haben.",
-      "Je nach Bank erscheint das Geld in der Regel innerhalb von 5-10 Werktagen auf Ihrem Konto.",
-      "Auf Ihrem Kontoauszug erscheint die Erstattung möglicherweise nicht als neue Zahlung, sondern als stornierter reservierter Betrag.",
+      "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     ],
     balance: "Den Betrag von {{summa}} haben wir Ihrem PROVIN-Kontoguthaben gutgeschrieben.",
   },
@@ -287,7 +284,7 @@ const CANCELLED_COPY: Record<
     lead: "We have cancelled your order for official dealer data{{#vin}} for the vehicle with VIN {{vin}}{{/vin}}.",
     card: " We have refunded {{summa}} in full to the card you paid with.",
     balance: " We have returned {{summa}} to your PROVIN account balance.",
-    bank: "Depending on your bank, the money usually appears in your account within 5-10 business days.",
+    bank: "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     again: "If you would like to order again, simply reply to this email.",
     waAgain: "If you would like to order again, write here.",
   },
@@ -297,7 +294,7 @@ const CANCELLED_COPY: Record<
     lead: "Мы отменили Ваш заказ официальных данных дилера{{#vin}} по автомобилю с VIN {{vin}}{{/vin}}.",
     card: " Мы вернули {{summa}} в полном объёме на карту, которой Вы оплатили.",
     balance: " Сумму {{summa}} мы вернули на баланс Вашего счёта PROVIN.",
-    bank: "В зависимости от банка деньги обычно поступают на счёт в течение 5-10 рабочих дней.",
+    bank: "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     again: "Если Вы хотите заказать повторно, просто ответьте на это письмо.",
     waAgain: "Если Вы хотите заказать повторно, напишите сюда.",
   },
@@ -307,7 +304,7 @@ const CANCELLED_COPY: Record<
     lead: "wir haben Ihre Bestellung der offiziellen Händlerdaten{{#vin}} für das Fahrzeug mit der FIN {{vin}}{{/vin}} storniert.",
     card: " Wir haben Ihnen {{summa}} vollständig auf die Karte erstattet, mit der Sie bezahlt haben.",
     balance: " Den Betrag von {{summa}} haben wir Ihrem PROVIN-Kontoguthaben gutgeschrieben.",
-    bank: "Je nach Bank erscheint das Geld in der Regel innerhalb von 5-10 Werktagen auf Ihrem Konto.",
+    bank: "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     again: "Wenn Sie erneut bestellen möchten, antworten Sie einfach auf diese E-Mail.",
     waAgain: "Wenn Sie erneut bestellen möchten, schreiben Sie bitte hier.",
   },
@@ -710,12 +707,11 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     noData: "We checked the vehicle{{#vin}} with VIN {{vin}}{{/vin}} - unfortunately, the European auction archive has no records for this car.",
     refundCard: [
       "We have refunded {{summa}} in full to the card you paid with.",
-      "Depending on your bank, the money usually appears in your account within 5-10 business days.",
-      "On your bank statement the refund may appear not as a new payment but as a cancelled reserved amount.",
+      "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     ],
     refundCardWa: [
       "We have refunded {{summa}} in full to the card you paid with.",
-      "Depending on your bank, the money usually appears in your account within 5-10 business days.",
+      "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     ],
     refundBalance: "We have returned {{summa}} to your PROVIN account balance.",
     auditsTip:
@@ -725,7 +721,7 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     cancelledSubject: "PROVIN · Order cancelled, money refunded{{#vin}} · {{vin}}{{/vin}}",
     cancelled:
       "We have cancelled your auction archive order{{#vin}} for the vehicle with VIN {{vin}}{{/vin}}.{{#karte}} We have refunded {{summa}} in full to the card you paid with.{{/karte}}{{#atlikums}} We have returned {{summa}} to your PROVIN account balance.{{/atlikums}}",
-    cancelledCardDays: "Depending on your bank, the money usually appears in your account within 5-10 business days.",
+    cancelledCardDays: "If the refund is made on the same day, the amount is usually simply released and visible right away. Otherwise the money appears in your account within 1-7 days, depending on your bank.",
     again: "If you would like to order again, simply reply to this message.",
     againWa: "If you would like to order again, write here.",
   },
@@ -755,12 +751,11 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     noData: "Мы проверили автомобиль{{#vin}} с VIN {{vin}}{{/vin}} - к сожалению, в европейском архиве аукционов записей об этом автомобиле нет.",
     refundCard: [
       "Мы вернули {{summa}} в полном объёме на карту, которой Вы платили.",
-      "В зависимости от банка деньги обычно поступают на счёт в течение 5-10 рабочих дней.",
-      "В выписке банка возврат может отображаться не как новый платёж, а как отмена зарезервированной суммы.",
+      "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     ],
     refundCardWa: [
       "Мы вернули {{summa}} в полном объёме на карту, которой Вы платили.",
-      "В зависимости от банка деньги обычно поступают на счёт в течение 5-10 рабочих дней.",
+      "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     ],
     refundBalance: "Сумму {{summa}} мы вернули на баланс Вашего счёта PROVIN.",
     auditsTip:
@@ -770,7 +765,7 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     cancelledSubject: "PROVIN · Заказ отменён, деньги возвращены{{#vin}} · {{vin}}{{/vin}}",
     cancelled:
       "Мы отменили Ваш заказ архива аукционов{{#vin}} по автомобилю с VIN {{vin}}{{/vin}}.{{#karte}} Мы вернули {{summa}} в полном объёме на карту, которой Вы платили.{{/karte}}{{#atlikums}} Сумму {{summa}} мы вернули на баланс Вашего счёта PROVIN.{{/atlikums}}",
-    cancelledCardDays: "В зависимости от банка деньги обычно поступают на счёт в течение 5-10 рабочих дней.",
+    cancelledCardDays: "Если возврат сделан в тот же день, сумма обычно просто разблокируется и сразу видна на счёте. В остальных случаях деньги поступают в течение 1-7 дней, в зависимости от банка.",
     again: "Если хотите заказать повторно, просто ответьте на это сообщение.",
     againWa: "Если хотите заказать повторно, напишите здесь.",
   },
@@ -800,12 +795,11 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     noData: "wir haben das Fahrzeug{{#vin}} mit der FIN {{vin}}{{/vin}} geprüft - leider enthält das europäische Auktionsarchiv keine Einträge zu diesem Fahrzeug.",
     refundCard: [
       "Wir haben {{summa}} vollständig auf die Karte erstattet, mit der Sie bezahlt haben.",
-      "Je nach Bank erscheint das Geld in der Regel innerhalb von 5-10 Werktagen auf Ihrem Konto.",
-      "Auf dem Kontoauszug erscheint die Erstattung möglicherweise nicht als neue Zahlung, sondern als aufgehobene Reservierung.",
+      "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     ],
     refundCardWa: [
       "Wir haben {{summa}} vollständig auf die Karte erstattet, mit der Sie bezahlt haben.",
-      "Je nach Bank erscheint das Geld in der Regel innerhalb von 5-10 Werktagen auf Ihrem Konto.",
+      "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     ],
     refundBalance: "Den Betrag von {{summa}} haben wir Ihrem PROVIN Kontoguthaben gutgeschrieben.",
     auditsTip:
@@ -815,7 +809,7 @@ const ARCHIVE: Record<ForeignLang, ArchiveCopy> = {
     cancelledSubject: "PROVIN · Bestellung storniert, Geld erstattet{{#vin}} · {{vin}}{{/vin}}",
     cancelled:
       "wir haben Ihre Bestellung des Auktionsarchivs{{#vin}} für das Fahrzeug mit der FIN {{vin}}{{/vin}} storniert.{{#karte}} Wir haben {{summa}} vollständig auf die Karte erstattet, mit der Sie bezahlt haben.{{/karte}}{{#atlikums}} Den Betrag von {{summa}} haben wir Ihrem PROVIN Kontoguthaben gutgeschrieben.{{/atlikums}}",
-    cancelledCardDays: "Je nach Bank erscheint das Geld in der Regel innerhalb von 5-10 Werktagen auf Ihrem Konto.",
+    cancelledCardDays: "Erfolgt die Erstattung am selben Tag, wird der Betrag meist einfach freigegeben und ist sofort sichtbar. Andernfalls erscheint das Geld innerhalb von 1-7 Tagen auf Ihrem Konto, je nach Bank.",
     again: "Wenn Sie erneut bestellen möchten, antworten Sie einfach auf diese Nachricht.",
     againWa: "Wenn Sie erneut bestellen möchten, schreiben Sie hier.",
   },

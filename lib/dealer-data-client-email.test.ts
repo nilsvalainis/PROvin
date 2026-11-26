@@ -29,7 +29,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.subject).toMatch(/atgriezt/i);
     expect(d.text).toContain("(VIN WDB1400511A032828)");
     expect(d.text).toContain("24,99 €");
-    expect(d.text).toMatch(/atcelta rezervētā summa/);
+    expect(d.text).toMatch(/1-7 dienu laikā/);
     expect(d.text).toContain("PROVIN AUDITS");
     expect(d.text).toContain(`Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`);
     expect(d.text).not.toContain("Nils");
@@ -174,6 +174,6 @@ describe("dealer no-data WhatsApp + HTML CTA", () => {
     });
     expect(html).toContain("Pasūtīt PROVIN AUDITS");
     expect(html).toContain('href="https://provin.lv"');
-    expect(html).toMatch(/atcelta rezervētā summa/);
+    expect(html).toMatch(/1-7 dienu laikā/);
   });
 });

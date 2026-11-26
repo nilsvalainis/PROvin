@@ -1042,7 +1042,7 @@ export async function sendDealerDataRefundEmail(opts: {
     lang === "lv"
       ? [
           { value: amount, label: "atmaksāts uz karti" },
-          { value: "5-10", label: "darba dienas bankā" },
+          { value: "1-7", label: "dienas bankā" },
         ]
       : [];
   await sendSmtpMail({
