@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminVinScanV4, type VinScanV4Row } from "@/components/admin/vin-scan-v4/AdminVinScanV4";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
@@ -10,7 +11,6 @@ import type { VinHistoryEntry } from "@/lib/vin-history";
 import { AdminVinHistoryList } from "@/components/admin/AdminVinHistoryList";
 import { quickEvalNordicSearchLinks } from "@/lib/quick-eval-vin-scan";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
-import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
 import { isProvinUserscriptPresent } from "@/lib/provin-userscript-presence";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
@@ -149,7 +149,6 @@ export function AdminQuickEvalVinBar({ peekId, entries }: { peekId: string; entr
 
 // ── Avotu kartītes ───────────────────────────────────────────────────
 
-const SCAN_TONE: Record<string, CardTone> = { found: "ok", none: "none", unknown: "warn", manual: "none", skipped: "none", needs_input: "none" };
 
 /** Izsoļu portālu arhīva foto skaits: PROVIN skripts pārlūkā atver checkcar.vin fonā un atgriež skaitu. */
 function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; count: number | null | undefined; at?: string }) {
@@ -384,55 +383,11 @@ export function AdminQuickEvalSourceGrid({
     extra: <CcVinChip peekId={peekId} vin={vin} count={ccVin?.count} at={ccVin?.at} />,
   });
   const nordic = quickEvalNordicSearchLinks(vin);
-  const nordicOnDecodeCard = Boolean(vinScan?.indicators.some((i) => i.id === "vin_decode" && i.status === "found"));
-  const scanMeta = vinScan ? fmtLv(vinScan.at) : "nav ielasīts";
-  for (const i of vinScan?.indicators ?? []) {
-    if (SCAN_HAS_OWN_CARD.has(i.id)) continue;
-    const title = i.country && i.country !== "EU" ? `${i.label} · ${i.country}` : i.label;
-    if (i.status === "found") {
-      const facts: GridCard["facts"] = [];
-      if (i.id === "vin_decode") {
-        const decoded = decodeVinLocal(vin);
-        if (decoded.wmi) facts.push({ label: "WMI", value: decoded.wmi });
-        if (decoded.countryName) facts.push({ label: "Valsts", value: decoded.countryName });
-      }
-      if (i.vehicle && (i.vehicle.make || i.vehicle.model)) facts.push({ label: "Auto", value: [i.vehicle.make, i.vehicle.model].filter(Boolean).join(" ") });
-      if (i.vehicle?.year) facts.push({ label: "Gads", value: i.vehicle.year });
-      const lastMileage = i.mileage?.[i.mileage.length - 1];
-      if (lastMileage) facts.push({ label: "Nobraukums", value: `${lastMileage.odometer}${lastMileage.date ? ` (${lastMileage.date})` : ""}` });
-      if (i.mileage && i.mileage.length > 1) facts.push({ label: "Ieraksti", value: String(i.mileage.length) });
-      if (typeof i.media?.photoCount === "number") facts.push({ label: "Foto", value: String(i.media.photoCount) });
-      facts.push({ label: "Rezultāts", value: i.summary });
-      data.push({
-        key: `scan:${i.id}`,
-        title,
-        tone: SCAN_TONE[i.status] ?? "ok",
-        meta: scanMeta,
-        link: i.openUrl,
-        facts,
-        more: i.detail || null,
-        extra:
-          i.id === "vin_decode" && nordic.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {nordic.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-provin-handoff-vin={vin || undefined}
-                  className={btnSm}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          ) : undefined,
-      });
-    } else {
-      empty.push({ key: `scan:${i.id}`, title, message: i.summary || "Nav atrasts", retry: "vin_scan", link: i.openUrl });
-    }
-  }
+  // VIN SCAN v4: avotu rindas zīmē tā pati komponente kā Ātrajā pārbaudē un pasūtījumā.
+  const v4Rows = (vinScan?.indicators ?? [])
+    .filter((i) => !SCAN_HAS_OWN_CARD.has(i.id))
+    .map((i) => ({ ...i, openUrl: i.openUrl ?? "" }) as VinScanV4Row);
+  const [v4Busy, setV4Busy] = useState(false);
   if (!vinScan) empty.push({ key: "scan", title: "Publiskie reģistri (VIN SCAN)", message: "Vēl nav skenēts", retry: "vin_scan", link: null });
 
   const pending = cards.some((c) => c.tone === "pending");
@@ -449,7 +404,7 @@ export function AdminQuickEvalSourceGrid({
 
   return (
     <div className="mt-3 space-y-3">
-      {!nordicOnDecodeCard && nordic.length > 0 ? (
+      {!vinScan && nordic.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {nordic.map((link) => (
             <a
@@ -464,6 +419,21 @@ export function AdminQuickEvalSourceGrid({
             </a>
           ))}
         </div>
+      ) : null}
+      {vinScan ? (
+        <AdminVinScanV4
+          vin={vin}
+          rows={v4Rows}
+          busy={v4Busy}
+          scannedAt={vinScan.at}
+          links={nordic}
+          onRetry={async () => {
+            setV4Busy(true);
+            await postAction(peekId, { action: "refresh", only: "vin_scan" });
+            setV4Busy(false);
+            router.refresh();
+          }}
+        />
       ) : null}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {data.map((c) => (

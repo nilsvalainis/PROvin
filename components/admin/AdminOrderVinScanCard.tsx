@@ -9,6 +9,7 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
+import { AdminVinScanV4, VIN_SCAN_V4_BTN, VIN_SCAN_V4_BTN_DARK, type VinScanV4Row } from "@/components/admin/vin-scan-v4/AdminVinScanV4";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MOBILE_VIN_SCAN_EVENT,
@@ -29,8 +30,6 @@ import {
 
 const BTN =
   "inline-flex h-6 shrink-0 items-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[10px] font-medium text-[var(--color-apple-text)] shadow-sm hover:bg-black/[0.04] disabled:opacity-50";
-const BTN_AUCTION =
-  "inline-flex h-6 shrink-0 items-center rounded-md border border-teal-800/20 bg-[#0f766e] px-2 text-[10px] font-semibold text-white shadow-sm hover:bg-[#0d6962] disabled:opacity-50";
 
 type DotState = "found" | "none" | "error" | "blocked" | "timeout" | "config_missing" | "browser_only";
 
@@ -92,9 +91,6 @@ export function AdminOrderVinScanCard({
   const [showFields, setShowFieldsState] = useState(
     () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields")) ?? true,
   );
-  const [showNone, setShowNoneState] = useState(
-    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-none")) ?? false,
-  );
   const [busy, setBusy] = useState(false);
   const [listExpanded, setListExpandedState] = useState(
     () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-list")) ?? false,
@@ -104,16 +100,6 @@ export function AdminOrderVinScanCard({
     (next: boolean) => {
       writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields"), next);
       setShowFieldsState(next);
-    },
-    [sessionId],
-  );
-  const setShowNone = useCallback(
-    (next: boolean | ((prev: boolean) => boolean)) => {
-      setShowNoneState((prev) => {
-        const v = typeof next === "function" ? next(prev) : next;
-        writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-none"), v);
-        return v;
-      });
     },
     [sessionId],
   );
@@ -233,6 +219,18 @@ export function AdminOrderVinScanCard({
   }, [sessionId, vin, adoptRecord]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
+  // VIN SCAN v4: tā pati komponente kā Ātrajā pārbaudē (pasūtījuma ieraksta rindas + pasūtījuma pogas).
+  const v4Rows = useMemo<VinScanV4Row[]>(
+    () =>
+      (record?.indicators ?? []).map((ind) => ({
+        ...ind,
+        openUrl: ind.openUrl ?? "",
+        status: record?.status === "running" && ind.status === "unknown" ? "checking" : ind.status,
+        ...(importNotes[ind.id] ? { note: importNotes[ind.id] } : {}),
+      })) as VinScanV4Row[],
+    [record, importNotes],
+  );
+  const v4Csdd = record?.indicators.find((r) => r.id === "csdd");
   const sourceCount = record?.indicators.length ?? 0;
   const clock = record?.at ? formatOrderVinScanClock(record.at) : "";
   const meta =
@@ -345,8 +343,6 @@ export function AdminOrderVinScanCard({
     if (row.openUrl && /^https:\/\//i.test(row.openUrl)) window.open(row.openUrl, "_blank", "noopener,noreferrer");
   };
 
-  const rowLabel = (row: OrderVinScanSourceRow) =>
-    row.id === "stat_vin" && row.state === "found" ? `${row.label} ★` : row.label;
 
   const collapsedStrip = (
     <div className="flex min-w-0 flex-wrap items-center gap-2 py-1 text-[10.5px] text-[var(--color-provin-muted)]">
@@ -492,80 +488,34 @@ export function AdminOrderVinScanCard({
                 </button>
               </div>
 
-              {summary?.rows.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-[var(--color-apple-text)]"
-                >
-                  <Dot state={row.state} />
-                  <b className="truncate font-semibold">{rowLabel(row)}</b>
-                  <span
-                    className={`min-w-0 truncate ${
-                      row.state === "blocked"
-                        ? "text-orange-700"
-                        : row.state === "error" || row.state === "timeout"
-                          ? "text-rose-700"
-                          : ""
-                    }`}
-                  >
-                    {importNotes[row.id] && row.state !== "found" && row.state !== "none"
-                      ? importNotes[row.id]
-                      : row.blocked
-                        ? "Avots bloķē serveri - atver pārlūkā un importē"
-                        : row.hint || (row.state === "error" ? "Kļūda" : "")}
-                  </span>
-                  <span className="flex items-center justify-end gap-1">
-                    {row.photoUrls.slice(0, 3).map((url) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={url} src={url} alt="" className="h-[22px] w-[30px] rounded-[3px] object-cover" />
-                    ))}
-                    <button
-                      type="button"
-                      className={row.action === "import_auction" ? BTN_AUCTION : BTN}
-                      disabled={busy || (row.action === "open" && !row.openUrl)}
-                      onClick={() => runAction(row)}
-                    >
-                      {actionLabel(row.action)}
-                    </button>
-                  </span>
-                </div>
-              ))}
-
-              {summary && summary.none > 0 ? (
-                <>
-                  <div className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500">
-                    <Dot state="none" />
-                    <b className="font-semibold">Nav datu ({summary.none})</b>
-                    <span className="min-w-0 truncate">
-                      {showNone ? "" : summary.noneCollapsedLabels.slice(0, 8).join(" · ")}
-                    </span>
-                    <button type="button" className={BTN} onClick={() => setShowNone((v) => !v)}>
-                      {showNone ? "Slēpt" : "Rādīt"}
-                    </button>
-                  </div>
-                  {showNone
-                    ? summary.noneRows.map((row) => (
-                        <div
-                          key={row.id}
-                          className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500"
-                        >
-                          <Dot state="none" />
-                          <b className="truncate font-semibold">{row.label}</b>
-                          <span className="min-w-0 truncate">{row.hint || "Nav datu"}</span>
-                          <button
-                            type="button"
-                            className={BTN}
-                            disabled={!row.openUrl}
-                            onClick={() => runAction(row)}
-                          >
-                            Atvērt
-                          </button>
-                        </div>
-                      ))
-                    : null}
-                </>
+              {record ? (
+                <AdminVinScanV4
+                  vin={vin.trim().toUpperCase()}
+                  title={[v4Csdd?.vehicle?.make, v4Csdd?.vehicle?.model].filter(Boolean).join(" ")}
+                  rows={v4Rows}
+                  busy={record.status === "running" || busy}
+                  scannedAt={record.at}
+                  onRetry={(ids) => {
+                    // Tas pats ceļš kā rindas «Atkārtot» (tikai lietotāja klikšķis).
+                    const row = summary?.rows.find((x) => x.id === ids[0]);
+                    if (row) runAction({ ...row, action: "retry" });
+                  }}
+                  rowAction={(r) => {
+                    const row = summary?.rows.find((x) => x.id === r.id) ?? summary?.noneRows.find((x) => x.id === r.id);
+                    if (!row || row.action === "open" || row.action === "retry") return null;
+                    return (
+                      <button
+                        type="button"
+                        className={row.action === "import_auction" ? VIN_SCAN_V4_BTN_DARK : VIN_SCAN_V4_BTN}
+                        disabled={busy}
+                        onClick={() => runAction(row)}
+                      >
+                        {actionLabel(row.action)}
+                      </button>
+                    );
+                  }}
+                />
               ) : null}
-
               {!record ? (
                 <p className="text-[11px] text-[var(--color-provin-muted)]">VIN SCAN: vēl nav skenēts</p>
               ) : null}

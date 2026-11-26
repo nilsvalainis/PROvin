@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
 import { AdminVinScanPanel, type VinScanPanelSnapshot } from "@/components/admin/AdminVinScanPanel";
+import { useVinScanSmartId } from "@/components/admin/vin-scan-v4/useVinScanSmartId";
+import { VinScanV4CsddSms, VinScanV4PaidServices } from "@/components/admin/vin-scan-v4/VinScanV4Paid";
+import { vinScanV4PaidServices } from "@/lib/vin-scan/v4-paid-services";
 import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
 import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobileVinCameraSheet";
 import { AdminDealerCheckPage, type DealerCheckEmbedState } from "@/components/admin/AdminDealerCheckPage";
 import { AdminAtraFreeSources, AdminAtraPaidSources, RunButton } from "@/components/admin/AdminAtraParbaudeSources";
 import { AdminAtraParbaudeHistory } from "@/components/admin/AdminAtraParbaudeHistory";
-import {
-  AdminAtraCopyButton,
-  AdminAtraFactCards,
-  AdminAtraPotential,
-  AdminAtraPreviewBanners,
-} from "@/components/admin/AdminAtraParbaudeFacts";
+import { AdminAtraCopyButton, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
 import { ECSDD_URL, atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
 import { useSettledWhileBusy } from "@/lib/use-settled-while-busy";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
@@ -200,6 +198,11 @@ export function AdminAtraParbaudePage({
   );
   const conclusionScore = useMemo(() => (conclusionFacts ? atraStoryScore(conclusionFacts) : null), [conclusionFacts]);
   const summary = useMemo(() => atraSummaryText({ vin, title, year: vehicle?.year ?? "" }, facts, score), [vin, title, vehicle, facts, score]);
+
+  // VIN SCAN v4: e.csdd + LTAB automātiski skenēšanas laikā caur servera Smart-ID sesiju (tikai adminam).
+  const smartIdPlate = plate || csdd?.registrationNumber || "";
+  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
+  const paidServices = useMemo(() => (isAdmin && valid ? vinScanV4PaidServices(vin) : []), [isAdmin, valid, vin]);
 
   /* ---------- vēsture: abas krātuves ---------- */
   useEffect(() => {
@@ -475,8 +478,6 @@ export function AdminAtraParbaudePage({
 
   const q = parseAtraQuery(query);
   const foreignCount = FOREIGN_FIELDS.filter((f) => foreign[f.kind].trim()).length;
-  const progressTotal = rows.length;
-  const progressDone = doneRows.length;
   const showResult = hasScanResult || scanBusy || Boolean(dealerRecord) || Boolean(dealerState?.busy) || Boolean(speckr);
 
   return (
@@ -606,23 +607,6 @@ export function AdminAtraParbaudePage({
       {showResult ? (
         <section className={card} data-atra-result>
           <div className="flex flex-wrap items-center gap-3.5">
-            <div className="min-w-0">
-              <h2 className="text-[20px] font-semibold tracking-tight text-[#111]">{title || "Auto"}</h2>
-              <p className="text-[13px] text-[#8e8e93]">
-                <span className="font-mono">{vin}</span>
-                {plate ? ` · ${plate}` : ""}
-                {vehicle?.year ? ` · ${vehicle.year}` : ""}
-              </p>
-            </div>
-            <div className="flex min-w-[200px] items-center gap-2.5 text-[13px] tabular-nums text-[#3a3a3c]" data-atra-progress>
-              <span className="h-1.5 w-[120px] overflow-hidden rounded-[3px] bg-[#e5e5ea]">
-                <i
-                  className="block h-full bg-[#0b3fa8] transition-[width] duration-300"
-                  style={{ width: `${progressTotal ? Math.round((progressDone / progressTotal) * 100) : 0}%` }}
-                />
-              </span>
-              {progressTotal ? `${progressDone} no ${progressTotal}` : ""}
-            </div>
             <div className="ml-auto flex flex-wrap gap-2">
               {isAdmin ? (
                 <button
@@ -660,15 +644,6 @@ export function AdminAtraParbaudePage({
         </section>
       ) : null}
 
-      {showResult && valid && conclusionFacts && conclusionScore ? (
-        <section className="space-y-2.5" data-atra-conclusion>
-          <h2 className="px-1 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">Ātrais secinājums</h2>
-          <AdminAtraPotential score={conclusionScore} />
-          <AdminAtraFactCards facts={conclusionFacts} vin={vin} />
-          <AdminAtraPreviewBanners previews={conclusionFacts.previews} />
-        </section>
-      ) : null}
-
       <AdminVinScanPanel
         vin={vin}
         plates={plates}
@@ -679,7 +654,26 @@ export function AdminAtraParbaudePage({
         historyOpen={allScansOpen}
         sourceIds={freeOn}
         paidSourceIds={paidScanIds}
-        layout="table"
+        layout="v4"
+        v4={{
+          plate: smartIdPlate,
+          title,
+          spec: [vehicle?.year, csdd?.displacementCm3 ? `${csdd.displacementCm3} cm³` : "", csdd?.powerKw ? `${csdd.powerKw} kW` : "", csdd?.fuel]
+            .filter(Boolean)
+            .join(" · "),
+          csdd,
+          csddMessage: plateInfo && !plateInfo.ok ? plateInfo.status : "",
+          smartId: smartId.state,
+          onSmartIdRetry: smartId.retry,
+          smsStep: isAdmin && valid ? <VinScanV4CsddSms vin={vin} plate={smartIdPlate} /> : undefined,
+          paidServices: paidServices.length ? <VinScanV4PaidServices services={paidServices} /> : undefined,
+          progressLead: plate && plateInfo?.ok ? (
+            <>
+              VIN atrasts CSDD pēc <b className="font-semibold text-[#1d1d1f]">{plate}</b>
+            </>
+          ) : undefined,
+          hasListing: isPlausibleListingUrl(listingUrl),
+        }}
       />
       {valid ? (
         <p className="px-1 text-[13px]" data-atra-ecsdd>
@@ -687,6 +681,12 @@ export function AdminAtraParbaudePage({
             Liegumi - pārbaudīt e.csdd.lv ›
           </a>
         </p>
+      ) : null}
+
+      {showResult && valid && conclusionFacts && conclusionScore ? (
+        <section className="space-y-2.5" data-atra-conclusion>
+          <AdminAtraPotential score={conclusionScore} />
+        </section>
       ) : null}
 
       {isAdmin && dealer ? (
@@ -791,7 +791,7 @@ export function AdminAtraParbaudeShell({
           initialEntries={dealer.initialEntries}
         />
       ) : (
-        <AdminVinScanPageClient initialVin={props.autoScan ? props.initialVin : ""} footer={props.footer} />
+        <AdminVinScanPageClient initialVin={props.autoScan ? props.initialVin : ""} footer={props.footer} isAdmin={props.isAdmin} />
       )}
     </>
   );

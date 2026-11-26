@@ -3,6 +3,7 @@ import "server-only";
 import { timingSafeEqual } from "node:crypto";
 
 import { quickEvalPeekIdFromRelayRef } from "@/lib/quick-eval-auto-core";
+import { vinScanVinFromRelayRef } from "@/lib/vin-scan/v4-view";
 
 import { sendAdminPush } from "@/lib/admin-push";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
@@ -204,9 +205,14 @@ export async function handleLtabRelayEvent(
   const sessionId = ev.ref;
   // Ātrais vērtējums (`qe_…`): nav pasūtījuma - Dropbox mapi neveido, saite uz vērtējuma kartīti.
   const quickEvalPeekId = quickEvalPeekIdFromRelayRef(sessionId);
+  // VIN SCAN «Ātrā pārbaude» (`vs_<vin>`): arī nav pasūtījuma - bez Dropbox mapes.
+  const vinScanVin = vinScanVinFromRelayRef(sessionId);
+  const noOrder = Boolean(quickEvalPeekId || vinScanVin);
   const adminUrl = quickEvalPeekId
     ? `/admin/atras-vertesanas/${encodeURIComponent(quickEvalPeekId)}`
-    : `/admin/orders/${encodeURIComponent(sessionId)}`;
+    : vinScanVin
+      ? `/admin/vin-scan?vin=${encodeURIComponent(vinScanVin)}`
+      : `/admin/orders/${encodeURIComponent(sessionId)}`;
   const prev = await readLtabAutoStatus(sessionId);
   if (prev?.jobId && ev.jobId && prev.jobId !== ev.jobId) {
     // Vecs uzdevums (piem. pēc "Pieprasīt vēlreiz") - neko nepārrakstām.
@@ -258,12 +264,12 @@ export async function handleLtabRelayEvent(
     return { ok: true, status };
   }
 
-  const draft = quickEvalPeekId ? null : await readOrderDraft(sessionId);
+  const draft = noOrder ? null : await readOrderDraft(sessionId);
   const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
   const car = orderCarFromCsdd(csdd, base.plate ?? ev.plate, draft?.orderEdits?.vin ?? "");
 
   // Oriģinālais LTAB PDF pasūtījuma mapē - arī tad, ja negadījumu nav (kā agrāk ar roku).
-  const saved = bytes && !quickEvalPeekId ? await saveLtabPdf(sessionId, car, bytes) : { pdf: undefined, note: "" };
+  const saved = bytes && !noOrder ? await saveLtabPdf(sessionId, car, bytes) : { pdf: undefined, note: "" };
   const pdf = saved.pdf;
   const dropboxNote = saved.note;
 

@@ -52,7 +52,8 @@ describe("VIN SCAN UI copy", () => {
   it("atvērta VIN SCAN lapa (forma un avotu saraksts) nerāda palīdzības tekstus, vietturus un uzvedņu title", () => {
     const html = renderHtml(<AdminVinScanPageClient initialVin={VIN} />);
     expect(html).toContain("Pārbaudīt");
-    expect(html).toContain("stat.vin");
+    // VIN SCAN v4: avoti parādās pakāpeniski tikai pēc «Pārbaudīt» (līdz tam avotu saraksta nav).
+    expect(html).not.toContain("data-vin-scan-v4");
     expectNoHelpCopy(html);
     /* Pirkums šajā rīkā nav pieejams (tikai pasūtījuma lapā pēc apstiprinājuma). */
     expect(html).not.toMatch(/pirkt/i);
