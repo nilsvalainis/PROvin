@@ -265,6 +265,26 @@ function tokenSetsOverlap(a: Set<string>, b: Set<string>): boolean {
 }
 
 /**
+ * 26.11: pozīcijas precizējums (priekšējie/aizmugurējie, kreisie/labie; front/rear, left/right;
+ * vorne/hinten, links/rechts). Darbi ar dažādu vai jebkādu pozīciju ir atsevišķi darbi -
+ * tos apvieno tikai tad, ja teksts ir identisks (WDD2122931A366915: «Priekšējo bremžu kluču maiņa»
+ * pazuda pie «Aizmugurējo bremžu kluču maiņa»).
+ */
+const POSITION_TOKEN_RE =
+  /^(priek[šs]\p{L}*|aizmugur\p{L}*|kreis\p{L}*|lab(ais|ā|o|ajā|ajam|ajai|ās|ie|ajiem|ajās|ajos)|front\p{L}*|rear|left|right|vorn(e)?|vorder\p{L}*|hinter\p{L}*|hinten|links|rechts|fram|bak|bag|vänster|höger|venstre|høyre|højre|voor|achter|linker|rechter)$/u;
+
+function hasPositionQualifier(line: string): boolean {
+  return line
+    .toLocaleLowerCase("lv")
+    .split(/[^\p{L}\p{N}]+/u)
+    .some((t) => t && POSITION_TOKEN_RE.test(t));
+}
+
+function identicalWorkKey(line: string): string {
+  return line.toLocaleLowerCase("lv").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+/**
  * Apvienojot vizītes: pārklājošos darbus (pēc nozīmes) atstāj vienu reizi.
  * Identisks teksts nav vajadzīgs: „Apkope ar eļļas maiņu” un „Regulārā apkope / Eļļas maiņa” ir viens darbs.
  */
@@ -274,7 +294,9 @@ export function mergeOverlappingServiceWorkLines(lines: readonly string[]): stri
   for (const line of cleaned) {
     const family = serviceWorkFamily(line);
     const tokens = workTokens(line);
+    const positioned = hasPositionQualifier(line);
     const hit = kept.findIndex((prev) => {
+      if (positioned || hasPositionQualifier(prev)) return identicalWorkKey(prev) === identicalWorkKey(line);
       const prevFamily = serviceWorkFamily(prev);
       if (family && prevFamily) return family === prevFamily;
       if (family || prevFamily) return false;

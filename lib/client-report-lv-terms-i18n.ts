@@ -378,6 +378,24 @@ const RULES: Rule[] = [
   { re: /^[Nn]o (\d{4})$/, to: (m, l) => `${l === "en" ? "From" : l === "de" ? "Ab" : "С"} ${m[1]}` },
   { re: /^līdz (.+)$/, to: (m, l) => `${l === "en" ? "up to" : l === "de" ? "bis" : "до"} ${m[1]}` },
   {
+    re: /^Pēdējais rādījums (\d[\d\s\u00a0]*km)(?: \(([^()·]+)\))?$/u,
+    to: (m, l) => {
+      const src = m[2] ? ` (${m[2]})` : "";
+      return `${l === "en" ? "Latest reading" : l === "de" ? "Letzter Messwert" : "Последний показатель"} ${m[1]}${src}`;
+    },
+  },
+  {
+    re: /^iepriekš (\d[\d\s\u00a0]*km)(?: \(([^()·]+)\))?$/u,
+    to: (m, l) => {
+      const src = m[2] ? ` (${m[2]})` : "";
+      return `${l === "en" ? "earlier" : l === "de" ? "zuvor" : "ранее"} ${m[1]}${src}`;
+    },
+  },
+  {
+    re: /^kritums (\d[\d\s\u00a0]*km)$/u,
+    to: (m, l) => `${l === "en" ? "decrease" : l === "de" ? "Rückgang" : "снижение"} ${m[1]}`,
+  },
+  {
     re: /^sludinājumā (\d.*?[\s\u00a0]km)$/u,
     to: (m, l) => (l === "en" ? `listing ${m[1]}` : l === "de" ? `Inserat ${m[1]}` : `в объявлении ${m[1]}`),
   },
