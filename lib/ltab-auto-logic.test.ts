@@ -6,6 +6,7 @@ import {
   ltabAutoCanApply,
   ltabCertificateHasClaims,
   ltabCertificateMismatch,
+  ltabQueuedMessageLv,
   reduceLtabProgress,
 } from "@/lib/ltab-auto-logic";
 import type { LtabAutoStatus } from "@/lib/ltab-auto-types";
@@ -72,5 +73,13 @@ describe("LTAB automātika: izziņa", () => {
   it("recognises PDF bytes by signature", () => {
     expect(isPdfBytes(new TextEncoder().encode("%PDF-1.7 ..."))).toBe(true);
     expect(isPdfBytes(new TextEncoder().encode("<html>"))).toBe(false);
+  });
+});
+
+describe("LTAB: rindas ziņa (26.11 - nekad «Gaida rītu»)", () => {
+  it("parasts releja stāvoklis = «Gaida rindā»; arī deferred_night nesola rītu", () => {
+    expect(ltabQueuedMessageLv("queued")).toBe("Gaida rindā");
+    expect(ltabQueuedMessageLv(undefined)).toBe("Gaida rindā");
+    expect(ltabQueuedMessageLv("deferred_night")).not.toMatch(/rītu|07:00|naktī/i);
   });
 });

@@ -14,7 +14,7 @@ export type EcsddRelayJobEvent = {
   query: string;
   state: "queued" | "awaiting_login" | "awaiting_smartid" | "searching" | "result" | "error";
   verificationCode?: string;
-  /** `awaiting_login`: night | yield | blocked | off | busy */
+  /** `awaiting_login`: night (tikai ar sašaurinātu releja logu) | yield | blocked | off | busy */
   reason?: string;
   found?: boolean;
   rawText?: string;
@@ -112,7 +112,8 @@ export function ecsddRelayErrorLv(code: string | undefined, fallback?: string): 
 }
 
 const WAIT_REASON_LV: Record<string, string> = {
-  night: "Gaida rītu (08:00) - naktī Smart-ID automātiski neprasām",
+  // Tikai, ja relejā sašaurināts ECSDD_AUTO_LOGIN_FROM/TO (noklusējumā Smart-ID prasa visu diennakti, 26.11).
+  night: "Gaida - šajā laikā automātika Smart-ID neprasa (releja iestatījums). Spied \"Pieslēgt e.csdd\"",
   yield: "Gaida - e.csdd tagad lieto tu (savā pārlūkā). Spied \"Pieslēgt e.csdd\", ja vari atdot",
   blocked: "Smart-ID neapstiprināts (automātika vairs pati neprasa) - spied \"Mēģināt vēlreiz\"",
   off: "Gaida pieslēgšanos - spied \"Pieslēgt e.csdd\"",

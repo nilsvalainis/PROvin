@@ -121,7 +121,7 @@ describe("B2B top-up invoice", () => {
     expect(getB2bMailFromAddress()).toBe("PROVIN <desk@example.lv>");
     const html = b2bProvinEmailHtml({ title: "PROVIN: rēķins", paragraphs: ["Summa 100,00 €."] });
     expect(html).toContain("PROVIN");
-    expect(html).toContain("#0061D2");
+    expect(html).toContain('href="tel:+37129502039"');
     expect(html).not.toContain("PROVIN.LV");
     expect(html).not.toContain("#F26522");
     if (prevUser === undefined) delete process.env.SMTP_USER;

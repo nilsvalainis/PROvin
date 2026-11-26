@@ -106,16 +106,24 @@ describe("LTAB relejs: personas kods nekad žurnālā", () => {
 });
 
 describe("LTAB relejs: nakts logs (Rīga)", () => {
-  it("22:00-07:00 Riga time is night, 12:00 is not", () => {
-    expect(isNightInRiga(new Date("2026-10-23T20:30:00Z"))).toBe(true); // 23:30 Rīgā (UTC+3)
-    expect(isNightInRiga(new Date("2026-10-23T03:30:00Z"))).toBe(true); // 06:30
-    expect(isNightInRiga(new Date("2026-10-23T09:00:00Z"))).toBe(false); // 12:00
+  it("noklusējumā klusā loga nav: 23:30 un 06:30 Rīgā automātika nav jāaptur (26.11)", () => {
+    expect(isNightInRiga(new Date("2026-10-23T20:30:00Z"))).toBe(false); // 23:30 Rīgā (UTC+3)
+    expect(isNightInRiga(new Date("2026-10-23T03:30:00Z"))).toBe(false); // 06:30
+    expect(isNightInRiga(new Date("2026-10-23T20:30:00Z"), 0, 0)).toBe(false);
+  });
+
+  it("ar env logu 22-7 (pāri pusnaktij) un 1-5 klusais laiks strādā", () => {
+    expect(isNightInRiga(new Date("2026-10-23T20:30:00Z"), 22, 7)).toBe(true); // 23:30
+    expect(isNightInRiga(new Date("2026-10-23T03:30:00Z"), 22, 7)).toBe(true); // 06:30
+    expect(isNightInRiga(new Date("2026-10-23T09:00:00Z"), 22, 7)).toBe(false); // 12:00
+    expect(isNightInRiga(new Date("2026-10-23T00:30:00Z"), 1, 5)).toBe(true); // 03:30
+    expect(isNightInRiga(new Date("2026-10-23T20:30:00Z"), 1, 5)).toBe(false); // 23:30
   });
 });
 
 type Sent = { state: string; jobId: string; [k: string]: unknown };
 
-function makeQueue(opts: { night?: boolean; run?: (job: { plate: string }, p: (s: string, e: object) => Promise<boolean>) => Promise<{ found: boolean; pdf?: Buffer | null }>; maxPerHour?: number; stateFile?: string }) {
+function makeQueue(opts: { night?: boolean; at?: string; run?: (job: { plate: string }, p: (s: string, e: object) => Promise<boolean>) => Promise<{ found: boolean; pdf?: Buffer | null }>; maxPerHour?: number; stateFile?: string }) {
   const sent: Sent[] = [];
   const ran: string[] = [];
   const q = createJobQueue({
@@ -126,7 +134,8 @@ function makeQueue(opts: { night?: boolean; run?: (job: { plate: string }, p: (s
     notify: async (body: Sent) => {
       sent.push(body);
     },
-    isNight: () => Boolean(opts.night),
+    isNight: opts.at ? () => isNightInRiga(new Date(opts.at!)) : () => Boolean(opts.night),
+    ...(opts.at ? { now: () => new Date(opts.at!) } : {}),
     maxPerHour: opts.maxPerHour ?? 20,
     stateFile: opts.stateFile ?? "",
   });
@@ -160,6 +169,30 @@ describe("LTAB relejs: rinda", () => {
     q.enqueue({ ref: "cs_test_bbbbbb", plate: "CD5678", trigger: "manual" });
     expect(await q.tick()).toBe(true);
     expect(ran).toEqual(["CD5678"]);
+  });
+
+  it("23:00 Rīgā automātiskais uzdevums uzreiz prasa Smart-ID (nav «deferred_night», 26.11)", async () => {
+    const { q, ran } = makeQueue({ at: "2026-10-23T20:00:00Z" }); // 23:00 Rīgā
+    const auto = q.enqueue({ ref: "cs_test_aaaaaa", plate: "AB1234", trigger: "auto" });
+    expect(auto.state).toBe("queued");
+    expect(await q.tick()).toBe(true);
+    expect(ran).toEqual(["AB1234"]);
+  });
+
+  it("vecais «gaida rītu» uzdevums pēc releja atjaunināšanas (restarts) palaižas pats", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ltab-q-"));
+    const stateFile = path.join(dir, "jobs.json");
+    const old = makeQueue({ night: true, stateFile });
+    const { jobId, state } = old.q.enqueue({ ref: "cs_test_aaaaaa", plate: "AB1234", trigger: "auto" });
+    expect(state).toBe("deferred_night");
+    expect(await old.q.tick()).toBe(false);
+    await new Promise((r) => setTimeout(r, 50));
+    const next = makeQueue({ at: "2026-10-23T20:00:00Z", stateFile });
+    await next.q.load();
+    expect(next.q.get(jobId)?.state).toBe("queued");
+    expect(await next.q.tick()).toBe(true);
+    expect(next.ran).toEqual(["AB1234"]);
+    expect(next.sent.at(-1)).toMatchObject({ jobId, state: "result" });
   });
 
   it("deduplicates the same order+plate while queued", () => {

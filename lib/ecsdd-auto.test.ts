@@ -10,6 +10,7 @@ import {
   ecsddNeedsSmartIdRetry,
   ecsddSmartIdExpired,
   ecsddSessionSummaryLv,
+  ecsddWaitReasonLv,
   reduceEcsddProgress,
   reduceEcsddResult,
   resolveEcsddQuery,
@@ -328,5 +329,11 @@ describe("e.csdd: Vercel plūsma", () => {
     );
     expect(ok.status).toBe(200);
     expect(store.get(SESSION)).toMatchObject({ state: "found", rawText: "Reģistrācijas numurs AB1234" });
+  });
+});
+
+describe("e.csdd: gaidīšanas ziņa (26.11 - nekad «Gaida rītu»)", () => {
+  it("night iemesls (tikai ar sašaurinātu releja logu) nesola rītu", () => {
+    expect(ecsddWaitReasonLv("night")).not.toMatch(/rītu|08:00|naktī/i);
   });
 });

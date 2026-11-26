@@ -503,7 +503,7 @@ export function buildUpsellDraft(
   const emailLead =
     `Jūsu pasūtījumu${vinPart} varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.`;
   const waLead =
-    `Jūsu oficiālā dīlera datu pasūtījumam${vinPart} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
+    `Jūsu oficiālā dīlera datu pasūtījumam${vinPart} varam sagatavot pilno PROVIN AUDITU tajā pašā pasūtījumā.`;
 
   const emailText = [
     "Labdien!",

@@ -157,11 +157,19 @@ describe("e.csdd relejs: sesijas politika", () => {
 type FakeLookup = { status: "found"; rawText: string } | { status: "not_found" } | { status: "logged_out" };
 
 function fakeRelay(
-  opts: { login?: () => Promise<void>; lookups?: FakeLookup[]; work?: boolean; ping?: () => "ok" | "logged_out" } = {},
+  opts: {
+    login?: () => Promise<void>;
+    lookups?: FakeLookup[];
+    work?: boolean;
+    ping?: () => "ok" | "logged_out";
+    at?: string;
+    env?: Record<string, string>;
+    stateFile?: string;
+  } = {},
 ) {
   const events: Array<Record<string, unknown>> = [];
   const calls = { login: 0, lookup: 0, logout: 0, ping: 0 };
-  let t = Date.parse("2026-10-23T08:00:00Z");
+  let t = Date.parse(opts.at ?? "2026-10-23T08:00:00Z");
   const now = () => new Date(t);
   const lookups = [...(opts.lookups ?? [])];
   const browser = {
@@ -183,12 +191,12 @@ function fakeRelay(
     },
   };
   const core = createRelayCore({
-    queue: createJobQueue({ now }),
+    queue: createJobQueue({ now, stateFile: opts.stateFile ?? "" }),
     browser,
     notify: async (b: Record<string, unknown>) => {
       events.push(b);
     },
-    cfg: defaultSessionConfig({}),
+    cfg: defaultSessionConfig(opts.env ?? {}),
     now,
     isWorkHours: () => opts.work ?? true,
   });
@@ -287,7 +295,7 @@ describe("e.csdd relejs: rinda un sesija (viltots pārlūks)", () => {
   });
 
   it("Nils's own button logs in even during yield or at night", async () => {
-    const { core, calls } = fakeRelay({ work: false });
+    const { core, calls } = fakeRelay({ work: false, env: { ECSDD_AUTO_LOGIN_FROM: "8", ECSDD_AUTO_LOGIN_TO: "10" } });
     core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
     expect(await core.tick()).toBe(false);
     core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "manual" });
@@ -295,12 +303,43 @@ describe("e.csdd relejs: rinda un sesija (viltots pārlūks)", () => {
     expect(calls.login).toBe(1);
   });
 
-  it("night: automatic lookups wait for the morning without Smart-ID", async () => {
-    const { core, events, calls } = fakeRelay({ work: false });
+  it("23:00 Rīgā: automātika pati prasa Smart-ID (negaida rītu, 26.11)", async () => {
+    // 20:00Z = 23:00 Rīgā (UTC+3); ārpus darba laika (keep-alive nav), bet Smart-ID automātikai atļauts.
+    const { core, events, calls } = fakeRelay({ work: false, at: "2026-10-23T20:00:00Z", lookups: [{ status: "found", rawText: "Marka BMW" }] });
+    core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
+    while (await core.tick()) {
+      /* līdz rinda tukša */
+    }
+    expect(calls.login).toBe(1);
+    expect(calls.lookup).toBe(1);
+    expect(events.some((e) => e.state === "awaiting_login" && e.reason === "night")).toBe(false);
+    expect(events.filter((e) => e.kind === "job").at(-1)).toEqual(expect.objectContaining({ state: "result", found: true }));
+  });
+
+  it("sašaurināts logs (ECSDD_AUTO_LOGIN_FROM/TO) joprojām ļauj automātikai gaidīt", async () => {
+    const { core, events, calls } = fakeRelay({ work: false, at: "2026-10-23T20:00:00Z", env: { ECSDD_AUTO_LOGIN_FROM: "8", ECSDD_AUTO_LOGIN_TO: "22" } });
     core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
     expect(await core.tick()).toBe(false);
     expect(calls.login).toBe(0);
     expect(events.at(-1)).toEqual(expect.objectContaining({ state: "awaiting_login", reason: "night" }));
+  });
+
+  it("vecais «gaida rītu» uzdevums pēc releja atjaunināšanas (restarts) pats prasa Smart-ID", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ecsdd-q-"));
+    const stateFile = path.join(dir, "jobs.json");
+    const at = "2026-10-23T20:00:00Z"; // 23:00 Rīgā
+    const old = fakeRelay({ work: false, at, stateFile, env: { ECSDD_AUTO_LOGIN_FROM: "8", ECSDD_AUTO_LOGIN_TO: "20" } });
+    old.core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
+    expect(await old.core.tick()).toBe(false);
+    expect(old.events.at(-1)).toEqual(expect.objectContaining({ state: "awaiting_login", reason: "night" }));
+    await new Promise((r) => setTimeout(r, 50));
+    const next = fakeRelay({ work: false, at, stateFile, lookups: [{ status: "not_found" }] });
+    await next.core.load();
+    while (await next.core.tick()) {
+      /* līdz rinda tukša */
+    }
+    expect(next.calls.login).toBe(1);
+    expect(next.events.filter((e) => e.kind === "job").at(-1)).toEqual(expect.objectContaining({ ref: "order_aaaaaa", state: "result", found: false }));
   });
 
   it("release logs out and keeps automation away for the given minutes", async () => {

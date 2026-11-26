@@ -71,7 +71,7 @@ export function rigaHour(date = new Date()) {
   return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Riga", hour: "2-digit", hourCycle: "h23" }).format(date));
 }
 
-/** Darba laiks Rīgā [fromHour, toHour). Ārpus tā automātika Smart-ID neprasa un sesiju neuztur. */
+/** Rīgas stundu logs [fromHour, toHour) (darba laiks keep-alive; arī Smart-ID automātikas logs, sk. session.mjs). */
 export function isWorkHoursRiga(date = new Date(), fromHour = 8, toHour = 20) {
   const h = rigaHour(date);
   return h >= fromHour && h < toHour;

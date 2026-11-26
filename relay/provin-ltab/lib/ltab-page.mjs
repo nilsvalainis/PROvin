@@ -74,10 +74,15 @@ export function rigaHour(date = new Date()) {
   );
 }
 
-/** Naktī (22:00-07:00) automātika Smart-ID neprasa - uzdevums gaida rītu. */
-export function isNightInRiga(date = new Date(), fromHour = 22, toHour = 7) {
+/**
+ * Vai Rīgas laiks ir "klusajā" logā [fromHour, toHour), kurā automātika Smart-ID neprasa.
+ * Noklusējums 0/0 = logs tukšs: automātika Smart-ID prasa jebkurā diennakts laikā (Nils strādā arī naktīs, 26.11).
+ * Logu var ieslēgt ar env LTAB_NIGHT_FROM / LTAB_NIGHT_TO (piem. 22 / 7).
+ */
+export function isNightInRiga(date = new Date(), fromHour = 0, toHour = 0) {
+  if (!Number.isFinite(fromHour) || !Number.isFinite(toHour) || fromHour === toHour) return false;
   const h = rigaHour(date);
-  return h >= fromHour || h < toHour;
+  return fromHour < toHour ? h >= fromHour && h < toHour : h >= fromHour || h < toHour;
 }
 
 const CONSENT_RE = /inform[eē]t|piekr[iī]t|apliecin|apstiprin|personas\s+dat|noteikum|datu\s+apstr|esmu\s+iepazin/i;

@@ -30,7 +30,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.text).toContain("(VIN WDB1400511A032828)");
     expect(d.text).toContain("24,99 €");
     expect(d.text).toMatch(/1-7 dienu laikā/);
-    expect(d.text).toContain("PROVIN AUDITS");
+    expect(d.text).toContain("PROVIN AUDITU");
     expect(d.text).toContain(`Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`);
     expect(d.text).not.toContain("Nils");
     expect(d.text).not.toMatch(/—/);
@@ -40,7 +40,7 @@ describe("dealer-data-client-email drafts", () => {
     const d = buildDealerNoDataEmailDraft({ vin: "WDB1400511A032828", refunded: false });
     expect(d.subject).not.toMatch(/atgriezt/i);
     expect(d.text).toMatch(/atgriezīsim/i);
-    expect(d.text).toContain("PROVIN AUDITS");
+    expect(d.text).toContain("PROVIN AUDITU");
   });
 
   it("builds cancelled and ready drafts", () => {
@@ -53,7 +53,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālā dīlera dati · WVWZZZ3CZME138258");
     expect(d.text).not.toContain("Nils");
     expect(d.text).toContain("PROVIN.LV");
-    expect(d.text).toContain("info@provin.lv");
+    expect(d.text).toContain("Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.");
     const html = dealerDataOperatorMessageEmailHtml({ text: d.text });
     expect(html).not.toContain("Nils");
     expect(html).toContain("PROVIN.LV");
@@ -163,7 +163,7 @@ describe("dealer no-data WhatsApp + HTML CTA", () => {
     });
     const html = dealerDataOperatorMessageEmailHtml({ text: draft.text });
     expect(html).toContain('href="https://provin.lv"');
-    expect(html).toContain("Pasūtīt PROVIN AUDITS");
+    expect(html).toContain("Pasūtīt PROVIN AUDITU");
     expect(html).not.toMatch(/>Pasūtīt: https:\/\/provin\.lv</);
   });
 
@@ -172,7 +172,7 @@ describe("dealer no-data WhatsApp + HTML CTA", () => {
       vin: "WDB1400511A032828",
       amountEur: "24,99 €",
     });
-    expect(html).toContain("Pasūtīt PROVIN AUDITS");
+    expect(html).toContain("Pasūtīt PROVIN AUDITU");
     expect(html).toContain('href="https://provin.lv"');
     expect(html).toMatch(/1-7 dienu laikā/);
   });

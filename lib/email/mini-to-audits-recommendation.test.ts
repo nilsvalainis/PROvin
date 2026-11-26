@@ -91,7 +91,7 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     expect(d.emailText).toContain("✓ Oficiālā dīlera datus un izsoļu arhīvus");
     expect(d.emailText).toContain("negadījumu vēsturi, nobraukumu ārvalstīs");
     expect(d.emailText).toContain("Ievestam auto tie ir svarīgākie dati.");
-    expect(d.emailText).toContain("Iesakām PROVIN AUDITS");
+    expect(d.emailText).toContain("Iesakām PROVIN AUDITU");
     expect(d.emailText).toContain("turpināsim ar PROVIN MINI");
     expect(d.emailText).not.toContain("atbilstu");
     expect(d.emailText).not.toContain("pie ievestiem");
