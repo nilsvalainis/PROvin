@@ -15,6 +15,7 @@
  *   LTAB_MAX_PER_HOUR            noklusējums 20
  *   LTAB_NIGHT_FROM / LTAB_NIGHT_TO  noklusējums 22 / 7 (Rīgas laiks; automātika naktī gaida)
  *   LTAB_SMARTID_TIMEOUT_SEC     noklusējums 120
+ *   LTAB_SESSION_TTL_MIN         noklusējums 20 (cik ilgi pēc pēdējā veiksmīgā vaicājuma sesiju uzskata par aktīvu)
  *   LTAB_CHROME_CHANNEL          noklusējums chrome (ja nav, Playwright Chromium)
  *   DISPLAY                      Xvfb (systemd): :97
  *
@@ -22,6 +23,7 @@
  *   GET  /ltab/health        bez auth: dzīvs, rinda, vai personas kods iestatīts (bez vērtības)
  *   POST /ltab/lookup        {plate, ref, trigger}  -> {jobId, state: queued|deferred_night|running}
  *   GET  /ltab/jobs/:id      uzdevuma stāvoklis
+ *   GET  /ltab/session       Smart-ID sesijas stāvoklis (tikai nolasa, bez login; forma kā e.csdd relejam)
  *   POST /ltab/logout        izdzēš pārlūka profilu (kill switch)
  */
 import { createServer } from "node:http";
@@ -30,6 +32,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 import { createJobQueue } from "./lib/jobs.mjs";
+import { createLtabSessionState } from "./lib/session-state.mjs";
 import { LtabFlowError, runLtabLookup } from "./lib/ltab-flow.mjs";
 import { isAllowedHost, isNightInRiga, isValidPersonalCode, isValidPlate, normalizePlate, redact } from "./lib/ltab-page.mjs";
 
@@ -47,6 +50,8 @@ const NIGHT_TO = Number(process.env.LTAB_NIGHT_TO || 7);
 const SMARTID_TIMEOUT_MS = Math.max(30, Number(process.env.LTAB_SMARTID_TIMEOUT_SEC || 120)) * 1000;
 const CHROME_CHANNEL = (process.env.LTAB_CHROME_CHANNEL ?? "chrome").trim();
 const MAX_PDF_BYTES = 3 * 1024 * 1024;
+const SESSION_TTL_MS = Math.max(1, Number(process.env.LTAB_SESSION_TTL_MIN || 20)) * 60_000;
+const session = createLtabSessionState({ ttlMs: SESSION_TTL_MS });
 const SECRETS = [PERSONAL_CODE, TOKEN];
 
 if (TOKEN.length < 16) {
@@ -187,17 +192,23 @@ async function runJob(job, onProgress) {
   const ctx = await openContext();
   const page = await ctx.newPage();
   try {
-    return await runLtabLookup({
+    const result = await runLtabLookup({
       page,
       plate: job.plate,
       personalCode: PERSONAL_CODE,
-      onProgress,
+      onProgress: (state, extra) => {
+        session.onProgress(state, extra);
+        return onProgress(state, extra);
+      },
       log: (m) => log(`${job.jobId.slice(0, 8)} ${m}`),
       debugDir: DEBUG_DIR,
       smartIdTimeoutMs: SMARTID_TIMEOUT_MS,
       maxPdfBytes: MAX_PDF_BYTES,
     });
+    session.onSuccess();
+    return result;
   } catch (e) {
+    session.onError(e instanceof LtabFlowError ? e.code : "error");
     if (e instanceof LtabFlowError) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     throw new LtabFlowError(/timeout|net::|ERR_/i.test(msg) ? "unavailable" : "error", redact(msg, SECRETS).slice(0, 200));
@@ -256,6 +267,10 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    if (req.method === "GET" && p === "/session") {
+      return sendJson(res, 200, { session: session.view(), personalCodeSet: isValidPersonalCode(PERSONAL_CODE), ...queue.stats() });
+    }
+
     const jobMatch = p.match(/^\/jobs\/([a-f0-9-]{36})$/);
     if (req.method === "GET" && jobMatch) {
       const job = queue.get(jobMatch[1]);
@@ -266,6 +281,7 @@ const server = createServer(async (req, res) => {
     if (req.method === "POST" && p === "/logout") {
       await closeContext();
       await fs.rm(PROFILE_DIR, { recursive: true, force: true });
+      session.onLogout();
       log("profils izdzēsts (logout)");
       return sendJson(res, 200, { ok: true });
     }

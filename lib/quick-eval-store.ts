@@ -6,6 +6,7 @@ import { del, get, put } from "@vercel/blob";
 import { isSafeListingPeekId } from "@/lib/listing-peek-photos";
 import type { FreeSourceSeedParts } from "@/lib/admin-free-source-seed";
 import { mergeSourceBlocksWithDefaults, type SourceBlockKey, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { parseQuickEvalAutoStatus, type QuickEvalAutoStatus } from "@/lib/quick-eval-auto-core";
 
 /**
  * Ātrā vērtējuma darba zona: tie paši avotu bloki kā pasūtījumam, bet atsevišķā failā katram
@@ -52,6 +53,8 @@ export type QuickEvalDoc = {
   ccVin?: { at: string; count: number | null; error?: string };
   /** LTAB pārbaudi dara operators; atzīme saglabājas un aiziet vēstulē / eksportā. */
   ltab?: { at: string; mark: QuickEvalLtabMark };
+  /** Automātika pēc pieteikuma (`lib/quick-eval-auto.ts`): statuss, sarkanie karogi, ieteikumi, melnraksts. */
+  auto?: QuickEvalAutoStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -98,6 +101,7 @@ export function parseQuickEvalDoc(raw: string, peekId: string): QuickEvalDoc | n
       ...(o.vinScan && Array.isArray(o.vinScan.indicators) ? { vinScan: o.vinScan } : {}),
       ...(o.ccVin && typeof o.ccVin === "object" ? { ccVin: o.ccVin } : {}),
       ...(o.ltab && (o.ltab.mark === "clean" || o.ltab.mark === "claims") ? { ltab: o.ltab } : {}),
+      ...(parseQuickEvalAutoStatus(o.auto) ? { auto: parseQuickEvalAutoStatus(o.auto)! } : {}),
       createdAt: typeof o.createdAt === "string" ? o.createdAt : base.createdAt,
       updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : base.updatedAt,
     };

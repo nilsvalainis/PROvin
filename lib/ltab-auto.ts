@@ -2,6 +2,8 @@ import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
 
+import { quickEvalPeekIdFromRelayRef } from "@/lib/quick-eval-auto-core";
+
 import { sendAdminPush } from "@/lib/admin-push";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { mergeSourceBlocksWithDefaults, type CsddFormFields } from "@/lib/admin-source-blocks";
@@ -200,6 +202,11 @@ export async function handleLtabRelayEvent(
   ev: LtabRelayEvent,
 ): Promise<{ ok: true; status: LtabAutoStatus } | { ok: false; error: string; httpStatus: number }> {
   const sessionId = ev.ref;
+  // Ātrais vērtējums (`qe_…`): nav pasūtījuma - Dropbox mapi neveido, saite uz vērtējuma kartīti.
+  const quickEvalPeekId = quickEvalPeekIdFromRelayRef(sessionId);
+  const adminUrl = quickEvalPeekId
+    ? `/admin/atras-vertesanas/${encodeURIComponent(quickEvalPeekId)}`
+    : `/admin/orders/${encodeURIComponent(sessionId)}`;
   const prev = await readLtabAutoStatus(sessionId);
   if (prev?.jobId && ev.jobId && prev.jobId !== ev.jobId) {
     // Vecs uzdevums (piem. pēc "Pieprasīt vēlreiz") - neko nepārrakstām.
@@ -213,7 +220,7 @@ export async function handleLtabRelayEvent(
       await sendAdminPush({
         title: "LTAB: apstiprini Smart-ID",
         body: `Kods ${status.verificationCode}. Apstiprini tikai, ja kods telefonā sakrīt.`,
-        url: `/admin/orders/${encodeURIComponent(sessionId)}`,
+        url: adminUrl,
         tag: "ltab-smartid",
         audience: "pro",
       });
@@ -251,12 +258,12 @@ export async function handleLtabRelayEvent(
     return { ok: true, status };
   }
 
-  const draft = await readOrderDraft(sessionId);
+  const draft = quickEvalPeekId ? null : await readOrderDraft(sessionId);
   const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
   const car = orderCarFromCsdd(csdd, base.plate ?? ev.plate, draft?.orderEdits?.vin ?? "");
 
   // Oriģinālais LTAB PDF pasūtījuma mapē - arī tad, ja negadījumu nav (kā agrāk ar roku).
-  const saved = bytes ? await saveLtabPdf(sessionId, car, bytes) : { pdf: undefined, note: "" };
+  const saved = bytes && !quickEvalPeekId ? await saveLtabPdf(sessionId, car, bytes) : { pdf: undefined, note: "" };
   const pdf = saved.pdf;
   const dropboxNote = saved.note;
 
@@ -294,7 +301,7 @@ export async function handleLtabRelayEvent(
   await sendAdminPush({
     title: "LTAB: atrasti negadījumi",
     body: `${car.plate}: ${claims || "?"} OCTA ${claims === 1 ? "gadījums" : "gadījumi"}${mismatch ? " - pārbaudi atbilstību" : ""}`,
-    url: `/admin/orders/${encodeURIComponent(sessionId)}`,
+    url: adminUrl,
     tag: `ltab-${sessionId}`,
     audience: "pro",
   });
