@@ -2,8 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
 import {
-  ecsddAutoCanApply,
+  ECSDD_SMARTID_TIMEOUT_MS,
+  ecsddCanApplyManually,
+  ecsddCanRestorePrevious,
+  ecsddClientShouldSync,
   ecsddAutoShouldStart,
+  ecsddNeedsSmartIdRetry,
+  ecsddSmartIdExpired,
   ecsddSessionSummaryLv,
   reduceEcsddProgress,
   reduceEcsddResult,
@@ -15,11 +20,18 @@ import { applyCsddPasteToForm, parseCsddPaste } from "@/lib/csdd-paste-parse";
 const store = new Map<string, EcsddAutoStatus>();
 const pushes: Array<{ title: string; body: string }> = [];
 let draftCsdd: Record<string, unknown> = {};
+let retryIndex: Array<{ ref: string; query: string; at: string }> = [];
+const patches: Array<{ sessionId: string; csdd: CsddFormFields; opts: unknown }> = [];
 
 vi.mock("@/lib/ecsdd-auto-store", () => ({
   readEcsddAutoStatus: async (id: string) => store.get(id) ?? null,
   writeEcsddAutoStatus: async (id: string, s: EcsddAutoStatus) => {
     store.set(id, s);
+    return { ok: true };
+  },
+  readEcsddSmartIdRetryIndex: async () => [...retryIndex],
+  writeEcsddSmartIdRetryIndex: async (refs: typeof retryIndex) => {
+    retryIndex = [...refs];
     return { ok: true };
   },
 }));
@@ -31,7 +43,12 @@ vi.mock("@/lib/admin-push", () => ({
 }));
 vi.mock("@/lib/source-health-store", () => ({ recordSourceOutcomes: async () => undefined }));
 vi.mock("@/lib/admin-order-draft-store", () => ({
-  readOrderDraft: async () => ({ orderEdits: {}, workspace: { sourceBlocks: { csdd: draftCsdd } } }),
+  readOrderDraft: async () => ({ orderEdits: {}, workspaceRevision: 7, workspace: { sourceBlocks: { csdd: draftCsdd } } }),
+  patchOrderDraft: async (sessionId: string, patch: { workspace: { sourceBlocks: { csdd: CsddFormFields } } }, opts: unknown) => {
+    patches.push({ sessionId, csdd: patch.workspace.sourceBlocks.csdd, opts });
+    draftCsdd = patch.workspace.sourceBlocks.csdd as unknown as Record<string, unknown>;
+    return { ok: true };
+  },
   isSafeOrderDraftSessionId: (id: string) => /^[A-Za-z0-9_-]{6,120}$/.test(id),
 }));
 
@@ -61,18 +78,33 @@ describe("e.csdd: ko meklēt un kad", () => {
     expect(resolveEcsddQuery(csdd(), "")).toBeNull();
   });
 
-  it("automation only when the CSDD API knew the car and RAW is still empty (never overwrites Nils's paste)", () => {
+  it("automation when the CSDD API knew the car or there is an LV plate - also when RAW is already filled", () => {
     expect(ecsddAutoShouldStart(withRegistry())).toBe(true);
-    expect(ecsddAutoShouldStart(withRegistry({ rawUnprocessedData: "Nila teksts" }))).toBe(false);
+    expect(ecsddAutoShouldStart(withRegistry({ rawUnprocessedData: "VIN SCAN piezīmes" }))).toBe(true);
+    expect(ecsddAutoShouldStart(csdd({ registrationNumber: "NB2407" }))).toBe(true);
     expect(ecsddAutoShouldStart(csdd())).toBe(false);
   });
 
-  it("auto-insert only into an empty RAW and only once", () => {
+  it("manual button stays while the block does not hold the e.csdd text; restore only when a backup exists", () => {
     const found: EcsddAutoStatus = { state: "found", rawText: "Reģistrācijas numurs AB1234", updatedAt: "x" };
-    expect(ecsddAutoCanApply(found, csdd())).toBe(true);
-    expect(ecsddAutoCanApply(found, csdd({ rawUnprocessedData: "jau ir" }))).toBe(false);
-    expect(ecsddAutoCanApply({ ...found, appliedAt: "y" }, csdd())).toBe(false);
-    expect(ecsddAutoCanApply({ state: "not_found", updatedAt: "x" }, csdd())).toBe(false);
+    expect(ecsddCanApplyManually(found, csdd())).toBe(true);
+    expect(ecsddCanApplyManually(found, csdd({ rawUnprocessedData: "jau ir" }))).toBe(true);
+    expect(ecsddCanApplyManually(found, csdd({ rawUnprocessedData: "Reģistrācijas numurs AB1234" }))).toBe(false);
+    expect(ecsddCanApplyManually({ state: "not_found", updatedAt: "x" }, csdd())).toBe(false);
+    const applied = { ...found, appliedAt: "y", appliedBy: "auto" as const, previousRawText: "vecais" };
+    expect(ecsddCanRestorePrevious(applied, csdd({ rawUnprocessedData: found.rawText }))).toBe(true);
+    expect(ecsddCanRestorePrevious(applied, csdd({ rawUnprocessedData: "vecais" }))).toBe(false);
+    expect(ecsddCanRestorePrevious({ ...found, appliedAt: "y" }, csdd())).toBe(false);
+  });
+
+  it("open tab takes over the server-inserted text only while it still shows the old RAW", () => {
+    const s: EcsddAutoStatus = { state: "found", rawText: "e.csdd", appliedAt: "y", appliedBy: "auto", previousRawText: "vecais", updatedAt: "x" };
+    expect(ecsddClientShouldSync(s, csdd({ rawUnprocessedData: "vecais" }))).toBe(true);
+    expect(ecsddClientShouldSync(s, csdd({ rawUnprocessedData: "e.csdd" }))).toBe(false);
+    // Nils pēc tam RAW mainīja pats - neaiztiek.
+    expect(ecsddClientShouldSync(s, csdd({ rawUnprocessedData: "Nila labojums" }))).toBe(false);
+    expect(ecsddClientShouldSync({ ...s, restoredAt: "z" }, csdd({ rawUnprocessedData: "vecais" }))).toBe(false);
+    expect(ecsddClientShouldSync({ ...s, previousRawText: undefined }, csdd())).toBe(true);
   });
 
   it("relay text goes through the same RAW parser as a paste and fills inspection history", () => {
@@ -103,7 +135,7 @@ describe("e.csdd: releja notikumi", () => {
     const w = reduceEcsddProgress(null, { kind: "job", jobId: "j1", ref: SESSION, query: VIN, state: "awaiting_login", reason: "yield" }, "t");
     expect(w.message).toMatch(/lieto tu/);
     const e = reduceEcsddProgress(null, { kind: "job", jobId: "j1", ref: SESSION, query: VIN, state: "error", code: "smartid_refused" }, "t");
-    expect(e).toMatchObject({ state: "error", message: "Smart-ID pieprasījums atteikts telefonā" });
+    expect(e).toMatchObject({ state: "error", errorCode: "smartid_refused", message: "Smart-ID atteikts telefonā - spied \"Mēģināt vēlreiz\"" });
   });
 
   it("result: found keeps the text, empty found is an error, not found is explicit", () => {
@@ -126,6 +158,8 @@ describe("e.csdd: Vercel plūsma", () => {
   beforeEach(() => {
     store.clear();
     pushes.length = 0;
+    patches.length = 0;
+    retryIndex = [];
     draftCsdd = {};
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
@@ -150,15 +184,117 @@ describe("e.csdd: Vercel plūsma", () => {
     expect(String(init.body)).not.toContain("x".repeat(32));
   });
 
-  it("automation does nothing for an order whose RAW Nils already filled, or without ECSDD_AUTO_ENABLED", async () => {
+  it("automation does nothing for a foreign car (CSDD API did not know it), or without ECSDD_AUTO_ENABLED", async () => {
     const { startEcsddLookup } = await import("@/lib/ecsdd-auto");
-    const r1 = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: withRegistry({ rawUnprocessedData: "Nila teksts" }) });
+    const r1 = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: csdd() });
     expect(r1.started).toBe(false);
     vi.stubEnv("ECSDD_AUTO_ENABLED", "");
     const r2 = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: withRegistry() });
     expect(r2.started).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(store.size).toBe(0);
+  });
+
+  it("session active: result is inserted into the CSDD block automatically; the old RAW is kept for restore", async () => {
+    const { startEcsddLookup, handleEcsddJobEvent } = await import("@/lib/ecsdd-auto");
+    draftCsdd = { ...withRegistry({ rawUnprocessedData: "VIN SCAN piezīmes" }) } as unknown as Record<string, unknown>;
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ jobId: "job-1", session: { state: "active" } }), { status: 202 }));
+    const start = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: draftCsdd as unknown as CsddFormFields });
+    expect(start.started).toBe(true);
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body))).toMatchObject({ trigger: "auto" });
+    const raw = ["Reģistrācijas numurs AB1234", `VIN ${VIN}`, "Nobraukuma vēsture", "Nobraukums, datums", "192100- 02.10.2026"].join("\n");
+    const out = await handleEcsddJobEvent({ kind: "job", jobId: "job-1", ref: SESSION, query: VIN, state: "result", found: true, rawText: raw });
+    expect(out.ok).toBe(true);
+    expect(patches).toHaveLength(1);
+    expect(patches[0].opts).toEqual({ expectedWorkspaceRevision: 7 });
+    expect(patches[0].csdd.rawUnprocessedData).toBe(raw);
+    expect(patches[0].csdd.mileageHistory.some((r) => r.odometer.replace(/\D/g, "") === "192100")).toBe(true);
+    // CSDD API dati paliek.
+    expect(patches[0].csdd.registry?.data?.vin).toBe(VIN);
+    expect(store.get(SESSION)).toMatchObject({ state: "found", appliedBy: "auto", previousRawText: "VIN SCAN piezīmes" });
+    expect(store.get(SESSION)?.appliedAt).toBeTruthy();
+
+    // Atkārtots pieprasījums: iepriekšējais e.csdd teksts NEaizstāj Nila sākotnējo RAW rezervē.
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ jobId: "job-2", session: { state: "active" } }), { status: 202 }));
+    await startEcsddLookup(SESSION, { trigger: "manual", orderVin: VIN, force: true });
+    await handleEcsddJobEvent({ kind: "job", jobId: "job-2", ref: SESSION, query: VIN, state: "result", found: true, rawText: `${raw}\nStatuss Uzskaitē` });
+    expect(patches).toHaveLength(2);
+    expect(store.get(SESSION)?.previousRawText).toBe("VIN SCAN piezīmes");
+  });
+
+  it("quick evaluation / VIN SCAN refs are never written into an order draft", async () => {
+    const { handleEcsddJobEvent } = await import("@/lib/ecsdd-auto");
+    await handleEcsddJobEvent({ kind: "job", jobId: "j", ref: "qe_abc_def", query: VIN, state: "result", found: true, rawText: "teksts" });
+    expect(patches).toHaveLength(0);
+    expect(store.get("qe_abc_def")).toMatchObject({ state: "found", rawText: "teksts" });
+  });
+
+  it("no session: one Smart-ID request per order - the second automatic start does not ask again", async () => {
+    const { startEcsddLookup, handleEcsddJobEvent } = await import("@/lib/ecsdd-auto");
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ jobId: "job-1", session: { state: "logged_out" } }), { status: 202 }));
+    const r1 = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: withRegistry() });
+    expect(r1.status).toMatchObject({ state: "queued", message: "Gaida e.csdd pieslēgšanos" });
+    await handleEcsddJobEvent({ kind: "job", jobId: "job-1", ref: SESSION, query: VIN, state: "awaiting_smartid", verificationCode: "4821" });
+    expect(store.get(SESSION)).toMatchObject({ state: "awaiting_smartid", verificationCode: "4821", message: "Gaida Smart-ID - apstiprini telefonā" });
+    expect(store.get(SESSION)?.smartIdAskedAt).toBeTruthy();
+    await handleEcsddJobEvent({ kind: "job", jobId: "job-1", ref: SESSION, query: VIN, state: "error", code: "smartid_timeout" });
+    const r2 = await startEcsddLookup(SESSION, { trigger: "auto", orderVin: VIN, csdd: withRegistry() });
+    expect(r2.started).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(store.get(SESSION)?.message).toMatch(/Smart-ID neapstiprināts/);
+    expect(ecsddNeedsSmartIdRetry(store.get(SESSION))).toBe(true);
+  });
+
+  it("queue: orders that failed on one Smart-ID are re-queued together once the server logs in (no new Smart-ID)", async () => {
+    const { startEcsddLookup, handleEcsddJobEvent, handleEcsddSessionEvent } = await import("@/lib/ecsdd-auto");
+    const refs = ["cs_live_order_a", "cs_live_order_b", "cs_live_order_c"];
+    let n = 0;
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ jobId: `job-${++n}`, session: { state: "logged_out" } }), { status: 202 }));
+    for (const ref of refs) await startEcsddLookup(ref, { trigger: "auto", orderVin: VIN, csdd: withRegistry() });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    for (const [i, ref] of refs.entries()) {
+      await handleEcsddJobEvent({ kind: "job", jobId: `job-${i + 1}`, ref, query: VIN, state: "error", code: "smartid_timeout" });
+    }
+    expect(retryIndex.map((e) => e.ref)).toEqual(refs);
+    // Nils nospiež «Mēģināt vēlreiz» vienā pasūtījumā -> serveris ielogojas -> visi pārējie rindā paši.
+    await handleEcsddSessionEvent({ state: "active" });
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+    const bodies = fetchMock.mock.calls.slice(3).map((c) => JSON.parse(String((c as [string, RequestInit])[1].body)));
+    expect(bodies.map((b) => b.ref)).toEqual(refs);
+    expect(bodies.every((b) => b.trigger === "auto")).toBe(true);
+    expect(retryIndex).toEqual([]);
+    // Otrs «active» notikums neko neatkārto.
+    await handleEcsddSessionEvent({ state: "active" });
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
+  it("timeout: no Smart-ID approval within 5 min -> «Smart-ID neapstiprināts» and «Mēģināt vēlreiz» upgrades to Nils's request", async () => {
+    const { expireStaleEcsddSmartId, startEcsddLookup } = await import("@/lib/ecsdd-auto");
+    const asked = new Date(Date.now() - ECSDD_SMARTID_TIMEOUT_MS - 1000).toISOString();
+    const waiting: EcsddAutoStatus = { state: "awaiting_smartid", jobId: "job-1", query: VIN, verificationCode: "4821", smartIdAskedAt: asked, updatedAt: asked };
+    expect(ecsddSmartIdExpired({ ...waiting, smartIdAskedAt: new Date().toISOString() }, Date.now())).toBe(false);
+    store.set(SESSION, waiting);
+    const out = await expireStaleEcsddSmartId(SESSION, waiting);
+    expect(out).toMatchObject({ state: "error", errorCode: "smartid_timeout" });
+    expect(out?.message).toMatch(/^Smart-ID neapstiprināts/);
+    expect(out?.verificationCode).toBeUndefined();
+    expect(ecsddNeedsSmartIdRetry(out)).toBe(true);
+    expect(retryIndex.map((e) => e.ref)).toEqual([SESSION]);
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ jobId: "job-1", session: { state: "logged_out" } }), { status: 202 }));
+    const retry = await startEcsddLookup(SESSION, { trigger: "manual", orderVin: VIN, force: true });
+    expect(retry.started).toBe(true);
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body))).toMatchObject({ trigger: "manual" });
+  });
+
+  it("manual «Ievietot e.csdd datus» keeps the previous RAW; restore marks it so automation does not re-insert", async () => {
+    const { markEcsddAutoApplied } = await import("@/lib/ecsdd-auto");
+    store.set(SESSION, { state: "found", rawText: "e.csdd teksts", updatedAt: "t" });
+    const a = await markEcsddAutoApplied(SESSION, { previousRawText: "Nila RAW" });
+    expect(a).toMatchObject({ appliedBy: "manual", previousRawText: "Nila RAW" });
+    const r = await markEcsddAutoApplied(SESSION, { action: "restore" });
+    expect(r?.restoredAt).toBeTruthy();
+    expect(r?.appliedAt).toBeUndefined();
+    expect(ecsddClientShouldSync(r, csdd({ rawUnprocessedData: "Nila RAW" }))).toBe(false);
   });
 
   it("a stale job event does not overwrite the newer request", async () => {

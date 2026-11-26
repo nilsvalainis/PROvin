@@ -93,6 +93,8 @@ export function createRelayCore({ queue, browser, notify, cfg, now = () => new D
   const jobBody = (job, state, extra = {}) => ({ kind: "job", jobId: job.jobId, ref: job.ref, query: job.query, state, ...extra });
 
   async function doLogin(trigger) {
+    // Viens Smart-ID pieprasījums uz pasūtījumu: visi šobrīd gaidošie uzdevumi šo pieteikšanos jau "izmantojuši".
+    queue.markLoginTried();
     await setSession(onLoginStarted(session, now(), trigger));
     log(`pieteikšanās sākta (${trigger === "manual" ? "Nila poga" : "automātika"})`);
     try {
@@ -161,7 +163,10 @@ export function createRelayCore({ queue, browser, notify, cfg, now = () => new D
       return true;
     }
     const manualJob = q.find((j) => j.trigger === "manual");
-    const reason = manualJob ? null : autoLoginBlockReason(session, now(), cfg, isWorkHours);
+    let reason = manualJob ? null : autoLoginBlockReason(session, now(), cfg, isWorkHours);
+    // Pēc neapstiprināta (taimauts) Smart-ID automātika vairs neprasa tiem pašiem pasūtījumiem, bet jauns pasūtījums
+    // (kuram Smart-ID vēl nav prasīts) drīkst prasīt vienreiz. Atteikts Smart-ID ("smartid_refused") bloķē līdz Nila pogai.
+    if (reason === "blocked" && session.autoLoginBlocked === "smartid_timeout" && q.some((j) => !j.loginTried)) reason = null;
     if (reason) {
       for (const job of q) {
         if (job.waitNotified === reason) continue;

@@ -219,15 +219,52 @@ describe("e.csdd relejs: rinda un sesija (viltots pārlūks)", () => {
     expect(core.session().state).toBe("active");
   });
 
-  it("a refused or timed out Smart-ID fails the waiting jobs and is not retried automatically", async () => {
+  it("a timed out Smart-ID fails the waiting jobs and is never retried for them; a new order may ask once", async () => {
     const { core, events, calls } = fakeRelay({ login: async () => Promise.reject(err("smartid_timeout")) });
     core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
     await core.tick();
     expect(events.filter((e) => e.state === "error").map((e) => e.code)).toEqual(["smartid_timeout"]);
+    expect(await core.tick()).toBe(false);
+    expect(calls.login).toBe(1);
+    // Jauns pasūtījums: viens Smart-ID pieprasījums (arī tas neizdodas) - tad bloķēts.
+    core.enqueue({ ref: "order_bbbbbb", query: "AB1235", kind: "plate", trigger: "auto" });
+    expect(await core.tick()).toBe(true);
+    expect(calls.login).toBe(2);
+    expect(await core.tick()).toBe(false);
+    expect(calls.login).toBe(2);
+  });
+
+  it("a refused Smart-ID blocks automation (also for new orders) until Nils presses the button", async () => {
+    const { core, events, calls } = fakeRelay({ login: async () => Promise.reject(err("smartid_refused")) });
+    core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
+    await core.tick();
     core.enqueue({ ref: "order_bbbbbb", query: "AB1235", kind: "plate", trigger: "auto" });
     expect(await core.tick()).toBe(false);
     expect(calls.login).toBe(1);
     expect(events.at(-1)).toEqual(expect.objectContaining({ state: "awaiting_login", reason: "blocked" }));
+    core.enqueue({ ref: "order_bbbbbb", query: "AB1235", kind: "plate", trigger: "manual" });
+    expect(await core.tick()).toBe(true);
+    expect(calls.login).toBe(2);
+  });
+
+  it("orders queued while one Smart-ID is pending share it (one request for all)", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const { core, calls } = fakeRelay({ login: () => gate, lookups: [{ status: "found", rawText: "a" }, { status: "found", rawText: "b" }, { status: "found", rawText: "c" }] });
+    core.enqueue({ ref: "order_aaaaaa", query: "AB1234", kind: "plate", trigger: "auto" });
+    const first = core.tick();
+    await new Promise((r) => setTimeout(r, 5));
+    core.enqueue({ ref: "order_bbbbbb", query: "AB1235", kind: "plate", trigger: "auto" });
+    core.enqueue({ ref: "order_cccccc", query: "AB1236", kind: "plate", trigger: "auto" });
+    release();
+    await first;
+    while (await core.tick()) {
+      /* */
+    }
+    expect(calls.login).toBe(1);
+    expect(calls.lookup).toBe(3);
   });
 
   it("when Nils logs in himself (server session kicked), automation yields and does not take the session back", async () => {

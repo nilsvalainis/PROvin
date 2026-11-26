@@ -47,18 +47,55 @@ export function resolveEcsddQuery(csdd: CsddFormFields | null | undefined, order
 }
 
 /**
- * Automātika pēc apmaksas: tikai, ja CSDD API auto atrada (tātad e.csdd ir ko rādīt) un RAW vēl tukšs
- * (Nila ielīmējumu nepārrakstām, ārzemju auto Smart-ID neprasām).
+ * Automātika pēc pasūtījuma apstrādes: tikai, ja CSDD API auto atrada vai ir LV numurs (tātad e.csdd ir ko rādīt;
+ * ārzemju auto Smart-ID neprasām). RAW saturs vairs nav šķērslis - e.csdd teksts to aizvieto, bet iepriekšējais
+ * RAW tiek saglabāts (`previousRawText`) un ir atjaunojams.
  */
 export function ecsddAutoShouldStart(csdd: CsddFormFields | null | undefined): boolean {
   if (!csdd) return false;
-  if ((csdd.rawUnprocessedData ?? "").trim()) return false;
-  return Boolean(csdd.registry?.data?.vin?.trim() || csdd.registry?.data?.registrationNumber?.trim());
+  return Boolean(
+    csdd.registry?.data?.vin?.trim() || csdd.registry?.data?.registrationNumber?.trim() || csdd.registrationNumber?.trim(),
+  );
+}
+
+/** Iepriekšējais automātikas stāvoklis, kas neliedz automātikai mēģināt vēlreiz (nekas netika prasīts). */
+export function ecsddAutoPrevAllowsStart(prev: EcsddAutoStatus | null | undefined): boolean {
+  return !prev || prev.state === "skipped" || prev.state === "not_configured";
+}
+
+/** Smart-ID taimauts adminā (Nila 26.11 lēmums): pēc 5 min «Smart-ID neapstiprināts» + «Mēģināt vēlreiz». */
+export const ECSDD_SMARTID_TIMEOUT_MS = 5 * 60_000;
+
+export const ECSDD_SMARTID_NOT_APPROVED_LV = "Smart-ID neapstiprināts - spied \"Mēģināt vēlreiz\"";
+
+/** Kļūdas, pēc kurām pasūtījumu ieliek rindā no jauna, kad serveris atkal ielogojas. */
+export const ECSDD_SMARTID_RETRY_CODES: readonly string[] = ["smartid_timeout", "smartid_refused"];
+
+/** Vai pasūtījums gaida Smart-ID ilgāk par 5 min (relejs nav paziņojis taimautu). */
+export function ecsddSmartIdExpired(s: EcsddAutoStatus | null | undefined, nowMs: number): boolean {
+  if (!s || (s.state !== "awaiting_smartid" && !(s.state === "awaiting_login" && s.waitReason === "busy"))) return false;
+  const asked = Date.parse(s.smartIdAskedAt ?? "");
+  return Number.isFinite(asked) && nowMs - asked > ECSDD_SMARTID_TIMEOUT_MS;
+}
+
+/** Stāvoklis pēc 5 min bez Smart-ID apstiprinājuma. */
+export function ecsddSmartIdExpiredStatus(s: EcsddAutoStatus, now: string): EcsddAutoStatus {
+  const next: EcsddAutoStatus = { ...s, state: "error", errorCode: "smartid_timeout", message: ECSDD_SMARTID_NOT_APPROVED_LV, updatedAt: now };
+  delete next.verificationCode;
+  delete next.waitReason;
+  return next;
+}
+
+/** Vai adminā rādīt «Mēģināt vēlreiz» (Smart-ID nav apstiprināts vai automātika vairs pati neprasa). */
+export function ecsddNeedsSmartIdRetry(s: EcsddAutoStatus | null | undefined): boolean {
+  if (!s) return false;
+  if (s.state === "error" && ECSDD_SMARTID_RETRY_CODES.includes(s.errorCode ?? "")) return true;
+  return s.state === "awaiting_login" && s.waitReason === "blocked";
 }
 
 const RELAY_ERROR_LV: Record<string, string> = {
-  smartid_timeout: "Smart-ID netika apstiprināts 120 s laikā - spied \"Pieprasīt vēlreiz\"",
-  smartid_refused: "Smart-ID pieprasījums atteikts telefonā",
+  smartid_timeout: ECSDD_SMARTID_NOT_APPROVED_LV,
+  smartid_refused: "Smart-ID atteikts telefonā - spied \"Mēģināt vēlreiz\"",
   code_not_read: "Neizdevās nolasīt Smart-ID kontrolkodu - jāpārbauda manuāli",
   login_not_kept: "Pēc Smart-ID e.csdd neielogojās - jāpārbauda manuāli",
   captcha: "e.csdd vai Vienotā pieteikšanās prasa captcha - jāpārbauda manuāli",
@@ -77,9 +114,9 @@ export function ecsddRelayErrorLv(code: string | undefined, fallback?: string): 
 const WAIT_REASON_LV: Record<string, string> = {
   night: "Gaida rītu (08:00) - naktī Smart-ID automātiski neprasām",
   yield: "Gaida - e.csdd tagad lieto tu (savā pārlūkā). Spied \"Pieslēgt e.csdd\", ja vari atdot",
-  blocked: "Gaida pieslēgšanos - iepriekšējais Smart-ID netika apstiprināts. Spied \"Pieslēgt e.csdd\"",
+  blocked: "Smart-ID neapstiprināts (automātika vairs pati neprasa) - spied \"Mēģināt vēlreiz\"",
   off: "Gaida pieslēgšanos - spied \"Pieslēgt e.csdd\"",
-  busy: "Gaida pieslēgšanos e.csdd",
+  busy: "Gaida Smart-ID (viens pieprasījums visiem gaidošajiem pasūtījumiem)",
 };
 
 export function ecsddWaitReasonLv(reason: string | undefined): string {
@@ -95,13 +132,33 @@ export function reduceEcsddProgress(prev: EcsddAutoStatus | null, ev: EcsddRelay
     updatedAt: now,
   };
   delete base.verificationCode;
+  delete base.waitReason;
+  delete base.errorCode;
   if (ev.state === "awaiting_smartid") {
     const code = /^\d{4}$/.test(ev.verificationCode ?? "") ? ev.verificationCode : undefined;
-    return { ...base, state: "awaiting_smartid", ...(code ? { verificationCode: code } : {}), message: "Apstiprini Smart-ID telefonā" };
+    return {
+      ...base,
+      state: "awaiting_smartid",
+      ...(code ? { verificationCode: code } : {}),
+      smartIdAskedAt: prev?.smartIdAskedAt || now,
+      message: "Gaida Smart-ID - apstiprini telefonā",
+    };
   }
-  if (ev.state === "awaiting_login") return { ...base, state: "awaiting_login", message: ecsddWaitReasonLv(ev.reason) };
+  if (ev.state === "awaiting_login") {
+    const reason = ev.reason?.slice(0, 20);
+    return {
+      ...base,
+      state: "awaiting_login",
+      ...(reason ? { waitReason: reason } : {}),
+      // Cita pasūtījuma Smart-ID jau gaida - tas pats pieprasījums apkalpos arī šo.
+      ...(reason === "busy" ? { smartIdAskedAt: prev?.smartIdAskedAt || now } : {}),
+      message: ecsddWaitReasonLv(reason),
+    };
+  }
   if (ev.state === "searching") return { ...base, state: "searching", message: "Meklē e.csdd" };
-  if (ev.state === "error") return { ...base, state: "error", message: ecsddRelayErrorLv(ev.code, ev.message) };
+  if (ev.state === "error") {
+    return { ...base, state: "error", ...(ev.code ? { errorCode: ev.code.slice(0, 40) } : {}), message: ecsddRelayErrorLv(ev.code, ev.message) };
+  }
   return { ...base, state: "queued", message: "Gaida rindā" };
 }
 
@@ -116,17 +173,39 @@ export function reduceEcsddResult(prev: EcsddAutoStatus | null, ev: EcsddRelayJo
   };
   delete base.verificationCode;
   delete base.appliedAt;
+  delete base.appliedBy;
+  delete base.restoredAt;
   delete base.rawText;
+  delete base.waitReason;
+  delete base.errorCode;
   const raw = (ev.rawText ?? "").trim();
   if (ev.found && raw) return { ...base, state: "found", rawText: raw.slice(0, 60_000), message: "e.csdd dati saņemti" };
   if (ev.found) return { ...base, state: "error", message: "e.csdd atdeva tukšu lapu - ielīmē datus ar roku" };
   return { ...base, state: "not_found", message: "e.csdd šo auto neatrada" };
 }
 
-/** Automātiski ievieto tikai tukšā RAW laukā un tikai vienreiz. */
-export function ecsddAutoCanApply(status: EcsddAutoStatus | null | undefined, csdd: CsddFormFields): boolean {
-  if (!status || status.state !== "found" || !status.rawText?.trim() || status.appliedAt) return false;
-  return !(csdd.rawUnprocessedData ?? "").trim();
+/** Vai e.csdd tekstu (vēl) var ievietot CSDD blokā ar pogu «Ievietot e.csdd datus». */
+export function ecsddCanApplyManually(status: EcsddAutoStatus | null | undefined, csdd: CsddFormFields): boolean {
+  if (!status || status.state !== "found" || !status.rawText?.trim()) return false;
+  return (csdd.rawUnprocessedData ?? "").trim() !== status.rawText.trim();
+}
+
+/**
+ * Serveris ievietoja e.csdd tekstu (releja atzvanā), bet atvērtajā cilnē vēl ir vecais RAW - cilne to ievieto
+ * pati ar to pašu parseri (rezultāts sakrīt ar servera). Ja Nils RAW pēc tam mainījis vai atjaunojis - neaiztiek.
+ */
+export function ecsddClientShouldSync(status: EcsddAutoStatus | null | undefined, csdd: CsddFormFields): boolean {
+  if (!status || status.state !== "found" || status.appliedBy !== "auto" || !status.appliedAt || status.restoredAt) return false;
+  const raw = status.rawText?.trim() ?? "";
+  const local = (csdd.rawUnprocessedData ?? "").trim();
+  if (!raw || local === raw) return false;
+  return local === (status.previousRawText ?? "").trim();
+}
+
+/** Vai rādīt «Atjaunot iepriekšējo RAW». */
+export function ecsddCanRestorePrevious(status: EcsddAutoStatus | null | undefined, csdd: CsddFormFields): boolean {
+  if (!status || !status.appliedAt || !status.previousRawText?.trim()) return false;
+  return (csdd.rawUnprocessedData ?? "").trim() !== status.previousRawText.trim();
 }
 
 /** Sesijas rinda adminam: kas notiek ar e.csdd sesiju un vai tā ietekmē Nila pārlūku. */
