@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import {
   isSafeCheckoutSessionId,
   unpaidMatchesPaidIdentity,
@@ -99,10 +100,12 @@ export async function POST(req: Request, ctx: Ctx) {
     textOverride,
     locale: row.locale,
   });
+  const lang = resolveClientEmailLang(row.locale);
   const sent = await trySendUnpaidOrderReminderEmail({
     to: row.email,
     subject: copy.subject,
     text: copy.text,
+    lang,
   });
   if (!sent) {
     return NextResponse.json({ error: "send_failed" }, { status: 502 });
@@ -122,6 +125,7 @@ export async function POST(req: Request, ctx: Ctx) {
     paymentPublicUrl: paymentUrl,
     expiresAt: new Date(now.getTime() + UNPAID_REMINDER_LINK_TTL_MS).toISOString(),
     hidden: false,
+    ...(lang !== "lv" ? { lang } : {}),
   });
 
   return NextResponse.json({ ok: true, paymentUrl, remindedAt: now.toISOString() });

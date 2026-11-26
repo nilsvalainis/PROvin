@@ -6,6 +6,7 @@ import Stripe from "stripe";
 import { sendB2bWalletTopupInvoiceEmail, sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import { renderB2bTopupInvoiceEmail } from "@/lib/b2b-topup-invoice";
+import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { attachB2bWalletTopupInvoice, applyB2bWalletTopup, formatB2bWalletEuro } from "@/lib/b2b-wallet";
 import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
@@ -219,6 +220,7 @@ async function fulfillPaidCheckoutSession(
                 subject: rendered.subject,
                 text: rendered.text,
                 invoiceAttachment,
+                lang: resolveClientEmailLang(session.locale),
               });
               console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id });
             } else {

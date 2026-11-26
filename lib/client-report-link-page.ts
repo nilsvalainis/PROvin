@@ -68,7 +68,7 @@ export async function loadClientReportLinkView(args: {
     const o = doc?.offers.dealer_to_audit;
     if (o && o.status === "open" && !isOfferExpired(o.expiresAt)) {
       offer = {
-        href: upsellPublicPath(o.token),
+        href: upsellPublicPath(o.token, locale),
         priorLabel: formatEurFromCents(o.priorCents),
         chargeLabel: formatEurFromCents(o.chargeCents),
         totalLabel: formatEurFromCents(o.targetCents),

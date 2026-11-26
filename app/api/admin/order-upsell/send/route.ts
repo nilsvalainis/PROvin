@@ -47,7 +47,9 @@ export async function POST(req: Request) {
   if (!offer || offer.status !== "open") {
     return NextResponse.json({ error: "offer_not_open" }, { status: 400 });
   }
-  let url = `${getPublicSiteOrigin()}${upsellPublicPath(offer.token)}`;
+  const draft = await readOrderDraft(sessionId).catch(() => null);
+  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
+  let url = `${getPublicSiteOrigin()}${upsellPublicPath(offer.token, lang)}`;
   if (kindRaw === "mini_to_audit") {
     const pay = await ensureOrderUpsellStripePaymentUrl({
       parentSessionId: sessionId,
@@ -55,14 +57,13 @@ export async function POST(req: Request) {
       vin: order.vin,
       phone: order.phone,
       offer,
+      lang,
     });
     if (!pay.ok) {
       return NextResponse.json({ error: pay.error }, { status: 503 });
     }
     url = pay.url;
   }
-  const draft = await readOrderDraft(sessionId).catch(() => null);
-  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
   const sent = await trySendDealerDataOperatorEmail({
     to,
     subject,
