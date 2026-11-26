@@ -18,6 +18,8 @@ export type UnpaidReminderRecord = UnpaidReminderState & {
   newSessionId?: string | null;
   paymentTokenHash?: string | null;
   expiresAt?: string | null;
+  /** Klienta valoda (Stripe `session.locale`): /apmaksa pāradresē uz /{lang}/pasutit. Nav = LV. */
+  lang?: string | null;
 };
 
 type UnpaidReminderDoc = {
@@ -59,6 +61,7 @@ function parseDoc(raw: unknown): UnpaidReminderDoc {
       paymentPublicUrl: typeof r.paymentPublicUrl === "string" ? r.paymentPublicUrl : null,
       expiresAt: typeof r.expiresAt === "string" ? r.expiresAt : null,
       hidden: r.hidden === true,
+      ...(r.lang === "en" || r.lang === "ru" || r.lang === "de" ? { lang: r.lang } : {}),
     });
   }
   return {

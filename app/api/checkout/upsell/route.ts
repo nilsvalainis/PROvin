@@ -5,6 +5,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { isOfferExpired, isUpsellToken } from "@/lib/order-upsell";
 import { createOrderUpsellCheckoutSession } from "@/lib/order-upsell-checkout";
 import { readUpsellByToken } from "@/lib/order-upsell-store";
+import { normalizeUpsellLang } from "@/lib/order-upsell-i18n";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { createMetaEventId } from "@/lib/meta-pixel";
 import {
   checkoutMetaClientFields,
@@ -19,7 +21,7 @@ export const dynamic = "force-dynamic";
 const MAX_PER_WINDOW = 20;
 const WINDOW_MS = 10 * 60 * 1000;
 
-async function startUpsellCheckout(req: Request, token: string): Promise<NextResponse> {
+async function startUpsellCheckout(req: Request, token: string, lang: ClientReportLang = "lv"): Promise<NextResponse> {
   if (!isUpsellToken(token)) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
@@ -50,6 +52,7 @@ async function startUpsellCheckout(req: Request, token: string): Promise<NextRes
       phone: parent.phone,
       email,
       trackingMetadata: stripeMetaCapiMetadataFromRequest(req),
+      lang,
     });
     const eventId = createMetaEventId();
     const value = resolveInitiateCheckoutValueEur(created.amountTotal, found.offer.chargeCents);
@@ -73,11 +76,14 @@ export async function POST(req: Request) {
   }
 
   let token = "";
+  let lang: ClientReportLang = "lv";
   try {
-    const body = (await req.json()) as { token?: unknown };
+    const body = (await req.json()) as { token?: unknown; lang?: unknown };
     token = typeof body.token === "string" ? body.token.trim() : "";
+    /** Lapas valoda (/{lang}/papildinajums) - Stripe un atgriešanās lapa tajā pašā valodā. */
+    lang = normalizeUpsellLang(body.lang);
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  return startUpsellCheckout(req, token);
+  return startUpsellCheckout(req, token, lang);
 }

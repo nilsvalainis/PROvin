@@ -4,13 +4,14 @@ import { OrderUpsellPayButton } from "@/components/OrderUpsellPayButton";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { formatEurFromCents, isOfferExpired, isUpsellToken } from "@/lib/order-upsell";
 import { readUpsellByToken } from "@/lib/order-upsell-store";
+import { normalizeUpsellLang, upsellPageCopy } from "@/lib/order-upsell-i18n";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-  title: "PROVIN papildinājums",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return { robots: { index: false, follow: false }, title: upsellPageCopy(locale).title };
+}
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split("@");
@@ -22,10 +23,12 @@ export default async function OrderUpsellPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<{ token: string; locale: string }>;
   searchParams: Promise<{ paid?: string }>;
 }) {
-  const { token } = await params;
+  const { token, locale } = await params;
+  const lang = normalizeUpsellLang(locale);
+  const c = upsellPageCopy(lang);
   const sp = await searchParams;
   if (!isUpsellToken(token)) notFound();
 
@@ -37,10 +40,8 @@ export default async function OrderUpsellPage({
   if (found.state === "replaced") {
     return (
       <main className={shell}>
-        <h1 className="text-2xl font-semibold">Šī saite ir nomainīta</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
-          Palūdziet jaunu apmaksas saiti, rakstot uz info@provin.lv.
-        </p>
+        <h1 className="text-2xl font-semibold">{c.replacedTitle}</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">{c.replacedBody}</p>
       </main>
     );
   }
@@ -56,9 +57,9 @@ export default async function OrderUpsellPage({
   if (paid) {
     return (
       <main className={shell}>
-        <h1 className="text-2xl font-semibold">Papildu apmaksa saņemta</h1>
+        <h1 className="text-2xl font-semibold">{c.paidTitle}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
-          Pasūtījums tiek papildināts. Sagatavošana aizņem līdz 48 stundām. Jau nosūtītie materiāli paliek spēkā.
+          {c.paidBody}
           {vin ? ` VIN ${vin}.` : ""}
         </p>
       </main>
@@ -68,9 +69,9 @@ export default async function OrderUpsellPage({
   if (returnedFromCheckout) {
     return (
       <main className={shell}>
-        <h1 className="text-2xl font-semibold">Maksājums tiek apstrādāts</h1>
+        <h1 className="text-2xl font-semibold">{c.processingTitle}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
-          Tiklīdz maksājums būs apstiprināts, pasūtījums tiks papildināts. Ja maksājumu neveicāt, atveriet saiti vēlreiz.
+          {c.processingBody}
           {vin ? ` VIN ${vin}.` : ""}
         </p>
       </main>
@@ -80,43 +81,43 @@ export default async function OrderUpsellPage({
   if (expired) {
     return (
       <main className={shell}>
-        <h1 className="text-2xl font-semibold">Piedāvājuma termiņš ir beidzies</h1>
+        <h1 className="text-2xl font-semibold">{c.expiredTitle}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
-          Šī saite vairs nav derīga. Jaunu pasūtījumu var izveidot vietnē{" "}
-          <a className="text-[#0061D2] underline" href="https://provin.lv">
+          {c.expiredBody[0]}
+          <a className="text-[#0061D2] underline" href={`https://www.provin.lv/${lang}`}>
             provin.lv
           </a>
-          .
+          {c.expiredBody[1]}
         </p>
       </main>
     );
   }
 
   return (
-    <main className={shell}>
+    <main className={shell} lang={lang}>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0061D2]">PROVIN</p>
-      <h1 className="mt-2 text-2xl font-semibold">Papildināt esošo pasūtījumu</h1>
+      <h1 className="mt-2 text-2xl font-semibold">{c.title2}</h1>
       <p className="mt-3 text-[15px] leading-relaxed text-neutral-600">
-        Šī apmaksa papildina jau esošo pasūtījumu. Jaunu pasūtījumu neveido.
+        {c.lead}
         {vin ? ` VIN ${vin}.` : ""}
-        {email ? ` Apstiprinājums aizies uz ${email}.` : ""}
+        {email ? c.confirmTo(email) : ""}
       </p>
       <dl className="mt-6 space-y-2 text-[15px]">
         <div className="flex justify-between gap-4">
-          <dt className="text-neutral-500">Jau samaksāts</dt>
+          <dt className="text-neutral-500">{c.alreadyPaid}</dt>
           <dd className="font-medium">{formatEurFromCents(found.offer.priorCents)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-neutral-500">Tagad</dt>
+          <dt className="text-neutral-500">{c.now}</dt>
           <dd className="font-medium">{formatEurFromCents(found.offer.chargeCents)}</dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-neutral-200 pt-2">
-          <dt>Kopā</dt>
+          <dt>{c.total}</dt>
           <dd className="font-semibold">{formatEurFromCents(found.offer.targetCents)}</dd>
         </div>
       </dl>
       <div className="mt-8">
-        <OrderUpsellPayButton token={token} label={`Apmaksāt ${formatEurFromCents(found.offer.chargeCents)}`} />
+        <OrderUpsellPayButton token={token} lang={lang} label={c.pay(formatEurFromCents(found.offer.chargeCents))} />
       </div>
     </main>
   );
