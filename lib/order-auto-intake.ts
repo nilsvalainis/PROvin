@@ -33,6 +33,8 @@ import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { fetchThecarapiCcVinMerge } from "@/lib/thecarapi-cc-vin";
 import { thecarapiAdminFlag, thecarapiConfigured } from "@/lib/vin-scan/thecarapi-flags";
+import { kfzAtPushLine, kfzAtViewState } from "@/lib/kfzgutachten/austria-signals";
+import { orderVinScanKfzContext } from "@/lib/kfzgutachten/order-kfz-context";
 
 const LOG = "[order-auto-intake]";
 
@@ -195,7 +197,7 @@ async function runOrderAutoIntakeLocked(
   let auctionSales = 0;
   const imported = indicators.length
     ? await patchDraftSourceBlocks(sessionId, (blocks) => {
-        const applied = applyVinScanImportsToBlocks(blocks, indicators);
+        const applied = applyVinScanImportsToBlocks(blocks, indicators, { vin });
         auctionSales = applied.sales;
         return applied.changed ? applied.blocks : null;
       })
@@ -229,6 +231,9 @@ async function runOrderAutoIntakeLocked(
       auctionSales,
       photosImported,
       thecarapiAuctions,
+      austriaLine: kfzAtPushLine(
+        kfzAtViewState({ vin, rows: indicators, ...orderVinScanKfzContext(latest, sessionId) }),
+      ),
     });
     pushed = (await sendAdminPush(msg).catch(() => ({ sent: 0 }))).sent;
   }

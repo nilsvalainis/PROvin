@@ -1,10 +1,11 @@
 /**
  * VIN SCAN avoti, kurus relejs nolasa ar Chrome pēc VIN (nevis pēc gatava URL):
- * bid.cars (meklēšanas API -> lota lapa) un CARFAX.eu (bezmaksas pieejamības pārbaude).
+ * bid.cars (meklēšanas API -> lota lapa), CARFAX.eu (bezmaksas pieejamības pārbaude) un
+ * kfzgutachten.at (Austrijas §57a apskašu bezmaksas saraksts pēc VIN + 1. reģ. datuma; atzinumus nepērk).
  * Te tikai tīra loģika (validācija, kešs, atbilžu nolasīšana) - Chrome daļa ir vinsource-page.mjs.
  */
 
-export const VINSOURCE_IDS = ["bid_cars", "carfax_eu"];
+export const VINSOURCE_IDS = ["bid_cars", "carfax_eu", "kfz_at"];
 
 /** Viss darbs Chrome (palaišana + lapas + gaidīšana) iekļaujas šajā laikā. */
 export const VINSOURCE_TIMEOUT_MS = 40_000;
@@ -15,17 +16,191 @@ const HTML_LIMIT = 900_000;
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
 
+/** DD.MM.YYYY, ja datums ir reāls kalendāra datums (kfzgutachten.at Erstzulassungsdatum); citādi "". */
+export function kfzExactDate(raw) {
+  const t = String(raw ?? "").trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(t);
+  const dot = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(t);
+  let d;
+  let m;
+  let y;
+  if (iso) [y, m, d] = [Number(iso[1]), Number(iso[2]), Number(iso[3])];
+  else if (dot) [d, m, y] = [Number(dot[1]), Number(dot[2]), Number(dot[3])];
+  else return "";
+  if (y < 1950 || y > 2100) return "";
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return "";
+  if (dt.getTime() > Date.now() + 24 * 60 * 60 * 1000) return "";
+  return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
+}
+
 export function validVinSourceRequest(body) {
   const source = String(body?.source ?? "").trim();
   const vin = String(body?.vin ?? "").trim().toUpperCase();
   if (!VINSOURCE_IDS.includes(source)) return { ok: false, error: "nezināms avots" };
   if (!VIN_RE.test(vin)) return { ok: false, error: "nederīgs VIN" };
+  if (source === "kfz_at") {
+    // kfzgutachten.at bez precīza 1. reģ. datuma nemeklē - datumu neizdomājam.
+    const date = kfzExactDate(body?.date);
+    if (!date) return { ok: false, error: "vajag precīzu 1. reģ. datumu (TT.MM.GGGG)" };
+    return { ok: true, source, vin, date };
+  }
   return { ok: true, source, vin };
 }
 
-/** Rindas atslēga: visi vinsource darbi dala vienu Chrome vietu (viens Chrome vienlaikus). */
-export function vinSourceLaneKey(source, vin) {
-  return `https://vinsource.relay/${source}/${vin}`;
+/** Rindas atslēga: visi vinsource darbi dala vienu Chrome vietu (viens Chrome vienlaikus). kfz_at: + datums. */
+export function vinSourceLaneKey(source, vin, date = "") {
+  return `https://vinsource.relay/${source}/${vin}${date ? `/${date}` : ""}`;
+}
+
+/* ---------------- kfzgutachten.at ---------------- */
+
+/** IP reputācija: ne vairāk kā 1 īsts vaicājums ik 2 min (Nila lēmums 26.11). */
+export const KFZ_MIN_INTERVAL_MS = 2 * 60 * 1000;
+/** Rinda: ne vairāk par tik gaidošiem vaicājumiem; vecāki par 6 h izkrīt. */
+export const KFZ_QUEUE_MAX = 30;
+export const KFZ_QUEUE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+export function kfzSearchResponseMatches(url, method) {
+  try {
+    const u = new URL(String(url ?? ""));
+    const host = u.hostname.toLowerCase();
+    if (host !== "kfzgutachten.at" && host !== "www.kfzgutachten.at") return false;
+    return /^\/home\/search\/?$/i.test(u.pathname) && String(method ?? "POST").toUpperCase() === "POST";
+  } catch {
+    return false;
+  }
+}
+
+function isoToDdMmYyyy(raw) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(raw ?? "").trim());
+  if (m) return `${m[3]}.${m[2]}.${m[1]}`;
+  return kfzExactDate(raw);
+}
+
+function cleanCell(v, max = 80) {
+  return String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/** Nobraukums, ja atbildē tāds lauks ir (sarakstā parasti nav - tad ""). */
+function itemKm(item) {
+  for (const [k, v] of Object.entries(item ?? {})) {
+    if (!/mileage|kilomet|odometer|kmstand/i.test(k)) continue;
+    const n = String(v ?? "").replace(/\D/g, "");
+    if (n && n.length <= 7) return n;
+  }
+  return "";
+}
+
+/**
+ * `POST /Home/Search` atbilde (lapas skripts: `result.Items[]`, `result.TotalItems`).
+ * Rinda: { date: DD.MM.YYYY (Gutachtendatum), model, plate, vin, km? }. Tikai šī VIN rindas.
+ * reCAPTCHA atteikums -> `captcha: true` (atdzišana, nekešo). Neskaidra atbilde -> kļūda (nekešo).
+ */
+export function readKfzSearch(status, text, vin) {
+  const raw = String(text ?? "");
+  let body = null;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    body = null;
+  }
+  if (/recaptcha/i.test(raw) && !(body && Array.isArray(body.Items) && body.Items.length > 0)) {
+    return { kind: "error", note: "kfzgutachten.at: reCAPTCHA noraidīja", captcha: true };
+  }
+  if (status !== 200) {
+    return status === 400 || status === 403
+      ? { kind: "error", note: `kfzgutachten.at: meklēšana noraidīta (HTTP ${status})`, captcha: true }
+      : { kind: "error", note: `kfzgutachten.at atbildēja HTTP ${status || 0}` };
+  }
+  if (!body || typeof body !== "object" || !Array.isArray(body.Items)) {
+    return { kind: "error", note: "kfzgutachten.at: neskaidra atbilde (nav saraksta)" };
+  }
+  const want = String(vin ?? "").toUpperCase();
+  const rows = [];
+  const seen = new Set();
+  for (const item of body.Items) {
+    if (!item || typeof item !== "object") continue;
+    const rowVin = cleanCell(item.VehicleIdentificationNumber, 20).replace(/\s/g, "").toUpperCase();
+    if (want && rowVin && rowVin !== want) continue;
+    const date = isoToDdMmYyyy(item.EvaluationDate);
+    if (!date) continue;
+    const plate = cleanCell(item.LicensePlate, 20);
+    const key = `${date}|${plate.replace(/\s/g, "")}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const km = itemKm(item);
+    rows.push({
+      date,
+      model: cleanCell([item.VehicleModel, item.VehicleType].filter(Boolean).join(" ")),
+      plate,
+      vin: rowVin || want,
+      ...(km ? { km } : {}),
+    });
+  }
+  const dayMs = (d) => {
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(d);
+    return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : 0;
+  };
+  rows.sort((a, b) => dayMs(a.date) - dayMs(b.date));
+  if (rows.length === 0) return { kind: "none", rows: [] };
+  return { kind: "found", rows: rows.slice(0, 60) };
+}
+
+/**
+ * kfzgutachten.at plānotājs: ≥2 min starp īstiem vaicājumiem + rinda (FIFO, bez dublikātiem).
+ * Tīra loģika - taimeri un Chrome ir server.mjs.
+ */
+export function createKfzScheduler(opts = {}) {
+  const intervalMs = Number.isFinite(opts.intervalMs) ? opts.intervalMs : KFZ_MIN_INTERVAL_MS;
+  const maxPending = Number.isFinite(opts.maxPending) ? opts.maxPending : KFZ_QUEUE_MAX;
+  const maxAgeMs = Number.isFinite(opts.maxAgeMs) ? opts.maxAgeMs : KFZ_QUEUE_MAX_AGE_MS;
+  const now = typeof opts.now === "function" ? opts.now : () => Date.now();
+  let lastRunAt = 0;
+  /** @type {Map<string, { vin: string, date: string, at: number }>} */
+  const pending = new Map();
+  const prune = () => {
+    for (const [key, job] of pending) if (now() - job.at > maxAgeMs) pending.delete(key);
+  };
+  return {
+    /** 0 - drīkst vaicāt tagad; citādi ms līdz nākamajam atļautajam vaicājumam. */
+    waitMs() {
+      return lastRunAt ? Math.max(0, lastRunAt + intervalMs - now()) : 0;
+    },
+    markRun() {
+      lastRunAt = now();
+    },
+    /** Ieliek rindā (vai atstāj esošo vietu). Atgriež vietu rindā (1..n) vai 0, ja rinda pilna. */
+    enqueue(key, vin, date) {
+      prune();
+      if (!pending.has(key)) {
+        if (pending.size >= maxPending) return 0;
+        pending.set(key, { vin, date, at: now() });
+      }
+      return [...pending.keys()].indexOf(key) + 1;
+    },
+    position(key) {
+      prune();
+      return [...pending.keys()].indexOf(key) + 1;
+    },
+    forget(key) {
+      pending.delete(key);
+    },
+    /** Nākamais darbs, ja intervāls ir pagājis (ar `blockedMs` > 0 - neko nedod). */
+    takeNext(blockedMs = 0) {
+      prune();
+      if (blockedMs > 0 || this.waitMs() > 0) return null;
+      const first = pending.entries().next();
+      if (first.done) return null;
+      const [key, job] = first.value;
+      pending.delete(key);
+      return { key, ...job };
+    },
+    get size() {
+      prune();
+      return pending.size;
+    },
+  };
 }
 
 export function bidCarsSearchApiUrl(vin) {

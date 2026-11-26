@@ -735,7 +735,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
     id: BLOCK_SIGN_OFF_ID,
     channel: "block",
     group: "Kopīgie bloki",
-    title: "Paraksts (Nils / PROVIN.LV)",
+    title: "Paraksts (PROVIN.LV)",
     body: defaultSignOffBlock(),
     vars: [],
   },

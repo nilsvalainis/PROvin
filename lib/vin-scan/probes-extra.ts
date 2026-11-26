@@ -428,7 +428,7 @@ export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicato
  * bid.cars / CARFAX.eu: vispirms releja Chrome (lapu veido JS). Ja relejs nav vai neizdevās,
  * rinda paliek pārlūka joslā (Tampermonkey), un iemesls redzams kopsavilkumā.
  */
-async function fromRelayOrBrowser(id: VinSourceRelayId, ctx: VinScanContext): Promise<VinScanIndicator> {
+async function fromRelayOrBrowser(id: Exclude<VinSourceRelayId, "kfz_at">, ctx: VinScanContext): Promise<VinScanIndicator> {
   const lane = fromBrowser(id, ctx);
   if (!vinSourceRelayConfigured()) return lane;
   const got = await fetchVinSourceViaRelay(id, ctx.vin);

@@ -19,6 +19,7 @@ import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewpor
 
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
+import { orderVinScanKfzContext } from "@/lib/kfzgutachten/order-kfz-context";
 import { useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
@@ -1208,6 +1209,11 @@ export function OrderDetailWorkspace({
   );
   /** Pretrunas starp avotiem (josla pie «Ģenerēt PDF», brīdinājums sūtīšanas dialogā). Rakstīšanu nebremzē. */
   const dSourceBlocks = useDeferredValue(ws.sourceBlocks);
+  /** VIN SCAN v4 Austrija §57a: datums no blokiem, CSDD iepriekšējā valsts, jau ielasītās apskates. */
+  const vinScanKfz = useMemo(
+    () => orderVinScanKfzContext(mergeSourceBlocksWithDefaults(dSourceBlocks as unknown), payload.sessionId, payload.listingUrl),
+    [dSourceBlocks, payload.sessionId, payload.listingUrl],
+  );
   const dRisks = useDeferredValue(ws.tehniskoRiskuAnalize);
   const dSummary = useDeferredValue(ws.iriss);
   const dInspection = useDeferredValue(ws.apskatesPlāns);
@@ -6693,6 +6699,7 @@ export function OrderDetailWorkspace({
                 vin={payload.vin ?? ""}
                 listingUrl={payload.listingUrl ?? ""}
                 initial={payload.vinScan ?? null}
+                kfz={vinScanKfz}
                 onImportAuction={async (scan) => {
                   const applied = applyVinScanAuctionsToCcVin(wsPersistRef.current.sourceBlocks.cc_vin, scan.indicators);
                   updateSourceBlock("cc_vin", applied.block);

@@ -626,7 +626,8 @@ export async function fetchThecarapiAuctionImages(
     const key = thecarapiRecordKey(ref.site, ref.id);
     if (!deps.skipCache) {
       const cached = await readThecarapiImageCache(ref.site, ref.id).catch(() => null);
-      if (cached) {
+      // TheCarApi bildes vēl lejupielādēja (`pending`) - saglabātais saraksts nepilns, prasām vēlreiz.
+      if (cached && !thecarapiImagesPending(cached.json)) {
         byKey[key] = cached.json;
         return;
       }
@@ -692,6 +693,34 @@ function thecarapiDetailStored(
   return refs.some((ref) => rawByKey[thecarapiRecordKey(ref.site, ref.id)] != null);
 }
 
+/** TheCarApi vēl lejupielādē bildes (`pending` > 0) - saglabātais saraksts nav pilns. */
+export function thecarapiImagesPending(json: unknown): boolean {
+  if (!json || typeof json !== "object" || Array.isArray(json)) return false;
+  const pending = (json as { pending?: unknown }).pending;
+  return typeof pending === "number" && pending > 0;
+}
+
+/**
+ * Vecā kešā `refs` var būt bez `detailPath` (pirms arhīva ceļa labojuma). Tad detaļu sauca pa
+ * `/api/auction/...` un arhivētai lotei saņēma 404 katrā klikšķī. Ceļu ņemam no vēstures ieraksta.
+ */
+export function thecarapiFillRefPaths(
+  refs: readonly ThecarapiAuctionRef[],
+  records: readonly ThecarapiAdminRecord[],
+): ThecarapiAuctionRef[] {
+  if (records.length === 0) return [...refs];
+  const fromRecords = new Map(thecarapiRefsFromRecords(records).map((ref) => [`${ref.site}:${ref.id}`, ref]));
+  return refs.map((ref) => {
+    if (ref.detailPath) return ref;
+    const hit = fromRecords.get(`${ref.site}:${ref.id}`);
+    return hit?.detailPath ? { ...ref, detailPath: hit.detailPath } : ref;
+  });
+}
+
+function recordImagesPending(records: readonly ThecarapiAdminRecord[]): boolean {
+  return records.some((record) => thecarapiImagesPending(record.rawImages));
+}
+
 export async function fetchThecarapiVinWithDetails(
   vin: string,
   deps: ThecarapiDeps = {},
@@ -699,11 +728,18 @@ export async function fetchThecarapiVinWithDetails(
   let history = await fetchThecarapiVinHistory(vin, deps);
   if (history.refs.length === 0 && history.records.length > 0) {
     history = { ...history, refs: thecarapiRefsFromRecords(history.records) };
+  } else if (history.records.length > 0) {
+    history = { ...history, refs: thecarapiFillRefPaths(history.refs, history.records) };
   }
   if (history.parse.status !== "found" || history.refs.length === 0) {
     return { ...history, detailsBillable: false };
   }
-  if (!deps.skipCache && history.recordsComplete && thecarapiCacheHasDetail(history.records, history.refs)) {
+  if (
+    !deps.skipCache &&
+    history.recordsComplete &&
+    thecarapiCacheHasDetail(history.records, history.refs) &&
+    !recordImagesPending(history.records)
+  ) {
     return { ...history, detailsBillable: false };
   }
   if (history.fromCache && !history.rawJson && history.records.length === 0) {

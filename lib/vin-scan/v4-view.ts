@@ -45,7 +45,7 @@ export type VinScanV4Status =
   | "checking";
 
 /** Minimālais rindas veids, ko saprot v4 skats (VIN SCAN panelis un pasūtījuma ieraksts dod vairāk lauku). */
-export type VinScanV4RowLike = { id: string; status: string; summary?: string };
+export type VinScanV4RowLike = { id: string; status: string; summary?: string; label?: string; note?: string };
 
 export function vinScanV4BlockOf(id: string): VinScanV4BlockId | "csdd" | null {
   if (id === VIN_SCAN_V4_CSDD_ID) return "csdd";
@@ -61,7 +61,34 @@ export function vinScanV4BlockOf(id: string): VinScanV4BlockId | "csdd" | null {
 export type VinScanV4Kind = "data" | "empty" | "error" | "pending" | "link";
 
 const EMPTY_STATUSES = new Set(["none", "skipped", "needs_input", "config_missing", "manual"]);
-const ERROR_STATUSES = new Set(["unknown", "blocked", "timeout", "browser_only", "error"]);
+/** Vienmēr īstas kļūdas: avots neatbildēja laikā / bloķēja (403, Cloudflare). */
+const HARD_ERROR_STATUSES = new Set(["timeout", "blocked", "error"]);
+
+/**
+ * 26.11 (Nils): kļūdu skaitā tikai īstas kļūdas - tīkls, 5xx, captcha, taimauts.
+ * Teksts, kas to norāda (arī relejā, ne tikai avotā).
+ */
+const REAL_ERROR_TEXT_RE =
+  /captcha|cloudflare|taimaut|timeout|neatbildēja|nav pieejam|neizdevās|fetch failed|econn|enotfound|socket|tīkl|network|\bhttp\s*5\d\d\b|\b5\d\d\b|pauze|kļūd/i;
+/** Informatīvi teksti: auto citam tirgum vai jāpārbauda saitē - tas nav kļūda. */
+const INFO_TEXT_RE = /var neattiekties|attiecas tikai|nav starp .* jaunākajiem|pārbaudi saitē|pārbaude pārlūkā|lapa bez šī VIN/i;
+
+/** Austrijas §57a: bez cilvēka nav iespējams (reCAPTCHA + precīzs datums) - nekad nav «kļūda». */
+export const VIN_SCAN_V4_KFZ_ID = "kfz_at";
+
+function rowText(row: VinScanV4RowLike): string {
+  return `${row.summary ?? ""} ${row.note ?? ""}`;
+}
+
+/** Vai rinda ir īsta kļūda (tīkls, 5xx, captcha, taimauts), nevis «nav atrasts» / «nav piemērojams». */
+export function vinScanV4IsRealError(row: VinScanV4RowLike): boolean {
+  if (row.id === VIN_SCAN_V4_KFZ_ID) return false;
+  if (HARD_ERROR_STATUSES.has(row.status)) return true;
+  const text = rowText(row);
+  if (row.status === "unknown") return !INFO_TEXT_RE.test(text) || REAL_ERROR_TEXT_RE.test(text.replace(INFO_TEXT_RE, ""));
+  if (row.status === "browser_only") return REAL_ERROR_TEXT_RE.test(text);
+  return false;
+}
 
 /** Kā rindu rādīt: ar datiem (blokā), tukša / kļūda (saliktajā sarakstā), vēl lasa, tikai saite. */
 export function vinScanV4Kind(row: VinScanV4RowLike): VinScanV4Kind {
@@ -69,8 +96,94 @@ export function vinScanV4Kind(row: VinScanV4RowLike): VinScanV4Kind {
   if (vinScanSourceLinkOnly(row.id)) return "link";
   if (row.status === "idle" || row.status === "checking") return "pending";
   if (EMPTY_STATUSES.has(row.status)) return "empty";
-  if (ERROR_STATUSES.has(row.status)) return "error";
-  return "empty";
+  return vinScanV4IsRealError(row) ? "error" : "empty";
+}
+
+/* ---------------- Saliktā saraksta rinda (26.11: bez dubultiem un jaukta teksta) ---------------- */
+
+export type VinScanV4Notice = {
+  /** Īss statuss labajā kolonnā: «nav atrasts» / «nav piemērojams» / «vajag numuru» / «kļūda». */
+  status: string;
+  /** Papildu skaidrojums zem nosaukuma (tikai ja tas nav tas pats, kas statuss). */
+  detail: string;
+  error: boolean;
+  /** Sarkans, arī ja nav kļūda (piem. Austrija - vajag cilvēku). */
+  risk: boolean;
+};
+
+const MAX_DETAIL = 140;
+
+function clip(text: string): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > MAX_DETAIL ? `${t.slice(0, MAX_DETAIL - 1).trimEnd()}…` : t;
+}
+
+/**
+ * Garais tehniskais teksts -> īss latviski. Piem. «CARFAX.eu: no pārlūka (from browser) · relejs: CARFAX.eu: pēc
+ * reCAPTCHA atteikuma pauze līdz 21:09 - pārbaudi pārlūka joslā» -> «pauze līdz 21:09 (reCAPTCHA) - izmanto pārlūka joslu».
+ */
+export function vinScanV4ShortText(raw: string, label = ""): string {
+  let t = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const captcha = /captcha/i.test(t);
+  const pause = /pauze līdz (\d{1,2}:\d{2})/i.exec(t);
+  if (pause) return `pauze līdz ${pause[1]}${captcha ? " (reCAPTCHA)" : ""} - izmanto pārlūka joslu`;
+  // «X: no pārlūka (from browser) · relejs: Y» -> Y (pārlūka josla ir noklusējums, to nerakstām).
+  t = t.replace(/^[^·]*?no pārlūka \(from browser\)\s*(?:·\s*)?/i, "");
+  t = t.replace(/\(from browser\)/gi, "").replace(/^relejs:\s*/i, "").replace(/\s*·\s*relejs:\s*/gi, " · ");
+  // Avota nosaukums jau ir kreisajā kolonnā - «CARFAX.eu: …», «Chrome relejs: …» prefiksu noņemam.
+  const first = (label.split(/[\s(·]/)[0] ?? "").trim().toLowerCase();
+  for (let i = 0; i < 3; i += 1) {
+    const m = /^([^\s:]{2,30}(?: [^\s:]{1,20})?):\s+/.exec(t);
+    if (!m) break;
+    const head = m[1]!.toLowerCase();
+    const same = (first.length >= 3 && head.startsWith(first)) || /\.[a-z]{2,3}$/.test(head) || /relejs$/.test(head);
+    if (!same) break;
+    t = t.slice(m[0].length);
+  }
+  if (!t) return captcha ? "reCAPTCHA - izmanto pārlūka joslu" : "";
+  return clip(t);
+}
+
+function needsStatus(text: string): string {
+  if (/sludinājum/i.test(text)) return "vajag sludinājumu";
+  if (/datum/i.test(text)) return "vajag datumu";
+  if (/reģ\. ?nr|numur|plate/i.test(text)) return "vajag numuru";
+  if (/\bVIN\b/.test(text)) return "vajag VIN";
+  return "vajag datus";
+}
+
+/** Saliktā saraksta rinda: kreisajā nosaukums (+ īss skaidrojums zem), labajā īss statuss. Teksts vienreiz. */
+export function vinScanV4Notice(row: VinScanV4RowLike): VinScanV4Notice {
+  const label = row.label ?? "";
+  const text = (row.note || row.summary || "").trim();
+  if (vinScanV4IsRealError(row)) {
+    const short = vinScanV4ShortText(row.status === "timeout" && !text ? "neatbildēja laikā" : text, label);
+    return { status: "kļūda", detail: short || (row.status === "timeout" ? "neatbildēja laikā" : ""), error: true, risk: true };
+  }
+  const plain = (status: string, detail = ""): VinScanV4Notice => ({ status, detail, error: false, risk: false });
+  switch (row.status) {
+    case "none":
+      return plain("nav atrasts", /pārbaudi saitē/i.test(text) ? "pārbaudi saitē" : "");
+    case "skipped":
+      return plain("nav piemērojams");
+    case "needs_input":
+      return plain(needsStatus(text));
+    case "config_missing":
+      return plain("nav iestatīts");
+    case "manual":
+      return plain("pārbaudi pats");
+    case "unknown":
+      // Safety Gate: marka nav starp jaunākajiem - nevar apgalvot «nav», bet tā nav kļūda.
+      return plain("nav atrasts", "pārbaudi saitē");
+    case "browser_only":
+      if (/var neattiekties|attiecas tikai/i.test(text)) return plain("nav piemērojams");
+      if (/lapa bez šī VIN/i.test(text)) return plain("nav atrasts");
+      if (/no pārlūka|from browser/i.test(text)) return plain("pārlūka joslā");
+      return plain("pārbaudi pārlūkā");
+    default:
+      return plain("nav datu");
+  }
 }
 
 export type VinScanV4Group<T> = { id: VinScanV4BlockId; label: string; items: T[] };

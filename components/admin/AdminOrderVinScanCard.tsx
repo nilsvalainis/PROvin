@@ -9,7 +9,13 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
-import { AdminVinScanV4, VIN_SCAN_V4_BTN, VIN_SCAN_V4_BTN_DARK, type VinScanV4Row } from "@/components/admin/vin-scan-v4/AdminVinScanV4";
+import {
+  AdminVinScanV4,
+  VIN_SCAN_V4_BTN,
+  VIN_SCAN_V4_BTN_DARK,
+  type VinScanV4KfzContext,
+  type VinScanV4Row,
+} from "@/components/admin/vin-scan-v4/AdminVinScanV4";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import {
   ADMIN_MOBILE_VIN_SCAN_EVENT,
@@ -78,6 +84,7 @@ export function AdminOrderVinScanCard({
   onImportAuction,
   onImportCsdd,
   onImportListing,
+  kfz,
 }: {
   sessionId: string;
   vin: string;
@@ -86,6 +93,8 @@ export function AdminOrderVinScanCard({
   onImportAuction: (record: OrderVinScanRecord) => void | Promise<void | { failed?: number }>;
   onImportCsdd: (record: OrderVinScanRecord) => void;
   onImportListing: (record: OrderVinScanRecord) => void;
+  /** Austrija §57a: datums no pasūtījuma blokiem, CSDD iepriekšējā valsts, Tampermonkey tilts. */
+  kfz?: VinScanV4KfzContext;
 }) {
   const [record, setRecord] = useState<OrderVinScanRecord | null>(initial);
   const [showFields, setShowFieldsState] = useState(
@@ -495,6 +504,7 @@ export function AdminOrderVinScanCard({
                   rows={v4Rows}
                   busy={record.status === "running" || busy}
                   scannedAt={record.at}
+                  kfz={kfz ?? { orderId: sessionId, listingUrl }}
                   onRetry={(ids) => {
                     // Tas pats ceļš kā rindas «Atkārtot» (tikai lietotāja klikšķis).
                     const row = summary?.rows.find((x) => x.id === ids[0]);

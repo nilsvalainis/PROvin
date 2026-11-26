@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 
 export function createJobQueue({ now = () => new Date(), maxQueue = 30, maxPerHour = 20, stateFile = "", log = () => undefined }) {
-  /** @type {Array<{jobId:string, ref:string, query:string, kind:string, trigger:string, state:string, createdAt:string, waitNotified?:string}>} */
+  /** @type {Array<{jobId:string, ref:string, query:string, kind:string, trigger:string, state:string, createdAt:string, waitNotified?:string, loginTried?:boolean}>} */
   let jobs = [];
   const startedAt = [];
 
@@ -14,7 +14,16 @@ export function createJobQueue({ now = () => new Date(), maxQueue = 30, maxPerHo
     if (!stateFile) return;
     const pending = jobs
       .filter((j) => j.state === "queued" || j.state === "running")
-      .map(({ jobId, ref, query, kind, trigger, createdAt }) => ({ jobId, ref, query, kind, trigger, state: "queued", createdAt }));
+      .map(({ jobId, ref, query, kind, trigger, createdAt, loginTried }) => ({
+        jobId,
+        ref,
+        query,
+        kind,
+        trigger,
+        state: "queued",
+        createdAt,
+        ...(loginTried ? { loginTried: true } : {}),
+      }));
     try {
       await fs.writeFile(`${stateFile}.tmp`, JSON.stringify({ jobs: pending }), { mode: 0o600 });
       await fs.rename(`${stateFile}.tmp`, stateFile);
@@ -58,6 +67,18 @@ export function createJobQueue({ now = () => new Date(), maxQueue = 30, maxPerHo
     return [...q.filter((j) => j.trigger === "manual"), ...q.filter((j) => j.trigger !== "manual")];
   }
 
+  /** Pieteikšanās sākta: visiem gaidošajiem uzdevumiem Smart-ID jau prasīts (automātika tiem otrreiz neprasa). */
+  function markLoginTried() {
+    let changed = false;
+    for (const j of jobs) {
+      if (j.state === "queued" && !j.loginTried) {
+        j.loginTried = true;
+        changed = true;
+      }
+    }
+    if (changed) void persist();
+  }
+
   function rateLimited() {
     const t = now().getTime();
     while (startedAt.length && t - startedAt[0] > 3_600_000) startedAt.shift();
@@ -88,6 +109,7 @@ export function createJobQueue({ now = () => new Date(), maxQueue = 30, maxPerHo
     load,
     enqueue,
     queued,
+    markLoginTried,
     rateLimited,
     start,
     requeue,

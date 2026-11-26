@@ -27,7 +27,7 @@ describe("report-ready product emails", () => {
     expect(text).not.toContain("20%");
     expect(text).not.toContain("79,99");
     expect(text).not.toContain("PROVIN AUDITS");
-    expect(text).toContain("Nils");
+    expect(text).not.toContain("Nils");
     expect(text).toContain("PROVIN.LV");
     expect(text).not.toContain("PROVIN.LV komanda");
     expect(text).not.toContain("g.page");
@@ -54,7 +54,7 @@ describe("report-ready product emails", () => {
     expect(html).not.toContain("Pasūtīt PROVIN AUDITS");
     expect(html).not.toContain("20%");
     expect(html).not.toContain("79,99");
-    expect(html).toContain("Nils");
+    expect(html).not.toContain("Nils");
   });
 
   it("adds Google review HTML only when asked", () => {
@@ -71,7 +71,7 @@ describe("report-ready product emails", () => {
       productKind: "audits",
       includeGoogleReview: true,
     });
-    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
+    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
   });
 
@@ -110,7 +110,7 @@ describe("report-ready product emails", () => {
       attachmentLines: ["PROVIN_atskaite.pdf"],
       productKind: "audits",
     });
-    expect(retail).toContain("Nils");
+    expect(retail).not.toContain("Nils");
     expect(retail).toContain("PROVIN.LV");
   });
 
@@ -128,10 +128,10 @@ describe("report-ready product emails", () => {
       attachmentLines: [],
       includeGoogleReview: true,
     });
-    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
+    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
-    expect(on).toContain("Nils");
-    expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils"));
+    expect(on).not.toContain("Nils");
+    expect(on.indexOf("g.page")).toBeLessThan(on.lastIndexOf("PROVIN.LV"));
   });
 
   it("omits VIN parentheses when the VIN is missing or invalid", () => {
@@ -164,7 +164,7 @@ describe("report-ready product emails", () => {
     expect(textEn).toContain("You will find attached:");
     expect(textEn).toContain("OFICIALA_DILERA_DATI_EN.pdf");
     expect(textEn).toContain("Best regards,");
-    expect(textEn).toContain("Nils");
+    expect(textEn).not.toContain("Nils");
     expect(textEn).not.toContain("Labdien!");
     expect(textEn).not.toMatch(/[–—]/);
 

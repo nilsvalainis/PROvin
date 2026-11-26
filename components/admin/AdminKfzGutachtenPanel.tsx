@@ -106,6 +106,54 @@ export function AdminKfzGutachtenPanel({ vin, sessionId, value, onChange, getSou
     return () => document.removeEventListener(KFZ_AT_LIST_EVENT, onList);
   }, [disabled, sessionId, vin]);
 
+  // 26.11: saraksts ielasās automātiski (releja Chrome, VIN + 1. reģ. datums). Viens pieprasījums uz VIN + datumu;
+  // ja relejs ielicis rindā - pajautā vēlreiz pēc ~2,5 min (rezultāts relejā kešā 7 d). Neko nepērk.
+  const [auto, setAuto] = useState<{ key: string; status: string; summary: string } | null>(null);
+  const autoKeyRef = useRef("");
+  const hasList = (store?.list.length ?? 0) > 0;
+  const autoKey = !disabled && exact && vin.trim() && !hasList ? `${vin.trim().toUpperCase()}|${exact}` : "";
+  useEffect(() => {
+    if (!autoKey || autoKeyRef.current === autoKey) return;
+    autoKeyRef.current = autoKey;
+    let stop = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const [autoVin, autoDate] = autoKey.split("|");
+    const ask = async (attempt: number) => {
+      setAuto({ key: autoKey, status: "checking", summary: "kfzgutachten.at: pārbauda…" });
+      try {
+        const res = await fetch("/api/admin/kfzgutachten/list", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ vin: autoVin, date: autoDate }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          status?: string;
+          summary?: string;
+          queued?: boolean;
+          rows?: ReturnType<typeof parseKfzSearchListText>;
+        };
+        if (stop) return;
+        if (!res.ok) {
+          setAuto({ key: autoKey, status: "unchecked", summary: `kfzgutachten.at: nav pārbaudīts (HTTP ${res.status})` });
+          return;
+        }
+        if (data.status === "found" && (data.rows ?? []).length > 0) applyRef.current({ list: data.rows });
+        setAuto({ key: autoKey, status: data.status ?? "unchecked", summary: data.summary ?? "" });
+        if (data.queued && attempt < 4) timer = setTimeout(() => void ask(attempt + 1), 150_000);
+      } catch {
+        if (!stop) setAuto({ key: autoKey, status: "unchecked", summary: "kfzgutachten.at: nav pārbaudīts (savienojums neizdevās)" });
+      }
+    };
+    void ask(0);
+    return () => {
+      stop = true;
+      if (timer) clearTimeout(timer);
+      // Cits VIN / datums vai bloks aizvērts - nākamreiz drīkst jautāt vēlreiz.
+      autoKeyRef.current = "";
+    };
+  }, [autoKey]);
+
   const uploadPdfs = async (files: File[]) => {
     if (disabled || busy || files.length === 0) return;
     setBusy(true);
@@ -178,6 +226,14 @@ export function AdminKfzGutachtenPanel({ vin, sessionId, value, onChange, getSou
         </div>
       ) : null}
 
+      {auto && auto.key === autoKey && auto.summary ? (
+        <p
+          className={`mt-1 text-[10px] ${auto.status === "unchecked" ? "font-medium text-red-600" : "text-[var(--color-provin-muted)]"}`}
+          role="status"
+        >
+          {auto.summary}
+        </p>
+      ) : null}
       {store && (store.list.length > 0 || store.reports.length > 0) ? (
         <p className="mt-1.5 text-[10px] font-medium text-slate-700">
           {store.list.length > 0 ? `${store.list.length} apskates sarakstā` : ""}

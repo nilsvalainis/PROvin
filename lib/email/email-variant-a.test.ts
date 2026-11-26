@@ -99,7 +99,7 @@ describe("e-pasti variants A", () => {
     const off = dealerDataOperatorMessageEmailHtml({ text: "Labdien!", context: { situation: "ready", vin: VIN } });
     expect(off).not.toContain("star.png");
     const on = dealerDataOperatorMessageEmailHtml({
-      text: "Labdien!\n\nJa mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review",
+      text: "Labdien!\n\nJa mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review",
       context: { situation: "ready", vin: VIN },
     });
     expect(on).toContain("star.png");

@@ -1,7 +1,7 @@
 /**
  * «Izsoļu arhīvs dīlera datu vietā» klienta ziņas EN / RU / DE (Nils 26.11): piedāvājums, atgādinājums,
  * gatavs - e-pasta teksts, WhatsApp, HTML kartītes etiķetes. LV paliek `auction-archive-email.ts`.
- * Paraksts «Nils Valainis / PROVIN.LV» - B2B to pārvērš `applyB2bSignature` (tikai «PROVIN»).
+ * Paraksts «PROVIN.LV» (bez vārda, Nils 26.11) - B2B to pārvērš `applyB2bSignature` (tikai «PROVIN»).
  * Tīrs modulis (bez servera atkarībām).
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
@@ -145,7 +145,7 @@ const EN: AuctionArchiveEmailCopy = {
   readyLead: (vin, what, p) =>
     `Thank you for your choice. Attached is the auction archive for the car with VIN ${vin} (${what}) - photos with dates, ${p ? "prices, " : ""}mileage, damage by zone and the auction description.`,
   noSurcharge: "No extra payment is required.",
-  waReady: (vin) => `Hello! Thank you for your choice - I am sending the auction archive for the car with VIN ${vin} (PDF). No extra payment is required.`,
+  waReady: (vin) => `Hello! Thank you for your choice - we are sending the auction archive for the car with VIN ${vin} (PDF). No extra payment is required.`,
   plainChoose: "Choose and confirm:",
   html: {
     archive: "auction archive",
@@ -221,7 +221,7 @@ const RU: AuctionArchiveEmailCopy = {
   readyLead: (vin, what, p) =>
     `Спасибо за выбор. Во вложении архив аукционов для автомобиля с VIN ${vin} (${what}) - фото с датами, ${p ? "цены, " : ""}пробег, повреждения по зонам и описание аукциона.`,
   noSurcharge: "Доплата не требуется.",
-  waReady: (vin) => `Здравствуйте! Спасибо за выбор - отправляю архив аукционов для автомобиля с VIN ${vin} (PDF). Доплата не требуется.`,
+  waReady: (vin) => `Здравствуйте! Спасибо за выбор - отправляем архив аукционов для автомобиля с VIN ${vin} (PDF). Доплата не требуется.`,
   plainChoose: "Выбрать и подтвердить:",
   html: {
     archive: "архив аукционов",
@@ -297,7 +297,7 @@ const DE: AuctionArchiveEmailCopy = {
   readyLead: (vin, what, p) =>
     `Vielen Dank für Ihre Wahl. Im Anhang finden Sie das Auktionsarchiv zum Fahrzeug mit der VIN ${vin} (${what}) - Fotos mit Datum, ${p ? "Preise, " : ""}Kilometerstand, Schäden nach Zonen und die Auktionsbeschreibung.`,
   noSurcharge: "Eine Zuzahlung ist nicht erforderlich.",
-  waReady: (vin) => `Guten Tag! Vielen Dank für Ihre Wahl - ich sende das Auktionsarchiv zum Fahrzeug mit der VIN ${vin} (PDF). Eine Zuzahlung ist nicht erforderlich.`,
+  waReady: (vin) => `Guten Tag! Vielen Dank für Ihre Wahl - wir senden das Auktionsarchiv zum Fahrzeug mit der VIN ${vin} (PDF). Eine Zuzahlung ist nicht erforderlich.`,
   plainChoose: "Auswählen und bestätigen:",
   html: {
     archive: "Auktionsarchiv",

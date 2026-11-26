@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
+import { thecarapiCacheLabel, thecarapiDetailMissing, thecarapiUsageLabel } from "@/lib/thecarapi-admin-copy";
 import { runThecarapiIngest, THECARAPI_RECOVERED_NOTE_LV } from "@/lib/thecarapi-ingest-client";
 
 type Status = {
@@ -12,6 +13,8 @@ type Status = {
   cap: number;
   cachedSummary: string;
   cachedAt: string;
+  /** Saglabātās vēstures statuss: found / none (TheCarApi neatrada). */
+  cachedStatus?: string;
   cacheHasDetail?: boolean;
 };
 
@@ -71,7 +74,7 @@ export function AdminThecarapiIngestBar({
           enabled?: boolean;
           used?: number;
           cap?: number;
-          cache?: { summary?: string; cachedAt?: string } | null;
+          cache?: { summary?: string; cachedAt?: string; status?: string } | null;
           cacheHasDetail?: boolean;
         } | null;
         if (!alive || !body) return;
@@ -81,6 +84,7 @@ export function AdminThecarapiIngestBar({
           cap: typeof body.cap === "number" ? body.cap : 0,
           cachedSummary: body.cache?.summary || "",
           cachedAt: body.cache?.cachedAt || "",
+          cachedStatus: body.cache?.status || "",
           cacheHasDetail: body.cacheHasDetail === true,
         });
       })
@@ -111,6 +115,7 @@ export function AdminThecarapiIngestBar({
           cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? 0,
           cachedSummary: body.fromCache ? body.summary || prev?.cachedSummary || "" : prev?.cachedSummary || "",
           cachedAt: body.cachedAt || prev?.cachedAt || "",
+          cachedStatus: body.fromCache ? body.parse?.status || prev?.cachedStatus || "" : prev?.cachedStatus || "",
           cacheHasDetail: body.cacheHasDetail === true,
         }));
       }
@@ -125,7 +130,8 @@ export function AdminThecarapiIngestBar({
         used: typeof body.used === "number" ? body.used : prev?.used ?? used,
         cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? cap,
         cachedSummary: body.summary || prev?.cachedSummary || "",
-        cachedAt: body.cachedAt || prev?.cachedAt || "",
+        cachedAt: body.cachedAt || prev?.cachedAt || new Date().toISOString(),
+        cachedStatus: body.parse?.status || prev?.cachedStatus || "",
         cacheHasDetail: body.cacheHasDetail === true,
       }));
       if (outcome.recovered) setNote(THECARAPI_RECOVERED_NOTE_LV);
@@ -137,12 +143,21 @@ export function AdminThecarapiIngestBar({
     }
   };
 
-  const detailMissing = cached && status?.cacheHasDetail === false;
+  const detailMissing = thecarapiDetailMissing({
+    status: status?.cachedStatus,
+    summary: status?.cachedSummary,
+    cacheHasDetail: status?.cacheHasDetail,
+  });
+  const cacheLabel = thecarapiCacheLabel({
+    status: status?.cachedStatus,
+    summary: status?.cachedSummary,
+    cachedAt: status?.cachedAt,
+  });
   const onClick = () => {
     if (!enabled) return;
     if (cached && !detailMissing) {
       const ok = window.confirm(
-        `Šim VIN jau ir TheCarApi kešs${status?.cachedAt ? ` (${status.cachedAt.slice(0, 10)})` : ""}. Atjaunot (maksas)?`,
+        `Šim VIN jau ir TheCarApi kešs${status?.cachedAt ? ` (${status.cachedAt.slice(0, 10)})` : ""}. Pārbaudīt vēlreiz TheCarApi (paketē)?`,
       );
       if (!ok) return;
       void load(true);
@@ -152,7 +167,7 @@ export function AdminThecarapiIngestBar({
   };
   const onForce = () => {
     if (!enabled || !vin) return;
-    const ok = window.confirm("Atjaunot TheCarApi no jauna (maksas)? Kešs tiks ignorēts.");
+    const ok = window.confirm("Pārbaudīt TheCarApi no jauna? Saglabātie dati tiks ignorēti un ielādēti vēlreiz.");
     if (!ok) return;
     void load(true);
   };
@@ -161,14 +176,9 @@ export function AdminThecarapiIngestBar({
     <div className="mb-3 rounded-lg border border-slate-200/90 bg-slate-50/70 px-2 py-2">
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">EU izsoles (TheCarApi)</p>
       <p className="mb-2 text-[10px] leading-snug text-slate-500">
-        {enabled ? (cap > 0 ? `maksas izsaukums · šomēnes ${used}/${cap}` : `maksas izsaukums · šomēnes ${used}`) : DISABLED}
+        {enabled ? thecarapiUsageLabel(used) : DISABLED}
       </p>
-      {cached ? (
-        <p className="mb-2 text-[11px] text-slate-600">
-          Kešs: {status?.cachedSummary}
-          {status?.cachedAt ? ` · ${status.cachedAt.slice(0, 10)}` : ""}
-        </p>
-      ) : null}
+      {cacheLabel ? <p className="mb-2 text-[11px] text-slate-600">{cacheLabel}</p> : null}
       <button
         type="button"
         data-admin-paid="thecarapi"
@@ -176,7 +186,7 @@ export function AdminThecarapiIngestBar({
         disabled={!editable || busy || !vin || !enabled}
         onClick={onClick}
       >
-        {busy ? "Ielādē…" : !enabled ? DISABLED : detailMissing ? "Ielādēt detaļas (maksas)" : cached ? "Atjaunot (maksas)" : "Ielādēt EU izsoles (TheCarApi)"}
+        {busy ? "Ielādē…" : !enabled ? DISABLED : detailMissing ? "Ielādēt detaļas" : cached ? "Pārbaudīt vēlreiz" : "Ielādēt EU izsoles (TheCarApi)"}
       </button>
       {enabled ? (
         <button

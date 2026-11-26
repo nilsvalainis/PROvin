@@ -7,8 +7,11 @@ import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { provinEmailSubject } from "@/lib/email/email-subject";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 
+export { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
+
 /** Stripe session.locale / pasūtījuma valoda -> e-pasta valoda (nezināma = lv). */
 export function resolveClientEmailLang(raw: string | null | undefined): ClientReportLang {
+  // Stripe «auto» (pārlūka valoda) nekad nenosaka e-pasta valodu.
   const t = (raw ?? "").trim().toLowerCase().slice(0, 2);
   return t === "en" || t === "ru" || t === "de" ? t : "lv";
 }

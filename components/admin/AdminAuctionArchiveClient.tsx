@@ -29,6 +29,8 @@ export function AdminAuctionArchiveClient({
     used: number;
     cap: number;
     cachedSummary: string;
+    cachedStatus?: string;
+    cachedAt?: string;
     cacheHasDetail?: boolean;
     records?: ThecarapiAdminRecord[];
   } | null;
@@ -43,6 +45,8 @@ export function AdminAuctionArchiveClient({
   const [tcUsed, setTcUsed] = useState(thecarapi?.used ?? 0);
   const [tcCached, setTcCached] = useState(thecarapi?.cachedSummary ?? "");
   const [tcDetail, setTcDetail] = useState(thecarapi?.cacheHasDetail === true);
+  const [tcStatus, setTcStatus] = useState(thecarapi?.cachedStatus ?? "");
+  const [tcCachedAt, setTcCachedAt] = useState(thecarapi?.cachedAt ?? "");
 
   async function load(vin: string) {
     const q = vin ? `?vin=${encodeURIComponent(vin)}` : "";
@@ -135,6 +139,8 @@ export function AdminAuctionArchiveClient({
         auctions?: { date: string; venue: string; odometer: string; price: string }[];
         records?: unknown;
         cacheHasDetail?: boolean;
+        cachedAt?: string | null;
+        parse?: { status?: string };
       };
       if (!r.ok) throw new Error(body.summary || body.error || "TheCarApi neizdevās.");
       if (typeof body.used === "number") setTcUsed(body.used);
@@ -143,6 +149,8 @@ export function AdminAuctionArchiveClient({
       setTcNote(body.summary || "");
       if (body.summary) setTcCached(body.summary);
       if (typeof body.cacheHasDetail === "boolean") setTcDetail(body.cacheHasDetail);
+      if (body.parse?.status) setTcStatus(body.parse.status);
+      setTcCachedAt(body.cachedAt || new Date().toISOString());
       await load(initialVin);
     } catch (err) {
       setTcNote(err instanceof Error ? err.message : "TheCarApi neizdevās.");
@@ -174,6 +182,8 @@ export function AdminAuctionArchiveClient({
               used: tcUsed,
               cap: thecarapi.cap,
               cachedSummary: tcCached,
+              cachedStatus: tcStatus,
+              cachedAt: tcCachedAt,
               cacheHasDetail: tcDetail,
               busy: tcBusy,
               note: tcNote,

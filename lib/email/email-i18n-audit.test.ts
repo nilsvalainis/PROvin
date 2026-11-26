@@ -60,7 +60,7 @@ describe("dīlera dati «Sūtīt klientam» - visas valodas", () => {
     expect(m.subject).toBe(`PROVIN · Bericht fertig · Offizielle Händlerdaten · ${VIN}`);
     expect(m.text).toContain("die von Ihnen bestellten offiziellen Händlerdaten");
     expect(m.text).toContain("Bei Fragen antworten Sie einfach auf diese E-Mail");
-    expect(m.text.endsWith("Mit freundlichen Grüßen\nNils\nPROVIN.LV")).toBe(true);
+    expect(m.text.endsWith("Mit freundlichen Grüßen,\nPROVIN.LV")).toBe(true);
   });
 
   it("RU uzruna «Вы»", () => {
@@ -72,7 +72,7 @@ describe("dīlera dati «Sūtīt klientam» - visas valodas", () => {
   it("LV paliek kā līdz šim (šablons no reģistra)", () => {
     const m = buildDealerSendMessage({ channel: "email", situation: "ready", b2b: false, vin: VIN, lang: "lv" });
     expect(m.text).toContain("Labdien!");
-    expect(m.text).toContain("Ar cieņu,\nNils\nPROVIN.LV");
+    expect(m.text).toContain("Ar cieņu,\nPROVIN.LV");
   });
 
   it("LV admina pārraksts ne-LV klientam netiek lietots", () => {
@@ -160,7 +160,7 @@ describe("pārējie klientu e-pasti - ne-LV bez latviešu teksta", () => {
       for (const lang of FOREIGN) {
         const r = renderTemplateById(id, vars, null, { lang });
         expect(byLang[lang as "en"], `${id} ${lang}`).toBeTruthy();
-        expect(lvLeak(`${r?.subject ?? ""}\n${r?.text ?? ""}`.replace(/Ar cieņu,\nNils\nPROVIN\.LV/, "")), `${id} ${lang}`).toBeNull();
+        expect(lvLeak(`${r?.subject ?? ""}\n${r?.text ?? ""}`.replace(/Ar cieņu,\nPROVIN\.LV/, "")), `${id} ${lang}`).toBeNull();
         if (def!.subject) expect(r?.subject, `${id} ${lang}`).toBeTruthy();
       }
     }

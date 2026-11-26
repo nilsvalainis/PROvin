@@ -9,6 +9,8 @@
 import type { AdminPushMessage } from "@/lib/admin-push-shared";
 import type { CsddFormFields, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { kfzExactDateDdMmYyyy } from "@/lib/kfzgutachten/kfzgutachten";
+import { applyKfzAtToCitiAvoti } from "@/lib/kfzgutachten/apply-citi";
+import { kfzAtListRowsFromInspections } from "@/lib/kfzgutachten/kfz-at-result";
 import { applyVinScanAuctionsToCcVin } from "@/lib/order-vin-scan";
 import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
 import { emptyVinScanPlates, isValidScanPlate, normalizeScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
@@ -78,6 +80,7 @@ function same(a: unknown, b: unknown): boolean {
 export function applyVinScanImportsToBlocks(
   blocks: WorkspaceSourceBlocks,
   indicators: readonly VinScanIndicator[],
+  opts: { vin?: string } = {},
 ): VinScanBlockImport {
   let next = blocks;
   let sales = 0;
@@ -99,6 +102,14 @@ export function applyVinScanImportsToBlocks(
     const listing = applyVinScanListingToBlock(next.listing_analysis, listingRow);
     if (!same(listing, next.listing_analysis)) next = { ...next, listing_analysis: listing };
   }
+  // Austrija §57a (kfzgutachten.at bezmaksas saraksts) -> Citi avoti «Austrija · §57a apskates».
+  const kfzRow = indicators.find((row) => row.id === "kfz_at" && row.status === "found");
+  const kfzVin = (opts.vin || next.csdd.vin || next.csdd.registry?.data.vin || "").trim().toUpperCase();
+  const kfzList = kfzRow && kfzVin ? kfzAtListRowsFromInspections(kfzVin, kfzRow.inspections) : [];
+  if (kfzList.length > 0) {
+    const applied = applyKfzAtToCitiAvoti(next.citi_avoti, { list: kfzList }, { vin: kfzVin });
+    if (applied.addedListRows > 0) next = { ...next, citi_avoti: applied.block };
+  }
   return { blocks: next, changed: next !== blocks, sales, damages };
 }
 
@@ -110,6 +121,8 @@ export type OrderAutoIntakeSummary = {
   auctionSales: number;
   photosImported: number;
   thecarapiAuctions: number;
+  /** 26.11: Austrija §57a - atrasto atzinumu skaits vai ko vēl jāizdara cilvēkam. Tukšs - nav ko ziņot. */
+  austriaLine?: string;
 };
 
 function previewLine(label: string, row: VinScanIndicator | undefined): string {
@@ -135,8 +148,11 @@ export function buildOrderAutoIntakePush(s: OrderAutoIntakeSummary): AdminPushMe
     head,
     previewLine("AutoDNA", s.indicators.find((row) => row.id === "autodna_precheck")),
     previewLine("CARFAX", s.indicators.find((row) => row.id === "carfax_eu")),
+    s.austriaLine ?? "",
     "Pirkums tikai ar Tavu klikšķi pasūtījumā.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
   const title = `Pasūtījums gatavs pārskatam${s.vehicleLabel ? `: ${s.vehicleLabel}` : ""}`.slice(0, 120);
   return {
     title,

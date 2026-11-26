@@ -12,9 +12,12 @@ import {
   buildVinScanV4Attention,
   buildVinScanV4Layout,
   formatKmLv,
+  vinScanV4Notice,
   vinScanV4StatusLine,
+  VIN_SCAN_V4_KFZ_ID,
   type VinScanV4Flag,
 } from "@/lib/vin-scan/v4-view";
+import { kfzAtViewState } from "@/lib/kfzgutachten/austria-signals";
 
 /* ---------------- Tipi ---------------- */
 
@@ -38,6 +41,16 @@ export type VinScanV4SmartId = {
 };
 
 export type VinScanV4Link = { id: string; label: string; href: string };
+
+/** Austrija §57a: ko zina konteiners (pasūtījums) - datums no blokiem, CSDD iepriekšējā valsts, sessionId. */
+export type VinScanV4KfzContext = {
+  previousCountry?: string;
+  firstRegDate?: string;
+  orderId?: string;
+  listingUrl?: string;
+  /** Apskates, kas jau ielasītas Citi avoti «Austrija». */
+  listed?: number;
+};
 
 /* ---------------- Stils (makets v4: balts, grafīts, #D2D2D7) ---------------- */
 
@@ -467,6 +480,7 @@ export function AdminVinScanV4({
   extraFlags,
   progressLead,
   hasListing = false,
+  kfz,
 }: {
   vin: string;
   plate?: string;
@@ -497,11 +511,29 @@ export function AdminVinScanV4({
   /** «VIN atrasts CSDD pēc NK-7310». */
   progressLead?: ReactNode;
   hasListing?: boolean;
+  /** Austrija §57a (kfzgutachten.at): pasūtījuma dati datumam un Tampermonkey tiltam. */
+  kfz?: VinScanV4KfzContext;
 }) {
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [emptyOpen, setEmptyOpen] = useState(false);
   const toggle = (id: string) => setOpenIds((cur) => ({ ...cur, [id]: !cur[id] }));
   const layout = useMemo(() => buildVinScanV4Layout(rows), [rows]);
+  const kfzState = useMemo(
+    () =>
+      rows.some((r) => r.id === VIN_SCAN_V4_KFZ_ID) || kfz
+        ? kfzAtViewState({
+            vin,
+            rows,
+            previousCountry: kfz?.previousCountry,
+            listingUrl: kfz?.listingUrl,
+            firstRegDate: kfz?.firstRegDate,
+            csddFirstRegIso: csdd?.firstRegistrationIso,
+            orderId: kfz?.orderId,
+            listed: kfz?.listed,
+          })
+        : null,
+    [vin, rows, kfz, csdd],
+  );
   const facts = useMemo(
     () =>
       rows.some((r) => r.status === "found") || csdd
@@ -799,9 +831,13 @@ export function AdminVinScanV4({
     );
   };
 
-  const emptyList = [...layout.errors, ...layout.empty];
+  // Austrijas auto: kfz_at rinda saraksta augšā (sarkana), arī aizvērtā sarakstā redzama zem virsraksta.
+  const kfzRisk = Boolean(kfzState?.risk);
+  const emptyList = [...layout.errors, ...layout.empty].sort(
+    (a, b) => Number(kfzRisk && b.id === VIN_SCAN_V4_KFZ_ID) - Number(kfzRisk && a.id === VIN_SCAN_V4_KFZ_ID),
+  );
   const empties =
-    emptyList.length || links.length || layout.links.length ? (
+    emptyList.length || links.length || layout.links.length || kfzRisk ? (
       <div className="rounded-[10px] border border-[#d2d2d7] bg-white px-[18px] max-sm:rounded-[8px] max-sm:px-3" data-v4-block="tuksi">
         <button
           type="button"
@@ -828,32 +864,73 @@ export function AdminVinScanV4({
             ›
           </span>
         </button>
+        {kfzRisk && kfzState && !emptyOpen ? (
+          <p className={`-mt-1 min-w-0 break-words pb-3 text-[12px] leading-[1.4] ${RISK}`} data-v4-kfz-alert>
+            Austrija · §57a apskates: {kfzState.status} ({kfzState.signals.join(", ")}) ·{" "}
+            <a
+              href={kfzState.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-provin-handoff-vin={vin || undefined}
+              className="font-medium underline decoration-[#d2d2d7] underline-offset-[3px]"
+            >
+              Atvērt sarakstu
+            </a>
+          </p>
+        ) : null}
         {emptyOpen ? (
           <div className="grid pb-2.5">
             {emptyList.map((r) => {
-              const err = layout.errors.includes(r);
+              const kfzRow = r.id === VIN_SCAN_V4_KFZ_ID && kfzState;
+              const n = kfzRow
+                ? { status: kfzState.status, detail: kfzState.detail, error: false, risk: kfzState.risk }
+                : vinScanV4Notice(r);
+              const href = kfzRow ? kfzState.url : n.error || /saitē/.test(n.detail) ? r.openUrl : "";
               return (
-                <div key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-[#f5f5f7] py-1.5 text-[12.5px]" data-v4-empty={r.id}>
-                  <span>
+                <div
+                  key={r.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-t border-[#f5f5f7] py-1.5 text-[12.5px]"
+                  data-v4-empty={r.id}
+                >
+                  <span className={`min-w-0 truncate ${INK}`} title={r.label}>
                     {r.label}
-                    {r.summary && !err ? <span className={MUTE}> · {r.summary}</span> : null}
                   </span>
-                  <span className={`text-right ${err ? RISK : MUTE}`}>
-                    {err ? r.note || r.summary || "kļūda" : r.status === "none" ? "nav atrasts" : r.summary || "nav datu"}
-                    {err && onRetry ? (
-                      <>
-                        {" · "}
-                        <button
-                          type="button"
-                          className={`border-0 bg-transparent p-0 text-[12.5px] font-medium underline decoration-[#d2d2d7] underline-offset-[3px] ${RISK}`}
-                          onClick={() => onRetry([r.id])}
-                          disabled={busy}
-                        >
-                          Atkārtot
-                        </button>
-                      </>
-                    ) : null}
-                  </span>
+                  <span className={`shrink-0 whitespace-nowrap text-right ${n.risk ? RISK : MUTE}`}>{n.status}</span>
+                  {n.detail || href || (n.error && onRetry) ? (
+                    <span
+                      className={`col-span-2 min-w-0 break-words text-[11.5px] leading-[1.4] ${n.risk ? RISK : MUTE}`}
+                      data-v4-empty-detail
+                    >
+                      {n.detail}
+                      {href ? (
+                        <>
+                          {n.detail ? " · " : null}
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-provin-handoff-vin={vin || undefined}
+                            className="font-medium underline decoration-[#d2d2d7] underline-offset-[3px]"
+                          >
+                            {kfzRow ? "Atvērt sarakstu" : "Atvērt"}
+                          </a>
+                        </>
+                      ) : null}
+                      {n.error && onRetry ? (
+                        <>
+                          {n.detail || href ? " · " : null}
+                          <button
+                            type="button"
+                            className={`border-0 bg-transparent p-0 text-[11.5px] font-medium underline decoration-[#d2d2d7] underline-offset-[3px] ${RISK}`}
+                            onClick={() => onRetry([r.id])}
+                            disabled={busy}
+                          >
+                            Atkārtot
+                          </button>
+                        </>
+                      ) : null}
+                    </span>
+                  ) : null}
                 </div>
               );
             })}
