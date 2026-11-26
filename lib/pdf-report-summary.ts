@@ -47,11 +47,14 @@ import {
   unifiedIncidentCountKind,
 } from "@/lib/unified-incidents";
 import {
+  analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
   isListingMileageSource,
   parseOdometerKm,
   prepareUnifiedMileageDisplayRows,
+  type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
+import { countryLabelToIso2 } from "@/lib/country-names-lv";
 import {
   activeListingBelowAnomalies,
   countChartMileageReadings,
@@ -177,6 +180,45 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
+/** Kritums, no kura rāda «iepriekš …» (mazākas atšķirības - rādījumu precizitāte, nevis kritums). */
+const MILEAGE_EARLIER_HIGHER_MIN_KM = 1000;
+
+function groupKmLv(n: number): string {
+  return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0")}\u00a0km`;
+}
+
+/** «CSDD» / «DK» - īss avots: CSDD pēc nosaukuma, citiem valsts ISO kods, citādi avota nosaukums. */
+function mileageRowShortSource(row: UnifiedMileageRow): string {
+  if (/\bcsdd\b/i.test(row.sourceLabel)) return "CSDD";
+  const firstCountry = (row.country ?? "").split("/")[0]!.trim();
+  const iso = firstCountry ? countryLabelToIso2(firstCountry) : null;
+  return iso || row.sourceLabel.trim();
+}
+
+/**
+ * 26.11 (WDD2122931A366915): baneris rādīja tikai pēdējo CSDD rādījumu 287 469 km, lai gan agrāk
+ * fiksēts 357 628 km (DK 13.08.2026). Atgriež augstāko agrāko rādījumu, ja tas ir lielāks par jaunāko.
+ * Sludinājumi un grafikā izslēgtie izlēcēji neskaitās.
+ */
+export function findEarlierHigherMileage(
+  rows: UnifiedMileageRow[],
+  newest: UnifiedMileageRow,
+): { row: UnifiedMileageRow; km: number; newestKm: number; dropKm: number } | null {
+  const newestKm = parseOdometerKm(newest.odometer);
+  if (newestKm == null) return null;
+  const exclude = analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
+  let best: { row: UnifiedMileageRow; km: number } | null = null;
+  for (const r of rows) {
+    if (r === newest || exclude.has(r.sourceOrder) || isListingMileageSource(r)) continue;
+    if (r.sortableTime === Number.NEGATIVE_INFINITY || r.sortableTime > newest.sortableTime) continue;
+    const km = parseOdometerKm(r.odometer);
+    if (km == null) continue;
+    if (!best || km > best.km) best = { row: r, km };
+  }
+  if (!best || best.km - newestKm < MILEAGE_EARLIER_HIGHER_MIN_KM) return null;
+  return { ...best, newestKm, dropKm: best.km - newestKm };
+}
+
 function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   const rows = prepareUnifiedMileageDisplayRows(
     collectUnifiedMileageRows({
@@ -231,6 +273,26 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   // Ja jaunākais sludinājums pats ir „mazāk” ieraksts, otru rindu nedublē.
   const listingIsBelowRow = listingBelow.some((a) => a.toKm === listingKm);
   const noteLead = listingBelow.length > 0 && currentListingLine && !listingIsBelowRow ? currentListingLine : undefined;
+  // 26.11: agrāk augstāks rādījums - fakts ar abiem rādījumiem un kritumu (bez verdikta), sarkanā tonī.
+  // Ja operators kritumu atzīmējis kā kļūdu (override), rollback nav aktīvs - rindu nerāda.
+  const earlier = rollback ? findEarlierHigherMileage(rows, newest) : null;
+  if (earlier) {
+    const segments = [
+      `Pēdējais rādījums ${groupKmLv(earlier.newestKm)} (${mileageRowShortSource(newest)})`,
+      `iepriekš ${groupKmLv(earlier.km)} (${[mileageRowShortSource(earlier.row), earlier.row.date.trim()].filter(Boolean).join(" ")})`,
+      `kritums ${groupKmLv(earlier.dropKm)}`,
+      ...(currentListingLine ? [currentListingLine] : []),
+    ];
+    return {
+      id: "mileage",
+      label: "Nobraukums",
+      value,
+      note: segments.join(" · "),
+      noteSegments: segments,
+      tone: "alert",
+      readings: chartCount,
+    };
+  }
   return {
     id: "mileage",
     label: "Nobraukums",

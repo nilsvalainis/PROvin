@@ -33,7 +33,7 @@ function indicator(partial: Partial<VinScanIndicator> & Pick<VinScanIndicator, "
 describe("WMI dekodējums: ražotājvalsts tikai identitātē", () => {
   it("lokālais dekodējums: «Ražots: Francija», flags.manufactureCountry, bez registrationCountry", () => {
     const parsed = vinDecodeParseFromLocal(decodeVinLocal(PEUGEOT_VIN));
-    expect(parsed.summary).toBe("2017 Peugeot · Ražots: Francija");
+    expect(parsed.summary).toBe("Peugeot · Ražots: Francija");
     expect(parsed.flags?.manufactureCountry).toBe("FR");
     expect(parsed.flags?.registrationCountry).toBeUndefined();
   });
@@ -43,7 +43,7 @@ describe("WMI dekodējums: ražotājvalsts tikai identitātē", () => {
       status: "found",
       summary: "2017 PEUGEOT 308",
       vehicle: { make: "PEUGEOT", model: "308", year: "2017" },
-    });
+    }, { registryYear: "2017" });
     expect(merged.summary).toBe("2017 PEUGEOT 308 · Ražots: Francija");
     expect(merged.flags?.manufactureCountry).toBe("FR");
     expect(merged.flags?.registrationCountry).toBeUndefined();

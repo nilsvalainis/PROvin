@@ -9,6 +9,7 @@ import { formatServiceWorkOdometer, type AutoRecordsServiceWorkRow } from "@/lib
 import { findDealerOdometerDrops, findDealerOdometerOutliers } from "@/lib/dealer-odometer-checks";
 import { isGearboxOilChangeWork } from "@/lib/dealer-major-works";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
+import { formatOilStepRangeFactLine } from "@/lib/oil-change-intervals";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { buildDealerVisitSummary } from "@/lib/pdf-dealer-timeline";
 import { detectDealerTaxiSignals } from "@/lib/dealer-review-score";
@@ -125,12 +126,15 @@ export function buildDealerCodeFactsForPrompt(
     }
   }
 
-  const oil = dealerOilChangePointsForPrompt(sourceBlocks);
+  const oilSeries = buildOilIntervalSeriesForBlock(blocks.auto_records);
+  const oil = oilSeries.points.map((p) => ({ date: p.date, odometer: p.odometer }));
   lines.push(
     oil.length > 0
       ? `- Dzinēja eļļas maiņas (tā pati tabula kā PDF): ${oil.length} (${oil.map((p) => `${p.date || "datums nav"} ${kmLabel(p.odometer)}`).join("; ")}).`
       : "- Dzinēja eļļas maiņas: kods dīlera datos neatrada nevienu. Neizdomā maiņas.",
   );
+  const oilSteps = formatOilStepRangeFactLine(oilSeries);
+  if (oilSteps) lines.push(`- ${oilSteps}`);
 
   const gearbox = rows.filter((r) => isGearboxOilChangeWork(r.works));
   if (gearbox.length > 0) {

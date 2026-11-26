@@ -776,3 +776,34 @@ export function buildOilChangeIntervalPdfHtml(
     ${oilClaimCautionHtml(cautionOpts)}
   </div>`;
 }
+
+function groupOilKm(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+export type OilStepRange = { steps: number[]; minKm: number; maxKm: number };
+
+/**
+ * 26.11 (WDD2122931A366915): visi km soļi starp tabulas maiņām (arī tie, kas vidējā nav iekļauti),
+ * lai AI tekstā diapazons būtu tieši tas, ko rāda tabula (nevis «11 200-25 000», ja tabulā 7 607 un 47 560).
+ */
+export function oilIntervalStepRange(series: Pick<OilChangeIntervalSeries, "points">): OilStepRange | null {
+  const steps = series.points.map((p) => p.intervalKm).filter((v): v is number => v != null && v > 0);
+  if (steps.length === 0) return null;
+  return { steps, minKm: Math.min(...steps), maxKm: Math.max(...steps) };
+}
+
+/** Viena faktu rinda AI promptam: precīzais soļu diapazons un visi soļi tabulas secībā. */
+export function formatOilStepRangeFactLine(series: Pick<OilChangeIntervalSeries, "points">): string {
+  const r = oilIntervalStepRange(series);
+  if (!r) return "";
+  const all = r.steps.map((s) => `${groupOilKm(s)} km`).join(", ");
+  return `Soļi starp dzinēja eļļas maiņām (tā pati tabula kā PDF): no ${groupOilKm(r.minKm)} km līdz ${groupOilKm(r.maxKm)} km; visi soļi: ${all}. Cits diapazons AIZLIEGTS; ja raksti diapazonu, tas ir tieši ${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)} km.`;
+}
+
+/** Īsā faktu lapas rinda: «Dzinēja eļļas soļi (tabula): 7 607-47 560 km». */
+export function formatOilStepRangeShortLv(series: Pick<OilChangeIntervalSeries, "points">): string {
+  const r = oilIntervalStepRange(series);
+  if (!r) return "";
+  return `Dzinēja eļļas soļi (tabula): ${r.minKm === r.maxKm ? groupOilKm(r.minKm) : `${groupOilKm(r.minKm)}-${groupOilKm(r.maxKm)}`} km`;
+}

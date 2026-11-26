@@ -1,6 +1,8 @@
 /**
  * ISO 3779 VIN dekodēšana bez tīkla: WMI (ražotājs + izcelsmes valsts),
- * modeļa gads (10. zīme), rūpnīcas kods (11. zīme).
+ * modeļa gads (10. zīme, tikai Ziemeļamerikas WMI), rūpnīcas kods (11. zīme).
+ * 26.11: Eiropas (un citu ne-ASV/CA/MX) VIN 10. zīme nav standartizēts modeļa gads un kontrolcipars
+ * (9. zīme) nav obligāts - gadu nedekodējam (to dod reģistri), kontrolciparu neziņojam kā kļūdu.
  * NHTSA vPIC paliek bagātināšana; šis vienmēr dod vismaz valsti/marku.
  */
 
@@ -272,8 +274,15 @@ function makeFromWmi(wmi: string): string {
   return "";
 }
 
+/** Ziemeļamerikas WMI (ASV/Kanāda/Meksika): 10. zīme = modeļa gads, 9. zīme = obligāts kontrolcipars. */
+export function vinHasNorthAmericanCoding(vin: string): boolean {
+  const v = vin.trim().toUpperCase();
+  return NORTH_AMERICA_COUNTRIES.has(countryFromWmi(v.slice(0, 3)));
+}
+
 function modelYearFromVin(vin: string): string {
   if (vin.length < 10) return "";
+  if (!vinHasNorthAmericanCoding(vin)) return "";
   const ch = vin[9] ?? "";
   if (/[1-9]/.test(ch)) return String(2000 + Number(ch));
   const base = YEAR_LETTER[ch];
@@ -304,7 +313,8 @@ export function decodeVinLocal(raw: string): VinDecode {
   const countryName = vinOriginCountryLabel(countryCode);
   const year = modelYearFromVin(vin);
   const plant = vin.length >= 11 ? vin[10] ?? "" : "";
-  const checkDigitOk = vin.length === 17 ? iso3779CheckDigit(vin) === vin[8] : null;
+  const checkDigitOk =
+    vin.length === 17 && vinHasNorthAmericanCoding(vin) ? iso3779CheckDigit(vin) === vin[8] : null;
   const ok = Boolean(make || countryCode || year);
   return {
     ok,
@@ -446,7 +456,23 @@ export function preferVinModelYear(localYear: string, vpicYear: string, nowYear 
   return vpicYear;
 }
 
-export function mergeVinDecodeWithVpic(local: VinDecode, vpic: VinScanParse | null): VinScanParse {
+/**
+ * `registryYear` - gads no tā paša skenējuma reģistriem (CSDD, tjekbil...). Ne-ASV VIN vPIC gads ir
+ * izlasīts no 10. zīmes tāpat kā lokāli (WDD...1A... = «2001»), tāpēc to neņemam.
+ */
+export function mergeVinDecodeWithVpic(
+  local: VinDecode,
+  vpic: VinScanParse | null,
+  opts: { registryYear?: string } = {},
+): VinScanParse {
+  const northAmerican = vinHasNorthAmericanCoding(local.vin);
+  const registryYear = /^(19|20)\d{2}$/.test(String(opts.registryYear ?? "").trim())
+    ? String(opts.registryYear).trim()
+    : "";
+  if (!northAmerican) {
+    local = { ...local, year: local.year || registryYear };
+    if (vpic?.vehicle) vpic = { ...vpic, vehicle: { ...vpic.vehicle, year: "" } };
+  }
   const base = vinDecodeParseFromLocal(local);
   if (base.status !== "found") return vpic && vpic.status === "found" ? vpic : base;
   const vpicOk = vpic && vpic.status === "found" && vpic.vehicle && (vpic.vehicle.make || vpic.vehicle.model || vpic.vehicle.year);

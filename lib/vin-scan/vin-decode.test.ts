@@ -14,17 +14,17 @@ import {
 const VOLVO_SE = "YV1DZ5251B2146640";
 
 describe("decodeVinLocal", () => {
-  it("YV1 ir Volvo, Zviedrija, 2011, arī ar nederīgu kontrolciparu", () => {
+  it("YV1 ir Volvo, Zviedrija; Eiropas VIN gadu un kontrolciparu nedekodē", () => {
     const d = decodeVinLocal(VOLVO_SE);
     expect(d.ok).toBe(true);
     expect(d.wmi).toBe("YV1");
     expect(d.make).toBe("Volvo");
     expect(d.countryCode).toBe("SE");
     expect(d.countryName).toBe("Zviedrija");
-    expect(d.year).toBe("2011");
+    expect(d.year).toBe("");
     expect(d.plant).toBe("2");
     expect(d.nordic).toBe(true);
-    expect(d.checkDigitOk).toBe(false);
+    expect(d.checkDigitOk).toBe(null);
   });
 
   it("WMI tabula: BMW Vācija, Škoda Čehija, Honda ASV", () => {
@@ -84,8 +84,8 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     expect(parsed.status).toBe("found");
     expect(parsed.summary).toContain("Volvo");
     expect(parsed.summary).toContain("Zviedrija");
-    expect(parsed.summary).toContain("2011");
-    expect(parsed.vehicle).toMatchObject({ make: "Volvo", year: "2011" });
+    expect(parsed.summary).not.toContain("2011");
+    expect(parsed.vehicle).toMatchObject({ make: "Volvo", year: "" });
     expect(parsed.flags?.manufactureCountry).toBe("SE");
     expect(parsed.detail).toContain("WMI YV1");
   });
@@ -98,20 +98,52 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     });
     expect(merged.summary).toContain("XC60");
     expect(merged.summary).toContain("Zviedrija");
-    expect(merged.vehicle).toEqual({ make: "VOLVO", model: "XC60", year: "2011" });
+    // Eiropas VIN: vPIC gads arī ir no 10. zīmes, to neņem.
+    expect(merged.vehicle).toEqual({ make: "VOLVO", model: "XC60", year: "" });
     expect(merged.flags?.manufactureCountry).toBe("SE");
   });
 
-  it("vPIC 1981 (ISO cikls) neaizstāj lokālo 2011", () => {
-    const merged = mergeVinDecodeWithVpic(decodeVinLocal(VOLVO_SE), {
-      status: "found",
-      summary: "Daļējs dekodējums: 1981 VOLVO",
-      vehicle: { make: "VOLVO", model: "", year: "1981" },
-    });
+  it("Eiropas VIN: gads tikai no reģistra, vPIC 1981 neņem", () => {
+    const merged = mergeVinDecodeWithVpic(
+      decodeVinLocal(VOLVO_SE),
+      { status: "found", summary: "Daļējs dekodējums: 1981 VOLVO", vehicle: { make: "VOLVO", model: "", year: "1981" } },
+      { registryYear: "2011" },
+    );
     expect(merged.vehicle?.year).toBe("2011");
     expect(merged.vehicle?.make).toBe("VOLVO");
     expect(merged.summary).toContain("2011");
     expect(merged.flags?.manufactureCountry).toBe("SE");
+  });
+
+  it("ASV VIN: vPIC 1981 (ISO cikls) neaizstāj lokālo 2003", () => {
+    const merged = mergeVinDecodeWithVpic(decodeVinLocal("1HGCM82633A004352"), {
+      status: "found",
+      summary: "1973 HONDA",
+      vehicle: { make: "HONDA", model: "", year: "1973" },
+    });
+    expect(merged.vehicle?.year).toBe("2003");
+  });
+
+  it("WDD2122931A366915 (Mercedes): nav «2001», nav kontrolcipara kļūdas", () => {
+    const d = decodeVinLocal("WDD2122931A366915");
+    expect(d.make.toUpperCase()).toContain("MERCEDES");
+    expect(d.year).toBe("");
+    expect(d.checkDigitOk).toBe(null);
+    const parsed = vinDecodeParseFromLocal(d);
+    expect(parsed.summary).not.toContain("2001");
+    expect(parsed.detail ?? "").not.toContain("kontrolcipars");
+    const merged = mergeVinDecodeWithVpic(d, {
+      status: "found",
+      summary: "2001 MERCEDES-BENZ",
+      vehicle: { make: "MERCEDES-BENZ", model: "", year: "2001" },
+    });
+    expect(merged.vehicle?.year).toBe("");
+    expect(merged.summary).not.toContain("2001");
+  });
+
+  it("ASV VIN: kontrolcipars joprojām tiek pārbaudīts", () => {
+    expect(decodeVinLocal("1HGCM82633A004352").checkDigitOk).toBe(true);
+    expect(decodeVinLocal("1M8GDM9A0KP042788").checkDigitOk).toBe(false);
   });
 
   it("vPIC kļūda atstāj lokālo dekodējumu", () => {
