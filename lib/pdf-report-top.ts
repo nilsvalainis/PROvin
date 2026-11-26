@@ -359,14 +359,94 @@ export function pdfTopMakeLogoUri(makeModel: string): string | null {
   if (!uri) return null;
   const b64 = /^data:image\/svg\+xml;base64,(.+)$/.exec(uri)?.[1];
   if (!b64) return null;
-  let svg = fromBase64(b64);
-  const inner = /^<svg\b[^>]*>\s*<svg\b[^>]*\bwidth="([\d.]+)"[^>]*\bheight="([\d.]+)"[^>]*\bx="([\d.]+)"[^>]*\by="([\d.]+)"/.exec(svg);
+  let svg = fromBase64(b64).trim();
+  const inner = /^<svg\b([^>]*)>\s*<svg\b[^>]*\bwidth="([\d.]+)"[^>]*\bheight="([\d.]+)"[^>]*\bx="([\d.]+)"[^>]*\by="([\d.]+)"/.exec(svg);
   if (inner) {
-    const [, w, h, x, y] = inner;
-    svg = svg.replace(/^<svg\b[^>]*>/, `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">`);
+    const [, outerAttrs, w, h, x, y] = inner;
+    // 26.11: ārējā tagā deklarētās vārdtelpas (xmlns:xlink u.c.) jāsaglabā - bez tām Peugeot/DS/Land Rover/Porsche
+    // (`xlink:href`) kļuva par nederīgu XML un PDF rādīja salauztu attēlu.
+    const ns = [...outerAttrs!.matchAll(/\s(xmlns:[\w.-]+)\s*=\s*("[^"]*"|'[^']*')/g)].map((m) => ` ${m[1]}=${m[2]}`).join("");
+    svg = svg.replace(/^<svg\b[^>]*>/, `<svg xmlns="http://www.w3.org/2000/svg"${ns} width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">`);
   }
   if (PDF_SOURCE_LOGO_TONE) svg = recolorSvgToTone(svg, PDF_SOURCE_LOGO_TONE);
+  // Ja logo nav droši derīgs - labāk tikai nosaukums nekā salauzta attēla ikona.
+  if (pdfTopSvgProblem(svg)) return null;
   return svgDataUri(svg);
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const SVG_DRAW_RE = /<(?:[\w.-]+:)?(?:path|circle|rect|ellipse|line|polyline|polygon|image|use|text)\b/;
+
+/**
+ * Vienkārša SVG pārbaude bez XML bibliotēkas: korekti tagi un ligzdošana, pēdiņās attiecinātie atribūti bez
+ * dublikātiem, deklarētas vārdtelpas (prefiksi), derīgas entītijas, saknē `<svg xmlns=…>` ar viewBox (vai
+ * width/height) > 0 un vismaz viens zīmējuma elements. Atgriež problēmas aprakstu vai null, ja SVG derīgs.
+ */
+export function pdfTopSvgProblem(svgRaw: string): string | null {
+  const svg = svgRaw.trim();
+  if (!svg.startsWith("<svg")) return "nesākas ar <svg";
+  const stack: { name: string; ns: Map<string, string> }[] = [];
+  let rootAttrs: Map<string, string> | null = null;
+  let closedRoot = false;
+  const badEntity = /&(?!(?:[A-Za-z][\w.-]*|#\d+|#x[0-9A-Fa-f]+);)/;
+  const tokenRe = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<!DOCTYPE[^>]*>|<\/([\w:.-]+)\s*>|<([\w:.-]+)((?:\s+[\w:.-]+\s*=\s*(?:"[^"<]*"|'[^'<]*'))*)\s*(\/?)>/gy;
+  let pos = 0;
+  while (pos < svg.length) {
+    const lt = svg.indexOf("<", pos);
+    const text = svg.slice(pos, lt < 0 ? svg.length : lt);
+    if (text.trim()) {
+      if (!stack.length) return "teksts ārpus saknes";
+      if (badEntity.test(text)) return "nederīga entītija tekstā";
+    }
+    if (lt < 0) break;
+    if (closedRoot) return "saturs pēc saknes </svg>";
+    tokenRe.lastIndex = lt;
+    const m = tokenRe.exec(svg);
+    if (!m) return `nederīgs tags pozīcijā ${lt}`;
+    pos = tokenRe.lastIndex;
+    const [tok, closeName, openName, attrsRaw, selfClose] = m;
+    if (tok.startsWith("<!") || tok.startsWith("<?")) continue;
+    if (closeName) {
+      const top = stack.pop();
+      if (!top || top.name !== closeName) return `neatbilstošs </${closeName}>`;
+      if (!stack.length) closedRoot = true;
+      continue;
+    }
+    const ns = new Map(stack.length ? stack[stack.length - 1]!.ns : [["xml", "x"], ["xmlns", "x"]]);
+    const attrs = new Map<string, string>();
+    for (const a of (attrsRaw ?? "").matchAll(/([\w:.-]+)\s*=\s*("([^"]*)"|'([^']*)')/g)) {
+      const name = a[1]!;
+      const val = a[3] ?? a[4] ?? "";
+      if (attrs.has(name)) return `dublēts atribūts ${name} <${openName}>`;
+      if (badEntity.test(val)) return `nederīga entītija atribūtā ${name}`;
+      attrs.set(name, val);
+      if (name.startsWith("xmlns:")) ns.set(name.slice(6), val);
+    }
+    const prefixOf = (n: string) => (n.includes(":") ? n.split(":")[0]! : null);
+    const elPrefix = prefixOf(openName!);
+    if (elPrefix && !ns.has(elPrefix)) return `nedeklarēts prefikss ${elPrefix}: <${openName}>`;
+    for (const name of attrs.keys()) {
+      const ap = prefixOf(name);
+      if (ap && !ns.has(ap)) return `nedeklarēts prefikss ${ap}: atribūtā ${name}`;
+    }
+    if (!stack.length) {
+      if (rootAttrs) return "vairākas saknes";
+      if (openName !== "svg") return "sakne nav <svg>";
+      rootAttrs = attrs;
+    }
+    if (!selfClose) stack.push({ name: openName!, ns });
+    else if (!stack.length) closedRoot = true;
+  }
+  if (stack.length) return `neaizvērts <${stack[stack.length - 1]!.name}>`;
+  if (!rootAttrs) return "nav saknes";
+  if (rootAttrs.get("xmlns") !== SVG_NS) return "saknei nav SVG xmlns";
+  const vb = (rootAttrs.get("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+  const hasVb = vb.length === 4 && vb.every(Number.isFinite) && vb[2]! > 0 && vb[3]! > 0;
+  const w = parseFloat(rootAttrs.get("width") ?? "");
+  const h = parseFloat(rootAttrs.get("height") ?? "");
+  if (!hasVb && !(w > 0 && h > 0)) return "nav viewBox vai izmēru";
+  if (!SVG_DRAW_RE.test(svg)) return "tukšs (nav zīmējuma elementu)";
+  return null;
 }
 
 /** Izsoles vieta → logo atslēga. */
@@ -748,7 +828,7 @@ function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
         : "";
       const noteHtml = c.note ? `<p class="pdf-top6-card__sub">${keepNumbers(esc(c.note))}</p>` : "";
       const labelHtml = c.labelLogoUri
-        ? `<p class="pdf-top6__lab" style="display:flex;align-items:center;gap:${LABEL_LOGO_GAP}px;${fitStyle(labPx, 6.25)}"><img src="${esc(c.labelLogoUri)}" alt="" style="height:${LABEL_LOGO_H}px;width:auto;max-width:${LABEL_LOGO_H * 2.5}px;flex:none;margin:-2px 0">${esc(c.label)}</p>`
+        ? `<p class="pdf-top6__lab" style="display:flex;align-items:center;gap:${LABEL_LOGO_GAP}px;${fitStyle(labPx, 6.25)}"><img src="${esc(c.labelLogoUri)}" alt="" style="height:${LABEL_LOGO_H}px;width:auto;max-width:${LABEL_LOGO_H * 2.5}px;flex:none;margin:-2px 0" onerror="this.remove()">${esc(c.label)}</p>`
         : `<p class="pdf-top6__lab" style="${fitStyle(labPx, 6.25)}">${esc(c.label)}</p>`;
       return `<div class="pdf-top6-card pdf-top6-card--${esc(c.id.replace(/[^a-z0-9-]/gi, "-"))}" style="grid-row:${cell.row};grid-column:${cell.col} / span 2">${labelHtml}${valueHtml}${noteHtml}</div>`;
     })
@@ -776,7 +856,8 @@ function sourcesHtml(m: PdfTopModel): string {
         const h = LOGO_HEIGHT[s.logo.key] ?? 13;
         nm = `<img class="pdf-top6-src__logo" style="height:${h}px" src="${sourceLogoUri(s.logo.key)}" alt="${esc(s.name)}"/>`;
       } else if (s.logo && "uri" in s.logo) {
-        nm = `<img class="pdf-top6-src__logo pdf-top6-src__logo--make" src="${s.logo.uri}" alt="${esc(s.name)}"/>`;
+        // Rezerve: ja pārlūks/PDF renderis logo neielādē - paslēpj attēlu un rāda nosaukumu (nekad salauzta ikona).
+        nm = `<img class="pdf-top6-src__logo pdf-top6-src__logo--make" src="${s.logo.uri}" alt="${esc(s.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/><span style="display:none;${fitStyle(pdfTopFitPx(s.name, cellW, 11.5, 8), 8)}">${esc(s.name)}</span>`;
       } else {
         nm = `<span style="${fitStyle(pdfTopFitPx(s.name, cellW, 11.5, 8), 8)}">${esc(s.name)}</span>`;
       }
