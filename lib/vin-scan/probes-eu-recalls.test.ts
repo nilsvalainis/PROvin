@@ -395,3 +395,17 @@ describe("ES Safety Gate zonde", () => {
     expect(row.summary).toContain("6 modeļa līmeņa brīdinājumi - SKODA Kodiaq");
   });
 });
+
+describe("safetyGateModelFor (26.11: vPIC nav galvenais)", () => {
+  it("reģistra modelis pirms vPIC; vPIC tikai rezerve; svešai markai modeli neņem", async () => {
+    const { safetyGateModelFor } = await import("@/lib/vin-scan/probes-eu-recalls");
+    const vpic = { make: "VOLVO", model: "740 Series", year: "2014" };
+    expect(safetyGateModelFor("Volvo", { make: "VOLVO", model: "V60", year: "2014" }, vpic)).toEqual({
+      model: "V60",
+      year: "2014",
+      from: "hint",
+    });
+    expect(safetyGateModelFor("Volvo", null, vpic)).toEqual({ model: "740 Series", year: "2014", from: "vpic" });
+    expect(safetyGateModelFor("Volvo", { make: "AUDI", model: "A6", year: "" }, null)).toEqual({ model: "", year: "", from: "" });
+  });
+});

@@ -82,9 +82,9 @@ function expectOnlyFreeProbes() {
 
 describe("automātiskais VIN SCAN nepalaiž maksas avotus", () => {
   it("runVinScan: arī tieši palūgti maksas avoti netiek izsaukti", async () => {
-    const rows = await runVinScan({ vin: VIN, sourceIds: [...PAID, "tjekbil", "stat_vin"] });
-    expect(probeCalls.sort()).toEqual(["stat_vin", "tjekbil"]);
-    expect(rows.map((row) => row.id).sort()).toEqual(["stat_vin", "tjekbil"]);
+    const rows = await runVinScan({ vin: VIN, sourceIds: [...PAID, "tjekbil", "bid_cars"] });
+    expect(probeCalls.sort()).toEqual(["bid_cars", "tjekbil"]);
+    expect(rows.map((row) => row.id).sort()).toEqual(["bid_cars", "tjekbil"]);
     expectOnlyFreeProbes();
   });
 

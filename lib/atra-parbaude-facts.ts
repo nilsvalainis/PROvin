@@ -10,6 +10,7 @@ import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
 import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
+import { vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
 
 export const ECSDD_URL = "https://e.csdd.lv/";
 
@@ -25,8 +26,9 @@ export type AtraFactRow = {
   vehicle?: { make?: string; model?: string; year?: string };
   mileage?: { date: string; odometer: string; source?: string }[];
   media?: { photoUrl?: string; photoCount?: number };
-  flags?: { wanted?: boolean; stolen?: boolean; registrationCountry?: string; photoCount?: number };
+  flags?: { wanted?: boolean; stolen?: boolean; registrationCountry?: string; countries?: string[]; photoCount?: number };
   inspections?: { date: string; result?: string; odometer?: string }[];
+  recalls?: { title: string; date?: string }[];
   incidents?: { date?: string; summary: string }[];
   auctions?: { title?: string; date?: string; price?: string; venue?: string; photoUrl?: string; photoCount?: number }[];
   listings?: { date: string; price?: string; odometer?: string; photoUrl?: string }[];
@@ -82,7 +84,9 @@ export type AtraFacts = {
   dealer: AtraDealerFact | null;
   /** `found`: sludinājuma vēstures avots atgrieza ierakstu (nevis tikai ielikta saite). */
   listing: { has: boolean; found: boolean; price: string; km: number; kmDeviates: boolean; priceDeviates: boolean };
-  inspection: { until: string; count: number; last: string };
+  inspection: { until: string; count: number; last: string; sources: string[] };
+  /** Atsaukumi / drošības brīdinājumi ar trāpījumu (ES Safety Gate modeļa līmenī, NHTSA, RDW, tjekbil RAPEX). */
+  recalls: { count: number; items: string[]; sources: string[] };
   flags: { totalLoss: boolean; commercial: boolean };
   /** Maksas atskaišu bezmaksas priekšskatījums (AutoDNA, CheckCar.vin, CARFAX.eu). */
   previews: AtraPreview[];
@@ -224,7 +228,9 @@ function dealerFact(record: DealerCheckRecord | null): AtraDealerFact | null {
   };
 }
 
-export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
+export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
+  // NICB (tikai ASV) ne-ASV VIN: nedrīkst ieslēgt «Meklēšanā», «total loss» vai dot stāsta punktus.
+  const input: AtraFactsInput = { ...rawInput, rows: rawInput.rows.filter((r) => vinScanSourceAppliesToVin(r.id, rawInput.vin)) };
   const found = input.rows.filter((r) => r.status === "found");
   const mileage = mileageFact(input);
   const wanted = found.filter((r) => r.flags?.wanted || r.flags?.stolen).map((r) => r.label);
@@ -240,6 +246,10 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
   for (const r of found) {
     const c = r.flags?.registrationCountry || "";
     if (COUNTRY_OK.test(c)) countries.add(c);
+    for (const extra of r.flags?.countries ?? []) {
+      const code = String(extra).trim().toUpperCase();
+      if (COUNTRY_OK.test(code) && code !== "EU") countries.add(code);
+    }
   }
   for (const p of mileage.points) if (p.country) countries.add(p.country);
   if (input.csdd?.vin) countries.add("LV");
@@ -255,6 +265,20 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
   const priceDeviates = prices.length >= 2 && Math.abs(prices[0]! - prices[prices.length - 1]!) / prices[prices.length - 1]! >= 0.2;
   const text = found.map(rowText).join("\n");
   const inspections = found.flatMap((r) => r.inspections ?? []);
+  const inspectionSources = [
+    ...new Set([...(input.csdd?.inspectionValidUntilIso ? ["CSDD"] : []), ...found.filter((r) => r.inspections?.length).map((r) => r.label)]),
+  ];
+  const recallItems: string[] = [];
+  const recallSources = new Set<string>();
+  for (const r of found) {
+    // Safety Gate bez modeļa ir tikai markas līmenis - tas nav šī auto trāpījums.
+    if (r.id === "eu_safety_gate" && /markas līmeņa/i.test(r.summary)) continue;
+    for (const rc of r.recalls ?? []) {
+      if (!rc.title?.trim()) continue;
+      recallItems.push([atraLvDate(atraSortableDate(rc.date)), rc.title.trim()].filter(Boolean).join(" "));
+      recallSources.add(r.label);
+    }
+  }
   const lastInspection = [...inspections].sort((a, b) => (atraSortableDate(a.date) < atraSortableDate(b.date) ? 1 : -1))[0];
   return {
     mileage,
@@ -275,7 +299,9 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
       until: input.csdd?.inspectionValidUntilIso ? atraLvDate(input.csdd.inspectionValidUntilIso.slice(0, 10)) : "",
       count: inspections.length,
       last: lastInspection ? [atraLvDate(atraSortableDate(lastInspection.date)), lastInspection.result].filter(Boolean).join(" · ") : "",
+      sources: inspectionSources,
     },
+    recalls: { count: recallItems.length, items: recallItems, sources: [...recallSources] },
     flags: { totalLoss: TOTAL_LOSS_RE.test(text), commercial: COMMERCIAL_RE.test(text) },
     previews: buildAtraPreviews(input.vin, input.rows),
   };
@@ -283,7 +309,16 @@ export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
 
 /* ---------------- Kuras kartītes rādīt augšā ---------------- */
 
-export type AtraFactKey = "mileage" | "wanted" | "incidents" | "auctions" | "countries" | "dealer" | "listing" | "inspection";
+export type AtraFactKey =
+  | "mileage"
+  | "wanted"
+  | "incidents"
+  | "auctions"
+  | "countries"
+  | "dealer"
+  | "listing"
+  | "inspection"
+  | "recalls";
 
 /**
  * Augšā tikai kartītes ar reālu rezultātu (Nils 23.11: «tukšos logus nevajag»).
@@ -299,6 +334,7 @@ export function atraVisibleFacts(f: AtraFacts): AtraFactKey[] {
   if (f.dealer) out.push("dealer");
   if (f.listing.found || f.listing.price) out.push("listing");
   if (f.inspection.until || f.inspection.count > 0) out.push("inspection");
+  if (f.recalls?.count > 0) out.push("recalls");
   return out;
 }
 

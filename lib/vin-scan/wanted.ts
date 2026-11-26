@@ -1,11 +1,26 @@
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import type { VinScanParse, VinScanStatus } from "@/lib/vin-scan/types";
+import { isUsWmiVin } from "@/lib/vin-scan/vin-decode";
 
 export const VIN_SCAN_WANTED_BROWSER_IDS = ["lt_itpr"] as const;
 export type VinScanWantedId = (typeof VIN_SCAN_WANTED_BROWSER_IDS)[number];
 
 export function isVinScanWantedSource(id: string): id is VinScanWantedId {
   return (VIN_SCAN_WANTED_BROWSER_IDS as readonly string[]).includes(id);
+}
+
+/** Avoti, kas attiecas tikai uz Ziemeļamerikas (ASV/CA/MX) VIN. Citiem to «zagts»/«total loss» ir viltus trauksme. */
+const NORTH_AMERICA_ONLY_IDS = new Set(["nicb"]);
+
+/**
+ * false: šī avota rinda nedrīkst ieslēgt «Meklēšanā» kartīti vai dot stāsta punktus (piem. NICB vācu auto).
+ * Bez VIN (vecs izsaucējs) - paliek kā agrāk.
+ */
+export function vinScanSourceAppliesToVin(id: string, vin: string | undefined): boolean {
+  if (!NORTH_AMERICA_ONLY_IDS.has(id)) return true;
+  const clean = String(vin ?? "").trim().toUpperCase();
+  if (clean.length < 11) return true;
+  return isUsWmiVin(clean);
 }
 
 export function vinScanWantedStatusLabel(status: VinScanStatus | "idle" | "checking"): string {

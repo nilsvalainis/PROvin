@@ -15,7 +15,8 @@ const AdminVinScanResultCards = dynamic(
   { ssr: false },
 );
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl, vinScanSourceLinkOnly } from "@/lib/vin-scan/catalog";
+import { vinScanLinkOnlyRowVisible, vinScanManualLinks } from "@/lib/vin-scan/manual-links";
 import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
@@ -427,22 +428,36 @@ export function AdminVinScanPanel({
       // Ieķeksētie + tie, kam jau ir rinda (TheCarApi/JoJ no iepriekšējās pārbaudes).
       const wanted = new Set<string>([...sourceIds, ...(paidSourceIds ?? [])]);
       return VIN_SCAN_CATALOG.filter(
-        (item) => !item.disabled && (wanted.has(item.id) || ((item.id === "thecarapi_eu" || item.id === "joj_copart_iaai") && displayById[item.id])),
+        (item) =>
+          !item.disabled &&
+          vinScanLinkOnlyRowVisible(item.id, displayById[item.id]?.status ?? "") &&
+          (wanted.has(item.id) || ((item.id === "thecarapi_eu" || item.id === "joj_copart_iaai") && displayById[item.id])),
       );
     }
+    // Saišu avoti (26.11) rindā tikai ar reāliem datiem (piem. pārlūka imports), citādi tikai saite augšā.
+    const linkRows = VIN_SCAN_CATALOG.filter(
+      (item) => vinScanSourceLinkOnly(item.id) && displayById[item.id]?.status === "found",
+    );
     const extra = VIN_SCAN_CATALOG.find((item) => item.id === "thecarapi_eu");
-    if (!extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id)) return CATALOG;
-    return [...CATALOG, extra];
+    const base = !extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id) ? CATALOG : [...CATALOG, extra];
+    return linkRows.length ? [...base, ...linkRows] : base;
     // sourceKey/paidKey aizstāj masīvu identitāti.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayById, sourceKey, paidKey]);
 
   const rows = tiles.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
-  const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
+  const facts = rows.length > 0 ? buildVinScanFacts(rows, clean) : null;
   const countLine = rows.length > 0 ? formatVinScanCountLine(vinScanCountBreakdown(rows)) : "";
   const unknownIds = tiles.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
-  const nordicLinks = valid ? nordicVinSearchLinks(clean) : [];
+  const nordicLinks = useMemo(() => {
+    if (!valid) return [];
+    const list: { id: string; label: string; href: string }[] = [...nordicVinSearchLinks(clean)];
+    for (const link of vinScanManualLinks(clean, plates)) {
+      if (!list.some((row) => row.id === link.id)) list.push(link);
+    }
+    return list;
+  }, [valid, clean, plates]);
   const linkBtn =
     "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
