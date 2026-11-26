@@ -47,7 +47,7 @@ export type EcsddAutoStatus = {
   smartIdAskedAt?: string;
   /** Releja kļūdas kods (`smartid_timeout`, `smartid_refused`, ...). */
   errorCode?: string;
-  /** `awaiting_login` iemesls: night | yield | blocked | off | busy */
+  /** `awaiting_login` iemesls: night (tikai ar sašaurinātu releja logu) | yield | blocked | off | busy */
   waitReason?: string;
   trigger?: "auto" | "manual";
 };

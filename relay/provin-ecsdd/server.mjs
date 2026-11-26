@@ -14,7 +14,8 @@
  *   ECSDD_RELAY_HOST/PORT        noklusējums 127.0.0.1 / 8790
  *   ECSDD_DATA_DIR               noklusējums /var/lib/provin-ecsdd
  *   ECSDD_MAX_PER_HOUR           noklusējums 20
- *   ECSDD_WORK_FROM/TO           noklusējums 8 / 20 (Rīga): ārpus tā automātika Smart-ID neprasa, keep-alive nav
+ *   ECSDD_WORK_FROM/TO           noklusējums 8 / 20 (Rīga): ārpus tā tukšu sesiju neuztur (keep-alive nav)
+ *   ECSDD_AUTO_LOGIN_FROM/TO     noklusējums 0 / 24 (Rīga): kad automātika drīkst prasīt Smart-ID (visu diennakti)
  *   ECSDD_KEEPALIVE_MIN          noklusējums 4 (keep-alive intervāls)
  *   ECSDD_KEEPALIVE_IDLE_MIN     noklusējums 240 (bez uzziņām ilgāk - sesiju vairs neuztur)
  *   ECSDD_YIELD_MIN              noklusējums 60 (pēc izmešanas / "Atbrīvot" automātika pati nepiesakās)

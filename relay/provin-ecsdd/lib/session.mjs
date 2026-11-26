@@ -7,8 +7,12 @@
  *  - ja servera sesija pazūd, kamēr to uzturējām (= kāds cits, visticamāk Nils, ielogojās), stāvoklis `kicked`
  *    un automātika ECSDD_YIELD_MIN minūtes pati Smart-ID neprasa (Nila sesiju neatņemam atpakaļ);
  *  - pēc neveiksmīga / atteikta Smart-ID automātika vairs pati neprasa, līdz Nils nospiež pogu (nav Smart-ID noguruma);
- *  - keep-alive tikai darba laikā un tikai, ja nesen bija uzziņa; citādi sesija nomirst pati.
+ *  - keep-alive tikai darba laikā un tikai, ja nesen bija uzziņa; citādi sesija nomirst pati;
+ *  - Smart-ID automātika (kad pasūtījumam vajag) prasa jebkurā diennakts laikā - Nils strādā arī naktīs (26.11).
+ *    Logu var sašaurināt ar ECSDD_AUTO_LOGIN_FROM/TO (Rīgas stundas, noklusējums 0-24).
  */
+
+import { isWorkHoursRiga } from "./ecsdd-page.mjs";
 
 export const SESSION_STATES = ["logged_out", "logging_in", "awaiting_smartid", "active", "kicked", "expired"];
 
@@ -20,6 +24,8 @@ export function defaultSessionConfig(env = {}) {
   return {
     workFrom: num(env.ECSDD_WORK_FROM, 8, 0),
     workTo: num(env.ECSDD_WORK_TO, 20, 1),
+    autoLoginFrom: Math.min(23, num(env.ECSDD_AUTO_LOGIN_FROM, 0, 0)),
+    autoLoginTo: Math.min(24, num(env.ECSDD_AUTO_LOGIN_TO, 24, 1)),
     keepAliveMin: num(env.ECSDD_KEEPALIVE_MIN, 4, 1),
     keepAliveIdleMin: num(env.ECSDD_KEEPALIVE_IDLE_MIN, 240, 5),
     yieldMin: num(env.ECSDD_YIELD_MIN, 60, 1),
@@ -52,14 +58,23 @@ export function isYielding(s, now = new Date()) {
   return ms(s?.yieldUntil) > now.getTime();
 }
 
+/** Vai Rīgas laiks ir automātiskās Smart-ID pieteikšanās logā (noklusējums 0-24 = visu diennakti). */
+export function inAutoLoginWindow(now, cfg) {
+  const from = Number.isFinite(cfg?.autoLoginFrom) ? cfg.autoLoginFrom : 0;
+  const to = Number.isFinite(cfg?.autoLoginTo) ? cfg.autoLoginTo : 24;
+  if (from <= 0 && to >= 24) return true;
+  // Logs pāri pusnaktij (piem. 7-2) arī der.
+  return from < to ? isWorkHoursRiga(now, from, to) : !isWorkHoursRiga(now, to, from);
+}
+
 /**
- * Vai automātika (bez Nila pogas) drīkst sākt Smart-ID pieteikšanos.
+ * Vai automātika (bez Nila pogas) drīkst sākt Smart-ID pieteikšanos. Darba laiks (keep-alive) to neierobežo.
  * Atgriež `null` (drīkst) vai iemeslu: off | night | yield | blocked | busy.
  */
-export function autoLoginBlockReason(s, now, cfg, isWorkHours) {
+export function autoLoginBlockReason(s, now, cfg, _isWorkHours) {
   if (!cfg.autoLogin) return "off";
   if (s.state === "logging_in" || s.state === "awaiting_smartid") return "busy";
-  if (!isWorkHours(now)) return "night";
+  if (!inAutoLoginWindow(now, cfg)) return "night";
   if (isYielding(s, now)) return "yield";
   if (s.autoLoginBlocked) return "blocked";
   return null;
