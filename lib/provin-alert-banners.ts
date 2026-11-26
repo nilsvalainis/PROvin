@@ -34,6 +34,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { computeLatviaRegistrationTenure, formatLatviaTenureShort } from "@/lib/latvia-registration-tenure";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
   ccVinAlertChecks,
@@ -693,6 +694,8 @@ export function computeProvinInfoBannersFromPayloadSlice(
     citiAvotiBlock?: import("@/lib/admin-source-blocks").CitiAvotiBlockState | null;
   },
   referenceDate?: Date,
+  /** PDF atskaites valoda - kartītes vērtība («1 yr 5 mo») uzreiz šajā valodā. */
+  lang: ClientReportLang = "lv",
 ): ProvinInfoBanner[] {
   const out: ProvinInfoBanner[] = [];
 
@@ -708,7 +711,7 @@ export function computeProvinInfoBannersFromPayloadSlice(
       kind: "lv_registration_tenure",
       text: tenure.sentence,
       label: "Reģistrācija Latvijā",
-      value: formatLatviaTenureShort(tenure.daysRegistered, tenure.monthsRegistered),
+      value: formatLatviaTenureShort(tenure.daysRegistered, tenure.monthsRegistered, lang),
       note: tenure.firstDateDisplay ? `Kopš ${tenure.firstDateDisplay}` : "",
     });
   }

@@ -9,7 +9,18 @@ const LV_DIACRITIC = /[āčēģīķļņšūžĀČĒĢĪĶĻŅŠŪŽ]/;
 
 /** Vārdi bez garumzīmēm, kas PDF paliek latviski (skaitļa formas, "nav ierakstu"). */
 const LV_PLAIN_WORD =
-  /\b(ieraksts|ieraksti|ierakstu|ierakstiem|diena|dienas|dienu|dienā|nav|latvija|latvijā|vācija|vācijā|benzīns|dīzelis|uzskaitē|nobraukums|nobraukuma|apskate|īpašnieks|īpašnieki|reģistrācija|vizīte|vizītes|pārbaudīts|pamatpārbaude|atkārtota|novērtējums|trūkumi|bojājumi|korozija|sludinājums|grafika|apdrošināts|transportlīdzeklis|numura|zīme|izlaiduma|laikā|modelis|jauda|degviela|interjers|aprikojums|periods|intervals|lauks|veids)\b/i;
+  /\b(ieraksts|ieraksti|ierakstu|ierakstiem|diena|dienas|dienu|dienā|nav|latvija|latvijā|vācija|vācijā|benzīns|dīzelis|uzskaitē|nobraukums|nobraukuma|apskate|īpašnieks|īpašnieki|reģistrācija|vizīte|vizītes|pārbaudīts|pamatpārbaude|atkārtota|novērtējums|trūkumi|bojājumi|korozija|sludinājums|grafika|apdrošināts|transportlīdzeklis|numura|zīme|izlaiduma|laikā|modelis|jauda|degviela|interjers|aprikojums|periods|intervals|lauks|veids|izsole|izsoles)\b/i;
+
+/** LV vārdi, kas ir arī angliski («intervals», «periods») - jaukta mezgla pārbaudē tos neskaita. */
+const LV_EN_HOMOGRAPH = /\b(intervals|periods)\b/gi;
+
+/**
+ * Stingrāka pārbaude jau iztulkotam mezglam: vai tajā vēl ir latviešu teksts (garumzīmes vai LV vārdi,
+ * izņemot vārdus, kas sakrīt ar angļu valodu).
+ */
+export function htmlTextStillLatvian(text: string): boolean {
+  return htmlTextNeedsTranslation(text.replace(LV_EN_HOMOGRAPH, " "));
+}
 
 const PROTECTED_REGION = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi;
 

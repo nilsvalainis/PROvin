@@ -15,6 +15,7 @@ import { formatSourceDatePreservingMonth } from "@/lib/auto-records-paste-parse"
 import { isLatviaCountryName } from "@/lib/country-names-lv";
 import { ownerFirstRegistrationInLatvia } from "@/lib/csdd-extended-parse";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 
 export type LatviaRegistrationTenure = {
   firstDateDisplay: string;
@@ -75,18 +76,27 @@ function lvMenesisForm(n: number): string {
   return "mēnešu";
 }
 
+/** Saīsinātās vienības «Reģistrācija Latvijā» kartītei katrā atskaites valodā (26.11: EN bija «1 g. 5 mo.»). */
+const TENURE_UNITS: Record<ClientReportLang, { y: string; m: string; day: (n: number) => string }> = {
+  lv: { y: "g.", m: "mēn.", day: (n) => lvDienaLabel(n) },
+  en: { y: "yr", m: "mo", day: (n) => (n === 1 ? "day" : "days") },
+  ru: { y: "г.", m: "мес.", day: () => "дн." },
+  de: { y: "J.", m: "Mon.", day: (n) => (n === 1 ? "Tag" : "Tage") },
+};
+
 /**
  * Kartītes «Reģistrācija Latvijā» vērtība (Nils 25.11): līdz 1 mēn. - «N dienas», tālāk «5 mēn.», «1 g. 3 mēn.», «2 g.».
- * EN/RU/DE tulko `client-report-dynamic-i18n` (tās pašas vienības kā «Vecums»).
+ * Ar `lang` - uzreiz atskaites valodā: EN «1 yr 5 mo», RU «1 г. 5 мес.», DE «1 J. 5 Mon.».
  */
-export function formatLatviaTenureShort(days: number, months: number): string {
+export function formatLatviaTenureShort(days: number, months: number, lang: ClientReportLang = "lv"): string {
+  const u = TENURE_UNITS[lang] ?? TENURE_UNITS.lv;
   const d = Math.max(0, Math.floor(days));
   const mo = Math.max(0, Math.floor(months));
-  if (mo < 1) return `${d} ${lvDienaLabel(d)}`;
+  if (mo < 1) return `${d} ${u.day(d)}`;
   const y = Math.floor(mo / 12);
   const m = mo % 12;
-  if (y === 0) return `${m} mēn.`;
-  return m === 0 ? `${y} g.` : `${y} g. ${m} mēn.`;
+  if (y === 0) return `${m} ${u.m}`;
+  return m === 0 ? `${y} ${u.y}` : `${y} ${u.y} ${m} ${u.m}`;
 }
 
 /**

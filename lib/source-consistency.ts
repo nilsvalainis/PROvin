@@ -52,6 +52,11 @@ import {
   parseOdometerKm,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
+import {
+  aggregateUnifiedIncidents,
+  collectUnifiedIncidentDamageDetails,
+  collectUnifiedIncidentRows,
+} from "@/lib/unified-incidents";
 import { buildVehicleLifecycleEvents, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -80,6 +85,7 @@ export type SourceIssueKind =
   | "ai_numbers"
   | "ai_first_reg_country"
   | "ai_owner_count_mismatch"
+  | "ai_incident_count"
   | "cover_auctions";
 
 export type SourceIssueValue = { source: string; value: string };
@@ -1280,6 +1286,51 @@ function checkOwnerCountAcrossTexts(texts: readonly { label: string; text: strin
   });
 }
 
+/** «7 negadījumi», «5 incidents», «1 negadījums» AI tekstos (skaitlis tieši pirms vārda). */
+const AI_INCIDENT_COUNT_RE = /(?<![\d.,])(\d{1,3})\s+(?:negadījum[a-zāčēģīķļņšūž]*|incidents?|инцидент\w*|Unfäll\w*|Unfall\w*)/giu;
+
+/**
+ * 26.11 regresija: AI tekstā «7 negadījumi», bet 1. lapas kartītē 5 unikāli negadījumi. Salīdzina katru
+ * tekstā nosaukto skaitu ar unikālo negadījumu skaitu (tā pati agregācija kā kartītē «Negadījumi un bojājumi»).
+ * Ja kartītē negadījumu nav (0), pārbaude klusē - kartīte tad rāda bojājumus vai «Nav ierakstu».
+ */
+function checkAiIncidentCount(
+  blocks: WorkspaceSourceBlocks,
+  texts: readonly { label: string; text: string }[],
+  out: SourceIssue[],
+): void {
+  if (texts.length === 0) return;
+  const manualVendorBlocks = toPdfManualVendorBlocks(blocks);
+  const rows = collectUnifiedIncidentRows({
+    manualVendorBlocks,
+    manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+    ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
+  });
+  const cardCount = aggregateUnifiedIncidents(rows, collectUnifiedIncidentDamageDetails(manualVendorBlocks)).uniqueCount;
+  if (cardCount <= 0) return;
+  const byCount = new Map<number, Set<string>>();
+  for (const t of texts) {
+    const plain = adminRichHtmlToPlainText(t.text ?? "");
+    for (const m of plain.matchAll(AI_INCIDENT_COUNT_RE)) {
+      const n = Number(m[1]);
+      if (!Number.isFinite(n) || n <= 0 || n === cardCount) continue;
+      byCount.set(n, (byCount.get(n) ?? new Set()).add(t.label));
+    }
+  }
+  if (byCount.size === 0) return;
+  push(out, {
+    id: "ai_incident_count",
+    kind: "ai_incident_count",
+    severity: "warn",
+    title: "AI tekstā cits negadījumu skaits nekā 1. lapas kartītē",
+    values: [
+      { source: "1. lapas kartīte", value: `${cardCount} negadījumi` },
+      ...[...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: `${n} negadījumi` })),
+    ],
+  });
+}
+
 /** (d) 1. lapas kartīte «Izsoles» pret izsoļu sadaļu: «Nav atrastas», bet ir izsoļu arhīva foto. */
 function checkCoverAuctionCard(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIssue[]): void {
   const cc = blocks.cc_vin;
@@ -1325,6 +1376,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
     () => checkAiNumbers(blocks, mileageRows(blocks, input.listingUrl), input.texts ?? [], out),
     () => checkFirstRegCountryConsistency(blocks, input.texts ?? [], input.listingUrl, out),
     () => checkOwnerCountAcrossTexts(input.texts ?? [], out),
+    () => checkAiIncidentCount(blocks, input.texts ?? [], out),
     () => checkCoverAuctionCard(blocks, lots, out),
   ];
   for (const step of steps) {

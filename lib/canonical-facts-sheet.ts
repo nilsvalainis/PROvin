@@ -20,7 +20,8 @@ import {
 import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
 import { computeReportIncidentCount, collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
-import { classifyOdometerAnomalies } from "@/lib/odometer-anomaly-classify";
+import { classifyOdometerAnomalies, resolveLatestConfirmedMileage } from "@/lib/odometer-anomaly-classify";
+import { pdfTopOdometerSourceName } from "@/lib/pdf-report-top";
 import {
   ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
@@ -516,7 +517,9 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   // 24.11 audits #2: «jaunākais rādījums» = jaunākais APSTIPRINĀTAIS (reģistrs / dīleris / TA / vēstures avoti);
   // sludinājuma km ir tikai pārdevēja norāde - atsevišķi, salīdzinājumam.
   const withKm = [...chrono].reverse().filter((r) => parseOdometerKm(r.odometer) != null);
-  const lastConfirmed = withKm.find((r) => !isListingMileageSource(r));
+  // 26.11: tā pati izvēle (rinda + avota nosaukums) kā PDF 1. lapas odometra kartītē - vienam ierakstam viens avots.
+  const latestConfirmed = resolveLatestConfirmedMileage(mileageRows);
+  const lastConfirmed = latestConfirmed?.row ?? null;
   const lastListing = withKm.find((r) => isListingMileageSource(r));
   const lastWithKm = lastConfirmed ?? null;
   const latestKm = lastWithKm ? parseOdometerKm(lastWithKm.odometer) : null;
@@ -603,7 +606,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     firstReg,
     latestKm,
     latestKmDate: lastWithKm?.date ?? "",
-    latestKmSource: lastWithKm?.sourceLabel ?? "",
+    latestKmSource: lastWithKm && latestConfirmed ? pdfTopOdometerSourceName(latestConfirmed.sourceLabel, lastWithKm.date, blocks.cc_vin, "lv") : "",
     listingMileage,
     mileageKms: mileageRows.map((r) => parseOdometerKm(r.odometer)).filter((n): n is number => n != null && n > 0),
     mileageDates: mileageRows.map((r) => r.date).filter(Boolean),

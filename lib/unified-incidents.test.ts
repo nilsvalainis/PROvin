@@ -541,6 +541,26 @@ describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
     expect(dayConflict.uniqueCount).toBe(2);
   });
 
+  it("26.11: precīzs summas trāpījums pārī pirms pielaides (LTAB 767,64 € <-> carVertical 751 - 1 000 €)", () => {
+    const agg = aggregateUnifiedIncidents([
+      // LTAB jūnijā, carVertical tikai mēnesis (05.2019): 720 € ir tuvāk laikā, bet 767,64 € ietilpst 751 - 1 000 €.
+      ltab("03.06.2019", "720 €", Date.UTC(2019, 5, 3)),
+      ltab("25.06.2019", "767,64 €", Date.UTC(2019, 5, 25)),
+      cv("05.2019", "751 - 1 000 €", Date.UTC(2019, 4, 1)),
+      cv("05.2019", "501 - 750 €", Date.UTC(2019, 4, 1)),
+    ]);
+    expect(agg.rawCount).toBe(4);
+    expect(agg.uniqueCount).toBe(2);
+    const ltabAmount = (c: (typeof agg.clusters)[number]) =>
+      c.sourceValuations.find((v) => v.sourceLabel === "LTAB")?.displayAmount ?? "";
+    const cvAmount = (c: (typeof agg.clusters)[number]) =>
+      c.sourceValuations.find((v) => v.sourceLabel === "CarVertical")?.displayAmount ?? "";
+    const a767 = agg.clusters.find((c) => /767/.test(ltabAmount(c)))!;
+    const a720 = agg.clusters.find((c) => /720/.test(ltabAmount(c)))!;
+    expect(cvAmount(a767)).toMatch(/751/);
+    expect(cvAmount(a720)).toMatch(/501/);
+  });
+
   it("mēneša ieraksts ar pretrunīgu summu (iespējams KASKO) paliek atsevišķi", () => {
     const agg = aggregateUnifiedIncidents([
       ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),

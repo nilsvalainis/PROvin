@@ -4,7 +4,7 @@
  */
 
 import { KFZ_AT_SECTION_LABEL } from "@/lib/kfzgutachten/kfzgutachten";
-import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
+import { applyClientReportSweepTranslations } from "@/lib/client-report-dynamic-i18n";
 import {
   activeListingBelowAnomalies,
   formatListingBelowFactLv,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/odometer-anomaly-classify";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
-  applyClientReportStaticTranslations,
   clientReportDateLocale,
   type ClientReportLang,
 } from "@/lib/client-report-i18n";
@@ -149,13 +148,16 @@ import {
   pdfTopExtraCards,
   pdfTopMakeLogoUri,
   pdfTopText,
+  pdfTopListingOdometerNote,
+  pdfTopOdometerSourceName,
+  pdfTopDealerSourceName,
   isPdfTopTextKey,
   resolvePdfTopPhoto,
   collectPdfTopAuctions,
   type PdfTopSource,
 } from "@/lib/pdf-report-top";
 import { provinBannerOverrideFor, summaryTileBannerKind } from "@/lib/provin-alert-banners";
-import { resolvePdfLatestOdometerReading } from "@/lib/pdf-report-summary";
+import { resolvePdfLatestOdometerReading, resolvePdfListingOdometer } from "@/lib/pdf-report-summary";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -965,19 +967,18 @@ function pdfTopFirstRegistration(p: ClientReportPayload): { date: string; countr
   return { date, country: "", ms: m ? Date.UTC(+m[3]!, +m[2]! - 1, +m[1]!) : 0 };
 }
 
-function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfTopSource[] {
+function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings, lang: ClientReportLang = "lv"): PdfTopSource[] {
   const L = SOURCE_BLOCK_LABELS;
   const makeModel = resolvePdfReportMakeModelFromPayload(p);
   return collectPdfCheckedSources(p, vis).map((s): PdfTopSource => {
-    const lang: ClientReportLang = "lv";
     if (s.label === L.csdd) return { logo: { key: "csdd" }, name: "CSDD", category: "catRegistry", count: s.count };
     if (s.label === L.autodna) return { logo: { key: "autodna" }, name: "autoDNA", category: "catHistory", count: s.count };
     if (s.label === L.carvertical) return { logo: { key: "carvertical" }, name: "carVertical", category: "catHistory", count: s.count };
     if (s.label === L.carfax) return { logo: { key: "carfax" }, name: "CARFAX", category: "catHistory", count: s.count };
     if (s.label === PDF_SOURCE_DEALER_TITLE) {
-      const uri = pdfTopMakeLogoUri(makeModel);
-      const make = makeModel.split(/\s+/)[0] ?? "";
-      return { ...(uri ? { logo: { uri, make: true as const } } : {}), name: make || s.label, category: "catDealer", count: s.count };
+      const dealer = pdfTopDealerSourceName(makeModel, p.vin ?? "", lang);
+      const uri = dealer.logoUri;
+      return { ...(uri ? { logo: { uri, make: true as const } } : {}), name: dealer.name, category: "catDealer", count: s.count };
     }
     if (s.label === CC_VIN_PDF_SOURCE_LABEL) {
       const venue = collectPdfTopAuctions(p.ccVinBlock)[0]?.venue ?? "";
@@ -1061,21 +1062,21 @@ function buildPdfTopHtml(args: {
 
   const mileageTile = tiles.find((t) => t.id === "mileage");
   const latest = resolvePdfLatestOdometerReading(summaryInput);
-  let odometer: { value: string; sub: string } | null = null;
-  const sourceName = (label: string, date: string): string => {
-    if (label === CC_VIN_PDF_SOURCE_LABEL) {
-      const sale = collectPdfTopAuctions(pVis.ccVinBlock).find((a) => a.date === pdfTopDay(date));
-      return sale?.venue ? pdfTopText("auctionAt", lang).replace("{v}", sale.venue) : pdfTopText("catAuctions", lang);
-    }
-    if (label === "OFICIĀLĀ DĪLERA DATI") return pdfTopText("catDealer", lang);
-    if (label === SOURCE_BLOCK_LABELS.autodna) return "autoDNA";
-    if (label === SOURCE_BLOCK_LABELS.carvertical) return "carVertical";
-    return label;
-  };
+  let odometer: { value: string; sub: string; none?: boolean } | null = null;
+  const sourceName = (label: string, date: string): string =>
+    pdfTopOdometerSourceName(label, date, pVis.ccVinBlock, lang);
   if (mileageTile && overridden.has("mileage") && /\d/.test(mileageTile.value)) {
     odometer = { value: mileageTile.value, sub: "" };
   } else if (latest) {
     odometer = { value: latest.odometer, sub: [latest.date, sourceName(latest.sourceLabel, latest.date)].filter(Boolean).join(" · ") };
+  } else {
+    // 26.11: sludinājuma km nav rādījums - kartītē mierīgs «nav datu», sludinājuma skaitlis tikai ar atzīmi.
+    const listingOdo = resolvePdfListingOdometer(summaryInput);
+    odometer = {
+      value: pdfTopText("noData", lang),
+      sub: listingOdo ? pdfTopListingOdometerNote(listingOdo.odometer, listingOdo.date, lang) : "",
+      none: true,
+    };
   }
   const first = pdfTopFirstRegistration(pVis);
   const makeModel = formatPdfReportMakeModel(resolvePdfReportMakeModelFromPayload(p));
@@ -1093,7 +1094,7 @@ function buildPdfTopHtml(args: {
     age: first ? pdfTopAgeLabel(first.ms, args.now.getTime(), lang) : "",
     firstReg: first ? { date: first.date, sub: first.country } : null,
     cards: [...cards, ...extra],
-    sources: pdfTopSources(p, vis).map((s) => ({
+    sources: pdfTopSources(p, vis, lang).map((s) => ({
       ...s,
       category: isPdfTopTextKey(s.category) ? pdfTopText(s.category, lang) : s.category,
     })),
@@ -2295,6 +2296,7 @@ function buildCcVinAvotuSubsection(
   photoDataUrls?: Map<string, string>,
   sparkHtml = "",
   externalPhotoKeys?: ReadonlySet<string>,
+  lang: ClientReportLang = "lv",
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
@@ -2327,7 +2329,7 @@ function buildCcVinAvotuSubsection(
     ...groupTcPhotos.filter((photo) => photoDataUrls?.has(photo.id) && ![...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && haveKeys.has(k))),
   ].slice(0, THECARAPI_PDF_GALLERY_MAX);
   // Izsoļu bildes - kopīgās izsoles kartītes galerijā (tas pats dizains kā «Izsoļu arhīva» PDF).
-  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "" }) : "";
+  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "", lang }) : "";
   const tcPhotoIds = new Set([...tcIds, ...groupTcPhotos.map((photo) => photo.id)]);
   const legacyPhotos = (b?.photos ?? []).filter((photo) => !tcPhotoIds.has(photo.id));
   const photosHtml = b ? buildSourcePhotoGroupsPdfHtml(otherGroups, legacyPhotos, photoDataUrls, normalizeCcVinPhotoGroups) : "";
@@ -2804,6 +2806,7 @@ function buildAvotuDatiSectionHtml(
       ...(p.manualVendorBlocks ?? []).flatMap((block) => block.photoGroups ?? []),
       ...(p.citiAvoti?.sections ?? []).flatMap((section) => section.photoGroups ?? []),
     ]),
+    lang,
   );
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
@@ -4296,7 +4299,7 @@ export function buildClientReportDocumentHtml(args: {
             manualVendorBlocks: pVisFacts.manualVendorBlocks ?? null,
             manualLtabBlock: pVisFacts.manualLtabBlock ?? null,
             citiAvotiBlock: pVisFacts.citiAvoti ?? null,
-          }),
+          }, undefined, lang),
           pVis.pdfBannerInclude,
         ),
       })
@@ -4456,6 +4459,6 @@ ${CLIENT_REPORT_A4_VIEWPORT_META}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${runningCss}${CLIENT_REPORT_SCREEN_A4_CSS}${PDF_TOP6_CSS}${izvilkums ? PDF_IZVILKUMS_CSS : ""}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${izvilkums ? buildIzvilkumsWatermarkHtml(lang) : ""}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
+  const translated = applyClientReportSweepTranslations(html, lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

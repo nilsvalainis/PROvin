@@ -54,12 +54,22 @@ const GLUED_SECOND_WORD_RE = new RegExp(
 );
 /** «Dīzeļdegviela s pilēšana» - ģenitīva «s» atdalīts ar atstarpi. */
 const DETACHED_GENITIVE_S_RE = /(\p{L}{4,}[aeiu]) s(?= \p{Ll})/gu;
-/** Pielīmēta cita defekta koda rinda: «... pusē. 5.3.3.12. tilts. ...». */
-const GLUED_DEFECT_CODE_RE = /([.!?;])\s+(?=\d{1,2}\.\d{1,2}(?:\.\d{1,2}){1,3}\.?\s+\p{L})/gu;
+/** «Dīzeļdegviela sšļūtene» - ģenitīva «s» pielipis nākamajam vārdam («sšļ» latviešu valodā nav). */
+const GENITIVE_S_GLUED_NEXT_RE = /(\p{L}{4,}[aeiu]) s(?=šļ)/gu;
+const STRAY_S_BEFORE_SHL_RE = /sšļ/gu;
+/**
+ * Pielīmēta cita defekta koda rinda: «... pusē. 5.3.3.12. tilts. ...» un bez atstarpes aiz koda
+ * «... par augstu. 1.1.12.12.tilts. ...» (26.11).
+ */
+const GLUED_DEFECT_CODE_RE = /([.!?;])\s+(?=\d{1,2}\.\d{1,2}(?:\.\d{1,2}){1,3}\.?\s*\p{L})/gu;
+/** Rindas sākumā kods bez atstarpes pirms vārda: «1.1.12.12.tilts» -> «1.1.12.12. tilts». */
+const LINE_DEFECT_CODE_NO_SPACE_RE = /^(\d{1,2}\.\d{1,2}(?:\.\d{1,2}){1,3}\.)(?=\p{L})/u;
 
 export function normalizeCsddDefectText(raw: string): string {
   let s = (raw ?? "").replace(/ /g, " ");
   if (!s.trim()) return "";
+  s = s.replace(GENITIVE_S_GLUED_NEXT_RE, "$1s ");
+  s = s.replace(STRAY_S_BEFORE_SHL_RE, "šļ");
   s = s.replace(DETACHED_GENITIVE_S_RE, "$1s");
   s = s.replace(GLUED_SECOND_WORD_RE, (m, first: string, second: string) => {
     // «bremžu» + «šļūtenes»: atdala; ja pirmā daļa pati par sevi ir pārāk īsa, atstāj.
@@ -70,7 +80,7 @@ export function normalizeCsddDefectText(raw: string): string {
   s = s.replace(/[ \t]{2,}/g, " ");
   return s
     .split("\n")
-    .map((x) => x.trim())
+    .map((x) => x.trim().replace(LINE_DEFECT_CODE_NO_SPACE_RE, "$1 "))
     .filter(Boolean)
     .join("\n");
 }

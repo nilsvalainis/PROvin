@@ -11,9 +11,9 @@
 
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
-import { ccVinSaleRowHasData } from "@/lib/cc-vin-report";
+import { CC_VIN_PDF_SOURCE_LABEL, ccVinSaleRowHasData } from "@/lib/cc-vin-report";
 import { PDF_DEALER_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
-import { pdfDealerBrandFileKey } from "@/lib/pdf-source-brand-logos";
+import { pdfDealerBrandFileKey, pdfDealerBrandFileKeyFromVin } from "@/lib/pdf-source-brand-logos";
 import { PDF_SOURCE_LOGO_SVG, type PdfSourceLogoKey } from "@/lib/pdf-source-logo-svgs";
 import type { PdfSummaryTile } from "@/lib/pdf-report-summary";
 
@@ -49,6 +49,8 @@ const TXT = {
   mileageRollback: { lv: "Nobraukuma kritums", en: "Mileage decrease", ru: "Снижение пробега", de: "Rückgang km-Stand" },
   mileageListingBelow: { lv: "Sludinājumā mazāk", en: "Lower in listing", ru: "В объявлении меньше", de: "Im Inserat weniger" },
   noData: { lv: "Nav datu", en: "No data", ru: "Нет данных", de: "Keine Daten" },
+  dealerName: { lv: "Dīleris", en: "Dealer", ru: "Дилер", de: "Händler" },
+  odoListing: { lv: "sludinājumā {km}", en: "in listing {km}", ru: "в объявлении {km}", de: "im Inserat {km}" },
   auctionsNone: { lv: "Nav atrastas", en: "None found", ru: "Не найдены", de: "Keine gefunden" },
   auctionsNoneNote: { lv: "Izsoļu arhīvos nav ierakstu", en: "No auction archive records", ru: "Записей в архивах аукционов нет", de: "Keine Einträge in Auktionsarchiven" },
   serviceLatest: { lv: "Pēdējais", en: "Latest", ru: "Последний", de: "Letzter" },
@@ -81,6 +83,71 @@ export function isPdfTopTextKey(key: string): key is PdfTopTextKey {
 
 export function pdfTopText(key: PdfTopTextKey, lang: Lang): string {
   return TXT[key][lang] ?? TXT[key].lv;
+}
+
+/**
+ * Odometra rādījuma avota nosaukums - viens visur (PDF 1. lapas kartīte un AI faktu lapa «Jaunākais rādījums»),
+ * lai vienam ierakstam būtu viens avots (26.11 regresija).
+ */
+export function pdfTopOdometerSourceName(
+  label: string,
+  date: string,
+  cc: CcVinBlockState | null | undefined,
+  lang: Lang,
+): string {
+  const l = label.trim();
+  if (l === CC_VIN_PDF_SOURCE_LABEL) {
+    const sale = collectPdfTopAuctions(cc).find((a) => a.date === pdfTopDay(date));
+    return sale?.venue ? pdfTopText("auctionAt", lang).replace("{v}", sale.venue) : pdfTopText("catAuctions", lang);
+  }
+  if (l === "OFICIĀLĀ DĪLERA DATI") return pdfTopText("catDealer", lang);
+  if (l === "AutoDNA") return "autoDNA";
+  if (l === "CarVertical") return "carVertical";
+  return l;
+}
+
+const DEALER_MAKE_DISPLAY: Record<string, string> = {
+  bmw: "BMW",
+  mini: "MINI",
+  mg: "MG",
+  seat: "SEAT",
+  mercedes: "Mercedes-Benz",
+  "land-rover": "Land Rover",
+  "alfa-romeo": "Alfa Romeo",
+  "aston-martin": "Aston Martin",
+  "rolls-royce": "Rolls-Royce",
+  skoda: "Škoda",
+  citroen: "Citroën",
+};
+
+function dealerMakeDisplay(key: string): string {
+  return DEALER_MAKE_DISPLAY[key] ?? key.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+/**
+ * Dīlera avota flīze 1. lapā: nosaukums pēc markas (26.11 regresija: flīzē bija modelis «Touran»).
+ * Marka - no markas/modeļa teksta (ja tā ir zināma marka ar logo) vai no VIN (WMI); ja markas nav - «Dīleris».
+ */
+export function pdfTopDealerSourceName(
+  makeModel: string,
+  vin: string,
+  lang: Lang,
+): { name: string; logoUri: string | null } {
+  const mm = makeModel.trim();
+  const uri = mm ? pdfTopMakeLogoUri(mm) : null;
+  if (uri) return { name: mm.split(/\s+/)[0] ?? "", logoUri: uri };
+  const vinKey = pdfDealerBrandFileKeyFromVin(vin ?? "");
+  if (vinKey) return { name: dealerMakeDisplay(vinKey), logoUri: pdfTopMakeLogoUri(vinKey) };
+  return { name: pdfTopText("dealerName", lang), logoUri: null };
+}
+
+/**
+ * 26.11: sludinājuma km nav odometra rādījums - kartītē tikai kā skaidri atzīmēta piezīme
+ * («sludinājumā 196 000 km · 14.08.2026»), nekad kā lielais skaitlis.
+ */
+export function pdfTopListingOdometerNote(km: string, date: string, lang: Lang): string {
+  const kmText = /\b(km|mi|км)\s*$/i.test(km.trim()) ? km.trim() : `${km.trim()} km`;
+  return [pdfTopText("odoListing", lang).replace("{km}", kmText), date.trim()].filter(Boolean).join(" · ");
 }
 
 /** «PROVIN atskaites ģenerēšanā izmantotie avoti» - zīmols vārda vietā katrā valodā. */
@@ -612,7 +679,8 @@ export type PdfTopModel = {
   vin: string;
   specLine: string;
   photo: PdfTopPhoto | null;
-  odometer: { value: string; sub: string } | null;
+  /** `none`: apstiprināta rādījuma nav - mierīgs «Nav datu» (sludinājuma km tikai `sub` ar atzīmi). */
+  odometer: { value: string; sub: string; none?: boolean } | null;
   age: string;
   firstReg: { date: string; sub: string } | null;
   cards: PdfTopCard[];
@@ -744,7 +812,9 @@ export function buildPdfTopSectionHtml(m: PdfTopModel): string {
     ? `<p class="pdf-top6__spec" style="${fitStyle(pdfTopFitPx(m.specLine, W, 9, 7), 7)}">${esc(m.specLine)}</p>`
     : "";
   let odo = "";
-  if (m.odometer) {
+  if (m.odometer?.none) {
+    odo = `<div class="pdf-top6__odo"><p class="pdf-top6__lab">${esc(pdfTopText("odometer", lang))}</p><p class="pdf-top6__big pdf-top6__big--none s-none" style="font-size:22px">${esc(m.odometer.value)}</p>${m.odometer.sub ? `<p class="pdf-top6__sub">${keepNumbers(esc(m.odometer.sub))}</p>` : ""}</div>`;
+  } else if (m.odometer) {
     const mm = /^(.*?)\s*(km|mi|км)$/i.exec(m.odometer.value.trim());
     const num = mm ? mm[1]! : m.odometer.value.trim();
     const unit = mm ? mm[2]! : "";
