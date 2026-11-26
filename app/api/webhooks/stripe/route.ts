@@ -32,6 +32,7 @@ import { orderDropboxCategory } from "@/lib/order-dropbox-folder";
 import { isTelegramGroupPayment } from "@/lib/admin-customer-identity";
 import {
   ensureOrderDraftEditsFromCheckoutFields,
+  dealerNoVinErrorCode,
   resolveOrderVinFromPlate,
 } from "@/lib/order-plate-vin-resolve";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -390,6 +391,7 @@ async function startPaidOrderDownstream(
       const enteredValidVin = Boolean(effectiveVin && isValidVin(effectiveVin));
       let plateForDealer: string | null = null;
       let plateFailReason: string | null = null;
+      let plateInProgress = false;
       if (effectiveVin && !isValidVin(effectiveVin)) {
         try {
           const resolved = await resolveOrderVinFromPlate(session.id, {
@@ -399,7 +401,11 @@ async function startPaidOrderDownstream(
           });
           if (resolved.effectiveVin) effectiveVin = resolved.effectiveVin;
           plateForDealer = resolved.resolution?.plate ?? null;
-          plateFailReason = resolved.resolution?.message ?? resolved.reason ?? null;
+          plateInProgress = resolved.reason === "in_progress";
+          plateFailReason =
+            resolved.resolution?.status === "failed"
+              ? dealerNoVinErrorCode(resolved.resolution)
+              : (resolved.reason ?? null);
           console.info("[stripe webhook] plate→vin", {
             sessionId: session.id,
             ok: resolved.ok,
@@ -408,7 +414,7 @@ async function startPaidOrderDownstream(
             vinFound: Boolean(resolved.effectiveVin),
           });
         } catch (err) {
-          plateFailReason = "csdd_error";
+          plateFailReason = "csdd_unreachable";
           console.error("[stripe webhook] plate→vin:", err);
         }
       }
@@ -416,7 +422,8 @@ async function startPaidOrderDownstream(
       // Dīlera dati ar numurzīmi (Nils 20.11): pēc atrastā VIN automātiski tā pati pilnā ielase
       // kā VIN pasūtījumam. VIN neatrasts -> statuss «Nav VIN» + admina paziņojums.
       const dealerPlateRun = (async () => {
-        if (!dealerOrder || enteredValidVin) return;
+        // Cita palaišana (atkārtots webhook) jau vaicā CSDD - tā pati arī pabeigs dīlera darbu.
+        if (!dealerOrder || enteredValidVin || plateInProgress) return;
         try {
           if (effectiveVin && isValidVin(effectiveVin)) {
             // Atsevišķi no šī webhook laika budžeta (seed/VIN SCAN): cron ≤5 min palaiž ar savu 300 s.
@@ -473,7 +480,7 @@ async function startPaidOrderDownstream(
       }
       await dealerPlateRun;
       // Pēc CSDD sēklas: mapes nosaukums ar marku/modeli + automātiskā CSDD maksas izziņa (AUDITS / Business ar LV numuru).
-      if (dropboxCategory) await ensureOrderDropboxFolderSafe(session.id, { vin: order.vin });
+      if (dropboxCategory) await ensureOrderDropboxFolderSafe(session.id, { vin: vinForAuto });
       try {
         const paidJob = await enqueueCsddPaidAutoForOrder(session.id, {
           checkoutLine,

@@ -6,6 +6,7 @@
  */
 import {
   DEALER_DATA_MAX_AUTO_ATTEMPTS,
+  dealerNoVinAutoRetryable,
   mergeDealerPaidOutcomes,
   type DealerDataJob,
   type DealerDataJobStatus,
@@ -99,6 +100,9 @@ export function mergeDealerDataJobPatch(
     ...(patch.commentLang ?? current?.commentLang ? { commentLang: patch.commentLang ?? current?.commentLang } : {}),
     ...(mergedResults ? { oneautoResults: mergedResults } : {}),
     ...(patch.plate ?? current?.plate ? { plate: patch.plate ?? current?.plate } : {}),
+    ...(patch.plateAttempts ?? current?.plateAttempts
+      ? { plateAttempts: patch.plateAttempts ?? current?.plateAttempts }
+      : {}),
     // Pabeigtam / skrienošam darbam nākamā mēģinājuma laiks vairs nav aktuāls.
     ...(terminalOrRunning
       ? {}
@@ -151,7 +155,22 @@ const UNFINISHED: readonly DealerDataJobStatus[] = ["pending", "running", "faile
  * Vai darbs paliek slaucīšanas indeksā. Gala kļūda (≥3 mēģinājumi) ar jau nosūtītu admina
  * paziņojumu vairs netiek slaucīta - to risina operators.
  */
-export function dealerDataJobBelongsInSweepIndex(job: Pick<DealerDataJob, "status" | "attempts" | "alert">): boolean {
+export function dealerDataJobBelongsInSweepIndex(
+  job: Pick<DealerDataJob, "status" | "attempts" | "alert"> &
+    Partial<Pick<DealerDataJob, "error" | "plate" | "plateAttempts" | "refund" | "createdAt" | "vin">>,
+): boolean {
+  // «CSDD nebija sasniedzams»: cron vēlreiz mēģina numurzīme → VIN.
+  if (job.status === "no_vin") {
+    return dealerNoVinAutoRetryable({
+      status: job.status,
+      error: job.error,
+      plate: job.plate,
+      plateAttempts: job.plateAttempts,
+      refund: job.refund,
+      createdAt: job.createdAt ?? "",
+      vin: job.vin ?? "",
+    });
+  }
   if (!UNFINISHED.includes(job.status)) return false;
   if (job.status === "failed" && job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS && job.alert) return false;
   return true;

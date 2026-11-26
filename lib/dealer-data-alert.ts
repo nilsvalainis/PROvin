@@ -98,6 +98,9 @@ export async function markDealerDataNoVin(args: {
     trigger: "webhook",
     error: (args.reason ?? "vin_not_found").slice(0, 200),
     ...(args.plate?.trim() ? { plate: args.plate.trim().toUpperCase().slice(0, 16) } : {}),
+    plateAttempts: Math.max(1, existing?.plateAttempts ?? 0),
+    // «CSDD nebija sasniedzams»: cron slaucītājs atkārto pēc šī laika (sk. dealerNoVinAutoRetryable).
+    nextRetryAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   });
   await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: "webhook", job });
 }

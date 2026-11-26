@@ -125,7 +125,10 @@ export async function POST(req: Request) {
         console.info("[operator-order] plate→vin", { orderId: created.orderId, ...resolved });
         return;
       }
-      await runOrderFreeVinScan(created.orderId, { vin: effectiveVin, listingUrl: listingUrl || null });
+      // Numurzīmei bezmaksas avotus un VIN SCAN jau palaida runDownstream; VIN ievadei - šeit.
+      if (resolved.reason === "already_vin") {
+        await runOrderFreeVinScan(created.orderId, { vin: effectiveVin, listingUrl: listingUrl || null });
+      }
     } catch (err) {
       console.error("[operator-order] plate→vin / VIN SCAN:", err);
     }
