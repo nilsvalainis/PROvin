@@ -48,6 +48,8 @@ import {
   auctionArchiveReminderWhatsappText,
 } from "@/lib/email/auction-archive-email";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
+import { isPartnerHighlightAdminOrder } from "@/lib/b2b-partner-orders";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getSiteOrigin } from "@/lib/email/mail-config";
@@ -107,6 +109,19 @@ export async function loadAuctionArchiveOrderContext(sessionId: string): Promise
   };
 }
 
+/** B2B partnera pasūtījums (paraksts klientam tikai «PROVIN»). Kļūme = nav B2B. */
+async function isAuctionArchiveB2bOrder(sessionId: string): Promise<boolean> {
+  const [order, draft] = await Promise.all([
+    getCheckoutSessionDetail(sessionId).catch(() => null),
+    readOrderDraft(sessionId).catch(() => null),
+  ]);
+  return isPartnerHighlightAdminOrder({
+    partnerId: order?.partnerId,
+    partnerCompanyName: order?.companyName,
+    notes: draft?.orderEdits?.notes || order?.notes,
+  });
+}
+
 export function auctionArchiveSummaryFor(
   ctx: AuctionArchiveOrderContext,
   manualSources: readonly AuctionArchiveManualSource[] = [],
@@ -131,7 +146,8 @@ export type PrepareOfferResult =
 export async function prepareAuctionArchiveOffer(args: {
   sessionId: string;
   channel: AuctionArchiveChannel;
-  locale: AppLocale;
+  /** Izvēles lapas un ziņu valoda; nav - pasūtījuma klienta valoda (`ctx.lang`), citādi LV. */
+  locale?: AppLocale;
   previewIds?: readonly string[];
   manualSources?: readonly AuctionArchiveManualSource[];
   deadline?: number;
@@ -141,6 +157,7 @@ export async function prepareAuctionArchiveOffer(args: {
   const ctx = await loadAuctionArchiveOrderContext(args.sessionId);
   if (!ctx) return { ok: false, error: "not_found" };
   if (!ctx.vin) return { ok: false, error: "no_vin" };
+  const locale: AppLocale = args.locale ?? ctx.lang ?? "lv";
   if (ctx.refunded) return { ok: false, error: "already_refunded" };
   const prev = await readAuctionArchiveOffer(args.sessionId);
   if (prev && prev.status !== "pending" && prev.status !== "withdrawn") {
@@ -161,7 +178,7 @@ export async function prepareAuctionArchiveOffer(args: {
   });
   const created = await createAuctionArchiveOffer({
     sessionId: args.sessionId,
-    locale: args.locale,
+    locale,
     channel: args.channel,
     paidCents: ctx.paidCents,
     summary: { ...summary, photoCount: Math.max(summary.photoCount, persisted.photos.length) },
@@ -175,7 +192,7 @@ export async function prepareAuctionArchiveOffer(args: {
   return {
     ok: true,
     token: created.token,
-    choiceUrl: auctionArchiveAbsoluteUrl(origin, args.locale, created.token),
+    choiceUrl: auctionArchiveAbsoluteUrl(origin, locale, created.token),
     previewUrls: created.doc.previewIds.map((_, n) => `${origin}${auctionArchivePreviewPath(created.token, n)}`),
     doc: created.doc,
   };
@@ -315,21 +332,24 @@ export async function runAuctionArchiveReminders(nowMs = Date.now(), deps: Remin
     ).catch(() => null);
     if (!issued) continue;
     let marked = issued.doc;
+    const b2b = await isAuctionArchiveB2bOrder(id);
+    const signFor = (t: string) => (b2b ? applyB2bSignature(t) : t);
     const choiceUrl = auctionArchiveAbsoluteUrl(origin, marked.locale, issued.token);
     let client: "email_sent" | "email_failed" | "whatsapp" | undefined;
     let whatsappText = "";
     if (marked.channel === "whatsapp") {
       client = "whatsapp";
-      whatsappText = auctionArchiveReminderWhatsappText(marked.summary, marked.paidCents, choiceUrl);
+      // Nilam kopēšanai - klienta valodā (piedāvājuma `locale`); B2B paraksts tikai «PROVIN».
+      whatsappText = signFor(auctionArchiveReminderWhatsappText(marked.summary, marked.paidCents, choiceUrl, marked.locale));
     } else if (isAuctionArchiveClientReminderAllowed(marked, nowMs)) {
       const to = await reminderRecipient(marked);
       let ok = false;
       if (to) {
-        const text = auctionArchiveReminderText(marked.summary, marked.paidCents, marked.showPrices === true);
+        const text = signFor(auctionArchiveReminderText(marked.summary, marked.paidCents, marked.showPrices === true, marked.locale));
         ok = await sendClientEmail({
           to,
-          subject: auctionArchiveReminderSubject(marked.summary),
-          text: auctionArchiveOfferPlainText(text, choiceUrl),
+          subject: auctionArchiveReminderSubject(marked.summary, marked.locale),
+          text: auctionArchiveOfferPlainText(text, choiceUrl, marked.locale),
           html: auctionArchiveOfferEmailHtml({
             summary: marked.summary,
             paidCents: marked.paidCents,
@@ -340,6 +360,7 @@ export async function runAuctionArchiveReminders(nowMs = Date.now(), deps: Remin
             showPrices: marked.showPrices === true,
             reminder: true,
             date: new Date(nowMs),
+            lang: marked.locale,
           }),
         }).catch(() => false);
       }
