@@ -14,6 +14,7 @@ import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDa
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
+import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
 import { AdminAuctionArchivePanel } from "@/components/admin/AdminAuctionArchive";
 import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGate";
 import { AdminDealerReviewCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
@@ -115,6 +116,9 @@ export function AdminDealerDataJobStrip({
     setMarks,
     rerun,
     refund,
+    refundDialog,
+    setRefundDialog,
+    onStripeRefunded,
     refunded,
     showRefund,
     defaultSituation,
@@ -145,7 +149,9 @@ export function AdminDealerDataJobStrip({
             Automātiskā ielase
           </span>
           <span
-            className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_TONE[job.status]}`}
+            className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+              job.status === "no_data" && !job.refund ? STATUS_TONE.failed : STATUS_TONE[job.status]
+            }`}
           >
             {describeDealerDataJob(job)}
           </span>
@@ -278,6 +284,16 @@ export function AdminDealerDataJobStrip({
               }
             : null
         }
+      />
+
+      <AdminDealerRefundDialog
+        open={refundDialog}
+        onClose={() => setRefundDialog(false)}
+        sessionId={sessionId}
+        vin={vin}
+        customerEmail={(customerEmail ?? "").trim()}
+        customerPhoneDigits={dealerSend?.customerPhoneDigits ?? null}
+        onRefunded={onStripeRefunded}
       />
 
       {notice ? (

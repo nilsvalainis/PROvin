@@ -18,6 +18,7 @@ import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow
 import {
   dealerDataJobRetryDue,
   decideDealerDataRun,
+  decideDealerRefundLock,
   normalizeDealerDataJob,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
@@ -266,6 +267,58 @@ export async function upsertDealerDataJob(
   }
   if (next) await updatePendingIndex(sessionId, dealerDataJobBelongsInSweepIndex(next));
   return next;
+}
+
+/**
+ * Atmaksas slēdzene (CAS): tikai viens pieprasījums var sākt naudas atgriešanu un e-pastu.
+ * Jau atmaksāts vai cita atmaksa ceļā - atteikums (Nils 26.11: dubulta atmaksa nav iespējama).
+ */
+export type DealerRefundLockResult =
+  | { ok: true; job: DealerDataJob }
+  | { ok: false; reason: "already_refunded" | "refund_in_progress" | "store_error" };
+
+export async function claimDealerRefundLock(
+  sessionId: string,
+  fallback: { vin: string },
+): Promise<DealerRefundLockResult> {
+  if (!isSafeDealerJobSessionId(sessionId)) return { ok: false, reason: "store_error" };
+  try {
+    return await casJob<DealerRefundLockResult>(sessionId, (current) => {
+      const gate = decideDealerRefundLock(current);
+      if (!gate.ok) return { value: { ok: false, reason: gate.reason } };
+      const now = new Date().toISOString();
+      const base: DealerDataJob = current ?? {
+        sessionId,
+        vin: fallback.vin,
+        status: "no_data",
+        attempts: 0,
+        createdAt: now,
+        updatedAt: now,
+        serviceEventCount: 0,
+      };
+      const next = normalizeDealerDataJob({ ...base, refundPendingAt: now, updatedAt: now }, sessionId);
+      if (!next) return { value: { ok: false, reason: "store_error" } };
+      return { value: { ok: true, job: next }, next };
+    });
+  } catch (err) {
+    console.error("[dealer-data-job-store] refund lock failed", { sessionId, err });
+    return { ok: false, reason: "store_error" };
+  }
+}
+
+/** Noņem atmaksas slēdzeni (pēc neveiksmes vai pēc ieraksta). Atmaksas ierakstu neaiztiek. */
+export async function releaseDealerRefundLock(sessionId: string): Promise<void> {
+  if (!isSafeDealerJobSessionId(sessionId)) return;
+  try {
+    await casJob(sessionId, (current) => {
+      if (!current?.refundPendingAt) return { value: null };
+      const { refundPendingAt: _drop, ...rest } = current;
+      void _drop;
+      return { value: null, next: { ...rest, updatedAt: new Date().toISOString() } };
+    });
+  } catch (err) {
+    console.error("[dealer-data-job-store] refund unlock failed", { sessionId, err });
+  }
 }
 
 export type DealerDataClaimResult =

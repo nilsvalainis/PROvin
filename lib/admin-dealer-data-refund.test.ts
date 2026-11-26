@@ -13,45 +13,63 @@ import {
   resolveDealerRefundActionKind,
   resolveDealerRefundClientEmail,
   shouldOpenDealerRefundEmailSheet,
-  shouldSendDealerStripeRefundEmail,
   shouldShowDealerRefundButton,
+  dealerStripeRefundButtonLabel,
+  dealerRefundEmailFacts,
+  parseDealerStripeRefundMessage,
 } from "@/lib/admin-dealer-data-refund";
 
-describe("shouldSendDealerStripeRefundEmail", () => {
-  it("sūta, ja karogs izlaists vai true (opt-out, ne opt-in)", () => {
-    expect(shouldSendDealerStripeRefundEmail(undefined)).toBe(true);
-    expect(shouldSendDealerStripeRefundEmail(true)).toBe(true);
-    expect(shouldSendDealerStripeRefundEmail(null)).toBe(true);
+describe("parseDealerStripeRefundMessage (Nils 26.11: bez loga teksta atmaksas nav)", () => {
+  it("bez kanāla / teksta / temata - atteikums (vecais «uzreiz + šablons» ceļš slēgts)", () => {
+    expect(parseDealerStripeRefundMessage({})).toEqual({ ok: false, error: "channel_required" });
+    expect(parseDealerStripeRefundMessage({ notifyEmail: true })).toEqual({ ok: false, error: "channel_required" });
+    expect(parseDealerStripeRefundMessage({ channel: "email", subject: "S", text: "  " })).toEqual({
+      ok: false,
+      error: "text_required",
+    });
+    expect(parseDealerStripeRefundMessage({ channel: "email", subject: "", text: "T" })).toEqual({
+      ok: false,
+      error: "subject_required",
+    });
   });
 
-  it("nesūta tikai pie skaidra false", () => {
-    expect(shouldSendDealerStripeRefundEmail(false)).toBe(false);
+  it("e-pasts: Nila rediģētais temats + teksts nemainīti; valoda no loga", () => {
+    const r = parseDealerStripeRefundMessage({ channel: "email", subject: " Mans temats ", text: "Labots teksts\r\nPROVIN.LV", lang: "en" });
+    expect(r).toEqual({
+      ok: true,
+      message: { channel: "email", subject: "Mans temats", text: "Labots teksts\nPROVIN.LV", lang: "en" },
+    });
+  });
+
+  it("WhatsApp: temats nav vajadzīgs; nezināma valoda -> LV", () => {
+    expect(parseDealerStripeRefundMessage({ channel: "whatsapp", text: "Sveiki", lang: "fr" })).toEqual({
+      ok: true,
+      message: { channel: "whatsapp", subject: "", text: "Sveiki", lang: "lv" },
+    });
+  });
+});
+
+describe("dealerStripeRefundButtonLabel / dealerRefundEmailFacts", () => {
+  it("poga ar summu", () => {
+    expect(dealerStripeRefundButtonLabel(1749, "email")).toBe("Atgriezt 17,49 € un nosūtīt");
+    expect(dealerStripeRefundButtonLabel(1749, "whatsapp")).toBe("Atgriezt 17,49 € un atvērt WhatsApp");
+    expect(dealerStripeRefundButtonLabel(null, "email")).toBe("Atgriezt un nosūtīt");
+  });
+
+  it("fakti tikai LV", () => {
+    expect(dealerRefundEmailFacts("lv", 1749)[0]).toEqual({ value: "17,49 €", label: "atmaksāts uz karti" });
+    expect(dealerRefundEmailFacts("en", 1749)).toEqual([]);
   });
 });
 
 describe("buildDealerRefundRequestBody", () => {
-  it("B2C Stripe galvenā atmaksa prasa paziņojuma e-pastu", () => {
-    expect(
-      buildDealerRefundRequestBody({ sessionId: "cs_live_a1a05IWM", kind: "stripe" }),
-    ).toEqual({ sessionId: "cs_live_a1a05IWM", notifyEmail: true });
-  });
-
-  it("B2B kredīts / maks paliek pie sava paziņojuma ceļa", () => {
-    expect(
-      buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit" }),
-    ).toEqual({ sessionId: "manual_order_1", notifyEmail: false });
-    expect(
-      buildDealerRefundRequestBody({ sessionId: "manual_order_w", kind: "wallet" }),
-    ).toEqual({ sessionId: "manual_order_w", notifyEmail: false });
-  });
-
-  it("override: true tikai ja operators to prasa", () => {
-    expect(
-      buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit", override: true }),
-    ).toEqual({ sessionId: "manual_order_1", notifyEmail: false, override: true });
-    expect(
-      buildDealerRefundRequestBody({ sessionId: "cs_live_a1a05IWM", kind: "stripe", override: false }),
-    ).toEqual({ sessionId: "cs_live_a1a05IWM", notifyEmail: true });
+  it("B2B kredīts / maks: tikai sessionId (+ override)", () => {
+    expect(buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit" })).toEqual({ sessionId: "manual_order_1" });
+    expect(buildDealerRefundRequestBody({ sessionId: "manual_order_w", kind: "wallet" })).toEqual({ sessionId: "manual_order_w" });
+    expect(buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit", override: true })).toEqual({
+      sessionId: "manual_order_1",
+      override: true,
+    });
   });
 });
 
@@ -87,7 +105,7 @@ describe("dealerRefundNeedsOverride / planDealerRefund", () => {
       job: { status: "no_data" },
     });
     expect(plan.override).toBe(false);
-    expect(plan.requestBody).toEqual({ sessionId: "manual_order_1", notifyEmail: false });
+    expect(plan.requestBody).toEqual({ sessionId: "manual_order_1" });
     expect(plan.confirmMessage).not.toMatch(/override/);
     expect(plan.confirmMessage).toMatch(/IRISS e-pastu/);
   });
@@ -102,11 +120,7 @@ describe("dealerRefundNeedsOverride / planDealerRefund", () => {
     });
     expect(failed.kind).toBe("credit");
     expect(failed.override).toBe(true);
-    expect(failed.requestBody).toEqual({
-      sessionId: "manual_order_2",
-      notifyEmail: false,
-      override: true,
-    });
+    expect(failed.requestBody).toEqual({ sessionId: "manual_order_2", override: true });
     expect(failed.confirmMessage).toMatch(/override/);
     expect(failed.confirmMessage).toMatch(/nav «nav datu»/);
     expect(failed.confirmMessage).toMatch(/kredītu/);
@@ -116,11 +130,7 @@ describe("dealerRefundNeedsOverride / planDealerRefund", () => {
       walletRefund: true,
       job: null,
     });
-    expect(missing.requestBody).toEqual({
-      sessionId: "manual_order_w",
-      notifyEmail: false,
-      override: true,
-    });
+    expect(missing.requestBody).toEqual({ sessionId: "manual_order_w", override: true });
     expect(missing.confirmMessage).toMatch(/override/);
     expect(missing.confirmMessage).toMatch(/IRISS e-pastu/);
   });
@@ -154,11 +164,10 @@ describe("resolveDealerRefundClientEmail", () => {
 });
 
 describe("dealer refund operator copy", () => {
-  it("Stripe apstiprinājums piesaka e-pasta izvēli nākamajā solī, ne atsevišķu pogu", () => {
+  it("Stripe apstiprinājums - neatgriezeniska darbība, bez «atsevišķi»", () => {
     const confirm = dealerRefundConfirmMessage("stripe");
-    expect(confirm).toMatch(/e-pastu/i);
+    expect(confirm).toMatch(/neatgriezeniska/);
     expect(confirm).not.toMatch(/atsevišķi/);
-    expect(confirm).not.toMatch(/ja vajag/);
   });
 
   it("veiksmīga Stripe atmaksa rāda emailSent", () => {
@@ -195,23 +204,28 @@ describe("dealer refund operator copy", () => {
     );
   });
 
-  it("admin strip un refund API vairs nepadara paziņojumu par atsevišķu soli", () => {
+  it("Stripe: poga atver logu, API sūta Nila tekstu tikai pēc atmaksas (26.11)", () => {
     // Atmaksas loģika kopīga dīlera blokam un telefona B1 blokam (22.11): `useDealerDataJobControls`.
     const strip = ["components/admin/AdminDealerDataJobStrip.tsx", "components/admin/useDealerDataJobControls.ts"]
       .map((f) => readFileSync(join(process.cwd(), f), "utf8"))
       .join("\n");
-    const route = readFileSync(
-      join(process.cwd(), "app/api/admin/dealer-data/refund/route.ts"),
-      "utf8",
-    );
-    expect(strip).not.toMatch(/notifyEmail:\s*false/);
+    const route = readFileSync(join(process.cwd(), "app/api/admin/dealer-data/refund/route.ts"), "utf8");
     expect(strip).toContain("planDealerRefund");
     expect(strip).toContain("shouldShowDealerRefundButton");
-    expect(strip).not.toMatch(/showRefund = Boolean\(job && job.status === "no_data"/);
-    expect(strip).not.toMatch(/Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag/);
-    expect(route).not.toMatch(/notifyEmail === true/);
-    expect(route).toContain("shouldSendDealerStripeRefundEmail");
-    expect(route).toContain("trySendDealerDataRefundEmail");
+    expect(strip).toContain("setRefundDialog(true)");
+    expect(strip).toContain("AdminDealerRefundDialog");
+    expect(strip).not.toMatch(/notifyEmail/);
+    // Vecais šablona e-pasts uzreiz pēc atmaksas vairs netiek izsaukts.
+    expect(route).not.toContain("trySendDealerDataRefundEmail");
+    expect(route).toContain("parseDealerStripeRefundMessage");
+    expect(route).toContain("humanSent: true");
+    // Kārtība: slēdzene -> Stripe -> e-pasts.
+    const lockAt = route.indexOf("claimDealerRefundLock(sessionId");
+    const stripeAt = route.indexOf("stripe.refunds.create(");
+    const mailAt = route.indexOf("trySendDealerDataOperatorEmail({");
+    expect(lockAt).toBeGreaterThan(0);
+    expect(stripeAt).toBeGreaterThan(lockAt);
+    expect(mailAt).toBeGreaterThan(stripeAt);
 
     const workspace = readFileSync(
       join(process.cwd(), "components/admin/OrderDetailWorkspace.tsx"),
@@ -235,12 +249,6 @@ describe("dealer refund operator copy", () => {
 });
 
 describe("C2 - viens e-pasts uz atmaksu (06.11)", () => {
-  it("Stripe pieprasījums ievēro operatora izvēli", () => {
-    expect(buildDealerRefundRequestBody({ sessionId: "cs_1", kind: "stripe" }).notifyEmail).toBe(true);
-    expect(buildDealerRefundRequestBody({ sessionId: "cs_1", kind: "stripe", notifyEmail: false }).notifyEmail).toBe(false);
-    expect(buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit", notifyEmail: true }).notifyEmail).toBe(false);
-  });
-
   it("izvēle bez e-pasta - skaidrs paziņojums", () => {
     expect(dealerRefundResultNotice({ kind: "stripe", ok: true, emailSent: false, emailSkipped: true })).toBe(
       "Atmaksa veikta bez e-pasta (Tava izvēle).",

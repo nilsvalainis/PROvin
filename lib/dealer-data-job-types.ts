@@ -78,6 +78,11 @@ export type DealerDataJob = {
   shadowGate?: DealerShadowGate;
   /** Admina atsauksme par spriedumu (sūtīšanas formā). */
   shadowFeedback?: DealerShadowFeedback;
+  /**
+   * Atmaksa notiek tieši tagad (Stripe pieprasījums ceļā). Otra «Atgriezt» poga šajā laikā
+   * saņem atteikumu - dubulta atmaksa / dubults e-pasts nav iespējams (Nils 26.11).
+   */
+  refundPendingAt?: string;
 };
 
 export type DealerDataJobArchive = {
@@ -156,6 +161,23 @@ export const DEALER_DATA_MAX_AMOUNT_CENTS = 3000;
  * ka pasūtījumā ir arī citas pozīcijas, kuras šī poga nedrīkst skart.
  */
 export const DEALER_REFUND_MAX_CENTS = DEALER_DATA_MAX_AMOUNT_CENTS;
+
+/** Atmaksas slēdzenes ilgums: pēc tam (piem. funkcija nogalināta) poga atkal strādā. */
+export const DEALER_REFUND_LOCK_MS = 2 * 60 * 1000;
+
+/**
+ * Vai drīkst sākt atmaksu (Nils 26.11: dubulta atmaksa nav iespējama).
+ * Jau atmaksāts - nekad; cita atmaksa ceļā (svaiga slēdzene) - pagaidām nē.
+ */
+export function decideDealerRefundLock(
+  job: Pick<DealerDataJob, "refund" | "refundPendingAt"> | null,
+  nowMs: number = Date.now(),
+): { ok: true } | { ok: false; reason: "already_refunded" | "refund_in_progress" } {
+  if (job?.refund) return { ok: false, reason: "already_refunded" };
+  const at = Date.parse(job?.refundPendingAt ?? "");
+  if (Number.isFinite(at) && nowMs - at < DEALER_REFUND_LOCK_MS) return { ok: false, reason: "refund_in_progress" };
+  return { ok: true };
+}
 
 /** Cik ilgi `running` uzskatām par dzīvu, pirms ļaujam pārstartēt. */
 export const DEALER_DATA_STALE_RUNNING_MS = 10 * 60 * 1000;
@@ -489,11 +511,14 @@ export function dealerDataAlertText(
         title: `Dīlera dati: datu nav - ${who}, jāatmaksā ${amount}`,
         body: opts.wallet
           ? `${who} - OneAuto datu nav. B2B maka automātiskā atmaksa neizdevās - atmaksā ${amount} makā.`
-          : `${who} - OneAuto datu nav. Atmaksā ${amount} un informē klientu.`,
+          : `${who} - OneAuto datu nav. Gaida atmaksas apstiprinājumu: atver pasūtījumu, pārbaudi klienta tekstu un spied «Atgriezt maksājumu» (${amount}).`,
       };
     }
   }
 }
+
+/** Statuss pasūtījumam, kuram datu nav un atmaksa vēl nav apstiprināta (sarkans adminā). */
+export const DEALER_REFUND_AWAITING_LABEL = "Gaida atmaksas apstiprinājumu";
 
 /** Īsa sarkanā atzīme pasūtījumu sarakstā (null - nekas nav jādara). */
 export function dealerDataListAlertLabel(
@@ -505,7 +530,8 @@ export function dealerDataListAlertLabel(
     if (job.error === "draft_write_failed") return "Dīlera dati nav melnrakstā";
     return job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS ? "Dīlera ielase: kļūda" : null;
   }
-  if (job.status === "no_data" && !job.refund) return "Dīlera datu nav";
+  // Nils 26.11: atmaksa nekad nenotiek automātiski - pasūtījums gaida viņa apstiprinājumu.
+  if (job.status === "no_data" && !job.refund) return DEALER_REFUND_AWAITING_LABEL;
   return null;
 }
 
@@ -702,6 +728,7 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(shadowFeedback ? { shadowFeedback } : {}),
     ...(asStr(o.nextRetryAt, 40) ? { nextRetryAt: asStr(o.nextRetryAt, 40) } : {}),
     ...(asStr(o.runId, 80) ? { runId: asStr(o.runId, 80) } : {}),
+    ...(asStr(o.refundPendingAt, 40) ? { refundPendingAt: asStr(o.refundPendingAt, 40) } : {}),
     ...(asStr(o.draftWrittenAt, 40) ? { draftWrittenAt: asStr(o.draftWrittenAt, 40) } : {}),
     ...(asStr(o.pendingRequestId, 120) ? { pendingRequestId: asStr(o.pendingRequestId, 120) } : {}),
     ...(asArchived(o.archived) ? { archived: asArchived(o.archived)! } : {}),
@@ -734,7 +761,7 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
       return `Ielasīts: ${parts.join(", ")}`;
     }
     case "no_data":
-      return "Dīlera dati nav pieejami";
+      return job.refund ? "Dīlera dati nav pieejami" : `Dīlera dati nav pieejami · ${DEALER_REFUND_AWAITING_LABEL}`;
     case "failed":
       if (job.error?.startsWith("vin_decode:")) {
         return `Ielasīts: ${job.serviceEventCount ?? 0} servisa ieraksti, VIN dekodēšana atkārtosies`;
