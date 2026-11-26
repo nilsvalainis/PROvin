@@ -48,9 +48,9 @@ describe("NHTSA vPIC (zelta VIN)", () => {
     expect(vpic.vehicle).toEqual({ make: "BMW", model: "330i", year: "2020" });
 
     const merged = mergeVinDecodeWithVpic(decodeVinLocal(BMW), vpic);
-    expect(merged.summary).toBe("2020 BMW 330i Vācija");
+    expect(merged.summary).toBe("2020 BMW 330i · Ražots: Vācija");
     expect(merged.vehicle).toEqual({ make: "BMW", model: "330i", year: "2020" });
-    expect(merged.flags?.registrationCountry).toBe("DE");
+    expect(merged.flags?.manufactureCountry).toBe("DE");
   });
 
   it("Škoda: NHTSA neatkodē (ErrorCode 7), paliek lokālais dekodējums", () => {
@@ -62,7 +62,7 @@ describe("NHTSA vPIC (zelta VIN)", () => {
     expect(local).toMatchObject({ make: "Škoda", year: "2022", countryCode: "CZ", checkDigitOk: true });
     const merged = mergeVinDecodeWithVpic(local, vpic);
     expect(merged.status).toBe("found");
-    expect(merged.summary).toBe("2022 Škoda Čehija");
+    expect(merged.summary).toBe("2022 Škoda · Ražots: Čehija");
     expect(merged.vehicle).toEqual({ make: "Škoda", model: "", year: "2022" });
   });
 
@@ -71,8 +71,8 @@ describe("NHTSA vPIC (zelta VIN)", () => {
     expect(vpic.status).toBe("found");
     expect(vpic.summary).toBe("2003 HONDA Accord");
     const merged = mergeVinDecodeWithVpic(decodeVinLocal(HONDA), vpic);
-    expect(merged.summary).toBe("2003 HONDA Accord ASV");
-    expect(merged.flags?.registrationCountry).toBe("US");
+    expect(merged.summary).toBe("2003 HONDA Accord · Ražots: ASV");
+    expect(merged.flags?.manufactureCountry).toBe("US");
   });
 });
 

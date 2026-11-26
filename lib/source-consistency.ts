@@ -57,7 +57,7 @@ import {
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
 } from "@/lib/unified-incidents";
-import { buildVehicleLifecycleEvents, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
+import { buildVehicleLifecycleEvents, lifecycleEventIsProduction, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export type SourceIssueSeverity = "critical" | "warn" | "info";
@@ -663,7 +663,11 @@ function checkCountry(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIss
   for (const key of ["carvertical", "autodna", "carfax"] as const) {
     const b = blocks[key];
     for (const r of b.serviceHistory ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
-    for (const r of b.vehicleHistoryTimeline ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
+    for (const r of b.vehicleHistoryTimeline ?? []) {
+      // 26.11: «Ražots <valsts>» ir ražotājvalsts, ne valsts, kur auto bijis - pretrunu nerada.
+      if (lifecycleEventIsProduction({ title: r.description ?? "", detail: "" })) continue;
+      add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
+    }
   }
   for (const r of blocks.cc_vin.mileage ?? []) add(iso2(r.country), CC_VIN_ADMIN_LABEL);
   const regs: [keyof WorkspaceSourceBlocks, string][] = [

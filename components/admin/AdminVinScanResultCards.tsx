@@ -57,6 +57,7 @@ export function AdminVinScanResultCards({ rows, bare = false }: { rows: readonly
             <Kv label="Modelis" value={card.vehicle?.model ?? ""} />
             <Kv label="Gads" value={card.vehicle?.year ?? ""} />
             <Kv label="Valsts" value={card.origin} />
+            <Kv label="Ražots" value={card.made} />
           </div>
           {card.inspections.length > 0 ? (
             <ul className="mt-1.5 space-y-0.5">

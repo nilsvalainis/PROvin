@@ -16,16 +16,41 @@ describe("buildVinScanResultCard", () => {
     expect(card?.origin).toBe("");
   });
 
-  it("WMI dekodējums ar valsti ir kartīte", () => {
+  it("WMI dekodējums: valsts ir «Ražots», ne reģistrācijas valsts (26.11)", () => {
     const card = buildVinScanResultCard({
       id: "vin_decode",
       label: "WMI",
       status: "found",
       vehicle: { make: "Volvo", model: "", year: "2011" },
+      flags: { manufactureCountry: "SE" },
+    });
+    expect(card?.origin).toBe("");
+    expect(card?.made).toBe("Zviedrija");
+    expect(card?.vehicle?.make).toBe("Volvo");
+  });
+
+  it("vecs WMI momentuzņēmums ar registrationCountry arī ir tikai «Ražots»", () => {
+    const card = buildVinScanResultCard({
+      id: "vin_decode",
+      label: "WMI",
+      status: "found",
+      vehicle: { make: "PEUGEOT", model: "", year: "2017" },
+      flags: { registrationCountry: "FR" },
+    });
+    expect(card?.origin).toBe("");
+    expect(card?.made).toBe("Francija");
+  });
+
+  it("reģistra rindas valsts paliek «Valsts», ne «Ražots»", () => {
+    const card = buildVinScanResultCard({
+      id: "carinfo",
+      label: "car.info",
+      status: "found",
+      vehicle: { make: "Volvo", model: "XC60", year: "2018" },
       flags: { registrationCountry: "SE" },
     });
     expect(card?.origin).toBe("Zviedrija");
-    expect(card?.vehicle?.make).toBe("Volvo");
+    expect(card?.made).toBe("");
   });
 
   it("parsē apskates no detail, ja masīva nav", () => {

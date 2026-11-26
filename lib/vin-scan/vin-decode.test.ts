@@ -86,7 +86,7 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     expect(parsed.summary).toContain("Zviedrija");
     expect(parsed.summary).toContain("2011");
     expect(parsed.vehicle).toMatchObject({ make: "Volvo", year: "2011" });
-    expect(parsed.flags?.registrationCountry).toBe("SE");
+    expect(parsed.flags?.manufactureCountry).toBe("SE");
     expect(parsed.detail).toContain("WMI YV1");
   });
 
@@ -99,7 +99,7 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     expect(merged.summary).toContain("XC60");
     expect(merged.summary).toContain("Zviedrija");
     expect(merged.vehicle).toEqual({ make: "VOLVO", model: "XC60", year: "2011" });
-    expect(merged.flags?.registrationCountry).toBe("SE");
+    expect(merged.flags?.manufactureCountry).toBe("SE");
   });
 
   it("vPIC 1981 (ISO cikls) neaizstāj lokālo 2011", () => {
@@ -111,7 +111,7 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     expect(merged.vehicle?.year).toBe("2011");
     expect(merged.vehicle?.make).toBe("VOLVO");
     expect(merged.summary).toContain("2011");
-    expect(merged.flags?.registrationCountry).toBe("SE");
+    expect(merged.flags?.manufactureCountry).toBe("SE");
   });
 
   it("vPIC kļūda atstāj lokālo dekodējumu", () => {

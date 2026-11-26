@@ -505,8 +505,17 @@ function vendorTimelineTitleAndDetail(
 const LIFECYCLE_EXPORT_EVENT_RE = /eksport|\bexport/i;
 
 /** Stipra rezidence: atpazīstama valsts, ne sludinājums un ne laikposma tabula. */
+/**
+ * 26.11 (Nils): «Ražots» (CarVertical/AutoDNA laikposms, WMI) dod tikai ražotājvalsti.
+ * Tā nav valsts, kur auto bijis: nedrīkst sākt valstu ķēdi vai radīt «Francija → Vācija» pāreju.
+ */
+export function lifecycleEventIsProduction(e: Pick<LifecycleEvent, "title" | "detail">): boolean {
+  return /ražot|izgatavot|manufactur|produced|\bbuilt\b/i.test(`${e.title} ${e.detail}`);
+}
+
 export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
   if (lifecycleCountryIsSoft(e)) return false;
+  if (lifecycleEventIsProduction(e)) return false;
   // j26: eksports / izņemšana no uzskaites eksportam ir izbraukšana, ne rezidence (citādi
   // tās pašas dienas jaunās valsts reģistrācija rada viltus lēcienus FI -> SE -> FI).
   if (LIFECYCLE_EXPORT_EVENT_RE.test(`${e.title} ${e.detail} ${e.body ?? ""}`)) return false;
@@ -519,6 +528,7 @@ export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boole
  * Maiņu ģenerē tikai stiprs notikums (nobraukums, reģistrs, negadījums).
  */
 function lifecycleEventCountryChainIso(e: LifecycleEvent, prevIso: string): string | null {
+  if (lifecycleEventIsProduction(e)) return null;
   const iso = lifecycleEventKnownCountryIso(e);
   if (!iso) return null;
   if (lifecycleEventProvidesCountryResidence(e)) return iso;
@@ -1504,12 +1514,10 @@ function eventCountryIso(e: LifecycleEvent): string | null {
   return countryLabelToIso2(e.country);
 }
 
-const PRODUCTION_EVENT_RE = /ražot|izgatavot|manufactur|produced|\bbuilt\b/i;
-
 function isFirstRegistrationEvidence(e: LifecycleEvent): boolean {
   if (e.kind === "first_registration" || e.kind === "import" || e.kind === "gap") return false;
   if (e.nationalRegistration) return false;
-  if (PRODUCTION_EVENT_RE.test(`${e.title} ${e.detail}`)) return false;
+  if (lifecycleEventIsProduction(e)) return false;
   return lifecycleEventProvidesCountryResidence(e);
 }
 

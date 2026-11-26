@@ -7,6 +7,7 @@ import type {
   VinScanVehicle,
 } from "@/lib/vin-scan/types";
 import { vinOriginCountryLabel } from "@/lib/vin-scan/vin-decode";
+import { vinScanRowManufactureCountry, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
 export type VinScanResultRow = {
   id: string;
@@ -26,6 +27,7 @@ export type VinScanResultRow = {
     finlandLinked?: boolean;
     finlandLinkSource?: string;
     registrationCountry?: string;
+    manufactureCountry?: string;
   };
   inspections?: VinScanInspection[];
   recalls?: VinScanRecall[];
@@ -39,7 +41,10 @@ export type VinScanResultCard = {
   label: string;
   href: string;
   vehicle: VinScanVehicle | null;
+  /** Reģistrācijas valsts (reģistra avots). */
   origin: string;
+  /** Ražotājvalsts (WMI) - tikai identitāte, ne vēsture. */
+  made: string;
   mileage: { date: string; odometer: string }[];
   inspections: VinScanInspection[];
   incidents: { date?: string; summary: string }[];
@@ -118,7 +123,9 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
           source: String(row.flags.finlandLinkSource || "").trim(),
         }
       : null;
-  const origin = vinOriginCountryLabel(String(row.flags?.registrationCountry || ""));
+  // 26.11: reģistrācijas valsts un ražotājvalsts (WMI) ir atsevišķi lauki.
+  const origin = vinOriginCountryLabel(vinScanRowRegistrationCountry(row));
+  const made = vinOriginCountryLabel(vinScanRowManufactureCountry(row));
   const hasRecords =
     mileage.length > 0 ||
     inspections.length > 0 ||
@@ -128,7 +135,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     listings.length > 0 ||
     Boolean(photoUrl) ||
     photoCount > 0;
-  if (!hasRecords && !finlandLink && !origin && (row.status !== "found" || !vehicle)) {
+  if (!hasRecords && !finlandLink && !origin && !made && (row.status !== "found" || !vehicle)) {
     return null;
   }
   return {
@@ -137,6 +144,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     href: String(row.openUrl || "").trim(),
     vehicle,
     origin,
+    made,
     mileage: mileage.map((item) => ({ date: item.date, odometer: item.odometer })),
     inspections,
     incidents,
