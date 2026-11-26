@@ -1077,7 +1077,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
         emailParagraph(
           `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${esc(amount)} pilnā apmērā uz karti, ar kuru maksājāt.`,
           "margin:0 0 10px;",
-        ) + emailParagraph("Ja atmaksa veikta tajā pašā dienā, summa parasti tiek vienkārši atbloķēta un kontā redzama uzreiz. Citos gadījumos nauda kontā parādās 1-7 dienu laikā, atkarībā no bankas.", "margin:0;"),
+        ) + emailParagraph("Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.", "margin:0;"),
         "20px 36px 0",
       ),
       emailRow(question, "18px 36px 0"),
@@ -1098,7 +1098,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
     ),
     facts,
     emailRow(
-      emailSmall("Ja atmaksa veikta tajā pašā dienā, summa parasti tiek vienkārši atbloķēta un kontā redzama uzreiz. Citos gadījumos nauda kontā parādās 1-7 dienu laikā, atkarībā no bankas."),
+      emailSmall("Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā."),
       "14px 36px 0",
     ),
     emailRow(

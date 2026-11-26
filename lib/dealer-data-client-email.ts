@@ -101,7 +101,7 @@ export function buildDealerCancelledEmailDraft(
       "",
       `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.`,
       "",
-      "Ja atmaksa veikta tajā pašā dienā, summa parasti tiek vienkārši atbloķēta un kontā redzama uzreiz. Citos gadījumos nauda kontā parādās 1-7 dienu laikā, atkarībā no bankas.",
+      "Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.",
       "",
       "Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.",
       "",

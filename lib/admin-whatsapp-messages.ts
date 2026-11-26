@@ -103,7 +103,7 @@ Pārbaudījām Jūsu auto${vinSuffix(vin)}. Diemžēl oficiālā dīlera dati pa
 
 Atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.
 
-Ja atmaksa veikta tajā pašā dienā, summa parasti tiek vienkārši atbloķēta un kontā redzama uzreiz. Citos gadījumos nauda kontā parādās 1-7 dienu laikā, atkarībā no bankas.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
@@ -124,7 +124,7 @@ export function whatsappPrefillDealerPaymentCancelled(vin?: string | null, templ
 
 Atcēlām Jūsu oficiālā dīlera datu pasūtījumu${vinSuffix(vin)} un atmaksājām visu summu.
 
-Ja atmaksa veikta tajā pašā dienā, summa parasti tiek vienkārši atbloķēta un kontā redzama uzreiz. Citos gadījumos nauda kontā parādās 1-7 dienu laikā, atkarībā no bankas.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
