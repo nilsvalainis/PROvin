@@ -6,6 +6,8 @@ import { resolveOrderVinFromPlate } from "@/lib/order-plate-vin-resolve";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** CSDD atkārtojumi (VPN pārslēgšanās) + bezmaksas avoti pēc atrastā VIN. */
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   if (!(await getAdminSession())) {

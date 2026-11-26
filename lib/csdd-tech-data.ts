@@ -1,4 +1,5 @@
-import { dedupeAsync } from "@/lib/vin-fetch-dedupe";
+import { dedupeAsync, forgetVinFetchDedupe } from "@/lib/vin-fetch-dedupe";
+import { isCsddTransientMessage } from "@/lib/order-vin-plate-resolution";
 
 /**
  * CSDD Transportlīdzekļu reģistra web serviss (līgums LĪG-ieņ/375/26, 1. pielikums).
@@ -251,11 +252,28 @@ async function fetchCsddTechDataOnce(
   }
 }
 
-/** Atkārtots zvans tam pašam nr1 60 s laikā (sēkla + VIN SCAN) iet vienu reizi. Testi ar `opts.env` kešu nelieto. */
+/**
+ * Pārejoša kļūda (relejs/VPN/taimauts), nevis reģistra atbilde. «Netika atrasts» un «nav datu» nav pārejošas.
+ * 26.11.2026: CSDD VPN pārslēdzās (Idle Timeout) tieši pasūtījuma brīdī - HTTP 502.
+ */
+export function isCsddTransientFailure(result: CsddTechDataResult): boolean {
+  if (result.found) return false;
+  return isCsddTransientMessage(result.message);
+}
+
+/**
+ * Atkārtots zvans tam pašam nr1 60 s laikā (sēkla + VIN SCAN) iet vienu reizi. Testi ar `opts.env` kešu nelieto.
+ * Pārejošu kļūdu kešā neturam - nākamais mēģinājums iet uz CSDD no jauna.
+ */
 export function fetchCsddTechData(
   nr1: string,
   opts: { env?: CsddRelayEnv; timeoutMs?: number } = {},
 ): Promise<CsddTechDataResult> {
   if (opts.env) return fetchCsddTechDataOnce(nr1, opts);
-  return dedupeAsync(`csdd:${nr1.trim().toUpperCase()}`, () => fetchCsddTechDataOnce(nr1, opts));
+  const key = `csdd:${nr1.trim().toUpperCase()}`;
+  return dedupeAsync(key, async () => {
+    const result = await fetchCsddTechDataOnce(nr1, opts);
+    if (isCsddTransientFailure(result)) forgetVinFetchDedupe(key);
+    return result;
+  });
 }

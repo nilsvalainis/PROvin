@@ -13,13 +13,32 @@ export const VIN_PLATE_RESOLVE_FAILED_LABEL = "VIN nav atrasts pēc numura";
 
 export type OrderVinPlateResolutionStatus = "pending" | "resolved" | "failed";
 
+/** not_found - CSDD atbildēja, ka VIN nav; unreachable - relejs/VPN/taimauts (vērts atkārtot). */
+export type OrderVinPlateFailKind = "not_found" | "unreachable";
+
 export type OrderVinPlateResolution = {
   plate: string;
   status: OrderVinPlateResolutionStatus;
   /** CSDD vai iekšējā kļūda (nav klientam). */
   message?: string;
+  failKind?: OrderVinPlateFailKind;
+  /** CSDD vaicājumu skaits šim pasūtījumam (ar atkārtojumiem). */
+  attempts?: number;
   updatedAt: string;
 };
+
+/** Pārejoša CSDD kļūda (relejs, VPN pārslēgšanās, taimauts) - nevis reģistra atbilde «nav atrasts». */
+export function isCsddTransientMessage(message: string | null | undefined): boolean {
+  return /neatbildēja|noildza|sasniegt|tukša/i.test(message ?? "");
+}
+
+/** Admin teksts sarkanajā joslā (Nils 26.11: klusā apstāšanās aizliegta). */
+export function orderVinPlateFailLabel(plate: string, failKind: OrderVinPlateFailKind | undefined): string {
+  const p = plate.trim() || "?";
+  return failKind === "unreachable"
+    ? `CSDD nebija sasniedzams - VIN numuram ${p} nav iegūts`
+    : `CSDD neatrada VIN numuram ${p}`;
+}
 
 export function parseOrderVinPlateResolution(raw: unknown): OrderVinPlateResolution | null {
   if (!raw || typeof raw !== "object") return null;
@@ -30,7 +49,17 @@ export function parseOrderVinPlateResolution(raw: unknown): OrderVinPlateResolut
   const updatedAt = typeof o.updatedAt === "string" && o.updatedAt.trim() ? o.updatedAt.trim() : "";
   if (!updatedAt) return null;
   const message = typeof o.message === "string" ? o.message.trim().slice(0, 400) : undefined;
-  return { plate, status, ...(message ? { message } : {}), updatedAt };
+  const failKind = o.failKind === "not_found" || o.failKind === "unreachable" ? o.failKind : undefined;
+  const attempts =
+    typeof o.attempts === "number" && Number.isFinite(o.attempts) ? Math.max(0, Math.floor(o.attempts)) : undefined;
+  return {
+    plate,
+    status,
+    ...(message ? { message } : {}),
+    ...(failKind ? { failKind } : {}),
+    ...(attempts !== undefined ? { attempts } : {}),
+    updatedAt,
+  };
 }
 
 export type OrderVinOrPlateIntake =
