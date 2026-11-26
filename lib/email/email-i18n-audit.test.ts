@@ -155,7 +155,8 @@ describe("pārējie klientu e-pasti - ne-LV bez latviešu teksta", () => {
     for (const [id, byLang] of Object.entries(LOCALIZED_TEMPLATES)) {
       const def = getMessageTemplateDef(id);
       expect(def, id).toBeTruthy();
-      const vars = templateSampleVars(def!);
+      // Paraugi «Jāni» (LV vokatīvs) un LV «apraksts» ne-LV klientam reālajā plūsmā aizstāj ar valodas vērtībām.
+      const vars = { ...templateSampleVars(def!), vards: "Anna", apraksts: "In the archive: 1 auction." };
       for (const lang of FOREIGN) {
         const r = renderTemplateById(id, vars, null, { lang });
         expect(byLang[lang as "en"], `${id} ${lang}`).toBeTruthy();

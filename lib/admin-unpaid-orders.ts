@@ -47,6 +47,7 @@ export function unpaidCandidateFromSession(s: Stripe.Checkout.Session): UnpaidSe
     partnerId: s.metadata?.partner_id?.trim() || null,
     upgradeOf: s.metadata?.upgrade_of?.trim() || null,
     reminderOf: s.metadata?.reminder_of?.trim() || null,
+    locale: s.locale ?? null,
   };
 }
 

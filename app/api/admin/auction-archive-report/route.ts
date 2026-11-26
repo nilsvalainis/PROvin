@@ -87,6 +87,7 @@ export async function GET(req: Request) {
     statusLine: auctionArchiveReportStatusLine(report),
     pdfUrl: pdf ? pdfUrl(sessionId) : null,
     filename: auctionArchiveReportPdfFilename(ctx.vin),
+    lang: ctx.lang ?? "lv",
   });
 }
 
@@ -184,7 +185,8 @@ export async function POST(req: Request) {
       subject,
       text,
       b2bClient,
-      lang: "lv",
+      // E-pasta rāmis klienta valodā (teksts no «Sūtīt klientam» loga jau tajā valodā); PDF saturs - LV.
+      lang: ctx?.lang ?? "lv",
       ...(attachment ? { attachments: [{ filename: attachment.filename, content: attachment.content, contentType: "application/pdf" }] } : {}),
       context: {
         situation,

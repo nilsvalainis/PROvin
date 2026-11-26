@@ -97,6 +97,7 @@ export async function POST(req: Request, ctx: Ctx) {
     doc: getCachedMessageTemplatesDoc(),
     subjectOverride,
     textOverride,
+    locale: row.locale,
   });
   const sent = await trySendUnpaidOrderReminderEmail({
     to: row.email,
