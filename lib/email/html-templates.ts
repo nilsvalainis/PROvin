@@ -475,7 +475,7 @@ function clientSignOffHtml(b2bClient?: boolean, lang: ClientReportLang = "lv"): 
   if (b2bClient) {
     return emailParagraph(`${greeting}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span>`, "margin:0;");
   }
-  return emailParagraph(`${greeting}<br/>Nils<br/>PROVIN.LV`, "margin:0;");
+  return emailParagraph(`${greeting}<br/>PROVIN.LV`, "margin:0;");
 }
 
 /** Google atsauksmes bloks: teksts + 5 zvaigznes + saite (tikai, ja operators to ieslēdza). */

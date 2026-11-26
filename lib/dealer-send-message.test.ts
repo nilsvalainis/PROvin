@@ -36,7 +36,7 @@ describe("dealer send texts", () => {
     expect(m.text).toContain("Kopā: 99,99 €");
     expect(m.text).toContain(`Apmaksāt: ${offer.url} (saite derīga 30 dienas)`);
     expect(m.text).not.toContain(GOOGLE_REVIEW_URL);
-    expect(m.text.endsWith("Ar cieņu,\nNils\nPROVIN.LV")).toBe(true);
+    expect(m.text.endsWith("Ar cieņu,\nPROVIN.LV")).toBe(true);
   });
 
   it("ready WhatsApp with review asks for a Google review and has no offer", () => {
@@ -45,7 +45,7 @@ describe("dealer send texts", () => {
     expect(m.text).toContain("PDF pievienoju zemāk.");
     expect(m.text).toContain(`atsauksmi Google: ${GOOGLE_REVIEW_URL}`);
     expect(m.text).not.toContain("Piemaksa");
-    expect(m.text.endsWith("Nils, PROVIN.LV")).toBe(true);
+    expect(m.text.endsWith("\nPROVIN.LV")).toBe(true);
   });
 
   it("offer and review together: offer block first, then the review request (Nils 22.11)", () => {
@@ -68,7 +68,6 @@ describe("dealer send texts", () => {
         "Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.",
         "",
         "Ar cieņu,",
-        "Nils",
         "PROVIN.LV",
       ].join("\n"),
     );

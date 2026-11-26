@@ -5,7 +5,7 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
  * LV teksts paliek reģistrā (labojams adminā «Šabloni»); šeit - tie paši bloki un mainīgie citās valodās.
  * Ne-LV versijām admina LV pārrakstu NEizmanto (citādi latviešu teksts aizietu vācu klientam).
  *
- * Paraksts: «Nils» paliek tikai privātklientiem; B2B to noņem `applyB2bSignature` (paraksts tikai «PROVIN»).
+ * Paraksts (Nils 26.11): bez vārda - privātklientiem «PROVIN.LV», B2B `applyB2bSignature` atstāj tikai «PROVIN».
  */
 
 export type ForeignLang = Exclude<ClientReportLang, "lv">;
@@ -14,11 +14,11 @@ export type LocalizedTemplate = { subject?: string; body: string };
 const SIGN_GREETING: Record<ForeignLang, string> = {
   en: "Best regards,",
   ru: "С уважением,",
-  de: "Mit freundlichen Grüßen",
+  de: "Mit freundlichen Grüßen,",
 };
 
-const emailSign = (lang: ForeignLang) => [SIGN_GREETING[lang], "Nils", "{{zimols}}"].join("\n");
-const WA_SIGN = "Nils, {{zimols}}";
+const emailSign = (lang: ForeignLang) => [SIGN_GREETING[lang], "{{zimols}}"].join("\n");
+const WA_SIGN = "{{zimols}}";
 
 /* ---------- Dīlera dati: dati gatavi ---------- */
 
@@ -359,7 +359,7 @@ const REVIEW_COPY: Record<ForeignLang, { subject: string; greeting: string; than
 function reviewRequest(lang: ForeignLang, channel: "email" | "whatsapp"): LocalizedTemplate {
   const c = REVIEW_COPY[lang];
   if (channel === "whatsapp") {
-    return { body: [c.greeting, "", c.thanks, "", c.ask, "", "Nils, PROVIN.LV"].join("\n") };
+    return { body: [c.greeting, "", c.thanks, "", c.ask, "", "PROVIN.LV"].join("\n") };
   }
   return { subject: c.subject, body: [c.greeting, "", c.thanks, "", c.ask, "", c.helps, "", "{{paraksts}}"].join("\n") };
 }
@@ -472,8 +472,8 @@ const CLIENT_LINK: Record<ForeignLang, LocalizedTemplate> = {
 
 /* ---------- Piedāvājumi (upsell) ---------- */
 
-const UPSELL_SIGN_EMAIL = (lang: ForeignLang) => [SIGN_GREETING[lang], "Nils", "PROVIN.LV"].join("\n");
-const UPSELL_SIGN_WA = "Nils, PROVIN.LV";
+const UPSELL_SIGN_EMAIL = (lang: ForeignLang) => [SIGN_GREETING[lang], "PROVIN.LV"].join("\n");
+const UPSELL_SIGN_WA = "PROVIN.LV";
 
 type UpsellCopy = {
   greeting: string;

@@ -41,7 +41,6 @@ exports[`template snapshots (default text) > snapshot block.sign_off 1`] = `
   "html": undefined,
   "subject": undefined,
   "text": "Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -75,7 +74,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu izsoļu arhīva pasūtījumu auto VIN WAUZZZF43PA018831. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -95,7 +94,6 @@ Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -130,7 +128,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.<br/>Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU - negadījumu un nobraukuma vēsturi no vairākām Eiropas datubāzēm, dīlera servisa vēsturi un sludinājuma un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://www.provin.lv/lv?plan=audits" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -157,7 +155,6 @@ Pasūtīt: https://www.provin.lv/lv?plan=audits
 Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -195,7 +192,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Apmaksāt: <a href="https://www.provin.lv/lv/papildinajums/…" target="_blank" class="c-lnk" style="color:#0061D2;word-break:break-all;">https://www.provin.lv/lv/papildinajums/…</a> (saite derīga 30 dienas)</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/…/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/…/review</a></p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -232,7 +229,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -295,7 +291,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu (VIN WVWZZZ1KZAW000123) un atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -313,7 +309,6 @@ Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laik�
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -355,7 +350,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://provin.lv" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja rodas jautājumi, rakstiet uz info@provin.lv.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -379,7 +374,6 @@ Pasūtīt: https://provin.lv
 Ja rodas jautājumi, rakstiet uz info@provin.lv.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -418,7 +412,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Pielikumā PDF formātā nosūtām Jūsu pasūtītos oficiālā dīlera datus (VIN WVWZZZ1KZAW000123).</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -434,7 +428,6 @@ Pielikumā PDF formātā nosūtām Jūsu pasūtītos oficiālā dīlera datus (V
 Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -474,7 +467,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu auto VIN WVWZZZ1KZAW000123. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -494,7 +487,6 @@ Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -535,7 +527,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.<br/>Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU - negadījumu un nobraukuma vēsturi no vairākām Eiropas datubāzēm, izsoļu arhīvu pārbaudi un sludinājuma un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://www.provin.lv/lv?plan=audits" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -562,7 +554,6 @@ Pasūtīt: https://www.provin.lv/lv?plan=audits
 Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -607,7 +598,7 @@ a{text-decoration:none}
 <p class="c-mut" style="margin:10px 0 0;font-size:12px;line-height:18px;color:#646b76;">Saite derīga 30 dienas · dati paliek tajā pašā pasūtījumā</p></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/…/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/…/review</a></p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -640,7 +631,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -709,7 +699,6 @@ Pielikumā 2 fotogrāfijas.
 Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS: https://provin.lv/?plan=audits#home-hero
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -926,7 +915,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:16px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:10px;margin:0 0 8px;"><tr><td width="24" valign="middle" style="padding:12px 0 12px 14px;"><img src="https://www.provin.lv/email/doc.png" width="20" height="20" alt="" style="display:block;border:0;outline:none;width:20px;height:20px;"></td><td valign="middle" style="padding:12px 14px 12px 10px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:#16181d;word-break:break-all;">Kopsavilkuma PDF atskaiti</p></td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:10px;margin:0 0 8px;"><tr><td width="24" valign="middle" style="padding:12px 0 12px 14px;"><img src="https://www.provin.lv/email/doc.png" width="20" height="20" alt="" style="display:block;border:0;outline:none;width:20px;height:20px;"></td><td valign="middle" style="padding:12px 14px 12px 10px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:#16181d;word-break:break-all;">Papildu materiālus un pielikumus</p></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0 0 4px;font-weight:600;">Vajag konsultāciju par šo auto?</p><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 14px;">Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz <a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a>. Labprāt palīdzēsim.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" class="c-gh" style="border:1px solid #cfd4db;border-radius:999px;"><a href="mailto:info@provin.lv?subject=Jaut%C4%81jums%20par%20atskaiti%20WVWZZZ1KZAW000123" target="_blank" class="c-ght m-btn" style="display:inline-block;padding:13px 26px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#16181d;text-decoration:none;border-radius:999px;">Uzdot jautājumu</a></td></tr></table></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p></td></tr>
-<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -950,7 +939,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -990,7 +978,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:16px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:10px;margin:0 0 8px;"><tr><td width="24" valign="middle" style="padding:12px 0 12px 14px;"><img src="https://www.provin.lv/email/doc.png" width="20" height="20" alt="" style="display:block;border:0;outline:none;width:20px;height:20px;"></td><td valign="middle" style="padding:12px 14px 12px 10px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:#16181d;word-break:break-all;">OFICIALA_DILERA_DATI.pdf</p><p class="c-mut" style="margin:0;font-size:12px;line-height:16px;color:#646b76;">PDF</p></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:18px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a>. Labprāt palīdzēsim.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p></td></tr>
-<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -1013,7 +1001,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1052,7 +1039,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0 0 6px;">Labdien!</p><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.</p></td></tr>
 <tr><td class="m-pad" style="padding:18px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a>. Labprāt palīdzēsim.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/CamRaT51IPQ_EBM/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p></td></tr>
-<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -1072,7 +1059,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1106,7 +1092,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Paldies, ka auto VIN WVWZZZ1KZAW000123 pārbaudei izvēlējāties PROVIN.LV.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:0 0 8px;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td><td style="padding:0 4px 0 0;"><a href="https://g.page/r/…/review" target="_blank" style="text-decoration:none;"><img src="https://www.provin.lv/email/star.png" width="22" height="22" alt="★" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td></tr></table><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;margin:6px 0 0;font-size:12px;"><a href="https://g.page/r/…/review" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;font-weight:400;font-size:12px;word-break:break-all;">https://g.page/r/…/review</a></p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Tā palīdz arī citiem pircējiem atrast drošu auto pārbaudi.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -1124,7 +1110,6 @@ Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: http
 Tā palīdz arī citiem pircējiem atrast drošu auto pārbaudi.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1182,7 +1167,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Jau ievadītie dati paliek. Pievienosim to, kas vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://buy.stripe.com/…" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Apmaksāt</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Saite ir derīga 30 dienas.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -1206,7 +1191,6 @@ Apmaksāt: https://buy.stripe.com/…
 Saite ir derīga 30 dienas.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1221,7 +1205,7 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_audit
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Iesakām PROVIN AUDITS. Starpību (60,00 €) varat apmaksāt šeit:<br/>https://buy.stripe.com/…</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></body></html>",
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>PROVIN.LV</p></body></html>",
   "subject": "PROVIN · Ieteikums: PROVIN AUDITS · VW Golf · WVWZZZ1KZAW000123",
   "text": "Labdien, Jāni!
 
@@ -1246,7 +1230,6 @@ https://buy.stripe.com/…
 Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1282,7 +1265,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Datus pievienosim esošajam pasūtījumam. Jau ievadītā informācija paliek.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://buy.stripe.com/…" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Apmaksāt</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Saite ir derīga 30 dienas.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:16px 36px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="mailto:info@provin.lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">info@provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;font-weight:600;">29&nbsp;502&nbsp;039</a></td><td class="m-stack c-mut" valign="top" align="right" style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:13px;line-height:20px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:#0061D2;text-decoration:none;">provin.lv</a></td></tr></table></td></tr>
 </table>
@@ -1304,7 +1287,6 @@ Apmaksāt: https://buy.stripe.com/…
 Saite ir derīga 30 dienas.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1644,7 +1626,7 @@ Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1666,7 +1648,7 @@ Ja auto vēl plānojat pirkt, varam sagatavot pilno PROVIN AUDITU: https://www.p
 
 Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1695,7 +1677,7 @@ Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.
 Ja dati noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/…/review
 
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1712,7 +1694,6 @@ Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laik�
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1736,7 +1717,6 @@ Pasūtīt: https://provin.lv
 Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1755,7 +1735,7 @@ Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1777,7 +1757,7 @@ Ja auto vēl plānojat pirkt, varam sagatavot pilno PROVIN AUDITU: https://www.p
 
 Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1802,7 +1782,7 @@ Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.
 Ja dati noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/…/review
 
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1819,7 +1799,6 @@ Jautājumi: rakstiet šeit vai info@provin.lv.
 Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1837,7 +1816,6 @@ Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz 
 Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1855,7 +1833,6 @@ Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim
 Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1873,7 +1850,6 @@ Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim
 Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1888,7 +1864,7 @@ Paldies, ka auto VIN WVWZZZ1KZAW000123 pārbaudei izvēlējāties PROVIN.LV.
 
 Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/…/review
 
-Nils, PROVIN.LV",
+PROVIN.LV",
 }
 `;
 
@@ -1905,7 +1881,6 @@ Svarīgi: ja e-pastu neredzat, pārbaudiet arī mapi „Spam” (surogātpasts).
 Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstiet šeit vai zvaniet. Labprāt palīdzēšu.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1927,7 +1902,6 @@ Jau ievadītie dati paliek.
 Apmaksāt: https://buy.stripe.com/…
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1942,7 +1916,7 @@ exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_audit 1`
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Iesakām PROVIN AUDITS. Starpību (60,00 €) varat apmaksāt šeit:<br/>https://buy.stripe.com/…</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></body></html>",
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>PROVIN.LV</p></body></html>",
   "subject": "PROVIN · Ieteikums: PROVIN AUDITS · VW Golf · WVWZZZ1KZAW000123",
   "text": "Labdien, Jāni!
 
@@ -1967,7 +1941,6 @@ https://buy.stripe.com/…
 Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;
@@ -1985,7 +1958,6 @@ Dati papildinās esošo pasūtījumu.
 Apmaksāt: https://buy.stripe.com/…
 
 Ar cieņu,
-Nils
 PROVIN.LV",
 }
 `;

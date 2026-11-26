@@ -3,7 +3,7 @@ import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 export const DEALER_NO_DATA_AUDIT_CTA_URL = "https://provin.lv";
 
 export const GOOGLE_REVIEW_URL = "https://g.page/r/CamRaT51IPQ_EBM/review";
-export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils", "PROVIN.LV"] as const;
+export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "PROVIN.LV"] as const;
 
 export const BLOCK_SIGN_OFF_ID = "block.sign_off";
 export const BLOCK_GOOGLE_REVIEW_ID = "block.google_review";

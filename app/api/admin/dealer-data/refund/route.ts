@@ -26,6 +26,7 @@ import {
   isDealerDataAutoFetchOrder,
   type DealerRefundRecord,
 } from "@/lib/dealer-data-job-types";
+import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
 import { trySendDealerDataRefundEmail } from "@/lib/email/send-transactional";
 import { getStripe } from "@/lib/stripe";
 import { getCheckoutLineFromSession } from "@/lib/stripe-session";
@@ -249,7 +250,7 @@ export async function POST(req: Request) {
         vin: job?.vin ?? draft?.orderEdits?.vin ?? null,
         amountEur: formatEurFromCents(decision.amountCents),
         cancelled: o.cancelled === true,
-        lang: session.locale ?? null,
+        lang: checkoutSessionSiteLang(session),
       });
       if (!emailSent) emailError = "send_failed";
     }

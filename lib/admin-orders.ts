@@ -1,4 +1,5 @@
 import "server-only";
+import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
 
 import type Stripe from "stripe";
 import { getCompanyLegal } from "@/lib/company";
@@ -460,7 +461,7 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     attribution: adminAttributionFromStripeMetadata(session.metadata),
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
-    locale: session.locale ?? null,
+    locale: checkoutSessionSiteLang(session),
     promo: session.metadata?.promo?.trim() || null,
     ...(select
       ? {

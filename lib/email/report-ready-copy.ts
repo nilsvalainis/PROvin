@@ -21,7 +21,7 @@ import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export { GOOGLE_REVIEW_URL, CLIENT_MESSAGE_SIGN_OFF_LINES };
 
-/** "Ar cieņu," tulkojumi - vārds "Nils" un "PROVIN" / "PROVIN.LV" paliek nemainīgi. */
+/** "Ar cieņu," tulkojumi - "PROVIN" / "PROVIN.LV" paliek nemainīgi; vārda parakstā nav (Nils 26.11). */
 const SIGN_OFF_GREETING: Record<ClientReportLang, string> = {
   lv: "Ar cieņu,",
   en: "Best regards,",
@@ -43,7 +43,7 @@ export function googleReviewPlainBlock(lang: ClientReportLang = "lv"): string {
 
 export function clientMessageSignOff(lang: ClientReportLang = "lv"): string {
   if (lang === "lv") return defaultSignOffBlock();
-  return [SIGN_OFF_GREETING[lang], "Nils", "PROVIN.LV"].join("\n");
+  return [SIGN_OFF_GREETING[lang], "PROVIN.LV"].join("\n");
 }
 
 export const B2B_CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "PROVIN"] as const;

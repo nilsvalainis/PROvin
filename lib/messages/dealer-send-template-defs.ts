@@ -33,8 +33,8 @@ const REVIEW: MessageTemplateVar = {
   sample: "https://g.page/r/…/review",
 };
 
-const EMAIL_SIGN = ["Ar cieņu,", "Nils", "{{zimols}}"].join("\n");
-const WA_SIGN = "Nils, {{zimols}}";
+const EMAIL_SIGN = ["Ar cieņu,", "{{zimols}}"].join("\n");
+const WA_SIGN = "{{zimols}}";
 
 export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
   {
@@ -215,7 +215,7 @@ export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "",
       "{{paraksts}}",
     ].join("\n"),
-    vars: [VIN, { ...REVIEW, required: true }, { key: "paraksts", label: "Paraksts", sample: "Ar cieņu,\nNils\nPROVIN.LV", required: true }],
+    vars: [VIN, { ...REVIEW, required: true }, { key: "paraksts", label: "Paraksts", sample: "Ar cieņu,\nPROVIN.LV", required: true }],
     htmlKind: "dealer_operator",
   },
   {
@@ -230,7 +230,7 @@ export const DEALER_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "",
       "Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: {{atsauksmes_saite}}",
       "",
-      "Nils, PROVIN.LV",
+      "PROVIN.LV",
     ].join("\n"),
     vars: [VIN, { ...REVIEW, required: true }],
   },

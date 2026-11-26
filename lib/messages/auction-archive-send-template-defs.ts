@@ -37,8 +37,8 @@ const REVIEW: MessageTemplateVar = {
   sample: "https://g.page/r/…/review",
 };
 
-const EMAIL_SIGN = ["Ar cieņu,", "Nils", "{{zimols}}"].join("\n");
-const WA_SIGN = "Nils, {{zimols}}";
+const EMAIL_SIGN = ["Ar cieņu,", "{{zimols}}"].join("\n");
+const WA_SIGN = "{{zimols}}";
 
 const REFUND_EMAIL = [
   "{{#karte}}",

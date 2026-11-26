@@ -1,7 +1,7 @@
 /**
  * «Izsoļu arhīvs dīlera datu vietā» klienta ziņas EN / RU / DE (Nils 26.11): piedāvājums, atgādinājums,
  * gatavs - e-pasta teksts, WhatsApp, HTML kartītes etiķetes. LV paliek `auction-archive-email.ts`.
- * Paraksts «Nils Valainis / PROVIN.LV» - B2B to pārvērš `applyB2bSignature` (tikai «PROVIN»).
+ * Paraksts «PROVIN.LV» (bez vārda, Nils 26.11) - B2B to pārvērš `applyB2bSignature` (tikai «PROVIN»).
  * Tīrs modulis (bez servera atkarībām).
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
