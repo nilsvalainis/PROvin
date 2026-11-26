@@ -33,6 +33,23 @@ describe("24.11 audits #33 - CSDD TA defektu teksts", () => {
     const once = normalizeCsddDefectText("Dīzeļdegviela s pilēšana balstiekārtasšarnīrā");
     expect(normalizeCsddDefectText(once)).toBe(once);
   });
+
+  it("26.11: «sšļ» -> «šļ» (ģenitīva s pielipis nākamajam vārdam)", () => {
+    expect(normalizeCsddDefectText("Mitra dīzeļdegviela sšļūtene")).toBe("Mitra dīzeļdegvielas šļūtene");
+    expect(normalizeCsddDefectText("Bojāta bremžusšļūtene")).toBe("Bojāta bremžu šļūtene");
+    const once = normalizeCsddDefectText("Mitra dīzeļdegviela sšļūtene");
+    expect(normalizeCsddDefectText(once)).toBe(once);
+  });
+
+  it("26.11: pielīmēts TA kods bez atstarpes iet jaunā rindā tāpat kā ar atstarpi", () => {
+    expect(normalizeCsddDefectText("Izplūdes gāzu dūmainība par augstu. 1.1.12.12.tilts. Nedaudz mitrs")).toBe(
+      "Izplūdes gāzu dūmainība par augstu.\n1.1.12.12. tilts. Nedaudz mitrs",
+    );
+    const once = normalizeCsddDefectText("par augstu. 1.1.12.12.tilts. Nedaudz");
+    expect(normalizeCsddDefectText(once)).toBe(once);
+    // Datums aiz punkta nav defekta kods.
+    expect(normalizeCsddDefectText("Pārbaudīts. 12.05.2024 atkārtoti")).toBe("Pārbaudīts. 12.05.2024 atkārtoti");
+  });
 });
 
 describe("24.11 audits #34 - aprīkojums", () => {

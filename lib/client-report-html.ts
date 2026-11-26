@@ -149,13 +149,16 @@ import {
   pdfTopExtraCards,
   pdfTopMakeLogoUri,
   pdfTopText,
+  pdfTopListingOdometerNote,
+  pdfTopOdometerSourceName,
+  pdfTopDealerSourceName,
   isPdfTopTextKey,
   resolvePdfTopPhoto,
   collectPdfTopAuctions,
   type PdfTopSource,
 } from "@/lib/pdf-report-top";
 import { provinBannerOverrideFor, summaryTileBannerKind } from "@/lib/provin-alert-banners";
-import { resolvePdfLatestOdometerReading } from "@/lib/pdf-report-summary";
+import { resolvePdfLatestOdometerReading, resolvePdfListingOdometer } from "@/lib/pdf-report-summary";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
@@ -965,7 +968,7 @@ function pdfTopFirstRegistration(p: ClientReportPayload): { date: string; countr
   return { date, country: "", ms: m ? Date.UTC(+m[3]!, +m[2]! - 1, +m[1]!) : 0 };
 }
 
-function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfTopSource[] {
+function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings, outLang: ClientReportLang = "lv"): PdfTopSource[] {
   const L = SOURCE_BLOCK_LABELS;
   const makeModel = resolvePdfReportMakeModelFromPayload(p);
   return collectPdfCheckedSources(p, vis).map((s): PdfTopSource => {
@@ -975,9 +978,9 @@ function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfT
     if (s.label === L.carvertical) return { logo: { key: "carvertical" }, name: "carVertical", category: "catHistory", count: s.count };
     if (s.label === L.carfax) return { logo: { key: "carfax" }, name: "CARFAX", category: "catHistory", count: s.count };
     if (s.label === PDF_SOURCE_DEALER_TITLE) {
-      const uri = pdfTopMakeLogoUri(makeModel);
-      const make = makeModel.split(/\s+/)[0] ?? "";
-      return { ...(uri ? { logo: { uri, make: true as const } } : {}), name: make || s.label, category: "catDealer", count: s.count };
+      const dealer = pdfTopDealerSourceName(makeModel, p.vin ?? "", outLang);
+      const uri = dealer.logoUri;
+      return { ...(uri ? { logo: { uri, make: true as const } } : {}), name: dealer.name, category: "catDealer", count: s.count };
     }
     if (s.label === CC_VIN_PDF_SOURCE_LABEL) {
       const venue = collectPdfTopAuctions(p.ccVinBlock)[0]?.venue ?? "";
@@ -1061,21 +1064,21 @@ function buildPdfTopHtml(args: {
 
   const mileageTile = tiles.find((t) => t.id === "mileage");
   const latest = resolvePdfLatestOdometerReading(summaryInput);
-  let odometer: { value: string; sub: string } | null = null;
-  const sourceName = (label: string, date: string): string => {
-    if (label === CC_VIN_PDF_SOURCE_LABEL) {
-      const sale = collectPdfTopAuctions(pVis.ccVinBlock).find((a) => a.date === pdfTopDay(date));
-      return sale?.venue ? pdfTopText("auctionAt", lang).replace("{v}", sale.venue) : pdfTopText("catAuctions", lang);
-    }
-    if (label === "OFICIĀLĀ DĪLERA DATI") return pdfTopText("catDealer", lang);
-    if (label === SOURCE_BLOCK_LABELS.autodna) return "autoDNA";
-    if (label === SOURCE_BLOCK_LABELS.carvertical) return "carVertical";
-    return label;
-  };
+  let odometer: { value: string; sub: string; none?: boolean } | null = null;
+  const sourceName = (label: string, date: string): string =>
+    pdfTopOdometerSourceName(label, date, pVis.ccVinBlock, lang);
   if (mileageTile && overridden.has("mileage") && /\d/.test(mileageTile.value)) {
     odometer = { value: mileageTile.value, sub: "" };
   } else if (latest) {
     odometer = { value: latest.odometer, sub: [latest.date, sourceName(latest.sourceLabel, latest.date)].filter(Boolean).join(" · ") };
+  } else {
+    // 26.11: sludinājuma km nav rādījums - kartītē mierīgs «nav datu», sludinājuma skaitlis tikai ar atzīmi.
+    const listingOdo = resolvePdfListingOdometer(summaryInput);
+    odometer = {
+      value: pdfTopText("noData", lang),
+      sub: listingOdo ? pdfTopListingOdometerNote(listingOdo.odometer, listingOdo.date, lang) : "",
+      none: true,
+    };
   }
   const first = pdfTopFirstRegistration(pVis);
   const makeModel = formatPdfReportMakeModel(resolvePdfReportMakeModelFromPayload(p));
@@ -1093,7 +1096,7 @@ function buildPdfTopHtml(args: {
     age: first ? pdfTopAgeLabel(first.ms, args.now.getTime(), lang) : "",
     firstReg: first ? { date: first.date, sub: first.country } : null,
     cards: [...cards, ...extra],
-    sources: pdfTopSources(p, vis).map((s) => ({
+    sources: pdfTopSources(p, vis, lang).map((s) => ({
       ...s,
       category: isPdfTopTextKey(s.category) ? pdfTopText(s.category, lang) : s.category,
     })),

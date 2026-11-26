@@ -385,6 +385,22 @@ export function countChartMileageReadings(rows: UnifiedMileageRow[]): number {
   return n;
 }
 
+/**
+ * Jaunākais APSTIPRINĀTAIS rādījums (reģistrs / dīleris / TA / vēstures avoti; ne sludinājums, ne izslēgtais
+ * izlēcējs). Bez rezerves uz sludinājumu - ja apstiprināta nav, `null`. Viena izvēle faktu lapai un PDF 1. lapai
+ * (26.11 regresija: kartītē bija ss.lv km, faktu lapā «nav»).
+ */
+export function selectLatestConfirmedMileageRow<T extends UnifiedMileageRow>(rows: T[]): T | null {
+  const exclude = analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
+  const visible = sortMileageChronological(rows).filter((r) => {
+    if (exclude.has(r.sourceOrder)) return false;
+    if (parseOdometerKm(r.odometer) == null) return false;
+    if (r.sortableTime === Number.NEGATIVE_INFINITY) return false;
+    return !isListingMileageSource(r);
+  }) as T[];
+  return visible[visible.length - 1] ?? null;
+}
+
 /** Pēdējais grafika / verificētais punkts (ne sludinājums, ne izslēgtais izlēcējs). */
 export function selectNewestChartMileageRow<T extends UnifiedMileageRow>(rows: T[]): T | null {
   const exclude = analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;

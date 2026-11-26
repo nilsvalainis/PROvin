@@ -621,7 +621,7 @@ function clusterHasLtab(c: UnifiedIncidentCluster): boolean {
  * Ja vairāki LTAB kandidāti, ņem to, kura summa pārklājas, tad - tuvāko laikā.
  */
 function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): UnifiedIncidentCluster[] {
-  const out = [...clusters];
+  let out = [...clusters];
   const daysBetween = (vendor: UnifiedIncidentCluster, ltab: UnifiedIncidentCluster): number => {
     if (!(vendor.sortableTime > 0) || !(ltab.sortableTime > 0)) return Number.POSITIVE_INFINITY;
     if (!clusterIsMonthPrecision(vendor)) return Math.abs(vendor.sortableTime - ltab.sortableTime) / 86_400_000;
@@ -631,10 +631,54 @@ function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): U
     if (ltab.sortableTime >= monthStart && ltab.sortableTime <= monthEnd) return 0;
     return Math.min(Math.abs(ltab.sortableTime - monthStart), Math.abs(ltab.sortableTime - monthEnd)) / 86_400_000;
   };
+  const isVendorOnly = (c: UnifiedIncidentCluster): boolean =>
+    !clusterHasLtab(c) &&
+    c.sourceValuations.length > 0 &&
+    c.sourceValuations.every((v) => VENDOR_DUPLICATE_SOURCE_RE.test(v.sourceLabel));
+  const sharesSource = (a: UnifiedIncidentCluster, b: UnifiedIncidentCluster): boolean =>
+    a.sourceValuations.some((v) => b.sourceValuations.some((x) => x.sourceLabel === v.sourceLabel));
+  const mergeInto = (targetIdx: number, vendor: UnifiedIncidentCluster) => {
+    const target = out[targetIdx]!;
+    const merged = mergeTwoIncidentClusters(target, vendor);
+    // Datums un laiks - no LTAB (dienas precizitāte), ne no mēneša ieraksta.
+    out[targetIdx] = { ...merged, date: target.date, sortableTime: target.sortableTime, country: target.country };
+  };
+
+  // 1. kārta (26.11 regresija): vispirms precīzi summas trāpījumi visā sarakstā (LTAB 767,64 € ietilpst
+  // carVertical «751 - 1 000 €»), tuvākais datums pirmais. Pielaides trāpījumi tikai 2. kārtā - citādi
+  // pielaides pāris «nozog» LTAB notikumu, kuram cits ieraksts atbilst precīzi.
+  const exactPairs: { i: number; j: number; days: number }[] = [];
   for (let i = 0; i < out.length; i++) {
     const c = out[i]!;
-    if (clusterHasLtab(c)) continue;
-    if (c.sourceValuations.length === 0 || !c.sourceValuations.every((v) => VENDOR_DUPLICATE_SOURCE_RE.test(v.sourceLabel))) continue;
+    if (!isVendorOnly(c)) continue;
+    const cBounds = clusterAmountBounds(c);
+    if (!cBounds) continue;
+    for (let j = 0; j < out.length; j++) {
+      const t = out[j]!;
+      if (j === i || !clusterHasLtab(t)) continue;
+      if (!countriesCompatible(incidentCountryKey(c.country), incidentCountryKey(t.country))) continue;
+      if (sharesSource(c, t)) continue;
+      const days = daysBetween(c, t);
+      if (days > VENDOR_LTAB_MERGE_MAX_DAYS) continue;
+      if (!boundsOverlap(cBounds, clusterAmountBounds(t), false)) continue;
+      exactPairs.push({ i, j, days });
+    }
+  }
+  exactPairs.sort((a, b) => a.days - b.days || a.i - b.i || a.j - b.j);
+  const consumed = new Set<number>();
+  for (const { i, j } of exactPairs) {
+    if (consumed.has(i)) continue;
+    const vendor = out[i]!;
+    if (sharesSource(vendor, out[j]!)) continue;
+    mergeInto(j, vendor);
+    consumed.add(i);
+  }
+  if (consumed.size > 0) out = out.filter((_c, idx) => !consumed.has(idx));
+
+  // 2. kārta: atlikušie - pielaides summa vai bez summas (tuvākais datums).
+  for (let i = 0; i < out.length; i++) {
+    const c = out[i]!;
+    if (!isVendorOnly(c)) continue;
     const cBounds = clusterAmountBounds(c);
     let best = -1;
     let bestRank = Number.POSITIVE_INFINITY;
@@ -657,10 +701,7 @@ function mergeVendorRecordsIntoLtabEvents(clusters: UnifiedIncidentCluster[]): U
       }
     }
     if (best < 0) continue;
-    const target = out[best]!;
-    const merged = mergeTwoIncidentClusters(target, c);
-    // Datums un laiks - no LTAB (dienas precizitāte), ne no mēneša ieraksta.
-    out[best] = { ...merged, date: target.date, sortableTime: target.sortableTime, country: target.country };
+    mergeInto(best, c);
     out.splice(i, 1);
     i--;
   }
