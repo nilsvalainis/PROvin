@@ -3403,6 +3403,7 @@ ${clientReportPageChromeCss(running)}
       }
       .pdf-dealer-cover-curve{display:block;width:100%;height:auto;margin:10px 0 0;}
       .pdf-dealer-cover-ax{font-size:10px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-unit{font-size:11px;font-weight:600;fill:#475569;}
       .pdf-dealer-cover-pl{font-size:11px;font-weight:650;fill:#0f172a;}
       .pdf-dealer-cover-year-heading{font-size:10.5px;font-weight:650;fill:#475569;letter-spacing:0.06em;}
       .pdf-dealer-cover-year{font-size:8.5px;fill:#64748b;font-variant-numeric:tabular-nums;}
