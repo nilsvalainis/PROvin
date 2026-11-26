@@ -106,7 +106,10 @@ import {
   dealerVisitMajorMarker,
   buildDealerVisitSummaryHtml,
 } from "@/lib/pdf-dealer-timeline";
-import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
+import {
+  buildOilIntervalSeriesForBlock,
+  oilIntervalNotesWithRequiredNotes,
+} from "@/lib/oil-change-interval-chart";
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
 import {
   buildCsddBlokiPdfParts,
@@ -2280,7 +2283,12 @@ function buildAutoRecordsAvotuSubsection(
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
     : "";
-  const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
+  // Nils 26.11.2026: pārsniegts OEM intervāls -> vienmēr piebilde (arī manuāli rediģētam tekstam).
+  const oilChangeIntervalNotes = oilIntervalNotesWithRequiredNotes(
+    b,
+    (b.oilChangeIntervalNotes ?? "").trim(),
+    lang,
+  );
   const showOilInterval = vis.autoRecordsOilInterval !== false;
   const oilTableHtml = showOilInterval
     ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }), {

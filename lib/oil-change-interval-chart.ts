@@ -14,6 +14,13 @@ import { parseOemOilIntervalFromText, type OemOilInterval } from "@/lib/oem-oil-
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
+import {
+  detectOilNoteLang,
+  ensureOilIntervalNotes,
+  findExceededOilIntervals,
+  type OilExceededInterval,
+  type OilNoteLang,
+} from "@/lib/oil-interval-dealer-notes";
 
 export type OilIntervalChartRow = {
   id: string;
@@ -190,4 +197,34 @@ export function buildOilIntervalSeriesForBlock(
     current: opts?.current ?? null,
   });
   return withOilIntervalHighlight(series, chart?.highlightOverOem !== false);
+}
+
+/**
+ * Pārsniegtie eļļas intervāli piebildēm (`ensureOilIntervalNotes`). Vienmēr pret OEM -
+ * arī ja adminā izslēgta pārsniegumu iekrāsošana (likums attiecas uz faktu, ne krāsu).
+ * `oemText` - ja OEM jāņem no jauna (vēl nesaglabāta) komentāra teksta.
+ */
+export function oilExceededIntervalsForBlock(
+  block: AutoRecordsBlockState,
+  opts?: { oemText?: string },
+): OilExceededInterval[] {
+  const rows = chartRowsToServiceWorks(resolveOilIntervalChartRows(block));
+  const oem =
+    opts?.oemText != null
+      ? (resolveOilIntervalOem({ ...block, oilChangeIntervalNotes: opts.oemText }) ??
+        resolveOilIntervalOem(block))
+      : resolveOilIntervalOem(block);
+  const series = buildOilChangeIntervalSeries(rows, oem);
+  return findExceededOilIntervals(series, dealerOilIntervalSourceRows(block));
+}
+
+/** Eļļas komentārs ar obligātajām piebildēm (Nils 26.11.2026). */
+export function oilIntervalNotesWithRequiredNotes(
+  block: AutoRecordsBlockState,
+  text: string,
+  lang?: OilNoteLang | null,
+): string {
+  if (!(text ?? "").trim()) return text ?? "";
+  const intervals = oilExceededIntervalsForBlock(block, { oemText: text });
+  return ensureOilIntervalNotes(text, intervals, lang ?? detectOilNoteLang(text));
 }

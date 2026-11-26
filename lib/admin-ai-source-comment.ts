@@ -1,5 +1,6 @@
 import "server-only";
 
+import { oilIntervalNotesWithRequiredNotes } from "@/lib/oil-change-interval-chart";
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import {
   aiAutoRecordsOilIntervalSystemPrompt,
@@ -352,7 +353,12 @@ ${
   // Drošības tīkls (Nils 23.11.2026): dati saka 4x2 / RWD / FWD - pilnpiedziņas vārdus izmet.
   const drivetrain = isOfficialDealerBlock(input.blockKey) ? extractVehicleDrivetrain(input.sourceBlocks) : null;
   const dropAwd = (text: string) => stripAwdClaimsForTwoWheelDrive(text, drivetrain);
-  if (isOilInterval || isServiceHistory) return dropAwd(generated);
+  if (isOilInterval) {
+    // Nils 26.11.2026: pārsniegts OEM intervāls -> deterministiska piebilde, ne prompta lūgums.
+    const lang = input.outputLang && input.outputLang !== "source" ? input.outputLang : null;
+    return oilIntervalNotesWithRequiredNotes(input.sourceBlocks.auto_records, dropAwd(generated), lang);
+  }
+  if (isServiceHistory) return dropAwd(generated);
   const cleaned = dropAwd(keepSourceCommentAfterExpansionStrip(generated));
   if (!commentContradictsPowertrain(cleaned, powertrainIdentity)) return cleaned;
   const retryPrompt = `${userPrompt}\n\n${powertrainBlock}\nVALIDATOR: iepriekšējā izeja runāja pretī ielādētajai degvielai vai dzinēja kodam. Pārraksti bez pretrunas.`;
