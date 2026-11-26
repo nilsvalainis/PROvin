@@ -16,6 +16,7 @@ import { TP5_DEALER_COVERAGE_TIERS, type DealerCoverageTierId } from "@/lib/deal
 import { AUDIT_PRICE_CENTS, DEALER_CATALOG_CENTS, formatEurFromCents } from "@/lib/order-upsell";
 import type { ProvinAlertBanner } from "@/lib/provin-alert-banners";
 import { formatSourceIssueLine, type SourceIssue } from "@/lib/source-consistency";
+import { vinScanRowHasLien } from "@/lib/vin-scan/lien-flag";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
@@ -217,6 +218,8 @@ export function buildQuickEvalRedFlags(args: {
     if (row.status !== "found") continue;
     if (row.flags?.stolen) pushUnique(out, { severity: "red", text: `${row.label}: auto atzīmēts kā zagts` });
     else if (row.flags?.wanted) pushUnique(out, { severity: "red", text: `${row.label}: auto meklēšanā` });
+    // 26.11: Bilbogen ķīla / parāds - sarkanais karogs, bet ne negadījums.
+    if (vinScanRowHasLien(row)) pushUnique(out, { severity: "red", text: `${row.label}: reģistrēta ķīla / parāds` });
   }
   for (const issue of args.issues) {
     if (issue.severity === "info") continue;
