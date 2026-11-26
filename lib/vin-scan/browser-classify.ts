@@ -6,7 +6,6 @@ import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
 import { classifyNicbText } from "@/lib/vin-scan/parse-extra";
 import { classifyStatVinText } from "@/lib/vin-scan/parse-stat-vin";
-import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
 
 export type BrowserProbeRead = {
@@ -51,14 +50,6 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
         return { status: "found", summary: "Ir izsoles ieraksts" };
       }
       return hasVin(text, vin) ? null : unknownPageWithoutVin("bid.cars", text);
-    case "auchistory":
-      if (/no (auction )?records|vehicle not found|nothing found|it seems we can['\u2019]t find what you['\u2019]re looking for/i.test(text)) {
-        return { status: "none", summary: "Nav izsoles vēstures" };
-      }
-      if (hasVin(text, vin) && /damage|auction|sold for|\bbid\b/i.test(text)) {
-        return { status: "found", summary: "Ir izsoles vēsture" };
-      }
-      return hasVin(text, vin) ? null : unknownPageWithoutVin("AucHistory", text);
     case "carfax_eu": {
       const found = /we found\s+(\d+)\s+record/i.exec(text);
       // «We found 0 records» ir tukšas priekšskatījuma lapas noklusējums (VIN nav padots) - tas nav rezultāts.
@@ -79,10 +70,6 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
     }
     case "plc_auction": {
       const parsed = classifyPlcAuction(text);
-      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
-    }
-    case "lt_itpr": {
-      const parsed = classifyPoliceWanted(id, text, vin);
       return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
     }
     case "bidfax":

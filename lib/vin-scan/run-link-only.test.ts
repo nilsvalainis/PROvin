@@ -53,7 +53,7 @@ describe("runVinScan 26.11 audits", () => {
     safetyGateHint = "nav izsaukts";
   });
 
-  it("saišu avotus (LT policija, AucHistory u.c.) neizsauc pat ar skaidru sarakstu - nav CapSolver maksas", async () => {
+  it("izņemtos (LT policija, AucHistory) un saišu avotus neizsauc pat ar skaidru sarakstu - nav CapSolver maksas", async () => {
     expect(sanitizeVinScanSourceIds(["lt_itpr", "auchistory", "nummerplade", "csdd"])).toEqual(["csdd"]);
     expect(sanitizeVinScanSourceIds(["lt_itpr", "auchistory"])).toBeUndefined();
     const rows = await runVinScan({ vin: VIN, sourceIds: ["lt_itpr", "auchistory", "stat_vin", "csdd"], ignoreBreaker: true });

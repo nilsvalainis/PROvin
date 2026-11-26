@@ -124,7 +124,7 @@ describe("Ātrā pārbaude - fakti", () => {
   it("negadījumi augšā tikai, ja avots tiešām atrada negadījumu (bez «nav fiksēti» minējuma)", () => {
     const input = bmw();
     // VIN SCAN rindām `incidents` vienmēr ir masīvs - tukšs masīvs nav «negadījumu nav».
-    const empty: AtraFactRow = { id: "lt_itpr", label: "LT policija", country: "LT", status: "found", summary: "Nav", incidents: [] };
+    const empty: AtraFactRow = { id: "regitra", label: "Regitra", country: "LT", status: "found", summary: "Nav", incidents: [] };
     const f0 = buildAtraFacts({ ...input, rows: [...input.rows, empty] });
     expect(atraVisibleFacts(f0)).not.toContain("incidents");
     expect(atraSummaryText(input, f0, atraStoryScore(f0))).not.toContain("Negadījumi");

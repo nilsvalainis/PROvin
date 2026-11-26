@@ -9,7 +9,6 @@ import {
   probeBiluppgifter,
   probeCarfaxEu,
   probeCheckcarVin,
-  probeLtPolice,
   probeNicb,
   probePlcAuction,
   probePoctra,
@@ -55,7 +54,6 @@ describe("VIN SCAN avotu vārti bez tīkla", () => {
       probeBiluppgifter,
       probeCarfaxEu,
       probeCheckcarVin,
-      probeLtPolice,
       probePlcAuction,
       probePoctra,
     ];

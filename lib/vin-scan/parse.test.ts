@@ -55,11 +55,12 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
-    expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("lt_itpr");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("auchistory");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
     expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(39);
-    expect(VIN_SCAN_CATALOG).toHaveLength(39);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(37);
+    expect(VIN_SCAN_CATALOG).toHaveLength(37);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
@@ -398,8 +399,6 @@ describe("vinScanSourceTimeoutMs", () => {
     for (const id of ["stat_vin", "plc_auction", "checkcar_vin", "bidfax", "poctra", "nicb"] as const) {
       expect(vinScanSourceTimeoutMs(id)).toBe(14_000);
     }
-    // epolicija.lt: reCAPTCHA v2 serverī (CapSolver).
-    expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
     // bid.cars un CARFAX.eu iet caur releja Chrome (/listings/vinsource ≤40 s + klienta 47 s).
     expect(vinScanSourceTimeoutMs("bid_cars")).toBe(50_000);
     expect(vinScanSourceTimeoutMs("carfax_eu")).toBe(50_000);

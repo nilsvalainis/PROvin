@@ -13,7 +13,6 @@ export const VIN_SCAN_BROWSER_FETCH_IDS = [
   "plc_auction",
   "carfax_eu",
   "poctra",
-  "lt_itpr",
   "biluppgifter",
   "nicb",
 ] as const satisfies readonly VinScanSourceId[];
@@ -28,7 +27,6 @@ const LABEL: Record<VinScanBrowserFetchId, string> = {
   plc_auction: "plc.auction",
   carfax_eu: "CARFAX.eu",
   poctra: "Poctra",
-  lt_itpr: "epolicija.lt",
   biluppgifter: "biluppgifter.se",
   nicb: "NICB",
 };

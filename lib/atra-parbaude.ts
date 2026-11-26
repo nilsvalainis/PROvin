@@ -43,7 +43,6 @@ const GROUPS: ReadonlyArray<{ id: AtraFreeGroupId; label: string; ids: readonly 
       "rdw",
       "traficom",
       "regitra",
-      "lt_itpr",
       "cz_rsv",
       "dvsa_mot",
       "kfz_at",
@@ -53,7 +52,7 @@ const GROUPS: ReadonlyArray<{ id: AtraFreeGroupId; label: string; ids: readonly 
   {
     id: "izsoles",
     label: "Izsoles un foto",
-    ids: ["thecarapi_eu", "auchistory", "bid_cars", "bidfax", "poctra", "plc_auction", "stat_vin", "checkcar_vin", "carfax_eu", "autodna_precheck"],
+    ids: ["thecarapi_eu", "bid_cars", "bidfax", "poctra", "plc_auction", "stat_vin", "checkcar_vin", "carfax_eu", "autodna_precheck"],
   },
   { id: "citi", label: "Atsaukumi, drošība, citi", ids: [] },
 ];

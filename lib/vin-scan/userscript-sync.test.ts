@@ -319,12 +319,13 @@ describe("userscript admin lapā: skenēšanas rinda", () => {
     for (const item of VIN_SCAN_BROWSER_CATALOG) {
       expect(scanQueueUrl(item.id), item.id).toBe(item.openUrl(vin));
     }
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(39);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(37);
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
     expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
     expect(VIN_SCAN_BROWSER_IDS).not.toContain("joj_copart_iaai");
     expect(VIN_SCAN_BROWSER_IDS).not.toContain("thecarapi_eu");
-    expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("lt_itpr");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("auchistory");
     expect(VIN_SCAN_SOURCE_IDS).toContain("vin_decode");
     expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
@@ -336,11 +337,11 @@ describe("userscript admin lapā: skenēšanas rinda", () => {
     expect(VIN_SCAN_BROWSER_IDS).toContain("plc_auction");
     expect(VIN_SCAN_BROWSER_IDS).toContain("checkcar_vin");
     expect(VIN_SCAN_BROWSER_IDS).not.toContain("vp_wanted");
-    expect(VIN_SCAN_BROWSER_IDS).toContain("lt_itpr");
+    expect(VIN_SCAN_BROWSER_IDS).not.toContain("lt_itpr");
     expect(VIN_SCAN_BROWSER_IDS).toContain("nicb");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("plc_auction");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("vp_wanted");
-    expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("lt_itpr");
+    expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("lt_itpr");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("autodna_preview");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("vininspect");
     for (const removed of VIN_SCAN_REMOVED_IDS) {
@@ -356,11 +357,11 @@ describe("userscript admin lapā: skenēšanas rinda", () => {
 
   it("rindā saglabā VIN un avotus, lai avota cilne zina, ko pārbaudīt", () => {
     const run = runUserscriptAt(ADMIN);
-    run.fire("provin-vin-scan-browser", { vin: "wba5r1c0-xlfh42873", sources: ["plc_auction", "lt_itpr"] });
+    run.fire("provin-vin-scan-browser", { vin: "wba5r1c0-xlfh42873", sources: ["plc_auction", "bidfax"] });
     expect(run.gm.set.get("provin_pending_vin")).toBe(VIN);
     expect(JSON.parse(String(run.gm.set.get("provin_scan_job")))).toMatchObject({
       vin: VIN,
-      sources: ["plc_auction", "lt_itpr"],
+      sources: ["plc_auction", "bidfax"],
       index: 0,
     });
   });
@@ -383,9 +384,6 @@ describe("userscript admin lapā: skenēšanas rinda", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(vin)).toBe(
       `https://plc.auction/?vin=${vin}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(vin)).toBe(
-      `https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=${vin}`,
-    );
   });
 });
 
@@ -397,11 +395,6 @@ describe("userscript avota lapā skenēšanas laikā", () => {
     expect(result).toMatchObject({ id: "plc_auction", vin: VIN, status: "none", summary: "Nav ierakstu", html: pageHtml, pageUrl: href });
   });
 
-  it("epolicija.lt: auto nav meklēšanā", () => {
-    const { result } = probeSourcePage("lt_itpr", vinScanCatalogItem("lt_itpr").openUrl(VIN), "Paieška. Duomenų nerasta");
-    expect(result).toMatchObject({ id: "lt_itpr", status: "none", summary: "Nav meklēšanā" });
-    expect(result?.html).toBeTruthy();
-  });
 
   it("stat.vin: atrod izsoles ierakstu ar izsoļu namu un lota numuru", () => {
     const text = `2019 BMW 530 VIN ${VIN} Copart Lot number: 50558298 Sold Odometer 185389`;

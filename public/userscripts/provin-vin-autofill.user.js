@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.27.1
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.27.2
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -29,8 +29,6 @@
 // @match        https://www.stat.vin/*
 // @match        https://bid.cars/*
 // @match        https://www.bid.cars/*
-// @match        https://auchistory.com/*
-// @match        https://www.auchistory.com/*
 // @match        https://www.carfax.eu/*
 // @match        https://carfax.eu/*
 // @match        https://en.cebia.com/*
@@ -40,8 +38,6 @@
 // @match        https://auto.vin/*
 // @match        https://plc.auction/*
 // @match        https://www.plc.auction/*
-// @match        https://www.epolicija.lt/*
-// @match        https://epolicija.lt/*
 // @match        https://www.nicb.org/*
 // @match        https://nicb.org/*
 // @match        https://bidfax.info/*
@@ -100,8 +96,6 @@
 // @connect      carfax.eu
 // @connect      poctra.com
 // @connect      www.poctra.com
-// @connect      www.epolicija.lt
-// @connect      epolicija.lt
 // @connect      biluppgifter.se
 // @connect      www.biluppgifter.se
 // @connect      www.nicb.org
@@ -121,7 +115,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.27.1";
+  const SCRIPT_VERSION = "1.27.2";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -761,9 +755,6 @@
       poctra: function (vin) {
         return "https://poctra.com/search?q=" + encodeURIComponent(vin);
       },
-      lt_itpr: function (vin) {
-        return "https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=" + encodeURIComponent(vin);
-      },
       biluppgifter: function (vin) {
         return "https://biluppgifter.se/" + encodeURIComponent(vin);
       },
@@ -779,7 +770,6 @@
       plc_auction: "plc.auction",
       carfax_eu: "CARFAX.eu",
       poctra: "Poctra",
-      lt_itpr: "epolicija.lt",
       biluppgifter: "biluppgifter.se",
       nicb: "NICB",
     };
@@ -1273,11 +1263,9 @@
     const SCAN_URLS = {
       stat_vin: "https://stat.vin/cars/" + v,
       bid_cars: "https://bid.cars/en/search?q=" + v,
-      auchistory: "https://auchistory.com/?s=" + v,
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/?vin=" + v,
-      lt_itpr: "https://www.epolicija.lt/eservice/wanted-vehicles-search?vin=" + v,
       nicb: "https://www.nicb.org/vincheck?vin=" + v,
       bidfax: "https://bidfax.info/?s=" + v,
       poctra: "https://poctra.com/search?q=" + v,
@@ -1308,11 +1296,9 @@
   function scanIdForHost(name) {
     if (name === "stat.vin" || name.endsWith(".stat.vin")) return "stat_vin";
     if (name.endsWith("bid.cars")) return "bid_cars";
-    if (name.endsWith("auchistory.com")) return "auchistory";
     if (name.endsWith("carfax.eu")) return "carfax_eu";
     if (name.endsWith("checkcar.vin")) return "checkcar_vin";
     if (name.endsWith("plc.auction")) return "plc_auction";
-    if (name.endsWith("epolicija.lt")) return "lt_itpr";
     if (name.endsWith("nicb.org")) return "nicb";
     if (name.endsWith("bidfax.info")) return "bidfax";
     if (name.endsWith("poctra.com")) return "poctra";
@@ -1384,11 +1370,6 @@
     if (id === "bid_cars") {
       if (/no results|0 vehicles|nothing found|no cars found/i.test(text)) return { status: "none", summary: "Nav izsoles arhīvā" };
       if (hasVin && /lot|bid|sold|auction|mileage/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
-      return null;
-    }
-    if (id === "auchistory") {
-      if (/no (auction )?records|vehicle not found|nothing found|it seems we can['\u2019]t find what you['\u2019]re looking for/i.test(text)) return { status: "none", summary: "Nav izsoles vēstures" };
-      if (hasVin && /damage|auction|sold for|\bbid\b/i.test(text)) return { status: "found", summary: "Ir izsoles vēsture" };
       return null;
     }
     if (id === "carfax_eu") {
@@ -1471,23 +1452,6 @@
       const bits = [title, location.replace(/\s+/g, " ").trim(), String(saleDate).trim(), String(winningBid).replace(/\s+/g, " ").trim()].filter(Boolean);
       return { status: "found", summary: bits.join(" · ") };
     }
-    if (id === "lt_itpr") {
-      if (/lapa netika atrasta|lapa nav atrasta|page not found|404 not found|šāda lapa neeksistē/i.test(text)) {
-        return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
-      }
-      if (/nėra ieškoma|not wanted|duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(text)) {
-        return { status: "none", summary: "Nav meklēšanā" };
-      }
-      if (/yra ieškoma|is wanted|paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(text)) {
-        const reason =
-          (text.match(/paieškos priežast(?:is)?:?\s*([^\n.]{3,80})/i) ||
-            text.match(/meklēšanas iemesls:?\s*([^\n.]{3,80})/i) ||
-            [])[1] || "";
-        const extra = String(reason).replace(/\s+/g, " ").trim();
-        return { status: "found", summary: extra ? "Meklēšanā. " + extra : "Meklēšanā" };
-      }
-      return null;
-    }
     return null;
   }
 
@@ -1522,7 +1486,6 @@
     plc_auction: 1,
     carfax_eu: 1,
     nicb: 1,
-    lt_itpr: 1,
     biluppgifter: 1,
     carinfo: 1,
   };
@@ -1804,27 +1767,6 @@
     return null;
   }
 
-  function findPoliceWantedInput() {
-    const knr = document.querySelector("input#wantedVehicleVin, input[name='wantedVehicleVin'], input[name='knr'], input#knr");
-    if (knr && isVisible(knr) && !knr.disabled) return knr;
-    const nodes = document.querySelectorAll("input, textarea");
-    for (const el of nodes) {
-      if (!isVisible(el) || el.disabled) continue;
-      if (el.type === "password" || el.type === "hidden" || el.type === "email" || el.type === "checkbox") continue;
-      const blob = (
-        (el.name || "") +
-        " " +
-        (el.id || "") +
-        " " +
-        (el.getAttribute("placeholder") || "") +
-        " " +
-        (el.getAttribute("aria-label") || "")
-      ).toLowerCase();
-      if (/vin|chassis|kebul|kėbul|sasij|šasij|identifikav|knr/.test(blob)) return el;
-    }
-    return findScanVinInput();
-  }
-
   function findPlcSearchInput() {
     const nodes = document.querySelectorAll("input, textarea");
     for (const el of nodes) {
@@ -1959,11 +1901,7 @@
         stableTicks = 0;
       }
       const input =
-        id === "plc_auction"
-          ? findPlcSearchInput()
-          : id === "lt_itpr"
-            ? findPoliceWantedInput()
-            : findScanVinInput();
+        id === "plc_auction" ? findPlcSearchInput() : findScanVinInput();
       if (input) {
         const current = String(input.value || "")
           .replace(/[\s-]/g, "")
@@ -1975,16 +1913,15 @@
         blocker !== "captcha" &&
         (id === "bid_cars" ||
           id === "plc_auction" ||
-          id === "lt_itpr" ||
           id === "nicb" ||
           id === "bidfax" ||
           id === "poctra");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
-        if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
+        if (!clicked && id === "plc_auction" && input && typeof input.form?.requestSubmit === "function") {
           input.form.requestSubmit();
           clicked = true;
-        } else if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input) {
+        } else if (!clicked && id === "plc_auction" && input) {
           input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
           clicked = true;
         }

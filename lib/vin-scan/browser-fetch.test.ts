@@ -22,7 +22,6 @@ describe("VIN SCAN from browser", () => {
       "plc_auction",
       "carfax_eu",
       "poctra",
-      "lt_itpr",
       "biluppgifter",
       "nicb",
     ]);
@@ -40,7 +39,7 @@ describe("VIN SCAN from browser", () => {
       browserFetchAwaiting({ id: "bid_cars", status: "browser_only", summary: browserFetchSummary("bid_cars") }),
     ).toBe(true);
     expect(browserFetchAwaiting({ id: "nicb", status: "found", summary: browserFetchSummary("nicb") })).toBe(false);
-    expect(browserFetchAwaiting({ id: "lt_itpr", status: "none", summary: "Nav meklēšanā" })).toBe(false);
+    expect(browserFetchAwaiting({ id: "lt_itpr", status: "browser_only", summary: browserFetchSummary("bid_cars") })).toBe(false);
     expect(browserFetchAwaiting({ id: "auchistory", status: "browser_only", summary: browserFetchSummary("bid_cars") })).toBe(
       false,
     );

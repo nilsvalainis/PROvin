@@ -74,7 +74,7 @@ describe("webhook laika budžets (maxDuration 300 s)", () => {
 });
 
 describe("imports blokos (tas pats, ko pogas «Importēt»)", () => {
-  const auctionRow = buildVinScanIndicator("auchistory", VIN, {
+  const auctionRow = buildVinScanIndicator("bidfax", VIN, {
     status: "found",
     summary: "1 izsole",
     auctions: [{ date: "2021-05-04", venue: "Copart", price: "4 500 $", odometer: "85 000 km", damage: "Front End" }],
@@ -110,7 +110,7 @@ describe("imports blokos (tas pats, ko pogas «Importēt»)", () => {
   });
 
   it("bez atrastām rindām - nekā", () => {
-    const none = buildVinScanIndicator("auchistory", VIN, { status: "none", summary: "nav" });
+    const none = buildVinScanIndicator("bidfax", VIN, { status: "none", summary: "nav" });
     expect(applyVinScanImportsToBlocks(createDefaultSourceBlocks(), [none]).changed).toBe(false);
   });
 });
@@ -120,7 +120,7 @@ describe("push ziņa Nilam", () => {
     const indicators = [
       buildVinScanIndicator("autodna_precheck", VIN, { status: "found", summary: "AutoDNA priekšskatījums: 12 foto · 5 ieraksti" }),
       buildVinScanIndicator("carfax_eu", VIN, { status: "found", summary: "8 ieraksti CARFAX priekšskatījumā (DE, SE)" }),
-      buildVinScanIndicator("auchistory", VIN, { status: "none", summary: "nav" }),
+      buildVinScanIndicator("bidfax", VIN, { status: "none", summary: "nav" }),
     ];
     const msg = buildOrderAutoIntakePush({
       sessionId: "cs_test_abc",

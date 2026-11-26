@@ -4,7 +4,6 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
   "mnt_ee",
   "lkf_ee",
   "carinfo",
-  "auchistory",
   "regitra",
   "traficom",
   "biluppgifter",
@@ -41,15 +40,12 @@ const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
 /**
  * stat_vin, checkcar_vin, plc_auction, bidfax, poctra un nicb tagad ir tikai
  * pārlūka avoti: zonde atgriež `browser_only` uzreiz bez tīkla, tāpēc tiem pietiek ar noklusējumu.
- * lt_itpr (epolicija.lt) risina reCAPTCHA v2 serverī, tāpēc tam CapSolver limits.
  */
 const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "lkf_ee",
   "carinfo",
-  "auchistory",
   "nummerplade",
   "carpass",
-  "lt_itpr",
 ]);
 
 /**

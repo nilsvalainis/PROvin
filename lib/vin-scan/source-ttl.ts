@@ -35,7 +35,6 @@ const AUCTION_ARCHIVE_IDS: ReadonlySet<string> = new Set([
   "checkcar_vin",
   "plc_auction",
   "carfax_eu",
-  "auchistory",
 ]);
 
 const RECALL_IDS: ReadonlySet<string> = new Set([

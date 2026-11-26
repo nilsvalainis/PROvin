@@ -14,7 +14,6 @@ import { formatStatVinOdometerKm, parseStatVinPage } from "@/lib/vin-scan/parse-
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
 import { buildVinScanIndicator, type VinScanAuction, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
-import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 
 /** Aptuveni 900 KB. Garāku lapu skripts saīsina, serveris noraida. */
 export const ORDER_VIN_SCAN_BROWSER_HTML_MAX = 900_000;
@@ -268,9 +267,6 @@ function parseArchiveHtml(
   }
   if (id === "nicb") {
     return readyParse(parseNicbHtml(html, vin));
-  }
-  if (id === "lt_itpr") {
-    return readyParse(classifyPoliceWanted("lt_itpr", visibleText(html), vin));
   }
   if (isSwedishBrowserSourceId(id)) {
     const parsed = parseSwedishVehiclePage(html, pageUrl);

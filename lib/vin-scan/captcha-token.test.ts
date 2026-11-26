@@ -23,7 +23,6 @@ vi.mock("@/lib/captcha-solver", () => ({
 import { runWithVinScanDeadline, scanFetchSmart, vinScanSolverBudgetMs } from "@/lib/vin-scan/http";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import { probeCarpass, probeNummerplade } from "@/lib/vin-scan/probes";
-import { probeAuchistory } from "@/lib/vin-scan/probes-extra";
 import { fetchLkfHttp } from "@/lib/vin-sources/lkf-http";
 
 const VIN = "WBA5R1C0XLFH42873";
@@ -36,7 +35,7 @@ const RECAPTCHA_HTML = `<html><head><title>nummerplade.net</title>
 </form></body></html>`;
 const TURNSTILE_HTML = `<html><body><div data-sitekey="0x4AAAAAAATestKey" class="cf-turnstile"></div>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script></body></html>`;
-const LT_CHALLENGE_HTML = `<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title></head><body>
+const CF_CHALLENGE_HTML = `<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title></head><body>
 <div id="challenge-error-text">Enable JavaScript and cookies to continue</div>
 <script>window._cf_chl_opt={cType:'managed'};a.src='/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1';</script>
 </body></html>`;
@@ -124,7 +123,7 @@ describe("scanFetchSmart - reCAPTCHA/Turnstile tikai pēc pieprasījuma", () => 
 
   it("Cloudflare challenge joprojām tiek risināts un pieprasījums atkārtots ar cf_clearance", async () => {
     vinHttpFetch
-      .mockResolvedValueOnce(page(LT_CHALLENGE_HTML, 403))
+      .mockResolvedValueOnce(page(CF_CHALLENGE_HTML, 403))
       .mockResolvedValueOnce(page("<html><body>dati</body></html>", 200, "x=1"));
     solveCaptcha.mockResolvedValueOnce({ ok: true, token: "", cookies: { cf_clearance: "cf1" }, userAgent: "UA-cf" });
     const res = await scanFetchSmart("https://example.test/x", { timeoutMs: 45_000 });
@@ -156,34 +155,6 @@ describe("zondes ar captcha lapu", () => {
     expect(solveCaptcha).not.toHaveBeenCalled();
     expect(row.status).toBe("unknown");
     expect(row.summary).toMatch(/Car-Pass: .*reCAPTCHA/);
-  });
-
-  it("AucHistory: tieši 1 CapSolver izsaukums un žetons POST ķermenī", async () => {
-    vinHttpFetch
-      .mockResolvedValueOnce(page(RECAPTCHA_HTML, 200, "sess=1"))
-      .mockResolvedValueOnce(page(`<html><body>${VIN} auction sold for 5000 damage</body></html>`));
-    solveCaptcha.mockResolvedValueOnce(solvedOk("auc-tok"));
-    const row = await runWithVinScanDeadline(Date.now() + 90_000, () => probeAuchistory(ctx()));
-    expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    expect(vinHttpFetch).toHaveBeenCalledTimes(2);
-    const [postUrl, postInit] = vinHttpFetch.mock.calls[1] as [string, { method: string; body: string; cookie: string }];
-    expect(postUrl).toBe("https://auchistory.com/");
-    expect(postInit.method).toBe("POST");
-    const body = new URLSearchParams(postInit.body);
-    expect(body.get("g-recaptcha-response")).toBe("auc-tok");
-    expect(body.get("vin")).toBe(VIN);
-    expect(postInit.cookie).toContain("sess=1");
-    expect(row.status).toBe("found");
-  });
-
-  it("AucHistory: neizdevies risinājums -> unknown, POST netiek sūtīts", async () => {
-    vinHttpFetch.mockResolvedValueOnce(page(RECAPTCHA_HTML));
-    solveCaptcha.mockResolvedValueOnce({ ok: false, reason: "CapSolver: timeout" });
-    const row = await runWithVinScanDeadline(Date.now() + 90_000, () => probeAuchistory(ctx()));
-    expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    expect(vinHttpFetch).toHaveBeenCalledTimes(1);
-    expect(row.status).toBe("unknown");
-    expect(row.summary).toMatch(/AucHistory: reCAPTCHA/);
   });
 });
 

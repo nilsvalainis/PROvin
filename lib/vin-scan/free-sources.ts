@@ -65,7 +65,6 @@ export const VIN_SCAN_VALUABLE_SOURCE_IDS = [
   "stat_vin",
   "joj_copart_iaai",
   "bid_cars",
-  "auchistory",
   "checkcar_vin",
   "plc_auction",
   "bidfax",
