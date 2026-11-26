@@ -158,6 +158,8 @@ export function buildVinScanV4Attention(facts: AtraFacts | null, extra: readonly
     });
   }
   if (facts.wanted.length) out.push({ text: "Meklēšanā / zagts", source: facts.wanted.join(" · ") });
+  // 26.11: ķīla / parāds ir apgrūtinājums, ne negadījums - atsevišķs karogs.
+  if (facts.liens?.length) out.push({ text: "Ķīla / parāds", source: facts.liens.join(" · ") });
   if (facts.flags.totalLoss) out.push({ text: "Totāla bojāeja (total loss)", source: "izsoļu / vēstures dati" });
   if (facts.incidents.count) {
     out.push({

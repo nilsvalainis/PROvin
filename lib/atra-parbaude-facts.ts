@@ -10,6 +10,7 @@ import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
 import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
+import { vinScanRowHasLien } from "@/lib/vin-scan/lien-flag";
 import { vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
 import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
@@ -30,6 +31,8 @@ export type AtraFactRow = {
   flags?: {
     wanted?: boolean;
     stolen?: boolean;
+    /** Reģistrēta ķīla / parāds (DK Bilbogen) - apgrūtinājums, ne negadījums. */
+    lien?: boolean;
     registrationCountry?: string;
     manufactureCountry?: string;
     countries?: string[];
@@ -86,6 +89,8 @@ export type AtraDealerFact = {
 export type AtraFacts = {
   mileage: AtraMileageFact;
   wanted: string[];
+  /** Avoti ar reģistrētu ķīlu / parādu (DK Bilbogen). 26.11: tas nav negadījums. */
+  liens?: string[];
   incidents: { count: number; items: string[]; sources: string[] };
   auctions: AtraAuctionFact;
   countries: string[];
@@ -243,6 +248,7 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   const found = input.rows.filter((r) => r.status === "found");
   const mileage = mileageFact(input);
   const wanted = found.filter((r) => r.flags?.wanted || r.flags?.stolen).map((r) => r.label);
+  const liens = found.filter(vinScanRowHasLien).map((r) => r.label);
   const incidentItems: string[] = [];
   const incidentSources = new Set<string>();
   for (const r of found) {
@@ -294,6 +300,7 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   return {
     mileage,
     wanted,
+    liens,
     incidents: { count: incidentItems.length, items: incidentItems, sources: [...incidentSources] },
     auctions: auctionFact(found),
     countries: [...countries].sort(),
@@ -404,6 +411,7 @@ export function atraSummaryText(input: Pick<AtraFactsInput, "vin" | "title" | "y
     lines.push(`Nobraukums: ${formatKm(m.last.km)} km (${atraLvDate(m.last.date)})`);
   }
   if (f.wanted.length) lines.push(`Meklēšanā: ${f.wanted.join(", ")}`);
+  if (f.liens?.length) lines.push(`Ķīla / parāds: ${f.liens.join(", ")}`);
   if (f.incidents.count) lines.push(`Negadījumi: ${f.incidents.count}`);
   if (f.auctions.count || f.auctions.photoCount) {
     const parts = [f.auctions.years.join(", "), f.auctions.venues.join(", "), f.auctions.photoCount ? `${f.auctions.photoCount} bildes` : ""];

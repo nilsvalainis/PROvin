@@ -33,6 +33,8 @@ const CURVE_H = CURVE_Y0 - CURVE_Y1;
 const BAR_BASE_Y = 300;
 const BAR_H = 82;
 const BAR_HEADING_Y = 191;
+/** Y ass vienība stabiņiem - pie ass, virs augšējās atzīmes (Nils 26.11). */
+const BAR_UNIT_Y = 207;
 const VIEW_W = 720;
 const VIEW_H_FULL = 340;
 const VIEW_H_CURVE = 190;
@@ -311,33 +313,99 @@ function excludedNote(count: number, lang: ClientReportLang): string {
   return head;
 }
 
-function yearlyNote(
-  first: DealerCoverMileagePoint,
-  last: DealerCoverMileagePoint,
-  excludedCount: number,
-  lang: ClientReportLang,
-): string {
-  const firstYear = yearOfDay(first.day);
-  const lastYear = yearOfDay(last.day);
-  const base = t(
-    "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.",
-    lang,
-  )
-    .replace("{y0}", String(firstYear))
-    .replace("{d0}", first.dateDisplay)
-    .replace("{y1}", String(lastYear))
-    .replace("{d1}", last.dateDisplay);
-  const extra = excludedNote(excludedCount, lang);
-  return extra ? `${base} ${extra}` : base;
+export type DealerCoverLegendKeys = {
+  dot: boolean;
+  line: boolean;
+  precise: boolean;
+  estimate: boolean;
+  partial: boolean;
+};
+
+/** Leģendā tikai tie elementi, kas šajā grafikā tiešām ir zīmēti (Nils 26.11). */
+export function dealerCoverLegendKeys(
+  pointCount: number,
+  years: DealerCoverYearlyRow[],
+): DealerCoverLegendKeys {
+  return {
+    dot: pointCount >= 1,
+    line: pointCount >= 2,
+    precise: years.some((r) => r.flag === "precise"),
+    estimate: years.some((r) => r.flag === "estimate"),
+    partial: years.some((r) => r.flag === "partial"),
+  };
 }
 
-function legendHtml(lang: ClientReportLang): string {
+/**
+ * Klientam saprotams skaidrojums (Nils 26.11): tikai par to, kas grafikā ir.
+ * Nepilni gadi + svītrotie stabiņi; ja viss precīzs - tukšs.
+ */
+export function dealerCoverYearlyExplanation(
+  years: DealerCoverYearlyRow[],
+  first: DealerCoverMileagePoint,
+  last: DealerCoverMileagePoint,
+  lang: ClientReportLang,
+): string {
+  const parts: string[] = [];
+  const partial = years.filter((r) => r.flag === "partial");
+  if (partial.length > 0) {
+    const firstYear = yearOfDay(first.day);
+    const lastYear = yearOfDay(last.day);
+    const fill = (s: string, y: number) =>
+      s
+        .replace("{y0}", String(firstYear))
+        .replace("{y1}", String(lastYear))
+        .replace("{y}", String(y))
+        .replace("{d0}", first.dateDisplay)
+        .replace("{d1}", last.dateDisplay);
+    if (years.length === 1) {
+      parts.push(fill(t("{y} ir nepilns gads (dati no {d0} līdz {d1}).", lang), partial[0]!.year));
+    } else if (partial.length >= 2) {
+      parts.push(
+        fill(
+          t("{y0} un {y1} ir nepilni gadi (dati no {d0} līdz {d1}), nobraukums sadalīts proporcionāli dienām.", lang),
+          firstYear,
+        ),
+      );
+    } else if (partial[0]!.year === firstYear) {
+      parts.push(
+        fill(t("{y} ir nepilns gads (dati no {d0}), nobraukums sadalīts proporcionāli dienām.", lang), firstYear),
+      );
+    } else {
+      parts.push(
+        fill(t("{y} ir nepilns gads (dati līdz {d1}), nobraukums sadalīts proporcionāli dienām.", lang), lastYear),
+      );
+    }
+  }
+  if (years.some((r) => r.flag === "estimate")) {
+    parts.push(t("Svītrotie stabiņi - aptuvens sadalījums, jo starp rādījumiem ir vairāki gadi.", lang));
+  }
+  return parts.join(" ");
+}
+
+function legendHtml(keys: DealerCoverLegendKeys, lang: ClientReportLang): string {
+  const items: string[] = [];
+  if (keys.dot) items.push(`<span><b></b>${escapeHtml(t("precīzs ieraksts", lang))}</span>`);
+  if (keys.line) {
+    items.push(`<span><i></i>${escapeHtml(t("nepārtraukta līnija savieno precīzos ierakstus", lang))}</span>`);
+  }
+  if (keys.precise) {
+    items.push(
+      `<span><em class="pdf-dealer-cover-bar-key"></em>${escapeHtml(t("precīzs gada nobraukums", lang))}</span>`,
+    );
+  }
+  if (keys.estimate) {
+    items.push(
+      `<span><em class="pdf-dealer-cover-bar-key pdf-dealer-cover-bar-key--estimated"></em>${escapeHtml(t("aptuveni (nav precīzu datu)", lang))}</span>`,
+    );
+  }
+  if (keys.partial) {
+    items.push(
+      `<span><em class="pdf-dealer-cover-bar-key pdf-dealer-cover-bar-key--partial"></em>${escapeHtml(t("nepilns gads", lang))}</span>`,
+    );
+  }
+  if (items.length === 0) return "";
   return `<div class="pdf-dealer-cover-leg">
-    <span><b></b>${escapeHtml(t("precīzs ieraksts", lang))}</span>
-    <span><i></i>${escapeHtml(t("nepārtraukta līnija savieno precīzos ierakstus", lang))}</span>
-    <span><em class="pdf-dealer-cover-bar-key"></em>${escapeHtml(t("precīzs gada nobraukums", lang))}</span>
-    <span><em class="pdf-dealer-cover-bar-key pdf-dealer-cover-bar-key--estimated"></em>${escapeHtml(t("aptuveni (nav precīzu datu)", lang))}</span>
-    <span><em class="pdf-dealer-cover-bar-key pdf-dealer-cover-bar-key--partial"></em>${escapeHtml(t("nepilns gads", lang))}</span>
+    ${items.join("\n    ")}
   </div>`;
 }
 
@@ -426,7 +494,7 @@ export function buildDealerCoverMileageChartHtml(
         );
       }
     }
-    barsHtml = `<text x="${PLOT_X0}" y="${BAR_HEADING_Y}" class="pdf-dealer-cover-year-heading">${escapeHtml(t("NOBRAUKUMS PA GADIEM", lang))}</text><text x="${PLOT_X1}" y="${BAR_HEADING_Y}" class="pdf-dealer-cover-ax" text-anchor="end">${escapeHtml(t("tūkst. km gadā", lang))}</text>${barGrid.join("")}${barShapes.join("")}`;
+    barsHtml = `<text x="${PLOT_X0}" y="${BAR_HEADING_Y}" class="pdf-dealer-cover-year-heading">${escapeHtml(t("NOBRAUKUMS PA GADIEM", lang))}</text><text x="2" y="${BAR_UNIT_Y}" class="pdf-dealer-cover-unit">${escapeHtml(t("tūkst. km gadā", lang))}</text>${barGrid.join("")}${barShapes.join("")}`;
   }
 
   const aria = escapeHtml(t("Nobraukuma vēsture un nobraukums pa kalendāra gadiem", lang));
@@ -437,7 +505,7 @@ export function buildDealerCoverMileageChartHtml(
         <line x1="0" x2="0" y1="0" y2="5" stroke="${BRAND}" stroke-opacity=".35" stroke-width="1.4"/>
       </pattern>
     </defs>
-    <text x="2" y="12" class="pdf-dealer-cover-ax">${escapeHtml(t("tūkst. km", lang))}</text>
+    <text x="2" y="12" class="pdf-dealer-cover-unit">${escapeHtml(t("tūkst. km", lang))}</text>
     ${grid.join("")}
     ${pathHtml}
     ${jewels}
@@ -455,13 +523,11 @@ export function buildDealerCoverMileageChartHtml(
           lastMeta: [last.dateDisplay, readingCountLabel(pts.length, lang)].filter(Boolean).join(" · "),
         })
       : "";
-  const note =
-    pts.length >= 2
-      ? `<div class="pdf-dealer-cover-note">${escapeHtml(yearlyNote(first, last, series.excludedCount, lang))}</div>`
-      : series.excludedCount > 0
-        ? `<div class="pdf-dealer-cover-note">${escapeHtml(excludedNote(series.excludedCount, lang))}</div>`
-        : "";
-  const legend = showLine ? legendHtml(lang) : "";
+  const explanation =
+    pts.length >= 2 ? dealerCoverYearlyExplanation(years, first, last, lang) : "";
+  const noteText = [explanation, excludedNote(series.excludedCount, lang)].filter(Boolean).join(" ");
+  const note = noteText ? `<div class="pdf-dealer-cover-note">${escapeHtml(noteText)}</div>` : "";
+  const legend = legendHtml(dealerCoverLegendKeys(pts.length, years), lang);
 
   return `${heading}${svg}${legend}${span}${note}`;
 }

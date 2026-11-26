@@ -86,6 +86,8 @@ export type VinScanFlags = {
   manufactureCountry?: string;
   /** Vairākas valstis, kur auto bijis (CARFAX.eu ierakstu sadalījums u.c.), ISO divburtu kodi. */
   countries?: string[];
+  /** Reģistrēta ķīla / parāds (DK Bilbogen). Apgrūtinājums, ne negadījums (26.11). */
+  lien?: boolean;
   napJudgement?: string;
   finlandLinked?: boolean;
   finlandLinkSource?: string;

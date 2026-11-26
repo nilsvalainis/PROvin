@@ -610,7 +610,7 @@ ASV FOCUS:
   ) {
     const scope =
       blockLabel === L.tjekbil
-        ? "Danish DMR / Færdselsstyrelsen registry data (odometer, inspections, usage, leasing, Bilbogen). Danish owner count: leasing and later private registration are two owners; consecutive lease contracts count as one leasing chapter; first registration abroad is not a Danish owner; never insurance/OCTA switches."
+        ? "Danish DMR / Færdselsstyrelsen registry data (odometer, inspections, usage, leasing, Bilbogen). A Bilbogen entry (pantebrev / ejerpantebrev / gæld, «Ķīla / parāds») is a registered lien or debt on the car, never an accident or damage: mention it as an encumbrance, not in the accident text. Danish owner count: leasing and later private registration are two owners; consecutive lease contracts count as one leasing chapter; first registration abroad is not a Danish owner; never insurance/OCTA switches."
         : blockLabel === L.mnt_ee
           ? "Estonian Transpordiamet registry data (odometer readings, usage history, restrictions, arrests/pledges)"
           : blockLabel === L.lkf_ee

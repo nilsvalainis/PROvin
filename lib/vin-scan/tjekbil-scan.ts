@@ -4,7 +4,7 @@
  * Tīra loģika (bez tīkla).
  */
 import { asArray, asRecord, str } from "@/lib/vin-sources/dk-json";
-import { mapTjekbilPayload, type TjekbilDmrResponse } from "@/lib/vin-sources/tjekbil-map";
+import { mapTjekbilPayload, tjekbilLiens, type TjekbilDmrResponse } from "@/lib/vin-sources/tjekbil-map";
 import type { TjekbilExtras } from "@/lib/vin-sources/tjekbil";
 import type { VinScanParse, VinScanRecall } from "@/lib/vin-scan/types";
 
@@ -22,6 +22,7 @@ export function tjekbilScanWithExtras(base: VinScanParse, dmr: TjekbilDmrRespons
   if (base.status !== "found") return base;
   const mapped = mapTjekbilPayload({ dmr, mileagelogs: extras.mileagelogs, wanted: extras.wanted, rapex: extras.rapex });
   const wanted = (extras.wanted?.length ?? 0) > 0;
+  const lien = tjekbilLiens(dmr).length > 0;
   const recalls = rapexRecalls(extras.rapex);
   const inspections = mapped.timeline
     .filter((row) => row.date && /apskate/i.test(row.event))
@@ -41,6 +42,7 @@ export function tjekbilScanWithExtras(base: VinScanParse, dmr: TjekbilDmrRespons
       ...base.flags,
       registrationCountry: "DK",
       ...(wanted ? { wanted: true } : {}),
+      ...(lien ? { lien: true } : {}),
       ...(recalls.length ? { recallCount: recalls.length } : {}),
     },
   };
