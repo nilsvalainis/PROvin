@@ -32,7 +32,8 @@ personas kodu nav iespējamas. Tāpēc dizains ir tāds, lai **Nils vienmēr izl
    `kicked`, un **60 min (`ECSDD_YIELD_MIN`) pats nepiesakās** - Nila sesija netiek atņemta atpakaļ.
    Automātiskās uzziņas gaida ("e.csdd tagad lieto tu"); Nila poga "Pieslēgt e.csdd" strādā vienmēr.
 3. Poga **"Atbrīvot e.csdd"**: serveris iziet un 60 min nepiesakās - Nils var strādāt savā pārlūkā.
-4. Naktī (ārpus 08:00-20:00) automātika Smart-ID neprasa un sesiju neuztur.
+4. Smart-ID automātika prasa jebkurā diennakts laikā (`ECSDD_AUTO_LOGIN_FROM/TO`, noklusējums 0-24). Tukšu sesiju
+   (keep-alive) uztur tikai darba laikā 08:00-20:00 (`ECSDD_WORK_FROM/TO`), lai naktī neaiztiktu Nila paša pārlūka sesiju bez vajadzības.
 5. Pēc atteikta Smart-ID automātika vairs pati neprasa, līdz Nils nospiež pogu (nav Smart-ID noguruma). Pēc neapstiprināta
    (taimauts) tie paši pasūtījumi vairs neprasa, bet jauns pasūtījums drīkst prasīt vienreiz (`loginTried` uzdevumā, 26.11).
 
