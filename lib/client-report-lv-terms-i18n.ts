@@ -108,6 +108,10 @@ const TERMS: Record<string, Tr> = {
   Elektroenerģija: t("Electricity", "Электроэнергия", "Elektrizität"),
   "Benzīns/gāze": t("Petrol/gas", "Бензин/газ", "Benzin/Gas"),
 
+  // Dzīves laikjosla / izsoļu statuss (26.11: EN/RU/DE PDF palika «Izsole · Autobid»)
+  Izsole: t("Auction", "Аукцион", "Auktion"),
+  "Pārdošanas ieraksts": t("Sale record", "Запись о продаже", "Verkaufseintrag"),
+
   // CSDD tehniskā apskate
   pamatpārbaude: t("periodic inspection", "основной осмотр", "Hauptuntersuchung"),
   "atkārtota pārbaude": t("re-inspection", "повторный осмотр", "Nachprüfung"),
@@ -122,6 +126,7 @@ const TERMS: Record<string, Tr> = {
     "2 - С дефектами, устраняемыми в течение месяца",
     "2 - Mit innerhalb eines Monats zu behebenden Mängeln",
   ),
+  "3 - Braukšanai nederīgā stāvoklī": t("3 - Unroadworthy condition", "3 - Непригоден для движения", "3 - Nicht verkehrssicherer Zustand"),
 
   // AutoDNA «Iepriekšējie meklējumi»
   "Iepriekšējie meklējumi": t("Previous searches", "Предыдущие запросы", "Frühere Abfragen"),

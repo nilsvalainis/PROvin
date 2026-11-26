@@ -4,7 +4,7 @@
  */
 
 import { KFZ_AT_SECTION_LABEL } from "@/lib/kfzgutachten/kfzgutachten";
-import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
+import { applyClientReportSweepTranslations } from "@/lib/client-report-dynamic-i18n";
 import {
   activeListingBelowAnomalies,
   formatListingBelowFactLv,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/odometer-anomaly-classify";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
-  applyClientReportStaticTranslations,
   clientReportDateLocale,
   type ClientReportLang,
 } from "@/lib/client-report-i18n";
@@ -965,11 +964,10 @@ function pdfTopFirstRegistration(p: ClientReportPayload): { date: string; countr
   return { date, country: "", ms: m ? Date.UTC(+m[3]!, +m[2]! - 1, +m[1]!) : 0 };
 }
 
-function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings): PdfTopSource[] {
+function pdfTopSources(p: ClientReportPayload, vis: PdfVisibilitySettings, lang: ClientReportLang): PdfTopSource[] {
   const L = SOURCE_BLOCK_LABELS;
   const makeModel = resolvePdfReportMakeModelFromPayload(p);
   return collectPdfCheckedSources(p, vis).map((s): PdfTopSource => {
-    const lang: ClientReportLang = "lv";
     if (s.label === L.csdd) return { logo: { key: "csdd" }, name: "CSDD", category: "catRegistry", count: s.count };
     if (s.label === L.autodna) return { logo: { key: "autodna" }, name: "autoDNA", category: "catHistory", count: s.count };
     if (s.label === L.carvertical) return { logo: { key: "carvertical" }, name: "carVertical", category: "catHistory", count: s.count };
@@ -1093,7 +1091,7 @@ function buildPdfTopHtml(args: {
     age: first ? pdfTopAgeLabel(first.ms, args.now.getTime(), lang) : "",
     firstReg: first ? { date: first.date, sub: first.country } : null,
     cards: [...cards, ...extra],
-    sources: pdfTopSources(p, vis).map((s) => ({
+    sources: pdfTopSources(p, vis, lang).map((s) => ({
       ...s,
       category: isPdfTopTextKey(s.category) ? pdfTopText(s.category, lang) : s.category,
     })),
@@ -2295,6 +2293,7 @@ function buildCcVinAvotuSubsection(
   photoDataUrls?: Map<string, string>,
   sparkHtml = "",
   externalPhotoKeys?: ReadonlySet<string>,
+  lang: ClientReportLang = "lv",
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
@@ -2327,7 +2326,7 @@ function buildCcVinAvotuSubsection(
     ...groupTcPhotos.filter((photo) => photoDataUrls?.has(photo.id) && ![...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && haveKeys.has(k))),
   ].slice(0, THECARAPI_PDF_GALLERY_MAX);
   // Izsoļu bildes - kopīgās izsoles kartītes galerijā (tas pats dizains kā «Izsoļu arhīva» PDF).
-  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "" }) : "";
+  const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b, { photos: tcPhotos, dataUrls: photoDataUrls, vin: "", lang }) : "";
   const tcPhotoIds = new Set([...tcIds, ...groupTcPhotos.map((photo) => photo.id)]);
   const legacyPhotos = (b?.photos ?? []).filter((photo) => !tcPhotoIds.has(photo.id));
   const photosHtml = b ? buildSourcePhotoGroupsPdfHtml(otherGroups, legacyPhotos, photoDataUrls, normalizeCcVinPhotoGroups) : "";
@@ -2804,6 +2803,7 @@ function buildAvotuDatiSectionHtml(
       ...(p.manualVendorBlocks ?? []).flatMap((block) => block.photoGroups ?? []),
       ...(p.citiAvoti?.sections ?? []).flatMap((section) => section.photoGroups ?? []),
     ]),
+    lang,
   );
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
@@ -4296,7 +4296,7 @@ export function buildClientReportDocumentHtml(args: {
             manualVendorBlocks: pVisFacts.manualVendorBlocks ?? null,
             manualLtabBlock: pVisFacts.manualLtabBlock ?? null,
             citiAvotiBlock: pVisFacts.citiAvoti ?? null,
-          }),
+          }, undefined, lang),
           pVis.pdfBannerInclude,
         ),
       })
@@ -4456,6 +4456,6 @@ ${CLIENT_REPORT_A4_VIEWPORT_META}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${runningCss}${CLIENT_REPORT_SCREEN_A4_CSS}${PDF_TOP6_CSS}${izvilkums ? PDF_IZVILKUMS_CSS : ""}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${izvilkums ? buildIzvilkumsWatermarkHtml(lang) : ""}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
+  const translated = applyClientReportSweepTranslations(html, lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }
