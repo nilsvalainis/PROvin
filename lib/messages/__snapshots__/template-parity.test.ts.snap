@@ -32,7 +32,7 @@ exports[`template snapshots (default text) > snapshot block.refund_bank_note 1`]
 {
   "html": undefined,
   "subject": undefined,
-  "text": "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
+  "text": "Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.",
 }
 `;
 
@@ -72,7 +72,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">Pasūtījums atcelts, nauda atgriezta</p></td></tr>
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu izsoļu arhīva pasūtījumu auto VIN WAUZZZF43PA018831. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
@@ -88,7 +88,7 @@ a{text-decoration:none}
 Atcēlām Jūsu izsoļu arhīva pasūtījumu auto VIN WAUZZZF43PA018831. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
 
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.
@@ -125,7 +125,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">Izsoļu arhīvā datu nav, nauda atgriezta</p></td></tr>
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Pārbaudījām auto VIN WAUZZZF43PA018831 - diemžēl Eiropas izsoļu arhīvā par šo auto ierakstu nav.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.<br/>Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU - negadījumu un nobraukuma vēsturi no vairākām Eiropas datubāzēm, dīlera servisa vēsturi un sludinājuma un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://www.provin.lv/lv?plan=audits" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
@@ -143,8 +143,7 @@ Pārbaudījām auto VIN WAUZZZF43PA018831 - diemžēl Eiropas izsoļu arhīvā p
 
 
 Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
-Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 
@@ -289,7 +288,7 @@ a{text-decoration:none}
 </td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu (VIN WVWZZZ1KZAW000123) un atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
@@ -304,7 +303,7 @@ a{text-decoration:none}
 
 Atcēlām Jūsu oficiālā dīlera datu pasūtījumu (VIN WVWZZZ1KZAW000123) un atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
-Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.
 
@@ -347,7 +346,7 @@ a{text-decoration:none}
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Diemžēl oficiālā dīlera dati šim auto (VIN WVWZZZ1KZAW000123) nav pieejami.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Summa: 24,99 € (atgriezīsim uz to pašu karti).</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://provin.lv" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja rodas jautājumi, rakstiet uz info@provin.lv.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
@@ -365,7 +364,7 @@ Diemžēl oficiālā dīlera dati šim auto (VIN WVWZZZ1KZAW000123) nav pieejami
 
 Summa: 24,99 € (atgriezīsim uz to pašu karti).
 
-Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
@@ -465,7 +464,7 @@ a{text-decoration:none}
 </td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu auto VIN WVWZZZ1KZAW000123. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
 <tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
@@ -481,7 +480,7 @@ a{text-decoration:none}
 Atcēlām Jūsu oficiālā dīlera datu pasūtījumu auto VIN WVWZZZ1KZAW000123. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
 
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo ziņu.
@@ -524,7 +523,7 @@ a{text-decoration:none}
 </td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Pārbaudījām auto VIN WVWZZZ1KZAW000123 - diemžēl oficiālā dīlera dati šim auto nav pieejami.</p></td></tr>
-<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.<br/>Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.<br/>Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.</p></td></tr>
 <tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-line" style="border:1px solid #e4e7eb;border-radius:14px;"><tr><td class="m-pad2" style="padding:20px 22px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITU - negadījumu un nobraukuma vēsturi no vairākām Eiropas datubāzēm, izsoļu arhīvu pārbaudi un sludinājuma un risku analīzi.</p><div style="height:20px;line-height:20px;font-size:1px;">&nbsp;</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" class="m-full"><tr><td align="center" bgcolor="#0061D2" style="border-radius:999px;background-color:#0061D2;"><a href="https://www.provin.lv/lv?plan=audits" target="_blank" class="m-btn" style="display:inline-block;padding:14px 28px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Pasūtīt PROVIN AUDITS</a></td></tr></table><div style="height:8px;line-height:8px;font-size:1px;">&nbsp;</div></td></tr></table></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.</p></td></tr>
 <tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
@@ -542,8 +541,7 @@ Pārbaudījām auto VIN WVWZZZ1KZAW000123 - diemžēl oficiālā dīlera dati š
 
 
 Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
-Bankas izrakstā atmaksa var parādīties nevis kā jauns maksājums, bet kā atcelta rezervētā summa.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 
@@ -1606,7 +1604,7 @@ exports[`template snapshots (default text) > snapshot wa.auction_archive_send.ca
 Atcēlām Jūsu izsoļu arhīva pasūtījumu auto VIN WAUZZZF43PA018831. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
 
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
@@ -1625,7 +1623,7 @@ Pārbaudījām auto VIN WAUZZZF43PA018831 - diemžēl Eiropas izsoļu arhīvā p
 
 
 Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 
@@ -1674,7 +1672,7 @@ exports[`template snapshots (default text) > snapshot wa.dealer.cancelled 1`] = 
 
 Atcēlām Jūsu oficiālā dīlera datu pasūtījumu (VIN WVWZZZ1KZAW000123) un atmaksājām visu summu.
 
-Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
@@ -1693,7 +1691,7 @@ Pārbaudījām Jūsu auto (VIN WVWZZZ1KZAW000123). Diemžēl oficiālā dīlera 
 
 Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
-Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
@@ -1715,7 +1713,7 @@ exports[`template snapshots (default text) > snapshot wa.dealer_send.cancelled 1
 Atcēlām Jūsu oficiālā dīlera datu pasūtījumu auto VIN WVWZZZ1KZAW000123. Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
 
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
@@ -1734,7 +1732,7 @@ Pārbaudījām auto VIN WVWZZZ1KZAW000123 - diemžēl oficiālā dīlera dati š
 
 
 Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
-Atkarībā no bankas nauda kontā parasti parādās 5-10 darba dienu laikā.
+Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.
 
 
 

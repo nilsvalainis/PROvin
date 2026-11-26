@@ -94,12 +94,12 @@ export function parseDealerStripeRefundMessage(
   return { ok: true, message: { channel, subject: channel === "email" ? subject : "", text, lang } };
 }
 
-/** LV e-pasta fakti (summa uz karti, 5-10 darba dienas) - kā agrāk atmaksas e-pastā; citās valodās nav. */
+/** LV e-pasta fakti (summa uz karti, 1-7 dienas bankā) - kā agrāk atmaksas e-pastā; citās valodās nav. */
 export function dealerRefundEmailFacts(lang: string, amountCents: number): { value: string; label: string }[] {
   if (lang !== "lv" || !(amountCents > 0)) return [];
   return [
     { value: formatEurFromCents(amountCents), label: "atmaksāts uz karti" },
-    { value: "5-10", label: "darba dienas bankā" },
+    { value: "1-7", label: "dienas bankā" },
   ];
 }
 

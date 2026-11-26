@@ -1063,7 +1063,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
   });
   const facts = emailFactsRow([
     { value: amount, label: "atmaksāts uz karti" },
-    { value: "5-10", label: "darba dienas bankā" },
+    { value: "1-7", label: "dienas bankā" },
   ]);
   const question = emailSmall(
     `Ja rodas jautājumi, ${opts.cancelled ? "atbildiet uz šo e-pastu" : "rakstiet uz"} ${MAIL_LINK_HTML}.`,
@@ -1077,7 +1077,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
         emailParagraph(
           `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${esc(amount)} pilnā apmērā uz karti, ar kuru maksājāt.`,
           "margin:0 0 10px;",
-        ) + emailParagraph("Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.", "margin:0;"),
+        ) + emailParagraph("Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.", "margin:0;"),
         "20px 36px 0",
       ),
       emailRow(question, "18px 36px 0"),
@@ -1098,7 +1098,7 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
     ),
     facts,
     emailRow(
-      emailSmall("Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa."),
+      emailSmall("Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā."),
       "14px 36px 0",
     ),
     emailRow(
