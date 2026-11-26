@@ -48,6 +48,8 @@ RULES:
 }
 
 const TRANSLATE_MAX = 40;
+/** EN/RU/DE PDF: Gemini Flash izsaukumu griesti vienam PDF (40 rindas katrā). */
+const TRANSLATE_BATCHES_FOREIGN = 3;
 
 function parseItems(raw: string, expected: number): string[] | null {
   const start = raw.indexOf("{");
@@ -72,7 +74,22 @@ export async function translateAuctionArchiveTexts(
   lang: ClientReportLang = "lv",
 ): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const unique = [...new Set(texts.map((t) => t.trim()).filter(Boolean))].slice(0, TRANSLATE_MAX);
+  // LV - viens izsaukums kā līdz šim; EN/RU/DE - līdz 3 izsaukumiem (arī mūsu LV vērtības un aprīkojums).
+  const all = [...new Set(texts.map((t) => t.trim()).filter(Boolean))].slice(0, lang === "lv" ? TRANSLATE_MAX : TRANSLATE_MAX * TRANSLATE_BATCHES_FOREIGN);
+  const batches: string[][] = [];
+  for (let i = 0; i < all.length; i += TRANSLATE_MAX) batches.push(all.slice(i, i + TRANSLATE_MAX));
+  // Paralēli - PDF būves laiks nepieaug (Vercel budžets).
+  const parts = await Promise.all(batches.map((b) => translateAuctionArchiveBatch(b, generate, lang)));
+  for (const part of parts) for (const [k, v] of part) out.set(k, v);
+  return out;
+}
+
+async function translateAuctionArchiveBatch(
+  unique: readonly string[],
+  generate: ((args: { userPrompt: string; systemInstruction: string }) => Promise<string>) | undefined,
+  lang: ClientReportLang,
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
   if (unique.length === 0) return out;
   const systemInstruction = lang === "lv" ? TRANSLATE_SYSTEM : translateSystemFor(lang);
   const gen =
@@ -159,7 +176,7 @@ export async function buildAuctionArchivePdf(
   const photosMs = Date.now() - t0;
   // Klienta valoda (#1241 `resolveOrderClientLang`): PDF etiķetes un avota tekstu tulkojums tajā pašā valodā kā e-pasts.
   const lang: ClientReportLang = ctx.lang ?? "lv";
-  const translations = await translateAuctionArchiveTexts(auctionArchiveTextsToTranslate(records), undefined, lang);
+  const translations = await translateAuctionArchiveTexts(auctionArchiveTextsToTranslate(records, lang), undefined, lang);
   const html = buildAuctionArchivePdfHtml({
     summary,
     records,

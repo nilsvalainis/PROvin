@@ -136,6 +136,27 @@ describe("izvēles serviss", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it("cron: atgādinājums klienta valodā (piedāvājuma locale); B2B paraksts tikai «PROVIN»", async () => {
+    stored = doc({ locale: "de", sentTo: "kunde@example.test" });
+    order.mockResolvedValue({ amountTotal: 2499, vin: "WAUZZZF43PA018831", paymentAdjustment: null, paymentStatus: "paid", customerEmail: "kunde@example.test", partnerId: "p_1" });
+    await runAuctionArchiveReminders(NOW + 3 * 864e5 + 1, O);
+    const m = clientMail.mock.calls[0]![0] as { subject: string; html: string; text: string };
+    expect(m.subject).toMatch(/^Erinnerung: Auktionsarchiv oder Rückerstattung/);
+    expect(m.html).toContain('<html lang="de"');
+    expect(m.html).toContain(`https://www.provin.lv/de/izvele/${"T".repeat(43)}?v=archive`);
+    expect(m.text).toContain("Auswählen und bestätigen:");
+    expect(m.text).not.toMatch(/Labdien|Atgādinām|Nils Valainis|PROVIN\.LV/);
+    expect(m.text).toMatch(/\nPROVIN\n\nAuswählen/);
+  });
+
+  it("cron WhatsApp: teksts Nilam klienta valodā", async () => {
+    stored = doc({ channel: "whatsapp", locale: "en" });
+    await runAuctionArchiveReminders(NOW + 3 * 864e5 + 1, O);
+    const text = (mail.mock.calls[0]![0] as { text: string }).text;
+    expect(text).toContain("A reminder about the car with VIN WAUZZZF43PA018831");
+    expect(text).toContain(`https://www.provin.lv/en/izvele/${"T".repeat(43)}`);
+  });
+
   it("cron: klienta e-pasts neizdodas → Nilam «NEIZDEVĀS», atzīme clientRemindedAt netiek likta", async () => {
     clientMail.mockResolvedValueOnce(false);
     const r = await runAuctionArchiveReminders(NOW + 3 * 864e5 + 1, O);

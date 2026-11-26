@@ -33,6 +33,14 @@ import {
   escMultiline,
   formatEmailFileSize,
 } from "@/lib/email/email-layout";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
+import {
+  AUCTION_ARCHIVE_EMAIL_I18N,
+  auctionArchiveCountryInLang,
+  auctionArchiveForeignLang,
+  type AuctionArchiveEmailCopy,
+  type AuctionArchiveForeignLang,
+} from "@/lib/email/auction-archive-email-i18n";
 
 const TABLE = 'role="presentation" cellpadding="0" cellspacing="0" border="0"';
 
@@ -66,6 +74,29 @@ export function auctionArchiveEmailFacts(s: AuctionArchiveSummary): AuctionArchi
   };
 }
 
+/* ---------- Klienta valoda (Nils 26.11) ---------- */
+
+type Foreign = { l: AuctionArchiveForeignLang; c: AuctionArchiveEmailCopy };
+
+function foreign(lang: ClientReportLang | null | undefined): Foreign | null {
+  const l = auctionArchiveForeignLang(lang);
+  return l ? { l, c: AUCTION_ARCHIVE_EMAIL_I18N[l] } : null;
+}
+
+function foreignCountries(s: AuctionArchiveSummary, l: AuctionArchiveForeignLang): string {
+  return auctionArchiveCountries(s)
+    .map((x) => auctionArchiveCountryInLang(x, l))
+    .join(", ");
+}
+
+function foreignWhere(s: AuctionArchiveSummary, f: AuctionArchiveEmailFacts, l: AuctionArchiveForeignLang): string {
+  return [f.lastDate, foreignCountries(s, l)].filter(Boolean).join(", ");
+}
+
+function foreignSign(c: AuctionArchiveEmailCopy): string[] {
+  return [c.regards, "Nils Valainis", "PROVIN.LV"];
+}
+
 /* ---------- Piedāvājums ---------- */
 
 /** Vērtības teikums (Nils 23.11): bildēs redzams stāvoklis pirms ievešanas Latvijā. */
@@ -78,15 +109,41 @@ function archiveWhat(photos: number, showPrices: boolean): string {
   return photos > 0 ? `ar ${photos} oriģinālajām izsoles bildēm${showPrices ? ", " : " un "}${tail}` : `ar ${tail}`;
 }
 
-export function auctionArchiveOfferSubject(s: AuctionArchiveSummary): string {
+export function auctionArchiveOfferSubject(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
   const car = [s.title, s.vin].filter(Boolean).join(" · ");
+  const fl = foreign(lang);
+  if (fl) return fl.c.offerSubject(car).slice(0, 180);
   return `Dīlera datu nav - piedāvājam izsoļu arhīvu ar bildēm${car ? ` (${car})` : ""}`.slice(0, 180);
 }
 
 /** Rediģējamais teksts (e-pasts): makets 1. solis. */
-export function auctionArchiveOfferText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
+export function auctionArchiveOfferText(
+  s: AuctionArchiveSummary,
+  paidCents: number | null,
+  showPrices = false,
+  lang?: ClientReportLang | null,
+): string {
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(paidCents);
+  const fl = foreign(lang);
+  if (fl) {
+    const { l, c } = fl;
+    return [
+      c.hello,
+      "",
+      c.offerChecked(s.vin),
+      "",
+      `${c.offerFound(c.auctions(f.auctions || 1), foreignWhere(s, f, l), c.what(f.photos, showPrices))}${f.photos > 0 ? ` ${c.value}` : ""}`,
+      "",
+      c.choose,
+      c.option1,
+      c.option2(refund || c.refundFallback),
+      "",
+      c.untilChoose,
+      "",
+      ...foreignSign(c),
+    ].join("\n");
+  }
   const where = [f.lastDate, f.countries].filter(Boolean).join(", ");
   const what = archiveWhat(f.photos, showPrices);
   return [
@@ -111,9 +168,30 @@ export function auctionArchiveOfferText(s: AuctionArchiveSummary, paidCents: num
 }
 
 /** WhatsApp teksts: makets 2. solis (atbilde «1» vai «2», Nils atzīmē adminā). */
-export function auctionArchiveOfferWhatsappText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
+export function auctionArchiveOfferWhatsappText(
+  s: AuctionArchiveSummary,
+  paidCents: number | null,
+  showPrices = false,
+  lang?: ClientReportLang | null,
+): string {
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(paidCents);
+  const fl = foreign(lang);
+  if (fl) {
+    const { l, c } = fl;
+    const countries = foreignCountries(s, l);
+    const meta = [f.years ? c.waYears(f.years) : "", countries ? `(${countries})` : ""].filter(Boolean).join(" ");
+    const parts = [c.auctions(f.auctions || 1) + (meta ? ` ${meta}` : ""), f.photos > 0 ? c.waPhotos(f.photos) : "", c.waTail(showPrices)].filter(Boolean);
+    return [
+      c.waOffer(c.waCar(s.title, s.vin), parts.join(", ")),
+      ...(f.photos > 0 ? [c.value] : []),
+      c.waChoose,
+      c.waOption1,
+      c.waOption2(refund || c.refundFallback),
+      c.waReply,
+      "Nils, PROVIN.LV",
+    ].join("\n");
+  }
   const car = s.title ? `Jūsu ${s.title} (VIN ${s.vin})` : `auto VIN ${s.vin}`;
   const meta = [f.years ? `${f.years}. gadā` : "", f.countries ? `(${f.countries})` : ""].filter(Boolean).join(" ");
   const parts = [
@@ -148,17 +226,27 @@ function previewRow(previews: readonly { url: string; caption: string }[]): stri
   return `<tr><td class="m-pad" style="padding:16px 36px 0;"><table ${TABLE} width="100%"><tr>${cells}</tr></table></td></tr>`;
 }
 
-function contentsRow(s: AuctionArchiveSummary, showPrices: boolean): string {
+function contentsRow(s: AuctionArchiveSummary, showPrices: boolean, lang?: ClientReportLang | null): string {
   const f = auctionArchiveEmailFacts(s);
-  const items = [
-    { t: "Visas izsoles bildes", sub: f.photos > 0 ? `${f.photos}, ar datumiem - stāvoklis pirms ievešanas Latvijā` : "ar datumiem" },
-    ...(showPrices
-      ? [{ t: "Izsoles cenas", sub: f.pricedAuctions > 0 ? lvCount(f.pricedAuctions, "izsolē", "izsolēs") : "ja izsole tās norāda" }]
-      : []),
-    { t: "Nobraukums izsoles dienā", sub: "ar odometra bildi, ja tāda ir" },
-    { t: "Bojājumi pa zonām", sub: "uz virsbūves shēmas" },
-    { t: "Izsoles apraksts", sub: "oriģināls + tulkojums" },
-  ];
+  const fl = foreign(lang);
+  const k = fl?.c.html.contents;
+  const items = k
+    ? [
+        { t: k.photos, sub: f.photos > 0 ? k.photosSub(f.photos) : k.photosSubNone },
+        ...(showPrices ? [{ t: k.prices, sub: f.pricedAuctions > 0 ? k.pricesSub(f.pricedAuctions) : k.pricesSubNone }] : []),
+        { t: k.km, sub: k.kmSub },
+        { t: k.damage, sub: k.damageSub },
+        { t: k.description, sub: k.descriptionSub },
+      ]
+    : [
+        { t: "Visas izsoles bildes", sub: f.photos > 0 ? `${f.photos}, ar datumiem - stāvoklis pirms ievešanas Latvijā` : "ar datumiem" },
+        ...(showPrices
+          ? [{ t: "Izsoles cenas", sub: f.pricedAuctions > 0 ? lvCount(f.pricedAuctions, "izsolē", "izsolēs") : "ja izsole tās norāda" }]
+          : []),
+        { t: "Nobraukums izsoles dienā", sub: "ar odometra bildi, ja tāda ir" },
+        { t: "Bojājumi pa zonām", sub: "uz virsbūves shēmas" },
+        { t: "Izsoles apraksts", sub: "oriģināls + tulkojums" },
+      ];
   const rows = items
     .map(
       (it) =>
@@ -181,6 +269,8 @@ export type AuctionArchiveOfferEmailInput = {
   /** 3 dienu atgādinājums klientam (tās pašas 2 pogas). */
   reminder?: boolean;
   date?: Date;
+  /** Klienta valoda (piedāvājuma `locale`); noklusēti LV. */
+  lang?: ClientReportLang | null;
 };
 
 /** Saite ar izvēli iepriekš atzīmētu (lapā vēl jāspiež «Apstiprināt»). */
@@ -192,6 +282,10 @@ export function auctionArchiveOfferEmailHtml(o: AuctionArchiveOfferEmailInput): 
   const s = o.summary;
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(o.paidCents);
+  const fl = foreign(o.lang);
+  const h = fl?.c.html;
+  const auctionsLabel = fl ? fl.c.auctions(f.auctions || 1) : lvCount(f.auctions || 1, "izsole", "izsoles");
+  const countries = fl ? foreignCountries(s, fl.l) : f.countries;
   const paragraphs = o.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
@@ -201,26 +295,35 @@ export function auctionArchiveOfferEmailHtml(o: AuctionArchiveOfferEmailInput): 
     .join("");
   const facts = emailFactsRow(
     [
-      { value: lvCount(f.auctions || 1, "izsole", "izsoles"), label: f.years || "izsoļu arhīvs" },
-      f.photos > 0 ? { value: String(f.photos), label: "izsoles bildes" } : null,
-      f.countries || f.platforms ? { value: f.countries || f.platforms, label: f.countries ? f.platforms : "izsoles" } : null,
+      { value: auctionsLabel, label: f.years || (h ? h.archive : "izsoļu arhīvs") },
+      f.photos > 0 ? { value: String(f.photos), label: h ? h.photosLabel : "izsoles bildes" } : null,
+      countries || f.platforms ? { value: countries || f.platforms, label: countries ? f.platforms : h ? h.auctionsLabel : "izsoles" } : null,
     ].filter((x): x is { value: string; label: string } => x != null),
   );
-  const buttons = `<tr><td class="m-pad" style="padding:22px 36px 0;">${emailParagraph("<strong>Izvēlieties, kā turpināt:</strong>", "margin:0 0 12px;")}${emailButton(
-    auctionArchiveChoiceHref(o.choiceUrl, "archive"),
-    "Jā, nomainīt uz izsoļu arhīvu",
-  )}${emailSpacer(10)}${emailButton(
+  const refundLabel = refund ? (h ? h.btnRefund(refund) : `Atgriezt ${refund}`) : h ? h.btnRefundFallback : "Atgriezt naudu";
+  const buttons = `<tr><td class="m-pad" style="padding:22px 36px 0;">${emailParagraph(
+    `<strong>${escHtml(h ? h.chooseHow : "Izvēlieties, kā turpināt:")}</strong>`,
+    "margin:0 0 12px;",
+  )}${emailButton(auctionArchiveChoiceHref(o.choiceUrl, "archive"), escHtml(h ? h.btnArchive : "Jā, nomainīt uz izsoļu arhīvu"))}${emailSpacer(10)}${emailButton(
     auctionArchiveChoiceHref(o.choiceUrl, "refund"),
-    escHtml(refund ? `Atgriezt ${refund}` : "Atgriezt naudu").replace(/ €/g, "&nbsp;€"),
+    escHtml(refundLabel).replace(/ €/g, "&nbsp;€"),
     "ghost",
   )}${emailSpacer(12)}${emailSmall(
-    "Maiņa bez piemaksas, PDF saņemsiet 24 stundu laikā. Vai vienkārši atbildiet uz šo e-pastu ar «1» (arhīvs) vai «2» (atmaksa). Kamēr neizvēlaties, neko nesūtām.",
+    h
+      ? escHtml(h.small)
+      : "Maiņa bez piemaksas, PDF saņemsiet 24 stundu laikā. Vai vienkārši atbildiet uz šo e-pastu ar «1» (arhīvs) vai «2» (atmaksa). Kamēr neizvēlaties, neko nesūtām.",
   )}</td></tr>`;
   const rows = [
     emailStatusCardRow({
       icon: "gavel",
-      eyebrow: o.reminder ? "Atgādinājums" : "Oficiālā dīlera dati",
-      title: o.reminder ? "Gaidām Jūsu izvēli - izsoļu arhīvs vai atmaksa" : "Dīlera datu nav - bet atradām izsoļu vēsturi ar bildēm",
+      eyebrow: o.reminder ? (h ? h.eyebrowReminder : "Atgādinājums") : h ? h.eyebrowOffer : "Oficiālā dīlera dati",
+      title: o.reminder
+        ? h
+          ? h.titleReminder
+          : "Gaidām Jūsu izvēli - izsoļu arhīvs vai atmaksa"
+        : h
+          ? h.titleOffer
+          : "Dīlera datu nav - bet atradām izsoļu vēsturi ar bildēm",
       car: s.title || null,
       vin: s.vin || null,
       date: formatEmailDate(o.date ?? new Date()),
@@ -228,27 +331,56 @@ export function auctionArchiveOfferEmailHtml(o: AuctionArchiveOfferEmailInput): 
     paragraphs ? emailRow(paragraphs, "22px 36px 0") : "",
     facts,
     previewRow(o.previews),
-    contentsRow(s, o.showPrices === true),
+    contentsRow(s, o.showPrices === true, o.lang),
     buttons,
   ].join("\n");
-  return emailDocument({ rows, lang: "lv", preheader: `${lvCount(f.auctions || 1, "izsole", "izsoles")}, ${f.photos} bildes - izvēlieties arhīvu vai atmaksu` });
+  return emailDocument({
+    rows,
+    lang: fl ? fl.l : "lv",
+    preheader: h ? h.preheaderOffer(auctionsLabel, f.photos) : `${auctionsLabel}, ${f.photos} bildes - izvēlieties arhīvu vai atmaksu`,
+  });
 }
 
 /** Teksta daļa (multipart): admina teksts + izvēles saite. */
-export function auctionArchiveOfferPlainText(text: string, choiceUrl: string): string {
-  return `${text.trim()}\n\nIzvēlēties un apstiprināt: ${choiceUrl}`;
+export function auctionArchiveOfferPlainText(text: string, choiceUrl: string, lang?: ClientReportLang | null): string {
+  const fl = foreign(lang);
+  return `${text.trim()}\n\n${fl ? fl.c.plainChoose : "Izvēlēties un apstiprināt:"} ${choiceUrl}`;
 }
 
 /* ---------- Atgādinājums klientam (3 dienas bez izvēles, vienreiz) ---------- */
 
-export function auctionArchiveReminderSubject(s: AuctionArchiveSummary): string {
+export function auctionArchiveReminderSubject(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
   const car = [s.title, s.vin].filter(Boolean).join(" · ");
+  const fl = foreign(lang);
+  if (fl) return fl.c.reminderSubject(car).slice(0, 180);
   return `Atgādinājums: izsoļu arhīvs vai atmaksa${car ? ` (${car})` : ""}`.slice(0, 180);
 }
 
-export function auctionArchiveReminderText(s: AuctionArchiveSummary, paidCents: number | null, showPrices = false): string {
+export function auctionArchiveReminderText(
+  s: AuctionArchiveSummary,
+  paidCents: number | null,
+  showPrices = false,
+  lang?: ClientReportLang | null,
+): string {
   const f = auctionArchiveEmailFacts(s);
   const refund = formatEurCents(paidCents);
+  const fl = foreign(lang);
+  if (fl) {
+    const { l, c } = fl;
+    return [
+      c.hello,
+      "",
+      `${c.reminderLead(s.vin, c.auctions(f.auctions || 1), foreignWhere(s, f, l), c.what(f.photos, showPrices))}${f.photos > 0 ? ` ${c.value}` : ""}`,
+      "",
+      c.chooseReminder,
+      c.option1,
+      c.option2(refund || c.refundFallback),
+      "",
+      c.untilChoose,
+      "",
+      ...foreignSign(c),
+    ].join("\n");
+  }
   const where = [f.lastDate, f.countries].filter(Boolean).join(", ");
   return [
     "Labdien!",
@@ -270,8 +402,17 @@ export function auctionArchiveReminderText(s: AuctionArchiveSummary, paidCents: 
 }
 
 /** WhatsApp atgādinājums - Nilam kopēšanai (pats nosūta). */
-export function auctionArchiveReminderWhatsappText(s: AuctionArchiveSummary, paidCents: number | null, choiceUrl: string): string {
+export function auctionArchiveReminderWhatsappText(
+  s: AuctionArchiveSummary,
+  paidCents: number | null,
+  choiceUrl: string,
+  lang?: ClientReportLang | null,
+): string {
   const refund = formatEurCents(paidCents);
+  const fl = foreign(lang);
+  if (fl) {
+    return [fl.c.waReminder(s.vin, refund || fl.c.refundFallback), fl.c.waReminderChoose, choiceUrl, "Nils, PROVIN.LV"].join("\n");
+  }
   return [
     `Labdien! Atgādinu par auto VIN ${s.vin} - izsoļu arhīvs ar bildēm (bez piemaksas) vai atmaksa ${refund || "samaksātās summas"}?`,
     "Atbildiet ar 1 (arhīvs) vai 2 (atmaksa), vai izvēlieties šeit:",
@@ -282,13 +423,21 @@ export function auctionArchiveReminderWhatsappText(s: AuctionArchiveSummary, pai
 
 /* ---------- Gatavs (PDF pēc klienta «Jā») ---------- */
 
-export function auctionArchiveReadySubject(s: AuctionArchiveSummary): string {
+export function auctionArchiveReadySubject(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
   const car = [s.title, s.vin].filter(Boolean).join(" · ");
+  const fl = foreign(lang);
+  if (fl) return fl.c.readySubject(car).slice(0, 180);
   return `Izsoļu arhīvs${car ? ` - ${car}` : ""}`.slice(0, 180);
 }
 
-export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = false): string {
+export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = false, lang?: ClientReportLang | null): string {
   const f = auctionArchiveEmailFacts(s);
+  const fl = foreign(lang);
+  if (fl) {
+    const { c } = fl;
+    const what = [c.auctions(f.auctions || 1), f.photos > 0 ? c.photosCount(f.photos) : ""].filter(Boolean).join(", ");
+    return [c.hello, "", c.readyLead(s.vin, what, showPrices), "", c.noSurcharge, "", ...foreignSign(c)].join("\n");
+  }
   const what = [lvCount(f.auctions || 1, "izsole", "izsoles"), f.photos > 0 ? lvCount(f.photos, "bilde", "bildes") : ""].filter(Boolean).join(", ");
   return [
     "Labdien!",
@@ -303,7 +452,9 @@ export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = f
   ].join("\n");
 }
 
-export function auctionArchiveReadyWhatsappText(s: AuctionArchiveSummary): string {
+export function auctionArchiveReadyWhatsappText(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
+  const fl = foreign(lang);
+  if (fl) return `${fl.c.waReady(s.vin)}\nNils, PROVIN.LV`;
   return `Labdien! Paldies par izvēli - nosūtu izsoļu arhīvu auto VIN ${s.vin} (PDF). Piemaksa nav jāveic.\nNils, PROVIN.LV`;
 }
 
@@ -312,7 +463,9 @@ export function auctionArchiveReadyEmailHtml(o: {
   text: string;
   attachment: { filename: string; bytes: number };
   date?: Date;
+  lang?: ClientReportLang | null;
 }): string {
+  const h = foreign(o.lang)?.c.html;
   const paragraphs = o.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
@@ -323,8 +476,8 @@ export function auctionArchiveReadyEmailHtml(o: {
   const rows = [
     emailStatusCardRow({
       icon: "check",
-      eyebrow: "Izsoļu arhīvs",
-      title: "Izsoļu arhīvs gatavs",
+      eyebrow: h ? h.readyEyebrow : "Izsoļu arhīvs",
+      title: h ? h.readyTitle : "Izsoļu arhīvs gatavs",
       car: o.summary.title || null,
       vin: o.summary.vin || null,
       date: formatEmailDate(o.date ?? new Date()),
@@ -332,5 +485,5 @@ export function auctionArchiveReadyEmailHtml(o: {
     paragraphs ? emailRow(paragraphs, "22px 36px 0") : "",
     emailAttachmentsRow([{ name: o.attachment.filename, meta: ["PDF", formatEmailFileSize(o.attachment.bytes)].filter(Boolean).join(" · ") }]),
   ].join("\n");
-  return emailDocument({ rows, lang: "lv", preheader: "Izsoļu arhīvs pielikumā" });
+  return emailDocument({ rows, lang: auctionArchiveForeignLang(o.lang) ?? "lv", preheader: h ? h.readyPreheader : "Izsoļu arhīvs pielikumā" });
 }

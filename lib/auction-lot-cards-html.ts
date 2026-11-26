@@ -223,11 +223,13 @@ export function auctionArchiveDescriptions(r: ThecarapiAdminRecord): string[] {
   return auctionArchiveDescriptionItems(r).map((d) => d.text);
 }
 
-function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<string, string>, lang: ClientReportLang = "lv"): string {
-  if (texts.length === 0) return "";
-  const items = texts
-    .map((t) => {
+function descriptionBlock(list: readonly AuctionArchiveDescription[], translations: ReadonlyMap<string, string>, lang: ClientReportLang = "lv"): string {
+  if (list.length === 0) return "";
+  const items = list
+    .map(({ text: t, fromKey }) => {
       const lv = translations.get(t)?.trim() ?? "";
+      // i18n atslēgas teksts ir mūsu LV tulkojums (ne avota oriģināls) - EN/RU/DE rāda tikai tulkojumu.
+      if (fromKey && lv && lang !== "lv") return `<div class="aa-desc"><p class="aa-desc__lv">${esc(lv)}</p></div>`;
       const same = !lv || lv.toLowerCase() === t.toLowerCase();
       return `<div class="aa-desc">${
         same ? `<p class="aa-desc__lv">${esc(t)}</p>` : `<p class="aa-desc__lv">${esc(lv)}</p><p class="aa-desc__orig"><span>${esc(auctionCardText("(oriģināls)", lang))}</span> ${esc(t)}</p>`
@@ -395,9 +397,14 @@ type Lot = {
 
 
 /** Faktu rindas un valsts atskaites valodā (LV - nemainīti). */
-function translateLotFacts(f: ArchiveLotFacts, lang: ClientReportLang): ArchiveLotFacts {
+function translateLotFacts(f: ArchiveLotFacts, lang: ClientReportLang, translations?: ReadonlyMap<string, string>): ArchiveLotFacts {
   if (lang === "lv") return f;
-  return { ...f, sale: translateAuctionKvRows(f.sale, lang), condition: translateAuctionKvRows(f.condition, lang), prices: translateAuctionKvRows(f.prices, lang) };
+  return {
+    ...f,
+    sale: translateAuctionKvRows(f.sale, lang, translations),
+    condition: translateAuctionKvRows(f.condition, lang, translations),
+    prices: translateAuctionKvRows(f.prices, lang, translations),
+  };
 }
 
 export function auctionLotRecordKey(r: ThecarapiAdminRecord): string {
@@ -457,7 +464,7 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
       platform: a?.platform || r.venue || r.site || T("Izsole"),
       date: a?.date || r.date || "",
       km: a?.km ?? null,
-      facts: translateLotFacts(auctionArchiveLotFacts(r, { showPrices }), lang),
+      facts: translateLotFacts(auctionArchiveLotFacts(r, { showPrices }), lang, translations),
       damages,
       model,
       photos: input.photos.filter((p) => p.auctionKey === key && input.dataUrls.has(p.id)),
@@ -504,7 +511,7 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
     : "";
 
   /* --- Transportlīdzeklis --- */
-  const vehicle = records.length ? card(T("Transportlīdzekļa dati"), kvGrid(translateAuctionKvRows(auctionArchiveVehicleRows(records), lang)), { icon: "car" }) : "";
+  const vehicle = records.length ? card(T("Transportlīdzekļa dati"), kvGrid(translateAuctionKvRows(auctionArchiveVehicleRows(records), lang, translations)), { icon: "car" }) : "";
 
   /* --- Katra izsole --- */
   const lotHtml = lots.map((l) => {
@@ -520,7 +527,7 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
     const dmg = auctionArchiveDamageBlockHtml(l.damages, marks.filter((m) => m.auctionKey === l.key), lang);
     const paint = l.model ? auctionLotPaintBlockHtml(l.model, lang) : "";
     const inspection = l.model ? auctionLotInspectionBlocksHtml(l.model, lang) : "";
-    const desc = descriptionBlock(auctionArchiveDescriptions(l.record), translations, lang);
+    const desc = descriptionBlock(auctionArchiveDescriptionItems(l.record), translations, lang);
     return card(auctionCardPlatformTitle(l.platform, lang), `${cols}${dmg}${paint}${inspection}${desc}`, { num: l.n, badge });
   });
 
@@ -531,7 +538,12 @@ export function buildAuctionLotsHtml(input: AuctionLotsHtmlInput): AuctionLotsHt
   const manualGallery = galleryHtml(`${T("Bildes")} · ${T("citi izsoļu avoti")}`, "", manualPhotos, input.dataUrls, undefined, lang);
 
   /* --- Aprīkojums --- */
-  const eqGroups = auctionArchiveEquipment(records, translations).groups;
+  const eqGroupsLv = auctionArchiveEquipment(records, translations).groups;
+  // EN/RU/DE: grupas - vārdnīca; vienības, kas ir LV (vārdnīca / i18n) - AI tulkojums no `translations`.
+  const eqGroups =
+    lang === "lv"
+      ? eqGroupsLv
+      : eqGroupsLv.map((g) => ({ group: T(g.group), items: g.items.map((x) => translations.get(x)?.trim() || x) }));
   const equipment = eqGroups.length
     ? `<div class="aa-tail">${card(
         T("Aprīkojums"),
