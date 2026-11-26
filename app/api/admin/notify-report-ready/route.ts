@@ -36,6 +36,8 @@ import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { reviewCarLabel } from "@/lib/review-ask";
+import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
 import { getB2bPartnerByEmail } from "@/lib/b2b-partner-store";
 import {
   evaluateReportRecipient,
@@ -121,7 +123,6 @@ export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
   let sessionId = "";
   let bodyCustomerEmail = "";
-  let includeGoogleReview = false;
   let reportLang: ClientReportLang = "lv";
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
@@ -142,9 +143,6 @@ export async function POST(req: Request) {
       multipartForm = await req.formData();
       sessionId = String(multipartForm.get("sessionId") ?? "").trim();
       bodyCustomerEmail = String(multipartForm.get("customerEmail") ?? "").trim();
-      includeGoogleReview =
-        String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
-        String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
       reportLang = parseReportLang(multipartForm.get("lang"));
       confirmRecipientOverride = String(multipartForm.get("confirmRecipientOverride") ?? "").trim() === "true";
     } else {
@@ -160,7 +158,6 @@ export async function POST(req: Request) {
       const b = body as Record<string, unknown>;
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
-      includeGoogleReview = b.includeGoogleReview === true || b.includeGoogleReview === "1";
       reportLang = parseReportLang(b.lang);
       jsonAttachmentsBase64 = b.attachmentsBase64;
       serverPdfPathname = typeof b.serverPdfPathname === "string" ? b.serverPdfPathname.trim() : "";
@@ -375,6 +372,11 @@ export async function POST(req: Request) {
     jsonBlobAttachments?.map((x) => x.url.trim()).filter(Boolean) ?? [];
 
   const previousSends = serverPdf ? await readClientReportSends(sessionId) : [];
+  const notifyB2bClient = isB2bInternationalClientReport({
+    notes: order.notes,
+    partnerId: order.partnerId,
+    partnerCompanyName: order.companyName,
+  });
 
   const reportProductKind = resolveReportReadyProductKind({
     checkoutLine: order.checkoutLine,
@@ -396,12 +398,9 @@ export async function POST(req: Request) {
       attachments: manualAttachments,
       productKind: reportProductKind,
       emailContext,
-      includeGoogleReview,
-      b2bClient: isB2bInternationalClientReport({
-        notes: order.notes,
-        partnerId: order.partnerId,
-        partnerCompanyName: order.companyName,
-      }),
+      // 26.11 (Nils): atsauksmes lūgums atskaites e-pastā vairs nav - atsevišķs e-pasts nākamajā darba dienā.
+      includeGoogleReview: false,
+      b2bClient: notifyB2bClient,
       lang: reportLang,
       corrected: previousSends.length > 0,
       custom: customMail,
@@ -505,6 +504,20 @@ export async function POST(req: Request) {
     reportLang,
     ...(recipient.recipientOverride ? { recipientOverride: true } : {}),
   });
+
+  // Google atsauksmes lūgums: rindā pēc pirmās atskaites (B2B, demo un iekšējie - nē). Kļūda sūtījumu neaptur.
+  if (!notifyB2bClient && !order.isDemo && order.auditPurpose !== "internal") {
+    const csddForCar = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
+    const carForReview = orderCarFromCsdd(csddForCar, "", notifyVin);
+    await enqueueReviewAskAfterReport({
+      sessionId,
+      reportSentAt: new Date().toISOString(),
+      email: to,
+      lang: reportLang,
+      car: reviewCarLabel(carForReview.make, carForReview.model),
+      vin: notifyVin,
+    });
+  }
 
   const dealerMarks = dealerSendInput
     ? await recordDealerSendOnServer(

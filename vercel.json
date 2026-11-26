@@ -173,6 +173,10 @@
       "schedule": "0 3,4 * * *"
     },
     {
+      "path": "/api/cron/review-ask",
+      "schedule": "17 7-15 * * 1-5"
+    },
+    {
       "path": "/api/cron/unpaid-orders-remind",
       "schedule": "0 7 * * *"
     },

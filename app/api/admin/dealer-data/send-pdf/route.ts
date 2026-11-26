@@ -16,6 +16,10 @@ import { trySendDealerDataOperatorEmail, type ReportReadyMailAttachment } from "
 import { loadReportEmailExtras } from "@/lib/email/dealer-email-context-server";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { reviewCarLabel } from "@/lib/review-ask";
+import { orderCarFromCsdd } from "@/lib/ltab-auto";
+import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
 import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
@@ -140,5 +144,17 @@ export async function POST(req: Request) {
       "ready",
     ),
   );
+  // Google atsauksmes lūgums nākamajā darba dienā (B2B - nē). Kļūda sūtījumu neaptur.
+  if (!b2bClient && !order.isDemo) {
+    const car = orderCarFromCsdd(mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd, "", vin);
+    await enqueueReviewAskAfterReport({
+      sessionId,
+      reportSentAt: new Date().toISOString(),
+      email: to,
+      lang,
+      car: reviewCarLabel(car.make, car.model),
+      vin,
+    });
+  }
   return NextResponse.json({ ok: true, emailSent: true, to, filename, ...(marks ? { marks } : {}) });
 }

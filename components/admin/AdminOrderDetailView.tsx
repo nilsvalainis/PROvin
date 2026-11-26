@@ -45,6 +45,7 @@ import {
   serializeOrderEditsForLocalStorage,
 } from "@/lib/admin-order-edits-persist";
 import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResultColorControl";
+import { AdminReviewAskPanel } from "@/components/admin/AdminReviewAskPanel";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
@@ -829,6 +830,10 @@ export function AdminOrderDetailView({
           ) : null}
         </p>
       </header>
+
+      {!isPartnerVin && !order.isDemo ? (
+        <AdminReviewAskPanel sessionId={order.id} vin={order.vin} phone={mergedCustomerPhone} />
+      ) : null}
 
       {order.isManual && !isPartnerVin ? (
         <div className="max-md:order-last max-md:mt-2">
