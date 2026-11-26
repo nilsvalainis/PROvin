@@ -134,7 +134,7 @@ function makeQueue(opts: { night?: boolean; at?: string; run?: (job: { plate: st
     notify: async (body: Sent) => {
       sent.push(body);
     },
-    isNight: opts.at ? (d: Date) => isNightInRiga(d) : () => Boolean(opts.night),
+    isNight: opts.at ? () => isNightInRiga(new Date(opts.at!)) : () => Boolean(opts.night),
     ...(opts.at ? { now: () => new Date(opts.at!) } : {}),
     maxPerHour: opts.maxPerHour ?? 20,
     stateFile: opts.stateFile ?? "",
