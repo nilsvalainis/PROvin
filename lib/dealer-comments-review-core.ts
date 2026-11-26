@@ -7,6 +7,7 @@ import {
   normalizeFlashMaxReviewDashes,
   type FlashMaxReviewFinding,
 } from "@/lib/flash-max-final-review";
+import { splitIntoSentences } from "@/lib/lv-sentences";
 
 export type DealerReviewField = { id: string; label: string; text: string };
 
@@ -128,8 +129,14 @@ function overlapRatio(a: Set<string>, b: Set<string>): number {
   return hit / a.size;
 }
 
+/**
+ * Teikumi bez zaudējumiem: kopīgais LV dalītājs (datumi, decimāļi, kārtas skaitļi nedala).
+ * 26.11.2026 (TMBJW7NX0MY127517): agrākais `match(/[^.!?]+…/g)` izlaida visu teikuma sākumu
+ * līdz datuma pēdējam punktam - „Ātrumkārbas eļļa … 03.12.2025 …” kļuva par „2025 ar …”.
+ */
 function splitSentencesKeep(line: string): string[] {
-  return line.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g)?.map((x) => x.trim()).filter(Boolean) ?? [line];
+  const parts = splitIntoSentences(line).map((x) => x.trim()).filter(Boolean);
+  return parts.length > 0 ? parts : [line];
 }
 
 /** Atgriež „Komentāri” tekstu bez eļļas tēmas teikumiem un bez atkārtojumiem no eļļas lauka. */
