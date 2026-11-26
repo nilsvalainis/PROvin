@@ -57,6 +57,7 @@ import {
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
 import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
+import { AdminTraficomFiAutoPanel } from "@/components/admin/AdminTraficomFiAutoPanel";
 import { parseCarinfoPastedText } from "@/lib/vin-sources/carinfo-parse";
 import {
   looksLikeVinRegistryTimelinePaste,
@@ -393,6 +394,17 @@ export function AdminVinRegistrySourceBlock({
   const inner = (
     <div className="flex min-h-0 flex-col overflow-hidden p-2">
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {blockKey === "traficom_fi" && sessionId ? (
+          <AdminTraficomFiAutoPanel
+            sessionId={sessionId}
+            orderVin={vin}
+            value={block}
+            disabled={disabled || busy}
+            readOnly={readOnly}
+            onChange={onChange}
+            onRestoreRaw={applyTraficomFiPaste}
+          />
+        ) : null}
         {!readOnly &&
         (blockKey === "finnik" || blockKey === "traficom_fi") &&
         getSourceBlocks &&

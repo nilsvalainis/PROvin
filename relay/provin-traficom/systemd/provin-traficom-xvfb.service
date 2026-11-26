@@ -1,0 +1,14 @@
+[Unit]
+Description=PROVIN Traficom relay: Xvfb virtual display :93
+After=network.target
+
+[Service]
+Type=simple
+User=provin-traficom
+Group=provin-traficom
+ExecStart=/usr/bin/Xvfb :93 -screen 0 1366x900x24 -nolisten tcp -ac
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

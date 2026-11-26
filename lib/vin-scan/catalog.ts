@@ -399,10 +399,10 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
   },
   {
     id: "traficom",
-    label: "Traficom",
+    label: "Traficom (FI)",
     country: "FI",
     category: "registri",
-    hint: "Somijas reģistrs. Publiskā saite pēc VIN",
+    hint: "Somijas reģistrs pēc VIN (eParaksts, bezmaksas dati). Automātiski tikai ar FI pazīmēm",
     needs: ["vin"],
     openUrl: (vin, plates) => traficomVehicleInfoUrl(vin, plates?.fi ?? ""),
   },

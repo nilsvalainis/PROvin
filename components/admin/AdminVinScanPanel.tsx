@@ -22,6 +22,9 @@ import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
+import { useVinScanTraficom } from "@/components/admin/vin-scan-v4/useVinScanTraficom";
+import { traficomFiAutoSignal, traficomFiScanRowView } from "@/lib/traficom-fi-auto-logic";
+import { isTraficomFiAutoActive } from "@/lib/traficom-fi-auto-types";
 import { vinScanResultCards } from "@/lib/vin-scan/result-fields";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -424,12 +427,40 @@ export function AdminVinScanPanel({
       .catch(() => undefined);
   }, [scannedAt, historyOpen]);
 
+  // Traficom (FI) caur eParaksts: automātiski tikai ar Somijas pazīmēm skenēšanas rezultātā (tikai adminam - v4 Smart-ID).
+  const traficomSignal = useMemo(() => {
+    if (busy) return { start: false, reason: "" };
+    return traficomFiAutoSignal(Object.values(byId), plates);
+  }, [byId, plates, busy]);
+  const traficom = useVinScanTraficom({ vin: valid ? clean : "", enabled: layout === "v4" && Boolean(v4?.smartId), signal: traficomSignal });
+  const traficomView = useMemo(() => traficomFiScanRowView(traficom.status), [traficom.status]);
+
   const displayById = useMemo(() => {
     const list = applyFinlandLink(Object.values(byId), plates);
     const next: Record<string, ScanRow> = {};
     for (const row of list) next[row.id] = row;
+    if (traficomView) {
+      const item = VIN_SCAN_CATALOG.find((c) => c.id === "traficom");
+      const base: ScanRow = next.traficom ?? {
+        id: "traficom",
+        label: item?.label ?? "Traficom (FI)",
+        country: "FI",
+        status: "unknown",
+        summary: "",
+        detail: "",
+        openUrl: null,
+        mileage: [],
+      };
+      // «checking» (gaida eParaksts / meklē) ir tikai v4 skata statuss - tabulai «unknown».
+      next.traficom = {
+        ...base,
+        status: traficomView.status === "checking" ? "unknown" : traficomView.status,
+        summary: traficomView.summary,
+        detail: traficomView.detail,
+      };
+    }
     return next;
-  }, [byId, plates]);
+  }, [byId, plates, traficomView]);
 
   const sourceKey = sourceIds ? sourceIds.join(",") : "";
   const paidKey = paidSourceIds ? paidSourceIds.join(",") : "";
@@ -440,20 +471,21 @@ export function AdminVinScanPanel({
       return VIN_SCAN_CATALOG.filter(
         (item) =>
           !item.disabled &&
-          vinScanLinkOnlyRowVisible(item.id, displayById[item.id]?.status ?? "") &&
+          (vinScanLinkOnlyRowVisible(item.id, displayById[item.id]?.status ?? "") || (item.id === "traficom" && Boolean(traficomView))) &&
           (wanted.has(item.id) || ((item.id === "thecarapi_eu" || item.id === "joj_copart_iaai") && displayById[item.id])),
       );
     }
     // Saišu avoti (26.11) rindā tikai ar reāliem datiem (piem. pārlūka imports), citādi tikai saite augšā.
     const linkRows = VIN_SCAN_CATALOG.filter(
-      (item) => vinScanSourceLinkOnly(item.id) && displayById[item.id]?.status === "found",
+      (item) =>
+        vinScanSourceLinkOnly(item.id) && (displayById[item.id]?.status === "found" || (item.id === "traficom" && Boolean(traficomView))),
     );
     const extra = VIN_SCAN_CATALOG.find((item) => item.id === "thecarapi_eu");
     const base = !extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id) ? CATALOG : [...CATALOG, extra];
     return linkRows.length ? [...base, ...linkRows] : base;
     // sourceKey/paidKey aizstāj masīvu identitāti.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayById, sourceKey, paidKey]);
+  }, [displayById, sourceKey, paidKey, traficomView]);
 
   const rows = tiles.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows, clean) : null;
@@ -683,7 +715,12 @@ export function AdminVinScanPanel({
   if (layout === "v4") {
     const v4Rows: VinScanV4Row[] = tiles.map((item) => {
       const row = displayById[item.id];
-      const status = busy && (!row || row.status === "unknown") ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
+      const status =
+        item.id === "traficom" && traficomView?.status === "checking"
+          ? "checking"
+          : busy && (!row || row.status === "unknown")
+            ? "checking"
+            : (row?.status ?? (busy ? "checking" : "idle"));
       return {
         ...(row ?? {}),
         id: item.id,
@@ -731,6 +768,17 @@ export function AdminVinScanPanel({
             toolbar={
               <>
                 {v4?.toolbar}
+                {traficom.configured && v4?.smartId ? (
+                  <button
+                    type="button"
+                    disabled={traficom.busy || isTraficomFiAutoActive(traficom.status)}
+                    onClick={() => traficom.start(true)}
+                    className={VIN_SCAN_V4_BTN}
+                    title="Somijas Traficom pēc VIN (bezmaksas dati). Pieteikšanos apstiprini eParaksts mobile."
+                  >
+                    {traficom.status?.state === "found" || traficom.status?.state === "not_found" ? "Traficom (FI) vēlreiz" : "Traficom (FI)"}
+                  </button>
+                ) : null}
                 {canRetry ? (
                   <button type="button" onClick={() => void retryUnknown()} className={VIN_SCAN_V4_BTN}>
                     Atkārtot neizdevušos

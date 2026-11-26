@@ -370,6 +370,7 @@ const RESTRICTION_LV: Array<{ re: RegExp; lv: string; redFlag: boolean }> = [
   },
   { re: /temporary decommissioning|temporarily decommissioned/i, lv: "Auto īslaicīgi noņemts no reģistra.", redFlag: true },
   { re: /vehicle decommissioning\s*\(\s*export/i, lv: "Auto noņemts no reģistra (eksports).", redFlag: false },
+  { re: /vehicle decommissioning\s*\(\s*reregistration abroad\s*\)/i, lv: "Auto noņemts no reģistra (reģistrēts ārzemēs).", redFlag: true },
   { re: /vehicle decommissioning/i, lv: "Auto noņemts no reģistra.", redFlag: true },
   { re: /prohibition of driving or use/i, lv: "Transportlīdzeklim noteikts braukšanas / lietošanas aizliegums.", redFlag: true },
   { re: /^export\b/i, lv: "Eksports.", redFlag: false },

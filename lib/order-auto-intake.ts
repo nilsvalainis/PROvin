@@ -34,6 +34,9 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { fetchThecarapiCcVinMerge } from "@/lib/thecarapi-cc-vin";
 import { thecarapiAdminFlag, thecarapiConfigured } from "@/lib/vin-scan/thecarapi-flags";
 import { kfzAtPushLine, kfzAtViewState } from "@/lib/kfzgutachten/austria-signals";
+import { startTraficomFiLookup } from "@/lib/traficom-fi-auto";
+import { traficomFiAutoSignal } from "@/lib/traficom-fi-auto-logic";
+import type { FinlandLinkRow } from "@/lib/vin-scan/finland-link";
 import { orderVinScanKfzContext } from "@/lib/kfzgutachten/order-kfz-context";
 
 const LOG = "[order-auto-intake]";
@@ -151,6 +154,22 @@ async function importThecarapi(
   return saved ? (res.parse.auctions ?? []).length : 0;
 }
 
+async function startTraficomAfterScan(
+  sessionId: string,
+  vin: string,
+  indicators: readonly FinlandLinkRow[],
+  plates: { fi?: string } | null | undefined,
+): Promise<void> {
+  try {
+    const signal = traficomFiAutoSignal(indicators, plates ?? null);
+    if (!signal.start) return;
+    const out = await startTraficomFiLookup(sessionId, { trigger: "auto", vin, reason: signal.reason });
+    console.info(LOG, "traficom", { sessionId: sessionId.slice(-8), reason: signal.reason, state: out.status.state, started: out.started });
+  } catch (err) {
+    console.warn(LOG, "traficom start failed", err instanceof Error ? err.message : "unknown");
+  }
+}
+
 export async function runOrderAutoIntake(sessionId: string, input: OrderAutoIntakeInput): Promise<OrderAutoIntakeResult> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, reason: "invalid_session" };
   const before = await readOrderDraft(sessionId).catch(() => null);
@@ -202,6 +221,10 @@ async function runOrderAutoIntakeLocked(
         return applied.changed ? applied.blocks : null;
       })
     : false;
+
+  // 2b) Traficom (FI): tikai ar Somijas pazīmēm (FI numurs, FI izsole / sludinājums, citos avotos FI) - mazāk lieku
+  // eParaksts pieprasījumu. Relejs strādā fonā; rezultāts nonāk FIN blokā caur atzvanu. Kļūda neaptur automātiku.
+  await startTraficomAfterScan(sessionId, vin, indicators, scanInput.plates);
 
   // 3) Foto un TheCarApi - tikai ja laiks atļauj (bloki jau saglabāti).
   let photosImported = 0;
