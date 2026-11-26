@@ -16,7 +16,13 @@ import {
   type SafetyGateDetail,
 } from "@/lib/vin-scan/parse-eu-safety-gate";
 import { parseVpicMakeModelYear } from "@/lib/vin-scan/parse-extra";
-import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
+import {
+  buildVinScanIndicator,
+  type VinScanContext,
+  type VinScanIndicator,
+  type VinScanParse,
+  type VinScanVehicle,
+} from "@/lib/vin-scan/types";
 import { decodeVinLocal, preferVinModelYear } from "@/lib/vin-scan/vin-decode";
 
 const ID = "eu_safety_gate" as const;
@@ -57,6 +63,32 @@ async function alertDetail(id: number): Promise<SafetyGateDetail | null> {
   }
 }
 
+async function vehicleHintBestEffort(ctx: VinScanContext): Promise<VinScanVehicle | null> {
+  if (!ctx.vehicleHint) return null;
+  try {
+    return await ctx.vehicleHint();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Modelis Safety Gate atlasei: vispirms tā paša skenējuma reģistri (CSDD, tjekbil, car.info...),
+ * vPIC tikai, ja neviens cits modeli nenosauca. Abos gadījumos tikai tad, ja marka sakrīt ar WMI.
+ */
+export function safetyGateModelFor(
+  make: string,
+  hinted: VinScanVehicle | null,
+  vpic: { make: string; model: string; year: string } | null,
+): { model: string; year: string; from: "hint" | "vpic" | "" } {
+  const brand = safetyGateBrandKey(make);
+  if (hinted?.model && (!hinted.make || safetyGateBrandKey(hinted.make) === brand)) {
+    return { model: hinted.model, year: hinted.year || "", from: "hint" };
+  }
+  if (vpic?.model && safetyGateBrandKey(vpic.make) === brand) return { model: vpic.model, year: vpic.year, from: "vpic" };
+  return { model: "", year: "", from: "" };
+}
+
 /**
  * ES Safety Gate brīdinājumi pēc markas (un modeļa/gada, ja zināmi). Skenē visiem VIN, arī ASV:
  * tie ir ES tirgus dati par marku/modeli, nevis par konkrēto VIN.
@@ -70,7 +102,7 @@ export async function probeEuSafetyGate(ctx: VinScanContext): Promise<VinScanInd
   try {
     const nowYear = new Date().getFullYear();
     // Lapas prasām paralēli: viena liela lapa markām ar daudz brīdinājumiem pārsniedz noildzi.
-    const [pages, vpic] = await Promise.all([
+    const [pages, vpic, hinted] = await Promise.all([
       Promise.allSettled(
         Array.from({ length: SAFETY_GATE_CHUNKS }, (_, page) =>
           scanFetch(SAFETY_GATE_SEARCH_URL, {
@@ -82,6 +114,7 @@ export async function probeEuSafetyGate(ctx: VinScanContext): Promise<VinScanInd
         ),
       ),
       vpicPromise,
+      vehicleHintBestEffort(ctx),
     ]);
     const first = pages[0];
     if (!first || first.status === "rejected") throw first?.reason ?? new Error("no_page");
@@ -89,10 +122,8 @@ export async function probeEuSafetyGate(ctx: VinScanContext): Promise<VinScanInd
       pages.map((page) => (page.status === "fulfilled" ? parseSafetyGateSearch(page.value.status, page.value.text) : null)),
     );
     if (!search.ok) return done(ctx, { status: "unknown", summary: search.summary });
-    // vPIC modeli ņemam tikai tad, ja tas runā par to pašu marku, ko WMI.
-    const sameMake = vpic && safetyGateBrandKey(vpic.make) === safetyGateBrandKey(make);
-    const model = sameMake ? vpic.model : "";
-    const year = preferVinModelYear(local.year, sameMake ? vpic.year : "");
+    const { model, year: modelYear } = safetyGateModelFor(make, hinted, vpic);
+    const year = preferVinModelYear(local.year, modelYear);
     const top = selectSafetyGateAlerts(search.alerts, { make, model }).candidates.slice(0, SAFETY_GATE_MAX_ALERTS);
     const details = new Map(await Promise.all(top.map(async (alert) => [alert.id, await alertDetail(alert.id)] as const)));
     return done(ctx, buildSafetyGateResult({ make, model, year, search, details, nowYear }));

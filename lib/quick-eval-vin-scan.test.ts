@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { atraFreeGroups, atraFreeSourceIds } from "@/lib/atra-parbaude";
-import { defaultVinScanSourceIds, VIN_SCAN_SOURCE_IDS, vinScanSourceDisabled } from "@/lib/vin-scan/catalog";
+import { defaultVinScanSourceIds, VIN_SCAN_SOURCE_IDS, vinScanSourceDisabled, vinScanSourceLinkOnly } from "@/lib/vin-scan/catalog";
 import {
   mergeQuickEvalVinScan,
   quickEvalNordicSearchLinks,
@@ -26,6 +26,7 @@ function allowedExclusion(id: string, thecarapiOn: boolean): string | null {
   if (id === "joj_copart_iaai") return "maksas (~0,50 $), tikai ar ķeksi «Ātrajā pārbaudē»";
   if (id === "thecarapi_eu" && !thecarapiOn) return "TheCarApi karogs izslēgts";
   if (vinScanSourceDisabled(id)) return "avots izslēgts katalogā";
+  if (vinScanSourceLinkOnly(id)) return "26.11 audits: 0 trāpījumu / CapSolver bez rezultāta - tikai saite";
   return null;
 }
 

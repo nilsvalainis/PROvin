@@ -1,6 +1,6 @@
 import "server-only";
 
-import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_CATALOG, isVinScanSourceId, vinScanSourceLinkOnly, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { freeVinScanSourceIds, isFreeVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
@@ -13,6 +13,7 @@ import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } fro
 import { readSourceHealth } from "@/lib/source-health-store";
 import { emptySourceHealthDoc, type SourceHealthDoc } from "@/lib/source-health";
 import { vinScanBreakerState, vinScanBreakerSummary } from "@/lib/vin-scan/source-health-outcomes";
+import { createVinScanVehicleHint } from "@/lib/vin-scan/vehicle-hint";
 
 function timeoutMsFor(id: VinScanSourceId): number {
   return vinScanSourceTimeoutMs(id);
@@ -86,6 +87,8 @@ async function readHealthBestEffort(read: () => Promise<SourceHealthDoc>): Promi
 /** Visi avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
 function isRunnableVinScanSourceId(id: string, allowPaid: readonly string[] = []): id is VinScanSourceId {
   if (!isVinScanSourceId(id)) return false;
+  // Tikai saite (26.11 audits): arī skaidrs `sources` saraksts tos neizsauc - nekādas CapSolver maksas.
+  if (vinScanSourceLinkOnly(id)) return false;
   if ((VIN_SCAN_OPT_IN_PAID_IDS as readonly string[]).includes(id)) return allowPaid.includes(id);
   if (id === "thecarapi_eu") return thecarapiVinScanEnabled();
   return isFreeVinScanSourceId(id);
@@ -111,11 +114,14 @@ export async function runVinScan(
   const health = needsHealth
     ? await readHealthBestEffort(input.readHealth ?? readSourceHealth)
     : emptySourceHealthDoc();
+  const hint = createVinScanVehicleHint(wanted.map((item) => item.id));
+  ctx.vehicleHint = hint.wait;
   return withVinScanRelayDedupe(async () => {
   const rows = await Promise.all(
     wanted.map(async (item) => {
       const started = Date.now();
       const finish = (row: VinScanIndicator): VinScanIndicator => {
+        hint.report(row);
         console.info(
           JSON.stringify({
             id: row.id,

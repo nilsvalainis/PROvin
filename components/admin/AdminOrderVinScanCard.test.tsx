@@ -22,7 +22,7 @@ const record = {
   vin: VIN,
   status: "done",
   indicators: [
-    { ...row("stat_vin", "", ""), ...browserFetchLane("stat_vin") },
+    { ...row("carfax_eu", "", ""), ...browserFetchLane("carfax_eu") },
     { ...row("nicb", "", ""), ...browserFetchLane("nicb") },
     row("csdd", "found", "Ir dati"),
     row("bid_cars", "none", "Nav izsoles arhīvā"),
@@ -64,7 +64,7 @@ describe("pasūtījuma VIN SCAN kartīte", () => {
       elements: [new FakeElement("span", { attrs })],
     });
     expect(run.gm.xhr.map((req) => req.url).sort()).toEqual(
-      [vinScanCatalogItem("stat_vin").openUrl(VIN), vinScanCatalogItem("nicb").openUrl(VIN)].sort(),
+      [vinScanCatalogItem("carfax_eu").openUrl(VIN), vinScanCatalogItem("nicb").openUrl(VIN)].sort(),
     );
   });
 
