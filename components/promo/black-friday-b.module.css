@@ -1,0 +1,618 @@
+/* Black Friday dizains B «Tumši zils gradients + elegants logs» (Nila izvēle 26.11.2026). */
+
+.root,
+.root * {
+  box-sizing: border-box;
+}
+.root {
+  --bf-blue: #2563eb;
+  --bf-blue2: #1a6fd4;
+  --bf-blue3: #1459ad;
+  --bf-ice: #9cc0ff;
+  --bf-mut: #a1a1aa;
+  --bf-mut2: #71717a;
+  --bf-line: rgba(255, 255, 255, 0.12);
+  font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #fff;
+  font-feature-settings: "tnum" 1, "kern" 1;
+}
+.root a {
+  text-decoration: none;
+}
+.eb {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bf-mut);
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bf-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 0 12px rgba(37, 99, 235, 0.8);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.16);
+  box-shadow: inset 0 0 0 1px var(--bf-blue);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.root s {
+  color: var(--bf-mut2);
+  text-decoration-thickness: 1px;
+}
+.pctSmall {
+  font-size: 0.58em;
+  letter-spacing: -0.02em;
+  margin-left: 0.04em;
+  vertical-align: 0.52em;
+}
+.omni {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--bf-mut);
+  font-weight: 400;
+  font-style: normal;
+}
+.shine {
+  background: linear-gradient(90deg, #fff 0%, #fff 38%, #9cc0ff 50%, #fff 62%, #fff 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: bf-shine 5s ease-in-out 1.2s infinite;
+}
+@keyframes bf-shine {
+  0% {
+    background-position: 100% 0;
+  }
+  60%,
+  100% {
+    background-position: -50% 0;
+  }
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, var(--bf-blue2) 0%, var(--bf-blue3) 100%);
+  color: #fff;
+  font-weight: 650;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.cta:hover {
+  filter: brightness(1.06);
+}
+.root a:focus-visible,
+.root button:focus-visible {
+  outline: 2px solid var(--bf-ice);
+  outline-offset: 3px;
+}
+.cdl {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.cells {
+  display: flex;
+  gap: 8px;
+}
+.cell {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-width: 64px;
+  padding: 10px 8px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--bf-line);
+}
+.cell b {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cell i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bf-mut);
+  margin-top: 6px;
+}
+
+/* ---------- augšējā josla ---------- */
+.top {
+  position: relative;
+  z-index: 61;
+  overflow: hidden;
+  background: linear-gradient(90deg, #040915 0%, #0a2257 30%, #0f3388 50%, #0a2257 70%, #040915 100%);
+}
+.top::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+}
+.top::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 260px;
+  left: -300px;
+  background: linear-gradient(100deg, transparent, rgba(156, 192, 255, 0.18), transparent);
+  animation: bf-sweep 6s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+@keyframes bf-sweep {
+  0% {
+    transform: translateX(0);
+  }
+  55%,
+  100% {
+    transform: translateX(2100px);
+  }
+}
+.topIn {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  white-space: nowrap;
+}
+.g {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+/* Garākas valodas (DE/RU): Omnibus rinda pāriet 2 rindās, nevis izspiež pogu ārpus joslas. */
+.gPrice {
+  flex: 0 1 auto;
+}
+.top .gPrice .omni {
+  white-space: normal;
+  min-width: 140px;
+  line-height: 1.25;
+}
+.topName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top .eb {
+  color: #c7d7f5;
+}
+.pct {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.topName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.topPrice {
+  font-size: 18px;
+  font-weight: 800;
+}
+.topPrice s {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9db0d6;
+  margin-left: 6px;
+}
+.top .omni {
+  color: #b9c8e6;
+}
+.sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.lab {
+  font-size: 12.5px;
+  color: #b9c8e6;
+  margin-right: 8px;
+}
+.top .cdl {
+  font-size: 16px;
+}
+.top .cta {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 11.5px;
+  background: #fff;
+  color: #0a2257;
+  border-color: #fff;
+}
+@media (max-width: 1240px) {
+  .topIn {
+    padding: 0 24px;
+  }
+}
+@media (max-width: 1100px) {
+  .top .omni {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  .topIn {
+    height: auto;
+    padding: 10px 16px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 12px;
+  }
+  .g2,
+  .sep,
+  .topName,
+  .top .eb {
+    display: none;
+  }
+  .pct {
+    font-size: 30px;
+  }
+  .gPrice {
+    justify-self: end;
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+  }
+  .top .omni {
+    display: block;
+    font-size: 10.5px;
+  }
+}
+
+/* ---------- telefona stikla kapsula ---------- */
+.cap {
+  display: none;
+}
+@media (max-width: 720px) {
+  .cap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    z-index: 95;
+    left: max(12px, env(safe-area-inset-left, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 12px 12px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: linear-gradient(160deg, rgba(37, 99, 235, 0.28), rgba(10, 34, 87, 0.35)), rgba(6, 12, 28, 0.86);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.8);
+    transition: bottom 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* Kad redzama «Pasūtīt auditu» + WhatsApp josla, kapsula paceļas virs tās. */
+  :global(body:has(.provin-order-bar.is-on)) .cap {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+.capL {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.capT {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+  white-space: nowrap;
+}
+.capTm {
+  font-size: 19px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cap .omni {
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+.cap .cta {
+  min-height: 48px;
+  padding: 0 15px;
+  font-size: 12.5px;
+}
+
+/* ---------- logs ---------- */
+.pop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(3, 5, 10, 0.62);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: bf-fade 0.35s ease-out;
+}
+@keyframes bf-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes bf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.box {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  text-align: center;
+  background: radial-gradient(120% 70% at 50% 0%, rgba(37, 99, 235, 0.55), transparent 60%),
+    linear-gradient(180deg, #0b1f4f 0%, #071431 45%, #05070d 100%);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  animation: bf-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.boxC {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 34px 32px 26px;
+}
+.box .eb {
+  color: #c7d7f5;
+}
+.boxBig {
+  font-size: 150px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+  margin: 6px 0 2px;
+}
+.boxName {
+  font-size: 20px;
+  font-weight: 700;
+}
+.boxPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.boxPrice b {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.boxPrice s {
+  font-size: 20px;
+  color: #9db0d6;
+}
+.box .omni {
+  color: #b9c8e6;
+  font-size: 13px;
+}
+.box .cta {
+  width: 100%;
+  min-height: 54px;
+  font-size: 14px;
+  margin-top: 6px;
+}
+.no {
+  background: none;
+  border: 0;
+  color: #a1a1aa;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 6px 10px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 22px;
+  line-height: 38px;
+  cursor: pointer;
+  padding: 0;
+}
+@media (max-width: 720px) {
+  .boxC {
+    padding: 62px 18px 20px;
+  }
+  .boxBig {
+    font-size: 116px;
+  }
+  .boxPrice b {
+    font-size: 38px;
+  }
+  .box .cells {
+    gap: 6px;
+  }
+  .box .cell {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
+/* ---------- hero izvēlnes cena ---------- */
+.em {
+  display: inline-grid;
+  justify-items: end;
+  gap: 3px;
+  line-height: 1.1;
+}
+.emRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.emChip {
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.18);
+  box-shadow: inset 0 0 0 1px #2563eb;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.em s {
+  color: #71717a;
+  font-weight: 500;
+}
+.emNew {
+  color: #fff;
+}
+.omniSmall {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #a1a1aa;
+  margin-top: 3px;
+  font-style: normal;
+}
+
+/* ---------- #dilera-dati cenu bloks ---------- */
+.dbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+  margin: 16px 0 18px;
+  padding: 20px 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: radial-gradient(120% 90% at 0% 0%, rgba(37, 99, 235, 0.45), transparent 60%), linear-gradient(160deg, #0b1f4f, #05070d);
+}
+.dboxBig {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+.dboxK {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dboxPr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  white-space: nowrap;
+  margin: 6px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.dboxPr b {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.dboxPr s {
+  font-size: 15px;
+}
+.dbox .omni {
+  display: block;
+}
+@media (max-width: 720px) {
+  .dbox {
+    gap: 16px;
+    padding: 16px 18px;
+  }
+  .dboxBig {
+    font-size: 52px;
+  }
+  .dboxPr b {
+    font-size: 26px;
+  }
+}
+.kickOld {
+  opacity: 0.7;
+}
+.kickNew {
+  color: #fff;
+}
+.kickChip {
+  height: 20px;
+  font-size: 11px;
+  vertical-align: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .root *,
+  .root::before,
+  .root::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .shine {
+    -webkit-text-fill-color: #fff;
+    background: none;
+  }
+}

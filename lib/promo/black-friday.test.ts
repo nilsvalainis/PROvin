@@ -76,10 +76,10 @@ describe("Black Friday cenas", () => {
 
 describe("Black Friday teksti 4 valodās", () => {
   it("Omnibus rinda", () => {
-    expect(omnibusLowestPriceLine(2499, "lv")).toBe("Zemākā cena pēdējās 30 dienās: 24,99 €");
-    expect(omnibusLowestPriceLine(2499, "en")).toBe("Lowest price in the last 30 days: €24.99");
-    expect(omnibusLowestPriceLine(2499, "de")).toBe("Niedrigster Preis der letzten 30 Tage: 24,99 €");
-    expect(omnibusLowestPriceLine(2499, "ru")).toBe("Самая низкая цена за последние 30 дней: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "lv").replace(/\u00a0/g, " ")).toBe("Zemākā cena pēdējās 30 dienās: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "en").replace(/\u00a0/g, " ")).toBe("Lowest price in the last 30 days: €24.99");
+    expect(omnibusLowestPriceLine(2499, "de").replace(/\u00a0/g, " ")).toBe("Niedrigster Preis der letzten 30 Tage: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "ru").replace(/\u00a0/g, " ")).toBe("Самая низкая цена за последние 30 дней: 24,99 €");
   });
 
   it("cenas formāts un aizstāšana pogās", () => {

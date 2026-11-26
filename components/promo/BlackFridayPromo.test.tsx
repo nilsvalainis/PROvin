@@ -15,7 +15,11 @@ import {
   PromoOmnibusLine,
   PromoPrice,
 } from "@/components/promo/BlackFridayPromo";
-import { renderHtml, renderText } from "@/lib/test-render";
+import { renderHtml as renderHtmlRaw, renderText as renderTextRaw } from "@/lib/test-render";
+
+const renderHtml = (el: Parameters<typeof renderHtmlRaw>[0]) => renderHtmlRaw(el).replace(/\u00a0/g, " ");
+
+const renderText = (el: Parameters<typeof renderTextRaw>[0]) => renderTextRaw(el).replace(/\u00a0/g, " ");
 
 const IN = Date.parse("2026-11-28T10:00:00Z");
 const AFTER = Date.parse("2026-12-02T10:00:00Z");

@@ -14,7 +14,8 @@ import {
   formatHomeV6Number,
   getHomeV6Copy,
 } from "@/lib/home-v6-copy";
-import { PromoOmnibusLine, PromoPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
+import { usePromoText } from "@/components/promo/BlackFridayPromo";
+import { BlackFridayDealerBoxB, BlackFridayDealerKickerB } from "@/components/promo/BlackFridayB";
 import styles from "./home-dealer-story.module.css";
 
 const VB_W = 640;
@@ -85,9 +86,7 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
         <p className={styles.kicker}>
           <span className={styles.badge}>{c.badge}</span>
           {kickerPrice ? (
-            <>
-              {kickerLabel} · <PromoPrice planId="dealer" regularLabel={kickerPrice} />
-            </>
+            <BlackFridayDealerKickerB label={kickerLabel ?? ""} regularLabel={kickerPrice} />
           ) : (
             c.kicker
           )}
@@ -177,11 +176,11 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
                 <p>{guaranteeText}</p>
               </div>
             </div>
+            <BlackFridayDealerBoxB />
             <div className={styles.actions}>
               <Link href="/?plan=dealer#home-hero" rel={publicAnchorRel("/?plan=dealer#home-hero")} className={styles.cta}>
                 {ctaText}
               </Link>
-              <PromoOmnibusLine planId="dealer" />
               <a
                 href={TP5_DEALER_SAMPLE_REPORT_HREF}
                 target="_blank"

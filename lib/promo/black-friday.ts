@@ -137,7 +137,8 @@ const OMNIBUS_PREFIX: Record<PromoLocale, string> = {
 /** ES Omnibus rinda, piem. «Zemākā cena pēdējās 30 dienās: 24,99 €». */
 export function omnibusLowestPriceLine(lowest30dCents: number, locale?: string | null): string {
   const loc = promoLocale(locale);
-  return `${OMNIBUS_PREFIX[loc]} ${formatPromoEur(lowest30dCents, loc)}`;
+  /** Nedalāmā atstarpe cenā, lai «€» nepārlec jaunā rindā. */
+  return `${OMNIBUS_PREFIX[loc]} ${formatPromoEur(lowest30dCents, loc).replace(" ", "\u00a0")}`;
 }
 
 const BANNER_TEXT: Record<PromoLocale, (promo: string, regular: string, off: string) => string> = {

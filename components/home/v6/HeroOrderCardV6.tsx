@@ -17,6 +17,7 @@ import {
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
 import { PromoOmnibusLine, PromoPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
+import { BlackFridayHeroOmnibusB, BlackFridayHeroPriceB } from "@/components/promo/BlackFridayB";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
@@ -181,16 +182,20 @@ export function HeroOrderCardV6({
                   {id === "dealer" ? <i className={styles.newBadge}>{uiCopy.newBadge}</i> : null}
                 </b>
                 <small>{opt?.sub ?? s.description}</small>
+                {id === "dealer" ? <BlackFridayHeroOmnibusB /> : <PromoOmnibusLine planId={TP5_MOBILE_CHECKOUT_PLAN[id]} />}
                 {id === "dealer" ? (
                   <span className={styles.guarantee}>
                     <ShieldIcon />
                     {copy.guaranteeShort}
                   </span>
                 ) : null}
-                <PromoOmnibusLine planId={TP5_MOBILE_CHECKOUT_PLAN[id]} />
               </span>
               <em>
-                <PromoPrice planId={TP5_MOBILE_CHECKOUT_PLAN[id]} regularLabel={s.price} />
+                {id === "dealer" ? (
+                  <BlackFridayHeroPriceB regularLabel={s.price} />
+                ) : (
+                  <PromoPrice planId={TP5_MOBILE_CHECKOUT_PLAN[id]} regularLabel={s.price} />
+                )}
               </em>
             </button>
           );
