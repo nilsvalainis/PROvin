@@ -507,6 +507,35 @@ export function vinScanSourceDisabled(id: string): boolean {
   return VIN_SCAN_CATALOG.find((item) => item.id === id)?.disabled === true;
 }
 
+/**
+ * 26.11 avotu audits: 0 trāpījumu 40 skenējumos, CapSolver maksa bez rezultāta (lt_itpr, auchistory)
+ * vai dublikāts (nummerplade = tjekbil). Kods paliek, bet serveris tos automātiski neprasa:
+ * VIN SCAN rāda tikai saiti «Atvērt pārlūkā», un tie neskaitās statusa rindā «N/M OK».
+ */
+export const VIN_SCAN_LINK_ONLY_IDS = [
+  "lt_itpr",
+  "auchistory",
+  "nummerplade",
+  "biluppgifter",
+  "stat_vin",
+  "checkcar_vin",
+  "plc_auction",
+  "bidfax",
+  "poctra",
+  "recall_vw",
+  "recall_bmw",
+  "recall_mercedes",
+  "recall_volvo",
+  "recall_toyota",
+  "carpass",
+  "traficom",
+  "regitra",
+] as const satisfies readonly VinScanSourceId[];
+
+export function vinScanSourceLinkOnly(id: string): boolean {
+  return (VIN_SCAN_LINK_ONLY_IDS as readonly string[]).includes(id);
+}
+
 /** VIN SCAN UI un POST noklusējums: tikai bezmaksas avoti (bez JoJ / Speckr u.c. maksas API). */
 export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return vinScanPipelineSourceIds();
@@ -518,6 +547,7 @@ export function vinScanPipelineSourceIds(): VinScanSourceId[] {
   return VIN_SCAN_SOURCE_IDS.filter((id) => {
     if (id === "joj_copart_iaai") return false;
     if (id === "thecarapi_eu" && !allowThecarapi) return false;
+    if (vinScanSourceLinkOnly(id)) return false;
     return !vinScanSourceDisabled(id);
   });
 }

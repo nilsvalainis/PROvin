@@ -3,7 +3,7 @@
  * Josla paliek „from browser”: HTML atnes Tampermonkey no operatora pārlūka (kā stat.vin).
  */
 
-import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
+import { vinScanSourceLinkOnly, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 
 export const VIN_SCAN_BROWSER_FETCH_IDS = [
   "stat_vin",
@@ -80,7 +80,9 @@ export function browserFetchHandoff(
   const ids = rows
     .filter(browserFetchAwaiting)
     .map((row) => row.id)
-    .filter((id): id is VinScanBrowserFetchId => typeof id === "string" && isVinScanBrowserFetchId(id));
+    .filter((id): id is VinScanBrowserFetchId => typeof id === "string" && isVinScanBrowserFetchId(id))
+    // Saišu avoti (26.11 audits) vecos momentuzņēmumos: skripts tos vairs automātiski neatver.
+    .filter((id) => !vinScanSourceLinkOnly(id));
   if (!ids.length) return null;
   const token = browserFetchToken(vin, at);
   if (!token) return null;

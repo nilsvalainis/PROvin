@@ -1,5 +1,5 @@
 import type { VinScanIndicator, VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
-import { isVinScanWantedSource } from "@/lib/vin-scan/wanted";
+import { isVinScanWantedSource, vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
 
 export type VinScanOverviewRow = {
   id: string;
@@ -28,13 +28,38 @@ export function formatVinScanScannedAt(iso: string): string {
   }).format(d);
 }
 
+/**
+ * Reģistri un VIN lapas pirms vPIC: NHTSA vPIC ne-ASV auto modeli bieži sajauc (Volvo V60 -> «740 Series»),
+ * tāpēc `vin_decode` ir pēdējais - tikai tad, ja neviens cits avots auto nenosauc.
+ */
+export const VIN_SCAN_VEHICLE_RANK = [
+  "csdd",
+  "tjekbil",
+  "rdw",
+  "vegvesen",
+  "carinfo",
+  "cz_rsv",
+  "dvsa_mot",
+  "carfax_eu",
+  "esyn",
+  "biluppgifter",
+  "plc_auction",
+] as const;
+
+function hasVehicle(row: VinScanOverviewRow): row is VinScanOverviewRow & { vehicle: VinScanVehicle } {
+  return row.status === "found" && Boolean(row.vehicle && (row.vehicle.make || row.vehicle.model || row.vehicle.year));
+}
+
 export function pickVinScanVehicle(rows: readonly VinScanOverviewRow[]): VinScanVehicle | null {
-  const ranked = ["csdd", "tjekbil", "rdw", "vegvesen", "esyn", "biluppgifter", "plc_auction", "vin_decode"] as const;
-  for (const id of ranked) {
-    const row = rows.find((item) => item.id === id && item.status === "found" && item.vehicle);
-    if (row?.vehicle && (row.vehicle.make || row.vehicle.model || row.vehicle.year)) return row.vehicle;
+  for (const id of VIN_SCAN_VEHICLE_RANK) {
+    const row = rows.find((item) => item.id === id && hasVehicle(item));
+    if (row?.vehicle) return row.vehicle;
   }
-  const any = rows.find((item) => item.status === "found" && item.vehicle);
+  const other = rows.find((item) => item.id !== "vin_decode" && hasVehicle(item) && Boolean(item.vehicle.model));
+  if (other?.vehicle) return other.vehicle;
+  const decoded = rows.find((item) => item.id === "vin_decode" && hasVehicle(item));
+  if (decoded?.vehicle) return decoded.vehicle;
+  const any = rows.find((item) => hasVehicle(item));
   return any?.vehicle ?? null;
 }
 
@@ -144,7 +169,9 @@ export type VinScanFacts = {
   registrations: string[];
 };
 
-export function buildVinScanFacts(rows: readonly VinScanOverviewRow[]): VinScanFacts {
+export function buildVinScanFacts(allRows: readonly VinScanOverviewRow[], vin?: string): VinScanFacts {
+  // NICB u.c. ASV avoti ne-ASV VIN: rinda paliek sarakstā, bet faktos («Meklēšanā / zagts») neskaitās.
+  const rows = allRows.filter((row) => vinScanSourceAppliesToVin(row.id, vin));
   const mileage = collectVinScanMileage(rows);
   const wanted: string[] = [];
   const recalls: string[] = [];
@@ -185,7 +212,7 @@ export function formatVinScanExportText(opts: {
   scannedAt: string;
   rows: readonly (VinScanOverviewRow & Partial<Omit<VinScanIndicator, "id">>)[];
 }): string {
-  const facts = buildVinScanFacts(opts.rows);
+  const facts = buildVinScanFacts(opts.rows, opts.vin);
   const when = formatVinScanScannedAt(opts.scannedAt);
   const lines = [
     `VIN: ${opts.vin}`,
@@ -225,7 +252,7 @@ export function formatVinScanExportJson(opts: {
       scannedAt: opts.scannedAt,
       vehicle: pickVinScanVehicle(opts.rows),
       mileage: collectVinScanMileage(opts.rows),
-      facts: buildVinScanFacts(opts.rows),
+      facts: buildVinScanFacts(opts.rows, opts.vin),
       indicators: opts.rows,
     },
     null,

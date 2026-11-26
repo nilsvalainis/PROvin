@@ -10,6 +10,7 @@ import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
 import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
+import { vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
 
 export const ECSDD_URL = "https://e.csdd.lv/";
 
@@ -224,7 +225,9 @@ function dealerFact(record: DealerCheckRecord | null): AtraDealerFact | null {
   };
 }
 
-export function buildAtraFacts(input: AtraFactsInput): AtraFacts {
+export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
+  // NICB (tikai ASV) ne-ASV VIN: nedrīkst ieslēgt «Meklēšanā», «total loss» vai dot stāsta punktus.
+  const input: AtraFactsInput = { ...rawInput, rows: rawInput.rows.filter((r) => vinScanSourceAppliesToVin(r.id, rawInput.vin)) };
   const found = input.rows.filter((r) => r.status === "found");
   const mileage = mileageFact(input);
   const wanted = found.filter((r) => r.flags?.wanted || r.flags?.stolen).map((r) => r.label);

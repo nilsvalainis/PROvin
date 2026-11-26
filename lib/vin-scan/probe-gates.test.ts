@@ -56,7 +56,6 @@ describe("VIN SCAN avotu vārti bez tīkla", () => {
       probeCarfaxEu,
       probeCheckcarVin,
       probeLtPolice,
-      probeNicb,
       probePlcAuction,
       probePoctra,
     ];
@@ -67,6 +66,14 @@ describe("VIN SCAN avotu vārti bez tīkla", () => {
       expect(row.summary).not.toMatch(/403|cloudflare/i);
       expect(row.openUrl).toMatch(/^https:\/\//);
     }
+  });
+
+  it("NICB ne-ASV VIN: skipped (tikai ASV datubāze), ASV VIN: from browser", async () => {
+    const eu = await probeNicb(ctx);
+    expect(eu.status).toBe("skipped");
+    const us = await probeNicb({ ...ctx, vin: "1FTFW1ET5DFC10312" });
+    expect(us.status).toBe("browser_only");
+    expect(us.summary).toMatch(/from browser/);
   });
 
   it("vegvesen bez VEGVESEN_API_KEY ir config_missing", async () => {

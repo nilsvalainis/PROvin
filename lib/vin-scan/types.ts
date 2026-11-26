@@ -134,6 +134,11 @@ export type VinScanContext = {
   listingUrl: string;
   /** Precīzs 1. reģistrācijas datums (DD.MM.YYYY), ja zināms - kfzgutachten.at meklēšanai. */
   firstRegDate?: string;
+  /**
+   * Labākais auto (marka/modelis/gads) no tā paša skenējuma reģistriem (CSDD, tjekbil u.c.), ne vPIC.
+   * ES Safety Gate to gaida paralēli meklēšanai. null - neviens reģistrs auto nenosauca.
+   */
+  vehicleHint?: () => Promise<VinScanVehicle | null>;
 };
 
 export function buildVinScanIndicator(
