@@ -11,6 +11,7 @@ import {
   ORDER_AUTO_INTAKE_FUNCTION_BUDGET_MS,
 } from "@/lib/order-auto-intake-core";
 import { buildVinScanIndicator } from "@/lib/vin-scan/types";
+import { findKfzAtSectionIndex, readKfzAtStore } from "@/lib/kfzgutachten/apply-citi";
 
 const VIN = "WBA5R1C0XLFH42873";
 const src = (rel: string) => readFileSync(path.join(process.cwd(), rel), "utf8");
@@ -107,6 +108,26 @@ describe("imports blokos (tas pats, ko pogas «Importēt»)", () => {
     const first = applyVinScanImportsToBlocks(createDefaultSourceBlocks(), [csddRow, listingRow]);
     const again = applyVinScanImportsToBlocks(first.blocks, [csddRow, listingRow]);
     expect(again.changed).toBe(false);
+  });
+
+  it("Austrija §57a: atrastais saraksts -> Citi avoti «Austrija · §57a apskates»; atkārtoti nedublē", () => {
+    const KVIN = "WBAFB71080LV66575";
+    const kfzRow = buildVinScanIndicator("kfz_at", KVIN, {
+      status: "found",
+      summary: "kfzgutachten.at: 2 atzinumi (13.11.2015, 04.08.2016)",
+      inspections: [
+        { date: "13.11.2015", plate: "W 44154Z", model: "BMW X5", result: "BMW X5 · W 44154Z" },
+        { date: "04.08.2016", plate: "W 81763N", model: "BMW X53", result: "BMW X53 · W 81763N" },
+      ],
+    });
+    const first = applyVinScanImportsToBlocks(createDefaultSourceBlocks(), [kfzRow], { vin: KVIN });
+    expect(first.changed).toBe(true);
+    const idx = findKfzAtSectionIndex(first.blocks.citi_avoti);
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(readKfzAtStore(first.blocks.citi_avoti.sections[idx]).list.map((r) => r.date)).toEqual(["13.11.2015", "04.08.2016"]);
+    expect(applyVinScanImportsToBlocks(first.blocks, [kfzRow], { vin: KVIN }).changed).toBe(false);
+    const queued = buildVinScanIndicator("kfz_at", KVIN, { status: "browser_only", summary: "kfzgutachten.at: nav pārbaudīts (rindā 1.)" });
+    expect(applyVinScanImportsToBlocks(createDefaultSourceBlocks(), [queued], { vin: KVIN }).changed).toBe(false);
   });
 
   it("bez atrastām rindām - nekā", () => {

@@ -18,6 +18,7 @@ import { pickReusableVinScanRows, stampVinScanRows } from "@/lib/vin-scan/source
 import { readVinScanBrowserImports, readVinScanSnapshot, writeVinScanSnapshot } from "@/lib/vin-scan/store";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { isValidVin } from "@/lib/order-field-validation";
+import { kfzExactDateDdMmYyyy } from "@/lib/kfzgutachten/kfzgutachten";
 
 export type SharedVinScanInput = {
   vin: string;
@@ -40,6 +41,17 @@ export type SharedVinScanResult = {
   scanned: VinScanIndicator[];
 };
 
+/** DD.MM.YYYY no kfzgutachten.at saites `?vin=…&date=…` (vai ""). */
+export function kfzDateFromRowUrl(url: string | null | undefined): string {
+  let raw = String(url ?? "");
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    /* paliek kā ir */
+  }
+  return kfzExactDateDdMmYyyy(/[?&]date=([0-9.]{10})/.exec(raw)?.[1] ?? "");
+}
+
 export async function runSharedVinScan(input: SharedVinScanInput): Promise<SharedVinScanResult> {
   const { vin, plates, force = false } = input;
   const listingUrl = input.listingUrl?.trim() ?? "";
@@ -56,12 +68,18 @@ export async function runSharedVinScan(input: SharedVinScanInput): Promise<Share
     : [];
   const cachedIds = new Set(reusable.map((row) => row.id));
   const toScan = requested.filter((id) => !cachedIds.has(id));
+  // kfzgutachten.at vajag CSDD 1. reģ. datumu. CSDD rinda no keša datumu nenes: ņemam to no iepriekšējās
+  // kfz_at saites (`date=`), bet, ja tādas nav, CSDD šoreiz skenē vēlreiz (tas pats bezmaksas pieprasījums).
+  const kfzDate = toScan.includes("kfz_at") ? kfzDateFromRowUrl(prev?.indicators.find((row) => row.id === "kfz_at")?.openUrl) : "";
+  const csddFound = reusable.some((row) => row.id === "csdd" && row.status === "found");
+  if (toScan.includes("kfz_at") && !kfzDate && csddFound && !toScan.includes("csdd") && requested.includes("csdd")) toScan.push("csdd");
   const scanned = stampVinScanRows(
     toScan.length
       ? await runVinScan({
           vin,
           plates: scanPlates,
           listingUrl,
+          ...(kfzDate ? { firstRegDate: kfzDate } : {}),
           sourceIds: toScan,
           ignoreBreaker: force,
           allowPaid: input.allowPaid ?? [],

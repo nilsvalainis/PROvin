@@ -76,3 +76,69 @@ test("CARFAX: cits 403 (bez INVALID_CAPTCHA) nav captcha", async () => {
   assert.equal(out.kind, "error");
   assert.equal(out.captcha, undefined);
 });
+
+/** Viltota kfzgutachten.at lapa: «Suchen» klikšķis atdod `POST /Home/Search` atbildi. */
+function fakeKfzPage(response) {
+  const calls = { goto: [], typed: [], clicked: 0 };
+  let pending = null;
+  const field = (name) => ({
+    click: async () => undefined,
+    fill: async () => undefined,
+    type: async (text) => {
+      calls.typed.push([name, text]);
+    },
+  });
+  const button = {
+    click: async () => {
+      calls.clicked += 1;
+      if (!pending || !response) return;
+      const url = "https://kfzgutachten.at/Home/Search";
+      assert.equal(pending.pred({ url: () => url, request: () => ({ method: () => "POST" }) }), true);
+      pending.resolve({ url: () => url, status: () => response.status, text: async () => response.text });
+    },
+  };
+  return {
+    calls,
+    goto: async (url) => {
+      calls.goto.push(url);
+      return { status: () => 200 };
+    },
+    title: async () => "kfzgutachten.at",
+    waitForTimeout: async () => undefined,
+    waitForSelector: async (sel) => (sel === "#vehicleIdInput" ? field("vin") : null),
+    $: async (sel) => (sel === "#regDtInput" ? field("date") : sel === "#searchButton" ? button : null),
+    $eval: async () => "",
+    waitForResponse: (pred) =>
+      new Promise((resolve) => {
+        pending = { pred, resolve };
+      }),
+    keyboard: { press: async () => undefined },
+  };
+}
+
+const KFZ_VIN = "WBAFB71080LV66575";
+
+test("kfzgutachten.at: tīra sākumlapa (bez ?vin=), VIN + datums, viens «Suchen», saraksts", async () => {
+  const page = fakeKfzPage({
+    status: 200,
+    text: JSON.stringify({
+      TotalItems: 1,
+      Items: [{ Id: 1, VehicleModel: "BMW", VehicleType: "X5", EvaluationDate: "2019-07-30T00:00:00", LicensePlate: "W 1234GT", VehicleIdentificationNumber: KFZ_VIN }],
+    }),
+  });
+  const out = await readVinSource(page, "kfz_at", KFZ_VIN, { timeoutMs: 40_000, date: "20.08.2004" });
+  assert.equal(out.kind, "found");
+  assert.deepEqual(out.rows, [{ date: "30.07.2019", model: "BMW X5", plate: "W 1234GT", vin: KFZ_VIN }]);
+  assert.deepEqual(page.calls.goto, ["https://kfzgutachten.at/"]);
+  assert.deepEqual(page.calls.typed, [["vin", KFZ_VIN], ["date", "20.08.2004"]]);
+  assert.equal(page.calls.clicked, 1);
+});
+
+test("kfzgutachten.at: reCAPTCHA atteikums -> captcha karogs, bez atkārtojuma", async () => {
+  const page = fakeKfzPage({ status: 400, text: "Recaptcha validation failed" });
+  const out = await readVinSource(page, "kfz_at", KFZ_VIN, { timeoutMs: 40_000, date: "20.08.2004" });
+  assert.equal(out.kind, "error");
+  assert.equal(out.captcha, true);
+  assert.equal(page.calls.clicked, 1);
+  assert.equal(page.calls.goto.length, 1);
+});

@@ -261,8 +261,11 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
 export async function probeCsdd(ctx: VinScanContext): Promise<VinScanIndicator> {
   const nr1 = ctx.vin || ctx.plates.lv;
   try {
-    return done("csdd", ctx, parseCsddTechScan(await fetchCsddTechData(nr1)));
+    const res = await fetchCsddTechData(nr1);
+    ctx.reportFirstReg?.(res.found ? res.data.firstRegistrationIso : "");
+    return done("csdd", ctx, parseCsddTechScan(res));
   } catch (e) {
+    ctx.reportFirstReg?.("");
     return failed("csdd", ctx, e);
   }
 }

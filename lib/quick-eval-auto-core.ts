@@ -45,7 +45,7 @@ export type QuickEvalRedFlagSeverity = "red" | "yellow" | "info";
 
 export type QuickEvalRedFlag = { severity: QuickEvalRedFlagSeverity; text: string };
 
-export type QuickEvalRecommendationId = "autodna" | "carfax" | "carvertical" | "csdd_sms" | "dealer";
+export type QuickEvalRecommendationId = "autodna" | "carfax" | "carvertical" | "csdd_sms" | "dealer" | "kfz_at";
 
 export type QuickEvalOfferProduct = "audits" | "dealer";
 
@@ -87,7 +87,7 @@ const STEP_IDS: readonly QuickEvalAutoStepId[] = [
   "analysis",
 ];
 const STEP_STATES: readonly QuickEvalAutoStepState[] = ["ok", "none", "skipped", "error", "smartid_wait", "running"];
-const REC_IDS: readonly QuickEvalRecommendationId[] = ["autodna", "carfax", "carvertical", "csdd_sms", "dealer"];
+const REC_IDS: readonly QuickEvalRecommendationId[] = ["autodna", "carfax", "carvertical", "csdd_sms", "dealer", "kfz_at"];
 
 function str(v: unknown, max = 400): string | undefined {
   return typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
@@ -268,7 +268,7 @@ function plural(n: number, one: string, many: string): string {
 }
 
 /** Avotu nosaukumi, kas nekad nedrīkst parādīties «Ieteicams piedāvāt» tekstā (tests to pārbauda). */
-export const QUICK_EVAL_SOURCE_NAME_RE = /autodna|carfax|car\s*vertical|csdd|e\.csdd|thecarapi|ltab|copart|iaai|bid\.?cars|checkcar|tjekbil|mnt\.ee|carinfo|oneauto|joj/i;
+export const QUICK_EVAL_SOURCE_NAME_RE = /autodna|carfax|car\s*vertical|csdd|e\.csdd|thecarapi|ltab|copart|iaai|bid\.?cars|checkcar|tjekbil|mnt\.ee|carinfo|oneauto|joj|kfzgutachten/i;
 
 /** Dīleru vēsture: pilna vai darbnīcu piezīmes (ierobežotās markas neiesakām). */
 export function dealerCoverageForMake(makeModel: string | null | undefined): { brand: string; tier: DealerCoverageTierId } | null {
@@ -357,6 +357,11 @@ export function buildQuickEvalRecommendations(input: QuickEvalRecommendationInpu
       add("carfax", tail ? `${head}: ${tail}` : head);
     }
   }
+
+  // Austrijas §57a apskates (bezmaksas saraksts atrada atzinumus; tos pērk Nils, PROVIN AUDITS tos ielasa).
+  const kfzRow = byId.get("kfz_at");
+  const kfzCount = kfzRow?.status === "found" ? (kfzRow.inspections ?? []).filter((i) => i.date).length : 0;
+  if (kfzCount > 0) add("kfz_at", `Austrijas tehniskās apskates: ${plural(kfzCount, "ieraksts", "ieraksti")}`);
 
   // Izsoļu / bojājumu vēsture vai vēsture vairākās valstīs.
   const countries = vehicleCountries(input.indicators);

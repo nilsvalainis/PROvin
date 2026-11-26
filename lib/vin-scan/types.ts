@@ -42,6 +42,9 @@ export type VinScanInspection = {
   date: string;
   result?: string;
   odometer?: string;
+  /** kfzgutachten.at: numurzīme un modelis atsevišķi (Citi avoti «Austrija» importam). */
+  plate?: string;
+  model?: string;
 };
 
 export type VinScanRecall = {
@@ -145,6 +148,13 @@ export type VinScanContext = {
    * ES Safety Gate to gaida paralēli meklēšanai. null - neviens reģistrs auto nenosauca.
    */
   vehicleHint?: () => Promise<VinScanVehicle | null>;
+  /**
+   * Precīzs 1. reģ. datums no tā paša skenējuma CSDD rindas (kfzgutachten.at gaida, ja `firstRegDate` nav).
+   * "" - CSDD nav skenēts vai datuma nav.
+   */
+  firstRegHint?: () => Promise<string>;
+  /** CSDD zonde paziņo savu 1. reģ. datumu (ISO vai DD.MM.YYYY). */
+  reportFirstReg?: (date: string) => void;
 };
 
 export function buildVinScanIndicator(
