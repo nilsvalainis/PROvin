@@ -1455,11 +1455,11 @@ function checkAiOilTable(
       id: "ai_oil_range",
       kind: "ai_oil_table",
       severity: "warn",
-      title: "Komentārā cits eļļas maiņu soļu diapazons nekā eļļas tabulā",
+      title: "Komentārā cits intervālu starp eļļas maiņām diapazons nekā eļļas tabulā",
       values: [
         {
           source: "Eļļas tabula",
-          value: `${fmtInt(range.minKm)}-${groupKm(range.maxKm)} (soļi: ${range.steps.map((x) => fmtInt(x)).join(", ")})`,
+          value: `${fmtInt(range.minKm)}-${groupKm(range.maxKm)} (intervāli: ${range.steps.map((x) => fmtInt(x)).join(", ")})`,
         },
         ...rangeHits,
       ],

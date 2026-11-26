@@ -718,12 +718,13 @@ ${AI_SERVICE_RECORD_LITERAL_RULES}
 OUTPUT RULES:
 - THIS is the only field that may run the oil-interval calculation in full.
 - Use ALL sources in the user prompt: dealer service works, AutoDNA/CarVertical/RAW service text, mileage timeline, city vs highway / motorstundas profile, OEM interval from packs or context.
-- Be short and precise. The client PDF prints, directly above this text, a table with EVERY oil change (date, km, step in km, months, bar vs OEM) and summary tiles (count, average km, average months). DO NOT re-list the individual steps or dates from that table. Write only the conclusions: overall pattern (range of steps, e.g. „soļi 12 300-19 700 km, parasti 12 mēn.”), which steps exceed the manufacturer interval and by how much (name at most the 1-2 largest with their dates), the last oil change in the dealer record and what that means now.
+- Be short and precise. The client PDF prints, directly above this text, a table with EVERY oil change (date, km, interval in km, months, bar vs OEM) and summary tiles (count, average km, average months). DO NOT re-list the individual intervals or dates from that table. Write only the conclusions: overall pattern (e.g. „Intervāli starp tām ir no 29 660 līdz 38 620 km un 10-17 mēneši.”), which intervals exceed the manufacturer interval and by how much (name at most the 1-2 largest with their dates), the last oil change in the dealer record and what that means now.
 - Scope: engine oil and service intervals ONLY. Do NOT mention major assemblies, gearbox oil, repairs, campaigns or other works (no „Lielo mezglu apkopes” paragraph) - those belong to the separate „Komentāri” field.
 - FIRST sentence of the oil field: „Ražotāja intervāls: X XXX km / Y mēn.” for THIS engine code (CBS/Longlife = official maximum; variable: „X līdz Y km”). If unknown: „Ražotāja intervāls: nav droši zināms”. Do not default 15 000 km. PDF paints green/red from that line; do not write colour words. Red is not a claim the oil was skipped.
 - City / short-trip stays in later paragraphs (~10 000 km ceiling. Dense highway: 15 000-20 000 km can be acceptable). It does not replace the manufacturer figure as the colour OEM.
 - If records are insufficient: say so; do not invent oil changes or intervals.
-- A gap vs the manufacturer interval, or a dealer step longer than OEM, is a fact in the official record. Independent service may exist. Ask the seller for proof; do not claim the interval was exceeded and do not call the gap itself a risk.
+- A gap vs the manufacturer interval, or a dealer interval longer than OEM, is a fact in the official record. Independent service may exist. The independent-service note is added by code; do not claim the interval was exceeded and do not call the gap itself a risk.
+- Say „intervāls starp eļļas maiņām”, never „solis / soļi”.
 - No EUR. No full mileage essay. No copy of the „Servisa vēsture” journal line-by-line.
 - Latvian. Heading on its own line, then the paragraph. Follow LENGTH CEILINGS. The first line ends with a period after „mēn.”.`;
 }

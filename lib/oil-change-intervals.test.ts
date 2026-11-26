@@ -117,7 +117,7 @@ describe("buildOilChangeIntervalSeries", () => {
     expect(series.ringStepCount).toBe(4);
     expect(series.gapStepCount).toBe(0);
     expect(series.ringIntervalKm).toBe(Math.round((29800 + 28200 + 39100 + 13720) / 4));
-    expect(series.ringNote).toContain("visiem 4 soļiem");
+    expect(series.ringNote).toContain("visiem 4 intervāliem");
     expect(series.ringNote).not.toContain("datu iztrūkums");
     expect(series.ringNote).not.toContain("\u2014");
   });

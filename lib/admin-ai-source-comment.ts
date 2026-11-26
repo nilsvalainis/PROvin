@@ -229,17 +229,18 @@ Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas in
 PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM; „mēn.” ar punktu):
 Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods])
 „fiksēts” / „Longlife” / „CBS” drīkst rakstīt TIKAI, ja tas ir dīlera datos vai agregātu pakā ŠIM motora kodam. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
-PDF virs šī teksta jau drukā tabulu ar KATRU eļļas maiņu (datums, km, solis km, mēneši, josla pret ražotāja intervālu) un kopsavilkuma kartītes (skaits, vidējais km, vidējais laiks). Tabulas rindas NEPĀRRAKSTI: nekādu „26 435 km (9 mēn.), 25 005 km (8 mēn.) …” uzskaitījumu un nekādu visu datumu saraksta.
+PDF virs šī teksta jau drukā tabulu ar KATRU eļļas maiņu (datums, km, intervāls km, mēneši, josla pret ražotāja intervālu) un kopsavilkuma kartītes (skaits, vidējais km, vidējais laiks). Tabulas rindas NEPĀRRAKSTI: nekādu „26 435 km (9 mēn.), 25 005 km (8 mēn.) …” uzskaitījumu un nekādu visu datumu saraksta.
 Jāatbild tālāk (tikai secinājumi):
-- kopējā aina: soļu diapazons (piem. „soļi 12 300-19 700 km, parasti reizi gadā”) un vai tas atbilst ražotāja intervālam;
-- kuri soļi ir garāki par ražotāja intervālu un par cik (nosauc ne vairāk kā 1-2 lielākos ar datumiem);
+- kopējā aina: intervālu starp eļļas maiņām diapazons (piem. „Intervāli starp tām ir no 29 660 līdz 38 620 km un 10-17 mēneši.”) un vai tas atbilst ražotāja intervālam;
+- kuri intervāli ir garāki par ražotāja intervālu un par cik (nosauc ne vairāk kā 1-2 lielākos ar datumiem);
 - pēdējā eļļas maiņa dīlera datos (datums, km) un cik mēneši pagājuši līdz šodienai (no koda faktu saraksta) - kā fakts, bez vērtējuma.
-PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera datos garāks, svītrojums = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Garāks solis NAV apgalvojums, ka eļļa nav mainīta.
+PDF krāsas (zaļa = dīlera intervāls iekļaujas OEM, neitrāls pelēks = dīlera datos garāks, svītrojums = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Garāks intervāls NAV apgalvojums, ka eļļa nav mainīta.
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
-Ja oficiālajā dīlerī ir periods bez ierakstiem, kas garāks par ražotāja intervālu, vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. To NESAUC par pirkuma risku, NEAPGALVO, ka intervāls ir pārkāpts, un NEDOD ieteikumus (rēķinu prasīšana, pilsētas intervāli u.tml.).
+Ja oficiālajā dīlerī ir periods bez ierakstiem, kas garāks par ražotāja intervālu, vai dīlera intervāls datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Piebildi par neatkarīgu servisu un ierakstiem bez darbu apraksta pievieno kods - pats to neraksti. To NESAUC par pirkuma risku, NEAPGALVO, ka intervāls ir pārkāpts, un NEDOD ieteikumus (rēķinu prasīšana, pilsētas intervāli u.tml.).
 ${DEALER_FACTS_ONLY_DIRECTIVE}
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
 Lielos mezglus, kārbas eļļu, remontus, kampaņas un citus darbus šeit NERAKSTI (nekādas rindkopas „Lielo mezglu apkopes”) - tie pieder atsevišķajam laukam „Komentāri”.
+VĀRDI: raksti „intervāls / intervāli starp eļļas maiņām”, NEKAD „solis”, „soļi”, „soļu diapazons”, „nobraukuma solis” (EN „interval(s) between oil changes”, ne „step”; RU „интервал(ы) между заменами масла”, ne „шаг”; DE „Intervall(e) zwischen den Ölwechseln”, ne „Schritt”).
 Garums: 2–3 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sākas tieši ar „Ražotāja intervāls:”. Pārējām rindkopām virsraksts savā rindā, tad rindkopa. Bez *, **.${
           input.highlightMajorAssemblies ? `\n\n${DEALER_MAJOR_ASSEMBLIES_DIRECTIVE}` : ""
         }${input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""}`,

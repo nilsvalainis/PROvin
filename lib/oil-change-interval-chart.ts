@@ -18,6 +18,7 @@ import {
   detectOilNoteLang,
   ensureOilIntervalNotes,
   findExceededOilIntervals,
+  replaceOilStepWordingLv,
   type OilExceededInterval,
   type OilNoteLang,
 } from "@/lib/oil-interval-dealer-notes";
@@ -225,6 +226,7 @@ export function oilIntervalNotesWithRequiredNotes(
   lang?: OilNoteLang | null,
 ): string {
   if (!(text ?? "").trim()) return text ?? "";
-  const intervals = oilExceededIntervalsForBlock(block, { oemText: text });
-  return ensureOilIntervalNotes(text, intervals, lang ?? detectOilNoteLang(text));
+  const worded = replaceOilStepWordingLv(text);
+  const intervals = oilExceededIntervalsForBlock(block, { oemText: worded });
+  return ensureOilIntervalNotes(worded, intervals, lang ?? detectOilNoteLang(worded));
 }

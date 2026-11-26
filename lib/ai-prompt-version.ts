@@ -246,5 +246,7 @@
  * - 2026-11-25.0 - Jauns avots CARFAX (carfax.eu PDF): avota komentāra fokuss (ātrā pārbaude, bojājumu
  *   zonas / smagums, drošības spilveni, salvage; remonta aplēse nav izmaksa; dīleris nav īpašnieks),
  *   Copilot avotu sarakstā `carfax`.
+ * - 2026-11-26.0 - Eļļas intervāli: «intervāls / intervāli starp eļļas maiņām», nekad «solis / soļi»
+ *   (prompti un faktu lapa); piebildi par neatkarīgu servisu un ierakstiem bez darbu apraksta pievieno kods.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-11-25.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-26.0";
