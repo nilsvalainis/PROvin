@@ -220,3 +220,83 @@ describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
     expect(dbx.calls.create).toBe(0);
   });
 });
+
+describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar veco nosaukumu)", () => {
+  it("cits izsaukums mapi jau pārdēvēja - ieraksts un fails iet uz jauno ceļu, vecā mape netiek atjaunota", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("cs_test_race", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00001", client: dbx.client });
+    expect(r1?.path).toBe("/_PROv/DILERA DATI/WBAJB5101HWA00001_2026-11-23_DILERA DATI");
+    h.drafts.set("cs_test_race", {
+      workspace: { sourceBlocks: { csdd: { makeModel: "BMW 540I XDRIVE", registrationNumber: "BM0001", vin: "WBAJB5101HWA00001" } } },
+    });
+    const renamed = "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0001_WBAJB5101HWA00001_2026-11-23_DILERA DATI";
+    // Šis izsaukums nolasa metadatus ar veco nosaukumu, bet pirms tā pārdēvē paralēls izsaukums.
+    let first = true;
+    const racing = {
+      ...dbx.client,
+      getMetadata: async (id: string) => {
+        const m = await dbx.client.getMetadata(id);
+        if (first && m) {
+          first = false;
+          dbx.byId.set(id, renamed);
+        }
+        return m;
+      },
+      move: dbx.client.move,
+      upload: dbx.client.upload,
+      ensureFolder: dbx.client.ensureFolder,
+    } as unknown as DropboxClient;
+    const r2 = await ensureOrderDropboxFolder("cs_test_race", { client: racing });
+    expect(r2?.path).toBe(renamed);
+    expect((await readOrderDropboxRecord("cs_test_race"))?.path).toBe(renamed);
+
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_race", "LTAB - BM0001.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe(`${renamed}/LTAB - BM0001.pdf`);
+    expect(dbx.calls.upload).toEqual([`${renamed}/LTAB - BM0001.pdf`]);
+    expect(dbx.calls.create).toBe(1);
+  });
+
+  it("ieraksta ceļš novecojis - augšupielāde pēc mapes id, nevis pēc ieraksta ceļa", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("cs_test_stale", { category: "audits", createdMs: created, vin: "AB1234", client: dbx.client });
+    // Mape pārdēvēta ārpus šī izsaukuma (piem. Nils Dropbox), ieraksts vēl rāda veco ceļu.
+    dbx.byId.set(r1!.folderId!, "/_PROv/AUDITI/AUDI A6_AB1234_2026-11-23_AUDITS");
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_stale", "CarVertical - X.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe("/_PROv/AUDITI/AUDI A6_AB1234_2026-11-23_AUDITS/CarVertical - X.pdf");
+  });
+
+  it("mapi pārdēvē tieši augšupielādes brīdī - fails pārcelts uz īsto mapi, tukšā liekā mape uz atkritni", async () => {
+    const dbx = fakeDropbox();
+    const r1 = await ensureOrderDropboxFolder("cs_test_mid", { category: "audits", createdMs: created, vin: "AB1235", client: dbx.client });
+    const oldPath = r1!.path!;
+    const newPath = "/_PROv/AUDITI/AUDI A6_AB1235_2026-11-23_AUDITS";
+    const deleted: string[] = [];
+    const moved: Array<[string, string]> = [];
+    const client = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      ensureFolder: dbx.client.ensureFolder,
+      async upload(p: string) {
+        dbx.byId.set(r1!.folderId!, newPath); // paralēla pārdēvēšana
+        return entry("file", p, "id:file1");
+      },
+      async move(from: string, to: string) {
+        moved.push([from, to]);
+        return entry("file", to, "id:file1");
+      },
+      async listFolder() {
+        return { entries: [], cursor: "", hasMore: false };
+      },
+      async deleteFile(p: string) {
+        deleted.push(p);
+      },
+    } as unknown as DropboxClient;
+    h.client = client;
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_mid", "LTAB - AB1235.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(moved).toEqual([[`${oldPath}/LTAB - AB1235.pdf`, `${newPath}/LTAB - AB1235.pdf`]]);
+    expect(deleted).toEqual([oldPath]);
+    expect(saved.path).toBe(`${newPath}/LTAB - AB1235.pdf`);
+  });
+});
