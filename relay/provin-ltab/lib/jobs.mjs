@@ -1,5 +1,6 @@
 /**
- * LTAB uzdevumu rinda: viens uzdevums vienlaikus (viens Chrome, viena sesija), nakts aizliegums automātikai,
+ * LTAB uzdevumu rinda: viens uzdevums vienlaikus (viens Chrome, viena sesija), izvēles klusais logs automātikai
+ * (`isNight`, pēc noklusējuma izslēgts),
  * stundas limits, rezultāts uz PROVIN caur `notify`. Rinda saglabājas failā (bez PDF), lai pēc restarta neizgaistu.
  */
 import { randomUUID } from "node:crypto";

@@ -1,4 +1,5 @@
 import { provinEmailSubject } from "@/lib/email/email-subject";
+import { CLIENT_EMAIL_QUESTION_LINE } from "@/lib/email/client-email-contact";
 /**
  * Klienta „atskaite gatava” e-pasti: dīleris / MINI / AUDITS.
  * Tīri stringi - der HTML veidnei un testiem.
@@ -107,26 +108,6 @@ const REPORT_READY_MAIN_LINE: Record<ReportReadyProductKind, Record<ClientReport
   },
 };
 
-const REPORT_READY_QUESTION_LINE: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
-  dealer: {
-    lv: "Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
-    en: "If you have any questions, please write to info@provin.lv. We're happy to help.",
-    ru: "Если у вас есть вопросы, напишите на info@provin.lv. Будем рады помочь.",
-    de: "Bei Fragen schreiben Sie bitte an info@provin.lv. Wir helfen gerne weiter.",
-  },
-  mini: {
-    lv: "Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
-    en: "If you have any questions, please write to info@provin.lv. We're happy to help.",
-    ru: "Если у вас есть вопросы, напишите на info@provin.lv. Будем рады помочь.",
-    de: "Bei Fragen schreiben Sie bitte an info@provin.lv. Wir helfen gerne weiter.",
-  },
-  audits: {
-    lv: "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
-    en: "If you have any questions or need additional consultation, please write to info@provin.lv. We're happy to help.",
-    ru: "Если у вас есть вопросы или нужна дополнительная консультация, напишите на info@provin.lv. Будем рады помочь.",
-    de: "Bei Fragen oder wenn Sie eine weitere Beratung benötigen, schreiben Sie bitte an info@provin.lv. Wir helfen gerne weiter.",
-  },
-};
 
 const REPORT_READY_AUDITS_BULLETS: Record<ClientReportLang, readonly [string, string]> = {
   lv: ["Kopsavilkuma PDF atskaiti", "Papildu materiālus un pielikumus"],
@@ -170,7 +151,7 @@ export function buildReportReadyPlainText(
   const closing = reportReadyClosingLines(b2bClient, lang);
   const greeting = REPORT_READY_GREETING[lang];
   const mainLine = REPORT_READY_MAIN_LINE[opts.kind][lang];
-  const questionLine = REPORT_READY_QUESTION_LINE[opts.kind][lang];
+  const questionLine = CLIENT_EMAIL_QUESTION_LINE[lang];
 
   if (opts.kind === "dealer") {
     const parts = [greeting, "", mainLine, "", REPORT_READY_ATTACHMENTS_INTRO[lang]];

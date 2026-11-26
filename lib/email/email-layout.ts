@@ -7,6 +7,15 @@
  * - bez JS. Teksts vienmēr escapots šeit vai izsaucējā.
  */
 import type { ClientReportLang } from "@/lib/client-report-i18n";
+import {
+  CLIENT_EMAIL_CONTACT_EMAIL,
+  CLIENT_EMAIL_CONTACT_PHONE_DISPLAY,
+  CLIENT_EMAIL_CONTACT_PHONE_TEL,
+  CLIENT_EMAIL_CONTACT_SITE_LABEL,
+  CLIENT_EMAIL_CONTACT_SITE_URL,
+  CLIENT_EMAIL_CONTACT_VARIANT,
+  type ClientEmailContactVariant,
+} from "@/lib/email/client-email-contact";
 
 export const EMAIL_ICON_BASE_URL = "https://www.provin.lv/email";
 
@@ -293,13 +302,26 @@ const FOOTER_AUTO: Record<ClientReportLang, string> = {
   de: "Diese E-Mail wurde automatisch gesendet.",
 };
 
-export function emailFooterRows(b2b: boolean): string {
-  const contacts = `${emailLink("mailto:info@provin.lv", "info@provin.lv")} · ${emailLink("tel:+37129502039", "29&nbsp;502&nbsp;039")}`;
-  const site = b2b
-    ? ""
-    : `<td class="m-stack c-mut" valign="top" align="right" style="font-family:${F};font-size:13px;line-height:20px;color:${C.mut};"><a href="https://www.provin.lv/lv" target="_blank" class="c-lnk" style="color:${C.blue};text-decoration:none;">provin.lv</a></td>`;
+/** Kontaktu saite kājenē - pelēka, bez zilā akcenta (Nils 26.11: kājene neuzkrītoša). */
+function footerLink(href: string, label: string): string {
+  return `<a href="${escHtml(href)}" target="_blank" class="c-mut" style="color:${C.mut};text-decoration:none;">${label}</a>`;
+}
+
+/**
+ * Klientu e-pasta kājene (sk. `CLIENT_EMAIL_CONTACT_VARIANT`):
+ * A - līnija + viena maza pelēka rinda «provin.lv · +371 29 502 039» (B2B - tikai tālrunis, bez «.LV»);
+ * B - bez līnijas, rinda «info@provin.lv · +371 29 502 039» uzreiz zem paraksta.
+ */
+export function emailFooterRows(b2b: boolean, variant: ClientEmailContactVariant = CLIENT_EMAIL_CONTACT_VARIANT): string {
+  const phone = footerLink(`tel:${CLIENT_EMAIL_CONTACT_PHONE_TEL}`, CLIENT_EMAIL_CONTACT_PHONE_DISPLAY.replace(/ /g, "&nbsp;"));
+  const lineStyle = `margin:0;font-family:${F};font-size:12px;line-height:18px;color:${C.mut};`;
+  if (variant === "B") {
+    const mail = footerLink(`mailto:${CLIENT_EMAIL_CONTACT_EMAIL}`, CLIENT_EMAIL_CONTACT_EMAIL);
+    return `<tr><td class="m-pad" style="padding:6px 36px 28px;"><p class="c-mut" style="${lineStyle}">${mail} · ${phone}</p></td></tr>`;
+  }
+  const items = b2b ? [phone] : [footerLink(CLIENT_EMAIL_CONTACT_SITE_URL, CLIENT_EMAIL_CONTACT_SITE_LABEL), phone];
   return `<tr><td class="m-pad" style="padding:26px 36px 0;">${emailHr()}</td></tr>
-<tr><td class="m-pad" style="padding:16px 36px 28px;"><table ${TABLE} width="100%"><tr><td class="m-stack c-mut" valign="top" style="font-family:${F};font-size:13px;line-height:20px;color:${C.mut};">${contacts}</td>${site}</tr></table></td></tr>`;
+<tr><td class="m-pad" style="padding:14px 36px 26px;"><p class="c-mut" style="${lineStyle}">${items.join(" · ")}</p></td></tr>`;
 }
 
 /**

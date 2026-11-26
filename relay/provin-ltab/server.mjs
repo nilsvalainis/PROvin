@@ -13,7 +13,8 @@
  *   LTAB_RELAY_HOST/PORT         noklusējums 127.0.0.1 / 8791
  *   LTAB_DATA_DIR                noklusējums /var/lib/provin-ltab
  *   LTAB_MAX_PER_HOUR            noklusējums 20
- *   LTAB_NIGHT_FROM / LTAB_NIGHT_TO  noklusējums 22 / 7 (Rīgas laiks; automātika naktī gaida)
+ *   LTAB_NIGHT_FROM / LTAB_NIGHT_TO  noklusējums 0 / 0 = nav klusā loga (Smart-ID automātiski prasa visu diennakti);
+ *                                piem. 22 / 7 - automātika šajā Rīgas laikā gaida (manuālā poga strādā vienmēr)
  *   LTAB_SMARTID_TIMEOUT_SEC     noklusējums 120
  *   LTAB_SESSION_TTL_MIN         noklusējums 20 (cik ilgi pēc pēdējā veiksmīgā vaicājuma sesiju uzskata par aktīvu)
  *   LTAB_CHROME_CHANNEL          noklusējums chrome (ja nav, Playwright Chromium)
@@ -45,8 +46,8 @@ const DATA_DIR = process.env.LTAB_DATA_DIR || "/var/lib/provin-ltab";
 const PROFILE_DIR = path.join(DATA_DIR, "profile");
 const DEBUG_DIR = path.join(DATA_DIR, "debug");
 const MAX_PER_HOUR = Math.max(1, Number(process.env.LTAB_MAX_PER_HOUR || 20));
-const NIGHT_FROM = Number(process.env.LTAB_NIGHT_FROM || 22);
-const NIGHT_TO = Number(process.env.LTAB_NIGHT_TO || 7);
+const NIGHT_FROM = Number(process.env.LTAB_NIGHT_FROM || 0);
+const NIGHT_TO = Number(process.env.LTAB_NIGHT_TO || 0);
 const SMARTID_TIMEOUT_MS = Math.max(30, Number(process.env.LTAB_SMARTID_TIMEOUT_SEC || 120)) * 1000;
 const CHROME_CHANNEL = (process.env.LTAB_CHROME_CHANNEL ?? "chrome").trim();
 const MAX_PDF_BYTES = 3 * 1024 * 1024;

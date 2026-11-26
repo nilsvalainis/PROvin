@@ -13,6 +13,7 @@ import { extractBearerToken } from "@/lib/iriss-aivars-api-token";
 import { runLtabPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import {
   isPdfBytes,
+  ltabQueuedMessageLv,
   ltabCertificateHasClaims,
   ltabCertificateMismatch,
   reduceLtabProgress,
@@ -138,12 +139,11 @@ export async function startLtabLookup(
       });
       return { ok: false, status, started: false };
     }
-    const night = json.state === "deferred_night";
     const status = await saveStatus(sessionId, {
       state: "queued",
       plate: target.plate,
       jobId: json.jobId,
-      message: night ? "Gaida rītu (07:00) - naktī Smart-ID neprasām" : "Gaida rindā",
+      message: ltabQueuedMessageLv(json.state),
       requestedAt,
       updatedAt: nowIso(),
       trigger: opts.trigger,

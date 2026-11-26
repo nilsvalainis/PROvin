@@ -46,6 +46,14 @@ export function ltabRelayErrorLv(code: string | undefined, fallback?: string): s
 }
 
 /** Atbildes, kas nav galīgs rezultāts: atjauno tikai stāvokli. */
+/**
+ * Ziņa pēc releja `/lookup` atbildes. `deferred_night` relejs atdod tikai, ja tajā ieslēgts klusais logs
+ * (LTAB_NIGHT_FROM/TO; noklusējumā nav - Smart-ID prasa jebkurā diennakts laikā, 26.11).
+ */
+export function ltabQueuedMessageLv(relayState: unknown): string {
+  return relayState === "deferred_night" ? "Gaida - šajā laikā automātika Smart-ID neprasa (releja iestatījums)" : "Gaida rindā";
+}
+
 export function reduceLtabProgress(prev: LtabAutoStatus | null, ev: LtabRelayEvent, now: string): LtabAutoStatus {
   const base: LtabAutoStatus = {
     ...(prev ?? { state: "queued", updatedAt: now }),

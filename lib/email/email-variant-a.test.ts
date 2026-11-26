@@ -134,10 +134,11 @@ describe("e-pasti variants A", () => {
     }
   });
 
-  it("kājene: info@provin.lv · 29 502 039 + automātiskā rinda", () => {
+  it("kājene: provin.lv · +371 29 502 039 + automātiskā rinda", () => {
     const html = readyWithOffer();
-    expect(html).toContain('href="mailto:info@provin.lv"');
+    expect(html).not.toContain('href="mailto:info@provin.lv"');
     expect(html).toContain('href="tel:+37129502039"');
+    expect(html).toContain(">provin.lv</a> · <a");
     expect(html).toContain("Šis e-pasts nosūtīts automātiski.");
   });
 
@@ -148,12 +149,12 @@ describe("e-pasti variants A", () => {
     expect(html).toContain("Report ready");
   });
 
-  it("atmaksa / atcelts - pelēka karte, poga uz PROVIN AUDITS", () => {
+  it("atmaksa / atcelts - pelēka karte, poga uz PROVIN AUDITU", () => {
     const msg = buildDealerSendMessage({ channel: "email", situation: "no_data", b2b: false, vin: VIN, refundCents: 2499 });
     const html = dealerDataOperatorMessageEmailHtml({ text: msg.text, context: { situation: "no_data", vin: VIN } });
     expect(html).toContain("Dati nav pieejami");
     expect(html).toContain("refund.png");
-    expect(html).toContain("Pasūtīt PROVIN AUDITS");
+    expect(html).toContain("Pasūtīt PROVIN AUDITU");
     const cancelled = dealerDataOperatorMessageEmailHtml({ text: "Labdien!", context: { situation: "cancelled", vin: VIN } });
     expect(cancelled).toContain("Pasūtījums atcelts");
   });

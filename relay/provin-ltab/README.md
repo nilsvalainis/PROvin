@@ -14,8 +14,8 @@ Kad relejs saņem uzdevumu, to nosaka PROVIN: tikai, ja CSDD dati rāda LV reģi
 | `server.mjs` | HTTP 127.0.0.1:8791, Bearer, Chrome profils, atzvans uz PROVIN |
 | `lib/ltab-flow.mjs` | Pārlūka soļi: LTAB sākumlapa, Smart-ID, meklēšana, PDF |
 | `lib/viss-sso.mjs` | Vienotā pieteikšanās (vpm.viss.gov.lv) + Smart-ID; IDENTISKS fails e.csdd relejā |
-| `lib/ltab-page.mjs` | Lapu atpazīšana (tīras funkcijas), personas koda redakcija, nakts logs |
-| `lib/jobs.mjs` | Rinda: viens uzdevums vienlaikus, 20/h, naktī automātika gaida, `jobs.json` |
+| `lib/ltab-page.mjs` | Lapu atpazīšana (tīras funkcijas), personas koda redakcija, klusais logs |
+| `lib/jobs.mjs` | Rinda: viens uzdevums vienlaikus, 20/h, izvēles klusais logs (noklusējumā nav), `jobs.json` |
 | `systemd/` | `provin-ltab.service` + `provin-ltab-xvfb.service` (:97) |
 | `install.sh` | Backup + kods uz `/opt/provin-ltab` + systemd (Caddy neaiztiek) |
 
@@ -34,7 +34,7 @@ relejs  -> PROVIN /api/ltab/relay-callback:
 
 - Viena pieteikšanās apkalpo visus rindā gaidošos (tas pats profils `/var/lib/provin-ltab/profile`).
 - Smart-ID pieprasījumu sāk tikai pasūtījums (pēc apmaksas, `LTAB_AUTO_ENABLED=1`) vai Nila poga "Pieprasīt no LTAB".
-  Naktī 22:00-07:00 automātiskie gaida rītu; poga strādā vienmēr. Atkārtoti pats Smart-ID neprasa.
+  Automātika Smart-ID prasa jebkurā diennakts laikā (26.11; klusais logs tikai ar `LTAB_NIGHT_FROM/TO`); poga strādā vienmēr. Atkārtoti pats Smart-ID neprasa.
 - Relejs nekad neapmaksā (maksājuma poga -> `paid`, stop) un nerisina captcha (`captcha`, stop).
 - Galvenā loga navigācija tikai uz `services.ltab.lv`, `*.viss.gov.lv` un latvija.lv; viss cits tiek bloķēts.
 
