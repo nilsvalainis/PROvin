@@ -64,12 +64,17 @@ function kmLv(raw: string): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+/**
+ * «… is a black Audi A7 Sportback from 2012» / «… är en svart Volvo XC60 från 2011».
+ * Krāsas vārds ir tikai mazajiem burtiem (bez `i` karoga tas vairs nenorij marku: agrāk «Audi» kļuva par krāsu
+ * un marka bija «A7», modelis «Sportback»). Modelis drīkst būt vairākos vārdos.
+ */
+const CARINFO_PROSE_RE =
+  /\b(?:[Ii]s an?|[Ää]r en)\s+(?:[a-zåäö]+\s+){0,2}([A-Z][A-Za-z0-9-]+(?:-[A-Z][A-Za-z]+)?)\s+([A-Z0-9][A-Za-z0-9.-]*(?:\s+[A-Za-z0-9][A-Za-z0-9.-]*){0,3}?)\s+(?:from|från)\s+(\d{4})/;
+
 function vehicleFromCarinfoText(text: string): VinScanVehicle | undefined {
-  const prose =
-    /\b(?:is an?|är en)\s+(?:[a-zåäö]+\s+)?([A-Z][A-Za-z0-9-]+)\s+([A-Z0-9][A-Za-z0-9-]*)\s+(?:from|från)\s+(\d{4})/i.exec(
-      text,
-    );
-  if (prose) return { make: prose[1] ?? "", model: prose[2] ?? "", year: prose[3] ?? "" };
+  const prose = CARINFO_PROSE_RE.exec(text);
+  if (prose) return { make: prose[1] ?? "", model: (prose[2] ?? "").trim(), year: prose[3] ?? "" };
   const titled = /\b([A-Z][A-Za-z0-9-]{2,})\s+([A-Z0-9][A-Za-z0-9-]*)\b[^\n]{0,48}?\b((?:19|20)\d{2})\b/.exec(text);
   if (!titled) return undefined;
   return { make: titled[1] ?? "", model: titled[2] ?? "", year: titled[3] ?? "" };
@@ -104,6 +109,30 @@ export function carinfoHtmlToBlockText(html: string): string {
     .trim();
 }
 
+function lvDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso;
+}
+
+/** car.info apskates -> «Tehniskā apskate» kartīte: vēstures notikumi + «Inspected» / «Inspection valid to». */
+export function carinfoInspections(parsed: ReturnType<typeof parseCarinfoExtract>): NonNullable<VinScanParse["inspections"]> {
+  const out: NonNullable<VinScanParse["inspections"]> = [];
+  for (const row of parsed.timeline ?? []) {
+    if (!row.date || !/apskate/i.test(row.event)) continue;
+    out.push({ date: row.date, result: row.event, ...(row.odometer ? { odometer: row.odometer } : {}) });
+  }
+  const validTo = parsed.inspectionValidTo ? `derīga līdz ${lvDate(parsed.inspectionValidTo)}` : "";
+  if (parsed.inspected) {
+    const same = out.find((row) => row.date === parsed.inspected);
+    if (same) {
+      if (validTo) same.result = [same.result, validTo].filter(Boolean).join(", ");
+    } else {
+      out.push({ date: parsed.inspected, result: validTo || "Tehniskā apskate" });
+    }
+  }
+  return out;
+}
+
 export function carinfoScanFromPage(status: number, html: string): VinScanParse {
   if (carinfoResponseBlocked(status, html)) {
     return { status: "blocked", summary: BLOCKED };
@@ -126,12 +155,14 @@ export function carinfoScanFromPage(status: number, html: string): VinScanParse 
   const otherMarket = /\b(?:en|da|nb|no|fi)\s*\/\s*(?:dk|no|fi)\b/i.test(text);
   const sweden =
     /transportstyrelsen|\b(?:en|sv)\s*\/\s*se\b/i.test(text) || (!otherMarket && /sverige|sweden/i.test(text));
+  const inspections = carinfoInspections(parsed);
   return {
     status: "found",
     summary: summaryFromParsed(text, { ...parsed, mileage }),
     detail,
     vehicle: vehicleFromCarinfoText(text),
     mileage: mileage.map((row) => ({ date: row.date, odometer: row.odometer })),
+    ...(inspections.length ? { inspections } : {}),
     flags: sweden ? { registrationCountry: "SE" } : undefined,
   };
 }

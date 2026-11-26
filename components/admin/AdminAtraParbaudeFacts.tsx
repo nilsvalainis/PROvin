@@ -328,7 +328,18 @@ export function AdminAtraFactCards({
               ? `pēdējā ${facts.inspection.last}`
               : undefined
         }
-        src="CSDD"
+        src={facts.inspection.sources?.join(" · ") || "CSDD"}
+      />
+    ),
+    recalls: (span) => (
+      <Fact
+        key="recalls"
+        span={span}
+        glass={glass}
+        k="Atsaukumi"
+        v={`${facts.recalls.count} ${facts.recalls.count % 10 === 1 && facts.recalls.count % 100 !== 11 ? "ieraksts" : "ieraksti"}`}
+        s={facts.recalls.items.slice(0, 3).join(" · ") || undefined}
+        src={facts.recalls.sources.join(" · ") || undefined}
       />
     ),
   };
