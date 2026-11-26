@@ -92,10 +92,12 @@ function resetFreeBlocks(baseline: WorkspaceSourceBlocks, keys: readonly SourceB
  * Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE)
  * plus VIN SCAN ar to pašu izpildītāju un kešu kā VIN SCAN lapa (`runSharedVinScan`, avoti `defaultVinScanSourceIds`).
  * `refresh` ielasa visu no jauna; `only` – tikai vienu avotu (kartītes „Mēģināt vēlreiz”).
+ * `skipVinScan` - automātika (`quick-eval-auto`) jau ņem svaigu (< 24 h) VIN SCAN momentuzņēmumu;
+ * `vin` - VIN, ko automātika jau atrada pēc numurzīmes (CSDD ar atkārtojumiem).
  */
 export async function seedQuickEval(
   peekId: string,
-  opts: { refresh?: boolean; only?: string } = {},
+  opts: { refresh?: boolean; only?: string; skipVinScan?: boolean; vin?: string } = {},
 ): Promise<QuickEvalDoc | null> {
   const peek = await getListingPeekById(peekId);
   if (!peek) return null;
@@ -106,13 +108,14 @@ export async function seedQuickEval(
   } else if (opts.refresh) {
     baseline = resetFreeBlocks(baseline, FREE_SOURCE_BLOCK_KEYS);
   }
-  const doScan = !opts.only || opts.only === "vin_scan";
+  const doScan = (!opts.only || opts.only === "vin_scan") && !opts.skipVinScan;
   const seedPromise =
     opts.only === "vin_scan"
       ? Promise.resolve(null)
       : computeFreeSourceSeed(baseline, { vin: peek.vin, listingUrl: peek.listingUrl });
   const seeded = await seedPromise;
-  const vin = seeded?.resolvedVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
+  const knownVin = isValidVin(normalizeVin(opts.vin ?? "")) ? normalizeVin(opts.vin ?? "") : "";
+  const vin = seeded?.resolvedVin || knownVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
   const blocksForScan = seeded?.blocks ?? current.sourceBlocks;
   // Tas pats izpildītājs, avotu saraksts un kešs pēc VIN kā VIN SCAN / «Ātrā pārbaude» lapā.
   const scanInput =

@@ -25,6 +25,9 @@ import { buildLetterFacts, buildSourceCards, csddCardFacts, fmtLv, type QuickEva
 import { listQuickEvalExportCandidates } from "@/lib/quick-eval-service";
 import { readQuickEval } from "@/lib/quick-eval-store";
 import { mergeQuickEvalVinScan } from "@/lib/quick-eval-vin-scan";
+import { AdminQuickEvalAutoPanel } from "@/components/admin/AdminQuickEvalAutoPanel";
+import { refreshQuickEvalSmartId } from "@/lib/quick-eval-auto";
+import { quickEvalAutoView, quickEvalProductPriceLabel } from "@/lib/quick-eval-auto-core";
 import { readVinScanSnapshot } from "@/lib/vin-scan/store";
 import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
 import { heardAboutDisplayLabel } from "@/lib/stripe-session";
@@ -90,7 +93,14 @@ export default async function QuickEvalDetailPage({
   if (peek.status === "new") {
     peek = (await updateListingPeekStatus(peek.id, "in_progress").catch(() => null)) ?? { ...peek, status: "in_progress" };
   }
+  // e.csdd / LTAB rezultāts varēja pienākt pa šo laiku (atzvans) - ievieto un pārrēķina (releju nesauc).
+  if (await refreshQuickEvalSmartId(peek.id, { startIfActive: false }).catch(() => false)) {
+    console.info("[quick-eval] smart-id results applied", { peekId: peek.id.slice(0, 8) });
+  }
   const [doc, all] = await Promise.all([readQuickEval(peek.id).catch(() => null), listListingPeeks(200).catch(() => [])]);
+  const autoStatus = doc?.auto ?? null;
+  const autoView = quickEvalAutoView(autoStatus, Date.now());
+  const autoProducts = [...new Set((autoStatus?.recommendations ?? []).map((r) => r.product))].map(quickEvalProductPriceLabel);
   // VIN vēsture un eksporta kandidāti skenē visus pasūtījumus → straumē ar Suspense, lapa nerāda tukšu ekrānu.
   const vinKeys = [peek.vin, doc?.vin, doc?.sourceBlocks.csdd.registrationNumber, doc?.sourceBlocks.csdd.vin];
 
@@ -239,6 +249,8 @@ export default async function QuickEvalDetailPage({
           </form>
         </details>
       </section>
+
+      <AdminQuickEvalAutoPanel peekId={peek.id} view={autoView} status={autoStatus} productLabels={autoProducts} />
 
       <Suspense fallback={null}>
         <VinBarSection peekId={peek.id} keys={vinKeys} />
