@@ -2,14 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  CARFAX_MAX_ATTEMPTS,
-  CARFAX_RETRY_MIN_LEFT_MS,
+  CARFAX_CACHE_MS,
+  CARFAX_COOLDOWN_BASE_MS,
   carfaxRecordCheckMatches,
   createVinSourceCache,
-  isCarfaxCaptchaReject,
+  createCarfaxCooldown,
   readBidCarsSearch,
   readCarfaxRecordCheck,
-  shouldRetryCarfax,
   validBidCarsLotUrl,
   validVinSourceRequest,
   vinSourceLaneKey,
@@ -84,15 +83,37 @@ test("createVinSourceCache: 24 h tikai found/none, vecākie izkrīt", () => {
   assert.equal(cache.get("b"), null);
 });
 
-test("shouldRetryCarfax: tikai reCAPTCHA 403, ar laika rezervi un ne vairāk par maksimumu", () => {
-  const reject = { status: 403, text: '{"error":"INVALID_CAPTCHA"}' };
-  assert.equal(isCarfaxCaptchaReject(reject.status, reject.text), true);
-  assert.equal(isCarfaxCaptchaReject(403, "Forbidden"), false);
-  assert.equal(shouldRetryCarfax({ ...reject, attempt: 1, leftMs: 30_000 }), true);
-  assert.equal(shouldRetryCarfax({ ...reject, attempt: CARFAX_MAX_ATTEMPTS - 1, leftMs: 30_000 }), true);
-  assert.equal(shouldRetryCarfax({ ...reject, attempt: CARFAX_MAX_ATTEMPTS, leftMs: 30_000 }), false);
-  assert.equal(shouldRetryCarfax({ ...reject, attempt: 1, leftMs: CARFAX_RETRY_MIN_LEFT_MS - 1 }), false);
-  assert.equal(shouldRetryCarfax({ status: 200, text: "{}", attempt: 1, leftMs: 30_000 }), false);
-  assert.equal(shouldRetryCarfax({ status: 422, text: "{}", attempt: 1, leftMs: 30_000 }), false);
-  assert.equal(shouldRetryCarfax({ status: 500, text: "INVALID_CAPTCHA", attempt: 1, leftMs: 30_000 }), false);
+test("createCarfaxCooldown: pauze pēc captcha, dubultojas, veiksme atiestata", () => {
+  let t = 1_000_000;
+  const cd = createCarfaxCooldown({ baseMs: 1_000, maxMs: 3_000, now: () => t });
+  assert.equal(cd.remainingMs(), 0);
+  cd.record({ kind: "error", note: "cits" });
+  assert.equal(cd.remainingMs(), 0, "ne-captcha kļūda pauzi neieslēdz");
+  cd.record({ kind: "error", captcha: true });
+  assert.equal(cd.remainingMs(), 1_000);
+  assert.ok(cd.untilIso());
+  t += 1_000;
+  assert.equal(cd.remainingMs(), 0);
+  cd.record({ kind: "error", captcha: true });
+  assert.equal(cd.remainingMs(), 2_000);
+  cd.record({ kind: "error", captcha: true });
+  assert.equal(cd.remainingMs(), 3_000, "griesti");
+  cd.record({ kind: "found" });
+  assert.equal(cd.remainingMs(), 0);
+  assert.equal(cd.strikes, 0);
+  assert.equal(CARFAX_COOLDOWN_BASE_MS >= 10 * 60 * 1000, true);
+});
+
+test("createVinSourceCache: avotam savs derīgums (carfax_eu 7 d)", () => {
+  let t = 0;
+  const cache = createVinSourceCache({ now: () => t, ttlBySource: { carfax_eu: CARFAX_CACHE_MS } });
+  const cf = vinSourceLaneKey("carfax_eu", VIN);
+  const bc = vinSourceLaneKey("bid_cars", VIN);
+  cache.set(cf, { kind: "found", json: {} });
+  cache.set(bc, { kind: "none" });
+  t = 2 * 24 * 60 * 60 * 1000;
+  assert.equal(cache.get(cf)?.kind, "found");
+  assert.equal(cache.get(bc), null);
+  t = CARFAX_CACHE_MS + 1;
+  assert.equal(cache.get(cf), null);
 });

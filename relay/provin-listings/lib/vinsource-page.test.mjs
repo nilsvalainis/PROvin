@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { CARFAX_MAX_ATTEMPTS } from "./vinsource-logic.mjs";
 import { readVinSource } from "./vinsource-page.mjs";
 
 const VIN = "TMBJH9NP9H7561596";
@@ -47,42 +46,33 @@ function fakePage(responses) {
   return page;
 }
 
-test("CARFAX: pēc reCAPTCHA 403 pārlādē un meklē vēlreiz tajā pašā sesijā", async () => {
+test("CARFAX: reCAPTCHA 403 -> viens mēģinājums, captcha karogs, bez atkārtojuma", async () => {
   const page = fakePage([REJECT, FOUND]);
   const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 40_000 });
-  assert.equal(out.kind, "found");
-  assert.equal(out.attempts, 2);
-  assert.equal(page.calls.goto, 2);
-  assert.equal(out.json.recordCheck.displayRecords, 10);
-});
-
-test("CARFAX: pirmais mēģinājums izdodas - bez atkārtojuma", async () => {
-  const page = fakePage([FOUND, FOUND]);
-  const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 40_000 });
-  assert.equal(out.kind, "found");
-  assert.equal(out.attempts, 1);
+  assert.equal(out.kind, "error");
+  assert.equal(out.captcha, true);
+  assert.equal(out.note, "CARFAX.eu: reCAPTCHA noraidīja (403)");
+  assert.equal(page.calls.goto, 1);
   assert.equal(page.calls.enter, 1);
 });
 
-test("CARFAX: ierakstu nav (422) nav kļūda un netiek atkārtots", async () => {
-  const page = fakePage([{ status: 422, text: "{}" }, FOUND]);
+test("CARFAX: atrasts", async () => {
+  const page = fakePage([FOUND]);
+  const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 40_000 });
+  assert.equal(out.kind, "found");
+  assert.equal(out.json.recordCheck.displayRecords, 10);
+  assert.equal(out.captcha, undefined);
+});
+
+test("CARFAX: ierakstu nav (422) nav kļūda", async () => {
+  const page = fakePage([{ status: 422, text: "{}" }]);
   const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 40_000 });
   assert.equal(out.kind, "none");
-  assert.equal(out.attempts, 1);
 });
 
-test("CARFAX: ne vairāk par maksimumu, tad skaidra kļūda", async () => {
-  const page = fakePage(Array.from({ length: CARFAX_MAX_ATTEMPTS + 2 }, () => REJECT));
-  const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 120_000 });
+test("CARFAX: cits 403 (bez INVALID_CAPTCHA) nav captcha", async () => {
+  const page = fakePage([{ status: 403, text: "Forbidden" }]);
+  const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 40_000 });
   assert.equal(out.kind, "error");
-  assert.equal(out.note, "CARFAX.eu: reCAPTCHA noraidīja (403)");
-  assert.equal(out.attempts, CARFAX_MAX_ATTEMPTS);
-  assert.equal(page.calls.enter, CARFAX_MAX_ATTEMPTS);
-});
-
-test("CARFAX: ja laika par maz, neatkārto", async () => {
-  const page = fakePage([REJECT, FOUND]);
-  const out = await readVinSource(page, "carfax_eu", VIN, { timeoutMs: 8_000 });
-  assert.equal(out.kind, "error");
-  assert.equal(out.attempts, 1);
+  assert.equal(out.captcha, undefined);
 });

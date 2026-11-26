@@ -88,7 +88,7 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 | GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
 | POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?, needPriceIds?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}`. ET: future_api 404/tukšs = `ok 0 (truly empty)` bez `/search` gaidīšanas. Tas pats URL rindā tiek lasīts vienreiz. |
 | POST | `/listings/page` | `{url}` VIN SCAN izsole + Adify / Tirgus Dati / ss.lv (stat.vin, bid.cars, checkcar.vin, bidfax.info, poctra.com, plc.auction, adify.lv, tirgusdati.lv, ss.lv, ss.com, city24.lv) -> `{ok, status, finalUrl, html, elapsedMs}`. Īsts Chrome, profils `vinscan`. Caddy `/listings/*` jau der. Dienas limits atsevišķs: `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400). |
-| POST | `/listings/vinsource` | `{source: bid_cars\|carfax_eu, vin}` VIN SCAN avoti, kuru lapu veido JS. bid.cars: lapas iekšienē `/app/search/en/vin-lot/{VIN}/true` -> lota lapa (pārdošanas vēsture, bojājumi, nobraukums, bildes). CARFAX.eu: sākumlapas forma -> `record-check` JSON (ierakstu skaits, valstis; nekas netiek pirkts). -> `{ok, source, vin, kind (found\|none\|blocked\|error), note, html?, json?, search?, finalUrl, elapsedMs, cached}`. Viena josla abiem avotiem (viens Chrome vienlaikus), ≤40 s, kešs 24 h (tikai found/none). Captcha/Turnstile neklikšķina. Skaitās `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY`. Profili `vinsource-bid_cars`, `vinsource-carfax_eu`. |
+| POST | `/listings/vinsource` | `{source: bid_cars\|carfax_eu, vin}` VIN SCAN avoti, kuru lapu veido JS. bid.cars: lapas iekšienē `/app/search/en/vin-lot/{VIN}/true` -> lota lapa (pārdošanas vēsture, bojājumi, nobraukums, bildes). CARFAX.eu: sākumlapas forma -> `record-check` JSON (ierakstu skaits, valstis; nekas netiek pirkts). -> `{ok, source, vin, kind (found\|none\|blocked\|error), note, html?, json?, search?, finalUrl, elapsedMs, cached}`. Viena josla abiem avotiem (viens Chrome vienlaikus), ≤40 s, kešs 24 h, CARFAX 7 d (tikai found/none), CARFAX atdzišana pēc reCAPTCHA 403. Captcha/Turnstile neklikšķina. Skaitās `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY`. Profili `vinsource-bid_cars`, `vinsource-carfax_eu`. |
 | POST | `/listings/detail` | j56: `{platform: auto1\|openlane, url}` viena auto detaļu lapa ar ielogoto profilu -> `{ok, status (ok\|login_required\|blocked\|not_found\|error), note, detail{title, fields[[etiķete,vērtība]], tables, lists, photos[] izsoles secībā, jsonFields, item}, elapsedMs}`. Neapstrādāts JSON/HTML un konta lauki netiek atdoti. Dienas limits `LISTINGS_DETAIL_MAX_FETCHES_PER_DAY` (noklusējums 60). |
 | POST | `/listings/lot-vins` | `{platform: openlane\|autobid, urls[]}` (līdz 12 lotes saitēm): ar ielogoto profilu atver lotes lapas un nolasa VIN -> `{ok, status (ok\|login_required\|blocked\|error), note, results[{url, status (ok\|no_vin\|gone\|error), vin, mileageKm, firstRegistration, title}], elapsedMs}`. `results` ir ievades secībā un skaitā, `url` atkārto ievadi burtiski. Sarakstos un meklēšanā VIN nav, lotes lapā ielogotam ir. Dienas limits `LISTINGS_LOTVIN_MAX_PER_DAY` (noklusējums 300, skaita katru atvērto lapu; pilns -> 429). Žurnālā VIN tikai pēdējās 6 zīmes. |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
@@ -186,9 +186,10 @@ done
 
 Sagaidāms: `bid_cars found` (IAAI 2020 lots, HTML ~270 KB), `bid_cars none`, `carfax_eu found 10`.
 CARFAX.eu: jaunam Chrome profilam neredzamā reCAPTCHA v3 var atbildēt 403 (`kind:error`, «reCAPTCHA noraidīja»);
-tad relejs tajā pašā Chrome sesijā pēc 2,5-4,5 s pauzes pārlādē sākumlapu un meklē vēlreiz (līdz 3 mēģinājumiem,
-cik ļauj 40 s; žurnālā «mēģ. N»). Captcha netiek risināta/klikšķināta. Ja visi mēģinājumi krīt, VIN SCAN rinda paliek
-pārlūka joslā (Tampermonkey) un kešs neko nesaglabā.
+uzreiz NEatkārto (mērījums 26.11: tūlītēji atkārtojumi pazemina Google vērtējumu šim IP un nākamās ~10+ min krīt viss).
+Pēc atteikuma relejs CARFAX.eu neatver 20 min (katrs nākamais atteikums dubulto, ≤3 h; veiksme atiestata) un atbild
+`kind:blocked` «pauze līdz HH:MM» - VIN SCAN rinda paliek pārlūka joslā (Tampermonkey). Captcha netiek risināta/klikšķināta.
+CARFAX found/none kešs 7 dienas (bid.cars 24 h). Atdzišana dzīvo atmiņā (restart to nodzēš).
 
 ## Servera env (`/etc/provin-listings.env`)
 

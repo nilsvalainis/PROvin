@@ -64,6 +64,8 @@ import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/v
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } from "./lib/vinscan-page.mjs";
 import {
+  CARFAX_CACHE_MS,
+  createCarfaxCooldown,
   createVinSourceCache,
   validVinSourceRequest,
   VINSOURCE_TIMEOUT_MS,
@@ -84,7 +86,8 @@ const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MA
 const LOTVIN_MAX_PER_DAY = envPositiveInt(process.env.LISTINGS_LOTVIN_MAX_PER_DAY, 300);
 const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
-const vinSourceCache = createVinSourceCache();
+const vinSourceCache = createVinSourceCache({ ttlBySource: { carfax_eu: CARFAX_CACHE_MS } });
+const carfaxCooldown = createCarfaxCooldown();
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
 
@@ -416,6 +419,20 @@ const server = createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, source, vin, ...hit });
     }
     const shared = vinScanLanes.peek(key);
+    if (!shared && source === "carfax_eu" && carfaxCooldown.remainingMs() > 0) {
+      const until = carfaxCooldown.untilIso();
+      log(`vinsource ${source} atdziest līdz ${until} (reCAPTCHA)`);
+      return sendJson(res, 200, {
+        ok: true,
+        source,
+        vin,
+        cached: false,
+        kind: "blocked",
+        note: `CARFAX.eu: pēc reCAPTCHA atteikuma pauze līdz ${new Date(until).toLocaleTimeString("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit" })} - pārbaudi pārlūka joslā`,
+        cooldownUntil: until,
+        elapsedMs: 0,
+      });
+    }
     if (!shared && vinScanLanes.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
     if (!shared && state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
       return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
@@ -435,7 +452,8 @@ const server = createServer(async (req, res) => {
         }
       });
       vinSourceCache.set(key, out);
-      log(`vinsource ${source} ${out.kind} ${out.elapsedMs} ms${out.attempts > 1 ? ` mēģ. ${out.attempts}` : ""}${out.note ? ` (${out.note})` : ""}`);
+      if (source === "carfax_eu" && !shared) carfaxCooldown.record(out);
+      log(`vinsource ${source} ${out.kind} ${out.elapsedMs} ms${out.note ? ` (${out.note})` : ""}`);
       return sendJson(res, 200, { ok: true, source, vin, cached: false, ...out });
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";

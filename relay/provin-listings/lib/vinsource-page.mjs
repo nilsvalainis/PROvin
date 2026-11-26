@@ -8,13 +8,11 @@
  */
 import {
   bidCarsSearchApiUrl,
-  CARFAX_RETRY_PAUSE_MS,
   carfaxRecordCheckMatches,
   clipHtml,
   isCarfaxCaptchaReject,
   readBidCarsSearch,
   readCarfaxRecordCheck,
-  shouldRetryCarfax,
   VINSOURCE_TIMEOUT_MS,
 } from "./vinsource-logic.mjs";
 
@@ -119,30 +117,20 @@ async function submitCarfaxOnce(page, vin, deadline, { dwellMs }) {
 }
 
 /**
- * CARFAX.eu bezmaksas pieejamības pārbaude. Ja reCAPTCHA v3 noraida tokenu (403 INVALID_CAPTCHA),
- * tajā pašā sasildītajā sesijā pēc pauzes pārlādē lapu un meklē vēlreiz (≤ CARFAX_MAX_ATTEMPTS, cik ļauj laiks).
- * Captcha netiek risināta, klikšķināta vai apieta; redzamo v2 «I'm not a robot» neaiztiek.
+ * CARFAX.eu bezmaksas pieejamības pārbaude, viens mēģinājums. Captcha netiek risināta, klikšķināta vai apieta.
+ * Pēc 403 INVALID_CAPTCHA uzreiz NEatkārto (tas tikai pazemina vērtējumu) - atdzišanu vada server.mjs.
  */
 async function readCarfax(page, vin, deadline) {
-  let attempt = 0;
-  let last = null;
-  while (true) {
-    attempt += 1;
-    const got = await submitCarfaxOnce(page, vin, deadline, { dwellMs: attempt === 1 ? 4_000 : 2_000 });
-    if (got.blocked) return { kind: "blocked", note: "CARFAX.eu: Cloudflare izaicinājums nenokrita", attempts: attempt };
-    if (got.noInput) return { kind: "error", note: "CARFAX.eu: VIN lauks nav atrasts", attempts: attempt };
-    if (got.timeout) return { kind: "error", note: "CARFAX.eu: pārbaudes atbilde nepienāca laikā", attempts: attempt };
-    last = got;
-    if (!shouldRetryCarfax({ status: got.status, text: got.text, attempt, leftMs: left(deadline) })) break;
-    const [lo, hi] = CARFAX_RETRY_PAUSE_MS;
-    await page.waitForTimeout(Math.round(lo + Math.random() * (hi - lo)));
-  }
-  const read = readCarfaxRecordCheck(last.status, last.text);
+  const got = await submitCarfaxOnce(page, vin, deadline, { dwellMs: 4_000 });
+  if (got.blocked) return { kind: "blocked", note: "CARFAX.eu: Cloudflare izaicinājums nenokrita" };
+  if (got.noInput) return { kind: "error", note: "CARFAX.eu: VIN lauks nav atrasts" };
+  if (got.timeout) return { kind: "error", note: "CARFAX.eu: pārbaudes atbilde nepienāca laikā" };
+  const read = readCarfaxRecordCheck(got.status, got.text);
   if (read.kind === "error") {
-    const note = isCarfaxCaptchaReject(last.status, last.text) ? "CARFAX.eu: reCAPTCHA noraidīja (403)" : read.note;
-    return { ...read, note, attempts: attempt };
+    if (isCarfaxCaptchaReject(got.status, got.text)) return { ...read, note: "CARFAX.eu: reCAPTCHA noraidīja (403)", captcha: true };
+    return read;
   }
-  return { kind: read.kind, json: read.json, attempts: attempt };
+  return { kind: read.kind, json: read.json };
 }
 
 /**
