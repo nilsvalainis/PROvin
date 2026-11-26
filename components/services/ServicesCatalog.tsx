@@ -22,6 +22,8 @@ import { SAMPLE_REPORTS, sampleReportAnchorId } from "@/lib/samples-catalog";
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import { packagePriceLabel, packageShortLabel } from "@/lib/services-catalog-labels";
+import { PromoOmnibusLine, PromoPrice, useBlackFridayPlanPrice } from "@/components/promo/BlackFridayPromo";
+import { swapPriceInText } from "@/lib/promo/black-friday";
 
 const SAMPLES_ANCHOR_ID = "paraugi";
 const ORDER: HomeFeatureBreakdownPackageId[] = ["audits", "mini", "dealer", "koreaUsa", "partner"];
@@ -55,6 +57,14 @@ export function ServicesCatalog() {
   );
   const [activeId, setActiveId] = useState<HomeFeatureBreakdownPackageId>(packages[0]?.id ?? "audits");
   const [lightbox, setLightbox] = useState<Sample | null>(null);
+  /** Black Friday: tikai dīlera dati (pārējās paketes nemainās). */
+  const dealerPromo = useBlackFridayPlanPrice("dealer");
+  const ctaText = (pkg: HomeFeatureBreakdownPackage) =>
+    pkg.id === "dealer" && dealerPromo
+      ? swapPriceInText(pkg.buttonText, dealerPromo.regularCents, dealerPromo.promoCents)
+      : pkg.buttonText;
+  const priceNode = (pkg: HomeFeatureBreakdownPackage, price: string) =>
+    pkg.id === "dealer" ? <PromoPrice planId="dealer" regularLabel={price} /> : price;
 
   const auditSamples: Sample[] = SAMPLE_REPORTS.map((s) => ({
     id: s.id,
@@ -126,7 +136,7 @@ export function ServicesCatalog() {
                   onClick={() => setActiveId(pkg.id)}
                 >
                   <b>{pkg.title}</b>
-                  {price ? <em>{price}</em> : <span className="svc-cell-gap" aria-hidden />}
+                  {price ? <em>{priceNode(pkg, price)}</em> : <span className="svc-cell-gap" aria-hidden />}
                 </button>
                 {pkg.ctaHref ? (
                   <Link href={pkg.ctaHref} className="svc-login" aria-label={pkg.buttonText} title={pkg.buttonText}>
@@ -182,13 +192,14 @@ export function ServicesCatalog() {
                 ) : null}
                 <h3 className="svc-name">{renderProvinText(pkg.title, homeDarkProvinWordmarkOptions)}</h3>
                 <p className="svc-price">
-                  {price ?? (
+                  {price ? priceNode(pkg, price) : (
                     pkg.ctaHref ? (
                       <Link href={pkg.ctaHref} className="svc-login is-big" aria-label={pkg.buttonText}>
                         <LoginIcon />
                       </Link>
                     ) : null
                   )}
+                  {pkg.id === "dealer" ? <PromoOmnibusLine planId="dealer" /> : null}
                 </p>
                 <p className="svc-goal-label">{uiCopy.goalLabel}</p>
                 <p className="svc-goal">{renderProvinText(goalFirst ?? "", homeDarkProvinWordmarkOptions)}</p>
@@ -262,13 +273,13 @@ export function ServicesCatalog() {
                       href={checkoutHref}
                       className="provin-press inline-flex min-h-[54px] w-full items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-8 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/90 no-underline transition hover:border-white/50 sm:w-auto sm:min-w-[18rem]"
                     >
-                      {pkg.buttonText}
+                      {ctaText(pkg)}
                     </Link>
                   ) : (
                     <div className={`${tp5Styles.ctaWrap} w-full sm:w-auto sm:min-w-[20rem]`}>
                       <Link href={checkoutHref} rel={publicAnchorRel(checkoutHref)} className={tp5Styles.liquidCtaLink}>
                         <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
-                        <span className={tp5Styles.liquidCtaLabel}>{pkg.buttonText}</span>
+                        <span className={tp5Styles.liquidCtaLabel}>{ctaText(pkg)}</span>
                       </Link>
                     </div>
                   )}

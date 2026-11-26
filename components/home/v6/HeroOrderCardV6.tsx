@@ -13,8 +13,10 @@ import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout"
 import {
   getTp5MobileCtaLabel,
   getTp5MobileService,
+  TP5_MOBILE_CHECKOUT_PLAN,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
+import { PromoOmnibusLine, PromoPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
@@ -124,6 +126,8 @@ export function HeroOrderCardV6({
   };
   const service = getTp5MobileService(activeId, locale);
   const sample = SAMPLE_BY_ID[activeId] ?? null;
+  /** Poga (arī telefonā) ar akcijas cenu, ja Black Friday aktīvs. */
+  const ctaLabel = usePromoText(TP5_MOBILE_CHECKOUT_PLAN[activeId], getTp5MobileCtaLabel(service, false));
   const fast = activeId === "dealer" || activeId === "mini";
   const [urgentOpen, setUrgentOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -183,8 +187,11 @@ export function HeroOrderCardV6({
                     {copy.guaranteeShort}
                   </span>
                 ) : null}
+                <PromoOmnibusLine planId={TP5_MOBILE_CHECKOUT_PLAN[id]} />
               </span>
-              <em>{s.price}</em>
+              <em>
+                <PromoPrice planId={TP5_MOBILE_CHECKOUT_PLAN[id]} regularLabel={s.price} />
+              </em>
             </button>
           );
         })}
@@ -294,7 +301,7 @@ export function HeroOrderCardV6({
           <div className={`${tp5Styles.ctaWrap} ${styles.cta}`}>
             <button type="button" className={tp5Styles.liquidCta} onClick={onSubmit} disabled={loading}>
               <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
-              <span className={tp5Styles.liquidCtaLabel}>{getTp5MobileCtaLabel(service, false)}</span>
+              <span className={tp5Styles.liquidCtaLabel}>{ctaLabel}</span>
             </button>
           </div>
           {sample ? (

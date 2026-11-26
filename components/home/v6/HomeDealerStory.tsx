@@ -14,6 +14,7 @@ import {
   formatHomeV6Number,
   getHomeV6Copy,
 } from "@/lib/home-v6-copy";
+import { PromoOmnibusLine, PromoPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
 import styles from "./home-dealer-story.module.css";
 
 const VB_W = 640;
@@ -41,6 +42,10 @@ function chartPoints() {
 export function HomeDealerStory({ className = "" }: { className?: string }) {
   const locale = useLocale();
   const c = getHomeV6Copy(locale).dealer;
+  /** Black Friday: «Datu atskaite · 24,99 €» -> pārsvītrotā + jaunā cena; teksti ar akcijas cenu. */
+  const [kickerLabel, kickerPrice] = c.kicker.split(" · ");
+  const ctaText = usePromoText("dealer", c.cta);
+  const guaranteeText = usePromoText("dealer", c.guaranteeText);
   const rootRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
   const [hover, setHover] = useState<number | null>(null);
@@ -79,7 +84,13 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
       <div className="mx-auto min-w-0 w-full max-w-[75rem]">
         <p className={styles.kicker}>
           <span className={styles.badge}>{c.badge}</span>
-          {c.kicker}
+          {kickerPrice ? (
+            <>
+              {kickerLabel} · <PromoPrice planId="dealer" regularLabel={kickerPrice} />
+            </>
+          ) : (
+            c.kicker
+          )}
         </p>
         <h2 id="home-dealer-story-title" className={styles.title}>
           {c.title}
@@ -163,13 +174,14 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
               </svg>
               <div>
                 <b>{c.guaranteeStrong}</b>
-                <p>{c.guaranteeText}</p>
+                <p>{guaranteeText}</p>
               </div>
             </div>
             <div className={styles.actions}>
               <Link href="/?plan=dealer#home-hero" rel={publicAnchorRel("/?plan=dealer#home-hero")} className={styles.cta}>
-                {c.cta}
+                {ctaText}
               </Link>
+              <PromoOmnibusLine planId="dealer" />
               <a
                 href={TP5_DEALER_SAMPLE_REPORT_HREF}
                 target="_blank"

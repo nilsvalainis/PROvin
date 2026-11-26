@@ -125,3 +125,73 @@ describe("„no X €” teksti = lētākais publiskais produkts", () => {
     for (const cta of ctas) expect(cta).toContain(price);
   });
 });
+
+describe("Black Friday checkout (serveris nosaka cenu)", () => {
+  const dealer = { ...valid, planId: "dealer" };
+
+  it("slēdzis ieslēgts un laiks intervālā: dīlera dati 17,49 € ar promo=bf2026", async () => {
+    vi.stubEnv("PROMO_BF_ENABLED", "1");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-28T10:00:00Z"));
+    try {
+      const res = await post({ ...dealer, promo: "none", unitAmount: 1 });
+      expect(res.status).toBe(200);
+      const params = state.created[0] as {
+        line_items: Array<{ price_data?: { unit_amount: number } }>;
+        metadata: Record<string, string>;
+      };
+      expect(params.line_items[0]?.price_data?.unit_amount).toBe(1749);
+      expect(params.metadata.promo).toBe("bf2026");
+      expect(params.metadata.checkout_line).toBe("dealer");
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("AUDITS akcijas laikā paliek parastajā cenā", async () => {
+    vi.stubEnv("PROMO_BF_ENABLED", "1");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-28T10:00:00Z"));
+    try {
+      await post(valid);
+      const params = state.created[0] as { line_items: Array<{ price_data?: { unit_amount: number } }>; metadata: Record<string, string> };
+      expect(params.line_items[0]?.price_data?.unit_amount).toBe(9999);
+      expect(params.metadata.promo).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("slēdzis izslēgts vai pēc beigām: dīlera dati 24,99 €, bez promo", async () => {
+    for (const [env, when] of [["", "2026-11-28T10:00:00Z"], ["1", "2026-12-02T10:00:00Z"]] as const) {
+      state.created.length = 0;
+      vi.stubEnv("PROMO_BF_ENABLED", env);
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(when));
+      try {
+        await post(dealer);
+        const params = state.created[0] as { line_items: Array<{ price_data?: { unit_amount: number } }>; metadata: Record<string, string> };
+        expect(params.line_items[0]?.price_data?.unit_amount, when).toBe(2499);
+        expect(params.metadata.promo).toBeUndefined();
+      } finally {
+        vi.useRealTimers();
+        vi.unstubAllEnvs();
+      }
+    }
+  });
+
+  it("klients nevar ielikt promo metadata caur sīkdatni/ķermeni", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/checkout/test-pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": "10.9.9.9" },
+        body: JSON.stringify({ ...dealer, metadata: { promo: "bf2026" } }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const params = state.created[0] as { metadata: Record<string, string> };
+    expect(params.metadata.promo).toBeUndefined();
+  });
+});
