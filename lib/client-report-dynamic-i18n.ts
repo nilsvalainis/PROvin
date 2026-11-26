@@ -3,7 +3,8 @@
  * Darbojas tikai teksta mezglos (starp `>` un `<`), ne atribūtos / CSS / skriptā. FABLE 25.10: EN/RU/DE PDF palika
  * "3 ieraksti bez pretrunām", "Aptuveni 29 mēneši bez ierakstiem", "2. īpašnieks Latvijā", "Vācija/Dānija".
  */
-import type { ClientReportLang } from "@/lib/client-report-i18n";
+import { applyClientReportStaticTranslations, type ClientReportLang } from "@/lib/client-report-i18n";
+import { htmlTextStillLatvian } from "@/lib/client-report-html-residue";
 import { countryIsoFromLvLocative, ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
 import { translateClientReportLvTerms } from "@/lib/client-report-lv-terms-i18n";
 
@@ -178,4 +179,44 @@ export function applyClientReportDynamicTranslations(html: string, lang: ClientR
       block ? block : `>${translateClientReportLvTerms(translateTextNode(text ?? "", lang), lang)}<`,
     );
   return head + body;
+}
+
+const TEXT_NODE_OR_BLOCK = /(<(script|style)\b[\s\S]*?<\/\2>)|>([^<]+)</g;
+
+function textNodesOf(html: string): string[] {
+  const out: string[] = [];
+  for (const m of html.matchAll(TEXT_NODE_OR_BLOCK)) if (!m[1]) out.push(m[3] ?? "");
+  return out;
+}
+
+function decodeText(raw: string): string {
+  return raw.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
+/**
+ * 26.11 regresija: vārdnīcas aizstāšana datu teikumos deva jauktus teikumus («Doors nav atveramas», «Record atspoguļo»,
+ * «Grey, metālika»). Ja teksta mezgls pēc tulkojuma mainījies, bet vēl ir latviski, tas tiek atjaunots oriģinālā -
+ * viss teikums paliek AI atlieku gājienam (`translateClientReportHtmlResidue`). Pilnībā iztulkoti mezgli paliek.
+ */
+export function revertMixedLanguageTextNodes(originalHtml: string, translatedHtml: string): string {
+  const orig = textNodesOf(originalHtml);
+  const next = textNodesOf(translatedHtml);
+  if (orig.length !== next.length) return translatedHtml;
+  let i = 0;
+  return translatedHtml.replace(TEXT_NODE_OR_BLOCK, (all, block: string | undefined, _tag, text: string | undefined) => {
+    if (block) return block;
+    const before = orig[i++] ?? "";
+    const after = text ?? "";
+    if (after === before) return all;
+    const decoded = decodeText(after.replace(/\s+/g, " ").trim());
+    if (/\(oriģināls\)/i.test(decoded) || !htmlTextStillLatvian(decoded)) return all;
+    return `>${before}<`;
+  });
+}
+
+/** Pilns bez-AI tulkojums PDF HTML: statiskā vārdnīca + frāzes/termini; jaukti mezgli atjaunoti AI gājienam. */
+export function applyClientReportSweepTranslations(html: string, lang: ClientReportLang): string {
+  if (lang === "lv") return html;
+  const swept = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
+  return revertMixedLanguageTextNodes(html, swept);
 }

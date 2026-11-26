@@ -9,6 +9,7 @@
 import { buildAuctionArchiveSummary, type AuctionArchivePhoto } from "@/lib/auction-archive-offer";
 import { AUCTION_LOT_CARDS_CSS, auctionLotRecordKey, buildAuctionLotsHtml } from "@/lib/auction-lot-cards-html";
 import type { ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   CC_VIN_SUBTITLES,
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
@@ -103,6 +104,8 @@ export type CcVinPdfAuctionOpts = {
   photos?: readonly ThecarapiStoredPhoto[];
   dataUrls?: ReadonlyMap<string, string>;
   vin?: string;
+  /** Atskaites valoda izsoļu kartītēm (26.11: EN/RU/DE PDF palika «Izsoles Nr.», «1. izsole», «ZS»). */
+  lang?: ClientReportLang;
 };
 
 /**
@@ -131,6 +134,7 @@ export function buildCcVinAuctionCardsHtml(b: CcVinBlockState, opts: CcVinPdfAuc
     photos,
     dataUrls: opts.dataUrls ?? new Map(),
     showPrices: true,
+    lang: opts.lang,
   });
   return `<div class="aa-embed">${parts.timeline}${parts.findings}${parts.vehicle}${parts.lots.join("\n")}${parts.galleries}</div>`;
 }

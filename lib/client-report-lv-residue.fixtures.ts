@@ -21,6 +21,10 @@ import { applyKfzAtToCitiAvoti } from "@/lib/kfzgutachten/apply-citi";
 import { parseKfzGutachtenText } from "@/lib/kfzgutachten/parse-gutachten";
 import { emptyLtabCertificate, type LtabCertificate } from "@/lib/ltab-report-extract";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { buildThecarapiAdminRecords } from "@/lib/vin-scan/parse-thecarapi";
+import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 export const LV_RESIDUE_VIN = "WDC00000000000002";
 
@@ -63,6 +67,20 @@ function ccVin() {
   } as unknown as ReturnType<typeof emptyCcVinBlock>;
 }
 
+/** AUTO1 izsoles ieraksts no anonimizētas TheCarApi fiktūras (izsoļu kartītes EN/RU/DE testam, 26.11). */
+export function lvResidueAuctionRecord(): ThecarapiAdminRecord {
+  const file = path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-full-anon.json");
+  const [row] = buildThecarapiAdminRecords({
+    historyJson: {
+      auctions: [
+        { site_name: "auto1", auction_id: "1326383403", detail_path: "/api/auction/auto1/1326383403", mileage: 226760, first_seen: "2026-10-07" },
+      ],
+    },
+    detailJson: JSON.parse(readFileSync(file, "utf8")) as unknown,
+  });
+  return row!;
+}
+
 export const LV_RESIDUE_PHOTO = "data:image/jpeg;base64,/9j/izdomats";
 
 export function lvResiduePhotoMap(): Map<string, string> {
@@ -74,7 +92,7 @@ export function lvResiduePhotoMap(): Map<string, string> {
 }
 
 /** Pilnā atskaite: CSDD (jaunais formāts ar TA vēsturi), AutoDNA, CarVertical, CARFAX, kfzgutachten, LTAB, izsoles, serviss. */
-export function lvResiduePayload(opts: { measurements?: boolean; izvilkums?: boolean } = {}): ClientReportPayload {
+export function lvResiduePayload(opts: { measurements?: boolean; izvilkums?: boolean; auctions?: boolean } = {}): ClientReportPayload {
   const blocks = createDefaultSourceBlocks();
   blocks.csdd = csddForm(opts.measurements ? ECSDD_OLD_FORMAT_MEASUREMENTS : ECSDD_NEW_FORMAT_DEREGISTERED);
   blocks.autodna = {
@@ -118,6 +136,7 @@ export function lvResiduePayload(opts: { measurements?: boolean; izvilkums?: boo
     },
   } as typeof blocks.auto_records;
   blocks.cc_vin = ccVin();
+  if (opts.auctions) blocks.cc_vin = { ...blocks.cc_vin, thecarapiRecords: [lvResidueAuctionRecord()] } as typeof blocks.cc_vin;
   const ltab = { ...blocks.ltab, rows: [], comments: "", certificate: LTAB_NO_CLAIMS };
 
   return {
