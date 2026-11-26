@@ -1,4 +1,5 @@
 /** Klienta sakritība adminā — tas pats e-pasta/tālruņa atslēgu modelis kā ātrajiem vērtējumiem. */
+import { BLACK_FRIDAY_PRICES } from "@/lib/promo/black-friday";
 
 export type CustomerContactMatchVia = "email" | "phone" | "email_and_phone";
 
@@ -118,6 +119,8 @@ export function paidProductLabel(args: {
   if (args.amountTotalCents === 3999) return "PROVIN MINI";
   if (args.amountTotalCents === 6999) return "PROVIN BUSINESS";
   if (args.amountTotalCents === 1999 || args.amountTotalCents === 2499) return "Dīlera dati";
+  /** Black Friday akcijas cena (`lib/promo/black-friday.ts`). */
+  if (args.amountTotalCents != null && args.amountTotalCents === BLACK_FRIDAY_PRICES.dealer?.promoCents) return "Dīlera dati";
   if (args.amountTotalCents != null && args.amountTotalCents >= 7999) return "PROVIN AUDITS";
   return "Apmaksāts pasūtījums";
 }

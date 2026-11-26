@@ -56,6 +56,9 @@ export const STRIPE_SERVER_METADATA_KEYS = [
   "upgrade_token",
   "client_link_hash",
   "manual_order_id",
+  /** Black Friday u.c. akcijas - tikai serveris (`lib/promo/black-friday-checkout.ts`). */
+  "promo",
+  "promo_regular_cents",
 ] as const;
 
 export type StripeServerMetadataKey = (typeof STRIPE_SERVER_METADATA_KEYS)[number];

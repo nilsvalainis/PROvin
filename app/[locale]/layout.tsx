@@ -19,6 +19,9 @@ import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
 import { openGraphLocale, openGraphLocaleAlternates } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { CLIENT_MESSAGE_NAMESPACES, pickClientMessages } from "@/lib/i18n/client-messages";
+import { BlackFridayBannerSlot, BlackFridayProvider } from "@/components/promo/BlackFridayPromo";
+import { BlackFridayOverlaysB, BlackFridayTopBarB } from "@/components/promo/BlackFridayB";
+import { blackFridayEnabledFromEnv } from "@/lib/promo/black-friday-checkout";
 import "./design-direction-theme.css";
 import "./public-a11y.css";
 
@@ -99,10 +102,15 @@ export default async function LocaleLayout({ children, params }: Props) {
     <RootHtml lang={locale} consentModeDefaults>
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SiteJsonLd locale={locale} description={tMetaDesc("description")} />
+      <BlackFridayProvider enabled={blackFridayEnabledFromEnv()}>
       <LenisProvider>
         <HomeReloadScrollToTop />
         <LocaleHtmlLang />
         <SkipToContent />
+        {/* Black Friday josla (vieta gala dizainam): tikai publiskajā vietnē, tikai akcijas laikā. */}
+        <BlackFridayBannerSlot>
+          <BlackFridayTopBarB />
+        </BlackFridayBannerSlot>
         <Header />
         <main
           id="main-content"
@@ -113,7 +121,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         </main>
         <CookieConsent />
         <WhatsAppFab />
+        <BlackFridayOverlaysB />
       </LenisProvider>
+      </BlackFridayProvider>
     </NextIntlClientProvider>
     </RootHtml>
   );

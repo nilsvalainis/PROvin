@@ -29,6 +29,7 @@ import {
 } from "@/lib/test-pricing-5-inline-checkout";
 import { parseOptionalCheckoutEmail, stripeCheckoutEmailFields } from "@/lib/test-pricing-checkout-email";
 import { routing } from "@/i18n/routing";
+import { applyBlackFridayToCheckout, blackFridayEnabledFromEnv } from "@/lib/promo/black-friday-checkout";
 
 export const runtime = "nodejs";
 
@@ -135,7 +136,7 @@ export async function POST(req: Request) {
 
   const tp5Product = getTp5StripeCheckoutProduct(plan.id, locale);
 
-  const lineItem = tp5Product
+  const baseLineItem = tp5Product
     ? {
         price_data: {
           currency: "eur",
@@ -163,6 +164,18 @@ export async function POST(req: Request) {
               quantity: 1,
             };
       })();
+
+  /** Black Friday: laiku un cenu nosaka serveris (env slēdzis + Rīgas laika intervāls). */
+  const bf = applyBlackFridayToCheckout({
+    planId: plan.id,
+    baseLineItem,
+    baseAmountCents: tp5Product?.amountCents ?? plan.amountCents,
+    productName: tp5Product?.productName ?? plan.productName,
+    productDesc: tp5Product ? tp5Product.productDesc : plan.productDesc,
+    nowMs: Date.now(),
+    enabled: blackFridayEnabledFromEnv(),
+  });
+  const lineItem = bf.lineItem;
 
   const submitNote = getTp5CheckoutSubmitMessage(plan.id, locale);
 
@@ -193,6 +206,7 @@ export async function POST(req: Request) {
         withdrawal_waiver_ack: "true",
         authorization_ack: "true",
         inline_checkout: "true",
+        ...bf.metadata,
       },
     ),
     locale: stripeCheckoutLocale(locale),
@@ -210,7 +224,7 @@ export async function POST(req: Request) {
   }
 
   const eventId = createMetaEventId();
-  const value = resolveInitiateCheckoutValueEur(session.amount_total, tp5Product?.amountCents ?? plan.amountCents);
+  const value = resolveInitiateCheckoutValueEur(session.amount_total, bf.amountCents);
   void notifyMetaInitiateCheckout({ req, eventId, value, email: parsedEmail.email, phone: null });
 
   return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });

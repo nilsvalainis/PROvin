@@ -51,7 +51,7 @@ const LV: HomeV6HeroCopy = {
   leadFirst: "Uzzini visu par savu nākamo auto.",
   leadRest:
     "Apvienojot plašāko auto vēstures pārklājumu Eiropā ar padziļinātu izpratni par marku specifiku, tirgus viltībām un pārdevēju paņēmieniem, mēs atklājam tehniskos un slēptos riskus, ko citi mēdz noklusēt.",
-  dealerLeadFirst: "Ražotāja oficiālā servisa vēsture pēc VIN koda.",
+  dealerLeadFirst: "Ražotāja oficiālā servisa vēsture pēc VIN vai numurzīmes.",
   dealerLeadRest:
     "Apkopes, remonti un nobraukums no autorizēto servisu sistēmām vienā saprotamā atskaitē - kā standarta vēstures atskaite, tikai ar oficiālā dīlera datiem. Ja datu nav, atmaksājam pilnu summu.",
   guaranteeShort: "100% atmaksa, ja datu nav",
@@ -120,7 +120,7 @@ const EN: HomeV6HeroCopy = {
   leadFirst: "Find out everything about your next car.",
   leadRest:
     "By combining the widest car history coverage in Europe with in-depth knowledge of each make, market tricks and seller tactics, we uncover the technical and hidden risks that others tend to keep quiet about.",
-  dealerLeadFirst: "The manufacturer's official service history by VIN.",
+  dealerLeadFirst: "The manufacturer's official service history by VIN or licence plate.",
   dealerLeadRest:
     "Maintenance, repairs and mileage from authorised service systems in one clear report - like a standard history report, but with official dealer data only. If there is no data, we refund the full amount.",
   guaranteeShort: "100% refund if there is no data",
@@ -189,7 +189,7 @@ const RU: HomeV6HeroCopy = {
   leadFirst: "Узнайте всё о своём следующем авто.",
   leadRest:
     "Сочетая самый широкий охват истории авто в Европе с глубоким знанием особенностей марок, рыночных уловок и приёмов продавцов, мы выявляем технические и скрытые риски, о которых другие предпочитают молчать.",
-  dealerLeadFirst: "Официальная сервисная история производителя по VIN.",
+  dealerLeadFirst: "Официальная сервисная история производителя по VIN или номерному знаку.",
   dealerLeadRest:
     "ТО, ремонты и пробег из систем авторизованных сервисов в одном понятном отчёте - как стандартный отчёт об истории, но только с данными официального дилера. Если данных нет, вернём всю сумму.",
   guaranteeShort: "100% возврат, если данных нет",
@@ -258,7 +258,7 @@ const DE: HomeV6HeroCopy = {
   leadFirst: "Erfahren Sie alles über Ihr nächstes Auto.",
   leadRest:
     "Wir verbinden die umfassendste Abdeckung von Fahrzeughistoriendaten in Europa mit fundiertem Wissen über Markenbesonderheiten, Markttricks und Verkäufertaktiken und decken so technische und versteckte Risiken auf, die andere gern verschweigen.",
-  dealerLeadFirst: "Die offizielle Servicehistorie des Herstellers per VIN.",
+  dealerLeadFirst: "Die offizielle Servicehistorie des Herstellers per FIN oder Kennzeichen.",
   dealerLeadRest:
     "Wartungen, Reparaturen und Kilometerstände aus den Systemen autorisierter Werkstätten in einem klaren Bericht - wie ein Standard-Historienbericht, nur mit offiziellen Händlerdaten. Gibt es keine Daten, erstatten wir den vollen Betrag.",
   guaranteeShort: "100 % Erstattung, wenn keine Daten vorliegen",
