@@ -73,6 +73,9 @@ type ScanRow = {
   listings?: VinScanIndicator["listings"];
 };
 
+/** Viena `/api/admin/vin-scan` pieprasījuma griesti klientā (servera `maxDuration` 300 s + rezerve). */
+const VIN_SCAN_CLIENT_TIMEOUT_MS = 320_000;
+
 export type VinScanPanelSnapshotRow = {
   id: string;
   label: string;
@@ -469,9 +472,11 @@ export function AdminVinScanPanel({
     "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
   async function scanServer(opts: { force?: boolean; sources?: string[]; paidSources?: string[] } = {}): Promise<boolean> {
+    // 26.11: bez taimauta karājošs pieprasījums turēja «lasa…» kopsavilkumā bezgalīgi. Serveris beidz ≤300 s.
     const res = await fetch("/api/admin/vin-scan", {
       method: "POST",
       credentials: "include",
+      signal: AbortSignal.timeout(VIN_SCAN_CLIENT_TIMEOUT_MS),
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         vin: clean,
