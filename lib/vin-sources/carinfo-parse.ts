@@ -409,7 +409,7 @@ function buildRedFlags(opts: {
     notes.push(`Sludinājumā${when} norādīts 0 km (${opts.classified.price})${peakTxt ? `; reģistrā ${peakTxt}` : ""}.`);
   }
   if (opts.owners != null && opts.owners >= 5) {
-    notes.push(`${opts.owners} īpašnieki.`);
+    notes.push(`${ownersCountLv(opts.owners)}.`);
   }
   if (/^yes|ja|stulen|stolen$/i.test(opts.stolen.trim())) {
     notes.push("Reģistrā atzīmēts kā zagts.");
@@ -462,7 +462,29 @@ function countryLv(raw: string): string {
   return detectCountry([raw.replace(/^(?:in|from|to)\s+/i, "")]);
 }
 
-/** Viena notikuma virsraksts un sīkākas rindas latviski. Nezināmu virsrakstu atstāj oriģinālā. */
+/** «1 īpašnieks», «2 īpašnieki», «21 īpašnieks» (latviešu skaitļa locījums). */
+function ownersCountLv(n: number): string {
+  const one = n % 10 === 1 && n % 100 !== 11;
+  return `${n} ${one ? "īpašnieks" : "īpašnieki"}`;
+}
+
+/** Apdrošinātāja / līzinga devēja nosaukums no sīkākām rindām (bez datumiem, km, valstīm). */
+function historyCompany(rest: string[]): string {
+  return (
+    rest.find(
+      (d) =>
+        /\p{L}{2,}/u.test(d) &&
+        !/^(?:to|from|removed)\b/i.test(d) &&
+        !/\d{4}-\d{2}-\d{2}|\bkm\b|\bmil\b|^passed$|^failed$|^approved$|^show classified$/i.test(d) &&
+        !countryLv(d),
+    ) ?? ""
+  );
+}
+
+/**
+ * Viena notikuma virsraksts un sīkākas rindas latviski. Nezināmu virsrakstu klientam nerādām angliski:
+ * «Reģistra ieraksts (car.info: "…")» - oriģināls pēdiņās, kā Dānijas trūkumiem (26.11, Mercedes SE→DK→LV).
+ */
 function historyEventLv(title: string, details: string[]): string {
   const t = title.replace(/\s+/g, " ").trim();
   const rest = details.map((d) => d.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -477,7 +499,20 @@ function historyEventLv(title: string, details: string[]): string {
       : "";
   const price = rest.find((d) => /\d\s*(?:EUR|SEK|DKK|NOK)\b/i.test(d)) ?? "";
   const join = (head: string, bits: string[]) => [head, ...bits.filter(Boolean)].join(", ");
+  const company = historyCompany(rest);
+  const withCompany = (head: string) => (company ? `${head}: ${company}` : head);
   if (/^leasing ended$/i.test(t)) return "Līzings beidzies";
+  if (/^(?:leasing started|leasing|new leasing)$/i.test(t)) return withCompany("Līzings sākts");
+  if (/^insurance ended$/i.test(t)) return withCompany("Apdrošināšana beigusies");
+  if (/^(?:insurance started|insured|new insurance|insurance)$/i.test(t)) return withCompany("Apdrošināšana sākta");
+  if (/^(?:change of insurance|insurance changed)$/i.test(t)) return withCompany("Apdrošinātāja maiņa");
+  if (/^(?:credit purchase|kreditköp)$/i.test(t)) return withCompany("Kredīta pirkums");
+  if (/^(?:temporarily deregistered|avställd)$/i.test(t)) return "Īslaicīgi noņemts no uzskaites";
+  if (/^(?:back in traffic|taken into traffic|påställd)$/i.test(t)) return "Atgriezts satiksmē";
+  if (/^(?:driving ban|körförbud)$/i.test(t)) return "Braukšanas aizliegums";
+  if (/^(?:mileage reading|odometer reading|reported odometer)$/i.test(t)) return "Nobraukuma rādījums";
+  if (/^(?:recall|recall campaign)$/i.test(t)) return "Ražotāja atsaukums";
+  if (/^(?:registration renewed|re-?registered)$/i.test(t)) return "Atkārtoti reģistrēts";
   if (/^leased$/i.test(t)) return until ? `Līzingā līdz ${formatRegistryDateLv(until)}` : "Līzingā";
   if (/^not in traffic$/i.test(t)) {
     return rest.some((d) => /temporarily in traffic/i.test(d))
@@ -511,7 +546,8 @@ function historyEventLv(title: string, details: string[]): string {
   if (/^scrapping/i.test(t)) return "Norakstīts";
   if (/^deregistered$/i.test(t)) return "Noņemts no uzskaites";
   if (/stolen/i.test(t)) return "Atzīmēts kā zagts";
-  return [t, ...rest.filter((d) => !/^show classified$/i.test(d)).slice(0, 2)].join(", ");
+  const original = [t, ...rest.filter((d) => !/^show classified$/i.test(d)).slice(0, 2)].join(", ");
+  return /[A-Za-z]{3,}/.test(t) ? `Reģistra ieraksts (car.info: "${original}")` : original;
 }
 
 /**
@@ -604,6 +640,30 @@ function dateAfterLabel(text: string, label: string): string {
   return m?.[1] ?? "";
 }
 
+/**
+ * 26.11 (Mercedes SE→DK→LV): pēc eksporta car.info rāda jaunās valsts reģistra notikumus ar lapas (SE) valsti.
+ * Rindas pēc pirmā eksporta / importa notikuma iegūst galamērķa valsti (notikuma vieta vai
+ * «latest known registration number DK …»). Bez datēta eksporta valsti saskaņo `registry-country-reconcile`.
+ */
+function shiftRowsAfterExport(
+  timeline: CarinfoTimelineRow[],
+  mileage: VinSourceMileageRow[],
+  exports: { date: string; country: string }[],
+  foreignCountry: string,
+  pageCountry: string,
+): CarinfoTimelineRow[] {
+  const exportRows = timeline.filter((r) => /^(?:eksportēts|importēts)/i.test(r.event));
+  const exportDates = [...exportRows.map((r) => r.date), ...exports.map((e) => e.date)].filter(Boolean).sort();
+  const from = exportDates[0] ?? "";
+  const named = exportRows
+    .map((r) => /\(([^)]+)\)$/.exec(r.event)?.[1] ?? "")
+    .find((c) => c && c !== pageCountry);
+  const target = named || (foreignCountry !== pageCountry ? foreignCountry : "");
+  if (!from || !target) return timeline;
+  for (const m of mileage) if (m.date && m.date > from && m.country !== target) m.country = target;
+  return timeline.map((r) => (r.date > from && r.country !== target ? { ...r, country: target } : r));
+}
+
 export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
   const text = loaded.text.replace(/\u00a0/g, " ");
   const pageCountry = inferPageCountry(text);
@@ -643,7 +703,7 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
   const ownerEvents = parseOwnerChangeEvents(text);
   const ownersIncomplete = /owner history is incomplete/i.test(text);
   const ownerLines = [
-    ownersCount ? `${ownersCount} īpašnieki` : "",
+    ownersCount ? ownersCountLv(Number(ownersCount)) : "",
     ownersIncomplete ? "Īpašnieku skaits nav pilnīgs: trūkst laika, kad auto bija reģistrēts ārvalstīs" : "",
     ...ownerEvents,
   ].filter(Boolean);
@@ -664,8 +724,14 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
   const exports = parseExportEvents(text);
   const classified = parseClassifiedZeroKm(text);
 
-  const timeline = parseCarinfoHistoryEvents(text, pageCountry);
   const foreignPlate = latestForeignPlate(text);
+  const timeline = shiftRowsAfterExport(
+    parseCarinfoHistoryEvents(text, pageCountry),
+    uniqueMileage,
+    exports,
+    foreignPlate ? (PLATE_COUNTRY[foreignPlate.code] ?? "") : "",
+    pageCountry,
+  );
   const foreignPlateLine = foreignPlate
     ? `Pēdējais zināmais reģistrācijas numurs: ${foreignPlate.code} ${foreignPlate.plate}${
         PLATE_COUNTRY[foreignPlate.code] ? ` (${PLATE_COUNTRY[foreignPlate.code]})` : ""
@@ -772,4 +838,15 @@ export function parseCarinfoPastedText(raw: string): CarinfoParsed {
     };
   }
   return parseCarinfoExtract({ text, tables: [], pairs: [] });
+}
+
+/**
+ * Saglabātā melnraksta car.info notikums, kas palika angliski («Insurance ended, <apdrošinātājs>»),
+ * atskaitē - latviski ar to pašu vārdnīcu. Jau latvisku tekstu neaiztiek.
+ */
+export function translateStoredCarinfoEvent(event: string): string {
+  const t = (event ?? "").trim();
+  if (!t || /[āčēģīķļņšūž]/i.test(t) || !/^[A-Z][a-z]+(?:[ -][A-Za-z]+)*(?:,|$)/.test(t)) return t;
+  const [title, ...details] = t.split(/,\s+/);
+  return historyEventLv(title ?? "", details);
 }

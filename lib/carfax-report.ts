@@ -6,6 +6,7 @@
  * laikposms, bojājumu zonas), kas nonāk kopējās tabulās ar avotu «CARFAX» - nekad AutoDNA / CarVertical blokos.
  */
 
+import { lvCount } from "@/lib/lv-plural";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData, formatAutoRecordsDateForOutput, sortAutoRecordsDescending } from "@/lib/auto-records-paste-parse";
 import type { CarVerticalDamageDetailRow, CarVerticalTimelineRow } from "@/lib/carvertical-pdf-parse";
@@ -362,7 +363,7 @@ export function applyCarfaxReportObject<B extends VendorLike & { report?: Carfax
     `${c.mileage} nobraukuma rādījumi`,
     `${c.damages} bojājumi`,
     `${c.history} vēstures ieraksti`,
-    c.owners > 0 ? `${c.owners} īpašnieki` : "",
+    c.owners > 0 ? lvCount(c.owners, "īpašnieks", "īpašnieki") : "",
     `${c.quickChecks} ātrās pārbaudes`,
   ]
     .filter(Boolean)

@@ -51,6 +51,7 @@ function stripOwnerCountNote(value: string): string {
 /** Dānijas / reģistra rindu tīrīšana atskaitē: bez birkām, bez iekavām pie skaita, lielais burts. */
 export function polishPdfFactCardRows(rows: readonly { k: string; v: string }[]): { k: string; v: string }[] {
   const out: { k: string; v: string }[] = [];
+  const seen = new Set<string>();
   for (const row of rows) {
     const key = factKeyNorm(row.k);
     if (DROP_FACT_KEYS.has(key)) continue;
@@ -65,11 +66,24 @@ export function polishPdfFactCardRows(rows: readonly { k: string; v: string }[])
     if (key === "izmantošanas veids" && /privāta\s+pasažieru\s+pārvadāšana/i.test(v)) {
       v = "Privāti";
     }
-    v = capitalizeFactValue(v);
+    v = capitalizeFactValue(fixLvOwnerCountNoun(v));
     if (!k || !v || isPdfEmptyPlaceholder(v)) continue;
+    // 26.11 (Mercedes SE→DK→LV): car.info «Pēdējais zināmais reģistrācijas numurs» un «Īpašais statuss» ir gan statusā,
+    // gan automātiskajās piezīmēs - kartītē tikai vienreiz.
+    const dupKey = `${factKeyNorm(k)}|${v.replace(/\s+/g, " ").toLocaleLowerCase("lv")}`;
+    if (seen.has(dupKey)) continue;
+    seen.add(dupKey);
     out.push({ k, v });
   }
   return out;
+}
+
+/** «1 īpašnieki» → «1 īpašnieks», «21 īpašnieki» → «21 īpašnieks» (latviešu skaitļa locījums). */
+export function fixLvOwnerCountNoun(value: string): string {
+  return value.replace(/\b(\d{1,3})\s+īpašniek(?:i|s)\b/giu, (_m, n: string) => {
+    const k = Number(n);
+    return `${n} ${k % 10 === 1 && k % 100 !== 11 ? "īpašnieks" : "īpašnieki"}`;
+  });
 }
 
 /** Īpašnieki + statusi + karogi vienā kv tabulā, bez komentāru kastēm. */

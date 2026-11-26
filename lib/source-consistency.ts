@@ -11,6 +11,7 @@
  * - `warn` - avoti nesakrīt, jāpaskatās;
  * - `info` - zināma avotu dabiska atšķirība (skaitā neietilpst, sarakstā pelēks).
  */
+import { lvCount } from "@/lib/lv-plural";
 import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
@@ -1307,7 +1308,7 @@ function checkOwnerCountAcrossTexts(texts: readonly { label: string; text: strin
     kind: "ai_owner_count_mismatch",
     severity: "warn",
     title: "AI tekstos dažāds kopējais īpašnieku skaits",
-    values: [...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: `${n} īpašnieki` })),
+    values: [...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: lvCount(Number(n), "īpašnieks", "īpašnieki") })),
   });
 }
 
