@@ -1,6 +1,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
+import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
 import { listManualOrders } from "@/lib/admin-manual-orders";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { listPaidCheckoutSessions } from "@/lib/admin-orders";
@@ -47,7 +48,7 @@ export function unpaidCandidateFromSession(s: Stripe.Checkout.Session): UnpaidSe
     partnerId: s.metadata?.partner_id?.trim() || null,
     upgradeOf: s.metadata?.upgrade_of?.trim() || null,
     reminderOf: s.metadata?.reminder_of?.trim() || null,
-    locale: s.locale ?? null,
+    locale: checkoutSessionSiteLang(s),
   };
 }
 

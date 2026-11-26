@@ -8,6 +8,8 @@ import {
   vinScanRelayRef,
   vinScanV4BlockOf,
   vinScanV4Kind,
+  vinScanV4Notice,
+  vinScanV4ShortText,
   vinScanV4StatusLine,
   vinScanVinFromRelayRef,
   VIN_SCAN_V4_BLOCKS,
@@ -130,5 +132,57 @@ describe("VIN SCAN v4 - Smart-ID atsauce un maksas pakalpojumi", () => {
       expect(s.href).toContain(VIN);
     }
     expect(vinScanV4PaidServices("ABC")).toEqual([]);
+  });
+});
+
+describe("VIN SCAN v4 - saliktais saraksts (26.11, Nila ekrānuzņēmums S 320 CDI)", () => {
+  const CARFAX =
+    "CARFAX.eu: no pārlūka (from browser) · relejs: CARFAX.eu: pēc reCAPTCHA atteikuma pauze līdz 21:09 - pārbaudi pārlūka joslā";
+
+  it("CARFAX reCAPTCHA pauze: kļūda ar īsu latvisku tekstu bez «from browser»", () => {
+    const row = { ...r("carfax_eu", "browser_only", CARFAX), label: "CARFAX.eu" };
+    expect(vinScanV4Kind(row)).toBe("error");
+    const n = vinScanV4Notice(row);
+    expect(n.error).toBe(true);
+    expect(n.status).toBe("kļūda");
+    expect(n.detail).toBe("pauze līdz 21:09 (reCAPTCHA) - izmanto pārlūka joslu");
+    expect(n.detail).not.toMatch(/from browser|relejs/);
+  });
+
+  it("NHTSA ASV tirgus un Safety Gate «nav starp jaunākajiem» nav kļūdas", () => {
+    const nhtsa = r("nhtsa_recalls", "browser_only", "ASV tirgus, var neattiekties");
+    const sg = r("eu_safety_gate", "unknown", "ES Safety Gate: Mercedes-Benz nav starp 100 jaunākajiem no 174 rezultātiem, pārbaudi saitē");
+    expect(vinScanV4Kind(nhtsa)).toBe("empty");
+    expect(vinScanV4Kind(sg)).toBe("empty");
+    expect(vinScanV4Notice(nhtsa)).toMatchObject({ status: "nav piemērojams", error: false });
+    expect(vinScanV4Notice(sg)).toMatchObject({ status: "nav atrasts", detail: "pārbaudi saitē", error: false });
+  });
+
+  it("teksts netiek dublēts: kreisajā nosaukums, labajā īss statuss", () => {
+    expect(vinScanV4Notice(r("rdw", "needs_input", "Vajag NL reģ. nr."))).toMatchObject({ status: "vajag numuru", detail: "" });
+    expect(vinScanV4Notice(r("dvsa_mot", "needs_input", "Vajag UK reģ. nr."))).toMatchObject({ status: "vajag numuru", detail: "" });
+    expect(vinScanV4Notice(r("listing_history", "needs_input", "Vajag sludinājumu"))).toMatchObject({ status: "vajag sludinājumu", detail: "" });
+    expect(vinScanV4Notice(r("nicb", "skipped", "NICB attiecas tikai uz ASV auto"))).toMatchObject({ status: "nav piemērojams", detail: "" });
+    expect(vinScanV4Notice(r("mnt_ee", "none", "VIN nav Igaunijas transportlīdzekļu reģistrā"))).toMatchObject({ status: "nav atrasts", detail: "" });
+  });
+
+  it("kļūdu skaitā tikai īstas kļūdas (tīkls, 5xx, captcha, taimauts); kfz_at nekad nav kļūda", () => {
+    const layout = buildVinScanV4Layout([
+      r("carfax_eu", "browser_only", CARFAX),
+      r("nhtsa_recalls", "browser_only", "ASV tirgus, var neattiekties"),
+      r("eu_safety_gate", "unknown", "ES Safety Gate: Mercedes-Benz nav starp 100 jaunākajiem no 174 rezultātiem, pārbaudi saitē"),
+      r("kfz_at", "browser_only", "kfzgutachten.at: saraksts bez maksas, bet tikai pārlūkā (reCAPTCHA)."),
+      r("dsb", "unknown", "Avotu neizdevās nolasīt"),
+      r("mnt_ee", "timeout", "Avots neatbildēja laikā"),
+      r("cz_rsv", "unknown", "HTTP 503"),
+      r("bid_cars", "browser_only", "bid.cars: no pārlūka (from browser) · relejs: lapa bez šī VIN"),
+    ]);
+    expect(layout.errors.map((x) => x.id)).toEqual(["carfax_eu", "dsb", "mnt_ee", "cz_rsv"]);
+    expect(layout.empty.map((x) => x.id)).toEqual(["nhtsa_recalls", "eu_safety_gate", "kfz_at", "bid_cars"]);
+  });
+
+  it("īsais teksts noņem avota prefiksu un garumu ierobežo", () => {
+    expect(vinScanV4ShortText("mnt.ee relejs: Chrome neatbildēja", "Igaunija · mnt.ee")).toBe("Chrome neatbildēja");
+    expect(vinScanV4ShortText("x".repeat(400)).length).toBeLessThanOrEqual(140);
   });
 });

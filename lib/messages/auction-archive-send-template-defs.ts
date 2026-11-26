@@ -37,8 +37,8 @@ const REVIEW: MessageTemplateVar = {
   sample: "https://g.page/r/…/review",
 };
 
-const EMAIL_SIGN = ["Ar cieņu,", "Nils", "{{zimols}}"].join("\n");
-const WA_SIGN = "Nils, {{zimols}}";
+const EMAIL_SIGN = ["Ar cieņu,", "{{zimols}}"].join("\n");
+const WA_SIGN = "{{zimols}}";
 
 const REFUND_EMAIL = [
   "{{#karte}}",
@@ -83,7 +83,7 @@ export const AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "Ja ir jautājumi, atbildiet uz šo ziņu vai rakstiet uz info@provin.lv.",
       "",
       "{{#atsauksmes_saite}}",
-      "Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: {{atsauksmes_saite}}",
+      "Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google: {{atsauksmes_saite}}",
       "",
       "{{/atsauksmes_saite}}",
       EMAIL_SIGN,
@@ -99,7 +99,7 @@ export const AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu pasūtītais izsoļu arhīvs{{#vin}} auto VIN {{vin}}{{/vin}} ir gatavs - PDF pievienoju zemāk.",
+      "Jūsu pasūtītais izsoļu arhīvs{{#vin}} auto VIN {{vin}}{{/vin}} ir gatavs - PDF pievienojam zemāk.",
       "",
       "{{#apraksts}}",
       "{{apraksts}}",
@@ -115,7 +115,7 @@ export const AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.",
       "",
       "{{#atsauksmes_saite}}",
-      "Ja dati noderēja, būšu pateicīgs par īsu atsauksmi Google: {{atsauksmes_saite}}",
+      "Ja dati noderēja, būsim pateicīgi par īsu atsauksmi Google: {{atsauksmes_saite}}",
       "",
       "{{/atsauksmes_saite}}",
       WA_SIGN,

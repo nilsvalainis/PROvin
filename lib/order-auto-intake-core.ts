@@ -110,6 +110,8 @@ export type OrderAutoIntakeSummary = {
   auctionSales: number;
   photosImported: number;
   thecarapiAuctions: number;
+  /** 26.11: Austrija §57a - ko vēl jāizdara cilvēkam (reCAPTCHA / datums). Tukšs - nav Austrijas pazīmju. */
+  austriaLine?: string;
 };
 
 function previewLine(label: string, row: VinScanIndicator | undefined): string {
@@ -135,8 +137,11 @@ export function buildOrderAutoIntakePush(s: OrderAutoIntakeSummary): AdminPushMe
     head,
     previewLine("AutoDNA", s.indicators.find((row) => row.id === "autodna_precheck")),
     previewLine("CARFAX", s.indicators.find((row) => row.id === "carfax_eu")),
+    s.austriaLine ?? "",
     "Pirkums tikai ar Tavu klikšķi pasūtījumā.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
   const title = `Pasūtījums gatavs pārskatam${s.vehicleLabel ? `: ${s.vehicleLabel}` : ""}`.slice(0, 120);
   return {
     title,

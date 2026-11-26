@@ -1,4 +1,5 @@
 import { AdminThecarapiRecords } from "@/components/admin/AdminThecarapiRecords";
+import { thecarapiCacheLabel, thecarapiDetailMissing, thecarapiUsageLabel } from "@/lib/thecarapi-admin-copy";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinObservation } from "@/lib/vin-memory";
 import type { AuctionSourceProgress, VinMemoryArchiveCounts, VinMemoryBrowseRow } from "@/lib/vin-memory-auction";
@@ -36,6 +37,8 @@ export type AuctionArchiveViewProps = {
     used: number;
     cap: number;
     cachedSummary: string;
+    cachedStatus?: string;
+    cachedAt?: string;
     cacheHasDetail?: boolean;
     busy: boolean;
     note: string;
@@ -83,6 +86,11 @@ function Stat({ label, value, hint }: { label: string; value: string; hint: stri
 export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
   const { counts, recent, progress, passDay, completedDay, vin, observations, rollback, vinNote, message, busy } = props;
   const others = counts ? otherObservations(counts) : { vins: 0, observations: 0 };
+  const tc = props.thecarapi;
+  const tcCacheLabel = tc ? thecarapiCacheLabel({ status: tc.cachedStatus, summary: tc.cachedSummary, cachedAt: tc.cachedAt }) : null;
+  const tcDetailMissing = tc
+    ? thecarapiDetailMissing({ status: tc.cachedStatus, summary: tc.cachedSummary, cacheHasDetail: tc.cacheHasDetail })
+    : false;
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4">
       <p className="text-[13px] leading-relaxed text-[var(--color-provin-muted)]" data-amx-hint>
@@ -214,24 +222,17 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
         {vin && props.thecarapi ? (
           <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[12px] text-[var(--color-provin-muted)]">
-              {props.thecarapi.enabled
-                ? props.thecarapi.cap > 0
-                  ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
-                  : `maksas izsaukums · šomēnes ${props.thecarapi.used}`
-                : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
+              {props.thecarapi.enabled ? thecarapiUsageLabel(props.thecarapi.used) : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
             </p>
-            {props.thecarapi.cachedSummary ? (
-              <p className="mt-1 text-[12px] text-[var(--color-apple-text)]">Kešs: {props.thecarapi.cachedSummary}</p>
-            ) : null}
+            {tcCacheLabel ? <p className="mt-1 text-[12px] text-[var(--color-apple-text)]">{tcCacheLabel}</p> : null}
             <button
               type="button"
               className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-50"
               disabled={props.thecarapi.busy || props.busy || !props.thecarapi.enabled}
               onClick={() => {
                 if (!props.thecarapi?.enabled) return;
-                const incomplete = Boolean(props.thecarapi.cachedSummary) && props.thecarapi.cacheHasDetail === false;
-                if (props.thecarapi.cachedSummary && !incomplete) {
-                  const ok = window.confirm("Šim VIN jau ir TheCarApi kešs. Atjaunot (maksas)?");
+                if (props.thecarapi.cachedSummary && !tcDetailMissing) {
+                  const ok = window.confirm("Šim VIN TheCarApi dati jau ir saglabāti. Pārbaudīt vēlreiz (paketē)?");
                   if (!ok) return;
                   props.thecarapi.onCheck(true);
                   return;
@@ -242,9 +243,9 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
               {props.thecarapi.busy
                 ? "Pārbauda…"
                 : props.thecarapi.enabled
-                  ? props.thecarapi.cachedSummary && props.thecarapi.cacheHasDetail === false
-                    ? "Ielādēt detaļas (maksas)"
-                    : "Pārbaudīt TheCarApi (maksas)"
+                  ? tcDetailMissing
+                    ? "Ielādēt detaļas"
+                    : "Pārbaudīt TheCarApi"
                   : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
             </button>
             {props.thecarapi.enabled ? (
@@ -254,7 +255,7 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
                 disabled={props.thecarapi.busy || props.busy}
                 onClick={() => {
                   if (!props.thecarapi?.enabled) return;
-                  const ok = window.confirm("Atjaunot TheCarApi no jauna (maksas)? Kešs tiks ignorēts.");
+                  const ok = window.confirm("Pārbaudīt TheCarApi no jauna? Saglabātie dati tiks ignorēti un ielādēti vēlreiz.");
                   if (!ok) return;
                   props.thecarapi.onCheck(true);
                 }}
