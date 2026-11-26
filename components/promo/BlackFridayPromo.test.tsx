@@ -45,10 +45,10 @@ const ui = (
 
 describe("Black Friday publiskās cenas", () => {
   const cases: Array<[string, string, string, string]> = [
-    ["lv", "24,99 €", "17,49 €", "Zemākā cena pēdējās 30 dienās: 24,99 €"],
-    ["en", "€24.99", "€17.49", "Lowest price in the last 30 days: €24.99"],
-    ["de", "24,99 €", "17,49 €", "Niedrigster Preis der letzten 30 Tage: 24,99 €"],
-    ["ru", "24,99 €", "17,49 €", "Самая низкая цена за последние 30 дней: 24,99 €"],
+    ["lv", "24,99 €", "17,49 €", "Iepriekšējā cena: 24,99 €"],
+    ["en", "€24.99", "€17.49", "Previous price: €24.99"],
+    ["de", "24,99 €", "17,49 €", "Vorheriger Preis: 24,99 €"],
+    ["ru", "24,99 €", "17,49 €", "Предыдущая цена: 24,99 €"],
   ];
 
   for (const [locale, oldPrice, newPrice, omnibus] of cases) {
@@ -70,7 +70,7 @@ describe("Black Friday publiskās cenas", () => {
   it("slēdzis izslēgts: parastā cena, nav Omnibus rindas, nav joslas", () => {
     const text = renderText(wrap("lv", false, IN, ui));
     expect(text).toContain("REGULAR");
-    expect(text).not.toContain("Zemākā cena");
+    expect(text).not.toContain("Iepriekšējā cena");
     expect(renderHtml(wrap("lv", false, IN, ui))).not.toContain("data-promo-banner");
   });
 
@@ -83,6 +83,6 @@ describe("Black Friday publiskās cenas", () => {
   it("servera HTML (laiks vēl nav zināms) vienmēr bez akcijas - nav hidratācijas nesakritības", () => {
     const text = renderText(wrap("lv", true, null, ui));
     expect(text).toContain("REGULAR");
-    expect(text).not.toContain("Zemākā cena");
+    expect(text).not.toContain("Iepriekšējā cena");
   });
 });

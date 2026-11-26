@@ -25,8 +25,17 @@ export type BlackFridayCopy = {
   until: string;
   /** Taimera vienības: dienas, stundas, minūtes, sekundes. */
   units: [string, string, string, string];
-  /** Dienu saīsinājums rindas taimerī («05d 08:15:24»). */
+  /** Dienu saīsinājums rindas taimerī («5 d 08:15:24»). */
   dayShort: string;
+  /** «Pasūtīt dīlera datus - 17,49 €» (logs). */
+  orderDealerDash: (price: string) => string;
+  /** Faktu rinda logā: «★ 5,0 Google · Izpilde 24 h · Pēc VIN vai numura». */
+  factRating: string;
+  factTurnaround: string;
+  factInput: string;
+  /** Garantijas teikums akcijas laikā: summa nav 24,99 €, bet samaksātā. */
+  creditFrom: RegExp;
+  creditTo: string;
 };
 
 const COPY: Record<PromoLocale, BlackFridayCopy> = {
@@ -47,6 +56,12 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     until: "Akcija līdz 01.12. 23:59",
     units: ["dienas", "stundas", "min", "sek"],
     dayShort: "d",
+    orderDealerDash: (p) => `Pasūtīt dīlera datus - ${p}`,
+    factRating: "5,0 Google",
+    factTurnaround: "Izpilde 24 h",
+    factInput: "Pēc VIN vai numurzīmes",
+    creditFrom: /24,99[ \u00a0]€ ieskaitām/,
+    creditTo: "samaksāto summu ieskaitām",
   },
   en: {
     eyebrow: "Black Friday",
@@ -65,6 +80,12 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     until: "Offer until 1 Dec, 23:59",
     units: ["days", "hours", "min", "sec"],
     dayShort: "d",
+    orderDealerDash: (p) => `Order dealer data - ${p}`,
+    factRating: "5.0 Google",
+    factTurnaround: "Delivery 24 h",
+    factInput: "By VIN or licence plate",
+    creditFrom: /the €24\.99 is credited/,
+    creditTo: "the amount paid is credited",
   },
   de: {
     eyebrow: "Black Friday",
@@ -83,6 +104,12 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     until: "Aktion bis 01.12., 23:59",
     units: ["Tage", "Std.", "Min.", "Sek."],
     dayShort: "T",
+    orderDealerDash: (p) => `Händlerdaten bestellen - ${p}`,
+    factRating: "5,0 Google",
+    factTurnaround: "Bearbeitung 24 h",
+    factInput: "Per FIN oder Kennzeichen",
+    creditFrom: /die 24,99[ \u00a0]€ auf/,
+    creditTo: "den bezahlten Betrag auf",
   },
   ru: {
     eyebrow: "Black Friday",
@@ -101,6 +128,12 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     until: "Акция до 01.12, 23:59",
     units: ["дней", "часов", "мин", "сек"],
     dayShort: "д",
+    orderDealerDash: (p) => `Заказать данные дилера - ${p}`,
+    factRating: "5,0 Google",
+    factTurnaround: "Срок 24 ч",
+    factInput: "По VIN или номерному знаку",
+    creditFrom: /24,99[ \u00a0]€ засчитаем/,
+    creditTo: "уплаченную сумму засчитаем",
   },
 };
 
@@ -118,8 +151,14 @@ export function blackFridayCountdownParts(nowMs: number, endMs: number = BLACK_F
   return [pad(d), pad(Math.floor(s / 3600)), pad(Math.floor((s % 3600) / 60)), pad(s % 60)];
 }
 
-/** «05d 08:15:24» */
+/** «5 d 08:15:24» */
 export function blackFridayCountdownLine(nowMs: number, locale?: string | null): string {
   const [d, h, m, s] = blackFridayCountdownParts(nowMs);
-  return `${d}${getBlackFridayCopy(locale).dayShort} ${h}:${m}:${s}`;
+  return `${Number(d)}\u00a0${getBlackFridayCopy(locale).dayShort} ${h}:${m}:${s}`;
+}
+
+/** Garantijas teksts akcijas laikā: «…, samaksāto summu ieskaitām audita cenā.» */
+export function blackFridayGuaranteeText(text: string, locale?: string | null): string {
+  const c = getBlackFridayCopy(locale);
+  return text.replace(c.creditFrom, c.creditTo);
 }

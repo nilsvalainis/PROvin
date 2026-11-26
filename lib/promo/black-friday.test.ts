@@ -4,6 +4,7 @@ import {
   BLACK_FRIDAY_PRICES,
   BLACK_FRIDAY_START_MS,
   blackFridayBannerText,
+  blackFridaySavingsLine,
   formatPromoEur,
   getBlackFridayPlanPrice,
   isBlackFridayActive,
@@ -75,11 +76,20 @@ describe("Black Friday cenas", () => {
 });
 
 describe("Black Friday teksti 4 valodās", () => {
+  it("ietaupījums «Ietaupi 7,50 €»", () => {
+    const cfg = BLACK_FRIDAY_PRICES.dealer!;
+    const n = (x: string) => x.replace(/\u00a0/g, " ");
+    expect(n(blackFridaySavingsLine(cfg, "lv"))).toBe("Ietaupi 7,50 €");
+    expect(n(blackFridaySavingsLine(cfg, "en"))).toBe("Save €7.50");
+    expect(n(blackFridaySavingsLine(cfg, "de"))).toBe("Sie sparen 7,50 €");
+    expect(n(blackFridaySavingsLine(cfg, "ru"))).toBe("Экономия 7,50 €");
+  });
+
   it("Omnibus rinda", () => {
-    expect(omnibusLowestPriceLine(2499, "lv").replace(/\u00a0/g, " ")).toBe("Zemākā cena pēdējās 30 dienās: 24,99 €");
-    expect(omnibusLowestPriceLine(2499, "en").replace(/\u00a0/g, " ")).toBe("Lowest price in the last 30 days: €24.99");
-    expect(omnibusLowestPriceLine(2499, "de").replace(/\u00a0/g, " ")).toBe("Niedrigster Preis der letzten 30 Tage: 24,99 €");
-    expect(omnibusLowestPriceLine(2499, "ru").replace(/\u00a0/g, " ")).toBe("Самая низкая цена за последние 30 дней: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "lv").replace(/\u00a0/g, " ")).toBe("Iepriekšējā cena: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "en").replace(/\u00a0/g, " ")).toBe("Previous price: €24.99");
+    expect(omnibusLowestPriceLine(2499, "de").replace(/\u00a0/g, " ")).toBe("Vorheriger Preis: 24,99 €");
+    expect(omnibusLowestPriceLine(2499, "ru").replace(/\u00a0/g, " ")).toBe("Предыдущая цена: 24,99 €");
   });
 
   it("cenas formāts un aizstāšana pogās", () => {

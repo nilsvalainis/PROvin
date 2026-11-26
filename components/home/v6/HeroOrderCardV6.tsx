@@ -16,8 +16,14 @@ import {
   TP5_MOBILE_CHECKOUT_PLAN,
   type Tp5MobileServiceId,
 } from "@/lib/test-pricing-5-mobile";
-import { PromoOmnibusLine, PromoPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
-import { BlackFridayHeroOmnibusB, BlackFridayHeroPriceB } from "@/components/promo/BlackFridayB";
+import { PromoOmnibusLine, PromoPrice, useBlackFridayPlanPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
+import {
+  BlackFridayHeroOmnibusB,
+  BlackFridayHeroPriceB,
+  BlackFridayHeroRibbonB,
+  bfHeroClasses,
+} from "@/components/promo/BlackFridayB";
+import { BF_HERO_CARD_ATTR } from "@/lib/promo/black-friday-hero";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
@@ -127,6 +133,8 @@ export function HeroOrderCardV6({
   };
   const service = getTp5MobileService(activeId, locale);
   const sample = SAMPLE_BY_ID[activeId] ?? null;
+  /** Black Friday (tikai dīlera dati): izcelšana, lente, spilgtāka zaļā, bez «JAUNUMS». */
+  const bfDealer = useBlackFridayPlanPrice("dealer");
   /** Poga (arī telefonā) ar akcijas cenu, ja Black Friday aktīvs. */
   const ctaLabel = usePromoText(TP5_MOBILE_CHECKOUT_PLAN[activeId], getTp5MobileCtaLabel(service, false));
   const fast = activeId === "dealer" || activeId === "mini";
@@ -158,7 +166,10 @@ export function HeroOrderCardV6({
   };
 
   return (
-    <div className={`${styles.card}${picked ? ` ${styles.isPicked}` : ""}${activeId === "dealer" ? ` ${styles.isDealer}` : ""}`}>
+    <div
+      {...{ [BF_HERO_CARD_ATTR]: "" }}
+      className={`${styles.card}${picked ? ` ${styles.isPicked}` : ""}${activeId === "dealer" ? ` ${styles.isDealer}` : ""}`}
+    >
       <div className={styles.options} role="radiogroup" aria-label={uiCopy.packageTabsAria} onKeyDown={onOptionsKey}>
         {ids.map((id) => {
           const opt = copy.options[id];
@@ -172,19 +183,19 @@ export function HeroOrderCardV6({
               aria-checked={on}
               data-id={id}
               tabIndex={on ? 0 : -1}
-              className={`${styles.option} ${id === "dealer" ? styles.optionDealer : styles.optionMain}${on ? ` ${styles.optionOn}` : ""}`}
+              className={`${styles.option} ${id === "dealer" ? styles.optionDealer : styles.optionMain}${on ? ` ${styles.optionOn}` : ""}${id === "dealer" && bfDealer ? ` ${bfHeroClasses.dealer}` : ""}`}
               onClick={() => onSelect(id)}
             >
-              <span className={styles.radio} aria-hidden />
+              <span className={`${styles.radio}${id === "dealer" && bfDealer ? ` ${bfHeroClasses.radio}` : ""}`} aria-hidden />
               <span className={styles.optionText}>
                 <b>
                   {opt?.name ?? s.title}
-                  {id === "dealer" ? <i className={styles.newBadge}>{uiCopy.newBadge}</i> : null}
+                  {id === "dealer" && !bfDealer ? <i className={styles.newBadge}>{uiCopy.newBadge}</i> : null}
                 </b>
                 <small>{opt?.sub ?? s.description}</small>
                 {id === "dealer" ? <BlackFridayHeroOmnibusB /> : <PromoOmnibusLine planId={TP5_MOBILE_CHECKOUT_PLAN[id]} />}
                 {id === "dealer" ? (
-                  <span className={styles.guarantee}>
+                  <span className={`${styles.guarantee}${bfDealer ? ` ${bfHeroClasses.green}` : ""}`}>
                     <ShieldIcon />
                     {copy.guaranteeShort}
                   </span>
@@ -197,6 +208,7 @@ export function HeroOrderCardV6({
                   <PromoPrice planId={TP5_MOBILE_CHECKOUT_PLAN[id]} regularLabel={s.price} />
                 )}
               </em>
+              {id === "dealer" ? <BlackFridayHeroRibbonB /> : null}
             </button>
           );
         })}

@@ -54,10 +54,10 @@ const all = (
 );
 
 const LOC: Array<[string, string, string, string, string]> = [
-  ["lv", "17,49 €", "24,99 €", "Zemākā cena pēdējās 30 dienās: 24,99 €", "Beidzas pēc"],
-  ["en", "€17.49", "€24.99", "Lowest price in the last 30 days: €24.99", "Ends in"],
-  ["de", "17,49 €", "24,99 €", "Niedrigster Preis der letzten 30 Tage: 24,99 €", "Endet in"],
-  ["ru", "17,49 €", "24,99 €", "Самая низкая цена за последние 30 дней: 24,99 €", "До конца"],
+  ["lv", "17,49 €", "24,99 €", "Iepriekšējā cena: 24,99 €", "Beidzas pēc"],
+  ["en", "€17.49", "€24.99", "Previous price: €24.99", "Ends in"],
+  ["de", "17,49 €", "24,99 €", "Vorheriger Preis: 24,99 €", "Endet in"],
+  ["ru", "17,49 €", "24,99 €", "Предыдущая цена: 24,99 €", "До конца"],
 ];
 
 describe("Black Friday B dizains", () => {
@@ -113,6 +113,10 @@ describe("Black Friday B dizains", () => {
       expect(html).toMatch(/Nē, paldies|No, thanks|Nein, danke|Нет, спасибо/);
       expect(html).toContain(now);
       expect(html).toContain(omni);
+      /** B4: faktu rinda un CTA ar produkta nosaukumu. */
+      expect(html).toMatch(/Pēc VIN vai numurzīmes|By VIN or licence plate|Per FIN oder Kennzeichen|По VIN или номерному знаку/);
+      expect(html).toContain("Google");
+      expect(html).toMatch(/Pasūtīt dīlera datus - |Order dealer data - |Händlerdaten bestellen - |Заказать данные дилера - /);
     }
   });
 });
@@ -122,7 +126,36 @@ describe("Black Friday taimeris", () => {
     expect(blackFridayCountdownParts(Date.parse("2026-12-01T21:59:00Z"))).toEqual(["00", "00", "01", "00"]);
     expect(blackFridayCountdownParts(Date.parse("2026-11-26T22:00:00Z"))).toEqual(["05", "00", "00", "00"]);
     expect(blackFridayCountdownParts(AFTER)).toEqual(["00", "00", "00", "00"]);
-    expect(blackFridayCountdownLine(Date.parse("2026-11-30T21:00:00Z"), "lv")).toBe("01d 01:00:00");
-    expect(blackFridayCountdownLine(Date.parse("2026-11-30T21:00:00Z"), "ru")).toBe("01д 01:00:00");
+    const n = (x: string) => x.replace(/\u00a0/g, " ");
+    expect(n(blackFridayCountdownLine(Date.parse("2026-11-30T21:00:00Z"), "lv"))).toBe("1 d 01:00:00");
+    expect(n(blackFridayCountdownLine(Date.parse("2026-11-30T21:00:00Z"), "ru"))).toBe("1 д 01:00:00");
+  });
+});
+
+import { blackFridayGuaranteeText } from "@/lib/promo/black-friday-copy";
+import { getHomeV6Copy } from "@/lib/home-v6-copy";
+import { popupDueAt, BF_POPUP_INTERVAL_MS } from "@/lib/promo/black-friday-hero";
+
+describe("Black Friday B4 noteikumi", () => {
+  it("garantija akcijas laikā: samaksātā summa, nevis 24,99 € (4 valodas)", () => {
+    const want: Record<string, string> = {
+      lv: "samaksāto summu ieskaitām",
+      en: "the amount paid is credited",
+      de: "den bezahlten Betrag auf",
+      ru: "уплаченную сумму засчитаем",
+    };
+    for (const loc of ["lv", "en", "de", "ru"]) {
+      const out = blackFridayGuaranteeText(getHomeV6Copy(loc).dealer.guaranteeText, loc);
+      expect(out, loc).toContain(want[loc]);
+      expect(out, loc).not.toMatch(/24[.,]99/);
+    }
+  });
+
+  it("logs ne biežāk kā reizi 7 dienās", () => {
+    const now = Date.parse("2026-11-28T10:00:00Z");
+    expect(popupDueAt(null, now)).toBe(true);
+    expect(popupDueAt(now - 1000, now)).toBe(false);
+    expect(popupDueAt(now - BF_POPUP_INTERVAL_MS + 1, now)).toBe(false);
+    expect(popupDueAt(now - BF_POPUP_INTERVAL_MS, now)).toBe(true);
   });
 });

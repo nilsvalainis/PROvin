@@ -127,14 +127,18 @@ export function swapPriceInText(text: string, fromCents: number, toCents: number
   return out;
 }
 
+/**
+ * ES Omnibus rinda. Nila teksts (26.11): «Iepriekšējā cena: 24,99 €».
+ * Vērtība vienmēr ir zemākā cena pēdējās 30 dienās pirms akcijas (`lowest30dCents`).
+ */
 const OMNIBUS_PREFIX: Record<PromoLocale, string> = {
-  lv: "Zemākā cena pēdējās 30 dienās:",
-  en: "Lowest price in the last 30 days:",
-  de: "Niedrigster Preis der letzten 30 Tage:",
-  ru: "Самая низкая цена за последние 30 дней:",
+  lv: "Iepriekšējā cena:",
+  en: "Previous price:",
+  de: "Vorheriger Preis:",
+  ru: "Предыдущая цена:",
 };
 
-/** ES Omnibus rinda, piem. «Zemākā cena pēdējās 30 dienās: 24,99 €». */
+/** ES Omnibus rinda, piem. «Iepriekšējā cena: 24,99 €». */
 export function omnibusLowestPriceLine(lowest30dCents: number, locale?: string | null): string {
   const loc = promoLocale(locale);
   /** Nedalāmā atstarpe cenā, lai «€» nepārlec jaunā rindā. */
@@ -152,4 +156,17 @@ const BANNER_TEXT: Record<PromoLocale, (promo: string, regular: string, off: str
 export function blackFridayBannerText(price: BlackFridayPriceConfig, locale?: string | null): string {
   const loc = promoLocale(locale);
   return BANNER_TEXT[loc](formatPromoEur(price.promoCents, loc), formatPromoEur(price.regularCents, loc), price.discountLabel);
+}
+
+const SAVE_PREFIX: Record<PromoLocale, string> = {
+  lv: "Ietaupi",
+  en: "Save",
+  de: "Sie sparen",
+  ru: "Экономия",
+};
+
+/** «Ietaupi 7,50 €» (starpība starp parasto un akcijas cenu). */
+export function blackFridaySavingsLine(price: BlackFridayPriceConfig, locale?: string | null): string {
+  const loc = promoLocale(locale);
+  return `${SAVE_PREFIX[loc]} ${formatPromoEur(price.regularCents - price.promoCents, loc).replace(" ", "\u00a0")}`;
 }

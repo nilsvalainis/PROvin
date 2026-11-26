@@ -2,7 +2,11 @@
 
 import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useBlackFridayPlanPrice } from "@/components/promo/BlackFridayPromo";
+import { getBlackFridayCopy } from "@/lib/promo/black-friday-copy";
+import { formatPromoEur } from "@/lib/promo/black-friday";
+import { requestBlackFridayDealer } from "@/lib/promo/black-friday-hero";
 import { Link, usePathname } from "@/i18n/navigation";
 import { whatsappAppUrl, whatsappWebUrl } from "@/lib/contact";
 import { isAzvinPublicPath } from "@/lib/azvin-public-path";
@@ -34,6 +38,9 @@ const NO_ORDER_BAR = ["/paldies", "/pasutit", "/lietosanas-noteikumi", "/privatu
 export function WhatsAppFab() {
   const t = useTranslations("Misc");
   const pathname = usePathname() ?? "";
+  const locale = useLocale();
+  /** Black Friday: apakšējā josla ved uz dīlera datiem (viena skaidra CTA, nevis «Pasūtīt auditu»). */
+  const bfDealer = useBlackFridayPlanPrice("dealer");
   const path = normalizeSitePath(pathname);
   const webHref = whatsappWebUrl();
   const [on, setOn] = useState(false);
@@ -107,9 +114,23 @@ export function WhatsAppFab() {
       <div className={`provin-order-bar${visible ? " is-on" : ""}`} aria-hidden={!visible}>
         <span className="provin-order-bar__slot" aria-hidden />
         {showOrder ? (
-          <Link href="/#home-hero" className="provin-order-bar__cta provin-press" tabIndex={visible ? 0 : -1}>
-            {t("orderBarCta")}
-          </Link>
+          bfDealer ? (
+            <Link
+              href="/?plan=dealer#home-hero"
+              className="provin-order-bar__cta provin-press"
+              tabIndex={visible ? 0 : -1}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                if (requestBlackFridayDealer()) e.preventDefault();
+              }}
+            >
+              {getBlackFridayCopy(locale).orderDealer(formatPromoEur(bfDealer.promoCents, locale))}
+            </Link>
+          ) : (
+            <Link href="/#home-hero" className="provin-order-bar__cta provin-press" tabIndex={visible ? 0 : -1}>
+              {t("orderBarCta")}
+            </Link>
+          )
         ) : null}
         <a
           href={webHref}

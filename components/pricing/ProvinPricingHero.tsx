@@ -29,6 +29,8 @@ import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
 import { HERO_PREFILL_EVENT, type HeroPrefillDetail } from "@/lib/hero-prefill";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
+import { useBlackFridayPlanPrice } from "@/components/promo/BlackFridayPromo";
+import { BF_SELECT_DEALER_EVENT, focusHeroVinField } from "@/lib/promo/black-friday-hero";
 
 /**
  * `useSearchParams` atsevišķā Suspense bērnā: citādi statiskajā renderā viss hero (ar H1 un
@@ -86,6 +88,10 @@ export function ProvinPricingHero({
   const [picked, setPicked] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
   const planParamApplied = useRef(false);
+  /** Klients pats izvēlējās paketi (vai to noteica `?plan=`) - akcija noklusēto izvēli vairs nemaina. */
+  const userChose = useRef(false);
+  /** Dīlera dati izvēlēti automātiski akcijas dēļ (pēc akcijas beigām atgriež AUDITS). */
+  const autoDealer = useRef(false);
   const onSearchParams = useCallback((params: URLSearchParams) => {
     setSearchParams(params);
     // Kā agrāk `useState(initialPlan)`: `?plan=` / `?tab=` nosaka sākuma cilni tikai vienreiz.
@@ -93,9 +99,34 @@ export function ProvinPricingHero({
     planParamApplied.current = true;
     const plan = parseHeroPlanParam(params.get("plan") ?? params.get("tab"));
     if (plan) {
+      userChose.current = true;
       setActiveId(plan);
       setPicked(true);
     }
+  }, []);
+  /** Black Friday (dīlera dati): kamēr akcija aktīva, noklusēti izvēlēti dīlera dati. */
+  const bfDealer = useBlackFridayPlanPrice("dealer");
+  const bfActive = Boolean(bfDealer);
+  useEffect(() => {
+    if (userChose.current) return;
+    if (bfActive) {
+      autoDealer.current = true;
+      setActiveId("dealer");
+    } else if (autoDealer.current) {
+      autoDealer.current = false;
+      setActiveId("audits");
+    }
+  }, [bfActive]);
+  /** Black Friday CTA bez pārlādes: dīlera dati + fokuss VIN laukā. */
+  useEffect(() => {
+    const onSelect = () => {
+      userChose.current = true;
+      setActiveId("dealer");
+      setPicked(true);
+      focusHeroVinField();
+    };
+    window.addEventListener(BF_SELECT_DEALER_EVENT, onSelect);
+    return () => window.removeEventListener(BF_SELECT_DEALER_EVENT, onSelect);
   }, []);
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
@@ -131,7 +162,10 @@ export function ProvinPricingHero({
       setGlobalError(null);
       setVin(value);
       if (detail.listingUrl) setListingUrl(detail.listingUrl);
-      if (detail.plan) setActiveId(detail.plan);
+      if (detail.plan) {
+        userChose.current = true;
+        setActiveId(detail.plan);
+      }
       setPicked(true);
       // Notīra un ieliek no jauna, lai animācija atkārtojas arī ar to pašu VIN.
       setPrefilledVin("");
@@ -235,6 +269,7 @@ export function ProvinPricingHero({
   }, [activeId, requestServiceCheckout]);
 
   const selectService = useCallback((id: Tp5MobileServiceId) => {
+    userChose.current = true;
     setActiveId(id);
     setPicked(true);
   }, []);

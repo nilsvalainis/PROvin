@@ -72,7 +72,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: bf-shine 5s ease-in-out 1.2s infinite;
+  animation: bf-shine 5s ease-in-out 1.2s 3;
 }
 @keyframes bf-shine {
   0% {
@@ -167,7 +167,7 @@
   width: 260px;
   left: -300px;
   background: linear-gradient(100deg, transparent, rgba(156, 192, 255, 0.18), transparent);
-  animation: bf-sweep 6s ease-in-out 1s infinite;
+  animation: bf-sweep 6s ease-in-out 1s 3;
   pointer-events: none;
 }
 @keyframes bf-sweep {
@@ -229,6 +229,9 @@
   font-size: 18px;
   font-weight: 800;
 }
+.topNameM {
+  display: none;
+}
 .topPrice s {
   font-size: 13px;
   font-weight: 500;
@@ -279,12 +282,30 @@
   }
   .g2,
   .sep,
-  .topName,
-  .top .eb {
+  .topName {
     display: none;
   }
+  .gLead {
+    display: grid;
+    gap: 3px;
+    justify-items: start;
+  }
+  .top .gLead .eb {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+  }
   .pct {
-    font-size: 30px;
+    font-size: 28px;
+  }
+  .topNameM {
+    display: inline;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  .topPrice {
+    font-size: 17px;
   }
   .gPrice {
     justify-self: end;
@@ -320,11 +341,16 @@
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     backdrop-filter: blur(18px) saturate(140%);
     box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.8);
-    transition: bottom 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    padding: 10px 10px 10px 14px;
+    gap: 10px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
-  /* Kad redzama «Pasūtīt auditu» + WhatsApp josla, kapsula paceļas virs tās. */
+  /* Kapsula paslēpjas, kamēr redzama hero forma vai esošā apakšējā josla (tā akcijas laikā ved uz dīlera datiem). */
+  .capOff,
   :global(body:has(.provin-order-bar.is-on)) .cap {
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    opacity: 0;
+    transform: translateY(16px);
+    pointer-events: none;
   }
 }
 .capL {
@@ -341,8 +367,15 @@
   color: #e4e4e7;
   white-space: nowrap;
 }
+.capPrice {
+  color: #fff;
+  font-weight: 800;
+}
+.capT s {
+  font-size: 11.5px;
+}
 .capTm {
-  font-size: 19px;
+  font-size: 16px;
   line-height: 1.1;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -352,10 +385,11 @@
 .cap .omni {
   font-size: 10.5px;
   line-height: 1.3;
+  white-space: nowrap;
 }
 .cap .cta {
-  min-height: 48px;
-  padding: 0 15px;
+  min-height: 46px;
+  padding: 0 18px;
   font-size: 12.5px;
 }
 
@@ -431,17 +465,42 @@
   font-variant-numeric: tabular-nums;
 }
 .boxPrice b {
-  font-size: 46px;
+  font-size: 62px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 .boxPrice s {
-  font-size: 20px;
+  font-size: 22px;
   color: #9db0d6;
 }
 .box .omni {
   color: #b9c8e6;
   font-size: 13px;
+}
+.box .cell {
+  min-width: 74px;
+}
+.box .cell i {
+  letter-spacing: 0.08em;
+}
+.facts {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #c7d7f5;
+}
+.star {
+  color: #fbbf24;
+}
+.factDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #7f93bd;
 }
 .box .cta {
   width: 100%;
@@ -477,20 +536,46 @@
 }
 @media (max-width: 720px) {
   .boxC {
-    padding: 62px 18px 20px;
+    padding: 56px 16px 18px;
+    gap: 10px;
   }
   .boxBig {
-    font-size: 116px;
+    font-size: 104px;
+  }
+  .boxName {
+    font-size: 18px;
   }
   .boxPrice b {
-    font-size: 38px;
+    font-size: 46px;
   }
   .box .cells {
+    width: 100%;
     gap: 6px;
   }
   .box .cell {
-    min-width: 0;
     flex: 1;
+    min-width: 0;
+    padding: 9px 2px 7px;
+  }
+  .box .cell b {
+    font-size: 28px;
+  }
+  .box .cell i {
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+  }
+  .box .cta {
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+  .facts {
+    row-gap: 4px;
+  }
+  .factBreak {
+    flex-basis: 100%;
+    width: 0;
+    height: 0;
+    background: none;
   }
 }
 
@@ -498,14 +583,14 @@
 .em {
   display: inline-grid;
   justify-items: end;
-  gap: 3px;
+  gap: 4px;
   line-height: 1.1;
 }
 .emRow {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
 }
 .emChip {
@@ -526,6 +611,63 @@
 }
 .emNew {
   color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.emSave {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #45f0b0;
+}
+/* Hero dīlera rinda akcijas laikā: izcelta, kad izvēlēta */
+.heroDealer.heroDealer {
+  overflow: visible;
+}
+.heroDealer.heroDealer[aria-checked="true"] {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(10, 34, 87, 0.4));
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb inset, 0 0 0 4px rgba(37, 99, 235, 0.16), 0 14px 34px -12px rgba(37, 99, 235, 0.65);
+}
+.heroDealer.heroDealer[aria-checked="true"] .heroRadio {
+  border: 5px solid #2563eb;
+  background: #fff;
+}
+.rib {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  height: 20px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(90deg, #0a2257, #0f3388);
+  box-shadow: inset 0 0 0 1px rgba(156, 192, 255, 0.5);
+  font: 700 10.5px/1 var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.heroDealer:not([aria-checked="true"]) .rib {
+  display: none;
+}
+/* Spilgtāka zaļā akcijas laikā (garantija) */
+.greenBright.greenBright {
+  color: #45f0b0;
+}
+.dsGuarantee.dsGuarantee {
+  border-color: rgba(69, 240, 176, 0.5);
+  background: rgba(69, 240, 176, 0.09);
+}
+.dsGuarantee.dsGuarantee svg {
+  color: #45f0b0;
+}
+.dsGuarantee.dsGuarantee b {
+  color: #e3fff3;
 }
 .omniSmall {
   display: block;
@@ -539,17 +681,37 @@
 /* ---------- #dilera-dati cenu bloks ---------- */
 .dbox {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 22px;
+  gap: 0;
   margin: 16px 0 18px;
-  padding: 20px 22px;
+  padding: 22px 24px;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: radial-gradient(120% 90% at 0% 0%, rgba(37, 99, 235, 0.45), transparent 60%), linear-gradient(160deg, #0b1f4f, #05070d);
 }
+.vr {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 22px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+}
+.save {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #45f0b0;
+  white-space: nowrap;
+}
+.save svg {
+  width: 13px;
+  height: 13px;
+}
 .dboxBig {
-  font-size: 64px;
+  justify-self: start;
+  font-size: 76px;
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 0.9;
@@ -569,26 +731,29 @@
   font-variant-numeric: tabular-nums;
 }
 .dboxPr b {
-  font-size: 30px;
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 .dboxPr s {
-  font-size: 15px;
+  font-size: 17px;
 }
 .dbox .omni {
   display: block;
 }
 @media (max-width: 720px) {
   .dbox {
-    gap: 16px;
-    padding: 16px 18px;
+    grid-template-columns: auto auto 1fr;
+    padding: 18px;
   }
   .dboxBig {
-    font-size: 52px;
+    font-size: 58px;
+  }
+  .vr {
+    margin: 0 16px;
   }
   .dboxPr b {
-    font-size: 26px;
+    font-size: 34px;
   }
 }
 .kickOld {

@@ -14,8 +14,14 @@ import {
   formatHomeV6Number,
   getHomeV6Copy,
 } from "@/lib/home-v6-copy";
-import { usePromoText } from "@/components/promo/BlackFridayPromo";
-import { BlackFridayDealerBoxB, BlackFridayDealerKickerB } from "@/components/promo/BlackFridayB";
+import { useBlackFridayPlanPrice, usePromoText } from "@/components/promo/BlackFridayPromo";
+import {
+  BfDealerLink,
+  BlackFridayDealerBoxB,
+  BlackFridayDealerKickerB,
+  bfHeroClasses,
+} from "@/components/promo/BlackFridayB";
+import { blackFridayGuaranteeText } from "@/lib/promo/black-friday-copy";
 import styles from "./home-dealer-story.module.css";
 
 const VB_W = 640;
@@ -46,7 +52,9 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
   /** Black Friday: «Datu atskaite · 24,99 €» -> pārsvītrotā + jaunā cena; teksti ar akcijas cenu. */
   const [kickerLabel, kickerPrice] = c.kicker.split(" · ");
   const ctaText = usePromoText("dealer", c.cta);
-  const guaranteeText = usePromoText("dealer", c.guaranteeText);
+  const bfDealer = useBlackFridayPlanPrice("dealer");
+  /** Akcijas laikā: «samaksāto summu ieskaitām audita cenā» (nevis 24,99 €). */
+  const guaranteeText = bfDealer ? blackFridayGuaranteeText(c.guaranteeText, locale) : c.guaranteeText;
   const rootRef = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
   const [hover, setHover] = useState<number | null>(null);
@@ -84,7 +92,7 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
     >
       <div className="mx-auto min-w-0 w-full max-w-[75rem]">
         <p className={styles.kicker}>
-          <span className={styles.badge}>{c.badge}</span>
+          {bfDealer ? null : <span className={styles.badge}>{c.badge}</span>}
           {kickerPrice ? (
             <BlackFridayDealerKickerB label={kickerLabel ?? ""} regularLabel={kickerPrice} />
           ) : (
@@ -166,7 +174,7 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
                 </div>
               );
             })}
-            <div className={styles.guarantee}>
+            <div className={`${styles.guarantee}${bfDealer ? ` ${bfHeroClasses.dsGuarantee}` : ""}`}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z" />
                 <path d="M9 12l2 2 4-4" />
@@ -178,9 +186,13 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
             </div>
             <BlackFridayDealerBoxB />
             <div className={styles.actions}>
-              <Link href="/?plan=dealer#home-hero" rel={publicAnchorRel("/?plan=dealer#home-hero")} className={styles.cta}>
-                {ctaText}
-              </Link>
+              {bfDealer ? (
+                <BfDealerLink className={styles.cta}>{ctaText}</BfDealerLink>
+              ) : (
+                <Link href="/?plan=dealer#home-hero" rel={publicAnchorRel("/?plan=dealer#home-hero")} className={styles.cta}>
+                  {ctaText}
+                </Link>
+              )}
               <a
                 href={TP5_DEALER_SAMPLE_REPORT_HREF}
                 target="_blank"
