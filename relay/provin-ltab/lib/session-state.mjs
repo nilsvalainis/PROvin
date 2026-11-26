@@ -8,8 +8,17 @@
 
 const SMARTID_LOST_CODES = new Set(["smartid_timeout", "smartid_refused", "not_configured", "captcha"]);
 
+/**
+ * @typedef {{ state: string; updatedAt: string; verificationCode?: string; activeSince?: string; lastOkAt?: string;
+ *   lastLookupAt?: string; lastError?: string }} LtabSessionView
+ */
+
+/**
+ * @param {{ ttlMs?: number; now?: () => number }} [opts]
+ */
 export function createLtabSessionState({ ttlMs, now = () => Date.now() } = {}) {
   const ttl = Math.max(60_000, Number(ttlMs) || 20 * 60_000);
+  /** @type {LtabSessionView} */
   const s = { state: "logged_out", updatedAt: new Date(now()).toISOString() };
   const stamp = () => {
     s.updatedAt = new Date(now()).toISOString();
@@ -25,6 +34,7 @@ export function createLtabSessionState({ ttlMs, now = () => Date.now() } = {}) {
   };
   return {
     /** Uzdevuma progress: `awaiting_smartid` = sesijas nav (gaida apstiprinājumu), `searching` = pieteicies. */
+    /** @param {string} state @param {{ verificationCode?: unknown } & Record<string, unknown>} [extra] */
     onProgress(state, extra = {}) {
       if (state === "awaiting_smartid") {
         s.state = "awaiting_smartid";
@@ -41,6 +51,7 @@ export function createLtabSessionState({ ttlMs, now = () => Date.now() } = {}) {
       markActive();
       s.lastLookupAt = s.lastOkAt;
     },
+    /** @param {string} code */
     onError(code) {
       s.lastLookupAt = new Date(now()).toISOString();
       if (SMARTID_LOST_CODES.has(code) || s.state === "awaiting_smartid") {
@@ -58,6 +69,7 @@ export function createLtabSessionState({ ttlMs, now = () => Date.now() } = {}) {
       stamp();
     },
     /** Publiskais skats: `active` tikai, ja pēdējais apstiprinājums jaunāks par TTL, citādi `expired`. */
+    /** @returns {LtabSessionView} */
     view() {
       const out = { ...s };
       if (s.state === "active") {
