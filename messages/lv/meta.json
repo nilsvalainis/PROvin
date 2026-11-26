@@ -32,7 +32,7 @@
     "offerAuditsName": "PROVIN AUDITS",
     "offerAuditsDesc": "Auto vēstures pārbaude importam: vismaz 2 maksas vēstures avoti, sludinājuma audits un tehnisko risku analīze.",
     "offerDealerName": "Dīlera servisa dati",
-    "offerDealerDesc": "Oficiālā dīlera servisa vēsture pēc VIN, bez eksperta slēdziena.",
+    "offerDealerDesc": "Oficiālā dīlera servisa vēsture pēc VIN vai numurzīmes.",
     "thanksTitle": "Paldies par pasūtījumu",
     "thanksDescription": "Pasūtījums saņemts. Īss apstiprinājums pēc veiksmīgas apmaksas ar Stripe."
   }

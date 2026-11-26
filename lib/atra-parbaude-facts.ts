@@ -11,6 +11,7 @@ import type { DealerCheckRecord } from "@/lib/dealer-check";
 import type { AtraPotential } from "@/lib/atra-parbaude";
 import { atraPreviewPhotoSources, buildAtraPreviews, type AtraPreview } from "@/lib/atra-prieksskatijums";
 import { vinScanSourceAppliesToVin } from "@/lib/vin-scan/wanted";
+import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
 export const ECSDD_URL = "https://e.csdd.lv/";
 
@@ -26,7 +27,14 @@ export type AtraFactRow = {
   vehicle?: { make?: string; model?: string; year?: string };
   mileage?: { date: string; odometer: string; source?: string }[];
   media?: { photoUrl?: string; photoCount?: number };
-  flags?: { wanted?: boolean; stolen?: boolean; registrationCountry?: string; countries?: string[]; photoCount?: number };
+  flags?: {
+    wanted?: boolean;
+    stolen?: boolean;
+    registrationCountry?: string;
+    manufactureCountry?: string;
+    countries?: string[];
+    photoCount?: number;
+  };
   inspections?: { date: string; result?: string; odometer?: string }[];
   recalls?: { title: string; date?: string }[];
   incidents?: { date?: string; summary: string }[];
@@ -158,7 +166,8 @@ function mileageFact(input: AtraFactsInput): AtraMileageFact {
   };
   for (const row of input.rows) {
     if (row.status !== "found") continue;
-    const c = row.flags?.registrationCountry || row.country;
+    // WMI (vin_decode) valsts ir ražotājvalsts - nobraukuma punktiem valsti nedod.
+    const c = isManufactureCountrySource(row.id) ? "" : vinScanRowRegistrationCountry(row) || row.country;
     for (const m of row.mileage ?? []) push(m.date, m.odometer, m.source || row.label, COUNTRY_OK.test(c) ? c : "");
     for (const i of row.inspections ?? []) push(i.date, i.odometer ?? "", row.label, COUNTRY_OK.test(c) ? c : "");
   }
@@ -244,7 +253,9 @@ export function buildAtraFacts(rawInput: AtraFactsInput): AtraFacts {
   }
   const countries = new Set<string>();
   for (const r of found) {
-    const c = r.flags?.registrationCountry || "";
+    // 26.11: WMI ražotājvalsts nav valsts, kur auto bijis.
+    if (isManufactureCountrySource(r.id)) continue;
+    const c = vinScanRowRegistrationCountry(r);
     if (COUNTRY_OK.test(c)) countries.add(c);
     for (const extra of r.flags?.countries ?? []) {
       const code = String(extra).trim().toUpperCase();

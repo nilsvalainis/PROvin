@@ -19,6 +19,7 @@ import {
   ownerMileageColumns,
   ownerMileageInputFromCsdd,
   ownerMileageReadingsFromUnifiedRows,
+  type OwnerMileageCountryRecord,
   type OwnerMileagePeriod,
   type OwnerMileageReading,
   type OwnerMileageResult,
@@ -76,6 +77,17 @@ function dateLabel(t: number): string {
   return `${String(d.getUTCDate()).padStart(2, "0")}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.${d.getUTCFullYear()}`;
 }
 
+/** Ārvalstu kolonnas virsraksts + karogs. */
+export function ownerMileageAbroadLabel(p: OwnerMileagePeriod, lang: ClientReportLang): { label: string; flag: string } {
+  if (p.countryUnknown) return { label: ownerMileageT("abroadUnknown", lang), flag: "" };
+  if (!p.country) return { label: ownerMileageT("abroad", lang), flag: "" };
+  const name = normalizeCountryName(p.country, lang);
+  const label = p.countryProvenFromT
+    ? `${name} (${ownerMileageT("provenFrom", lang)} ${new Date(p.countryProvenFromT).getUTCFullYear()})`
+    : name;
+  return { label, flag: ownerMileageFlagHtml(p.country) };
+}
+
 export function ownerMileagePeriodLabel(p: OwnerMileagePeriod, lang: ClientReportLang): string {
   const a = p.startYearOnly ? String(new Date(p.t0).getUTCFullYear()) : monthLabel(p.t0);
   if (p.current) return `${ownerMileageT("since", lang)} ${a}`;
@@ -107,10 +119,9 @@ export function buildOwnerMileageBlockHtml(r: OwnerMileageResult | null, opts: O
   if (!r) return "";
   const lang = opts.lang ?? "lv";
   const items: { p: OwnerMileagePeriod; label: string; flag: string; color: string; ab: boolean }[] = [];
-  if (r.abroad) {
-    const name = r.abroad.country ? normalizeCountryName(r.abroad.country, lang) : ownerMileageT("abroad", lang);
-    items.push({ p: r.abroad, label: name, flag: r.abroad.country ? ownerMileageFlagHtml(r.abroad.country) : "", color: ABROAD_BAR, ab: true });
-  }
+  // 26.11 (Nils): valsts tikai pierādītajam posmam; agrākais laiks - «Iepriekš - valsts nav zināma».
+  const abroadCols = r.abroadSegments?.length ? r.abroadSegments : r.abroad ? [r.abroad] : [];
+  for (const seg of abroadCols) items.push({ p: seg, ...ownerMileageAbroadLabel(seg, lang), color: ABROAD_BAR, ab: true });
   r.owners.forEach((o, i) =>
     items.push({
       p: o,
@@ -175,6 +186,7 @@ export const OWNER_MILEAGE_BLOCK_CSS = `
 .pdf-own-col--ab{background:#F8FAFC;}
 .pdf-own-fl{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;line-height:1.25;min-width:0;}
 .pdf-own-fl > span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pdf-own-col--ab .pdf-own-fl > span:last-child{white-space:normal;}
 .pdf-own-lb{height:6px;border-radius:999px;background:#EEF1F5;position:relative;overflow:hidden;margin:8px 0 4px;}
 .pdf-own-lb i{position:absolute;top:0;bottom:0;border-radius:999px;min-width:3px;display:block;}
 .pdf-own-ly{display:flex;justify-content:space-between;font-size:8.5px;color:#94a3b8;}
@@ -197,13 +209,19 @@ export const OWNER_MILEAGE_BLOCK_CSS = `
 export function buildCsddOwnerMileageBlockHtml(
   form: CsddFormFields,
   readings?: OwnerMileageReading[],
-  opts: { lang?: ClientReportLang; nowMs?: number; responsive?: boolean } = {},
+  opts: {
+    lang?: ClientReportLang;
+    nowMs?: number;
+    responsive?: boolean;
+    /** Datēti ieraksti ar valsti (arī bez km) - ārvalstu perioda valstij. */
+    countryRecords?: readonly OwnerMileageCountryRecord[];
+  } = {},
 ): string {
   try {
     const rs =
       readings ??
       ownerMileageReadingsFromUnifiedRows(prepareUnifiedMileageDisplayRows(collectUnifiedMileageRows({ csddForm: form })));
-    const input = ownerMileageInputFromCsdd(form, rs, opts.nowMs);
+    const input = ownerMileageInputFromCsdd(form, rs, opts.nowMs, opts.countryRecords);
     if (!input) return "";
     return buildOwnerMileageBlockHtml(buildOwnerMileagePeriods(input), {
       lang: opts.lang ?? "lv",

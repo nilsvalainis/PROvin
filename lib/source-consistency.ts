@@ -57,7 +57,7 @@ import {
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
 } from "@/lib/unified-incidents";
-import { buildVehicleLifecycleEvents, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
+import { buildVehicleLifecycleEvents, lifecycleEventIsProduction, vehicleFirstRegistrationSummary } from "@/lib/vehicle-lifecycle-timeline";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export type SourceIssueSeverity = "critical" | "warn" | "info";
@@ -663,7 +663,11 @@ function checkCountry(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIss
   for (const key of ["carvertical", "autodna", "carfax"] as const) {
     const b = blocks[key];
     for (const r of b.serviceHistory ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
-    for (const r of b.vehicleHistoryTimeline ?? []) add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
+    for (const r of b.vehicleHistoryTimeline ?? []) {
+      // 26.11: «Ražots <valsts>» ir ražotājvalsts, ne valsts, kur auto bijis - pretrunu nerada.
+      if (lifecycleEventIsProduction({ title: r.description ?? "", detail: "" })) continue;
+      add(iso2(r.country), SOURCE_BLOCK_LABELS[key]);
+    }
   }
   for (const r of blocks.cc_vin.mileage ?? []) add(iso2(r.country), CC_VIN_ADMIN_LABEL);
   const regs: [keyof WorkspaceSourceBlocks, string][] = [
@@ -1207,7 +1211,28 @@ function checkFirstRegCountryConsistency(
   });
   const summary = vehicleFirstRegistrationSummary(events);
   const firstIso = (summary.countryIso || iso2(summary.country)).toUpperCase();
-  if (!firstIso || firstIso === "LV") return;
+  if (!firstIso) {
+    // 26.11 (Nils, BMW X5): 1. reģistrācijas valsts nav zināma - AI tekstā to nedrīkst «aprēķināt» (piem. no CSDD iepriekšējās valsts).
+    const unknownValues: SourceIssueValue[] = [];
+    for (const t of texts) {
+      const plain = adminRichHtmlToPlainText(t.text ?? "");
+      for (const m of plain.matchAll(FIRST_REG_PHRASE_RE)) {
+        const iso = locativeCountryIso(m[1]!);
+        if (!iso || iso === "LV") continue;
+        unknownValues.push({ source: t.label, value: `«${m[0].slice(0, 140)}»` });
+      }
+    }
+    if (unknownValues.length === 0) return;
+    push(out, {
+      id: "ai_first_reg_country",
+      kind: "ai_first_reg_country",
+      severity: "warn",
+      title: "AI tekstā 1. reģistrācijas valsts, bet tā nav pierādāma (1. lapā «Nav zināma»)",
+      values: [{ source: "1. lapa", value: "Nav zināma" }, ...unknownValues.slice(0, 6)],
+    });
+    return;
+  }
+  if (firstIso === "LV") return;
   const firstLabel = countryLv(firstIso);
   const prev = iso2(blocks.csdd.previousRegistrationCountry);
   if (prev && prev !== "LV" && prev !== firstIso) {

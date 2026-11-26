@@ -572,7 +572,10 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   const iso = (facts.firstReg.countryIso || "").toUpperCase();
   const originDe = countryLv.includes("vācij") || iso === "DE";
   const originLv = countryLv.includes("latvij") || iso === "LV";
-  const originForeign = originDe || (Boolean(iso) && iso !== "LV");
+  // 26.11: 1. reģistrācijas valsts nav zināma, bet CSDD iepriekšējā valsts ir ārvalsts - auto nav pirmoreiz reģistrēts Latvijā.
+  const prevLv = (facts.firstReg.csddPreviousCountryLv ?? "").trim();
+  const prevForeign = !iso && Boolean(prevLv) && !/latvij/i.test(prevLv);
+  const originForeign = originDe || (Boolean(iso) && iso !== "LV") || prevForeign;
   // 24.11 audits: sadaļu virsraksti («Pirmā reģistrācija Latvijā un TA») nav apgalvojumi.
   const firstRegLvSentence = sentences.find(
     (s) => FIRST_REG_LV_RE.test(s) && !looksLikeHeading(s) && !CONDITIONAL_RE.test(s),
@@ -582,7 +585,9 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
       id: "first_reg_country",
       kind: "first_reg_country",
       level: "E",
-      message: `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || iso || "DE"}, teksts saka Latviju.`,
+      message: prevForeign
+        ? `Auto pirms Latvijas bijis ārvalstīs (CSDD: ${prevLv}), teksts saka, ka pirmā reģistrācija ir Latvijā.`
+        : `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || iso || "DE"}, teksts saka Latviju.`,
       sentence: firstRegLvSentence,
     });
   }
