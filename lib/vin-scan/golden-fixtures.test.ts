@@ -47,9 +47,11 @@ describe("NHTSA vPIC (zelta VIN)", () => {
     expect(vpic.status).toBe("found");
     expect(vpic.vehicle).toEqual({ make: "BMW", model: "330i", year: "2020" });
 
-    const merged = mergeVinDecodeWithVpic(decodeVinLocal(BMW), vpic);
+    // 26.11: Eiropas VIN gads tikai no reģistra (vPIC to lasa no 10. zīmes).
+    const merged = mergeVinDecodeWithVpic(decodeVinLocal(BMW), vpic, { registryYear: "2020" });
     expect(merged.summary).toBe("2020 BMW 330i · Ražots: Vācija");
     expect(merged.vehicle).toEqual({ make: "BMW", model: "330i", year: "2020" });
+    expect(mergeVinDecodeWithVpic(decodeVinLocal(BMW), vpic).vehicle?.year).toBe("");
     expect(merged.flags?.manufactureCountry).toBe("DE");
   });
 
@@ -59,11 +61,11 @@ describe("NHTSA vPIC (zelta VIN)", () => {
     expect(vpic.detail).toMatch(/^7 - Manufacturer is not registered/);
 
     const local = decodeVinLocal(SKODA);
-    expect(local).toMatchObject({ make: "Škoda", year: "2022", countryCode: "CZ", checkDigitOk: true });
+    expect(local).toMatchObject({ make: "Škoda", year: "", countryCode: "CZ", checkDigitOk: null });
     const merged = mergeVinDecodeWithVpic(local, vpic);
     expect(merged.status).toBe("found");
-    expect(merged.summary).toBe("2022 Škoda · Ražots: Čehija");
-    expect(merged.vehicle).toEqual({ make: "Škoda", model: "", year: "2022" });
+    expect(merged.summary).toBe("Škoda · Ražots: Čehija");
+    expect(merged.vehicle).toEqual({ make: "Škoda", model: "", year: "" });
   });
 
   it("Honda: tīrs ASV dekodējums", () => {

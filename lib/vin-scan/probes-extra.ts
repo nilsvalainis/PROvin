@@ -42,7 +42,7 @@ import {
   decodeVinLocal,
   isUsWmiVin,
   mergeVinDecodeWithVpic,
-  vinDecodeParseFromLocal,
+  vinHasNorthAmericanCoding,
 } from "@/lib/vin-scan/vin-decode";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
@@ -231,16 +231,23 @@ export async function probeNhtsaRecalls(ctx: VinScanContext): Promise<VinScanInd
 
 export async function probeVinDecode(ctx: VinScanContext): Promise<VinScanIndicator> {
   const local = decodeVinLocal(ctx.vin);
-  const fallback = vinDecodeParseFromLocal(local);
+  // 26.11: Eiropas VIN gadu nedekodē no 10. zīmes - ņem no tā paša skenējuma reģistriem, ja ir.
+  const registryYearPromise: Promise<string> = vinHasNorthAmericanCoding(ctx.vin) || !ctx.vehicleHint
+    ? Promise.resolve("")
+    : ctx.vehicleHint().then((v) => v?.year ?? "", () => "");
   try {
-    const res = await scanFetch(
-      `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(ctx.vin)}?format=json`,
-      { headers: { accept: "application/json" }, timeoutMs: 10_000 },
-    );
+    const [res, registryYear] = await Promise.all([
+      scanFetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(ctx.vin)}?format=json`,
+        { headers: { accept: "application/json" }, timeoutMs: 10_000 },
+      ),
+      registryYearPromise,
+    ]);
     const vpic = parseNhtsaDecode(res.status, res.text);
-    return done("vin_decode", ctx, mergeVinDecodeWithVpic(local, vpic));
+    return done("vin_decode", ctx, mergeVinDecodeWithVpic(local, vpic, { registryYear }));
   } catch {
-    return done("vin_decode", ctx, fallback);
+    const registryYear = await registryYearPromise;
+    return done("vin_decode", ctx, mergeVinDecodeWithVpic(local, null, { registryYear }));
   }
 }
 

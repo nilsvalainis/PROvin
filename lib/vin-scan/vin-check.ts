@@ -72,7 +72,8 @@ export function vinScanFormatHint(vin: string): VinScanVinHint {
   if (!/^[A-HJ-NPR-Z0-9]+$/.test(v)) {
     return { ok: false, warning: "VIN satur neatļautu zīmi (I, O, Q vai simbols)" };
   }
-  if (v.length === 17 && !vinCheckDigitOk(v)) {
+  // 26.11: kontrolcipars obligāts tikai Ziemeļamerikas WMI (1-5); Eiropas VIN 9. zīme var būt jebkas.
+  if (v.length === 17 && /^[1-5]/.test(v) && !vinCheckDigitOk(v)) {
     const expected = iso3779CheckDigit(v);
     return {
       ok: true,

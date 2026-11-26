@@ -13,6 +13,7 @@ import {
   translateTextLvChecked,
 } from "@/lib/vin-sources/translate-lv";
 import { formatDkLienLine, parseTjekbilLiens, type DkLien } from "@/lib/vin-sources/dk-liens";
+import { collapseDkLeaseInsuranceRows } from "@/lib/vin-sources/dk-lease-timeline";
 import type { VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 
 export type TjekbilDmrResponse = {
@@ -214,6 +215,18 @@ function occupancyPhaseLabel(
   return "Privāta reģistrācija Dānijā";
 }
 
+/** DMR `statusHistory` «Ejerskifte» dienas (īpašnieka maiņa reģistrā). */
+function dmrOwnerChangeDays(basic: Record<string, unknown>): Set<string> {
+  const out = new Set<string>();
+  for (const item of asArray(basic.statusHistory)) {
+    const rec = asRecord(item);
+    if (!/ejerskift/i.test(`${str(rec.status)} ${str(rec.type)} ${str(rec.typeNavn)}`)) continue;
+    const date = isoDay(rec.statusDate ?? rec.statusDato ?? rec.dato ?? rec.date);
+    if (date) out.add(date);
+  }
+  return out;
+}
+
 /**
  * Dānijas īpašnieku fāzes: nepārtraukts līzings = 1, privāta reģistrācija pirms/pēc = atsevišķi.
  * Ārvalstu pirmā reģistrācija, OCTA un atsevišķi līzinga līgumi nav jauns īpašnieks.
@@ -253,7 +266,11 @@ export function extractDkRegistrationSignals(
   if (dkFirstReg && !rows.some((s) => s.date === dkFirstReg)) {
     rows.push({ date: dkFirstReg, event: "Pirmā reģistrācija Dānijā" });
   }
+  const ownerChanges = dmrOwnerChangeDays(basic);
   for (const date of synDates) {
+    // 26.11 (Mercedes SE→DK→LV): reģistrācijas apskate līzinga laikā bez DMR īpašnieka maiņas („Registreringssyn uden
+    // ændring” 2024) ir tā paša līzinga turpinājums, ne jauns īpašnieks (DMR Ejerskifte = 3, ne 4).
+    if (!ownerChanges.has(date) && leases.some((l) => l.from < date && date <= l.to)) continue;
     // Reģistrācijas apskate dažas dienas pēc līzinga beigām / īpašnieka maiņas ir tā pati fāze (21.11: Passat
     // 23.02 līzings beidzas, 25.02 reģistrācijas apskate = viens privātais īpašnieks, ne divi).
     if (rows.some((s) => s.date === date || (s.date <= date && date <= addIsoDays(s.date, 7)))) continue;
@@ -284,12 +301,15 @@ function leasingPeriods(basic: Record<string, unknown>): { from: string; to: str
     if (from || to) rows.push({ from, to });
   }
   const seen = new Set<string>();
-  return rows.filter((r) => {
-    const key = `${r.from}|${r.to}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // DMR `leasingHistory` nav hronoloģisks (2020, 2024, 2018 …) - kopsavilkums ņem pirmo un pēdējo periodu.
+  return rows
+    .filter((r) => {
+      const key = `${r.from}|${r.to}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => (a.from || a.to).localeCompare(b.from || b.to) || a.to.localeCompare(b.to));
 }
 
 function hasLaterDkImport(inspections: TjekbilInspection[]): boolean {
@@ -343,16 +363,20 @@ function inspectionEvent(r: TjekbilInspection, exportDays: Set<string> = new Set
 
 export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: TjekbilInspection[]): VinSourceMileageRow[] {
   const rows: VinSourceMileageRow[] = [];
+  // DMR `foersteRegistreringDato` (origin 30) ir pirmā reģistrācija jebkurā valstī. Ja auto vēlāk ievests
+  // Dānijā (Toldsyn import), 0 km rindas valsts nav Dānija (26.11, Mercedes SE→DK→LV: SE 2010 → DK 2016).
+  const importedLater = hasLaterDkImport(inspections);
   for (const log of logs) {
     if (log.isHidden === true) continue;
     if (!isOfficialTjekbilMileageOrigin(log.origin)) continue;
     const km = num(log.mileage);
     const date = isoDay(log.mileageAt);
     if (km == null || !date) continue;
+    const firstRegistration = num(log.origin) === 30;
     rows.push({
       date,
       odometer: String(km),
-      country: DK_COUNTRY_LV,
+      country: firstRegistration && importedLater ? "" : DK_COUNTRY_LV,
       origin: MILEAGE_ORIGIN_LV[num(log.origin) ?? -1],
     });
   }
@@ -482,7 +506,7 @@ export function buildTjekbilTimeline(dmr: TjekbilDmrResponse, inspections: Tjekb
 
   const seen = new Set<string>();
   const out: TjekbilTimelineRow[] = [];
-  for (const row of rows.sort((a, b) => b.date.localeCompare(a.date))) {
+  for (const row of collapseDkLeaseInsuranceRows(rows).sort((a, b) => b.date.localeCompare(a.date))) {
     const key = `${row.date}|${row.event}|${row.odometer}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -513,6 +537,17 @@ export function drivenAxlesLv(n: number): string {
   if (n === 1) return "1 (viena ass, nav pilnpiedziņa)";
   if (n === 2) return "2 (pilnpiedziņa)";
   return String(n);
+}
+
+/** Statusa rinda «Līzings: 27.10.2016 - 24.09.2026 (10 periodi)» (pirmais un pēdējais periods pēc datuma). */
+export function tjekbilLeasingStatusLine(basic: Record<string, unknown>): string {
+  if (basic.bilLeaset === true) return "Līzings: Aktīvs";
+  const periods = leasingPeriods(basic);
+  if (periods.length === 0) return "";
+  const first = periods[0]!;
+  const last = periods[periods.length - 1]!;
+  const span = [first.from, last.to].filter(Boolean).map(formatRegistryDateLv).join(" - ");
+  return `Līzings: ${span || "bijis"}${periods.length > 1 ? ` (${periods.length} periodi)` : ""}`;
 }
 
 export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: string; specialUse: string[] } {
@@ -547,15 +582,8 @@ export function buildTjekbilStatusRecords(dmr: TjekbilDmrResponse): { text: stri
   const driven = tjekbilDrivenAxles(dmr);
   if (driven != null) lines.push(`${TJEKBIL_DRIVEN_AXLES_LABEL}: ${drivenAxlesLv(driven)}`);
 
-  const periods = leasingPeriods(basic);
-  if (basic.bilLeaset === true) {
-    lines.push("Līzings: Aktīvs");
-  } else if (periods.length > 0) {
-    const first = periods[0]!;
-    const last = periods[periods.length - 1]!;
-    const span = [first.from, last.to].filter(Boolean).map(formatRegistryDateLv).join(" - ");
-    lines.push(`Līzings: ${span || "bijis"}${periods.length > 1 ? ` (${periods.length} periodi)` : ""}`);
-  }
+  const leasingLine = tjekbilLeasingStatusLine(basic);
+  if (leasingLine) lines.push(leasingLine);
 
   const status = translateTermLv(str(basic.status), "da");
   const statusDate = isoDay(basic.statusDato);
@@ -688,4 +716,34 @@ export function tjekbilKid(dmr: TjekbilDmrResponse): number | null {
 
 export function tjekbilPlate(dmr: TjekbilDmrResponse): string {
   return str(dmr.basic?.regNr).replace(/\s+/g, "");
+}
+
+const rawDerivedCache = new Map<string, { ownersSummary: string; leasingLine: string } | null>();
+
+/**
+ * Saglabātā melnraksta RAW (tjekbil.dk JSON) → atvasinātie teksti ar pašreizējo loģiku. Vecajiem pasūtījumiem
+ * īpašnieku skaits un līzinga rinda tika saglabāti ar kļūdām (26.11, Mercedes SE→DK→LV: «Dānijā 4», «23.10.2020 - …»).
+ */
+export function tjekbilDerivedFromRaw(raw: string): { ownersSummary: string; leasingLine: string } | null {
+  const text = (raw ?? "").trim();
+  if (!text.startsWith("{") || !/leasingHistory|foersteRegistreringDato|inspectionData/.test(text)) return null;
+  if (rawDerivedCache.has(text)) return rawDerivedCache.get(text)!;
+  let out: { ownersSummary: string; leasingLine: string } | null = null;
+  try {
+    const obj = asRecord(JSON.parse(text));
+    const nested = asRecord(asRecord(obj.tjekbil).dmr);
+    const dmrRec = Object.keys(nested).length > 0 ? nested : Object.keys(asRecord(obj.dmr)).length > 0 ? asRecord(obj.dmr) : obj;
+    const dmr = dmrRec as TjekbilDmrResponse;
+    if (dmr.basic && typeof dmr.basic === "object") {
+      out = {
+        ownersSummary: buildTjekbilOwnersSummary(dmr, inspectionsOf(dmr)),
+        leasingLine: tjekbilLeasingStatusLine(dmr.basic),
+      };
+    }
+  } catch {
+    out = null;
+  }
+  if (rawDerivedCache.size > 16) rawDerivedCache.clear();
+  rawDerivedCache.set(text, out);
+  return out;
 }

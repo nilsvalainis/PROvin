@@ -28,7 +28,7 @@ export function defaultAuditsCtaBlock(): string {
 }
 
 export function defaultRefundBankNote(): string {
-  return "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.";
+  return "Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.";
 }
 
 export function defaultEmailFooterPlain(): string {

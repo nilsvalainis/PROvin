@@ -7,17 +7,15 @@
   "ss.lv": 1
  },
  "rindasSavaktas": 19,
- "rindasTabula": 10,
+ "rindasTabula": 8,
  "tabula": [
   "01.10.2018 | 11 | Vācija | CarVertical | mēnesis",
-  "16.11.2018 | 0 | Dānija | DĀNIJAS REĢISTRI",
+  "16.11.2018 | 0 | Vācija | DĀNIJAS REĢISTRI | secināta valsts",
   "01.01.2020 | 24000 | Vācija | AutoDNA + CarVertical | mēnesis",
   "18.02.2022 | 75000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
   "29.02.2024 | 147000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
-  "05.04.2024 | 150044 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
-  "05.04.2024 | 150000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
-  "02.03.2026 | 219659 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
-  "02.03.2026 | 219000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
+  "05.04.2024 | 150044 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CarVertical",
+  "02.03.2026 | 219659 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CarVertical",
   "08.10.2026 | 225 070 | Latvija | ss.lv"
  ],
  "sarkanaJosla": false,

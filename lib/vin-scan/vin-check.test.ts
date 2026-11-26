@@ -10,6 +10,8 @@ describe("VIN kontrolcipars", () => {
     expect(vinCheckDigitOk("1M8GDM9A0KP042788")).toBe(false);
     expect(vinScanFormatHint("1M8GDM9A0KP042788").warning).toContain("kontrolcipars");
     expect(vinScanFormatHint("WBA5R1C0").ok).toBe(false);
+    // Eiropas VIN: kontrolcipars nav obligāts - brīdinājuma nav.
+    expect(vinScanFormatHint("WDD2122931A366915").warning).toBe("");
   });
 });
 

@@ -101,7 +101,7 @@ export function buildDealerCancelledEmailDraft(
       "",
       `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.`,
       "",
-      "Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.",
+      "Atkarībā no bankas nauda kontā parasti parādās 1-7 dienu laikā, bieži jau tajā pašā dienā.",
       "",
       "Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.",
       "",

@@ -33,7 +33,11 @@ import {
   toPdfManualVendorBlocks,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
-import { computeLatviaRegistrationTenure, formatLatviaTenureShort } from "@/lib/latvia-registration-tenure";
+import {
+  computeLatviaRegistrationTenure,
+  formatLatviaTenureShort,
+  LATVIA_TENURE_NO_EXACT_DATE,
+} from "@/lib/latvia-registration-tenure";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
@@ -711,7 +715,10 @@ export function computeProvinInfoBannersFromPayloadSlice(
       kind: "lv_registration_tenure",
       text: tenure.sentence,
       label: "Reģistrācija Latvijā",
-      value: formatLatviaTenureShort(tenure.daysRegistered, tenure.monthsRegistered, lang),
+      value:
+        !tenure.exact && tenure.daysRegistered === 0
+          ? (LATVIA_TENURE_NO_EXACT_DATE[lang] ?? LATVIA_TENURE_NO_EXACT_DATE.lv)
+          : formatLatviaTenureShort(tenure.daysRegistered, tenure.monthsRegistered, lang),
       note: tenure.firstDateDisplay ? `Kopš ${tenure.firstDateDisplay}` : "",
     });
   }

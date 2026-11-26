@@ -2,6 +2,7 @@
  * Strukturēti avotu bloki admin portfelī → sintēze uz PDF / km / VIN heuristiku.
  */
 
+import { reconcileRegistryBlockCountries, registryBlockDisplayView } from "@/lib/registry-country-reconcile";
 import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
 import { dropFutureDatedRows, isImpossibleFutureDate } from "@/lib/future-date-guard";
 import { VENDOR_REGISTERED_RE } from "@/lib/lifecycle-owner-change-text";
@@ -2204,11 +2205,13 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     const liens = moveLienIncidentsToStatusRecords(b.incidents ?? [], b.statusRecords ?? "", b.rawUnprocessedData ?? "");
     const statusRecords = sanitizeVinRegistryClientText(stripRegistryPersonNames(liens.statusRecords));
     const autoNotes = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.autoNotes ?? ""));
+    // 26.11 (Mercedes SE→DK→LV): citas valsts rindas, ko jau rāda tās valsts reģistrs, un DK līzinga/OCTA troksnis.
     const moved = moveFailedInspectionIncidentsToTimeline(liens.incidents, b.timeline ?? []);
-    const timeline = moved.timeline.filter(vinRegistryTimelineRowHasData);
+    const view = registryBlockDisplayView(blocks, k, { ...b, timeline: moved.timeline, statusRecords });
+    const timeline = view.timeline.filter(vinRegistryTimelineRowHasData);
     out.push({
       title: SOURCE_BLOCK_LABELS[k],
-      mileageRows: (b.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
+      mileageRows: (view.mileage ?? []).filter(vinRegistryMileageRowHasData).map((r) => ({
         date: r.date,
         odometer: r.odometer,
         country: r.country,
@@ -2221,7 +2224,7 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       comments: (b.comments ?? "").trim(),
       ...syncedSourceBlockPhotos(b),
       ...(ownersSummary ? { ownersSummary } : {}),
-      ...(statusRecords ? { statusRecords } : {}),
+      ...(view.statusRecords.trim() ? { statusRecords: view.statusRecords } : {}),
       ...(autoNotes ? { autoNotes } : {}),
       ...(timeline.length > 0
         ? {
@@ -3211,7 +3214,7 @@ export function mergeSourceBlocksWithDefaults(partial: unknown): WorkspaceSource
     base.citi_avoti = parseCitiAvotiRaw(rawCitiAvoti as Record<string, unknown>);
   }
 
-  return repairWorkspaceSourceBlocks(base);
+  return reconcileRegistryBlockCountries(repairWorkspaceSourceBlocks(base));
 }
 
 function parseCitiAvotiSectionRaw(raw: unknown): CitiAvotiSectionState {

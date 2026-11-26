@@ -89,7 +89,7 @@ describe("dealer send texts", () => {
     const m = buildDealerSendMessage({ channel: "email", situation: "no_data", b2b: false, vin: VIN, refundCents: 2499 });
     expect(m.subject).toBe(`PROVIN · Dīlera dati nav pieejami, nauda atgriezta · ${VIN}`);
     expect(m.text).toContain("Atmaksājām 24,99 € pilnā apmērā uz karti");
-    expect(m.text).toContain("5-10 darba dienu laikā");
+    expect(m.text).toContain("1-7 dienu laikā");
     expect(m.text).toContain("Pasūtīt: https://www.provin.lv/lv?plan=audits");
   });
 

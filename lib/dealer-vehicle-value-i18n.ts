@@ -135,6 +135,31 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
     keys: ["electric", "elektro", "электрический", "elektroantrieb"],
     out: { lv: "elektrisks", en: "electric", ru: "электрический", de: "Elektro" },
   },
+  // 26.11 (WDD2122931A366915): Ziemeļvalstu / DE / NL reģistru virsbūves vārdi («Virsbūve: Personbil»).
+  {
+    keys: ["personbil", "pkw", "personenkraftwagen", "personenwagen", "personenauto", "passenger car", "vieglais automobilis", "легковой автомобиль"],
+    out: { lv: "vieglais automobilis", en: "passenger car", ru: "легковой автомобиль", de: "Pkw" },
+  },
+  {
+    keys: ["stationcar", "stationsvogn", "stasjonsvogn", "stationwagen", "stationwagon", "station wagon", "herrgårdsvagn"],
+    out: { lv: "universālis", en: "estate", ru: "универсал", de: "Kombi" },
+  },
+  {
+    keys: ["halvkombi", "kombikupé", "kombi coupé", "kombicoupé", "fließheck", "schrägheck"],
+    out: { lv: "hečbeks", en: "hatchback", ru: "хэтчбек", de: "Schrägheck" },
+  },
+  {
+    keys: ["cabriolet", "kabriolet", "cabrio", "convertible", "kabriolets", "кабриолет"],
+    out: { lv: "kabriolets", en: "convertible", ru: "кабриолет", de: "Cabriolet" },
+  },
+  {
+    keys: ["varebil", "varevogn", "skåpbil", "lieferwagen", "kastenwagen", "bestelwagen", "bestelauto", "furgons", "фургон"],
+    out: { lv: "furgons", en: "van", ru: "фургон", de: "Kastenwagen" },
+  },
+  {
+    keys: ["flerbrugskøretøj", "fleksibil", "großraumlimousine", "mpv", "monovolume", "minivan", "minivens", "минивэн"],
+    out: { lv: "minivens", en: "MPV", ru: "минивэн", de: "Van" },
+  },
   {
     keys: ["left-hand drive", "left hand drive", "lhd", "ll", "kreisā stūre", "левый руль", "linkslenker"],
     out: { lv: "kreisā stūre", en: "left-hand drive", ru: "левый руль", de: "Linkslenker" },
@@ -186,6 +211,34 @@ const TOKEN: { re: RegExp; out: LangMap }[] = [
   { re: /\btransmission\b/gi, out: { lv: "ātrumkārba", en: "transmission", ru: "коробка передач", de: "Getriebe" } },
   { re: /\bcoupe\b|\bcoupé\b/gi, out: { lv: "kupeja", en: "coupe", ru: "купе", de: "Coupé" } },
 ];
+
+/**
+ * 26.11 (WDD2122931A366915 «Krāsa: Svart»): krāsu vārdi zviedru, dāņu, norvēģu, vācu un nīderlandiešu valodā.
+ * Tikai krāsas / salona laukiem (`translateColorLikeValue`), lai «rot», «sort» u.c. neskartu citus laukus.
+ */
+const COLOR_WORD = (words: string): RegExp => new RegExp(`(?<!\\p{L})(?:${words})(?!\\p{L})`, "giu");
+const COLOR_TOKEN: { re: RegExp; out: LangMap }[] = [
+  { re: COLOR_WORD("svart|sort|schwarz|zwart"), out: { lv: "melns", en: "black", ru: "чёрный", de: "schwarz" } },
+  { re: COLOR_WORD("vit|hvid|hvit|weiß|weiss|wit"), out: { lv: "balts", en: "white", ru: "белый", de: "weiß" } },
+  { re: COLOR_WORD("grå|grau|grijs"), out: { lv: "pelēks", en: "grey", ru: "серый", de: "grau" } },
+  { re: COLOR_WORD("silver|sølv|silber|zilver"), out: { lv: "sudrabs", en: "silver", ru: "серебристый", de: "silber" } },
+  { re: COLOR_WORD("blå|blau|blauw"), out: { lv: "zils", en: "blue", ru: "синий", de: "blau" } },
+  { re: COLOR_WORD("röd|rød|rot|rood"), out: { lv: "sarkans", en: "red", ru: "красный", de: "rot" } },
+  { re: COLOR_WORD("grön|grøn|grønn|grün|groen"), out: { lv: "zaļš", en: "green", ru: "зелёный", de: "grün" } },
+  { re: COLOR_WORD("brun|braun|bruin"), out: { lv: "brūns", en: "brown", ru: "коричневый", de: "braun" } },
+  { re: COLOR_WORD("gul|gelb|geel"), out: { lv: "dzeltens", en: "yellow", ru: "жёлтый", de: "gelb" } },
+  { re: COLOR_WORD("orange|oranje"), out: { lv: "oranžs", en: "orange", ru: "оранжевый", de: "orange" } },
+  { re: COLOR_WORD("beige|beis"), out: { lv: "bežs", en: "beige", ru: "бежевый", de: "beige" } },
+  { re: COLOR_WORD("lilla|violett|violet|paars"), out: { lv: "violets", en: "purple", ru: "фиолетовый", de: "violett" } },
+  { re: COLOR_WORD("guld|gull|gold|goud"), out: { lv: "zelta", en: "gold", ru: "золотистый", de: "gold" } },
+  { re: COLOR_WORD("metallic|metallik|metalliclack|metalen"), out: { lv: "metāliskā", en: "metallic", ru: "металлик", de: "Metallic" } },
+];
+
+function applyColorTokens(raw: string, lang: ClientReportLang): string {
+  let t = raw;
+  for (const row of COLOR_TOKEN) t = t.replace(row.re, row.out[lang]);
+  return t;
+}
 
 const CODE_RE = /^(?:[A-Z0-9][A-Z0-9./-]{1,14})$/;
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{11,17}$/i;
@@ -304,7 +357,7 @@ function translateColorLikeValue(raw: string, lang: ClientReportLang): string {
     parts
       .map((part) => {
         if (part.startsWith("(")) return part;
-        const tokened = applyTokens(part, lang);
+        const tokened = applyColorTokens(applyTokens(part, lang), lang);
         return tokened.replace(
           /(?<!\p{L})(\p{Lu})(\p{Lu}{3,})(?!\p{L})/gu,
           (_m, first: string, rest: string) => first + rest.toLocaleLowerCase(),

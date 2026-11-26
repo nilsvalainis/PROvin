@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { lvCount } from "@/lib/lv-plural";
 import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import {
   extractListingSellerClaims,
@@ -17,7 +18,8 @@ import {
   formatRegistryCountryPeriodLine,
   type RegistryCountryPeriod,
 } from "@/lib/registry-country-periods";
-import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
+import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
+import { collectEngineOilChangeRows, formatOilStepRangeShortLv } from "@/lib/oil-change-intervals";
 import { computeReportIncidentCount, collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import { classifyOdometerAnomalies, resolveLatestConfirmedMileage } from "@/lib/odometer-anomaly-classify";
@@ -210,7 +212,12 @@ export type CanonicalFirstReg = {
   csddPreviousCountryLv?: string;
 };
 
-export type DealerComponentCount = { label: string; dates: string[] };
+export type DealerComponentCount = {
+  label: string;
+  dates: string[];
+  /** Papildu fakts zem skaita (piem. eļļas tabulas soļu diapazons). */
+  note?: string;
+};
 
 /** Dīlera sadaļas zīmju budžets faktu lapā (rindas + skaiti). */
 export const CANONICAL_DEALER_ROWS_BUDGET_CHARS = 1600;
@@ -573,9 +580,15 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     })
     .join("\n");
 
+  // 26.11 (WDD2122931A366915): skaits no TĀS PAŠAS sērijas, ko zīmē PDF eļļas tabula (tur 13, šeit bija 12).
+  const oilSeries = buildOilIntervalSeriesForBlock(blocks.auto_records);
+  const oilTableRows = oilSeries.points.map((p) => ({ date: p.date }));
   const dealerComponentCounts = buildDealerComponentCounts(
     dealer.rows,
-    collectEngineOilChangeRows(dealerServiceWorksFromSources({ oneauto: blocks.oneauto, autoRecords: blocks.auto_records })),
+    oilTableRows.length > 0
+      ? oilTableRows
+      : collectEngineOilChangeRows(dealerServiceWorksFromSources({ oneauto: blocks.oneauto, autoRecords: blocks.auto_records })),
+    oilTableRows.length > 0 ? formatOilStepRangeShortLv(oilSeries) : "",
   );
   const registryStatusLines = collectRegistryStatusLines(blocks);
 
@@ -698,7 +711,7 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     );
     if (facts.owners.latviaOwners != null) {
       lines.push(
-        `- Latvijā: ${facts.owners.latviaOwners} īpašnieki, ${facts.owners.latviaChanges ?? ownerChangesFromCount(facts.owners.latviaOwners)} maiņas`,
+        `- Latvijā: ${lvCount(facts.owners.latviaOwners, "īpašnieks", "īpašnieki")}, ${lvCount(facts.owners.latviaChanges ?? ownerChangesFromCount(facts.owners.latviaOwners), "maiņa", "maiņas")}`,
       );
     }
   } else {
@@ -881,10 +894,13 @@ const ENGINE_OIL_COUNT_LABEL = "Dzinēja eļļas maiņas";
 function buildDealerComponentCounts(
   rows: readonly DealerFact[],
   engineOilRows: readonly { date: string }[],
+  engineOilNote = "",
 ): DealerComponentCount[] {
   const out: DealerComponentCount[] = [];
   const oilDates = [...new Set(engineOilRows.map((r) => r.date.trim()).filter(Boolean))];
-  if (oilDates.length > 0) out.push({ label: ENGINE_OIL_COUNT_LABEL, dates: oilDates });
+  if (oilDates.length > 0) {
+    out.push(engineOilNote ? { label: ENGINE_OIL_COUNT_LABEL, dates: oilDates, note: engineOilNote } : { label: ENGINE_OIL_COUNT_LABEL, dates: oilDates });
+  }
   for (const c of DEALER_COMPONENTS) {
     const dates = [
       ...new Set(rows.filter((r) => r.components.includes(c.id)).map((r) => r.date.trim() || "datums nav")),
@@ -904,7 +920,9 @@ function formatDealerSection(dealerRowsLv: string, counts: readonly DealerCompon
     .filter(Boolean)
     .map((r) => (r.length > DEALER_ROW_MAX_CHARS ? `${r.slice(0, DEALER_ROW_MAX_CHARS - 1)}…` : r));
   const countLines = counts.map((c) => `- ${c.label}: ${c.dates.length} (${c.dates.join(", ")})`);
-  let budget = CANONICAL_DEALER_ROWS_BUDGET_CHARS - countLines.reduce((n, l) => n + l.length + 1, 0);
+  // Piezīmes pēc VISĀM skaitu rindām (`parseDealerComponentCountsFromSheet` lasa līdz pirmajai citai rindai).
+  const noteLines = counts.filter((c) => c.note).map((c) => `- ${c.note}`);
+  let budget = CANONICAL_DEALER_ROWS_BUDGET_CHARS - [...countLines, ...noteLines].reduce((n, l) => n + l.length + 1, 0);
   const kept: string[] = [];
   for (let i = rows.length - 1; i >= 0; i--) {
     const line = `- ${rows[i]}`;
@@ -918,7 +936,7 @@ function formatDealerSection(dealerRowsLv: string, counts: readonly DealerCompon
   out.push(...kept);
   if (countLines.length > 0) {
     out.push("Dīlera darbu skaiti (no visām rindām; cits skaits aizliegts, „nav” aizliegts, ja skaits > 0):");
-    out.push(...countLines);
+    out.push(...countLines, ...noteLines);
   }
   return out;
 }

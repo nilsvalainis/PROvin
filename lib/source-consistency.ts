@@ -11,10 +11,12 @@
  * - `warn` - avoti nesakrīt, jāpaskatās;
  * - `info` - zināma avotu dabiska atšķirība (skaitā neietilpst, sarakstā pelēks).
  */
+import { lvCount } from "@/lib/lv-plural";
 import { ltabNoClaimsConfirmed } from "@/lib/ltab-auto-logic";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
   mergeSourceBlocksWithDefaults,
+  REGISTRY_STYLE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -41,6 +43,8 @@ import {
   ownerEventMonthKey,
   synthesizeOwnerCountsFromBlocks,
 } from "@/lib/owner-count-synthesis";
+import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
+import { oilIntervalStepRange } from "@/lib/oil-change-intervals";
 import { findOwnerClaimIssues } from "@/lib/owner-claims-check";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
@@ -86,6 +90,7 @@ export type SourceIssueKind =
   | "ai_first_reg_country"
   | "ai_owner_count_mismatch"
   | "ai_incident_count"
+  | "ai_oil_table"
   | "cover_auctions";
 
 export type SourceIssueValue = { source: string; value: string };
@@ -172,7 +177,7 @@ function powerKw(raw: string | null | undefined): number | null {
   if (!t.trim()) return null;
   const kw = t.match(/(\d{2,3}(?:[.,]\d)?)\s*kw/i);
   if (kw) return num(kw[1]);
-  const ps = t.match(/(\d{2,4})\s*(?:ps|hp|zs|ch|cv)\b/i);
+  const ps = t.match(/(\d{2,4})\s*(?:ps|hp|zs|ch|cv|hk)\b/i);
   if (ps) {
     const n = num(ps[1]);
     return n ? Math.round(n / 1.35962) : null;
@@ -835,6 +840,18 @@ function checkVehicleIdentity(blocks: WorkspaceSourceBlocks, lots: Lot[], out: S
   if (csddKw) powerCands.push({ source: "CSDD", kw: csddKw });
   const viKw = powerKw(vi?.power ?? "");
   if (viKw) powerCands.push({ source: "Dīlera dati", kw: viKw });
+  // 26.11 (WDD2122931A366915): ārvalstu reģistri (DK DMR «Jauda / piedziņa: 336 HK (247 kW)») pret CSDD 195 kW.
+  for (const key of REGISTRY_STYLE_BLOCK_KEYS) {
+    const b = blocks[key];
+    for (const raw of String(b?.statusRecords ?? "").split("\n")) {
+      const m = raw.match(/^\s*Jauda[^:]*:\s*(.+)$/iu);
+      const kw = m ? powerKw(m[1]) : null;
+      if (kw && kw > 10) {
+        powerCands.push({ source: SOURCE_BLOCK_LABELS[key], kw });
+        break;
+      }
+    }
+  }
   for (const l of lots) {
     const kw = num(l.get.exact("kw") || l.get.tail("kw", "powerkw"));
     const hp = num(l.get.exact("hp") || l.get.tail("hp", "powerhp"));
@@ -1307,7 +1324,7 @@ function checkOwnerCountAcrossTexts(texts: readonly { label: string; text: strin
     kind: "ai_owner_count_mismatch",
     severity: "warn",
     title: "AI tekstos dažāds kopējais īpašnieku skaits",
-    values: [...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: `${n} īpašnieki` })),
+    values: [...byCount.entries()].map(([n, labels]) => ({ source: [...labels].join(", "), value: lvCount(Number(n), "īpašnieks", "īpašnieki") })),
   });
 }
 
@@ -1356,6 +1373,100 @@ function checkAiIncidentCount(
   });
 }
 
+/** «12 dzinēja eļļas maiņas», «13 eļļas un filtra maiņas» (ne «2 kārbas eļļas maiņas»). */
+const AI_OIL_COUNT_RE =
+  /(?<![\d.,])(\d{1,3})\s+(?:fiksēt\p{L}*\s+)?(?:dzinēja\s+|motor\p{L}*\s+)?eļļas\s+(?:un\s+(?:eļļas\s+)?filtra\s+)?maiņ\p{L}*/giu;
+const OIL_KM_NUM = "(\\d{1,3}(?:[ \\u00a0\\u202f]\\d{3})+|\\d{4,6})";
+/** «solis 11 200-25 000 km», «intervāls 11200 - 25000 km». */
+const AI_OIL_RANGE_RE = new RegExp(`${OIL_KM_NUM}\\s*(?:km\\s*)?[-–—]\\s*${OIL_KM_NUM}\\s*km`, "giu");
+const OIL_RANGE_CONTEXT_RE = /sol\p{L}*|intervāl\p{L}*|cikl\p{L}*|starp\s+maiņ|nobraukuma\s+sol/iu;
+
+function oilKmNum(raw: string): number {
+  return Number(raw.replace(/[^\d]/g, ""));
+}
+
+function oilKmNear(a: number, b: number): boolean {
+  return Math.abs(a - b) <= Math.max(100, Math.round(b * 0.02));
+}
+
+function groupKm(n: number): string {
+  return `${fmtInt(n)} km`;
+}
+
+/**
+ * 26.11 (WDD2122931A366915): dīlera eļļas komentārs «12 dzinēja eļļas maiņas», «solis 11 200-25 000 km»,
+ * bet PDF eļļas tabulā 13 maiņas un soļi 7 607-47 560 km. Salīdzina skaitu un diapazonu ar to pašu sēriju,
+ * ko zīmē tabula (`buildOilIntervalSeriesForBlock`). Tikai brīdinājums adminam.
+ */
+function checkAiOilTable(
+  blocks: WorkspaceSourceBlocks,
+  texts: readonly { label: string; text: string }[],
+  out: SourceIssue[],
+): void {
+  const series = buildOilIntervalSeriesForBlock(blocks.auto_records);
+  if (series.changeCount === 0) return;
+  const range = oilIntervalStepRange(series);
+  const all: { label: string; text: string; oil?: boolean }[] = [
+    { label: "Dīlera dati: Eļļas maiņas intervāli", text: blocks.auto_records.oilChangeIntervalNotes ?? "", oil: true },
+    { label: "Dīlera dati: Servisa vēsture", text: blocks.auto_records.serviceHistoryNotes ?? "" },
+    { label: "Dīlera dati: Komentāri", text: blocks.auto_records.comments ?? "" },
+    { label: "OneAuto: Eļļas maiņas intervāli", text: blocks.oneauto.oilChangeIntervalNotes ?? "", oil: true },
+    { label: "OneAuto: Komentāri", text: blocks.oneauto.comments ?? "" },
+    ...texts,
+  ];
+  const countHits: SourceIssueValue[] = [];
+  const rangeHits: SourceIssueValue[] = [];
+  const seen = new Set<string>();
+  for (const t of all) {
+    const plain = adminRichHtmlToPlainText(t.text ?? "");
+    if (!plain.trim()) continue;
+    for (const m of plain.matchAll(AI_OIL_COUNT_RE)) {
+      const n = Number(m[1]);
+      if (!Number.isFinite(n) || n <= 0 || n === series.changeCount) continue;
+      const k = `c|${t.label}|${n}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      countHits.push({ source: t.label, value: `«${sentenceAround(plain, m.index ?? 0).split("\n")[0]!.slice(0, 160)}»` });
+    }
+    if (!range) continue;
+    for (const m of plain.matchAll(AI_OIL_RANGE_RE)) {
+      const sentence = sentenceAround(plain, m.index ?? 0);
+      if (!OIL_RANGE_CONTEXT_RE.test(sentence) || (!t.oil && !/eļļ|maiņ|apkop/iu.test(sentence))) continue;
+      const lo = Math.min(oilKmNum(m[1]!), oilKmNum(m[2]!));
+      const hi = Math.max(oilKmNum(m[1]!), oilKmNum(m[2]!));
+      if (oilKmNear(lo, range.minKm) && oilKmNear(hi, range.maxKm)) continue;
+      const k = `r|${t.label}|${lo}|${hi}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      rangeHits.push({ source: t.label, value: `«${sentence.split("\n")[0]!.slice(0, 160)}»` });
+    }
+  }
+  if (countHits.length > 0) {
+    push(out, {
+      id: "ai_oil_count",
+      kind: "ai_oil_table",
+      severity: "warn",
+      title: "Komentārā cits dzinēja eļļas maiņu skaits nekā eļļas tabulā",
+      values: [{ source: "Eļļas tabula", value: `${series.changeCount} fiksētas maiņas` }, ...countHits],
+    });
+  }
+  if (range && rangeHits.length > 0) {
+    push(out, {
+      id: "ai_oil_range",
+      kind: "ai_oil_table",
+      severity: "warn",
+      title: "Komentārā cits eļļas maiņu soļu diapazons nekā eļļas tabulā",
+      values: [
+        {
+          source: "Eļļas tabula",
+          value: `${fmtInt(range.minKm)}-${groupKm(range.maxKm)} (soļi: ${range.steps.map((x) => fmtInt(x)).join(", ")})`,
+        },
+        ...rangeHits,
+      ],
+    });
+  }
+}
+
 /** (d) 1. lapas kartīte «Izsoles» pret izsoļu sadaļu: «Nav atrastas», bet ir izsoļu arhīva foto. */
 function checkCoverAuctionCard(blocks: WorkspaceSourceBlocks, lots: Lot[], out: SourceIssue[]): void {
   const cc = blocks.cc_vin;
@@ -1402,6 +1513,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
     () => checkFirstRegCountryConsistency(blocks, input.texts ?? [], input.listingUrl, out),
     () => checkOwnerCountAcrossTexts(input.texts ?? [], out),
     () => checkAiIncidentCount(blocks, input.texts ?? [], out),
+    () => checkAiOilTable(blocks, input.texts ?? [], out),
     () => checkCoverAuctionCard(blocks, lots, out),
   ];
   for (const step of steps) {

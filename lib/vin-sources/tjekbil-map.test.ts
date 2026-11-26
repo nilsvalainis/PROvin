@@ -84,7 +84,9 @@ describe("tjekbil-map", () => {
     expect(mapped.mileage.map((r) => r.odometer)).toEqual(["188528", "29000"]);
     expect(mapped.timeline.some((r) => /Muitas apskate/.test(r.event))).toBe(true);
     expect(mapped.timeline.some((r) => /reģistrācijas apskate/i.test(r.event))).toBe(true);
-    expect(mapped.timeline.some((r) => r.event === "Līzings sākas" && r.date === "2017-12-18")).toBe(true);
+    // 26.11: pēc kārtas atjaunoti līgumi laika joslā ir viena rinda.
+    expect(mapped.timeline.some((r) => r.event === "Līzings 2017-2019 (3 līgumi)" && r.date === "2017-12-18")).toBe(true);
+    expect(mapped.timeline.some((r) => /^Līzings (sākas|beidzas)$/.test(r.event))).toBe(false);
     expect(mapped.ownersSummary).toBe("Īpašnieku skaits Dānijā: 2.");
     expect(mapped.ownersSummary).not.toMatch(/OCTA|pēc reģistrācijas darbībām/);
     expect(mapped.statusRecords).toMatch(/Izmantošanas veids: Privāti/);

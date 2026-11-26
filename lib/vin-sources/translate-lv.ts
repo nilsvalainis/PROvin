@@ -287,7 +287,8 @@ export function capitalizeRegistryEvent(event: string): string {
   if (!t) return "";
   const i = t.search(/\p{L}/u);
   if (i < 0) return t;
-  let out = t.slice(0, i) + t.charAt(i).toLocaleUpperCase("lv") + t.slice(i + 1);
+  // «357 630 km», «2 (10 periodi)»: vārds aiz skaitļa nav teikuma sākums (26.11: «357 630 Km», «10 Periodi»).
+  let out = /\d/.test(t.slice(0, i)) ? t : t.slice(0, i) + t.charAt(i).toLocaleUpperCase("lv") + t.slice(i + 1);
   out = out.replace(/:\s+(\p{L})/u, (_m, letter: string) => `: ${letter.toLocaleUpperCase("lv")}`);
   return out;
 }
