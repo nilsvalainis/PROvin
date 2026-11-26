@@ -71,7 +71,7 @@ describe("report-ready product emails", () => {
       productKind: "audits",
       includeGoogleReview: true,
     });
-    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
+    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
   });
 
@@ -128,7 +128,7 @@ describe("report-ready product emails", () => {
       attachmentLines: [],
       includeGoogleReview: true,
     });
-    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
+    expect(on).toContain("būsim pateicīgi par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
     expect(on).not.toContain("Nils");
     expect(on.indexOf("g.page")).toBeLessThan(on.lastIndexOf("PROVIN.LV"));

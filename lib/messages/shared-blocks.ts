@@ -16,7 +16,7 @@ export function defaultSignOffBlock(): string {
 }
 
 export function defaultGoogleReviewBlock(): string {
-  return `Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: ${GOOGLE_REVIEW_URL}`;
+  return `Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google: ${GOOGLE_REVIEW_URL}`;
 }
 
 export function defaultAuditsCtaBlock(): string {

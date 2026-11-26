@@ -42,7 +42,7 @@ describe("dealer send texts", () => {
   it("ready WhatsApp with review asks for a Google review and has no offer", () => {
     const m = buildDealerSendMessage({ channel: "whatsapp", situation: "ready", b2b: false, vin: VIN, review: true });
     expect(m.subject).toBeUndefined();
-    expect(m.text).toContain("PDF pievienoju zemāk.");
+    expect(m.text).toContain("PDF pievienojam zemāk.");
     expect(m.text).toContain(`atsauksmi Google: ${GOOGLE_REVIEW_URL}`);
     expect(m.text).not.toContain("Piemaksa");
     expect(m.text.endsWith("\nPROVIN.LV")).toBe(true);

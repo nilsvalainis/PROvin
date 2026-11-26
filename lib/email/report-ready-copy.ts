@@ -30,10 +30,10 @@ const SIGN_OFF_GREETING: Record<ClientReportLang, string> = {
 };
 
 const GOOGLE_REVIEW_INTRO: Record<ClientReportLang, string> = {
-  lv: "Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:",
-  en: "If our work was useful to you, I would be grateful for a short Google review:",
-  ru: "Если наша работа была вам полезна, буду благодарен за короткий отзыв в Google:",
-  de: "Wenn Ihnen unsere Arbeit geholfen hat, würde ich mich über eine kurze Google-Bewertung freuen:",
+  lv: "Ja mūsu darbs Jums noderēja, būsim pateicīgi par īsu atsauksmi Google:",
+  en: "If our work was useful to you, we would be grateful for a short Google review:",
+  ru: "Если наша работа была вам полезна, будем благодарны за короткий отзыв в Google:",
+  de: "Wenn Ihnen unsere Arbeit geholfen hat, wären wir für eine kurze Google-Bewertung dankbar:",
 };
 
 export function googleReviewPlainBlock(lang: ClientReportLang = "lv"): string {

@@ -112,4 +112,18 @@ describe("paraksts bez «Nils» visās valodās", () => {
       expect(src, f).not.toMatch(/["'`]Nils(?: Valainis)?["',]|\\nNils|>Nils</);
     }
   });
+
+  it("bez vārda - nav 1. personas vienskaitļa (būšu pateicīgs / I would / буду / würde ich, pievienoju u.c.)", () => {
+    const first = /būšu|pateicīgs\b|pievienoju|nosūtu\b|\bI would\b|\bI am\b|буду благодарен|прикладываю|отправляю|würde ich|sende ich|füge ich|ich sende/;
+    for (const def of [...MESSAGE_TEMPLATE_DEFS, ...DEALER_SEND_TEMPLATE_DEFS, ...AUCTION_ARCHIVE_SEND_TEMPLATE_DEFS]) {
+      expect(`${def.subject ?? ""}\n${def.body}`, def.id).not.toMatch(first);
+    }
+    for (const [id, byLang] of Object.entries(LOCALIZED_TEMPLATES)) {
+      for (const [lang, t] of Object.entries(byLang)) expect(`${t.subject ?? ""}\n${t.body}`, `${id}:${lang}`).not.toMatch(first);
+    }
+    for (const lang of LANGS) {
+      const html = auditCompletedEmailHtml({ carVin: "WVWZZZ1JZXW000001", attachmentLines: [], productKind: "audits", lang, includeGoogleReview: true });
+      expect(html, lang).not.toMatch(first);
+    }
+  });
 });

@@ -452,7 +452,7 @@ export function auctionArchiveReadyText(s: AuctionArchiveSummary, showPrices = f
 export function auctionArchiveReadyWhatsappText(s: AuctionArchiveSummary, lang?: ClientReportLang | null): string {
   const fl = foreign(lang);
   if (fl) return `${fl.c.waReady(s.vin)}\nPROVIN.LV`;
-  return `Labdien! Paldies par izvēli - nosūtu izsoļu arhīvu auto VIN ${s.vin} (PDF). Piemaksa nav jāveic.\nPROVIN.LV`;
+  return `Labdien! Paldies par izvēli - nosūtām izsoļu arhīvu auto VIN ${s.vin} (PDF). Piemaksa nav jāveic.\nPROVIN.LV`;
 }
 
 export function auctionArchiveReadyEmailHtml(o: {
