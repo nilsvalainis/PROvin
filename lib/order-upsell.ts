@@ -19,6 +19,8 @@ import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { buildUpsellEmailVars, buildUpsellWaVars } from "@/lib/messages/template-vars";
+import { applyB2bSignature } from "@/lib/messages/localized-templates";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -330,6 +332,11 @@ export type UpsellDraft = {
   whatsappText: string;
 };
 
+/** Pirmais vārds bez LV vokatīva (tulkotajiem tekstiem). */
+function foreignFirstName(name?: string | null): string {
+  return (name ?? "").trim().split(/\s+/)[0] ?? "";
+}
+
 export function buildUpsellDraft(
   opts: {
     kind: OrderUpsellKind;
@@ -340,6 +347,10 @@ export function buildUpsellDraft(
     priorCents: number;
     chargeCents: number;
     targetCents: number;
+    /** Klienta valoda (B2B atskaites valoda / vietnes valoda pasūtot); nav = LV. */
+    lang?: ClientReportLang | null;
+    /** B2B partneris: paraksts tikai «PROVIN» (Nils 25.11). */
+    b2b?: boolean;
   },
   templatesDoc?: MessageTemplatesDoc | null,
 ): UpsellDraft {
@@ -355,15 +366,23 @@ export function buildUpsellDraft(
       : opts.kind === "dealer_to_audit"
         ? "wa.upsell.dealer_to_audit"
         : "wa.upsell.mini_to_audit";
+  const lang = opts.lang && opts.lang !== "lv" ? opts.lang : null;
   const vars = buildUpsellEmailVars(opts);
   const waVars = buildUpsellWaVars(opts);
-  const emailRendered = renderTemplateById(emailId, vars, templatesDoc);
-  const waRendered = renderTemplateById(waId, waVars, templatesDoc);
+  if (lang) {
+    // Tulkotajos tekstos nav LV vokatīva / LV ievada - vārds un auto kā ir, tukšs = bez tā.
+    const foreign = { vards: foreignFirstName(opts.customerName), auto: (opts.car ?? "").trim() };
+    Object.assign(vars, foreign);
+    Object.assign(waVars, foreign);
+  }
+  const emailRendered = renderTemplateById(emailId, vars, templatesDoc, { lang });
+  const waRendered = renderTemplateById(waId, waVars, templatesDoc, { lang });
   if (emailRendered?.text && waRendered?.text && emailRendered.subject) {
+    const sign = (t: string) => (opts.b2b ? applyB2bSignature(t) : t);
     return {
       subject: emailRendered.subject,
-      emailText: emailRendered.text,
-      whatsappText: waRendered.text,
+      emailText: sign(emailRendered.text),
+      whatsappText: sign(waRendered.text),
     };
   }
 

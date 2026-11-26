@@ -10,10 +10,8 @@ import {
   parseB2bWalletOrderMarks,
   shouldAutoRefundB2bWalletOrder,
 } from "@/lib/b2b-wallet";
-import {
-  B2B_WALLET_REFUND_EMAIL_PRODUCT,
-  renderB2bWalletRefundEmail,
-} from "@/lib/b2b-wallet-refund-email";
+import { b2bWalletRefundEmailProduct, renderB2bWalletRefundEmail } from "@/lib/b2b-wallet-refund-email";
+import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
 import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import type { DealerRefundRecord } from "@/lib/dealer-data-job-types";
@@ -93,12 +91,17 @@ export async function notifyB2bWalletRefundEmail(orderId: string): Promise<boole
   const to = partner?.email?.trim() ?? "";
   if (!to) return false;
   const vin = (job.vin || draft?.orderEdits?.vin || "").trim().toUpperCase();
-  const rendered = renderB2bWalletRefundEmail({
-    vin: vin || "-",
-    summa: formatB2bWalletEuro(refund.amountCents),
-    atlikums: formatB2bWalletEuro(wallet.balanceCents),
-    produkts: B2B_WALLET_REFUND_EMAIL_PRODUCT[marks.product],
-  });
+  // Valoda - partnera izvēlētā atskaites valoda pirkumā (`report_lang=`); veciem pasūtījumiem LV.
+  const lang = resolveOrderClientLang({ notes });
+  const rendered = renderB2bWalletRefundEmail(
+    {
+      vin: vin || "-",
+      summa: formatB2bWalletEuro(refund.amountCents),
+      atlikums: formatB2bWalletEuro(wallet.balanceCents),
+      produkts: b2bWalletRefundEmailProduct(marks.product, lang),
+    },
+    lang,
+  );
   const sent = await trySendB2bWalletRefundEmail({ to, subject: rendered.subject, text: rendered.text });
   if (!sent) return false;
   await upsertDealerDataJob(orderId, {

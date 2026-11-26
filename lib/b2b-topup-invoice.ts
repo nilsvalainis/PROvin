@@ -120,10 +120,64 @@ export function fillB2bTopupInvoiceEmailTemplate(template: string, vars: B2bTopu
     .replaceAll("{{uznemums}}", vars.uznemums);
 }
 
-export function renderB2bTopupInvoiceEmail(vars: B2bTopupInvoiceEmailVars): { subject: string; text: string } {
+/** Tas pats e-pasts EN / RU / DE (valoda - Stripe `session.locale`, partnera vietnes valoda). Rēķina PDF paliek LV. */
+const B2B_TOPUP_INVOICE_EMAIL_I18N: Record<"en" | "ru" | "de", { subject: string; body: string }> = {
+  en: {
+    subject: "PROVIN · Invoice for account top-up {{summa}}",
+    body: [
+      "Hello,",
+      "",
+      "Your account top-up of {{summa}} has been received.",
+      "New balance: {{atlikums}}.",
+      "Invoice No.: {{rekins}}.",
+      "",
+      "The invoice PDF is attached to this email.",
+      "",
+      "Best regards,",
+      "PROVIN",
+    ].join("\n"),
+  },
+  ru: {
+    subject: "PROVIN · Счёт за пополнение счёта {{summa}}",
+    body: [
+      "Здравствуйте!",
+      "",
+      "Пополнение счёта на {{summa}} получено.",
+      "Новый баланс: {{atlikums}}.",
+      "Номер счёта: {{rekins}}.",
+      "",
+      "Счёт в формате PDF приложен к этому письму.",
+      "",
+      "С уважением,",
+      "PROVIN",
+    ].join("\n"),
+  },
+  de: {
+    subject: "PROVIN · Rechnung für die Kontoaufladung {{summa}}",
+    body: [
+      "Guten Tag,",
+      "",
+      "Ihre Kontoaufladung über {{summa}} ist eingegangen.",
+      "Neues Guthaben: {{atlikums}}.",
+      "Rechnungsnr.: {{rekins}}.",
+      "",
+      "Die Rechnung als PDF ist dieser E-Mail beigefügt.",
+      "",
+      "Mit freundlichen Grüßen",
+      "PROVIN",
+    ].join("\n"),
+  },
+};
+
+export function renderB2bTopupInvoiceEmail(
+  vars: B2bTopupInvoiceEmailVars,
+  lang?: string | null,
+): { subject: string; text: string } {
+  const l = (lang ?? "").trim().toLowerCase().slice(0, 2);
+  const tpl = l === "en" || l === "ru" || l === "de" ? B2B_TOPUP_INVOICE_EMAIL_I18N[l] : B2B_TOPUP_INVOICE.email;
   return {
-    subject: fillB2bTopupInvoiceEmailTemplate(B2B_TOPUP_INVOICE.email.subject, vars),
-    text: fillB2bTopupInvoiceEmailTemplate(B2B_TOPUP_INVOICE.email.body, vars),
+    subject: fillB2bTopupInvoiceEmailTemplate(tpl.subject, vars),
+    text: fillB2bTopupInvoiceEmailTemplate(tpl.body, vars),
   };
 }
 

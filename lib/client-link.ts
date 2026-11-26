@@ -1,3 +1,4 @@
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { provinEmailSubject } from "@/lib/email/email-subject";
 import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVin, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
@@ -326,7 +327,15 @@ export function buildClientLinkWhatsAppUrl(phone: string, text: string): string 
 }
 
 export function buildClientLinkEmailCopy(
-  opts: { url: string; productName: string; expiresAt: string; amountCents: number; vin?: string | null },
+  opts: {
+    url: string;
+    productName: string;
+    expiresAt: string;
+    amountCents: number;
+    vin?: string | null;
+    /** Klienta valoda; saitei valodas lauka nav - noklusējums LV. */
+    lang?: ClientReportLang | null;
+  },
   templatesDoc?: MessageTemplatesDoc | null,
 ): { subject: string; text: string } {
   const until = formatClientLinkExpiryLong(opts.expiresAt);
@@ -342,6 +351,7 @@ export function buildClientLinkEmailCopy(
       maksajuma_saite: opts.url,
     },
     templatesDoc,
+    { lang: opts.lang },
   );
   if (rendered?.subject && rendered.text) {
     return { subject: rendered.subject, text: rendered.text };

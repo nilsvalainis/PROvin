@@ -32,6 +32,8 @@ export type UnpaidSessionCandidate = {
   partnerId?: string | null;
   upgradeOf?: string | null;
   reminderOf?: string | null;
+  /** Stripe `session.locale` (vietnes valoda pasūtot) - atgādinājuma e-pasta valoda. */
+  locale?: string | null;
 };
 
 export type PaidOrderIdentity = {
@@ -68,6 +70,8 @@ export type UnpaidOrderRow = {
   hidden: boolean;
   paymentPublicUrl: string | null;
   remindable: boolean;
+  /** Stripe `session.locale`; nav = LV. */
+  locale?: string | null;
 };
 
 export function normalizeUnpaidEmail(raw: string | null | undefined): string {
@@ -242,6 +246,7 @@ export function buildUnpaidOrderRows(
       hidden,
       paymentPublicUrl: rem?.paymentPublicUrl?.trim() || null,
       remindable: hasValidEmail && !remindedAt && !hidden,
+      locale: newest.locale ?? null,
     });
   }
 
