@@ -275,6 +275,10 @@ const DAMAGE_DESCRIPTIONS: Record<string, string> = {
   "depth.to-metal": "līdz metālam",
   "depth.deep-to-metal": "līdz metālam",
   "depth.clear-coat": "laka",
+  "depth.to-clear-coat": "laka",
+  "depth.paint-only": "tikai lakā",
+  "depth.to-paint": "līdz krāsas slānim",
+  "depth.through-paint": "cauri krāsas slānim",
   "deep-to-primer": "līdz gruntij",
   superficial: "virspusējs",
   light: "viegls",
@@ -291,6 +295,28 @@ const DAMAGE_DESCRIPTIONS: Record<string, string> = {
   significant: "būtisks",
   cosmetic: "kosmētisks",
   structural: "konstruktīvs",
+};
+
+/**
+ * Bojājuma dziļums / apraksts kā patstāvīgs teksts (izsoles kartītes «Izsoles apraksts»), ne kā piebilde
+ * pie bojājuma tipa («Skrāpējums līdz gruntij»). Atslēga - `global.damages-v3.description.` aste.
+ */
+const DAMAGE_DESCRIPTIONS_STANDALONE: Record<string, string> = {
+  "depth.deep-to-primer": "Dziļš, līdz gruntij",
+  "depth.to-primer": "Līdz gruntij",
+  "depth.deep": "Dziļš",
+  "depth.superficial": "Virspusējs",
+  "depth.surface": "Virspusējs",
+  "depth.light": "Viegls",
+  "depth.to-metal": "Līdz metālam",
+  "depth.deep-to-metal": "Dziļš, līdz metālam",
+  "depth.clear-coat": "Tikai lakas slānī",
+  "depth.to-clear-coat": "Tikai lakas slānī",
+  "depth.paint-only": "Tikai lakas slānī",
+  "depth.to-paint": "Līdz krāsas slānim",
+  "depth.through-paint": "Cauri krāsas slānim",
+  "with-paint-damage": "Ar lakas bojājumu",
+  "without-paint-damage": "Bez lakas bojājuma",
 };
 
 const BRAKES: Record<string, string> = {
@@ -916,6 +942,28 @@ export function translateI18n(raw: string): string {
   const shown = humanizeToken(last);
   noteThecarapiUntranslated("i18n", value, shown);
   return shown;
+}
+
+/**
+ * Izsoles brīvā teksta laukā (apraksts, komentārs) nonākusi i18n atslēga (`global.damages-v3.description.depth.deep-to-primer`)
+ * -> saprotams LV teksts («Dziļš, līdz gruntij»). Nezināmai atslēgai - pēdējās daļas lasāms teksts, nekad pati atslēga.
+ * Ne-atslēgu teksts paliek kā ir.
+ */
+export function thecarapiFreeText(raw: string): string {
+  const value = raw.replace(/\s+/g, " ").trim();
+  if (!isI18nKey(value)) return value;
+  const fam = i18nFamily(value);
+  if (fam && fam.domain.startsWith("damages") && fam.family === "description") {
+    const last = (fam.rest || fam.family).split(".").pop() ?? "";
+    const known = DAMAGE_DESCRIPTIONS_STANDALONE[fam.rest] ?? DAMAGE_DESCRIPTIONS_STANDALONE[last] ?? DAMAGE_DESCRIPTIONS[fam.rest] ?? DAMAGE_DESCRIPTIONS[last];
+    if (known) return capitalize(known);
+    const shown = humanizeToken(last);
+    noteThecarapiUntranslated("i18n", value, shown);
+    return shown;
+  }
+  const out = capitalize(translateI18n(value).trim());
+  if (out && !isI18nKey(out) && !/^global\./i.test(out)) return out;
+  return humanizeToken(value.split(".").pop() ?? "");
 }
 
 /** Enum vērtība (`NOT_NEW_CAR`, `company-car`, `paper`). Ja nav zināma, atgriež tukšu. */

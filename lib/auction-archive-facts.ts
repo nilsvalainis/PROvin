@@ -404,6 +404,9 @@ export function archiveEquipmentSource(r: ThecarapiAdminRecord): string[] {
     const key = f.key;
     if (/(^|\.)(BCAEquipment|equipment)$/i.test(key)) {
       out.push(...v.split(/,\s*(?=[A-Z][^:,]{1,60}:)/));
+    } else if (/(^|\.)(Dat)?EquipmentGroupsTranslated\.(global\.)?equipment_groups\.[^.]+$/i.test(key)) {
+      // AUTO1 aprīkojuma grupas («Seats» = «Sport seats, Seat heating front») - aprīkojums, ne virsbūve.
+      out.push(...v.split(/,\s+/).map((x) => x.trim()).filter(Boolean));
     } else if (/(EtgOptionList|equipment|options?|features?)\[\d+\](\.(Name|name|label|title))?$/.test(key)) {
       if (!/^\d+$/.test(v) && !/^(jā|nē)$/.test(v)) out.push(v);
     }
@@ -517,9 +520,15 @@ export function auctionArchiveVehicleRows(records: readonly ThecarapiAdminRecord
   });
   push("Ražots", archiveDay(made || madeFallback));
   const body = pickNewest(records, (g) => lookup(BODY_LV, g.exact("body_type")) || lookup(BODY_LV, g.tail("bodytype", "size")));
-  const doors = pickNewest(records, (g) => g.tail("numberofdoors", "doors"));
-  const seats = pickNewest(records, (g) => g.exact("places") || g.tail("seats", "places"));
-  push("Virsbūve", [body, doors ? `${doors} durvis` : "", seats ? `${seats} sēdvietas` : ""].filter(Boolean).join(", "));
+  // Durvis / sēdvietas - tikai skaitlis. `tail("seats")` agrāk trāpīja aprīkojuma grupai
+  // (`DatEquipmentGroupsTranslated...Seats` = «Sport seats, Seat heating front») un tā nonāca «Virsbūve» laukā.
+  const count = (v: string) => (/^\d{1,2}$/.test(v.trim()) && Number(v) > 0 ? v.trim() : "");
+  const doors = pickNewest(records, (g) => count(g.exact("number_of_doors", "doors")) || count(g.tail("numberofdoors", "doorcount", "doors")));
+  const seats = pickNewest(records, (g) => count(g.exact("places", "seats")) || count(g.tail("seatcount", "numberofseats", "seats", "places")));
+  // Virsbūvē tikai virsbūves tips; durvis un sēdvietas - savās rindās.
+  push("Virsbūve", body);
+  push("Durvis", doors);
+  push("Sēdvietas", seats);
 
   const cc = num(pickNewest(records, (g) => g.exact("cylinder_capacity") || g.tail("cylindercapacity", "enginecc", "displacement")));
   const fuelRaw = pickNewest(records, (g) => g.exact("fuel_group", "car_identification.FuelTypeEn") || g.tail("fuel", "fueltype", "fuelraw"));

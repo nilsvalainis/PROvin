@@ -29,7 +29,7 @@ import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
 import {
   AUCTION_LOT_CARDS_CSS,
-  auctionArchiveDescriptions,
+  auctionArchiveDescriptionItems,
   auctionLotRecordKey,
   buildAuctionLotsHtml,
   card,
@@ -161,7 +161,9 @@ const FONT_READY_SCRIPT = `<script>(function(){function done(){document.document
 
 /** Teksti, kas jātulko pirms PDF: apraksti + aprīkojums, ko vārdnīca nezina. */
 export function auctionArchiveTextsToTranslate(records: readonly ThecarapiAdminRecord[]): string[] {
-  return [...new Set([...records.flatMap(auctionArchiveDescriptions), ...auctionArchiveEquipment(records).untranslated])];
+  // I18n atslēgu apraksti jau ir LV (`thecarapiFreeText`) - AI tulkošanai nesūta.
+  const descriptions = records.flatMap((r) => auctionArchiveDescriptionItems(r).filter((d) => !d.fromKey).map((d) => d.text));
+  return [...new Set([...descriptions, ...auctionArchiveEquipment(records).untranslated])];
 }
 
 export function auctionArchivePdfFilename(vin: string, lang?: ClientReportLang | null): string {
