@@ -106,6 +106,8 @@ describe("Black Friday B dizains", () => {
       const labelled = /aria-labelledby="([^"]+)"/.exec(html)?.[1];
       expect(labelled).toBeTruthy();
       expect(html).toContain(`id="${labelled}"`);
+      /** Virsraksts tikai «Black Friday» (CSS lielie burti). */
+      expect(new RegExp(`id="${labelled}"[^>]*>Black Friday</span>`).test(html)).toBe(true);
       expect(html).toContain("data-bf-close");
       expect(html).toMatch(/aria-label="(Aizvērt|Close|Schließen|Закрыть)"/);
       expect(html).toMatch(/Nē, paldies|No, thanks|Nein, danke|Нет, спасибо/);

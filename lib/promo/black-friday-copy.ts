@@ -16,6 +16,7 @@ export type BlackFridayCopy = {
   orderPriceAfter: (price: string) => string;
   /** «Pasūtīt dīlera datus · 17,49 €» */
   orderDealer: (price: string) => string;
+  /** Loga virsraksts - tikai «BLACK FRIDAY» (Nila labojums 26.11). */
   popEyebrow: string;
   noThanks: string;
   close: string;
@@ -38,7 +39,7 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     orderWithPrice: (p) => `${p} - Pasūtīt`,
     orderPriceAfter: (p) => `Pasūtīt - ${p}`,
     orderDealer: (p) => `Pasūtīt dīlera datus · ${p}`,
-    popEyebrow: "Black Friday · tikai dīlera datiem",
+    popEyebrow: "Black Friday",
     noThanks: "Nē, paldies",
     close: "Aizvērt",
     timerAria: "Līdz akcijas beigām",
@@ -56,7 +57,7 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     orderWithPrice: (p) => `${p} - Order`,
     orderPriceAfter: (p) => `Order - ${p}`,
     orderDealer: (p) => `Order dealer data · ${p}`,
-    popEyebrow: "Black Friday · dealer data only",
+    popEyebrow: "Black Friday",
     noThanks: "No, thanks",
     close: "Close",
     timerAria: "Until the offer ends",
@@ -74,7 +75,7 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     orderWithPrice: (p) => `${p} - Bestellen`,
     orderPriceAfter: (p) => `Bestellen - ${p}`,
     orderDealer: (p) => `Händlerdaten bestellen · ${p}`,
-    popEyebrow: "Black Friday · nur Händlerdaten",
+    popEyebrow: "Black Friday",
     noThanks: "Nein, danke",
     close: "Schließen",
     timerAria: "Bis zum Ende der Aktion",
@@ -92,7 +93,7 @@ const COPY: Record<PromoLocale, BlackFridayCopy> = {
     orderWithPrice: (p) => `${p} - Заказать`,
     orderPriceAfter: (p) => `Заказать - ${p}`,
     orderDealer: (p) => `Заказать данные дилера · ${p}`,
-    popEyebrow: "Black Friday · только данные дилера",
+    popEyebrow: "Black Friday",
     noThanks: "Нет, спасибо",
     close: "Закрыть",
     timerAria: "До конца акции",
