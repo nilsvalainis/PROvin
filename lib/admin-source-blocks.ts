@@ -56,6 +56,14 @@ export {
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 import { sanitizeVinRegistryClientText, stripRegistryPersonNames } from "@/lib/vin-registry-client-text";
+import { isoDay } from "@/lib/vin-sources/dk-json";
+import {
+  formatDkLienLine,
+  formatLienAmount,
+  LEGACY_LIEN_INCIDENT_RE,
+  liensFromTjekbilRaw,
+  type DkLien,
+} from "@/lib/vin-sources/dk-liens";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import {
   mergeProvinBannerPdfInclude,
@@ -1486,24 +1494,71 @@ export function moveFailedInspectionIncidentsToTimeline<
   };
 }
 
+/**
+ * 26.11: Bilbogen ķīla / parāds nav negadījums. Saglabātajos pasūtījumos (pirms labojuma) tjekbil.dk to ielika
+ * negadījumu tabulā ar sabojātu datumu („2022-24-10”) - pārnesam uz statusu rindām. Pilnās ziņas (dokumenta
+ * veids, parāda summa, ķīlas ņēmējs) ņemam no saglabātā RAW, ja tas ir; citādi no pašas rindas.
+ */
+export function moveLienIncidentsToStatusRecords<I extends VinRegistryIncidentRow>(
+  incidents: readonly I[],
+  statusRecords: string,
+  rawUnprocessedData: string,
+): { incidents: I[]; statusRecords: string } {
+  const legacy = incidents.filter((r) => LEGACY_LIEN_INCIDENT_RE.test(wsStr(r.note)));
+  if (legacy.length === 0) return { incidents: [...incidents], statusRecords };
+  const rest = incidents.filter((r) => !LEGACY_LIEN_INCIDENT_RE.test(wsStr(r.note)));
+  const current = wsStr(statusRecords);
+  if (/ķīla\s*\/\s*parāds/i.test(current)) return { incidents: rest, statusRecords: current };
+  const fromRaw = liensFromTjekbilRaw(wsStr(rawUnprocessedData));
+  const liens: DkLien[] =
+    fromRaw && fromRaw.length > 0
+      ? fromRaw
+      : legacy.map((r) => {
+          const note = wsStr(r.note);
+          const sep = note.indexOf(" - ");
+          return {
+            date: isoDay(wsStr(r.date)),
+            type: "",
+            amount: formatLienAmount(wsStr(r.amount)),
+            holder: sep >= 0 ? note.slice(sep + 3).trim() : "",
+          };
+        });
+  const lines = liens.map(formatDkLienLine);
+  return { incidents: rest, statusRecords: [current.trim(), ...lines].filter(Boolean).join("\n") };
+}
+
+/** Saglabātais ISO datums ar mēnesi > 12 („2022-24-10”) -> derīgs ISO vai "". Citu formātu tekstu neaiztiek. */
+export function repairRegistryIsoDate(raw: string): string {
+  const s = wsStr(raw);
+  const m = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(s);
+  if (!m) return s;
+  const fixed = isoDay(s);
+  return fixed || "";
+}
+
 export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): VinRegistryBlockState {
   const e = emptyVinRegistryBlock();
   if (!b || typeof b !== "object") return e;
   const mileage = (Array.isArray(b.mileage) ? b.mileage : []).map((r) => ({
-    date: wsStr(r?.date).slice(0, 40),
+    date: repairRegistryIsoDate(wsStr(r?.date).slice(0, 40)),
     odometer: wsStr(r?.odometer).slice(0, 40),
     country: wsStr(r?.country).slice(0, 120),
     origin: wsStr(r?.origin).slice(0, 200),
   }));
-  const moved = moveFailedInspectionIncidentsToTimeline(
+  const liens = moveLienIncidentsToStatusRecords(
     (Array.isArray(b.incidents) ? b.incidents : []).map((r) => ({
-      date: wsStr(r?.date).slice(0, 40),
+      date: repairRegistryIsoDate(wsStr(r?.date).slice(0, 40)),
       amount: wsStr(r?.amount).slice(0, 120),
       country: wsStr(r?.country).slice(0, 120),
       note: wsStr(r?.note).slice(0, 600),
     })),
+    wsStr(b.statusRecords),
+    wsStr(b.rawUnprocessedData),
+  );
+  const moved = moveFailedInspectionIncidentsToTimeline(
+    liens.incidents,
     (Array.isArray(b.timeline) ? b.timeline : []).map((r) => ({
-      date: wsStr(r?.date).slice(0, 40),
+      date: repairRegistryIsoDate(wsStr(r?.date).slice(0, 40)),
       odometer: wsStr(r?.odometer).slice(0, 40),
       country: wsStr(r?.country).slice(0, 120),
       event: wsStr(r?.event),
@@ -1519,7 +1574,7 @@ export function repairVinRegistryBlock(b: VinRegistryBlockState | undefined): Vi
     incidents: incidents.length > 0 ? incidents : e.incidents,
     timeline: timeline.length > 0 ? timeline : e.timeline,
     ownersSummary: sanitizeVinRegistryClientText(wsStr(b.ownersSummary)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
-    statusRecords: sanitizeVinRegistryClientText(wsStr(b.statusRecords)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
+    statusRecords: sanitizeVinRegistryClientText(liens.statusRecords).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     rawUnprocessedData: wsStr(b.rawUnprocessedData).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     autoNotes: sanitizeVinRegistryClientText(wsStr(b.autoNotes)).slice(0, ADMIN_RAW_UNPROCESSED_MAX_LEN),
     comments: wsStr(b.comments).slice(0, 12000),
@@ -2146,9 +2201,10 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
     if (!vinRegistryBlockHasContent(b)) continue;
     // Personu vārdi (Traficom „Pirmais īpašnieks: …”, car.info „īpašnieka maiņa: …”) PDF nenonāk.
     const ownersSummary = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.ownersSummary ?? ""));
-    const statusRecords = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.statusRecords ?? ""));
+    const liens = moveLienIncidentsToStatusRecords(b.incidents ?? [], b.statusRecords ?? "", b.rawUnprocessedData ?? "");
+    const statusRecords = sanitizeVinRegistryClientText(stripRegistryPersonNames(liens.statusRecords));
     const autoNotes = sanitizeVinRegistryClientText(stripRegistryPersonNames(b.autoNotes ?? ""));
-    const moved = moveFailedInspectionIncidentsToTimeline(b.incidents ?? [], b.timeline ?? []);
+    const moved = moveFailedInspectionIncidentsToTimeline(liens.incidents, b.timeline ?? []);
     const timeline = moved.timeline.filter(vinRegistryTimelineRowHasData);
     out.push({
       title: SOURCE_BLOCK_LABELS[k],

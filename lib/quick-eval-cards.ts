@@ -186,6 +186,8 @@ function kmFmt(raw: string): string {
   return Number.isFinite(n) ? `${n.toLocaleString("lv-LV").replace(/,/g, " ")} km` : raw;
 }
 
+const LIEN_LINE_RE = /^\s*ķīla\s*\/\s*parāds/i;
+
 export function registryCardFacts(b: VinRegistryBlockState): CardFact[] {
   const facts: CardFact[] = [];
   const mileage = (b.mileage ?? []).filter((r) => s(r.odometer));
@@ -201,6 +203,14 @@ export function registryCardFacts(b: VinRegistryBlockState): CardFact[] {
       ? { label: "Negadījumi", value: `${incidents.length}${incidents[0]?.amount ? ` · ${incidents[0].amount}` : ""}`, tone: "bad" }
       : { label: "Negadījumi", value: "nav", tone: "ok" },
   );
+  // 26.11: Bilbogen ķīla / parāds ir statusu rindās (ne negadījumos) - atsevišķs sarkans fakts.
+  const liens = s(b.statusRecords)
+    .split("\n")
+    .filter((line) => LIEN_LINE_RE.test(line));
+  if (liens.length > 0) {
+    const first = liens[0]!.replace(/^[^:]*:\s*/, "");
+    facts.push({ label: "Ķīla / parāds", value: liens.length > 1 ? `${liens.length} · ${first}` : first, tone: "bad" });
+  }
   if (s(b.ownersSummary)) facts.push({ label: "Īpašnieki", value: s(b.ownersSummary).split("\n")[0]!.slice(0, 90) });
   if (s(b.statusRecords)) facts.push({ label: "Statusi", value: s(b.statusRecords).split("\n")[0]!.slice(0, 90), tone: "warn" });
   if (s(b.autoNotes)) facts.push({ label: "Piezīmes", value: s(b.autoNotes).split("\n")[0]!.slice(0, 90), tone: "warn" });

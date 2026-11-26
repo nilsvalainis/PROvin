@@ -30,7 +30,9 @@ describe("vinSourceResultToBlock", () => {
     const block = vinSourceResultToBlock(result);
     expect(vinRegistryBlockHasContent(block)).toBe(true);
     expect(block.mileage[0]?.odometer).toBe("106869");
-    expect(block.incidents[0]?.note).toContain("Ķīla");
+    // 26.11: Bilbogen ķīla nav negadījums - repair to pārnes uz statusu rindām.
+    expect(block.incidents.some((r) => /ķīla/i.test(r.note))).toBe(false);
+    expect(block.statusRecords).toContain("Ķīla / parāds (Bilbogen): 01.03.2021 · parāda summa 1 200");
     expect(block.timeline[0]?.event).toBe("Tehniskā apskate: Izieta");
     expect(block.ownersSummary).toContain("īpašnieku");
     expect(block.statusRecords).toContain("TAKSOMETRS");
