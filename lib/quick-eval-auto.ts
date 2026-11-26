@@ -116,7 +116,7 @@ async function ltabSessionActive(): Promise<boolean> {
   const config = readLtabRelayConfig();
   if (!config) return false;
   try {
-    // LTAB relejam sesijas stāvokļa vēl nav (tikai e.csdd ir `/session`); 404 = nezināms = gaidām.
+    // `GET /ltab/session` (tikai nolasa). Vecs relejs bez tā atbild 404 = nezināms = gaidām.
     const res = await fetch(`${config.baseUrl}/session`, {
       headers: { Authorization: `Bearer ${config.token}` },
       signal: AbortSignal.timeout(8_000),
