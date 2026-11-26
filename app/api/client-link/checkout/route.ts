@@ -91,6 +91,7 @@ export async function POST(req: Request) {
     vin: validated.resolved.vin,
     listingUrl: validated.resolved.listingUrl,
     phone: validated.resolved.phone,
+    lang: record.lang,
   });
 
   try {

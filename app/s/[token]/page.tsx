@@ -69,7 +69,7 @@ export default async function ClientSecureLinkPage({ params }: { params: Promise
   if (!record || !isClientLinkUsable(record)) {
     return (
       <>
-        <ClientLinkNeutralPage />
+        <ClientLinkNeutralPage lang={record?.lang ?? null} />
         <ClientLegalFooter />
       </>
     );

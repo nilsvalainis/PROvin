@@ -10,6 +10,7 @@ import {
   buildDealerCheckReportPayload,
   dealerCheckDzaEmailHtml,
   dealerCheckEmailDefaults,
+  dealerCheckEmailDefaultsByLang,
   dealerCheckReportFilename,
 } from "@/lib/dealer-check-report";
 import { dealerCheckDealerFacts } from "@/lib/dealer-check-delivery";
@@ -116,5 +117,24 @@ describe("dīlera datu servera PDF HTML", () => {
     const html = dealerCheckDzaEmailHtml("Labdien!\n\n<b>x</b>\nAr cieņu,\nNils Valainis");
     expect(html).not.toMatch(/provin/i);
     expect(html).toContain("&lt;b&gt;x&lt;/b&gt;<br>Ar cieņu,<br>Nils Valainis");
+  });
+
+  it("e-pasta teksts klienta valodā (EN/RU/DE); LV kā līdz šim", () => {
+    expect(dealerCheckEmailDefaults(record(), "lv")).toEqual(dealerCheckEmailDefaults(record()));
+    const expected = { en: ["Hello!", "Official dealer data", "Best regards"], ru: ["Здравствуйте!", "Данные официального дилера", "С уважением"], de: ["Guten Tag!", "Offizielle Händlerdaten", "Mit freundlichen Grüßen"] } as const;
+    for (const lang of ["en", "ru", "de"] as const) {
+      const m = dealerCheckEmailDefaults(record({ template: "cits" }), lang);
+      expect(m.subject).toContain(VIN);
+      expect(m.subject.startsWith(expected[lang][1])).toBe(true);
+      expect(m.text.startsWith(expected[lang][0])).toBe(true);
+      expect(m.text.trim().endsWith(expected[lang][2])).toBe(true);
+      expect(m.text).not.toMatch(/Labdien|Pielikumā|Ar cieņu|[—–]/);
+      const dza = dealerCheckEmailDefaults(record(), lang);
+      expect(dza.text).not.toMatch(/provin/i);
+      expect(dza.text.trim().endsWith("Nils Valainis")).toBe(true);
+    }
+    const all = dealerCheckEmailDefaultsByLang(record());
+    expect(Object.keys(all).sort()).toEqual(["de", "en", "lv", "ru"]);
+    expect(dealerCheckDzaEmailHtml("Hello!", "de")).toContain('<html lang="de">');
   });
 });

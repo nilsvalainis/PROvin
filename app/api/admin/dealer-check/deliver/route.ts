@@ -3,7 +3,8 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { currentDealerCheckCreatorId } from "@/lib/dealer-check-actor";
 import { addDealerCheckDelivery, readOwnedDealerCheck } from "@/lib/dealer-check-store";
 import { isSafeDealerCheckId, type DealerCheckRecord } from "@/lib/dealer-check";
-import { dealerCheckEmailDefaults } from "@/lib/dealer-check-report";
+import { dealerCheckEmailDefaults, dealerCheckEmailDefaultsByLang } from "@/lib/dealer-check-report";
+import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import {
   deliverDealerCheckToAutoparks,
   findDealerCheckAutoparksCar,
@@ -35,6 +36,7 @@ export async function GET(req: Request): Promise<Response> {
     ok: true,
     autoparks: found?.info ?? null,
     email: dealerCheckEmailDefaults(got.record),
+    emailByLang: dealerCheckEmailDefaultsByLang(got.record),
     smtp: isSmtpConfigured(),
     deliveries: got.record.deliveries ?? [],
   });
@@ -42,7 +44,8 @@ export async function GET(req: Request): Promise<Response> {
 
 /**
  * POST { id, action: "autoparks" } - servera PDF uz esošā Autoparka auto dokumentiem + Dropbox STOCK.
- * POST { id, action: "email", to, subject, text, confirmed: true } - sūta no info@provin.lv ar PDF.
+ * POST { id, action: "email", to, subject, text, lang?, confirmed: true } - sūta no info@provin.lv ar PDF
+ *   (`lang` lv/en/ru/de - e-pasta veidnes valoda; OEM PDF paliek oriģinālā).
  * Bez `confirmed: true` e-pasts netiek sūtīts (apstiprinājuma solis UI).
  */
 export async function POST(req: Request): Promise<Response> {
@@ -75,6 +78,7 @@ export async function POST(req: Request): Promise<Response> {
         to: typeof body.to === "string" ? body.to : "",
         subject: typeof body.subject === "string" ? body.subject : "",
         text: typeof body.text === "string" ? body.text : "",
+        lang: resolveClientEmailLang(typeof body.lang === "string" ? body.lang : null),
       });
       if (!sent.ok) {
         return NextResponse.json({ error: sent.error }, { status: sent.error === "smtp_not_configured" ? 503 : 400 });

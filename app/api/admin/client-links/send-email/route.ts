@@ -39,8 +39,8 @@ export async function POST(req: Request) {
   }
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim() ? getPublicSiteOrigin() : "http://localhost:3040";
   const url = clientLinkAbsoluteUrl(origin, token);
-  // Saitei valodas lauka nav: LV, ja admins skaidri nenorāda `lang` (en / ru / de).
-  const lang = resolveClientEmailLang(typeof body.lang === "string" ? body.lang : null);
+  // Admina izvēlētā valoda sūtīšanas brīdī, citādi saites ierakstā saglabātā (noklusēti LV).
+  const lang = resolveClientEmailLang(typeof body.lang === "string" && body.lang.trim() ? body.lang : (record.lang ?? null));
   const copy = buildClientLinkEmailCopy({
     url,
     productName: record.productName,

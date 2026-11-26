@@ -141,7 +141,13 @@ export async function deliverDealerCheckToAutoparks(
   };
 }
 
-export type DealerCheckEmailInput = { to: string; subject: string; text: string };
+export type DealerCheckEmailInput = {
+  to: string;
+  subject: string;
+  text: string;
+  /** Klienta valoda (e-pasta HTML veidne); OEM PDF paliek oriģinālā. Noklusēti LV. */
+  lang?: "lv" | "en" | "ru" | "de";
+};
 
 export function validateDealerCheckEmail(
   input: DealerCheckEmailInput,
@@ -180,7 +186,7 @@ export async function sendDealerCheckEmail(
       to: v.to,
       subject: v.subject,
       text: v.text,
-      html: dealerCheckDzaEmailHtml(v.text),
+      html: dealerCheckDzaEmailHtml(v.text, input.lang ?? "lv"),
       fromName: DEALER_CHECK_DZA_FROM_NAME,
       attachments,
     });
@@ -190,6 +196,7 @@ export async function sendDealerCheckEmail(
     to: v.to,
     carVin: record.vin,
     attachments,
+    lang: input.lang ?? "lv",
     custom: { subject: v.subject, text: v.text },
   });
   return { ok: true, to: v.to };
