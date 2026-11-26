@@ -1931,7 +1931,7 @@ export function lifecycleDatedCountryRecords(
   for (const e of events) {
     if (e.time <= 0 || e.kind === "import" || e.kind === "gap" || e.kind === "listed" || e.kind === "anomaly") continue;
     if (lifecycleCountryIsSoft(e) || isListingOnlySourceSet(e.sources)) continue;
-    if (PRODUCTION_EVENT_RE.test(`${e.title} ${e.detail}`)) continue;
+    if (lifecycleEventIsProduction(e)) continue;
     const iso = lifecycleEventKnownCountryIso(e);
     if (iso) out.push({ t: e.time, iso, source: e.sources[0] ?? e.title });
   }
