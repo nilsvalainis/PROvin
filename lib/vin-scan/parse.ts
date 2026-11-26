@@ -376,6 +376,14 @@ export function formatCsddPlateLookup(result: CsddTechDataResult): CsddPlateLook
   return { ok: true, vin: d.vin, make: d.make, model: d.model, year: d.year, status };
 }
 
+/** Reģistrs, kurā auto atrasts = valsts «Valstis» kartītei. lkf.ee ir OCTA (polise, ne reģistrācija). */
+const REGISTRY_COUNTRY: Partial<Record<VinSourceFetchResult["source"], string>> = { mnt_ee: "EE" };
+
+function formatSourceDateLv(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso;
+}
+
 export function parseVinSourceScan(result: VinSourceFetchResult): VinScanParse {
   const mileage = result.mileage
     .map((row) => ({ date: row.date, odometer: row.odometer }))
@@ -385,15 +393,44 @@ export function parseVinSourceScan(result: VinSourceFetchResult): VinScanParse {
     ...result.incidents.map((row) => row.country),
     ...result.timeline.map((row) => row.country),
   ].filter((name, i, all) => Boolean(name) && all.indexOf(name) === i);
-  const detail = [result.ownersSummary, result.statusRecords, ...result.notes, ...countries]
+  // mnt.ee reģistra notikumi (īpašnieku maiņas, reģistrācija, apskates) - līdz 26.11 tika izmesti.
+  const timelineLines = [...result.timeline]
+    .filter((row) => row.date && row.event)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((row) => `${formatSourceDateLv(row.date)} ${row.event}${row.odometer ? ` (${row.odometer} km)` : ""}`);
+  const detail = [
+    result.ownersSummary,
+    result.statusRecords,
+    ...result.notes,
+    timelineLines.length ? `Reģistra notikumi:\n${timelineLines.join("\n")}` : "",
+    ...(timelineLines.length ? [] : countries),
+  ]
     .filter(Boolean)
     .join("\n");
   if (result.found) {
+    // lkf.ee OCTA atlīdzības -> «Negadījumi» kartīte (līdz 26.11 izmestas).
+    const incidents = result.incidents
+      .filter((row) => row.date || row.amount || row.note)
+      .map((row) => ({
+        date: row.date,
+        summary: [row.note || "OCTA atlīdzība", row.amount, row.country].filter(Boolean).join(", "),
+      }));
+    const inspections = result.timeline
+      .filter((row) => row.date && /tehnisk[āa] apskate|apskate/i.test(row.event))
+      .map((row) => ({
+        date: row.date,
+        result: row.event.replace(/^Tehnisk[āa] apskate(?:\s*\([^)]*\))?:\s*/i, "").trim(),
+        ...(row.odometer ? { odometer: row.odometer } : {}),
+      }));
+    const country = REGISTRY_COUNTRY[result.source];
     return {
       status: "found",
       summary: result.message,
       detail,
       mileage,
+      ...(incidents.length ? { incidents } : {}),
+      ...(inspections.length ? { inspections } : {}),
+      ...(country ? { flags: { registrationCountry: country } } : {}),
     };
   }
   const msg = result.message.trim() || "Avotu neizdevās nolasīt";

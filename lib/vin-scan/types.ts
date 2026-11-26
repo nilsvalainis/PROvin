@@ -82,6 +82,8 @@ export type VinScanFlags = {
   recallCount?: number;
   photoCount?: number;
   registrationCountry?: string;
+  /** Vairākas valstis, kur auto bijis (CARFAX.eu ierakstu sadalījums u.c.), ISO divburtu kodi. */
+  countries?: string[];
   napJudgement?: string;
   finlandLinked?: boolean;
   finlandLinkSource?: string;

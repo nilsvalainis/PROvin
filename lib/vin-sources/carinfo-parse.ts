@@ -61,6 +61,9 @@ export type CarinfoParsed = {
   timeline?: CarinfoTimelineRow[];
   /** Cik no ierakstiem lapa rāda bez konta, piem. "3 no 6 nobraukuma ierakstiem". Tukšs, ja skaitītāju nav. */
   coverage?: string;
+  /** «Inspected» (pēdējā apskate) un «Inspection valid to», ISO `YYYY-MM-DD`. */
+  inspected?: string;
+  inspectionValidTo?: string;
 };
 
 const MILEAGE_EVENT =
@@ -727,6 +730,8 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
     notes: uniqueLines(notes),
     timeline,
     coverage: coverageLine(text, uniqueMileage.length, timeline.length),
+    ...(inspected ? { inspected } : {}),
+    ...(inspectionValidTo ? { inspectionValidTo } : {}),
   };
 }
 

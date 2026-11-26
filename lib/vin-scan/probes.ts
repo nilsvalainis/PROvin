@@ -2,7 +2,9 @@ import "server-only";
 
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { fetchVinSource } from "@/lib/vin-sources";
-import { fetchTjekbilDmrRaw } from "@/lib/vin-sources/tjekbil";
+import { fetchTjekbilDmrRaw, fetchTjekbilExtras } from "@/lib/vin-sources/tjekbil";
+import type { TjekbilDmrResponse } from "@/lib/vin-sources/tjekbil-map";
+import { tjekbilScanWithExtras } from "@/lib/vin-scan/tjekbil-scan";
 import { mapNummerpladePayload, nummerpladeApiKey } from "@/lib/vin-sources/nummerplade";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { scanChallengeReason, scanFetch, scanFetchSmart } from "@/lib/vin-scan/http";
@@ -90,7 +92,15 @@ export function sourceNeedsInput(id: VinScanSourceId, ctx: VinScanContext): VinS
 export async function probeTjekbil(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
     const res = await fetchTjekbilDmrRaw(ctx.vin);
-    return done("tjekbil", ctx, parseTjekbilProbe(res.status, res.text));
+    const base = parseTjekbilProbe(res.status, res.text);
+    if (base.status !== "found") return done("tjekbil", ctx, base);
+    // Nobraukums, meklēšana, RAPEX (kods jau bija pasūtījumu sēklā); ja daļa nenāk laikā, paliek DMR pamatdati.
+    try {
+      const dmr = JSON.parse(res.text) as TjekbilDmrResponse;
+      return done("tjekbil", ctx, tjekbilScanWithExtras(base, dmr, await fetchTjekbilExtras(dmr)));
+    } catch {
+      return done("tjekbil", ctx, base);
+    }
   } catch (e) {
     return failed("tjekbil", ctx, e);
   }
