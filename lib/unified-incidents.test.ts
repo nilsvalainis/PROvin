@@ -561,6 +561,33 @@ describe("24.11 audits #3 - LTAB + carVertical dublikāti", () => {
     expect(cvAmount(a720)).toMatch(/501/);
   });
 
+  it("26.11: tajā pašā mēnesī precīzs summas trāpījums pirms pielaides (aggregateUnifiedIncidents)", () => {
+    // AutoDNA 1 000 € ir pielaidē ar jaunāko LTAB 1 040 €, bet precīzi sakrīt ar LTAB 1 000 €.
+    const rows = [
+      ltab("20.06.2019", "1 040 €", Date.UTC(2019, 5, 20)),
+      row({ date: "15.06.2019", lossAmount: "1 000 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2019, 5, 15) }),
+      ltab("10.06.2019", "1 000 €", Date.UTC(2019, 5, 10)),
+    ];
+    const agg = aggregateUnifiedIncidents(rows);
+    expect(agg.rawCount).toBe(3);
+    expect(agg.uniqueCount).toBe(2);
+    const amount = (c: (typeof agg.clusters)[number], src: string) =>
+      c.sourceValuations.find((v) => v.sourceLabel === src)?.displayAmount ?? "";
+    const l1000 = agg.clusters.find((c) => /^1\s000/.test(amount(c, "LTAB")))!;
+    const l1040 = agg.clusters.find((c) => /1\s040/.test(amount(c, "LTAB")))!;
+    expect(amount(l1000, "AutoDNA")).toMatch(/1\s000/);
+    expect(amount(l1040, "AutoDNA")).toBe("");
+  });
+
+  it("26.11: pielaides trāpījums joprojām apvieno, ja precīza pāra nav", () => {
+    const agg = aggregateUnifiedIncidents([
+      ltab("20.06.2019", "1 040 €", Date.UTC(2019, 5, 20)),
+      row({ date: "15.06.2019", lossAmount: "1 000 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2019, 5, 15) }),
+    ]);
+    expect(agg.uniqueCount).toBe(1);
+    expect(agg.clusters[0]!.sourceValuations.map((v) => v.sourceLabel).sort()).toEqual(["AutoDNA", "LTAB"]);
+  });
+
   it("mēneša ieraksts ar pretrunīgu summu (iespējams KASKO) paliek atsevišķi", () => {
     const agg = aggregateUnifiedIncidents([
       ltab("18.04.2016", "420 €", Date.UTC(2016, 3, 18)),

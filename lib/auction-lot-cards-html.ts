@@ -230,7 +230,7 @@ function descriptionBlock(texts: readonly string[], translations: ReadonlyMap<st
       const lv = translations.get(t)?.trim() ?? "";
       const same = !lv || lv.toLowerCase() === t.toLowerCase();
       return `<div class="aa-desc">${
-        same ? `<p class="aa-desc__lv">${esc(t)}</p>` : `<p class="aa-desc__lv">${esc(lv)}</p><p class="aa-desc__orig"><span>(oriģināls)</span> ${esc(t)}</p>`
+        same ? `<p class="aa-desc__lv">${esc(t)}</p>` : `<p class="aa-desc__lv">${esc(lv)}</p><p class="aa-desc__orig"><span>${esc(auctionCardText("(oriģināls)", lang))}</span> ${esc(t)}</p>`
       }</div>`;
     })
     .join("");

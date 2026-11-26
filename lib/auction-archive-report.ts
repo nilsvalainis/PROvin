@@ -207,6 +207,8 @@ export type AuctionArchiveReportDoc = {
   missingPhotos?: number;
   /** Ar kādu «Rādīt izsoļu cenas» izvēli ģenerēts pēdējais PDF. */
   showPrices?: boolean;
+  /** Pēdējā PDF valoda (nav - LV). Citā valodā ģenerēts PDF klientam netiek sūtīts atkārtoti. */
+  lang?: ClientReportLang;
   sends: AuctionArchiveReportSend[];
 };
 
@@ -239,7 +241,16 @@ export function parseAuctionArchiveReportDoc(raw: unknown, sessionId: string): A
     if (v != null) out[k] = v;
   }
   if (o.showPrices === true) out.showPrices = true;
+  if (o.lang === "en" || o.lang === "ru" || o.lang === "de") out.lang = o.lang;
   return out;
+}
+
+/** Vai saglabāto PDF drīkst sūtīt atkārtoti: tā pati cenu izvēle un tā pati valoda. */
+export function auctionArchiveReportPdfReusable(
+  doc: Pick<AuctionArchiveReportDoc, "generatedAt" | "showPrices" | "lang">,
+  want: { showPrices: boolean; lang: ClientReportLang },
+): boolean {
+  return Boolean(doc.generatedAt) && (doc.showPrices === true) === want.showPrices && (doc.lang ?? "lv") === want.lang;
 }
 
 export function appendAuctionArchiveReportSend(doc: AuctionArchiveReportDoc, rec: AuctionArchiveReportSend): AuctionArchiveReportDoc {

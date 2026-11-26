@@ -21,6 +21,7 @@ import { isAuctionArchiveEligible } from "@/lib/auction-archive-offer";
 import {
   appendAuctionArchiveReportSend,
   auctionArchiveReportPdfFilename,
+  auctionArchiveReportPdfReusable,
   auctionArchiveReportStatusLine,
   isAuctionArchiveSendSituation,
 } from "@/lib/auction-archive-report";
@@ -63,6 +64,8 @@ async function buildAndRecord(sessionId: string, showPrices: boolean, startedAt:
     const next = { ...cur, generatedAt: new Date().toISOString(), pdfBytes: built.pdf.length, photos: built.photos, missingPhotos: built.missingPhotos };
     if (showPrices) next.showPrices = true;
     else delete next.showPrices;
+    if (built.lang !== "lv") next.lang = built.lang;
+    else delete next.lang;
     return next;
   }).catch(() => null);
   return { built, report };
@@ -86,7 +89,7 @@ export async function GET(req: Request) {
     report,
     statusLine: auctionArchiveReportStatusLine(report),
     pdfUrl: pdf ? pdfUrl(sessionId) : null,
-    filename: auctionArchiveReportPdfFilename(ctx.vin),
+    filename: auctionArchiveReportPdfFilename(ctx.vin, ctx.lang),
     lang: ctx.lang ?? "lv",
   });
 }
@@ -163,7 +166,8 @@ export async function POST(req: Request) {
     if (ready) {
       // Tas pats PDF, ko Nils skatīja (ja ģenerēts ar to pašu cenu izvēli); citādi - jauns.
       const report = await readAuctionArchiveReport(sessionId);
-      let pdf = report.generatedAt && (report.showPrices === true) === showPrices ? await readAuctionArchivePdf(sessionId).catch(() => null) : null;
+      const lang = ctx?.lang ?? "lv";
+      let pdf = auctionArchiveReportPdfReusable(report, { showPrices, lang }) ? await readAuctionArchivePdf(sessionId).catch(() => null) : null;
       if (!pdf) {
         try {
           pdf = (await buildAndRecord(sessionId, showPrices, startedAt)).built.pdf;
@@ -172,7 +176,7 @@ export async function POST(req: Request) {
           return bad(code, code === "pdf_failed" ? 500 : 409);
         }
       }
-      attachment = { filename: auctionArchiveReportPdfFilename(vin), content: pdf };
+      attachment = { filename: auctionArchiveReportPdfFilename(vin, lang), content: pdf };
     }
     const notes = draft?.orderEdits?.notes || order.notes || "";
     const b2bClient = isB2bDealerReadyEmailOrder({
@@ -185,7 +189,7 @@ export async function POST(req: Request) {
       subject,
       text,
       b2bClient,
-      // E-pasta rāmis klienta valodā (teksts no «Sūtīt klientam» loga jau tajā valodā); PDF saturs - LV.
+      // E-pasta rāmis, PDF saturs un faila nosaukums - klienta valodā (teksts no «Sūtīt klientam» loga jau tajā valodā).
       lang: ctx?.lang ?? "lv",
       ...(attachment ? { attachments: [{ filename: attachment.filename, content: attachment.content, contentType: "application/pdf" }] } : {}),
       context: {

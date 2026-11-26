@@ -434,6 +434,30 @@ function sameEventScore(a: IncidentRowCtx, b: IncidentRowCtx): number {
   return 0;
 }
 
+/** `sameEventScore` no 3 (precīza summa) uz augšu - droši tas pats notikums. */
+const EXACT_EVENT_SCORE = 3;
+
+function sameMonthCountry(members: IncidentRowCtx[], ctx: IncidentRowCtx): boolean {
+  const head = members[0]!;
+  if (!head.ym || head.ym !== ctx.ym || !countriesCompatible(head.countryKey, ctx.countryKey)) return false;
+  return members.every((m) => countriesCompatible(m.countryKey, ctx.countryKey));
+}
+
+/** Rindas piesaiste grupai: viena avota ierakstam tikai precīzs dublikāts (5), citādi labākais `sameEventScore`. */
+function rowJoinScore(members: IncidentRowCtx[], ctx: IncidentRowCtx): number {
+  if (!sameMonthCountry(members, ctx)) return 0;
+  const sameSource = members.filter((m) => m.row.sourceLabel === ctx.row.sourceLabel);
+  if (sameSource.length > 0) return sameSource.some((m) => isExactDuplicateIncidentRow(m, ctx)) ? 5 : 0;
+  return Math.max(0, ...members.map((m) => sameEventScore(m, ctx)));
+}
+
+/** Divu grupu apvienošana 2. kārtā: bez kopīga avota (viena avota divi ieraksti = divi negadījumi). */
+function groupJoinScore(target: IncidentRowCtx[], cur: IncidentRowCtx[]): number {
+  if (!cur.every((c) => c.ym && sameMonthCountry(target, c))) return 0;
+  if (cur.some((c) => target.some((t) => t.row.sourceLabel === c.row.sourceLabel))) return 0;
+  return Math.max(0, ...cur.flatMap((c) => target.map((t) => sameEventScore(t, c))));
+}
+
 /**
  * Katrs negadījums tiek skaitīts atsevišķi (Nila lēmums 19.11, variants B).
  * Viens notikums no vairākiem avotiem (AutoDNA, CarVertical, LTAB, cc_vin, ASV) joprojām ir viena karte, ja
@@ -446,6 +470,9 @@ export function aggregateUnifiedIncidents(
   damageDetails: UnifiedIncidentDamageInput[] = [],
 ): UnifiedIncidentAggregation {
   const sorted = sortUnifiedIncidentsNewestFirst(rows);
+  // 1. kārta (26.11, kā #1244 `mergeVendorRecordsIntoLtabEvents`): tikai droši trāpījumi - tā pati diena,
+  // precīza summa vai viena avota precīzs dublikāts. Pielaides/zonas pāris vairs nevar «nozagt» LTAB ierakstu,
+  // kuram cits avots tajā pašā mēnesī atbilst precīzi.
   const groups: IncidentRowCtx[][] = [];
   for (const row of sorted) {
     const ctx = incidentRowCtx(row, damageDetails);
@@ -456,24 +483,31 @@ export function aggregateUnifiedIncidents(
     let bestIdx = -1;
     let bestScore = 0;
     for (let i = 0; i < groups.length; i++) {
-      const members = groups[i]!;
-      const head = members[0]!;
-      if (head.ym !== ctx.ym || !countriesCompatible(head.countryKey, ctx.countryKey)) continue;
-      if (!members.every((m) => countriesCompatible(m.countryKey, ctx.countryKey))) continue;
-      const sameSource = members.filter((m) => m.row.sourceLabel === ctx.row.sourceLabel);
-      let score: number;
-      if (sameSource.length > 0) {
-        score = sameSource.some((m) => isExactDuplicateIncidentRow(m, ctx)) ? 5 : 0;
-      } else {
-        score = Math.max(0, ...members.map((m) => sameEventScore(m, ctx)));
-      }
-      if (score > bestScore) {
+      const score = rowJoinScore(groups[i]!, ctx);
+      if (score >= EXACT_EVENT_SCORE && score > bestScore) {
         bestScore = score;
         bestIdx = i;
       }
     }
     if (bestIdx < 0) groups.push([ctx]);
     else groups[bestIdx]!.push(ctx);
+  }
+  // 2. kārta: atlikušās grupas - summa ar pielaidi vai kopīga bojājumu zona (dažādi avoti, tas pats mēnesis/valsts).
+  for (let g = 1; g < groups.length; g++) {
+    const cur = groups[g]!;
+    let bestIdx = -1;
+    let bestScore = 0;
+    for (let h = 0; h < g; h++) {
+      const score = groupJoinScore(groups[h]!, cur);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = h;
+      }
+    }
+    if (bestIdx < 0) continue;
+    groups[bestIdx]!.push(...cur);
+    groups.splice(g, 1);
+    g--;
   }
 
   const clusters = groups.map((members) => {

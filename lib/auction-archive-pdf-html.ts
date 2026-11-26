@@ -16,7 +16,6 @@ import {
   auctionArchiveMaxKm,
   formatIsoDayLv,
   formatKm,
-  lvCount,
   type AuctionArchiveOperatorMark,
   type AuctionArchivePhoto,
   type AuctionArchiveSummary,
@@ -24,6 +23,8 @@ import {
 import { buildAuctionArchivePdfFilename } from "@/lib/audit-report-pdf-filename";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { auctionArchiveEquipment, auctionArchiveModelTitle, auctionArchiveVersion } from "@/lib/auction-archive-facts";
+import { auctionArchivePdfNote, auctionCardCount, auctionCardText } from "@/lib/auction-lot-cards-i18n";
+import { applyClientReportSweepTranslations } from "@/lib/client-report-dynamic-i18n";
 import { getClientReportPrintCss } from "@/lib/client-report-html";
 import { buildPdfDocFooterHtml } from "@/lib/client-report-pdf-footer";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
@@ -62,6 +63,8 @@ export type AuctionArchivePdfInput = {
   preparedFor?: string;
   /** «Rādīt izsoļu cenas» (Nils 23.11, lēmums 4): noklusējumā cenas PDF NErāda. */
   showPrices?: boolean;
+  /** Klienta valoda (`resolveOrderClientLang`): etiķetes, kājene, faila nosaukums. Noklusējums LV. */
+  lang?: ClientReportLang;
 };
 
 const DT = new Intl.DateTimeFormat("lv-LV", {
@@ -90,6 +93,9 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
   const showPrices = input.showPrices === true;
   const now = input.generatedAt ?? new Date();
   const marks = input.marks ?? [];
+  const lang: ClientReportLang = input.lang ?? "lv";
+  const T = (lv: string) => auctionCardText(lv, lang);
+  const docTitle = T(AUCTION_ARCHIVE_PDF_TITLE);
   const byKey = new Map(s.auctions.map((a) => [a.key, a]));
   // Hronoloģiski (vecākā pirmā) - nosaukumam/versijai uzvar jaunākā izsole.
   const records = [...input.records].sort((a, b) => (byKey.get(auctionLotRecordKey(a))?.date || "9999").localeCompare(byKey.get(auctionLotRecordKey(b))?.date || "9999"));
@@ -101,6 +107,7 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
     translations: input.translations,
     marks: input.marks,
     showPrices,
+    lang,
   });
 
   const title = auctionArchiveModelTitle(records, s.title || s.vin);
@@ -111,49 +118,47 @@ export function buildAuctionArchivePdfHtml(input: AuctionArchivePdfInput): strin
 
   /* --- 1. Vāks --- */
   const hero = `<header class="pdf-v1-hero"><div class="pdf-v1-hero-inner">${provincLogoSvg({ includeLvSuffix: true })}<div class="pdf-v1-hero-text"><h1 class="pdf-v1-doc-title">${esc(
-    AUCTION_ARCHIVE_PDF_TITLE,
-  )}</h1><p class="pdf-v1-meta">Ģenerēts: ${esc(fmtDateTime(now))} · VIN <span class="pdf-vin">${esc(s.vin)}</span></p></div></div></header>`;
+    docTitle,
+  )}</h1><p class="pdf-v1-meta">${esc(T("Ģenerēts"))}: ${esc(fmtDateTime(now))} · VIN <span class="pdf-vin">${esc(s.vin)}</span></p></div></div></header>`;
   const stats = [
-    { k: "Izsoles", v: String(s.auctions.length) },
-    { k: "Bildes", v: String(photoTotal) },
-    { k: "Pēdējā izsole", v: formatIsoDayLv(lastDate) || "-" },
-    { k: "Nobraukums", v: km != null ? formatKm(km) : "-" },
+    { k: T("Izsoles"), v: String(s.auctions.length) },
+    { k: T("Bildes"), v: String(photoTotal) },
+    { k: T("Pēdējā izsole"), v: formatIsoDayLv(lastDate) || "-" },
+    { k: T("Nobraukums"), v: km != null ? formatKm(km) : "-" },
   ];
   const cover = card(
-    AUCTION_ARCHIVE_PDF_TITLE,
-    `<div class="pdf-dealer-cover"><p class="pdf-dealer-cover__kicker">Eiropas izsoļu arhīvs</p><h3 class="pdf-dealer-cover__model">${esc(
+    docTitle,
+    `<div class="pdf-dealer-cover"><p class="pdf-dealer-cover__kicker">${esc(T("Eiropas izsoļu arhīvs"))}</p><h3 class="pdf-dealer-cover__model">${esc(
       title,
     )}</h3><p class="pdf-dealer-cover__meta">${version ? `${esc(version)} · ` : ""}VIN <b class="pdf-vin">${esc(s.vin)}</b></p></div>
 <div class="pdf-svc-summary">${stats.map((x) => `<div class="pdf-svc-summary__cell"><span>${esc(x.k)}</span><b>${esc(x.v)}</b></div>`).join("")}</div>`,
-    { icon: "globe", badge: s.auctions.length ? lvCount(s.auctions.length, "izsole", "izsoles") : undefined },
+    { icon: "globe", badge: s.auctions.length ? auctionCardCount(s.auctions.length, "izsole", lang) : undefined },
   );
 
   /* --- Citi avoti --- */
   const sources = s.manualSources.length
-    ? card("Citi avoti", `<ul class="aa-sources">${s.manualSources.map((m) => `<li>${esc(m.label)}${m.kind === "pdf" ? " (PDF)" : ""}</li>`).join("")}</ul>`, {
+    ? card(T("Citi avoti"), `<ul class="aa-sources">${s.manualSources.map((m) => `<li>${esc(m.label)}${m.kind === "pdf" ? " (PDF)" : ""}</li>`).join("")}</ul>`, {
         icon: "search",
       })
     : "";
 
-  const header = buildPdfRunningHeaderLine(title, s.vin, `PROVIN.LV · ${AUCTION_ARCHIVE_PDF_TITLE}`);
-  const footer = buildPdfRunningFooterLine({ vin: s.vin, dateLabel: fmtDateTime(now), preparedBy: input.preparedFor ?? "" });
-  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang: "lv" })}${AUCTION_LOT_CARDS_CSS}${ARCHIVE_ONLY_CSS}`;
-  const note = `<p class="aa-foot">Dati no Eiropas izsoļu portālu arhīva izsoles dienā. Bildes, ${
-    showPrices ? "cenas, " : ""
-  }nobraukums un apraksti ir avota dati; tulkojums un apkopojums - PROVIN.${
-    marks.length ? " «Redzams bildē» - PROVIN atzīme pēc bildes." : ""
-  }</p>`;
+  const header = buildPdfRunningHeaderLine(title, s.vin, `PROVIN.LV · ${docTitle}`);
+  const footer = buildPdfRunningFooterLine({ vin: s.vin, dateLabel: fmtDateTime(now), preparedBy: input.preparedFor ?? "", lang });
+  const css = `${getClientReportPrintCss()}${clientReportRunningPageCss({ header, footer, lang })}${AUCTION_LOT_CARDS_CSS}${ARCHIVE_ONLY_CSS}`;
+  const note = `<p class="aa-foot">${esc(auctionArchivePdfNote({ showPrices, marks: marks.length > 0 }, lang))}</p>`;
   const foot = `${buildPdfDocFooterHtml({
     vin: s.vin,
     amountTotalCents: null,
-    generatedLabel: `Ģenerēts ${fmtDateTime(now)}`,
-    productLabel: AUCTION_ARCHIVE_PDF_TITLE,
+    generatedLabel: `${T("Ģenerēts")} ${fmtDateTime(now)}`,
+    productLabel: docTitle,
   })}${note}`;
-  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="color-scheme" content="light"/><title>${esc(
-    `Izsolu_arhivs_${s.vin}.pdf`,
+  const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"/><meta name="color-scheme" content="light"/><title>${esc(
+    auctionArchivePdfFilename(s.vin, lang),
   )}</title><style>${css}</style></head><body class="provin-report-doc"><div class="sheet">${hero}${cover}${parts.timeline}${parts.findings}${parts.vehicle}${sources}${parts.lots.join(
     "\n",
   )}${parts.galleries}${parts.manualGallery}${parts.equipment}${foot}</div>${FONT_READY_SCRIPT}</body></html>`;
+  // EN/RU/DE: tā pati bez-AI vārdnīca kā klienta PDF (kolofona atruna u.c.); LV - nemainīts.
+  return lang === "lv" ? html : applyClientReportSweepTranslations(html, lang);
 }
 
 /** Servera renderis gaida `data-provin-fonts="ready"` (kā klienta atskaitē). */
