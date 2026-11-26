@@ -338,3 +338,39 @@ export async function saveFileToOrderFolderOrLegacy<T extends { path: string }>(
   const saved = await legacy();
   return { path: saved.path, duplicate: false, legacy: true };
 }
+
+/**
+ * PDF lejupielāde pēc statusā saglabātā Dropbox ceļa ar rezervi: ja pa šo ceļu faila vairs nav (dubultmapes apvienotas,
+ * mape pārdēvēta), meklē to pašu faila nosaukumu pasūtījuma kanoniskajā mapē (pēc mapes id / `order_dropbox` ieraksta).
+ * Statusu nemaina - tikai lasa. null - fails nav atrasts nevienā vietā.
+ */
+export async function downloadOrderDropboxFile(
+  client: DropboxClient,
+  sessionId: string,
+  storedPath: string,
+): Promise<{ bytes: Uint8Array; path: string; fallback: boolean } | null> {
+  const stored = storedPath.trim();
+  if (!stored) return null;
+  try {
+    const { bytes } = await client.download(stored);
+    return { bytes: new Uint8Array(bytes), path: stored, fallback: false };
+  } catch (e) {
+    if (!(e instanceof DropboxApiError && e.notFound)) throw e;
+  }
+  const name = stored.slice(stored.lastIndexOf("/") + 1);
+  if (!name || !isSafeOrderDraftSessionId(sessionId)) return null;
+  const { record } = await readOrderDropboxRecordResult(sessionId);
+  if (!record || record.state !== "ok") return null;
+  const folder = await currentOrderDropboxFolderPath(client, record);
+  if (!folder) return null;
+  const candidate = `${folder}/${name}`;
+  if (candidate.toLowerCase() === stored.toLowerCase()) return null;
+  try {
+    const { bytes } = await client.download(candidate);
+    console.info(`${LOG} file found in order folder`, { sessionId: sessionId.slice(-8) });
+    return { bytes: new Uint8Array(bytes), path: candidate, fallback: true };
+  } catch (e) {
+    if (e instanceof DropboxApiError && e.notFound) return null;
+    throw e;
+  }
+}

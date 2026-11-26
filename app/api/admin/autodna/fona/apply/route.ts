@@ -11,6 +11,7 @@ import { markAutodnaAutoApplied } from "@/lib/autodna-auto";
 import { readAutodnaAutoStatus, readAutodnaPdf } from "@/lib/autodna-auto-store";
 import { runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { getDropboxClient } from "@/lib/dropbox-client";
+import { downloadOrderDropboxFile } from "@/lib/order-dropbox";
 import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     const client = getDropboxClient();
     if (client) {
       try {
-        bytes = new Uint8Array((await client.download(status.pdf.dropboxPath)).bytes);
+        bytes = (await downloadOrderDropboxFile(client, sessionId, status.pdf.dropboxPath))?.bytes ?? null;
       } catch {
         bytes = null;
       }

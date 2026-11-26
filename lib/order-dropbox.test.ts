@@ -24,6 +24,7 @@ vi.mock("@vercel/blob", () => ({
 vi.mock("@/lib/dropbox-client", async (orig) => ({ ...(await orig<typeof import("@/lib/dropbox-client")>()), getDropboxClient: () => h.client ?? null }));
 
 import {
+  downloadOrderDropboxFile,
   ensureOrderDropboxFolder,
   moveOrderDropboxFolderToCategory,
   readOrderDropboxRecord,
@@ -298,5 +299,57 @@ describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar ve
     expect(moved).toEqual([[`${oldPath}/LTAB - AB1235.pdf`, `${newPath}/LTAB - AB1235.pdf`]]);
     expect(deleted).toEqual([oldPath]);
     expect(saved.path).toBe(`${newPath}/LTAB - AB1235.pdf`);
+  });
+});
+
+describe("PDF pēc saglabātā ceļa, kad dubultmapes apvienotas (Nils 26.11)", () => {
+  function withFiles(dbx: ReturnType<typeof fakeDropbox>, files: Record<string, number[]>) {
+    const downloads: string[] = [];
+    const client = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      async download(p: string) {
+        downloads.push(p);
+        const f = files[p];
+        if (!f) throw new DropboxApiError(409, "path/not_found/..");
+        return { bytes: Buffer.from(f), entry: null };
+      },
+    } as unknown as DropboxClient;
+    return { client, downloads };
+  }
+
+  it("ceļš derīgs - lasa to pašu, rezervi nemeklē", async () => {
+    const dbx = fakeDropbox();
+    const { client, downloads } = withFiles(dbx, { "/_PROv/AUDITI/X/LTAB - AB1.pdf": [1, 2] });
+    const got = await downloadOrderDropboxFile(client, "cs_test_dl1", "/_PROv/AUDITI/X/LTAB - AB1.pdf");
+    expect(got).toEqual({ bytes: new Uint8Array([1, 2]), path: "/_PROv/AUDITI/X/LTAB - AB1.pdf", fallback: false });
+    expect(downloads).toHaveLength(1);
+  });
+
+  it("vecā mape pārvietota uz arhīvu - fails atrasts pasūtījuma kanoniskajā mapē pēc nosaukuma", async () => {
+    const dbx = fakeDropbox();
+    const r = await ensureOrderDropboxFolder("cs_test_dl2", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00002", client: dbx.client });
+    dbx.byId.set(r!.folderId!, "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI");
+    const canon = "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf";
+    const { client } = withFiles(dbx, { [canon]: [7] });
+    const got = await downloadOrderDropboxFile(client, "cs_test_dl2", "/_PROv/DILERA DATI/WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf");
+    expect(got).toEqual({ bytes: new Uint8Array([7]), path: canon, fallback: true });
+    // Saknes mape («Auto VIN») - tas pats.
+    const got2 = await downloadOrderDropboxFile(client, "cs_test_dl2", "/_PROv/Auto WBAJB5101HWA00002/LTAB - BM0002.pdf");
+    expect(got2?.path).toBe(canon);
+  });
+
+  it("nav ne pa ceļu, ne kanoniskajā mapē / nav ieraksta - null", async () => {
+    const dbx = fakeDropbox();
+    await ensureOrderDropboxFolder("cs_test_dl3", { category: "audits", createdMs: created, vin: "AB0003", client: dbx.client });
+    const { client } = withFiles(dbx, {});
+    expect(await downloadOrderDropboxFile(client, "cs_test_dl3", "/_PROv/Auto AB0003/CarVertical - X.pdf")).toBeNull();
+    expect(await downloadOrderDropboxFile(client, "cs_test_noreq", "/_PROv/Auto AB0004/CarVertical - X.pdf")).toBeNull();
+  });
+
+  it("cita Dropbox kļūda (ne not_found) netiek noslēpta", async () => {
+    const dbx = fakeDropbox();
+    const client = { ...dbx.client, download: async () => { throw new DropboxApiError(503, "x"); } } as unknown as DropboxClient;
+    await expect(downloadOrderDropboxFile(client, "cs_test_dl5", "/_PROv/a.pdf")).rejects.toThrow();
   });
 });
