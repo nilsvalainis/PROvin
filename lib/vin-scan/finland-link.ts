@@ -23,6 +23,14 @@ const FI_TEXT_SOURCES = [
   "esyn",
   "biluppgifter",
   "mnt_ee",
+  // 26.11: izsoles, sludinājums un maksas atskaišu priekšskatījumi ar FI valsti (Traficom automātikas palaidējs).
+  "listing_history",
+  "thecarapi_eu",
+  "carfax_eu",
+  "bid_cars",
+  "joj_copart_iaai",
+  "autodna_precheck",
+  "checkcar_vin",
 ] as const;
 
 const SOURCE_LABEL: Record<(typeof FI_TEXT_SOURCES)[number], string> = {
@@ -34,10 +42,17 @@ const SOURCE_LABEL: Record<(typeof FI_TEXT_SOURCES)[number], string> = {
   esyn: "esyn.dk",
   biluppgifter: "biluppgifter.se",
   mnt_ee: "mnt.ee",
+  listing_history: "Sludinājums",
+  thecarapi_eu: "Izsole (TheCarApi)",
+  carfax_eu: "CARFAX",
+  bid_cars: "bid.cars",
+  joj_copart_iaai: "Copart/IAAI",
+  autodna_precheck: "AutoDNA",
+  checkcar_vin: "CheckCar.VIN",
 };
 
 const FI_WORD =
-  /(?:^|[^A-Za-zĀ-žÄÖäö])(?:somij[aāe]?|finland(?:e)?|suomi|finnish)(?:[^A-Za-zĀ-žÄÖäö]|$)/i;
+  /(?:^|[^A-Za-zĀ-žÄÖäö])(?:somij[aāe]?|finland(?:e)?|finnland|suomi|finnish)(?:[^A-Za-zĀ-žÄÖäö]|$)/i;
 /** FI tikai kā vesels, reģistrjutīgs tokens. Domēna gali (.fi) un VIN burti neskaitās. */
 const FI_CODE = /(?<![A-Za-z0-9.])FI(?![A-Za-z0-9])/;
 
