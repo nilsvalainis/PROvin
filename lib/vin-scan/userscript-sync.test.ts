@@ -205,9 +205,11 @@ describe("userscript admin lapā: ielāde no pārlūka (from browser)", () => {
         vin: VIN,
         at,
         rows: [
-          { id: "stat_vin", ...browserFetchLane("stat_vin") },
+          { id: "carfax_eu", ...browserFetchLane("carfax_eu") },
           { id: "nicb", ...browserFetchLane("nicb") },
           { id: "bid_cars", status: "found", summary: "Ir izsoles ieraksts" },
+          // Saišu avots (26.11): vecā momentuzņēmuma rinda skriptu vairs neiedarbina.
+          { id: "stat_vin", ...browserFetchLane("stat_vin") },
         ],
       }),
     );
@@ -216,7 +218,7 @@ describe("userscript admin lapā: ielāde no pārlūka (from browser)", () => {
     const marker = new FakeElement("span", { attrs });
     const run = runUserscriptAt(ADMIN_ORDER, { elements: [marker] });
     expect(run.gm.xhr.map((req) => req.url).sort()).toEqual(
-      [vinScanCatalogItem("stat_vin").openUrl(VIN), vinScanCatalogItem("nicb").openUrl(VIN)].sort(),
+      [vinScanCatalogItem("carfax_eu").openUrl(VIN), vinScanCatalogItem("nicb").openUrl(VIN)].sort(),
     );
   });
 

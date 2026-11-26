@@ -78,6 +78,20 @@ export function carfaxCountriesLine(perCountry: Record<string, number>): string 
     .join(", ");
 }
 
+/**
+ * Valstis «Valstis» kartītei: tikai ISO divburtu kodi (bez «EU» kopsummas), plus pašreizējā valsts.
+ * CARFAX lieto «uk» - kartītē tas pats, ko DVSA/«UK».
+ */
+export function carfaxCountryCodes(perCountry: Record<string, number>, presentCountry = ""): string[] {
+  const out: string[] = [];
+  for (const raw of [...Object.keys(perCountry), presentCountry]) {
+    const code = raw.trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code) || code === "EU") continue;
+    if (!out.includes(code)) out.push(code);
+  }
+  return out;
+}
+
 /** `kind` no releja: found (200 ar recordCheck) vai none (422/404 - šim VIN ierakstu nav). */
 export function vinScanParseFromCarfax(kind: "found" | "none", json: unknown, openUrl: string): VinScanParse {
   const data = kind === "found" ? parseCarfaxRecordCheck(json) : null;
@@ -107,10 +121,13 @@ export function vinScanParseFromCarfax(kind: "found" | "none", json: unknown, op
   ]
     .filter(Boolean)
     .join("\n");
+  const countryCodes = carfaxCountryCodes(data.recordsPerCountry, data.presentCountry);
   return {
     status: "found",
     summary: `${n} ${ierakstiWord(n)} CARFAX priekšskatījumā${countries ? ` (${countries})` : ""}`,
     detail,
     openUrl,
+    ...(data.make || data.model ? { vehicle: { make: data.make, model: data.model, year: "" } } : {}),
+    ...(countryCodes.length ? { flags: { countries: countryCodes } } : {}),
   };
 }

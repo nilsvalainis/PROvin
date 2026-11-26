@@ -10,6 +10,7 @@ import {
   traficomVehicleInfoUrl,
   vinScanFastSourceIds,
   vinScanPipelineSourceIds,
+  vinScanSourceLinkOnly,
 } from "@/lib/vin-scan/catalog";
 import { parseCsddTechDataXml } from "@/lib/csdd-tech-data";
 import { emptyVinSourceResult } from "@/lib/vin-sources/types";
@@ -96,7 +97,9 @@ describe("vin scan catalog", () => {
       hint: "AUTO1/Openlane/BCA/Autorola arhīvs",
     });
     expect(vinScanPipelineSourceIds()).toEqual(
-      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "thecarapi_eu" && id !== "vegvesen"),
+      VIN_SCAN_SOURCE_IDS.filter(
+        (id) => id !== "joj_copart_iaai" && id !== "thecarapi_eu" && id !== "vegvesen" && !vinScanSourceLinkOnly(id),
+      ),
     );
     expect(vinScanPipelineSourceIds()).not.toContain("thecarapi_eu");
     expect(vinScanPipelineSourceIds()).not.toContain("vegvesen");

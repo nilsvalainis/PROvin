@@ -76,6 +76,48 @@ export function fetchTjekbilDmrRaw(vin: string): Promise<{ status: number; text:
   });
 }
 
+export type TjekbilExtras = {
+  mileagelogs: TjekbilMileageLog[] | null;
+  wanted: unknown[] | null;
+  rapex: unknown;
+};
+
+function capped<T>(job: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    job.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
+/**
+ * VIN SCAN: nobraukuma žurnāls, meklēto TL vēsture un RAPEX (tie paši galapunkti, ko pasūtījuma sēkla),
+ * bez nummerplade.net. Katra daļa nav obligāta: pēc `capMs` paliek tas, kas atnāca.
+ */
+export async function fetchTjekbilExtras(dmr: TjekbilDmrResponse, capMs = 4_000): Promise<TjekbilExtras> {
+  const kid = tjekbilKid(dmr);
+  if (!kid) return { mileagelogs: null, wanted: null, rapex: null };
+  const empty = { status: 0, data: null };
+  const [mileageRes, wantedRes, rapexRes] = await Promise.all([
+    capped(getJson<TjekbilMileageLog[]>(`${BASE}/vehicles/mileagelogs?dmrId=${kid}`), capMs, empty),
+    capped(getJson<unknown[]>(`${BASE}/wanted-vehicles/getwantedvehiclehistory?dmrId=${kid}`), capMs, empty),
+    capped(getJson<unknown>(`${BASE}/rapex/alerts?dmrId=${kid}`), capMs, empty),
+  ]);
+  return {
+    mileagelogs: Array.isArray(mileageRes.data) ? mileageRes.data : null,
+    wanted: Array.isArray(wantedRes.data) ? wantedRes.data : null,
+    rapex: rapexRes.data,
+  };
+}
+
 export async function fetchTjekbil(vin: string): Promise<VinSourceFetchResult> {
   const raw = await fetchTjekbilDmrRaw(vin);
   let data: TjekbilDmrResponse | null = null;

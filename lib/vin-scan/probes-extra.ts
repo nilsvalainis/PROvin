@@ -328,7 +328,11 @@ function fromBrowser(id: VinScanBrowserFetchId, ctx: VinScanContext): VinScanInd
   return done(id, ctx, { ...browserFetchLane(id), openUrl: url });
 }
 
+/** NICB ir tikai ASV datubāze. Ne-ASV/Kanādas/Meksikas VIN to neprasa (citādi viltus «iespējams zagts»). */
+export const NICB_NOT_US_SUMMARY = "NICB attiecas tikai uz ASV auto";
+
 export async function probeNicb(ctx: VinScanContext): Promise<VinScanIndicator> {
+  if (!isUsWmiVin(ctx.vin)) return done("nicb", ctx, { status: "skipped", summary: NICB_NOT_US_SUMMARY });
   return fromBrowser("nicb", ctx);
 }
 

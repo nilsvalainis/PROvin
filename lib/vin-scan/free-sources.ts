@@ -9,6 +9,7 @@ import {
   VIN_SCAN_REMOVED_IDS,
   VIN_SCAN_SOURCE_IDS,
   vinScanSourceDisabled,
+  vinScanSourceLinkOnly,
   type VinScanSourceId,
 } from "@/lib/vin-scan/catalog";
 
@@ -46,12 +47,16 @@ export function isFreeVinScanSourceId(id: string): boolean {
 }
 
 export function freeVinScanSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => isFreeVinScanSourceId(id) && !vinScanSourceDisabled(id));
+  return VIN_SCAN_SOURCE_IDS.filter(
+    (id) => isFreeVinScanSourceId(id) && !vinScanSourceDisabled(id) && !vinScanSourceLinkOnly(id),
+  );
 }
 
 /** Automātiskais pasūtījuma / quick-eval / VIN SCAN (bez maksas) avotu saraksts. */
 export function vinScanAutoSourceIds(opts: { sourceIds?: readonly string[] } = {}): VinScanSourceId[] {
-  const wanted = (opts.sourceIds ?? []).filter((id): id is VinScanSourceId => isFreeVinScanSourceId(id));
+  const wanted = (opts.sourceIds ?? []).filter(
+    (id): id is VinScanSourceId => isFreeVinScanSourceId(id) && !vinScanSourceLinkOnly(id),
+  );
   if (wanted.length) return wanted;
   return freeVinScanSourceIds();
 }

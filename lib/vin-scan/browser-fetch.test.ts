@@ -10,6 +10,7 @@ import {
   browserImportErrorLv,
   parseVinScanBrowserEventDetail,
 } from "@/lib/vin-scan/browser-fetch";
+import { vinScanSourceLinkOnly } from "@/lib/vin-scan/catalog";
 
 describe("VIN SCAN from browser", () => {
   it("deviņi bloķētie avoti un stat.vin ir from browser, bez 403", () => {
@@ -62,10 +63,13 @@ describe("VIN SCAN from browser", () => {
       { id: "carvertical", status: "manual", summary: "Līdz pogai" },
     ]);
     expect(handoff?.token).toBe(`${vin}:${at}`);
-    expect(handoff?.ids).toEqual([...VIN_SCAN_BROWSER_FETCH_IDS]);
+    // Saišu avoti (stat.vin, BidFax, Poctra u.c., 26.11) vecos momentuzņēmumos skripts vairs neatver.
+    const auto = VIN_SCAN_BROWSER_FETCH_IDS.filter((id) => !vinScanSourceLinkOnly(id));
+    expect(auto).toEqual(["bid_cars", "carfax_eu", "nicb"]);
+    expect(handoff?.ids).toEqual(auto);
     expect(handoff?.attrs["data-provin-browser-fetch"]).toBe(`${vin}:${at}`);
-    expect(handoff?.attrs["data-provin-browser-fetch-ids"]).toBe(VIN_SCAN_BROWSER_FETCH_IDS.join(","));
-    expect(handoff?.attrs["data-provin-stat-vin-fetch"]).toBe(`${vin}:${at}`);
+    expect(handoff?.attrs["data-provin-browser-fetch-ids"]).toBe(auto.join(","));
+    expect(handoff?.attrs["data-provin-stat-vin-fetch"]).toBeUndefined();
     expect(
       browserFetchHandoff(vin, at, [{ id: "stat_vin", status: "found", summary: browserFetchSummary("stat_vin") }]),
     ).toBeNull();
