@@ -17,10 +17,12 @@ import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults, type Workspac
 import { mergeImportedPhotoGroups } from "@/lib/auction-photo-group-merge";
 import { CC_VIN_MAX_PHOTOS, makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { cronSecretGate } from "@/lib/cron-bearer";
+import { completeStripeEvent, releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe-store";
 import { getSiteOrigin } from "@/lib/email/mail-config";
 import {
   applyVinScanImportsToBlocks,
   buildOrderAutoIntakePush,
+  orderAutoIntakeLockKey,
   orderAutoIntakeScanInputFromCsdd,
   ORDER_AUTO_INTAKE_PHOTO_MIN_MS,
 } from "@/lib/order-auto-intake-core";
@@ -156,6 +158,26 @@ export async function runOrderAutoIntake(sessionId: string, input: OrderAutoInta
   const vin = isValidVin(vinRaw) ? vinRaw : isValidVin(csddVin) ? csddVin : "";
   if (!vin) return { ok: false, reason: "no_vin" };
 
+  // Idempotence (atkārtots webhook, fona maršruts, cron numurs → VIN, admina poga): viena palaišana
+  // katram pasūtījumam + VIN. Kopīgā Blob atslēga (kā Stripe dedupe): «claimed» 15 min, «done» 72 h.
+  const lockKey = orderAutoIntakeLockKey(sessionId, vin);
+  if (!(await tryBeginStripeEvent(lockKey))) return { ok: true, reason: "already_ran" };
+  try {
+    const result = await runOrderAutoIntakeLocked(sessionId, vin, seededBlocks, input);
+    await completeStripeEvent(lockKey);
+    return result;
+  } catch (err) {
+    await releaseStripeEvent(lockKey);
+    throw err;
+  }
+}
+
+async function runOrderAutoIntakeLocked(
+  sessionId: string,
+  vin: string,
+  seededBlocks: WorkspaceSourceBlocks,
+  input: OrderAutoIntakeInput,
+): Promise<OrderAutoIntakeResult> {
   // 1) VIN SCAN pēc CSDD: LV numurzīme + precīzs 1. reģistrācijas datums.
   const scanInput = orderAutoIntakeScanInputFromCsdd(seededBlocks.csdd);
   const scan = await runOrderFreeVinScan(sessionId, {
@@ -256,4 +278,23 @@ export async function dispatchOrderAutoIntake(
     console.warn(LOG, "dispatch failed", err instanceof Error ? err.message : "unknown");
     return false;
   }
+}
+
+/** Inline rezerve, ja fona maršrutā nodot neizdodas (izsaucējam savs 300 s budžets). */
+export const ORDER_AUTO_INTAKE_FALLBACK_INLINE_MS = 200_000;
+
+/**
+ * Pēc VIN atrašanas no numurzīmes (cron / admina poga): automātika ar savu budžetu fona maršrutā;
+ * ja nevar nodot - šeit pat ar ierobežotu termiņu. Dubultu palaišanu aptur `runOrderAutoIntake` atslēga.
+ */
+export async function startOrderAutoIntake(
+  sessionId: string,
+  body: { vin: string; listingUrl?: string | null; skipPush?: boolean },
+): Promise<"background" | OrderAutoIntakeResult> {
+  if (canDispatchOrderAutoIntake() && (await dispatchOrderAutoIntake(sessionId, body))) return "background";
+  return runOrderAutoIntake(sessionId, {
+    ...body,
+    trigger: "background",
+    deadlineAt: Date.now() + ORDER_AUTO_INTAKE_FALLBACK_INLINE_MS,
+  });
 }

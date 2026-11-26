@@ -6,6 +6,7 @@ import {
   applyVinScanImportsToBlocks,
   buildOrderAutoIntakePush,
   decideOrderAutoIntakeMode,
+  orderAutoIntakeLockKey,
   orderAutoIntakeScanInputFromCsdd,
   ORDER_AUTO_INTAKE_FUNCTION_BUDGET_MS,
 } from "@/lib/order-auto-intake-core";
@@ -52,6 +53,17 @@ describe("webhook laika budžets (maxDuration 300 s)", () => {
     const route = src("app/api/cron/order-auto-intake/route.ts");
     expect(route).toMatch(/export const maxDuration = 300/);
     expect(route).toMatch(/orderAutoIntakeRouteGate/);
+  });
+
+  it("numurs → VIN (#1248) iet caur to pašu automātiku, nevis atsevišķu VIN SCAN; atslēga pasūtījumam + VIN", () => {
+    const plate = src("lib/order-plate-vin-resolve.ts");
+    expect(plate).not.toMatch(/runOrderFreeVinScan\(/);
+    expect(plate).toMatch(/startOrderAutoIntake\(/);
+    const webhook = src("app/api/webhooks/stripe/route.ts");
+    expect(webhook).toMatch(/runDownstream: false/);
+    const key = orderAutoIntakeLockKey("cs_live_a1B2", "wba5r1c0xlfh42873");
+    expect(key).toBe("auto-intake_cs_live_a1B2_WBA5R1C0XLFH42873");
+    expect(key).toMatch(/^[a-zA-Z0-9._-]{1,200}$/);
   });
 
   it("automātika neko nepērk: nav AutoDNA / CarVertical / CARFAX / OneAuto pirkuma izsaukumu", () => {

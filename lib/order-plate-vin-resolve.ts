@@ -24,7 +24,7 @@ import {
   classifyOrderVinOrPlateInput,
   type OrderVinPlateResolution,
 } from "@/lib/order-vin-plate-resolution";
-import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
+import { startOrderAutoIntake } from "@/lib/order-auto-intake";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 
 export type ResolveOrderVinFromPlateResult = {
@@ -239,7 +239,7 @@ export const DEALER_NO_VIN_RETRY_MS = 10 * 60 * 1000;
 
 /**
  * Pēc atrastā VIN - tā pati plūsma kā pasūtījumam ar VIN: bezmaksas avotu sēkla (CSDD, sludinājums,
- * EE/DK/SE), bezmaksas VIN SCAN, dīlera datu ielase (tikai, ja pasūtījumam jau ir dīlera darbs),
+ * EE/DK/SE), tad automātika pēc apmaksas (bezmaksas VIN SCAN + imports blokos + push), dīlera datu ielase (tikai, ja pasūtījumam jau ir dīlera darbs),
  * Dropbox mapes nosaukums ar VIN. Citus maksas avotus šeit nepalaiž.
  */
 export async function runOrderDownstreamAfterPlateVin(
@@ -259,13 +259,17 @@ export async function runOrderDownstreamAfterPlateVin(
           return false;
         })
       : Promise.resolve(false);
-  const [dealerQueued] = await Promise.all([
-    dealerQueue,
-    Promise.allSettled([
-      seedPaidOrderAutoSources(sessionId, { vin, listingUrl }),
-      runOrderFreeVinScan(sessionId, { vin, listingUrl }),
-    ]),
-  ]);
+  // Tā pati secība kā Stripe webhook (#1225): vispirms CSDD/bezmaksas sēkla, tad automātika pēc apmaksas
+  // (VIN SCAN ar LV numurzīmi + imports blokos + push). Automātika ir idempotenta (viena reize pasūtījumam + VIN).
+  const intakeRun = (async () => {
+    await seedPaidOrderAutoSources(sessionId, { vin, listingUrl }).catch((err) =>
+      console.error("[plate→vin] seed:", err),
+    );
+    await startOrderAutoIntake(sessionId, { vin, listingUrl, skipPush: Boolean(dealerJob) }).catch((err) =>
+      console.error("[plate→vin] auto intake:", err),
+    );
+  })();
+  const [dealerQueued] = await Promise.all([dealerQueue, intakeRun]);
   await ensureOrderDropboxFolderSafe(sessionId, { vin });
   return { dealerQueued };
 }

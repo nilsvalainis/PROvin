@@ -18,6 +18,16 @@ vi.mock("@/lib/admin-order-draft-store", () => ({
     return { ok: true };
   }),
 }));
+const locks = new Map<string, "claimed" | "done">();
+vi.mock("@/lib/stripe-webhook-dedupe-store", () => ({
+  tryBeginStripeEvent: vi.fn(async (key: string) => {
+    if (locks.has(key)) return false;
+    locks.set(key, "claimed");
+    return true;
+  }),
+  completeStripeEvent: vi.fn(async (key: string) => void locks.set(key, "done")),
+  releaseStripeEvent: vi.fn(async (key: string) => void locks.delete(key)),
+}));
 vi.mock("@/lib/admin-push", () => ({
   sendAdminPush: vi.fn(async (msg: unknown) => {
     state.pushes.push(msg);
@@ -73,6 +83,7 @@ describe("runOrderAutoIntake (fona automātika pēc apmaksas)", () => {
     state.patches = [];
     state.scanArgs = [];
     state.pushes = [];
+    locks.clear();
     thecarapiMerge.mockReset();
     vi.stubEnv("THECARAPI_API_KEY", "");
   });
@@ -102,6 +113,31 @@ describe("runOrderAutoIntake (fona automātika pēc apmaksas)", () => {
     expect(state.pushes).toHaveLength(0);
     const none = await runOrderAutoIntake("cs_test_3", { vin: "", trigger: "webhook", deadlineAt: Date.now() + 200_000 });
     expect(none).toEqual({ ok: false, reason: "no_vin" });
+  });
+
+  it("idempotence: atkārtots webhook / fona maršruts tam pašam pasūtījumam + VIN nepalaiž otrreiz", async () => {
+    const { runOrderAutoIntake } = await import("@/lib/order-auto-intake");
+    const a = runOrderAutoIntake("cs_test_5", { vin: VIN, trigger: "webhook", deadlineAt: Date.now() + 200_000 });
+    const b = runOrderAutoIntake("cs_test_5", { vin: VIN, trigger: "background", deadlineAt: Date.now() + 200_000 });
+    const [ra, rb] = await Promise.all([a, b]);
+    expect([ra.reason, rb.reason].filter((r) => r === "already_ran")).toHaveLength(1);
+    expect(state.scanArgs).toHaveLength(1);
+    expect(state.pushes).toHaveLength(1);
+    const again = await runOrderAutoIntake("cs_test_5", { vin: VIN, trigger: "background", deadlineAt: Date.now() + 200_000 });
+    expect(again).toEqual({ ok: true, reason: "already_ran" });
+    expect(state.scanArgs).toHaveLength(1);
+  });
+
+  it("kļūdas gadījumā atslēga atbrīvota - nākamais mēģinājums drīkst palaist", async () => {
+    const { runOrderFreeVinScan } = await import("@/lib/order-vin-scan-run");
+    vi.mocked(runOrderFreeVinScan).mockRejectedValueOnce(new Error("boom"));
+    const { runOrderAutoIntake } = await import("@/lib/order-auto-intake");
+    await expect(
+      runOrderAutoIntake("cs_test_6", { vin: VIN, trigger: "webhook", deadlineAt: Date.now() + 200_000 }),
+    ).rejects.toThrow("boom");
+    const r = await runOrderAutoIntake("cs_test_6", { vin: VIN, trigger: "background", deadlineAt: Date.now() + 200_000 });
+    expect(r.ok).toBe(true);
+    expect(r.reason).toBeUndefined();
   });
 
   it("maz laika līdz termiņam - foto un TheCarApi nesāk", async () => {

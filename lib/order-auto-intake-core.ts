@@ -26,6 +26,11 @@ export const ORDER_AUTO_INTAKE_INLINE_MIN_MS = 150_000;
 /** Mazāk par šo līdz termiņam - foto un TheCarApi galeriju vairs nesāk (bloki jau saglabāti). */
 export const ORDER_AUTO_INTAKE_PHOTO_MIN_MS = 40_000;
 
+/** Idempotences atslēga (Stripe dedupe krātuvē): viena automātikas palaišana pasūtījumam + VIN. */
+export function orderAutoIntakeLockKey(sessionId: string, vin: string): string {
+  return `auto-intake_${sessionId.trim()}_${vin.trim().toUpperCase()}`.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+}
+
 export type OrderAutoIntakeMode = "inline" | "background";
 
 /** Webhook: vai pēc CSDD sēklas pietiek laika palikt šajā izsaukumā. */
