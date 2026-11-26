@@ -74,6 +74,11 @@ export type DealerSendBridge = {
     /** Serveris ieraksta sūtījumu klienta saziņas žurnālā. */
     dealerSend?: { situation: DealerSendSituation; offer: boolean; review: boolean };
   }) => Promise<{ sentTo: string; dealerMarks?: OrderClientMarks }>;
+  /**
+   * Pēc veiksmīgas dīlera datu (PDF) nosūtīšanas e-pastā: saglabā melnrakstu un atgriežas uz pasūtījumu sarakstu.
+   * Atgriež kļūdas tekstu, ja saglabāšana neizdevās (tad paliek pasūtījumā).
+   */
+  onDealerDataSent?: (info: { sentTo: string }) => Promise<string | null>;
 };
 
 type Props = {
@@ -463,6 +468,10 @@ export function AdminDealerSendDialog({
           dealerSend: sendFlags(),
         });
         await finish(`E-pasts ar PDF nosūtīts uz ${r.sentTo}.`, r.dealerMarks ?? null);
+        if (bridge.onDealerDataSent) {
+          const navErr = await bridge.onDealerDataSent({ sentTo: r.sentTo });
+          if (navErr) window.alert(navErr);
+        }
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Neizdevās nosūtīt.");
       } finally {

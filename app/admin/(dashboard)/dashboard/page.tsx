@@ -16,6 +16,7 @@ import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton"
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
+import { AdminOrdersListFlash } from "@/components/admin/AdminOrdersListFlash";
 import { AdminUnpaidOrdersPanel } from "@/components/admin/AdminUnpaidOrdersPanel";
 import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
 import { listUnpaidAdminOrders, stripeCheckoutSessionDashboardUrl } from "@/lib/admin-unpaid-orders";
@@ -294,7 +295,7 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="w-full max-w-none">
-      {null}
+      <AdminOrdersListFlash />
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm max-md:mx-4 max-md:mt-2 max-md:rounded-[14px] max-md:px-3 max-md:py-2 ${

@@ -182,7 +182,7 @@ import {
 } from "@/lib/admin-workspace-persist-client";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   analyzeVinAndKm,
   segmentTextForPreview,
@@ -199,6 +199,7 @@ import {
 import { attachPdfTextsToVendorBlocks } from "@/lib/vendor-damage-hydrate";
 import {
   buildClientReportDocumentHtml,
+  dealerExtraAvailability,
   isIzvilkumsReport,
   type ClientReportLang,
   type ClientReportPayload,
@@ -325,6 +326,15 @@ import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { AdminDealerExtraMenu } from "@/components/admin/AdminDealerExtraMenu";
+import { ADMIN_ORDERS_LIST_HREF, dealerSentFlashText, writeOrdersListFlash } from "@/lib/admin-orders-list-flash";
+import { AdminReportPreviewDialog, type ReportPreviewHtml } from "@/components/admin/AdminReportPreviewDialog";
+import {
+  DEALER_EXTRA_VENDOR_KEYS,
+  normalizeDealerExtra,
+  type DealerExtraAvailability,
+  type DealerExtraKey,
+} from "@/lib/dealer-pdf-extra";
 import { AdminOtherPdfMenu, orderOtherPdfEntries } from "@/components/admin/AdminOtherPdfMenu";
 import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
 import {
@@ -942,6 +952,7 @@ export function OrderDetailWorkspace({
   const [conflictNotice, setConflictNotice] = useState<string | null>(null);
   const workspaceRevisionConflictRef = useRef(false);
   const pathname = usePathname();
+  const router = useRouter();
   const pathnameRef = useRef(pathname);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
   const portfolioRef = useRef<PortfolioEntry[]>([]);
@@ -1053,6 +1064,19 @@ export function OrderDetailWorkspace({
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
   const pdfBusyRef = useRef(false);
   const pdfTargetRef = useRef(0);
+  /** Dīlera PDF «+ Extra» (Nils 26.11): tikai lapas stāvoklis - pasūtījumā netiek saglabāts, sākumā tukšs. */
+  const [dealerExtra, setDealerExtraState] = useState<DealerExtraKey[]>([]);
+  const dealerExtraRef = useRef<DealerExtraKey[]>([]);
+  const setDealerExtra = useCallback((next: DealerExtraKey[]) => {
+    const clean = normalizeDealerExtra(next);
+    dealerExtraRef.current = clean;
+    setDealerExtraState(clean);
+  }, []);
+  const [reportPreview, setReportPreview] = useState<{
+    busy: boolean;
+    html: ReportPreviewHtml | null;
+    error: string | null;
+  } | null>(null);
   const [pdfJob, setPdfJob] = useState<{ key: string; pct: number } | null>(null);
   const [factCheckByField, setFactCheckByField] = useState<Record<string, FactCheckResult>>({});
   const [factCheckBusy, setFactCheckBusy] = useState<Record<string, boolean>>({});
@@ -4330,12 +4354,14 @@ export function OrderDetailWorkspace({
     /** "Sūtīt atskaiti": tas pats HTML, PDF top serverī ar Chromium; rezultāts nonāk `onServerPdf`. */
     serverPdf?: boolean;
     onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
+    /** «Priekšskats»: tas pats payload kā PDF (bez foto, tulkojuma, faktu pārbaudes) - PDF netiek veidots. */
+    preview?: (payload: ClientReportPayload) => void;
   }) => {
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
     let phonePre: SyncOpenedWindow | null = null;
     // Servera PDF (`serverPdf`) logu neizmanto - rezultātu atver izsaucējs (citādi telefonā lieks tukšs logs).
-    if (phoneStack && !opts?.serverPdf) {
+    if (phoneStack && !opts?.serverPdf && !opts?.preview) {
       phonePre = openWindowSyncThen();
       if (!phonePre.writeHtml(PDF_PREPARING_HTML)) phonePre = null;
     }
@@ -4343,7 +4369,9 @@ export function OrderDetailWorkspace({
     const closePhonePre = () => {
       if (!phonePreUsed) phonePre?.close();
     };
-    if (factCheckPdfSkipRef.current) {
+    if (opts?.preview) {
+      /* Priekšskats nav sūtīšana - faktu pārbaude pie PDF. */
+    } else if (factCheckPdfSkipRef.current) {
       factCheckPdfSkipRef.current = false;
     } else {
       const cur = wsPersistRef.current;
@@ -4408,6 +4436,7 @@ export function OrderDetailWorkspace({
       }
     }
     const pdfJobKey = [
+      opts?.preview ? "preview" : "",
       opts?.dealerOnly
         ? "dealer"
         : opts?.asvOnly
@@ -4439,6 +4468,15 @@ export function OrderDetailWorkspace({
     const asvOnly = opts?.asvOnly === true;
     const businessBrand = opts?.businessBrand === true;
     const isolate = dealerOnly || asvOnly;
+    const preview = Boolean(opts?.preview);
+    // Dīlera PDF «EXTRA»: izvēle tikai lapas stāvoklī (nesaglabājas); maksas avoti nekad.
+    const dealerExtra = dealerOnly ? normalizeDealerExtra(dealerExtraRef.current) : [];
+    const extraOn = (k: DealerExtraKey) => dealerExtra.includes(k);
+    const extraVendorTitles = new Set(
+      DEALER_EXTRA_VENDOR_KEYS.filter((k) => extraOn(k)).map((k) => SOURCE_BLOCK_LABELS[k]),
+    );
+    const extraNeedsSourcePhotos =
+      extraVendorTitles.size > 0 || extraOn("csdd") || extraOn("ltab") || extraOn("citi_avoti");
     const reportLangEarly: ClientReportLang = opts?.lang ?? "lv";
     let lvServiceWorks: AutoRecordsServiceWorkRow[] | null = null;
     if (
@@ -4482,7 +4520,7 @@ export function OrderDetailWorkspace({
 
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
-    if (!isolate && listingUrl) {
+    if (!isolate && listingUrl && !preview) {
       try {
         const res = await fetch("/api/admin/scrape-listing", {
           method: "POST",
@@ -4511,7 +4549,7 @@ export function OrderDetailWorkspace({
     const photoIds = [...(coverPhotoId ? [coverPhotoId] : []), ...galleryPhotoIds];
     const listingAnalysisPhotoDataUrls = new Map<string, string>();
     let resolvedPhotoIds = galleryPhotoIds;
-    if (!isolate && photoIds.length > 0) {
+    if (!isolate && !preview && photoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/listing-analysis-photo/pdf-batch", {
           method: "POST",
@@ -4550,7 +4588,7 @@ export function OrderDetailWorkspace({
     const autoRecordsPhotoIds = (listingBlocks.auto_records.photos ?? []).map((p) => p.id);
     const autoRecordsPhotoDataUrls = new Map<string, string>();
     let resolvedAutoRecordsPhotoIds = autoRecordsPhotoIds;
-    if (autoRecordsPhotoIds.length > 0 && !asvOnly) {
+    if (autoRecordsPhotoIds.length > 0 && !asvOnly && !preview) {
       try {
         const res = await fetch("/api/admin/auto-records-photo/pdf-batch", {
           method: "POST",
@@ -4588,7 +4626,7 @@ export function OrderDetailWorkspace({
     const ccVinPhotoIds = (listingBlocks.cc_vin.photos ?? []).map((p) => p.id);
     const ccVinPhotoDataUrls = new Map<string, string>();
     let resolvedCcVinPhotoIds = ccVinPhotoIds;
-    if (!isolate && ccVinPhotoIds.length > 0) {
+    if ((!isolate || extraOn("cc_vin")) && !preview && ccVinPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/cc-vin-photo/pdf-batch", {
           method: "POST",
@@ -4623,7 +4661,7 @@ export function OrderDetailWorkspace({
     const asvPhotoIds = (listingBlocks.asv.photos ?? []).map((p) => p.id);
     const asvPhotoDataUrls = new Map<string, string>();
     let resolvedAsvPhotoIds = asvPhotoIds;
-    if (!dealerOnly && asvPhotoIds.length > 0) {
+    if ((!dealerOnly || extraOn("asv")) && !preview && asvPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/asv-photo/pdf-batch", {
           method: "POST",
@@ -4657,7 +4695,7 @@ export function OrderDetailWorkspace({
 
     const incidentPhotoIds = (wsPersistRef.current.incidentPhotos ?? []).map((p) => p.id);
     const incidentPhotoDataUrls = new Map<string, string>();
-    if (!isolate && incidentPhotoIds.length > 0) {
+    if (!isolate && !preview && incidentPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/incident-photo/pdf-batch", {
           method: "POST",
@@ -4681,7 +4719,7 @@ export function OrderDetailWorkspace({
 
     const sourceBlockPhotoIds = collectWorkspaceSourceBlockPhotoIds(listingBlocks);
     const sourceBlockPhotoDataUrls = new Map<string, string>();
-    if (!isolate && sourceBlockPhotoIds.length > 0) {
+    if ((!isolate || extraNeedsSourcePhotos) && !preview && sourceBlockPhotoIds.length > 0) {
       try {
         const res = await fetch("/api/admin/source-block-photo/pdf-batch", {
           method: "POST",
@@ -4702,7 +4740,9 @@ export function OrderDetailWorkspace({
       }
     }
 
-    let manualVendorBlocks = isolate ? [] : toPdfManualVendorBlocks(blocksDisplaySafe);
+    let manualVendorBlocks = isolate
+      ? toPdfManualVendorBlocks(blocksDisplaySafe).filter((b) => extraVendorTitles.has(b.title))
+      : toPdfManualVendorBlocks(blocksDisplaySafe);
     const portfolioPdfs = isolate
       ? []
       : portfolio.filter((p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name));
@@ -4726,18 +4766,19 @@ export function OrderDetailWorkspace({
       ...payload,
       ...flatSources,
       ...(isolate
-        ? { csdd: "", ltab: "", tirgus: "", citi: "" }
+        ? { csdd: extraOn("csdd") ? flatSources.csdd : "", ltab: "", tirgus: "", citi: "" }
         : {}),
-      csddForm: isolate ? undefined : blocksDisplaySafe.csdd,
+      csddForm: isolate && !extraOn("csdd") ? undefined : blocksDisplaySafe.csdd,
       tirgusForm: isolate ? undefined : blocksDisplaySafe.tirgus,
       manualVendorBlocks,
       carfaxBlock: isolate ? null : toPdfCarfaxBlock(blocksDisplaySafe.carfax),
-      manualLtabBlock: isolate ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
+      manualLtabBlock:
+        isolate && !extraOn("ltab") ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
       autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
       oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
-      ccVinBlock: isolate ? null : ccVinForPdf,
-      asvBlock: dealerOnly ? null : asvForPdf,
-      citiAvoti: isolate ? null : blocksDisplaySafe.citi_avoti,
+      ccVinBlock: isolate && !extraOn("cc_vin") ? null : ccVinForPdf,
+      asvBlock: dealerOnly && !extraOn("asv") ? null : asvForPdf,
+      citiAvoti: isolate && !extraOn("citi_avoti") ? null : blocksDisplaySafe.citi_avoti,
       listingAnalysis: isolate ? null : listingAnalysisForPdf,
       iriss: isolate ? "" : ws.iriss,
       apskatesPlāns: isolate ? "" : ws.apskatesPlāns,
@@ -4750,6 +4791,7 @@ export function OrderDetailWorkspace({
           ? ASV_ONLY_PDF_VISIBILITY
           : pdfVisibility,
       pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : businessBrand ? "business" : "full",
+      dealerExtra: dealerOnly ? dealerExtra : null,
       pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
       manualBanners: dealerOnly ? [] : manualBanners,
       internalComment: isolate ? "" : internalCommentDraft,
@@ -4759,6 +4801,11 @@ export function OrderDetailWorkspace({
       odometerAnomalyOverrides,
       dealerMajorWorkOverrides,
     };
+
+    if (opts?.preview) {
+      opts.preview(reportPayload);
+      return;
+    }
 
     let finalPayload = reportPayload;
     bumpPdf(46);
@@ -4884,6 +4931,76 @@ export function OrderDetailWorkspace({
         setPdfJob((cur) => (cur?.key === pdfJobKey ? null : cur));
       }, 700);
     }
+  };
+
+  /** «+ Extra» izvēlne: kurām bezmaksas sadaļām ir dati (aprēķina tikai atverot izvēlni). */
+  const getDealerExtraItems = useCallback(
+    (selected: readonly DealerExtraKey[]): DealerExtraAvailability[] => {
+      try {
+        return dealerExtraAvailability(
+          {
+            ...payload,
+            ...blocksToLegacyFlatFields(blocksDisplaySafe),
+            csddForm: blocksDisplaySafe.csdd,
+            autoRecordsBlock: blocksDisplaySafe.auto_records,
+            oneautoBlock: blocksDisplaySafe.oneauto,
+            ccVinBlock: blocksDisplaySafe.cc_vin,
+            asvBlock: blocksDisplaySafe.asv,
+            citiAvoti: blocksDisplaySafe.citi_avoti,
+            manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+            manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
+            pdfVisibility: DEALER_ONLY_PDF_VISIBILITY,
+            pdfReportKind: "dealer",
+            odometerAnomalyOverrides,
+            iriss: "",
+            apskatesPlāns: "",
+            tehniskoRiskuAnalize: "",
+            cenasAtbilstiba: "",
+          } as ClientReportPayload,
+          selected,
+        );
+      } catch (e) {
+        console.warn("[dealer-extra]", e);
+        return [];
+      }
+    },
+    [payload, blocksDisplaySafe, odometerAnomalyOverrides],
+  );
+
+  const closeReportPreview = useCallback(() => setReportPreview(null), []);
+
+  /** «Priekšskats»: tas pats payload kā PDF -> servera HTML fragments (bez Chromium) iframe logā. */
+  const openReportPreview = (kind: "dealer" | "full") => {
+    if (pdfBusyRef.current) return;
+    setReportPreview({ busy: true, html: null, error: null });
+    let called = false;
+    void openPrintReport({
+      ...(kind === "dealer" ? { dealerOnly: true } : {}),
+      preview: (reportPayload) => {
+        called = true;
+        void (async () => {
+          try {
+            const res = await fetch("/api/admin/report-preview", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payload: reportPayload }),
+            });
+            const data = (await res.json().catch(() => ({}))) as { html?: ReportPreviewHtml; error?: string };
+            if (!res.ok || !data.html) throw new Error(data.error || `HTTP ${res.status}`);
+            setReportPreview((cur) => (cur ? { busy: false, html: data.html!, error: null } : cur));
+          } catch (e) {
+            setReportPreview((cur) =>
+              cur ? { busy: false, html: null, error: `Priekšskats neizdevās (${e instanceof Error ? e.message : "kļūda"}).` } : cur,
+            );
+          }
+        })();
+      },
+    })
+      .catch(() => undefined)
+      .then(() => {
+        if (!called) setReportPreview((cur) => (cur ? { busy: false, html: null, error: "Priekšskats neizdevās." } : cur));
+      });
   };
 
   const openOemDealerReport = async () => {
@@ -5592,8 +5709,24 @@ export function OrderDetailWorkspace({
     isDealerHighlightAdminOrder({ checkoutLine: payload.checkoutLine, amountTotalCents: payload.amountTotal }) ||
     isDealerDataAutoFetchOrder({ checkoutLine: payload.checkoutLine, amountTotalCents: payload.amountTotal });
 
+  /**
+   * Pēc «Sūtīt klientam» (dīlera dati ar PDF) - vispirms saglabā melnrakstu (#1216: nekas nepazūd),
+   * tad atgriežas uz pasūtījumu sarakstu ar īsu apstiprinājumu. Ja saglabāšana neizdodas - paliek šeit.
+   */
+  const returnToOrdersAfterDealerSend = async (): Promise<string | null> => {
+    syncWsPersistRefFromState();
+    if (orderDraftPersistenceEnabled) {
+      const saved = await flushWorkspaceServerPatch({ showFlash: false });
+      if (!saved) return "Nosūtīts, bet melnraksts nav saglabāts - paliec pasūtījumā un nospied «Saglabāt».";
+    }
+    writeOrdersListFlash(dealerSentFlashText(payload.vin));
+    router.push(ADMIN_ORDERS_LIST_HREF);
+    return null;
+  };
+
   /** Dīlera bloks «Sūtīt klientam»: tas pats servera PDF un sūtīšanas ceļš kā «Sūtīt atskaiti». */
   const dealerSendBridge: DealerSendBridge = {
+    onDealerDataSent: () => returnToOrdersAfterDealerSend(),
     customerPhoneDigits: whatsappPhoneDigits ?? null,
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
@@ -6462,6 +6595,10 @@ export function OrderDetailWorkspace({
         onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
         onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
         onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
+        dealerExtra={dealerExtra}
+        onDealerExtraChange={setDealerExtra}
+        getDealerExtraItems={getDealerExtraItems}
+        onPreview={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
         pdfProgressKey={pdfJob?.key ?? null}
         pdfProgressPct={pdfJob?.pct ?? null}
         onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
@@ -7494,8 +7631,31 @@ export function OrderDetailWorkspace({
               openOemDealerReport: () => void openOemDealerReport(),
             })}
           />
+          <AdminDealerExtraMenu
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            getItems={getDealerExtraItems}
+            selected={dealerExtra}
+            onChange={setDealerExtra}
+          />
+          <button
+            type="button"
+            data-report-preview-button
+            disabled={pdfJob !== null}
+            onClick={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
+            className={`inline-flex h-9 shrink-0 items-center rounded-lg px-3 text-[11px] font-semibold tracking-tight disabled:opacity-40 ${PDF_FOOTER_NEUTRAL_TONE}`}
+          >
+            Priekšskats
+          </button>
         </div>
       </div>
+      <AdminReportPreviewDialog
+        open={reportPreview !== null}
+        vin={vinBar}
+        html={reportPreview?.html ?? null}
+        busy={reportPreview?.busy === true}
+        error={reportPreview?.error ?? null}
+        onClose={closeReportPreview}
+      />
       {factCheckPublishItems && typeof document !== "undefined"
         ? createPortal(
             <AdminFactCheckPublishConfirm

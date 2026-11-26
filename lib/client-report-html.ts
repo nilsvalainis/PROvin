@@ -289,6 +289,20 @@ import {
   mergePdfVisibility,
   type PdfVisibilitySettings,
 } from "@/lib/pdf-visibility";
+import {
+  DEALER_EXTRA_PDF_ICONS,
+  DEALER_EXTRA_PDF_TITLES,
+  DEALER_EXTRA_SECTION_TITLE,
+  dealerExtraCombinedVisibility,
+  dealerExtraSourceKeys,
+  dealerExtraSourcesOnlyVisibility,
+  normalizeDealerExtra,
+  type DealerExtraAvailability,
+  type DealerExtraKey,
+  type DealerExtraSourceKey,
+  DEALER_EXTRA_ADMIN_LABELS,
+  DEALER_EXTRA_KEYS,
+} from "@/lib/dealer-pdf-extra";
 import { type OneautoBlockState } from "@/lib/oneauto-block";
 import { OFFICIAL_DEALER_SECTION_TITLE, oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
@@ -486,6 +500,8 @@ export type ClientReportPayload = {
   pdfVisibility?: PdfVisibilitySettings | null;
   /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI. `business`: pilna atskaite ar BUSINESS virsrakstu. */
   pdfReportKind?: "full" | "dealer" | "asv" | "business";
+  /** Dīlera PDF «EXTRA · Papildu dati» - izvēlētās bezmaksas sadaļas (tikai atmiņā, netiek saglabāts). */
+  dealerExtra?: DealerExtraKey[] | null;
   /** Stripe checkout līnija - dīlera-only pret AUDITS/MINI zarošanai. */
   checkoutLine?: string | null;
   partnerId?: string | null;
@@ -1149,6 +1165,22 @@ function sectionHeadBrand(icon: string, title: string, badgeHtml = ""): string {
     ? `<span class="pdf-sec-brand-mark" aria-hidden="true">${icon}</span>`
     : `<span class="pdf-sec-ico-wrap" aria-hidden="true">${icon}</span>`;
   return `<div class="pdf-sec-head pdf-sec-head--brand">${iconWrap}<h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
+}
+
+/**
+ * EXTRA (dīlera PDF): sadaļas pirmā virsraksta logo un avota nosaukums -> vispārīga ikona + datu veids.
+ * Arī ligzdotie zīmolu logo virsrakstos tiek aizstāti ar vispārīgu ikonu.
+ */
+export function genericizeSectionHead(html: string, iconHtml: string, title: string): string {
+  const head = `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap" aria-hidden="true">${iconHtml}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>`;
+  const replaced = html.replace(
+    /<div class="pdf-sec-head pdf-sec-head--brand">[\s\S]*?<h2 class="pdf-sec pdf-sec--nobar">[\s\S]*?<\/h2>/,
+    () => head,
+  );
+  return replaced.replace(
+    /<span class="pdf-sec-brand-mark" aria-hidden="true">[\s\S]*?<\/span>(?=<h[23])/g,
+    () => `<span class="pdf-sec-ico-wrap" aria-hidden="true">${iconHtml}</span>`,
+  );
 }
 
 /** Avota sadaļas ārējā klase - augšmalas akcents avota krāsā (tā pati krāsa kā nobraukuma svītriņai). */
@@ -2783,8 +2815,14 @@ function buildAvotuDatiSectionHtml(
   asvPhotoDataUrls?: Map<string, string>,
   sourceBlockPhotoDataUrls?: Map<string, string>,
   lang: ClientReportLang = "lv",
+  opts: {
+    /** Nobraukuma mini-grafikiem - kuri avoti skaitās (EXTRA: dīleris + izvēlētie). */
+    sparkVis?: PdfVisibilitySettings;
+    /** EXTRA: sadaļas secība/atlase pēc atslēgām un vispārīgs virsraksts katrai. */
+    extra?: { keys: readonly DealerExtraSourceKey[]; lang: ClientReportLang };
+  } = {},
 ): string {
-  const sparkCtx = collectPdfMileageSparkContext(p, vis);
+  const sparkCtx = collectPdfMileageSparkContext(p, opts.sparkVis ?? vis);
   const spark = (key: MileagePdfSourceKey) => sourceMileageSparkHtml(sparkCtx, key);
 
   const csdd = buildCsddAvotuSubsection(
@@ -2843,6 +2881,31 @@ function buildAvotuDatiSectionHtml(
   const lkfEe = vendorHtml(SOURCE_BLOCK_LABELS.lkf_ee);
   const carinfo = vendorHtml(SOURCE_BLOCK_LABELS.carinfo);
   const traficomFi = vendorHtml(SOURCE_BLOCK_LABELS.traficom_fi);
+
+  if (opts.extra) {
+    const byKey: Record<DealerExtraSourceKey, string> = {
+      csdd,
+      ltab,
+      cc_vin: ccVin,
+      tjekbil,
+      mnt_ee: mntEe,
+      lkf_ee: lkfEe,
+      carinfo,
+      traficom_fi: traficomFi,
+      finnik: vis.finnik ? vendorHtml(SOURCE_BLOCK_LABELS.finnik) : "",
+      asv,
+      citi_avoti: citiAvoti,
+    };
+    const extraLang = opts.extra.lang;
+    return opts.extra.keys
+      .map((k) =>
+        byKey[k]
+          ? genericizeSectionHead(byKey[k], sectionIconPdfHtml(DEALER_EXTRA_PDF_ICONS[k]), DEALER_EXTRA_PDF_TITLES[k][extraLang])
+          : "",
+      )
+      .filter(Boolean)
+      .join("\n");
+  }
 
   const stack = [
     csdd,
@@ -4210,6 +4273,219 @@ ${pdfDocFooterCss()}
 }
 
 /** Admin ķeksītis «Izvilkums» (pdfVisibility.izvilkums); dīlera un ASV atskaitēm nav. */
+/** Izsoļu pārdošanas rindām - noslēguma cena no izsoles ieraksta (nevis publiskā cena ar maksām). */
+function withAuctionPricesPayload(src: ClientReportPayload): ClientReportPayload {
+  return src.ccVinBlock?.thecarapiRecords?.length
+    ? {
+        ...src,
+        ccVinBlock: {
+          ...src.ccVinBlock,
+          sales: salesWithAuctionFinalPrice(src.ccVinBlock.sales ?? [], src.ccVinBlock.thecarapiRecords),
+        },
+      }
+    : src;
+}
+
+/** Tā pati redzamība, ko lieto PDF dokuments (dīlera / ASV / pilnā). */
+function resolveReportDocVisibility(p: ClientReportPayload): PdfVisibilitySettings {
+  const savedVis = mergePdfVisibility(p.pdfVisibility);
+  if (isDealerOnlyReport(p)) {
+    return {
+      ...DEALER_ONLY_PDF_VISIBILITY,
+      autoRecordsOilInterval: savedVis.autoRecordsOilInterval,
+      autoRecordsEquipment: savedVis.autoRecordsEquipment,
+    };
+  }
+  if (isAsvOnlyReport(p)) return ASV_ONLY_PDF_VISIBILITY;
+  return savedVis;
+}
+
+function mileageOptsForVisibility(p: ClientReportPayload, vis: PdfVisibilitySettings): CollectUnifiedMileageOptions {
+  return {
+    omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
+    omitAutoRecords: !dealerPdfVisible(p, vis),
+    omitCcVin: !vis.cc_vin,
+    omitAsv: !vis.asv,
+    omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
+    omitListingMileage: !vis.sludinajums,
+  };
+}
+
+/** Dīlera PDF EXTRA: izvēle no payload; tukša, ja nav dīlera atskaite. */
+function dealerExtraOf(p: ClientReportPayload): DealerExtraKey[] {
+  return isDealerOnlyReport(p) ? normalizeDealerExtra(p.dealerExtra) : [];
+}
+
+/**
+ * NOBRAUKUMA VĒSTURE + NEGADĪJUMU VĒSTURE tieši tā, kā tās drukājas PDF (pilnā atskaite vai dīlera EXTRA).
+ * Lieto gan PDF dokuments, gan admin «Priekšskats» - abos vienāda redzamība un avotu atlase.
+ */
+export function buildReportHistoryTablesHtml(
+  rawPayload: ClientReportPayload,
+  incidentPhotoDataUrls?: Map<string, string>,
+): { mileageHtml: string; incidentsHtml: string } {
+  const p = withAuctionPricesPayload(rawPayload);
+  const vis = resolveReportDocVisibility(p);
+  if (isDealerOnlyReport(p)) {
+    const extra = dealerExtraOf(p);
+    if (extra.length === 0) return { mileageHtml: "", incidentsHtml: "" };
+    const cv = dealerExtraCombinedVisibility(vis, extra);
+    // Tikai dīleris + izvēlētie bezmaksas avoti; maksas avoti un admin komentāri nekad.
+    const pX = payloadForPdfVisibility({ ...p, carfaxBlock: null }, cv);
+    const mileageHtml = cv.unifiedMileage
+      ? buildUnifiedMileageTableHtml({ ...pX, mileageComment: "" }, mileageOptsForVisibility(pX, cv))
+      : "";
+    const incidentsHtml = cv.unifiedIncidents
+      ? buildUnifiedIncidentsTableHtml(
+          { ...pX, internalComment: "", incidentPhotoGroups: [], incidentPhotos: [] },
+          cv,
+        )
+      : "";
+    return { mileageHtml, incidentsHtml };
+  }
+  if (isAsvOnlyReport(p)) return { mileageHtml: "", incidentsHtml: "" };
+  const pVis = payloadForPdfVisibility(p, vis, { keepCsdd: true });
+  const mileageHtml = buildUnifiedMileageTableHtml(
+    vis.mileageComment ? p : { ...p, mileageComment: "" },
+    mileageOptsForVisibility(p, vis),
+  );
+  const incidentsHtml = buildUnifiedIncidentsTableHtml(
+    {
+      ...pVis,
+      internalComment: vis.incidentsSummary ? p.internalComment : "",
+      incidentPhotoGroups: vis.incidentPhotos ? p.incidentPhotoGroups : [],
+      incidentPhotos: vis.incidentPhotos ? p.incidentPhotos : [],
+    },
+    vis,
+    vis.incidentPhotos ? incidentPhotoDataUrls : undefined,
+  );
+  return { mileageHtml, incidentsHtml };
+}
+
+/** «EXTRA · Papildu dati» - dīlera PDF beigās (pirms kājenes). Tukšs, ja nekas nav izvēlēts vai nav datu. */
+function buildDealerExtraSectionHtml(
+  rawPayload: ClientReportPayload,
+  args: {
+    lang: ClientReportLang;
+    ccVinPhotoDataUrls?: Map<string, string>;
+    asvPhotoDataUrls?: Map<string, string>;
+    sourceBlockPhotoDataUrls?: Map<string, string>;
+  },
+): string {
+  const p = withAuctionPricesPayload(rawPayload);
+  const extra = dealerExtraOf(p);
+  if (extra.length === 0) return "";
+  const tables = buildReportHistoryTablesHtml(rawPayload);
+  const srcVis = dealerExtraSourcesOnlyVisibility(extra);
+  const cv = dealerExtraCombinedVisibility(resolveReportDocVisibility(p), extra);
+  const pSrc = payloadForPdfVisibility({ ...p, carfaxBlock: null }, srcVis);
+  const sourcesHtml = buildAvotuDatiSectionHtml(
+    pSrc,
+    srcVis,
+    undefined,
+    args.ccVinPhotoDataUrls,
+    args.asvPhotoDataUrls,
+    args.sourceBlockPhotoDataUrls,
+    args.lang,
+    { sparkVis: cv, extra: { keys: dealerExtraSourceKeys(extra), lang: args.lang } },
+  );
+  const parts = [tables.mileageHtml, tables.incidentsHtml, sourcesHtml].filter(Boolean);
+  if (parts.length === 0) return "";
+  const head = `<div class="pdf-page-flow-chunk pdf-dealer-extra-head" role="heading" aria-level="1">${sectionHeadBrand(
+    sectionIconPdfHtml("layers"),
+    DEALER_EXTRA_SECTION_TITLE[args.lang],
+  )}</div>`;
+  return `<div class="pdf-dealer-extra" data-dealer-extra="${escapeHtml(extra.join(","))}">${head}\n${parts.join("\n")}</div>`;
+}
+
+/**
+ * Admin izvēlne «+ Extra»: kurām sadaļām šim pasūtījumam ir dati un cik ierakstu (kopējām tabulām - ar pašreizējo
+ * avotu izvēli, jo tabulās nonāk tikai izvēlētie avoti + dīleris).
+ */
+export function dealerExtraAvailability(
+  rawPayload: ClientReportPayload,
+  selected: readonly DealerExtraKey[] = [],
+): DealerExtraAvailability[] {
+  const p = withAuctionPricesPayload({ ...rawPayload, pdfReportKind: "dealer", carfaxBlock: null });
+  const out: DealerExtraAvailability[] = [];
+  const badgeCount = (html: string): number => {
+    const m = html.match(/class="pdf-src-count-badge[^"]*">(\d+)/);
+    return m ? Number(m[1]) : 0;
+  };
+  for (const key of DEALER_EXTRA_KEYS) {
+    let count = 0;
+    let has = false;
+    if (key === "unifiedMileage" || key === "unifiedIncidents") {
+      const sel = normalizeDealerExtra([...selected.filter((k) => k !== "unifiedMileage" && k !== "unifiedIncidents"), key]);
+      const cv = dealerExtraCombinedVisibility(resolveReportDocVisibility(p), sel);
+      const pX = payloadForPdfVisibility(p, cv);
+      if (key === "unifiedMileage") {
+        const rows = prepareUnifiedMileageDisplayRows(
+          collectUnifiedMileageRows(
+            {
+              csddForm: pX.csddForm,
+              autoRecordsBlock: pX.autoRecordsBlock,
+              oneautoBlock: pX.oneautoBlock ?? null,
+              ccVinBlock: pX.ccVinBlock ?? null,
+              asvBlock: pX.asvBlock ?? null,
+              manualVendorBlocks: pX.manualVendorBlocks,
+              citiAvotiBlock: pX.citiAvoti ?? null,
+              tirgusForm: null,
+              listingUrl: null,
+            },
+            mileageOptsForVisibility(pX, cv),
+          ),
+        );
+        count = rows.length;
+      } else {
+        const collected = collectUnifiedIncidentRows({
+          manualVendorBlocks: pX.manualVendorBlocks ?? null,
+          manualLtabBlock: pX.manualLtabBlock ?? null,
+          ccVinBlock: cv.cc_vin ? pX.ccVinBlock ?? null : null,
+          asvBlock: cv.asv ? pX.asvBlock ?? null : null,
+        });
+        count = collected.length
+          ? aggregateUnifiedIncidents(collected, collectUnifiedIncidentDamageDetails(pX.manualVendorBlocks ?? null)).uniqueCount
+          : 0;
+      }
+      has = count > 0;
+    } else {
+      const sel: DealerExtraKey[] = [key];
+      const srcVis = dealerExtraSourcesOnlyVisibility(sel);
+      const html = buildAvotuDatiSectionHtml(
+        payloadForPdfVisibility(p, srcVis),
+        srcVis,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "lv",
+        { extra: { keys: [key], lang: "lv" } },
+      );
+      has = html.trim().length > 0;
+      count = has ? badgeCount(html) : 0;
+    }
+    if (has) out.push({ key, label: DEALER_EXTRA_ADMIN_LABELS[key], count });
+  }
+  return out;
+}
+
+/** Admin «Priekšskats»: cilnes saturs ar PDF CSS (bez Chromium, bez PDF faila). */
+export type ReportPreviewTab = "all" | "mileage" | "incidents";
+
+export function buildReportPreviewDocumentHtml(payload: ClientReportPayload, tab: ReportPreviewTab = "all"): string {
+  const { mileageHtml, incidentsHtml } = buildReportHistoryTablesHtml(payload);
+  const parts =
+    tab === "mileage" ? [mileageHtml] : tab === "incidents" ? [incidentsHtml] : [mileageHtml, incidentsHtml];
+  const body = parts.filter(Boolean).join("\n") || '<p class="pdf-preview-empty">Nav datu</p>';
+  return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>${clientReportPrintCss()}
+${CLIENT_REPORT_SCREEN_A4_CSS}
+.pdf-preview-empty{font:500 13px Inter,system-ui,sans-serif;color:#b42318;padding:24px 4px;}
+</style></head><body class="provin-report-doc"><div class="sheet">${body}</div></body></html>`;
+}
+
 export function isIzvilkumsReport(p: Pick<ClientReportPayload, "pdfVisibility" | "pdfReportKind">): boolean {
   if (p.pdfReportKind === "dealer" || p.pdfReportKind === "asv") return false;
   return mergePdfVisibility(p.pdfVisibility).izvilkums === true;
@@ -4245,17 +4521,7 @@ export function buildClientReportDocumentHtml(args: {
     sourceBlockPhotoDataUrls,
     printInk = false,
   } = args;
-  // Izsoļu pārdošanas rindām - noslēguma cena no izsoles ieraksta (nevis publiskā cena ar maksām).
-  const withAuctionPrices = (src: ClientReportPayload): ClientReportPayload =>
-    src.ccVinBlock?.thecarapiRecords?.length
-      ? {
-          ...src,
-          ccVinBlock: {
-            ...src.ccVinBlock,
-            sales: salesWithAuctionFinalPrice(src.ccVinBlock.sales ?? [], src.ccVinBlock.thecarapiRecords),
-          },
-        }
-      : src;
+  const withAuctionPrices = withAuctionPricesPayload;
   const p: ClientReportPayload = withAuctionPrices(rawPayload);
   // Fakti no oriģinālā (LV) payload pirms AI tulkojuma - skaitļi vienādi visās valodās (25.11).
   const pFacts: ClientReportPayload = rawPayload.factsSource
@@ -4268,16 +4534,7 @@ export function buildClientReportDocumentHtml(args: {
   const izvilkums = !dealerOnly && !asvOnly && isIzvilkumsReport(p);
   const includeLvSuffix = !b2bInternational;
   const logoSvg = provincLogoSvg({ includeLvSuffix });
-  const savedVis = mergePdfVisibility(p.pdfVisibility);
-  const vis = dealerOnly
-    ? {
-        ...DEALER_ONLY_PDF_VISIBILITY,
-        autoRecordsOilInterval: savedVis.autoRecordsOilInterval,
-        autoRecordsEquipment: savedVis.autoRecordsEquipment,
-      }
-    : asvOnly
-      ? ASV_ONLY_PDF_VISIBILITY
-      : savedVis;
+  const vis = resolveReportDocVisibility(p);
 
   const money =
     p.amountTotal == null
@@ -4384,31 +4641,9 @@ export function buildClientReportDocumentHtml(args: {
     const lifecycleHtml = buildPdfLifecycleTimelineHtml(pVisTimeline);
     if (lifecycleHtml) lines.push(lifecycleHtml);
 
-    const mileageOpts: CollectUnifiedMileageOptions = {
-      omitCsddMileage: !vis.csdd || !vis.csddMileageTable,
-      omitAutoRecords: !dealerPdfVisible(p, vis),
-      omitCcVin: !vis.cc_vin,
-      omitAsv: !vis.asv,
-      omitVendorBlockTitles: vendorTitlesOmittedForPdf(vis),
-      omitListingMileage: !vis.sludinajums,
-    };
-    const unifiedMileageHtml = buildUnifiedMileageTableHtml(
-      vis.mileageComment ? p : { ...p, mileageComment: "" },
-      mileageOpts,
-    );
-    if (unifiedMileageHtml) lines.push(unifiedMileageHtml);
-
-    const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(
-      {
-        ...pVis,
-        internalComment: vis.incidentsSummary ? p.internalComment : "",
-        incidentPhotoGroups: vis.incidentPhotos ? p.incidentPhotoGroups : [],
-        incidentPhotos: vis.incidentPhotos ? p.incidentPhotos : [],
-      },
-      vis,
-      vis.incidentPhotos ? incidentPhotoDataUrls : undefined,
-    );
-    if (unifiedIncidentsHtml) lines.push(unifiedIncidentsHtml);
+    const tables = buildReportHistoryTablesHtml(rawPayload, incidentPhotoDataUrls);
+    if (tables.mileageHtml) lines.push(tables.mileageHtml);
+    if (tables.incidentsHtml) lines.push(tables.incidentsHtml);
   }
 
   const avotuHtml = buildAvotuDatiSectionHtml(
@@ -4421,6 +4656,16 @@ export function buildClientReportDocumentHtml(args: {
     lang,
   );
   if (avotuHtml) lines.push(avotuHtml);
+
+  if (dealerOnly) {
+    const extraHtml = buildDealerExtraSectionHtml(rawPayload, {
+      lang,
+      ccVinPhotoDataUrls,
+      asvPhotoDataUrls,
+      sourceBlockPhotoDataUrls,
+    });
+    if (extraHtml) lines.push(extraHtml);
+  }
 
   const listingPriorityHtml = buildListingAnalysisPriorityHtml(
     p,
