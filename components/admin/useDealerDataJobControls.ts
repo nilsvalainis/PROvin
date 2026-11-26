@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  DEALER_REFUND_EMAIL_CHOICE_PROMPT,
   dealerRefundResultNotice,
   planDealerRefund,
   shouldOpenDealerRefundEmailSheet,
@@ -65,6 +64,8 @@ export function useDealerDataJobControls({
   const [notice, setNotice] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DealerSendMode | null>(null);
   const [marks, setMarksState] = useState<OrderClientMarks | null>(null);
+  /** B2C Stripe: «Atgriezt maksājumu» logs (Nils 26.11 - teksts redzams un labojams pirms naudas). */
+  const [refundDialog, setRefundDialog] = useState(false);
 
   const setJob = useCallback(
     (next: DealerDataJob | null) => {
@@ -168,14 +169,15 @@ export function useDealerDataJobControls({
   const refund = async () => {
     if (!editable || busy || !canRefund) return;
     const plan = planDealerRefund({ sessionId, walletRefund, job });
+    // B2C Stripe: nekāda atmaksa uzreiz - logs ar summu, kanālu, tekstu un priekšskatu.
+    if (plan.kind === "stripe") {
+      setNotice(null);
+      setRefundDialog(true);
+      return;
+    }
     if (!window.confirm(plan.confirmMessage)) {
       return;
     }
-    // C2: viens e-pasts - operators izvēlas, vai atmaksa iet ar e-pastu.
-    const requestBody =
-      plan.kind === "stripe"
-        ? { ...plan.requestBody, notifyEmail: window.confirm(DEALER_REFUND_EMAIL_CHOICE_PROMPT) }
-        : plan.requestBody;
     setBusy("refund");
     setNotice(null);
     try {
@@ -183,7 +185,7 @@ export function useDealerDataJobControls({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(plan.requestBody),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -201,13 +203,9 @@ export function useDealerDataJobControls({
           emailSent: body.emailSent,
           emailError: body.emailError,
           error: body.error,
-          emailSkipped: requestBody.notifyEmail === false && plan.kind === "stripe",
         }),
       );
-      if (
-        requestBody.notifyEmail !== false &&
-        shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })
-      ) {
+      if (shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })) {
         setDialog("no_data");
       }
     } catch {
@@ -216,6 +214,16 @@ export function useDealerDataJobControls({
       setBusy(null);
     }
   };
+
+  /** Atmaksas logs pabeidza (nauda atgriezta): atjauno darbu un saziņas atzīmes abos blokos. */
+  const onStripeRefunded = useCallback(
+    (next: DealerDataJob | null, nextMarks: OrderClientMarks | null, msg: string) => {
+      if (next) setJob(next);
+      if (nextMarks) setMarks(nextMarks);
+      setNotice(msg);
+    },
+    [setJob, setMarks],
+  );
 
   /**
    * Ēnu režīms: kvalitātes pārbaude vēlreiz (tikai spriedums, neko nesūta).
@@ -283,6 +291,9 @@ export function useDealerDataJobControls({
     setMarks,
     rerun,
     refund,
+    refundDialog,
+    setRefundDialog,
+    onStripeRefunded,
     refunded,
     showRefund,
     defaultSituation,

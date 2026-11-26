@@ -1131,6 +1131,8 @@ export async function sendDealerDataOperatorEmail(opts: {
   lang?: ClientReportLang;
   /** Dīlera «Sūtīt klientam»: statusa karte / fakti. Pielikumu izmērus pieliek šeit. */
   context?: OperatorEmailContext | null;
+  /** Sūta cilvēks (atmaksas logs): bez «nosūtīts automātiski» kājenē. */
+  humanSent?: boolean;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const b2bClient = opts.b2bClient === true;
@@ -1149,6 +1151,7 @@ export async function sendDealerDataOperatorEmail(opts: {
       text,
       b2bClient,
       lang,
+      ...(opts.humanSent ? { humanSent: true } : {}),
       context: opts.context
         ? {
             ...opts.context,
@@ -1177,6 +1180,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   b2bClient?: boolean;
   lang?: ClientReportLang;
   context?: OperatorEmailContext | null;
+  humanSent?: boolean;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");

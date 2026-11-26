@@ -906,6 +906,8 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
   b2bClient?: boolean;
   lang?: ClientReportLang;
   context?: OperatorEmailContext | null;
+  /** Sūta cilvēks (atmaksas logs): kājenē nav «nosūtīts automātiski». */
+  humanSent?: boolean;
 }): string {
   const title = (opts.title ?? "").trim();
   const b2bClient = opts.b2bClient === true;
@@ -1009,6 +1011,7 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
     lang,
     b2b: b2bClient,
     preheader: ctx ? (ctx.situation === "ready" ? STATUS_REPORT_READY[lang] : ctx.situation === "cancelled" ? STATUS_CANCELLED[lang] : STATUS_NO_DATA[lang]) : title || null,
+    ...(opts.humanSent ? { humanSent: true } : {}),
   });
 }
 
