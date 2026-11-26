@@ -400,7 +400,7 @@ export function nordicVinSearchLinks(vin: string): NordicVinSearchLink[] {
 
 export function vinDecodeParseFromLocal(decoded: VinDecode): VinScanParse {
   if (!decoded.ok) return { status: "none", summary: "VIN dekodēt neizdevās" };
-  const bits = [decoded.year, decoded.make, decoded.countryName].filter(Boolean);
+  const bits = [decoded.year, decoded.make].filter(Boolean);
   const detail = [
     decoded.wmi ? `WMI ${decoded.wmi}` : "",
     decoded.plant ? `rūpnīca ${decoded.plant}` : "",
@@ -410,15 +410,22 @@ export function vinDecodeParseFromLocal(decoded: VinDecode): VinScanParse {
     .join(" · ");
   return {
     status: "found",
-    summary: bits.join(" ") || decoded.wmi,
+    summary: vinDecodeSummary(bits.join(" "), decoded.countryName) || decoded.wmi,
     detail,
     vehicle: {
       make: decoded.make,
       model: decoded.model,
       year: decoded.year,
     },
-    flags: decoded.countryCode ? { registrationCountry: decoded.countryCode } : undefined,
+    // 26.11: WMI valsts = ražotājvalsts, ne reģistrācija (sk. lib/vin-scan/row-country.ts).
+    flags: decoded.countryCode ? { manufactureCountry: decoded.countryCode } : undefined,
   };
+}
+
+/** «2017 PEUGEOT 308 · Ražots: Francija» - ražotājvalsts tikai kā identitāte. */
+export function vinDecodeSummary(vehicleLine: string, countryName: string): string {
+  const made = countryName.trim() ? `Ražots: ${countryName.trim()}` : "";
+  return [vehicleLine.trim(), made].filter(Boolean).join(" · ");
 }
 
 /** vPIC bieži dod 1980. ciklu (B=1981), lokālais ISO 2010. ciklu (B=2011). */
@@ -447,13 +454,13 @@ export function mergeVinDecodeWithVpic(local: VinDecode, vpic: VinScanParse | nu
   const make = vpic.vehicle.make || base.vehicle?.make || "";
   const model = vpic.vehicle.model || base.vehicle?.model || "";
   const year = preferVinModelYear(base.vehicle?.year || local.year, vpic.vehicle.year);
-  const countryCode = local.countryCode || vpic.flags?.registrationCountry || "";
+  const countryCode = local.countryCode || vpic.flags?.manufactureCountry || "";
   const countryName = vinOriginCountryLabel(countryCode) || local.countryName;
   return {
     status: "found",
-    summary: [year, make, model, countryName].filter(Boolean).join(" "),
+    summary: vinDecodeSummary([year, make, model].filter(Boolean).join(" "), countryName),
     detail: [base.detail, vpic.detail].filter(Boolean).join("\n"),
     vehicle: { make, model, year },
-    flags: countryCode ? { registrationCountry: countryCode } : undefined,
+    flags: countryCode ? { manufactureCountry: countryCode } : undefined,
   };
 }

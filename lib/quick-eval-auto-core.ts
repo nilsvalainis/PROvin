@@ -17,6 +17,7 @@ import { AUDIT_PRICE_CENTS, DEALER_CATALOG_CENTS, formatEurFromCents } from "@/l
 import type { ProvinAlertBanner } from "@/lib/provin-alert-banners";
 import { formatSourceIssueLine, type SourceIssue } from "@/lib/source-consistency";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
+import { isManufactureCountrySource, vinScanRowRegistrationCountry } from "@/lib/vin-scan/row-country";
 
 /** Tas pats VIN pēdējās 24 h jau skenēts - VIN SCAN otrreiz nepalaiž (izmanto momentuzņēmumu). */
 export const QUICK_EVAL_SCAN_CACHE_MS = 24 * 60 * 60 * 1000;
@@ -241,8 +242,10 @@ export function vehicleCountries(indicators: readonly VinScanIndicator[]): strin
   const set = new Set<string>();
   for (const row of indicators) {
     if (row.status !== "found") continue;
+    // 26.11: WMI ražotājvalsts nav valsts, kur auto bijis (ne sarkanajiem karogiem, ne piedāvājumam).
+    if (isManufactureCountrySource(row.id)) continue;
     for (const c of row.flags?.countries ?? []) if (/^[A-Z]{2}$/.test(c)) set.add(c);
-    const reg = row.flags?.registrationCountry?.trim().toUpperCase();
+    const reg = vinScanRowRegistrationCountry(row);
     if (reg && /^[A-Z]{2}$/.test(reg)) set.add(reg);
   }
   return [...set].sort();

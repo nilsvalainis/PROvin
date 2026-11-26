@@ -82,6 +82,8 @@ export type VinScanFlags = {
   recallCount?: number;
   photoCount?: number;
   registrationCountry?: string;
+  /** Ražotājvalsts no WMI / VIN atšifrējuma (ISO2). Nav valsts, kur auto bijis (26.11). */
+  manufactureCountry?: string;
   /** Vairākas valstis, kur auto bijis (CARFAX.eu ierakstu sadalījums u.c.), ISO divburtu kodi. */
   countries?: string[];
   napJudgement?: string;
