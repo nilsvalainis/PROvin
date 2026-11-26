@@ -73,6 +73,20 @@ describe("ātro vērtējumu automātika - ieteikumi", () => {
     expect(r).toEqual({ id: "carfax", text: "Vēstures ieraksti no ārvalstīm (NL): 3 nobraukuma ieraksti, 2 tehniskās apskates", product: "audits" });
   });
 
+  it("Austrijas tehniskās apskates: skaits bez avota nosaukuma (26.11)", () => {
+    const row = buildVinScanIndicator("kfz_at", VIN, {
+      status: "found",
+      summary: "kfzgutachten.at: 6 atzinumi (13.11.2015, …)",
+      inspections: ["13.11.2015", "04.08.2016", "05.10.2017", "30.10.2018", "29.10.2019", "23.11.2020"].map((date) => ({ date })),
+    });
+    const recs = buildQuickEvalRecommendations(input({ indicators: [row] }));
+    const kfz = recs.find((r) => r.id === "kfz_at");
+    expect(kfz).toEqual({ id: "kfz_at", text: "Austrijas tehniskās apskates: 6 ieraksti", product: "audits" });
+    expect(kfz!.text).not.toMatch(QUICK_EVAL_SOURCE_NAME_RE);
+    const none = buildVinScanIndicator("kfz_at", VIN, { status: "none", summary: "kfzgutachten.at: nav ierakstu" });
+    expect(buildQuickEvalRecommendations(input({ indicators: [none] })).some((r) => r.id === "kfz_at")).toBe(false);
+  });
+
   it("nobraukuma pretruna LV auto - oficiālā reģistra izziņa", () => {
     const recs = buildQuickEvalRecommendations(input({ issues: [mileageIssue], blocks: blocks({ registrationNumber: "AB1234" }) }));
     expect(recs.map((r) => r.text)).toEqual(["Nobraukuma pretrunu var precizēt ar oficiālo reģistra izziņu"]);

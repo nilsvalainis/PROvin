@@ -13,7 +13,7 @@ import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } fro
 import { readSourceHealth } from "@/lib/source-health-store";
 import { emptySourceHealthDoc, type SourceHealthDoc } from "@/lib/source-health";
 import { vinScanBreakerState, vinScanBreakerSummary } from "@/lib/vin-scan/source-health-outcomes";
-import { createVinScanVehicleHint } from "@/lib/vin-scan/vehicle-hint";
+import { createVinScanFirstRegHint, createVinScanVehicleHint } from "@/lib/vin-scan/vehicle-hint";
 
 function timeoutMsFor(id: VinScanSourceId): number {
   return vinScanSourceTimeoutMs(id);
@@ -116,6 +116,12 @@ export async function runVinScan(
     : emptySourceHealthDoc();
   const hint = createVinScanVehicleHint(wanted.map((item) => item.id));
   ctx.vehicleHint = hint.wait;
+  // kfzgutachten.at: bez dota datuma gaida šī skenējuma CSDD 1. reģ. datumu (26.11 - visiem CSDD auto).
+  if (!ctx.firstRegDate && wanted.some((item) => item.id === "kfz_at")) {
+    const firstReg = createVinScanFirstRegHint(wanted.some((item) => item.id === "csdd"));
+    ctx.firstRegHint = firstReg.wait;
+    ctx.reportFirstReg = firstReg.report;
+  }
   return withVinScanRelayDedupe(async () => {
   const rows = await Promise.all(
     wanted.map(async (item) => {
@@ -133,9 +139,13 @@ export async function runVinScan(
         return row;
       };
       const missing = sourceNeedsInput(item.id, ctx);
-      if (missing) return finish(missing);
+      if (missing) {
+        if (item.id === "csdd") ctx.reportFirstReg?.("");
+        return finish(missing);
+      }
       const breaker = item.id === "vin_decode" ? null : vinScanBreakerState(health.sources[item.id], nowMs);
       if (breaker) {
+        if (item.id === "csdd") ctx.reportFirstReg?.("");
         return finish({
           ...buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: vinScanBreakerSummary(breaker) }, ctx.plates),
           breakerOpen: true,
@@ -148,8 +158,10 @@ export async function runVinScan(
       const ms = timeoutMsFor(item.id);
       try {
         const row = await runWithVinScanDeadline(Date.now() + ms, () => withTimeout(item.id, ctx, probe(ctx)));
+        if (item.id === "csdd") ctx.reportFirstReg?.("");
         return finish(row);
       } catch {
+        if (item.id === "csdd") ctx.reportFirstReg?.("");
         return finish(buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }, ctx.plates));
       }
     }),

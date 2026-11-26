@@ -45,7 +45,7 @@ describe("releja /vinsource klients", () => {
       env: ENV,
       fetchImpl: reply(200, { ok: true, kind: "blocked", note: "bid.cars: Cloudflare izaicinājums nenokrita" }),
     });
-    expect(blocked).toEqual({ ok: false, reason: "bid.cars: Cloudflare izaicinājums nenokrita" });
+    expect(blocked).toEqual({ ok: false, kind: "blocked", reason: "bid.cars: Cloudflare izaicinājums nenokrita" });
     const old = await fetchVinSourceViaRelay("bid_cars", VIN, { env: ENV, fetchImpl: reply(404, { ok: false, error: "nav" }) });
     expect(old).toEqual({ ok: false, reason: "Relejā vēl nav /vinsource (vajag releja deploy)" });
     const limit = await fetchVinSourceViaRelay("bid_cars", VIN, { env: ENV, fetchImpl: reply(429, { ok: false, error: "dienas limits 400" }) });
@@ -57,5 +57,31 @@ describe("releja /vinsource klients", () => {
     expect(
       vinScanParseFromVinSource("bid_cars", VIN, { ok: true, kind: "found", html: "<html><title>x</title></html>", cached: false }, "u"),
     ).toBeNull();
+  });
+
+  it("kfz_at: sūta VIN + datumu, saņem saraksta rindas; rinda (queued) -> ok:false ar iemeslu", async () => {
+    const KVIN = "WBAFB71080LV66575";
+    const calls: unknown[] = [];
+    const fetchImpl = (body: unknown) => async (_url: string, init?: RequestInit) => {
+      calls.push(JSON.parse(String(init?.body)));
+      return new Response(JSON.stringify(body), { status: 200 });
+    };
+    const got = await fetchVinSourceViaRelay("kfz_at", KVIN, {
+      env: ENV,
+      date: "20.08.2004",
+      fetchImpl: fetchImpl({
+        ok: true,
+        kind: "found",
+        rows: [{ date: "13.11.2015", model: "BMW X5", plate: "W 44154Z", vin: KVIN }, { date: "bad" }],
+      }),
+    });
+    expect(calls[0]).toEqual({ source: "kfz_at", vin: KVIN, date: "20.08.2004" });
+    expect(got).toMatchObject({ ok: true, kind: "found", rows: [{ date: "13.11.2015", plate: "W 44154Z", model: "BMW X5" }] });
+    const queued = await fetchVinSourceViaRelay("kfz_at", KVIN, {
+      env: ENV,
+      date: "20.08.2004",
+      fetchImpl: fetchImpl({ ok: true, kind: "queued", note: "kfzgutachten.at: rindā 1. - nolasīs ap 21:02" }),
+    });
+    expect(queued).toEqual({ ok: false, kind: "queued", reason: "kfzgutachten.at: rindā 1. - nolasīs ap 21:02" });
   });
 });

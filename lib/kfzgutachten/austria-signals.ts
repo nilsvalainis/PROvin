@@ -1,13 +1,14 @@
 /**
  * Austrijas pazīmes VIN SCAN rezultātos (26.11, Nils: «Austrijas dati netika automātiski aizpildīti un pārbaudīti»).
  *
- * kfzgutachten.at sarakstu serveris nolasīt nevar (Google reCAPTCHA Enterprise, to neapejam) un tam vajag
- * PRECĪZU 1. reģistrācijas datumu. Tāpēc automātika dara visu, ko var bez cilvēka: atrod Austrijas pazīmes,
- * saliek saiti ar VIN + datumu (+ pasūtījumu Tampermonkey tiltam) un SARKANI parāda, kas vēl jāizdara cilvēkam.
+ * 26.11 vēlāk: kfzgutachten.at sarakstu relejs mēģina nolasīt VISIEM auto ar VIN + precīzu 1. reģ. datumu
+ * (servera Chrome, reCAPTCHA neapiet). Ja neizdodas - «nav pārbaudīts» + saite ar VIN + datumu (+ pasūtījumu
+ * Tampermonkey tiltam); Austrijas pazīmes (CSDD iepriekšējā valsts, vēsture, izsole) to iekrāso SARKANI.
  * Tīras funkcijas (bez tīkla) - tās pašas Ātrajā pārbaudē, pasūtījumā, manuālajā pasūtījumā un Ātrajos vērtējumos.
  */
 
-import { kfzExactDateDdMmYyyy, kfzgutachtenSearchUrl } from "@/lib/kfzgutachten/kfzgutachten";
+import { kfzAtCountLv } from "@/lib/kfzgutachten/kfz-at-result";
+import { KFZ_AT_GUTACHTEN_PRICE_EUR, kfzExactDateDdMmYyyy, kfzgutachtenSearchUrl } from "@/lib/kfzgutachten/kfzgutachten";
 
 export const KFZ_AT_ROW_ID = "kfz_at";
 
@@ -19,6 +20,7 @@ type RowLike = {
   openUrl?: string | null;
   flags?: { registrationCountry?: string; countries?: readonly string[] } | null;
   auctions?: readonly { title?: string; venue?: string }[] | null;
+  inspections?: readonly { date?: string }[] | null;
 };
 
 const AT_TEXT_RE = /austrij|\baustria|österreich|oesterreich/i;
@@ -82,8 +84,12 @@ export type KfzAtViewState = {
   detail: string;
   /** Sarkans: Austrijas auto, bet saraksts vēl nav ielasīts. */
   risk: boolean;
-  /** Saraksts jau ielasīts pasūtījumā. */
+  /** Saraksts jau ielasīts pasūtījumā vai automātiski atrasts. */
   done: boolean;
+  /** Automātiskās pārbaudes rezultāts: found / none / "" (nav pārbaudīts). */
+  checked: "found" | "none" | "";
+  /** Atzinumu (apskašu) skaits. */
+  count: number;
 };
 
 /**
@@ -116,39 +122,61 @@ export function kfzAtViewState(input: {
   const date =
     kfzExactDateDdMmYyyy(input.firstRegDate) || kfzExactDateDdMmYyyy(input.csddFirstRegIso) || kfzExactDateDdMmYyyy(fromRow);
   const url = kfzgutachtenSearchUrl(input.vin, date, input.orderId);
-  const done = (input.listed ?? 0) > 0;
-  if (done) return { signals, date, url, status: `${input.listed} apskates ielasītas`, detail: "", risk: false, done };
+  const listed = input.listed ?? 0;
   const austria = signals.length > 0;
+  // 26.11: automātiskā pārbaude visiem auto ar VIN + 1. reģ. datumu (releja Chrome).
+  const found = row?.status === "found" ? (row.inspections ?? []).filter((i) => i.date) : [];
+  if (found.length > 0) {
+    return {
+      signals,
+      date,
+      url,
+      status: kfzAtCountLv(found.length),
+      detail: `${row?.summary ?? ""}${listed > 0 ? " · ielasīts pasūtījumā" : ""}`.trim(),
+      risk: false,
+      done: true,
+      checked: "found",
+      count: found.length,
+    };
+  }
+  if (listed > 0) {
+    return { signals, date, url, status: `${listed} apskates ielasītas`, detail: "", risk: false, done: true, checked: "", count: listed };
+  }
+  if (row?.status === "none") {
+    return { signals, date, url, status: "nav ierakstu", detail: date ? `ar 1. reģ. ${date}` : "", risk: false, done: false, checked: "none", count: 0 };
+  }
   if (!date) {
     return {
       signals,
       date,
       url,
-      status: "vajag 1. reģ. datumu",
-      detail: austria
-        ? `${signals.join(", ")} · automātiski nevar: nav precīza 1. reģ. datuma (TT.MM.GGGG) - ievadi Citi avoti «Austrija»`
-        : "",
+      status: "nav pārbaudīts",
+      detail: `${austria ? `${signals.join(", ")} · ` : ""}nav precīza 1. reģ. datuma (TT.MM.GGGG) - ievadi Citi avoti «Austrija»`,
       risk: austria,
-      done,
+      done: false,
+      checked: "",
+      count: 0,
     };
   }
+  const reason = /nav pārbaudīts\s*\(([^)]*)\)/.exec(row?.summary ?? "")?.[1] ?? "";
   return {
     signals,
     date,
     url,
-    status: "atver sarakstu",
-    detail: austria
-      ? `${signals.join(", ")} · automātiski nevar: reCAPTCHA - atver sarakstu un nospied «Suchen»`
-      : "bez maksas, tikai pārlūkā (reCAPTCHA)",
+    status: "nav pārbaudīts",
+    detail: `${austria ? `${signals.join(", ")} · ` : ""}${reason ? `${reason} - ` : ""}izmanto pārlūka joslu`,
     risk: austria,
-    done,
+    done: false,
+    checked: "",
+    count: 0,
   };
 }
 
-/** Push ziņas rinda pēc apmaksas (tikai, ja ir Austrijas pazīmes). */
+/** Push ziņas rinda pēc apmaksas: atrastie atzinumi vienmēr; nepārbaudīts - tikai, ja ir Austrijas pazīmes. */
 export function kfzAtPushLine(state: KfzAtViewState): string {
-  if (!state.signals.length || state.done) return "";
-  return state.date
-    ? "Austrija §57a: atver sarakstu pasūtījumā (reCAPTCHA - tikai pārlūkā)"
-    : "Austrija §57a: vajag precīzu 1. reģ. datumu";
+  if (state.checked === "found" && state.count > 0) {
+    return `Austrija §57a: ${kfzAtCountLv(state.count)} (atzinumus pērc pats, ${KFZ_AT_GUTACHTEN_PRICE_EUR} gab.)`;
+  }
+  if (!state.signals.length || state.done || state.checked === "none") return "";
+  return state.date ? "Austrija §57a: nav pārbaudīts - atver sarakstu pasūtījumā" : "Austrija §57a: vajag precīzu 1. reģ. datumu";
 }

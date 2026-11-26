@@ -17,7 +17,8 @@ import {
   kfzgutachtenSearchUrl,
 } from "@/lib/kfzgutachten/kfzgutachten";
 import { kfzFindingLineLv, parseKfzGutachtenText } from "@/lib/kfzgutachten/parse-gutachten";
-import { parseKfzAtProbe } from "@/lib/vin-scan/probe-kfz-at";
+import { parseKfzAtNoDate, parseKfzAtRelay } from "@/lib/vin-scan/probe-kfz-at";
+import { kfzAtCountLv, kfzAtListRowsFromInspections } from "@/lib/kfzgutachten/kfz-at-result";
 import { FAKE_VIN, GUTACHTEN_GLUED, GUTACHTEN_LINES, GUTACHTEN_OLDER } from "@/lib/kfzgutachten/__fixtures__/gutachten";
 
 describe("kfzgutachten.at datumi un saite", () => {
@@ -38,13 +39,56 @@ describe("kfzgutachten.at datumi un saite", () => {
     expect(kfzgutachtenSearchUrl(FAKE_VIN)).toBe(`https://kfzgutachten.at/?vin=${FAKE_VIN}&date=`);
   });
 
-  it("VIN SCAN rinda: bez datuma vajag datumu, ar datumu - tikai pārlūkā (reCAPTCHA)", () => {
-    expect(parseKfzAtProbe(FAKE_VIN, "").status).toBe("needs_input");
-    expect(parseKfzAtProbe(FAKE_VIN, "03.2006").status).toBe("needs_input");
-    const ok = parseKfzAtProbe(FAKE_VIN, "15.03.2006");
-    expect(ok.status).toBe("browser_only");
-    expect(ok.openUrl).toContain("date=15.03.2006");
-    expect(ok.summary).toMatch(/1,19 €/);
+  it("VIN SCAN rinda: bez datuma - nav pārbaudīts (vajag datumu)", () => {
+    const r = parseKfzAtNoDate(FAKE_VIN);
+    expect(r.status).toBe("needs_input");
+    expect(r.summary).toBe("kfzgutachten.at: nav pārbaudīts (nav precīza 1. reģ. datuma) - izmanto pārlūka joslu");
+  });
+
+  it("VIN SCAN rinda no releja: N atzinumi (datumi) / nav ierakstu / nav pārbaudīts (iemesls)", () => {
+    const found = parseKfzAtRelay(FAKE_VIN, "15.03.2006", {
+      ok: true,
+      kind: "found",
+      cached: false,
+      rows: [
+        { date: "13.11.2015", model: "BMW X5", plate: "W 44154Z", vin: FAKE_VIN },
+        { date: "04.08.2016", model: "BMW X53", plate: "W 81763N", vin: FAKE_VIN },
+      ],
+    });
+    expect(found.status).toBe("found");
+    expect(found.summary).toBe("kfzgutachten.at: 2 atzinumi (13.11.2015, 04.08.2016)");
+    expect(found.inspections?.[0]).toMatchObject({ date: "13.11.2015", plate: "W 44154Z", model: "BMW X5" });
+    expect(found.openUrl).toContain("date=15.03.2006");
+    const none = parseKfzAtRelay(FAKE_VIN, "15.03.2006", { ok: true, kind: "none", cached: true, rows: [] });
+    expect(none.status).toBe("none");
+    expect(none.summary).toBe("kfzgutachten.at: nav ierakstu (1. reģ. 15.03.2006)");
+    const queued = parseKfzAtRelay(FAKE_VIN, "15.03.2006", {
+      ok: false,
+      kind: "queued",
+      reason: "kfzgutachten.at: rindā 1. - nolasīs ap 21:02",
+    });
+    // Nepārbaudīts nav avota kļūda (circuit breaker to neskaita).
+    expect(queued.status).toBe("browser_only");
+    expect(queued.summary).toBe("kfzgutachten.at: nav pārbaudīts (rindā 1. - nolasīs ap 21:02) - izmanto pārlūka joslu");
+    const pause = parseKfzAtRelay(FAKE_VIN, "15.03.2006", {
+      ok: false,
+      kind: "blocked",
+      reason: "kfzgutachten.at: pēc reCAPTCHA atteikuma pauze līdz 21:30 - izmanto pārlūka joslu",
+    });
+    expect(pause.summary).toBe("kfzgutachten.at: nav pārbaudīts (pēc reCAPTCHA atteikuma pauze līdz 21:30) - izmanto pārlūka joslu");
+  });
+
+  it("skaits latviski un saraksta rindas no VIN SCAN apskatēm", () => {
+    expect(kfzAtCountLv(1)).toBe("1 atzinums");
+    expect(kfzAtCountLv(6)).toBe("6 atzinumi");
+    expect(kfzAtCountLv(21)).toBe("21 atzinums");
+    expect(kfzAtCountLv(11)).toBe("11 atzinumi");
+    expect(
+      kfzAtListRowsFromInspections(FAKE_VIN.toLowerCase(), [
+        { date: "13.11.2015", plate: "W 44154Z", model: "BMW X5" },
+        { date: "2015-11-13" },
+      ]),
+    ).toEqual([{ date: "13.11.2015", plate: "W 44154Z", vin: FAKE_VIN, model: "BMW X5" }]);
   });
 });
 
