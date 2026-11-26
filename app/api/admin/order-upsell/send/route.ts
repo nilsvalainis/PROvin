@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
-import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
+import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -60,10 +61,13 @@ export async function POST(req: Request) {
     }
     url = pay.url;
   }
+  const draft = await readOrderDraft(sessionId).catch(() => null);
+  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
   const sent = await trySendDealerDataOperatorEmail({
     to,
     subject,
     text: ensureUpsellUrlInText(text, url),
+    lang,
   });
   if (!sent) return NextResponse.json({ error: "email_failed" }, { status: 502 });
   return NextResponse.json({ ok: true, to });

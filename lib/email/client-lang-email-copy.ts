@@ -5,11 +5,23 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { provinEmailSubject } from "@/lib/email/email-subject";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 
 /** Stripe session.locale / pasūtījuma valoda -> e-pasta valoda (nezināma = lv). */
 export function resolveClientEmailLang(raw: string | null | undefined): ClientReportLang {
   const t = (raw ?? "").trim().toLowerCase().slice(0, 2);
   return t === "en" || t === "ru" || t === "de" ? t : "lv";
+}
+
+/**
+ * Pasūtījuma klienta valoda e-pastiem bez savas valodas izvēles (upsell, izsoļu arhīvs, maka atmaksa):
+ * 1) B2B maka pirkumā partnera izvēlētā atskaites valoda (`report_lang=` piezīmēs),
+ * 2) Stripe `session.locale` (vietnes valoda pasūtot), 3) citādi LV.
+ */
+export function resolveOrderClientLang(args: { notes?: string | null; locale?: string | null }): ClientReportLang {
+  const b2b = parseB2bWalletOrderMarks(args.notes ?? "")?.reportLang ?? null;
+  if (b2b) return resolveClientEmailLang(b2b);
+  return resolveClientEmailLang(args.locale);
 }
 
 type ForeignLang = Exclude<ClientReportLang, "lv">;

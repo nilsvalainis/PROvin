@@ -212,7 +212,7 @@ async function fulfillPaidCheckoutSession(
                 atlikums: formatB2bWalletEuro(wallet?.balanceCents ?? amountCents),
                 rekins: persistedInvoice?.invoiceNumber ?? "-",
                 uznemums: partner?.companyName ?? "",
-              });
+              }, session.locale ?? null);
               await sendB2bWalletTopupInvoiceEmail({
                 to: email,
                 subject: rendered.subject,

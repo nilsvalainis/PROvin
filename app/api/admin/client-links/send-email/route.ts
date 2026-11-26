@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { buildClientLinkEmailCopy, clientLinkAbsoluteUrl, isSafeClientLinkToken, isClientLinkUsable } from "@/lib/client-link";
 import { readClientLinkByHash } from "@/lib/client-link-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
@@ -38,14 +39,17 @@ export async function POST(req: Request) {
   }
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim() ? getPublicSiteOrigin() : "http://localhost:3040";
   const url = clientLinkAbsoluteUrl(origin, token);
+  // Saitei valodas lauka nav: LV, ja admins skaidri nenorāda `lang` (en / ru / de).
+  const lang = resolveClientEmailLang(typeof body.lang === "string" ? body.lang : null);
   const copy = buildClientLinkEmailCopy({
     url,
     productName: record.productName,
     expiresAt: record.expiresAt,
     amountCents: record.amountCents,
     vin: record.prefillVin,
+    lang,
   });
-  const sent = await trySendDealerDataOperatorEmail({ to, subject: copy.subject, text: copy.text });
+  const sent = await trySendDealerDataOperatorEmail({ to, subject: copy.subject, text: copy.text, lang });
   if (!sent) {
     return NextResponse.json({ error: "send_failed" }, { status: 502 });
   }

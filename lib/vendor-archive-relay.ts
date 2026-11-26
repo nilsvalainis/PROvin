@@ -13,7 +13,7 @@ import { normalizeArchiveJpeg, parseArchiveGroupDate, type ExtractedArchiveGroup
 
 const RELAY_TIMEOUT_MS = 180_000;
 const MAX_PHOTOS = 100;
-const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
 export type RelayArchivePhotosResult =
   | { ok: true; groups: ExtractedArchiveGroup[] }
