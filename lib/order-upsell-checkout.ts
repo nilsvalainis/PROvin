@@ -12,6 +12,7 @@ import { getPublicSiteOrigin } from "@/lib/site-url";
 import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 import { getStripe } from "@/lib/stripe";
 import { stripeCheckoutLocale } from "@/lib/stripe-session";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 
 export async function createOrderUpsellCheckoutSession(opts: {
   kind: OrderUpsellKind;
@@ -23,6 +24,8 @@ export async function createOrderUpsellCheckoutSession(opts: {
   phone?: string | null;
   email: string;
   trackingMetadata?: Record<string, string>;
+  /** Klienta valoda (`resolveOrderClientLang` vai lapas valoda). Noklusēti LV. */
+  lang?: ClientReportLang | null;
 }): Promise<{ url: string; stripeSessionId: string; amountTotal: number | null }> {
   const stripe = getStripe();
   const params = buildOrderUpsellCheckoutSessionParams({
@@ -31,7 +34,7 @@ export async function createOrderUpsellCheckoutSession(opts: {
   });
   const session = await stripe.checkout.sessions.create({
     ...params,
-    locale: stripeCheckoutLocale("lv"),
+    locale: stripeCheckoutLocale(params.locale),
     metadata: mergeStripeCheckoutMetadata(opts.trackingMetadata, params.metadata),
   });
   if (!session.url) {
@@ -54,6 +57,7 @@ export async function ensureOrderUpsellStripePaymentUrl(args: {
   vin?: string | null;
   phone?: string | null;
   offer: StoredUpsellOffer;
+  lang?: ClientReportLang | null;
 }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const email = args.email.trim();
   if (!email) return { ok: false, error: "missing_email" };
@@ -74,6 +78,7 @@ export async function ensureOrderUpsellStripePaymentUrl(args: {
       vin: args.vin,
       phone: args.phone,
       email,
+      lang: args.lang,
     });
     const attached = await attachUpsellStripeCheckout({
       sessionId: args.parentSessionId,

@@ -47,6 +47,14 @@ const CARD_TEXT: Record<string, Tr> = {
   "Pēdējā izsole": t("Last auction", "Последний аукцион", "Letzte Auktion"),
   "Citi avoti": t("Other sources", "Другие источники", "Weitere Quellen"),
   "Ģenerēts": t("Generated", "Сформировано", "Erstellt"),
+  /* Aprīkojuma grupas (`EQUIPMENT_CATEGORY_ORDER`). */
+  "Drošība un asistenti": t("Safety and assistance", "Безопасность и ассистенты", "Sicherheit und Assistenz"),
+  Gaismas: t("Lights", "Освещение", "Licht"),
+  "Komforts un salons": t("Comfort and interior", "Комфорт и салон", "Komfort und Innenraum"),
+  Multimēdijs: t("Multimedia", "Мультимедиа", "Multimedia"),
+  "Diski un riepas": t("Wheels and tyres", "Диски и шины", "Felgen und Reifen"),
+  "Dzinējs un transmisija": t("Engine and transmission", "Двигатель и трансмиссия", "Motor und Antrieb"),
+  Citi: t("Other", "Прочее", "Sonstiges"),
 };
 
 /** Faktu un transportlīdzekļa rindu etiķetes (`auction-archive-facts.ts`). */
@@ -149,6 +157,104 @@ const KV_VALUE: Record<string, Tr> = {
   "Nav norādīta": t("Not stated", "Не указана", "Nicht angegeben"),
   "Ir, servisa grāmata ir": t("Yes, service book present", "Есть, есть сервисная книжка", "Vorhanden, Serviceheft vorhanden"),
 };
+
+/**
+ * Mūsu koda LV vērtību daļas (pārnesumkārba, piedziņa, krāsa, virsbūve, degviela, izcelsme, atskaišu nosaukumi),
+ * atslēga - mazajiem burtiem. Vērtība var būt saraksts ar «, » («Melna, metālika», «Automātiskā, 7 pārnesumi»).
+ */
+const VALUE_PART: Record<string, Tr> = {
+  automātiskā: t("automatic", "автоматическая", "Automatik"),
+  "automātiskā (s tronic, dubultsajūga)": t("automatic (S tronic, dual-clutch)", "автоматическая (S tronic, с двойным сцеплением)", "Automatik (S tronic, Doppelkupplung)"),
+  "automātiskā (dsg, dubultsajūga)": t("automatic (DSG, dual-clutch)", "автоматическая (DSG, с двойным сцеплением)", "Automatik (DSG, Doppelkupplung)"),
+  robotizētā: t("automated manual", "роботизированная", "automatisiertes Schaltgetriebe"),
+  manuālā: t("manual", "механическая", "Schaltgetriebe"),
+  priekšējā: t("front-wheel drive", "передний", "Frontantrieb"),
+  aizmugurējā: t("rear-wheel drive", "задний", "Heckantrieb"),
+  pilnpiedziņa: t("all-wheel drive", "полный привод", "Allradantrieb"),
+  "pilnpiedziņa (quattro)": t("all-wheel drive (quattro)", "полный привод (quattro)", "Allradantrieb (quattro)"),
+  pelēka: t("grey", "серый", "Grau"),
+  melna: t("black", "чёрный", "Schwarz"),
+  balta: t("white", "белый", "Weiß"),
+  sudraba: t("silver", "серебристый", "Silber"),
+  zila: t("blue", "синий", "Blau"),
+  sarkana: t("red", "красный", "Rot"),
+  zaļa: t("green", "зелёный", "Grün"),
+  brūna: t("brown", "коричневый", "Braun"),
+  bēša: t("beige", "бежевый", "Beige"),
+  dzeltena: t("yellow", "жёлтый", "Gelb"),
+  oranža: t("orange", "оранжевый", "Orange"),
+  zelta: t("gold", "золотистый", "Gold"),
+  violeta: t("purple", "фиолетовый", "Violett"),
+  bronzas: t("bronze", "бронзовый", "Bronze"),
+  metālika: t("metallic", "металлик", "Metallic"),
+  pērļu: t("pearl", "перламутр", "Perleffekt"),
+  universālis: t("estate", "универсал", "Kombi"),
+  sedans: t("saloon", "седан", "Limousine"),
+  hečbeks: t("hatchback", "хэтчбек", "Schrägheck"),
+  kupeja: t("coupe", "купе", "Coupé"),
+  kabriolets: t("convertible", "кабриолет", "Cabrio"),
+  "apvidus (suv)": t("SUV", "внедорожник (SUV)", "Geländewagen (SUV)"),
+  minivens: t("MPV", "минивэн", "Van"),
+  furgons: t("van", "фургон", "Kastenwagen"),
+  pikaps: t("pickup", "пикап", "Pick-up"),
+  "vieglais kravas furgons": t("light commercial van", "лёгкий фургон", "leichtes Nutzfahrzeug"),
+  dīzelis: t("diesel", "дизель", "Diesel"),
+  benzīns: t("petrol", "бензин", "Benzin"),
+  elektrība: t("electric", "электро", "Elektro"),
+  hibrīds: t("hybrid", "гибрид", "Hybrid"),
+  "hibrīds (dīzelis)": t("hybrid (diesel)", "гибрид (дизель)", "Hybrid (Diesel)"),
+  "hibrīds (benzīns)": t("hybrid (petrol)", "гибрид (бензин)", "Hybrid (Benzin)"),
+  "spraudņa hibrīds": t("plug-in hybrid", "подключаемый гибрид", "Plug-in-Hybrid"),
+  "benzīns + gāze (lpg)": t("petrol + gas (LPG)", "бензин + газ (LPG)", "Benzin + Gas (LPG)"),
+  "dabasgāze (cng)": t("natural gas (CNG)", "природный газ (CNG)", "Erdgas (CNG)"),
+  "līzinga auto": t("leased car", "лизинговый автомобиль", "Leasingfahrzeug"),
+  "uzņēmuma auto": t("company car", "служебный автомобиль", "Firmenwagen"),
+  "uzņēmuma autoparka auto": t("fleet car", "автомобиль из автопарка компании", "Flottenfahrzeug"),
+  "nomas auto": t("rental car", "прокатный автомобиль", "Mietwagen"),
+  "privātpersonas auto": t("private car", "автомобиль частного лица", "Privatfahrzeug"),
+  "dīlera auto": t("dealer car", "автомобиль дилера", "Händlerfahrzeug"),
+  "maiņas auto (trade-in)": t("trade-in car", "автомобиль в зачёт (trade-in)", "Inzahlungnahme (Trade-in)"),
+  "ārējo bojājumu atskaite": t("external damage report", "отчёт о внешних повреждениях", "Bericht über Außenschäden"),
+  "pamata tehniskās pārbaudes atskaite": t("basic technical inspection report", "отчёт о базовой технической проверке", "Bericht der technischen Basisprüfung"),
+  "tehniskās pārbaudes atskaite": t("technical inspection report", "отчёт о технической проверке", "Technischer Prüfbericht"),
+  "stāvokļa atskaite": t("condition report", "отчёт о состоянии", "Zustandsbericht"),
+  "servisa izraksts": t("service record", "выписка обслуживания", "Servicenachweis"),
+};
+
+/** Etiķetes, kuru vērtības ir mūsu vārdnīcas saraksti (citās rindās brīvo tekstu pa daļām netulko). */
+const COMPOSITE_LABELS = new Set([
+  "Ātrumkārba",
+  "Piedziņa",
+  "Krāsa",
+  "Virsbūve",
+  "Dzinējs",
+  "Auto izcelsme",
+  "Pārbaudes atskaites",
+]);
+
+function capFirst(src: string, out: string): string {
+  return src && src.charAt(0) === src.charAt(0).toUpperCase() && src.charAt(0) !== src.charAt(0).toLowerCase()
+    ? out.charAt(0).toUpperCase() + out.slice(1)
+    : out;
+}
+
+/** «Automātiskā, 7 pārnesumi» → «Automatic, 7 gears»; nezināmas daļas paliek kā ir. */
+export function translateAuctionValueParts(v: string, lang: ClientReportLang | undefined): string {
+  if (!isTarget(lang)) return v;
+  const parts = v.split(/,\s+(?![^()]*\))/);
+  const out = parts.map((part) => {
+    const p = part.trim();
+    const hit = VALUE_PART[p.toLowerCase()];
+    if (hit) return hit[lang];
+    const gears = /^(\d+) pārnesum(?:i|s)$/.exec(p);
+    if (gears) {
+      const n = Number(gears[1]);
+      return lang === "en" ? `${n} gears` : lang === "ru" ? `${n} ${ruPlural(n, "передача", "передачи", "передач")}` : `${n} Gänge`;
+    }
+    return part;
+  });
+  return capFirst(v.trim(), out.join(", "));
+}
 
 const HP_UNIT: Tr = t("HP", "л.с.", "PS");
 const VAT: Tr = t("VAT", "НДС", "MwSt.");
@@ -279,10 +385,35 @@ export function translateAuctionKvLabel(k: string, lang: ClientReportLang | unde
   return KV_LABEL[k]?.[lang] ?? k;
 }
 
-/** Faktu / transportlīdzekļa rindas atskaites valodā. LV - tās pašas rindas. */
-export function translateAuctionKvRows(rows: readonly ArchiveKv[], lang: ClientReportLang | undefined): ArchiveKv[] {
+/** Vērtība pēc bez-AI vārdnīcas (pilnā sakritība, šabloni, saraksta daļas zināmām etiķetēm). */
+function translateKvValueFor(label: string, v: string, lang: Target): string {
+  const out = translateAuctionKvValue(v, lang);
+  return COMPOSITE_LABELS.has(label) ? translateAuctionValueParts(out, lang) : out;
+}
+
+const LV_LETTER = /[āēīūčšžģķļņ]/i;
+
+/**
+ * Faktu / transportlīdzekļa rindas atskaites valodā. LV - tās pašas rindas.
+ * `translations` - AI tulkojumi vērtībām, ko vārdnīca nezina (`auctionArchiveKvLeftovers`).
+ */
+export function translateAuctionKvRows(
+  rows: readonly ArchiveKv[],
+  lang: ClientReportLang | undefined,
+  translations?: ReadonlyMap<string, string>,
+): ArchiveKv[] {
   if (!isTarget(lang)) return [...rows];
-  return rows.map((r) => ({ ...r, k: translateAuctionKvLabel(r.k, lang), v: translateAuctionKvValue(r.v, lang) }));
+  return rows.map((r) => {
+    const dict = translateKvValueFor(r.k, r.v, lang);
+    const ai = LV_LETTER.test(dict) ? translations?.get(r.v)?.trim() : "";
+    return { ...r, k: translateAuctionKvLabel(r.k, lang), v: ai || dict };
+  });
+}
+
+/** Vērtības, kas pēc vārdnīcas joprojām ir latviski - tās tulko esošais Gemini Flash izsaukums (tikai EN/RU/DE). */
+export function auctionArchiveKvLeftovers(rows: readonly ArchiveKv[], lang: ClientReportLang | undefined): string[] {
+  if (!isTarget(lang)) return [];
+  return rows.filter((r) => r.v && LV_LETTER.test(translateKvValueFor(r.k, r.v, lang))).map((r) => r.v);
 }
 
 type FindingRule = { re: RegExp; to: (m: RegExpExecArray, lang: Target) => string };

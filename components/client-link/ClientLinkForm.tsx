@@ -8,8 +8,8 @@ import {
   formatClientLinkExpiryLong,
   type ClientLinkPublicView,
 } from "@/lib/client-link";
+import { clientLinkCopy, clientLinkLegalHrefs } from "@/lib/client-link-i18n";
 import {
-  VIN_INCOMPLETE_LENGTH_ERROR_LV,
   getVinOrPlateErrorKind,
   isValidVin,
   normalizeVin,
@@ -20,19 +20,6 @@ import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 const inputClass =
   "mt-1.5 min-h-12 w-full rounded-xl border border-[#e5e5ea] bg-[#f5f5f7] px-4 text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#aeaeb2] focus:border-[#1d1d1f] focus:bg-white";
 
-const fieldError: Record<string, string> = {
-  email: "Lauks nav aizpildīts pareizi.",
-  vin: "Lūdzu, ievadiet derīgu VIN kodu (17 zīmes) vai valsts numurzīmi (3-6 zīmes).",
-  vin_length: VIN_INCOMPLETE_LENGTH_ERROR_LV,
-  listing: "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
-  phone: "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem.",
-  consent: "Lai turpinātu uz apmaksu, atzīmējiet apstiprinājumu (noteikumi, privātuma politika, pilnvarojums un atteikuma tiesības).",
-  rate_limited: "Pārāk daudz pieprasījumu. Uzgaidiet īsu brīdi un mēģiniet vēlreiz.",
-  not_found: "Saite nav derīga.",
-  stripe_config: "Apmaksa šobrīd nav pieejama. Mēģiniet vēlāk.",
-  session_failed: "Neizdevās sagatavot apmaksu. Mēģiniet vēlreiz.",
-  network: "Tīkla kļūda. Mēģiniet vēlreiz.",
-};
 
 export function ClientLinkForm({ token, view }: { token: string; view: ClientLinkPublicView }) {
   const [email, setEmail] = useState(view.prefillEmail);
@@ -43,14 +30,17 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const c = clientLinkCopy(view.lang);
+  const fieldError: Record<string, string> = c.errors;
+  const legal = clientLinkLegalHrefs(view.lang);
   const until = formatClientLinkExpiryLong(view.expiresAt);
   const amount = formatClientLinkAmount(view.amountCents);
   const vinHint = useMemo(() => {
     const n = normalizeVin(vin);
-    if (!n) return "17 zīmes · 0/17";
-    if (isValidVin(n) && n.length === 17) return "17 zīmes · 17/17";
-    return `17 zīmes · ${Math.min(n.length, 17)}/17`;
-  }, [vin]);
+    if (!n) return c.vinHint(0);
+    if (isValidVin(n) && n.length === 17) return c.vinHint(17);
+    return c.vinHint(Math.min(n.length, 17));
+  }, [vin, c]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -61,7 +51,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
       if (view.require.vin || n) {
         const kind = getVinOrPlateErrorKind(n);
         if (kind === "vinLength") {
-          setError(VIN_INCOMPLETE_LENGTH_ERROR_LV);
+          setError(fieldError.vin_length);
           setLoading(false);
           return;
         }
@@ -102,7 +92,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="mx-auto w-full max-w-[420px] px-4 pb-10 pt-2">
+    <form lang={view.lang} onSubmit={(e) => void onSubmit(e)} className="mx-auto w-full max-w-[420px] px-4 pb-10 pt-2">
       <header className="mb-8 flex items-center justify-between px-1">
         <p className="text-[17px] font-bold tracking-tight text-[#1d1d1f]">PROVIN</p>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#aeaeb2]">PROVIN AUDITS</p>
@@ -110,20 +100,20 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
 
       <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[#1d1d1f]">{view.productName}</h1>
       <p className="mt-2 text-[15px] leading-relaxed text-[#6e6e73]">
-        Ievadiet savus datus un auto informāciju. Pasūtījums tiks izveidots pēc apmaksas.
+        {c.intro}
       </p>
 
       <section className="mt-6 rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">Jūsu dati</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">{c.yourData}</p>
         {view.require.email ? (
           <label className="mt-3 block">
-            <span className="text-[14px] font-semibold text-[#1d1d1f]">E-pasts</span>
+            <span className="text-[14px] font-semibold text-[#1d1d1f]">{c.email}</span>
             <input
               className={inputClass}
               type="email"
               autoComplete="email"
               inputMode="email"
-              placeholder="epasts@piemers.lv"
+              placeholder={c.emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -131,7 +121,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
         ) : null}
         {view.require.vin ? (
           <label className="mt-3 block">
-            <span className="text-[14px] font-semibold text-[#1d1d1f]">VIN kods</span>
+            <span className="text-[14px] font-semibold text-[#1d1d1f]">{c.vin}</span>
             <input
               className={`${inputClass} uppercase`}
               type="text"
@@ -150,7 +140,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
         ) : null}
         {view.require.listingUrl ? (
           <label className="mt-3 block">
-            <span className="text-[14px] font-semibold text-[#1d1d1f]">Sludinājuma saite</span>
+            <span className="text-[14px] font-semibold text-[#1d1d1f]">{c.listing}</span>
             <input
               className={inputClass}
               type="url"
@@ -164,7 +154,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
         ) : null}
         {view.require.phone ? (
           <label className="mt-3 block">
-            <span className="text-[14px] font-semibold text-[#1d1d1f]">Tālrunis</span>
+            <span className="text-[14px] font-semibold text-[#1d1d1f]">{c.phone}</span>
             <input
               className={inputClass}
               type="tel"
@@ -179,13 +169,13 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
       </section>
 
       <section className="mt-3 rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">Apmaksa</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">{c.payment}</p>
         <div className="mt-3 flex items-start justify-between gap-3 text-[15px] text-[#1d1d1f]">
           <span>{view.productName.replace(/\sPRO$/i, " · PRO")}</span>
           <span>{amount}</span>
         </div>
         <div className="mt-3 flex items-center justify-between border-t border-[#f2f2f7] pt-3 text-[16px] font-bold text-[#1d1d1f]">
-          <span>Kopā apmaksai</span>
+          <span>{c.total}</span>
           <span>{amount}</span>
         </div>
       </section>
@@ -198,15 +188,15 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
           onChange={(e) => setConsent(e.target.checked)}
         />
         <span>
-          Apstiprinu, ka esmu iepazinies ar{" "}
-          <Link href="/lv/lietosanas-noteikumi" className="underline" target="_blank">
-            Lietošanas noteikumiem
-          </Link>{" "}
-          un{" "}
-          <Link href="/lv/privatuma-politika" className="underline" target="_blank">
-            Privātuma politiku
+          {c.consent[0]}
+          <Link href={legal.terms} className="underline" target="_blank">
+            {c.consent[1]}
           </Link>
-          , pilnvaroju PROVIN iegūt transportlīdzekļa datus manā vārdā, piekrītu digitālā pakalpojuma tūlītējai izpildei un apzinos, ka zaudēju atteikuma tiesības, kad izpilde ir sākusies.
+          {c.consent[2]}
+          <Link href={legal.privacy} className="underline" target="_blank">
+            {c.consent[3]}
+          </Link>
+          {c.consent[4]}
         </span>
       </label>
 
@@ -217,16 +207,16 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
         disabled={loading}
         className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#22c55e] text-[17px] font-bold text-white shadow-sm transition hover:bg-[#16a34a] disabled:opacity-60"
       >
-        {loading ? "Sagatavo…" : "Iesniegt un maksāt"}
+        {loading ? c.submitting : c.submit}
       </button>
       <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-[#aeaeb2]">
         <Lock className="h-3.5 w-3.5" aria-hidden />
-        Droša apmaksa ar Stripe
+        {c.secure}
       </p>
       <p className="mt-8 text-center text-[12px] leading-relaxed text-[#aeaeb2]">
-        Saite ir personīga un vienreizēja un derīga līdz {until}.
+        {c.validUntil(until)}
         <br />
-        Pēc apmaksas tā vairs nebūs aktīva.
+        {c.afterPay}
       </p>
     </form>
   );

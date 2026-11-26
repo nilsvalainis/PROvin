@@ -19,9 +19,13 @@ const btnBlue =
 const field =
   "w-full min-w-0 rounded-[10px] border border-[#d1d1d6] bg-white px-3 py-[10px] text-[14px] text-[#111] focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/25";
 
+type EmailLang = "lv" | "en" | "ru" | "de";
+const EMAIL_LANGS: readonly EmailLang[] = ["lv", "en", "ru", "de"];
+
 type Info = {
   autoparks: { carId: string; title: string } | null;
   email: { subject: string; text: string };
+  emailByLang?: Partial<Record<EmailLang, { subject: string; text: string }>>;
   smtp: boolean;
   deliveries: DealerCheckDelivery[];
 };
@@ -50,6 +54,7 @@ export function AdminDealerCheckDelivery({
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [text, setText] = useState("");
+  const [lang, setLang] = useState<EmailLang>("lv");
 
   useEffect(() => {
     setOverrides(record.dealerMajorWorkOverrides ?? []);
@@ -67,6 +72,7 @@ export function AdminDealerCheckDelivery({
         const body = (await res.json().catch(() => null)) as (Info & { ok?: boolean }) | null;
         if (!alive || !res.ok || !body?.ok) return;
         setInfo(body);
+        setLang("lv");
         setSubject(body.email.subject);
         setText(body.email.text);
       } catch {
@@ -79,6 +85,16 @@ export function AdminDealerCheckDelivery({
   }, [record.id]);
 
   const locked = busy || working !== "";
+
+  /** Valodas maiņa sūtīšanas brīdī: temats un teksts no tās valodas noklusējuma (OEM PDF nemainās). */
+  function changeLang(next: EmailLang) {
+    setLang(next);
+    const d = info?.emailByLang?.[next];
+    if (d) {
+      setSubject(d.subject);
+      setText(d.text);
+    }
+  }
 
   async function changeOverrides(next: DealerMajorWorkOverride[]) {
     setOverrides(next);
@@ -142,7 +158,7 @@ export function AdminDealerCheckDelivery({
     setWorking("email");
     try {
       if (!(await beforePdf())) return;
-      const { res, body } = await post({ action: "email", to, subject, text, confirmed: true });
+      const { res, body } = await post({ action: "email", to, subject, text, lang, confirmed: true });
       if (!res.ok) {
         setError(dealerCheckDeliveryErrorLv(String(body.error ?? "")));
         return;
@@ -203,6 +219,22 @@ export function AdminDealerCheckDelivery({
 
       {step === "edit" ? (
         <div className="mt-3.5 space-y-2.5 rounded-xl border border-[#e5e5ea] bg-[#fafafa] p-3">
+          <div>
+            <span className="mb-1 block text-[11.5px] font-semibold text-[#6e6e73]">Klienta valoda</span>
+            <div className="inline-flex rounded-lg bg-[#e5e5ea] p-0.5" role="group" aria-label="Klienta valoda" data-dealer-check-email-lang>
+              {EMAIL_LANGS.map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={lang === l}
+                  onClick={() => changeLang(l)}
+                  className={`rounded-md px-3 py-1 text-[12.5px] font-medium ${lang === l ? "bg-white text-[#111] shadow-sm" : "text-[#6e6e73]"}`}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
           <label className="block">
             <span className="mb-1 block text-[11.5px] font-semibold text-[#6e6e73]">Adrese</span>
             <input
@@ -246,6 +278,9 @@ export function AdminDealerCheckDelivery({
           </p>
           <p className="text-[13px] text-[#111]">
             No: <b>{record.template === "dzintarzeme" ? "Nils Valainis · " : ""}info@provin.lv</b>
+          </p>
+          <p className="text-[13px] text-[#111]">
+            Valoda: <b>{lang.toUpperCase()}</b>
           </p>
           <p className="text-[13px] font-semibold text-[#111]">{subject}</p>
           <pre className="whitespace-pre-wrap rounded-lg border border-[#e5e5ea] bg-white p-2.5 font-sans text-[13px] leading-[1.5] text-[#3a3a3c]">

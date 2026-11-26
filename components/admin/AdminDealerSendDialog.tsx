@@ -231,12 +231,12 @@ export function AdminDealerSendDialog({
     const sign = (t: string) => (b2b ? applyB2bSignature(t) : t);
     if (channel === "whatsapp") {
       setSubject("");
-      setText(sign(ready ? auctionArchiveReadyWhatsappText(sum) : auctionArchiveOfferWhatsappText(sum, arch.paidCents, showPrices)));
+      setText(sign(ready ? auctionArchiveReadyWhatsappText(sum, pdfLang) : auctionArchiveOfferWhatsappText(sum, arch.paidCents, showPrices, pdfLang)));
     } else {
-      setSubject(ready ? auctionArchiveReadySubject(sum) : auctionArchiveOfferSubject(sum));
-      setText(sign(ready ? auctionArchiveReadyText(sum, showPrices) : auctionArchiveOfferText(sum, arch.paidCents, showPrices)));
+      setSubject(ready ? auctionArchiveReadySubject(sum, pdfLang) : auctionArchiveOfferSubject(sum, pdfLang));
+      setText(sign(ready ? auctionArchiveReadyText(sum, showPrices, pdfLang) : auctionArchiveOfferText(sum, arch.paidCents, showPrices, pdfLang)));
     }
-  }, [open, situation, channel, arch, showPrices, b2b]);
+  }, [open, situation, channel, arch, showPrices, b2b, pdfLang]);
 
   // Piedāvājumā jau saglabātā izvēle (piem. «Sūtīt izsoļu arhīvu» pēc klienta «Jā»).
   const archOfferShowPrices = arch?.offer?.showPrices === true;
@@ -348,6 +348,8 @@ export function AdminDealerSendDialog({
           previewIds,
           manualSources,
           showPrices,
+          // Klienta valoda: izvēles lapa, e-pasta HTML un atgādinājums tajā pašā valodā kā teksts.
+          lang: pdfLang,
           ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
         });
       let r = await post(false);

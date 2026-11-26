@@ -1172,11 +1172,11 @@ ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 }
 
 /** B2B klienta e-pasts: zīmols PROVIN (bez .LV), zils #0061D2. */
-export function b2bProvinEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
+export function b2bProvinEmailHtml(opts: { title: string; paragraphs: readonly string[]; lang?: ClientReportLang }): string {
   const paras = opts.paragraphs
     .map((p, i) => emailRow(emailParagraph(esc(p).replace(/\n/g, "<br/>"), "margin:0;"), i === 0 ? "14px 36px 0" : "12px 36px 0"))
     .join("\n");
-  return emailDocument({ rows: `${titleRow(opts.title)}\n${paras}`, b2b: true });
+  return emailDocument({ rows: `${titleRow(opts.title)}\n${paras}`, b2b: true, lang: opts.lang ?? "lv" });
 }
 
 export function staffInviteEmailHtml(opts: {

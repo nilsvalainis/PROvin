@@ -6,6 +6,7 @@ import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib
 import { readAutodnaAutoStatus, readAutodnaPdf } from "@/lib/autodna-auto-store";
 import { readCarverticalAutoStatus, readCarverticalPdf } from "@/lib/carvertical-auto-store";
 import { getDropboxClient } from "@/lib/dropbox-client";
+import { downloadOrderDropboxFile } from "@/lib/order-dropbox";
 import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { isVendorArchiveSource, type VendorArchiveSource } from "@/lib/vendor-archive-photo-group";
@@ -32,7 +33,7 @@ async function readStoredVendorPdf(
     const client = getDropboxClient();
     if (client) {
       try {
-        bytes = new Uint8Array((await client.download(status.pdf.dropboxPath)).bytes);
+        bytes = (await downloadOrderDropboxFile(client, sessionId, status.pdf.dropboxPath))?.bytes ?? null;
       } catch {
         bytes = null;
       }

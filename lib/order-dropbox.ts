@@ -174,8 +174,17 @@ export async function ensureOrderDropboxFolder(
             current = moved.pathDisplay || `${parent}/${targetName}`;
           } catch (e) {
             // Ja tāda mape jau ir (cits pasūtījums ar to pašu auto un dienu) - paliek vecais nosaukums / virsmape.
-            if (categoryChange) finalCategory = prev.category;
-            console.warn(`${LOG} ${categoryChange ? "move" : "rename"} skipped`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+            // Paralēls izsaukums (LTAB + CSDD + dīlera dati vienlaikus) var mapi jau būt pārdēvējis: tad `current`
+            // ir novecojis ceļš - augšupielāde uz to izveidotu otru mapi ar veco nosaukumu (Nils 26.11, 540i).
+            const fresh = await client.getMetadata(prev.folderId).catch(() => null);
+            if (fresh && fresh.tag === "folder" && fresh.pathDisplay) current = fresh.pathDisplay;
+            const movedByOther = current.toLowerCase().startsWith(`${parent.toLowerCase()}/`);
+            if (categoryChange && !movedByOther) finalCategory = prev.category;
+            console.warn(`${LOG} ${categoryChange ? "move" : "rename"} skipped`, {
+              sessionId: sessionId.slice(-8),
+              error: errCode(e),
+              ...(fresh?.pathDisplay && fresh.pathDisplay !== meta.pathDisplay ? { movedByOther: true } : {}),
+            });
           }
         }
         if (current === prev.path && finalCategory === prev.category) return prev;
@@ -219,14 +228,62 @@ export async function saveFileToOrderDropboxFolder(
   const rec = await ensureOrderDropboxFolder(sessionId, { client });
   if (!rec || rec.state !== "ok" || !rec.path) return null;
   const name = sanitizeDropboxName(fileName, 140) || "fails.pdf";
-  const target = `${rec.path}/${name}`;
+  const folder = await currentOrderDropboxFolderPath(client, rec);
+  const target = `${folder}/${name}`;
   try {
     const up = await client.upload(target, bytes, "add", { autorename: false });
-    return { path: up.pathDisplay || target, duplicate: false };
+    const finalPath = await keepFileInOrderFolder(client, rec, folder, up.pathDisplay || target, sessionId);
+    return { path: finalPath, duplicate: false };
   } catch (e) {
     if (e instanceof DropboxApiError && e.conflict) return { path: target, duplicate: true };
     console.error(`${LOG} upload failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
     return null;
+  }
+}
+
+/**
+ * Pasūtījuma mapes ceļš TAGAD (pēc mapes id). Ieraksta `path` var būt novecojis, ja mapi tikko pārdēvēja paralēls
+ * izsaukums; augšupielāde uz veco ceļu Dropbox klusām izveidotu otru mapi ar veco nosaukumu.
+ */
+export async function currentOrderDropboxFolderPath(client: DropboxClient, rec: OrderDropboxRecord): Promise<string> {
+  if (rec.folderId) {
+    const meta = await client.getMetadata(rec.folderId).catch(() => null);
+    if (meta && meta.tag === "folder" && meta.pathDisplay) return meta.pathDisplay;
+  }
+  return rec.path ?? "";
+}
+
+function parentDir(p: string): string {
+  const i = p.lastIndexOf("/");
+  return i > 0 ? p.slice(0, i) : "";
+}
+
+/**
+ * Pēc augšupielādes: ja mapi tieši tobrīd pārdēvēja (fails nonāca jaunizveidotā mapē ar veco nosaukumu),
+ * fails tiek pārcelts uz īsto mapi, un tukšā liekā mape - uz Dropbox atkritni (atjaunojama). Atgriež faila ceļu.
+ */
+export async function keepFileInOrderFolder(
+  client: DropboxClient,
+  rec: OrderDropboxRecord,
+  usedFolder: string,
+  filePath: string,
+  sessionId: string,
+): Promise<string> {
+  if (!rec.folderId) return filePath;
+  const now = await currentOrderDropboxFolderPath(client, rec);
+  if (!now || now.toLowerCase() === usedFolder.toLowerCase()) return filePath;
+  try {
+    const moved = await client.move(filePath, `${now}/${filePath.slice(filePath.lastIndexOf("/") + 1)}`, { autorename: true });
+    const stray = parentDir(filePath);
+    if (stray && stray.toLowerCase() !== now.toLowerCase()) {
+      const left = await client.listFolder(stray).catch(() => null);
+      if (left && left.entries.length === 0 && !left.hasMore) await client.deleteFile(stray).catch(() => undefined);
+    }
+    console.warn(`${LOG} file moved into renamed folder`, { sessionId: sessionId.slice(-8) });
+    return moved.pathDisplay || filePath;
+  } catch (e) {
+    console.error(`${LOG} move into folder failed`, { sessionId: sessionId.slice(-8), error: errCode(e) });
+    return filePath;
   }
 }
 
@@ -280,4 +337,40 @@ export async function saveFileToOrderFolderOrLegacy<T extends { path: string }>(
   }
   const saved = await legacy();
   return { path: saved.path, duplicate: false, legacy: true };
+}
+
+/**
+ * PDF lejupielāde pēc statusā saglabātā Dropbox ceļa ar rezervi: ja pa šo ceļu faila vairs nav (dubultmapes apvienotas,
+ * mape pārdēvēta), meklē to pašu faila nosaukumu pasūtījuma kanoniskajā mapē (pēc mapes id / `order_dropbox` ieraksta).
+ * Statusu nemaina - tikai lasa. null - fails nav atrasts nevienā vietā.
+ */
+export async function downloadOrderDropboxFile(
+  client: DropboxClient,
+  sessionId: string,
+  storedPath: string,
+): Promise<{ bytes: Uint8Array; path: string; fallback: boolean } | null> {
+  const stored = storedPath.trim();
+  if (!stored) return null;
+  try {
+    const { bytes } = await client.download(stored);
+    return { bytes: new Uint8Array(bytes), path: stored, fallback: false };
+  } catch (e) {
+    if (!(e instanceof DropboxApiError && e.notFound)) throw e;
+  }
+  const name = stored.slice(stored.lastIndexOf("/") + 1);
+  if (!name || !isSafeOrderDraftSessionId(sessionId)) return null;
+  const { record } = await readOrderDropboxRecordResult(sessionId);
+  if (!record || record.state !== "ok") return null;
+  const folder = await currentOrderDropboxFolderPath(client, record);
+  if (!folder) return null;
+  const candidate = `${folder}/${name}`;
+  if (candidate.toLowerCase() === stored.toLowerCase()) return null;
+  try {
+    const { bytes } = await client.download(candidate);
+    console.info(`${LOG} file found in order folder`, { sessionId: sessionId.slice(-8) });
+    return { bytes: new Uint8Array(bytes), path: candidate, fallback: true };
+  } catch (e) {
+    if (e instanceof DropboxApiError && e.notFound) return null;
+    throw e;
+  }
 }

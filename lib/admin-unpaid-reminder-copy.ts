@@ -59,12 +59,12 @@ export function unpaidReminderFallbackCopy(opts: { vin: string; paymentUrl: stri
 }
 
 /** Vienkāršs HTML no plain teksta - bez PROVIN zīmola veidnes. */
-export function unpaidReminderEmailHtml(text: string): string {
+export function unpaidReminderEmailHtml(text: string, lang: "lv" | "en" | "ru" | "de" = "lv"): string {
   const esc = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/\n/g, "<br/>");
-  return `<!DOCTYPE html><html lang="lv"><body style="font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.5;color:#111;">${esc}</body></html>`;
+  return `<!DOCTYPE html><html lang="${lang}"><body style="font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.5;color:#111;">${esc}</body></html>`;
 }

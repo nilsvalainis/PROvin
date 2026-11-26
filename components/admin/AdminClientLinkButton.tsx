@@ -20,6 +20,8 @@ import {
   type ClientLinkRecipientChannel,
   type ClientLinkRequiredFields,
 } from "@/lib/client-link";
+import { CLIENT_LINK_LANGS, CLIENT_LINK_LANG_LABEL, normalizeClientLinkLang } from "@/lib/client-link-i18n";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 
 const darkBtn =
   "inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-2.5 text-[12.5px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
@@ -44,8 +46,15 @@ function validityLabel(h: number): string {
   return `${h} h`;
 }
 
-/** `sheet` - pilna platuma rinda telefona izvēlnē "Darbības" (ar nosaukumu, ne tikai ikona). */
-export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "toolbar" | "sheet" } = {}) {
+/**
+ * `sheet` - pilna platuma rinda telefona izvēlnē "Darbības" (ar nosaukumu, ne tikai ikona).
+ * `defaultLang` - klienta valoda, ja saiti atver no pasūtījuma (`resolveOrderClientLang`); citādi LV.
+ */
+export function AdminClientLinkButton({
+  variant = "toolbar",
+  defaultLang = "lv",
+}: { variant?: "toolbar" | "sheet"; defaultLang?: ClientReportLang | null } = {}) {
+  const initialLang = normalizeClientLinkLang(defaultLang);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useAdminScrollLock(open);
@@ -68,6 +77,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
   const [prefillListingUrl, setPrefillListingUrl] = useState("");
   const [require, setRequire] = useState<ClientLinkRequiredFields>(defaultClientLinkRequire);
   const [validityHours, setValidityHours] = useState(CLIENT_LINK_DEFAULT_VALIDITY_HOURS);
+  const [lang, setLang] = useState<ClientReportLang>(initialLang);
 
   const saveTimer = useRef<number | null>(null);
   const idRef = useRef<string | null>(null);
@@ -94,8 +104,9 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
       prefillListingUrl,
       require,
       validityHours,
+      lang,
     }),
-    [amountText, channel, prefillListingUrl, prefillVin, productName, recipient, require, validityHours],
+    [amountText, channel, lang, prefillListingUrl, prefillVin, productName, recipient, require, validityHours],
   );
 
   const persist = useCallback(async () => {
@@ -147,6 +158,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
     setPrefillListingUrl("");
     setRequire(defaultClientLinkRequire());
     setValidityHours(CLIENT_LINK_DEFAULT_VALIDITY_HOURS);
+    setLang(initialLang);
     setError(null);
     setCopied(false);
     setEmailNotice(null);
@@ -170,6 +182,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
           prefillListingUrl: "",
           require: defaultClientLinkRequire(),
           validityHours: CLIENT_LINK_DEFAULT_VALIDITY_HOURS,
+          lang: initialLang,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -214,6 +227,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
       expiresAt,
       amountCents: parseEurToCents(amountText) ?? CLIENT_LINK_DEFAULT_AMOUNT_CENTS,
       vin: prefillVin,
+      lang,
     });
     const phone = channel === "whatsapp" ? recipient : "";
     window.open(buildClientLinkWhatsAppUrl(phone, text), "_blank", "noopener,noreferrer");
@@ -229,7 +243,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, token, to }),
+        body: JSON.stringify({ id, token, to, lang }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -329,6 +343,21 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
             />
+
+            <p className={`${fieldLabel} mt-4`}>Klienta valoda</p>
+            <div className="inline-flex rounded-lg bg-[#f2f2f7] p-0.5" role="group" aria-label="Klienta valoda" data-client-link-lang>
+              {CLIENT_LINK_LANGS.map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLang(l)}
+                  aria-pressed={lang === l}
+                  className={`rounded-md px-3 py-1 text-[12.5px] font-medium ${lang === l ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73]"}`}
+                >
+                  {CLIENT_LINK_LANG_LABEL[l]}
+                </button>
+              ))}
+            </div>
 
             <p className={`${fieldLabel} mt-4`}>Produkts un summa</p>
             <div className="grid grid-cols-[1fr_7.5rem] gap-2">

@@ -21,7 +21,7 @@ import { reportReadyVinVar } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { formatRigaDateTime } from "@/lib/order-client-marks";
 import { formatEurFromCents } from "@/lib/order-upsell";
-import { ISO2_TO_LV_NAME } from "@/lib/country-names-lv";
+import { auctionArchiveCountryInLang } from "@/lib/email/auction-archive-email-i18n";
 
 export type AuctionArchiveSendSituation = DealerSendSituation;
 
@@ -100,26 +100,13 @@ const CONTENTS_I18N: Record<
   },
 };
 
-let LV_COUNTRY_ISO: Map<string, string> | null = null;
-/** LV valsts nosaukums («Itālija») -> klienta valodā; nezināms paliek kā ir. */
-function countryInLang(lvName: string, lang: ForeignLang): string {
-  if (!LV_COUNTRY_ISO) LV_COUNTRY_ISO = new Map(Object.entries(ISO2_TO_LV_NAME).map(([iso, lv]) => [lv.toLocaleLowerCase("lv"), iso]));
-  const iso = LV_COUNTRY_ISO.get(lvName.trim().toLocaleLowerCase("lv"));
-  if (!iso) return lvName;
-  try {
-    return new Intl.DisplayNames([lang], { type: "region" }).of(iso) ?? lvName;
-  } catch {
-    return lvName;
-  }
-}
-
 /** Tas pats «Arhīvā: …» teikums klienta valodā. */
 export function auctionArchiveReportContentsLineI18n(s: AuctionArchiveSummary, showPrices: boolean, lang?: ClientReportLang | null): string {
   if (!lang || lang === "lv") return auctionArchiveReportContentsLine(s, showPrices);
   if (s.auctions.length === 0 && s.photoCount === 0) return "";
   const c = CONTENTS_I18N[lang];
   const last = [...s.auctions].reverse().find((a) => a.date)?.date ?? "";
-  const where = [formatIsoDayLv(last), ...auctionArchiveCountries(s).map((x) => countryInLang(x, lang))].filter(Boolean).join(", ");
+  const where = [formatIsoDayLv(last), ...auctionArchiveCountries(s).map((x) => auctionArchiveCountryInLang(x, lang))].filter(Boolean).join(", ");
   const parts = [
     `${c.auctions(Math.max(1, s.auctions.length))}${where ? ` (${where})` : ""}`,
     s.photoCount > 0 ? c.photos(s.photoCount) : "",

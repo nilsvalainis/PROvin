@@ -110,20 +110,64 @@ export function dealerCheckReportFilename(record: DealerCheckRecord): string {
 export const DEALER_CHECK_DZA_SIGNATURE = "Ar cieņu,\nNils Valainis";
 export const DEALER_CHECK_DZA_FROM_NAME = "Nils Valainis";
 
-/** E-pasta noklusējuma teksts (rediģējams pirms sūtīšanas). */
-export function dealerCheckEmailDefaults(record: DealerCheckRecord): { subject: string; text: string } {
+type DealerCheckEmailLang = "lv" | "en" | "ru" | "de";
+
+const DEALER_CHECK_EMAIL_COPY: Record<
+  DealerCheckEmailLang,
+  { subject: string; hello: string; attached: (label: string) => string; regards: string }
+> = {
+  lv: {
+    subject: "Oficiālā dīlera dati",
+    hello: "Labdien!",
+    attached: (l) => `Pielikumā oficiālā dīlera servisa dati${l ? ` (${l})` : ""}.`,
+    regards: "Ar cieņu",
+  },
+  en: {
+    subject: "Official dealer data",
+    hello: "Hello!",
+    attached: (l) => `Please find attached the official dealer service data${l ? ` (${l})` : ""}.`,
+    regards: "Best regards",
+  },
+  ru: {
+    subject: "Данные официального дилера",
+    hello: "Здравствуйте!",
+    attached: (l) => `Во вложении данные сервиса официального дилера${l ? ` (${l})` : ""}.`,
+    regards: "С уважением",
+  },
+  de: {
+    subject: "Offizielle Händlerdaten",
+    hello: "Guten Tag!",
+    attached: (l) => `Im Anhang finden Sie die offiziellen Servicedaten des Vertragshändlers${l ? ` (${l})` : ""}.`,
+    regards: "Mit freundlichen Grüßen",
+  },
+};
+
+export const DEALER_CHECK_EMAIL_LANGS: readonly DealerCheckEmailLang[] = ["lv", "en", "ru", "de"];
+
+/**
+ * E-pasta noklusējuma teksts (rediģējams pirms sūtīšanas) klienta valodā (Nils 26.11).
+ * OEM PDF saturs paliek oriģinālā - tulko tikai e-pasta tekstu.
+ */
+export function dealerCheckEmailDefaults(
+  record: DealerCheckRecord,
+  lang: DealerCheckEmailLang = "lv",
+): { subject: string; text: string } {
+  const c = DEALER_CHECK_EMAIL_COPY[lang] ?? DEALER_CHECK_EMAIL_COPY.lv;
   const car = [record.vehicle.make, record.vehicle.model].filter(Boolean).join(" ");
   const label = [car, record.vin].filter(Boolean).join(" · ");
+  const dza = record.template === "dzintarzeme";
   return {
-    subject: `Oficiālā dīlera dati - ${label || "auto"}`,
-    text: [
-      "Labdien!",
-      "",
-      `Pielikumā oficiālā dīlera servisa dati${label ? ` (${label})` : ""}.`,
-      "",
-      record.template === "dzintarzeme" ? DEALER_CHECK_DZA_SIGNATURE : "Ar cieņu",
-    ].join("\n"),
+    subject: `${c.subject} - ${label || "auto"}`,
+    text: [c.hello, "", c.attached(label), "", dza ? `${c.regards},\n${DEALER_CHECK_DZA_FROM_NAME}` : c.regards].join("\n"),
   };
+}
+
+/** Visas valodas uzreiz - UI pārslēdz bez servera izsaukuma. */
+export function dealerCheckEmailDefaultsByLang(record: DealerCheckRecord): Record<DealerCheckEmailLang, { subject: string; text: string }> {
+  return Object.fromEntries(DEALER_CHECK_EMAIL_LANGS.map((l) => [l, dealerCheckEmailDefaults(record, l)])) as Record<
+    DealerCheckEmailLang,
+    { subject: string; text: string }
+  >;
 }
 
 /** Vai teksts satur PROVIN zīmolu (DZA e-pastā aizliegts). */
@@ -136,11 +180,11 @@ function escapeEmailHtml(s: string): string {
 }
 
 /** DZA e-pasta HTML: tikai admina teksts, bez PROVIN veidnes, galvenes un kājenes. */
-export function dealerCheckDzaEmailHtml(text: string): string {
+export function dealerCheckDzaEmailHtml(text: string, lang: DealerCheckEmailLang = "lv"): string {
   const body = text
     .trim()
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 14px">${escapeEmailHtml(p).replace(/\n/g, "<br>")}</p>`)
     .join("");
-  return `<!doctype html><html lang="lv"><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#111">${body}</body></html>`;
+  return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#111">${body}</body></html>`;
 }

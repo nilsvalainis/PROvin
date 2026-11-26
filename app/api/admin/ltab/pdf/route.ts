@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { getDropboxClient } from "@/lib/dropbox-client";
+import { downloadOrderDropboxFile } from "@/lib/order-dropbox";
 import { provOrdersDropboxRoot } from "@/lib/ltab-dropbox";
 import { isInsideDropboxFolder } from "@/lib/iriss-autoparks-dropbox-path";
 import { readLtabAutoStatus } from "@/lib/ltab-auto-store";
@@ -24,7 +25,9 @@ export async function GET(req: Request) {
   const client = getDropboxClient();
   if (!client) return NextResponse.json({ error: "dropbox_not_configured" }, { status: 503 });
   try {
-    const { bytes } = await client.download(path);
+    const got = await downloadOrderDropboxFile(client, sessionId, path);
+    if (!got) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const bytes = got.bytes;
     const name = (status?.pdf?.name || "LTAB.pdf").replace(/[^\w .-]+/g, "_");
     return new NextResponse(new Uint8Array(bytes), {
       headers: {
