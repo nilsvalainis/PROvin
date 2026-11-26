@@ -1,8 +1,8 @@
 /**
  * 25.11.2026: EN/RU/DE klienta PDF palika latviešu teksts (6a kartītes «3 ieraksti», «Nav ierakstu»,
  * CARFAX bloks, CSDD vērtības, TA vērtējumi, LTAB izziņa, eļļas intervāli). Pastāvīga sargtests:
- * bagāts payload visās valodās - ne-LV versijā nav latviešu atlieku, izņemot avotu oriģinālus
- * (CSDD reģistra defektu brīvais teksts - to tulko AI atlieku gājiens) un «(oriģināls)» tekstus.
+ * bagāts payload visās valodās - ne-LV versijā nav latviešu atlieku, izņemot «(oriģināls)» tekstus.
+ * 25.11 (2. kārta): arī CSDD TA defektu un «Piezīmes» standarta teikumi tulkoti bez AI (csdd-ta-defects-i18n).
  */
 import { describe, expect, it } from "vitest";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
@@ -17,7 +17,7 @@ import {
   applyClientReportTranslatedTexts,
   collectClientReportTranslatableTexts,
 } from "@/lib/client-report-translatable-fields";
-import { ECSDD_NEW_FORMAT_DEREGISTERED, ECSDD_OLD_FORMAT_MEASUREMENTS } from "@/lib/csdd-bloki.fixtures";
+import { csddTaDefectSentencesLv, translateCsddTaDefectText } from "@/lib/csdd-ta-defects-i18n";
 
 const LV_DIACRITIC = /[āčēģīķļņšūžĀČĒĢĪĶĻŅŠŪŽ]/;
 const LV_WORD = /(?<![\p{L}\p{N}])(ieraksts|ieraksti|ierakstu|nav|dienas|dienu|mēn|pēdējais|apkopju|kopš|uzskaitē|izsoles|īpašnieki)(?![\p{L}\p{N}])/iu;
@@ -48,14 +48,9 @@ function textNodes(html: string): string[] {
     .filter(Boolean);
 }
 
-const squash = (s: string) => s.replace(/[\s«»]/g, "").replace(/^-/, "");
-const CSDD_ORIGINALS = [ECSDD_NEW_FORMAT_DEREGISTERED, ECSDD_OLD_FORMAT_MEASUREMENTS].map(squash);
-
-/** Avota oriģināls: CSDD reģistra brīvais teksts (defekti, piezīmes) vai tekstā ar «(oriģināls)». */
+/** Avota oriģināls: tekstā ar «(oriģināls)». */
 function isSourceOriginal(text: string): boolean {
-  if (/\(oriģināls\)/i.test(text)) return true;
-  const s = squash(text);
-  return s.length >= 12 && CSDD_ORIGINALS.some((raw) => raw.includes(s));
+  return /\(oriģināls\)/i.test(text);
 }
 
 function lvResidue(html: string): string[] {
@@ -119,5 +114,35 @@ describe("translateClientReportLvTerms", () => {
     expect(translateClientReportLvTerms("Mercedes-Benz Köln, DE-50667", "de")).toBe("Mercedes-Benz Köln, DE-50667");
     expect(translateClientReportLvTerms("Priekšējais tilts. Plaisas, lūzumi.", "en")).toBe("Priekšējais tilts. Plaisas, lūzumi.");
     expect(translateClientReportLvTerms("3 ieraksti", "lv")).toBe("3 ieraksti");
+  });
+});
+
+describe("CSDD TA defektu teikumi", () => {
+  it("fiksētie teikumi visās valodās, arī «- …» un «…» ietvarā", () => {
+    expect(translateCsddTaDefectText("Priekšējais tilts. Plaisas, lūzumi, ievērojama korozija labās puses atsperojumā.", "en")).toBe(
+      "Front axle. Cracks, fractures, significant corrosion of the right-hand suspension spring.",
+    );
+    expect(translateCsddTaDefectText("«Stāvbremze nedarbojas vienā pusē.»", "de")).toBe("«Feststellbremse auf einer Seite unwirksam.»");
+    expect(translateCsddTaDefectText("- Nevar pieslēgties OBD, jo nesavienojas ar sistēmu.", "ru")).toBe(
+      "- Не удаётся подключиться к OBD - нет связи с системой.",
+    );
+    expect(translateCsddTaDefectText("Priekšējais tilts. Palielināta brīvkustība balstiekārtas šarnīrā. Kreisais augšējais šarnīrs.", "de")).toBe(
+      "Vorderachse. Übermäßiges Spiel im Achsgelenk. Linkes oberes Gelenk.",
+    );
+  });
+
+  it("nezināms teikums - viss gabals paliek AI gājienam; LV - null", () => {
+    expect(translateCsddTaDefectText("Priekšējais tilts. Nezināms defekts.", "en")).toBeNull();
+    expect(translateCsddTaDefectText("Stāvbremze nedarbojas vienā pusē.", "lv")).toBeNull();
+  });
+
+  it("katram teikumam ir EN/RU/DE bez latviešu burtiem", () => {
+    for (const lv of csddTaDefectSentencesLv()) {
+      for (const lang of ["en", "ru", "de"] as const) {
+        const out = translateCsddTaDefectText(lv, lang);
+        expect(out, `${lang}: ${lv}`).not.toBeNull();
+        expect(LV_DIACRITIC.test(out!), `${lang}: ${out}`).toBe(false);
+      }
+    }
   });
 });
