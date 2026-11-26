@@ -31,6 +31,7 @@ import {
   resolveDealerPdfLang,
   useDealerDataJobControls,
 } from "@/components/admin/useDealerDataJobControls";
+import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
 import {
   AmxButton,
   AmxCard,
@@ -289,7 +290,7 @@ export function MobileDealerOrderPanel({
   if (!c.loaded) return null;
 
   const job = c.job;
-  const refundLabel = c.refunded ? "Atmaksāts" : c.b2bRefund ? (walletRefund ? "Atmaksa uz atlikumu" : "Atgriezt kredītu") : "Atmaksa";
+  const refundLabel = c.refunded ? "Atmaksāts" : c.b2bRefund ? (walletRefund ? "Atmaksa uz atlikumu" : "Atgriezt kredītu") : "Atgriezt maksājumu";
 
   return (
     <>
@@ -328,6 +329,15 @@ export function MobileDealerOrderPanel({
             <AdminAuctionArchivePanel sessionId={sessionId} refreshKey={archKey} onOpenSend={() => c.setDialog("archive")} />
           </>
         }
+      />
+      <AdminDealerRefundDialog
+        open={c.refundDialog}
+        onClose={() => c.setRefundDialog(false)}
+        sessionId={sessionId}
+        vin={c.vin}
+        customerEmail={(customerEmail ?? "").trim()}
+        customerPhoneDigits={dealerSend?.customerPhoneDigits ?? null}
+        onRefunded={c.onStripeRefunded}
       />
       <AdminDealerSendDialog
         open={c.dialog !== null}

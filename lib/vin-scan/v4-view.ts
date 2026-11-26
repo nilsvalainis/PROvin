@@ -308,3 +308,74 @@ export function vinScanVinFromRelayRef(ref: string): string | null {
   const m = VS_REF_RE.exec(ref.trim());
   return m ? m[1]!.toUpperCase() : null;
 }
+
+/* ---------------- Nobraukuma tabula ---------------- */
+
+export type VinScanV4MileageRow = {
+  /** «24.02.2026». */
+  date: string;
+  km: number;
+  /** Starpība pret iepriekšējo (vecāko) rādījumu; pirmajam `null`. */
+  diff: number | null;
+  source: string;
+  country: string;
+  /** Rādījums mazāks par iepriekšējo maksimumu (kritums). */
+  drop: boolean;
+};
+
+/**
+ * Visi nobraukuma rādījumi no visiem avotiem (Nils 26.11: «man vajag redzēt visus, nevis tikai pēdējo»),
+ * jaunākais augšā. Starpība pret iepriekšējo hronoloģisko rādījumu; kritums pret iepriekšējo maksimumu - sarkans.
+ */
+export function vinScanV4MileageRows(points: AtraFacts["mileage"]["points"]): VinScanV4MileageRow[] {
+  const asc = [...points].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.km - b.km));
+  let max = 0;
+  const out: VinScanV4MileageRow[] = asc.map((p, i) => {
+    const prev = i > 0 ? asc[i - 1]! : null;
+    const drop = max > 0 && p.km < max;
+    max = Math.max(max, p.km);
+    return { date: lvDateFromSortable(p.date), km: p.km, diff: prev ? p.km - prev.km : null, source: p.source, country: p.country, drop };
+  });
+  return out.reverse();
+}
+
+/** «489 009 km · 24.02.2026 · e.csdd»; bez datiem - tukšs (UI rāda sarkanu «nav datu», nekad «- km»). */
+export function vinScanV4LastOdometerLine(last: AtraFacts["mileage"]["last"]): string {
+  if (!last || !(last.km > 0)) return "";
+  return [`${formatKmLv(last.km)} km`, lvDateFromSortable(last.date), last.source].filter(Boolean).join(" · ");
+}
+
+/* ---------------- LTAB un CSDD konsekvence ---------------- */
+
+/** LTAB izlaišanas teksti, kas apgalvo, ka auto nav LV (sk. `LTAB_SKIP_REASON_LV`). */
+const LTAB_NOT_LV_RE = /nav\s+re[gģ]istr[eē]ts\s+latvij|nav\s+latvijas\s+numurz|nav\s+lv\s+numur/i;
+
+export type VinScanV4CsddRegistration = {
+  /** CSDD API (1. solis) numurzīme. */
+  apiPlate?: string;
+  /** e.csdd (2. solis): `true` - «Uzskaitē»; `false` - noņemts / izvests. */
+  ecsddRegistered?: boolean | null;
+  ecsddPlate?: string;
+};
+
+/** Vai CSDD (API vai e.csdd) apstiprina LV reģistrāciju. Noņemts no uzskaites e.csdd tekstā - nē. */
+export function vinScanV4CsddRegisteredLv(r: VinScanV4CsddRegistration): { registered: boolean; plate: string } {
+  if (r.ecsddRegistered === false) return { registered: false, plate: "" };
+  const plate = (r.apiPlate || r.ecsddPlate || "").trim();
+  return { registered: Boolean(plate) || r.ecsddRegistered === true, plate };
+}
+
+/**
+ * Konsekvences noteikums (26.11, «LTAB ir pretruna!»): ja CSDD saka «reģistrēts LV», neviens cits avots
+ * nedrīkst rādīt «nav reģistrēts Latvijā». Atgriež aizvietojošo tekstu vai `null`, ja pretrunas nav.
+ */
+export function vinScanV4LtabContradiction(
+  ltabMessage: string | null | undefined,
+  reg: VinScanV4CsddRegistration,
+): string | null {
+  const msg = String(ltabMessage ?? "");
+  if (!LTAB_NOT_LV_RE.test(msg)) return null;
+  const r = vinScanV4CsddRegisteredLv(reg);
+  if (!r.registered) return null;
+  return `CSDD: reģistrēts Latvijā${r.plate ? ` (${r.plate})` : ""} - LTAB vēl nav pārbaudīts, spied «Atkārtot»`;
+}

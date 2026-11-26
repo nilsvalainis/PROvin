@@ -20,6 +20,7 @@ import {
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
+  reviewAskEmailHtml,
   staffInviteEmailHtml,
   paymentConfirmationHtml,
   type OperatorEmailContext,
@@ -1131,6 +1132,8 @@ export async function sendDealerDataOperatorEmail(opts: {
   lang?: ClientReportLang;
   /** Dīlera «Sūtīt klientam»: statusa karte / fakti. Pielikumu izmērus pieliek šeit. */
   context?: OperatorEmailContext | null;
+  /** Sūta cilvēks (atmaksas logs): bez «nosūtīts automātiski» kājenē. */
+  humanSent?: boolean;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const b2bClient = opts.b2bClient === true;
@@ -1149,6 +1152,7 @@ export async function sendDealerDataOperatorEmail(opts: {
       text,
       b2bClient,
       lang,
+      ...(opts.humanSent ? { humanSent: true } : {}),
       context: opts.context
         ? {
             ...opts.context,
@@ -1177,6 +1181,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   b2bClient?: boolean;
   lang?: ClientReportLang;
   context?: OperatorEmailContext | null;
+  humanSent?: boolean;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");
@@ -1187,6 +1192,40 @@ export async function trySendDealerDataOperatorEmail(opts: {
     return true;
   } catch (err) {
     console.error("[dealer-data] operatora e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+/**
+ * Google atsauksmes lūgums (cron nākamajā darba dienā vai admina poga). From = info@provin.lv.
+ * Klients var atbildēt uz e-pastu (Reply-To kā citiem klientu e-pastiem).
+ */
+export async function trySendReviewAskEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  greeting: string;
+  body: string;
+  button: string;
+  href: string;
+  questions: string;
+  preheader?: string;
+  lang?: ClientReportLang;
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[review-ask] SMTP nav iestatīts, atsauksmes lūgums nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendSmtpMail({
+      to: opts.to,
+      subject: opts.subject.trim().slice(0, 180),
+      text: opts.text,
+      html: reviewAskEmailHtml(opts),
+    });
+    return true;
+  } catch (err) {
+    console.error("[review-ask] e-pasts neizdevās", err);
     return false;
   }
 }

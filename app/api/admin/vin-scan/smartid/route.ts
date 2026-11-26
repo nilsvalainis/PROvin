@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { fetchEcsddRelaySession, readEcsddRelayConfig, startEcsddLookup } from "@/lib/ecsdd-auto";
 import { readEcsddAutoStatus } from "@/lib/ecsdd-auto-store";
 import { isEcsddAutoActive, type EcsddAutoStatus } from "@/lib/ecsdd-auto-types";
@@ -9,6 +10,7 @@ import { readLtabRelayConfig, startLtabLookup } from "@/lib/ltab-auto";
 import { readLtabAutoStatus } from "@/lib/ltab-auto-store";
 import { isLtabAutoActive, type LtabAutoStatus } from "@/lib/ltab-auto-types";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
+import { vinScanLtabCsddContext } from "@/lib/vin-scan/ltab-csdd-context";
 import { vinScanRelayRef } from "@/lib/vin-scan/v4-view";
 
 export const runtime = "nodejs";
@@ -93,8 +95,22 @@ export async function POST(req: Request) {
   if (readEcsddRelayConfig() && !isEcsddAutoActive(prevE) && (force || !ecsddDone(prevE, now))) {
     tasks.push(startEcsddLookup(ref, { trigger: "manual", orderVin: q.vin, csdd, force: true }).catch(() => null));
   }
-  if (q.plate && readLtabRelayConfig() && !isLtabAutoActive(prevL) && (force || !ltabDone(prevL, now))) {
-    tasks.push(startLtabLookup(ref, { trigger: "manual", orderVin: q.vin, csdd, force: true }).catch(() => null));
+  if (readLtabRelayConfig() && !isLtabAutoActive(prevL) && (force || !ltabDone(prevL, now))) {
+    // 26.11: LTAB lemj pēc CSDD (API + e.csdd statuss), nevis tikai pēc ievadītā numura - citādi «nav reģistrēts
+    // Latvijā» pretrunā ar CSDD 1. soli. CSDD API zvans ir tas pats, ko VIN SCAN jau dara (60 s dedupe, uzskaite).
+    tasks.push(
+      (async () => {
+        const api = await fetchCsddTechDataCounted(q.vin, "admin", { timeoutMs: 12_000 }).catch(() => null);
+        const ctx = vinScanLtabCsddContext({
+          vin: q.vin,
+          plate: q.plate,
+          api,
+          ecsddRawText: prevE?.state === "found" ? prevE.rawText : "",
+        });
+        if (!ctx.plate) return null;
+        return startLtabLookup(ref, { trigger: "manual", orderVin: q.vin, csdd: ctx.csdd, force: true });
+      })().catch(() => null),
+    );
   }
   await Promise.all(tasks);
   return NextResponse.json(await view(q.vin));

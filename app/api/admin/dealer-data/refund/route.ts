@@ -1,15 +1,18 @@
 /**
  * Manuāla dīlera pasūtījuma atmaksa, kad OEM datu par VIN nav.
  *
- * B2C Stripe `cs_*`: nauda uz karti + klienta no_data e-pasts vienā solī.
+ * B2C Stripe `cs_*` (Nils 26.11): tikai no atmaksas loga - Nils redz un labo klienta tekstu.
+ *   Kārtība: teksts + saņēmējs pārbaudīti -> slēdzene (CAS) -> Stripe atmaksa -> TIKAI tad e-pasts
+ *   ar Nila apstiprināto tekstu. Ja Stripe neizdodas - e-pastu nesūta. Dubulta atmaksa nav iespējama.
  * B2B manuālais VIN (manual_order_*): 1 kredīts atpakaļ partnera kontā.
  * B2B maka pirkums (wallet_txn=): summa atpakaļ partnera atlikumā + IRISS e-pasts.
  */
 import { NextResponse } from "next/server";
 
 import {
+  dealerRefundEmailFacts,
+  parseDealerStripeRefundMessage,
   resolveDealerRefundClientEmail,
-  shouldSendDealerStripeRefundEmail,
 } from "@/lib/admin-dealer-data-refund";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
@@ -19,18 +22,27 @@ import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { notifyB2bWalletRefundEmail, refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
-import { readDealerDataJob, upsertDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
+import {
+  claimDealerRefundLock,
+  readDealerDataJob,
+  releaseDealerRefundLock,
+  upsertDealerDataJob,
+  writeDealerDataJob,
+} from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
   decideDealerRefund,
+  decideDealerRefundLock,
   isDealerDataAutoFetchOrder,
   type DealerRefundRecord,
 } from "@/lib/dealer-data-job-types";
+import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
+import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
+import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
-import { trySendDealerDataRefundEmail } from "@/lib/email/send-transactional";
 import { getStripe } from "@/lib/stripe";
 import { getCheckoutLineFromSession } from "@/lib/stripe-session";
-import { formatEurFromCents } from "@/lib/order-upsell";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +58,59 @@ function partnerIdFromNotes(notes: string | undefined): string | null {
 function lotIdFromNotes(notes: string | undefined): string | null {
   const m = (notes ?? "").match(/lot=([a-zA-Z0-9_-]+)/);
   return m?.[1] ?? null;
+}
+
+/**
+ * Atmaksas loga sākuma dati (tikai lasa, naudu neaiztiek): summa, klienta valoda (vietnes lapa),
+ * e-pasts, VIN un vai atmaksa vispār atļauta.
+ */
+export async function GET(req: Request) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim() ?? "";
+  if (!isSafeOrderDraftSessionId(sessionId) || !sessionId.startsWith("cs_")) {
+    return NextResponse.json({ error: "invalid_session" }, { status: 400 });
+  }
+  let stripe: ReturnType<typeof getStripe>;
+  try {
+    stripe = getStripe();
+  } catch {
+    return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
+  }
+  const [session, job, draft] = await Promise.all([
+    stripe.checkout.sessions.retrieve(sessionId).catch(() => null),
+    readDealerDataJob(sessionId),
+    readOrderDraft(sessionId),
+  ]);
+  if (!session) return NextResponse.json({ error: "session_not_found" }, { status: 404 });
+  const decision = decideDealerRefund({
+    job,
+    amountTotalCents: session.amount_total,
+    paid: session.payment_status === "paid",
+    override: job?.status !== "no_data",
+    dealerProduct: isDealerDataAutoFetchOrder({
+      checkoutLine: getCheckoutLineFromSession(session),
+      amountTotalCents: session.amount_total,
+    }),
+  });
+  const lock = decideDealerRefundLock(job);
+  return NextResponse.json({
+    ok: true,
+    allowed: decision.allowed && lock.ok,
+    ...(decision.allowed ? {} : { reason: decision.reason }),
+    ...(lock.ok ? {} : { reason: lock.reason }),
+    amountCents: decision.allowed ? decision.amountCents : (session.amount_total ?? null),
+    // Klienta valoda = vietnes lapa, kurā pasūtīja (#1274), ne pārlūka valoda.
+    lang: checkoutSessionSiteLang(session),
+    customerEmail: resolveDealerRefundClientEmail([
+      draft?.orderEdits?.customerEmail,
+      session.customer_details?.email,
+      session.customer_email,
+    ]),
+    vin: (job?.vin || draft?.orderEdits?.vin || "").trim(),
+    override: job?.status !== "no_data",
+  });
 }
 
 export async function POST(req: Request) {
@@ -149,6 +214,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_session" }, { status: 400 });
   }
 
+  // Nils 26.11: bez loga teksta atmaksas nav. Kanāls + teksts (+ e-pastam temats) obligāti.
+  const parsed = parseDealerStripeRefundMessage(o);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const message = parsed.message;
+
   let stripe: ReturnType<typeof getStripe>;
   try {
     stripe = getStripe();
@@ -184,6 +256,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "payment_intent_missing" }, { status: 409 });
   }
 
+  // E-pasta saņēmējs jāzina PIRMS naudas kustības (citādi nauda atgriezta, bet ziņa nekur neaiziet).
+  const draft = await readOrderDraft(sessionId);
+  let to = "";
+  if (message.channel === "email") {
+    const recipient = await resolveDealerSendRecipient({
+      logTag: "api/admin/dealer-data/refund",
+      sessionId,
+      requested: String(o.customerEmail ?? ""),
+      confirmOverride: o.confirmRecipientOverride === true,
+      draftEmail: draft?.orderEdits?.customerEmail?.trim() ?? "",
+      orderEmail: resolveDealerRefundClientEmail([session.customer_details?.email, session.customer_email]),
+      order: { notes: draft?.orderEdits?.notes ?? "" },
+    });
+    if (!recipient.ok) {
+      return NextResponse.json(dealerSendRecipientErrorBody(recipient), { status: recipient.status });
+    }
+    to = recipient.to;
+  }
+
+  // Dubulta atmaksa nav iespējama: CAS slēdzene + Stripe idempotences atslēga.
+  const lock = await claimDealerRefundLock(sessionId, { vin: job?.vin ?? draft?.orderEdits?.vin ?? "" });
+  if (!lock.ok) {
+    return NextResponse.json({ error: lock.reason, job }, { status: lock.reason === "store_error" ? 503 : 409 });
+  }
+
   let refund: Awaited<ReturnType<typeof stripe.refunds.create>>;
   try {
     refund = await stripe.refunds.create(
@@ -191,14 +288,16 @@ export async function POST(req: Request) {
         payment_intent: paymentIntentId,
         amount: decision.amountCents,
         reason: "requested_by_customer",
-        metadata: { provin_reason: "dealer_data_no_data", provin_session: sessionId },
+        metadata: { provin_reason: "dealer_data_no_data", provin_session: sessionId, provin_approved: "admin_dialog" },
       },
       { idempotencyKey: `provin-dealer-refund-${sessionId}` },
     );
   } catch (e) {
+    await releaseDealerRefundLock(sessionId);
     const detail = e instanceof Error ? e.message.slice(0, 300) : "unknown";
     console.error("[admin/dealer-data/refund] stripe refund failed", { sessionId, detail });
-    return NextResponse.json({ error: "refund_failed", detail }, { status: 502 });
+    // Atmaksa neizdevās - e-pastu NESŪTA.
+    return NextResponse.json({ error: "refund_failed", detail, emailSent: false }, { status: 502 });
   }
 
   const record: DealerRefundRecord = {
@@ -211,19 +310,15 @@ export async function POST(req: Request) {
   };
 
   const now = new Date().toISOString();
+  const base = (await readDealerDataJob(sessionId)) ?? lock.job;
+  const { refundPendingAt: _lock, ...baseRest } = base;
+  void _lock;
   const persisted = await writeDealerDataJob({
     // Saglabā kļūdu, trigeri un maksas rezultātus (oneautoResults), lai atkārtota
-    // ielase neiekasētu vēlreiz un adminā redzams iemesls.
-    ...(job ?? {}),
+    // ielase neiekasētu vēlreiz un adminā redzams iemesls. Slēdzene noņemta, atmaksa ierakstīta.
+    ...baseRest,
     sessionId,
-    vin: job?.vin ?? "",
-    status: job?.status ?? "no_data",
-    attempts: job?.attempts ?? 0,
-    createdAt: job?.createdAt ?? now,
     updatedAt: now,
-    ...(job?.startedAt ? { startedAt: job.startedAt } : {}),
-    ...(job?.finishedAt ? { finishedAt: job.finishedAt } : {}),
-    serviceEventCount: job?.serviceEventCount ?? 0,
     refund: record,
   });
   if (!persisted) {
@@ -233,42 +328,53 @@ export async function POST(req: Request) {
     });
   }
 
+  const vin = (job?.vin || draft?.orderEdits?.vin || "").trim() || null;
   let emailSent = false;
-  let emailError: "no_recipient" | "send_failed" | undefined;
-  const draft = await readOrderDraft(sessionId);
-  const to = resolveDealerRefundClientEmail([
-    session.customer_details?.email,
-    session.customer_email,
-    draft?.orderEdits?.customerEmail,
-  ]);
-  if (shouldSendDealerStripeRefundEmail(o.notifyEmail)) {
-    if (!to) {
-      emailError = "no_recipient";
-    } else {
-      emailSent = await trySendDealerDataRefundEmail({
-        to,
-        vin: job?.vin ?? draft?.orderEdits?.vin ?? null,
-        amountEur: formatEurFromCents(decision.amountCents),
-        cancelled: o.cancelled === true,
-        lang: checkoutSessionSiteLang(session),
+  let emailError: "send_failed" | undefined;
+  if (message.channel === "email") {
+    // Aiziet tieši Nila apstiprinātais (rediģētais) teksts - bez «nosūtīts automātiski».
+    emailSent = await trySendDealerDataOperatorEmail({
+      to,
+      subject: message.subject,
+      text: message.text,
+      lang: message.lang,
+      humanSent: true,
+      context: {
+        situation: o.cancelled === true ? "cancelled" : "no_data",
+        productKind: "dealer",
+        vin,
+        facts: dealerRefundEmailFacts(message.lang, decision.amountCents),
+      },
+    });
+    if (emailSent) {
+      await upsertDealerDataJob(sessionId, {
+        vin: vin ?? "",
+        refund: { ...record, emailSentAt: new Date().toISOString() },
       });
-      if (!emailSent) emailError = "send_failed";
+    } else {
+      emailError = "send_failed";
     }
   }
-  if (emailSent) {
-    await upsertDealerDataJob(sessionId, {
-      vin: job?.vin ?? "",
-      refund: { ...record, emailSentAt: new Date().toISOString() },
-    });
-  }
+  // Klienta saziņas žurnāls: e-pasts (ja aizgāja) vai WhatsApp (logs atver wa.me ar to pašu tekstu).
+  const marks =
+    emailSent || message.channel === "whatsapp"
+      ? await recordDealerSendOnServer(
+          sessionId,
+          dealerSendRecordFromInput({ situation: o.cancelled === true ? "cancelled" : "no_data" }, message.channel, now, "no_data"),
+        )
+      : null;
 
   return NextResponse.json({
     ok: true,
     refund: record,
     kind: "stripe",
+    channel: message.channel,
     statePersisted: persisted,
     emailSent,
+    ...(to ? { to } : {}),
     ...(emailError ? { emailError } : {}),
+    ...(marks ? { marks } : {}),
     job: await readDealerDataJob(sessionId),
   });
 }
+

@@ -12,12 +12,16 @@ import {
   buildVinScanV4Attention,
   buildVinScanV4Layout,
   formatKmLv,
+  vinScanV4LastOdometerLine,
+  vinScanV4LtabContradiction,
+  vinScanV4MileageRows,
   vinScanV4Notice,
   vinScanV4StatusLine,
   VIN_SCAN_V4_KFZ_ID,
   type VinScanV4Flag,
 } from "@/lib/vin-scan/v4-view";
 import { kfzAtViewState } from "@/lib/kfzgutachten/austria-signals";
+import { buildEcsddFacts, ECSDD_FACT_ROW_ID, ecsddInspectionLine, ecsddIsoToLvDate, type VinScanEcsddFacts } from "@/lib/vin-scan/ecsdd-facts";
 
 /* ---------------- Tipi ---------------- */
 
@@ -185,6 +189,55 @@ function Fact({ k, v, s, risk, sRisk, pending }: { k: string; v: string; s?: str
       <p className={LAB}>{k}</p>
       <p className={`text-[16px] font-bold leading-[1.25] tracking-[-0.015em] max-sm:text-[14px] ${risk ? RISK : pending ? `${MUTE} !font-medium` : INK}`}>{v}</p>
       {s ? <p className={`text-[11.5px] leading-[1.4] [overflow-wrap:anywhere] ${sRisk ? RISK : MUTE}`}>{s}</p> : null}
+    </div>
+  );
+}
+
+/** «Nobraukuma ieraksti»: skaits, pēdējie 3, izvēršama pilna tabula (datums · km · starpība · avots). Kritumi sarkanā. */
+function MileageFact({ facts }: { facts: AtraFacts }) {
+  const [open, setOpen] = useState(false);
+  const rows = vinScanV4MileageRows(facts.mileage.points);
+  const drop = facts.mileage.drop;
+  const diff = (d: number | null) => (d == null ? "" : `${d < 0 ? "-" : "+"}${formatKmLv(Math.abs(d))}`);
+  return (
+    <div className="col-span-2 grid min-w-0 content-start gap-[3px] border-b border-[#e8e8ec] py-3 max-sm:py-2.5 md:col-span-4 xl:col-span-1" data-v4-mileage>
+      <p className={LAB}>Nobraukuma ieraksti</p>
+      <p className={`text-[16px] font-bold leading-[1.25] tracking-[-0.015em] max-sm:text-[14px] ${INK}`}>{ieraksti(rows.length)}</p>
+      <p className={`text-[11.5px] leading-[1.4] ${drop ? RISK : MUTE}`}>{drop ? `kritums -${formatKmLv(drop.km)} km` : "bez kritumiem"}</p>
+      <ul className="m-0 mt-1 list-none p-0 text-[12.5px]">
+        {rows.slice(0, 3).map((r) => (
+          <li key={`${r.date}-${r.km}-${r.source}`} className={r.drop ? RISK : INK}>
+            {r.date} · {formatKmLv(r.km)} km <span className={r.drop ? RISK : MUTE}>· {r.source}</span>
+          </li>
+        ))}
+      </ul>
+      {rows.length > 3 ? (
+        <button type="button" className={`mt-1 justify-self-start text-[12px] font-semibold text-[#0061d2]`} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          {open ? "Paslēpt" : `Visi ${rows.length} rādījumi ›`}
+        </button>
+      ) : null}
+      {open ? (
+        <table className="mt-1.5 w-full border-collapse text-[12px]" data-v4-mileage-table>
+          <thead>
+            <tr className={`${MUTE} text-left`}>
+              <th className="py-1 pr-2 font-medium">Datums</th>
+              <th className="py-1 pr-2 text-right font-medium">km</th>
+              <th className="py-1 pr-2 text-right font-medium">Starpība</th>
+              <th className="py-1 font-medium">Avots</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={`${r.date}-${r.km}-${r.source}`} className={`border-t border-[#f5f5f7] ${r.drop ? RISK : INK}`}>
+                <td className="py-1 pr-2 whitespace-nowrap">{r.date}</td>
+                <td className="py-1 pr-2 text-right whitespace-nowrap">{formatKmLv(r.km)}</td>
+                <td className={`py-1 pr-2 text-right whitespace-nowrap ${r.diff != null && r.diff < 0 ? RISK : MUTE}`}>{diff(r.diff)}</td>
+                <td className="py-1 [overflow-wrap:anywhere]">{[r.source, r.country && r.country !== "LV" ? r.country : ""].filter(Boolean).join(" · ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
     </div>
   );
 }
@@ -419,9 +472,17 @@ function ecsddView(s: VinScanV4SmartId | null, busy: boolean): { kf: ReactNode; 
   };
 }
 
-function ltabView(s: VinScanV4SmartId | null, busy: boolean): { kf: ReactNode; done: boolean; error: boolean } {
+function ltabView(
+  s: VinScanV4SmartId | null,
+  busy: boolean,
+  contradiction: string | null = null,
+): { kf: ReactNode; done: boolean; error: boolean } {
   if (!s) return { kf: <span className={MUTE}>{busy ? "lasa…" : "nav palaists"}</span>, done: false, error: false };
   const l = s.ltab;
+  // CSDD saka «reģistrēts LV» - «nav reģistrēts Latvijā» nedrīkst rādīt (26.11); piedāvā atkārtot.
+  if (contradiction && l && (l.state === "skipped" || l.state === "not_configured")) {
+    return { kf: <span className={RISK}>{contradiction}</span>, done: false, error: true };
+  }
   if (!s.hasPlate && !l) return { kf: <span className={RISK}>Nav LV numura - LTAB nav datu</span>, done: false, error: false };
   if (l?.state === "awaiting_smartid" && l.verificationCode) {
     return { kf: <SmartIdCode code={l.verificationCode} where="LTAB" />, done: false, error: false };
@@ -534,18 +595,29 @@ export function AdminVinScanV4({
         : null,
     [vin, rows, kfz, csdd],
   );
+  const ecsddRaw = smartId?.ecsdd?.state === "found" ? (smartId.ecsdd.rawText ?? "") : "";
+  const ecsddFacts = useMemo<VinScanEcsddFacts | null>(() => buildEcsddFacts(ecsddRaw), [ecsddRaw]);
+  // e.csdd (2. solis) ir tāds pats avots kā VIN SCAN rindas: nobraukums, apskates, CSNg (26.11).
+  const factRows = useMemo(() => (ecsddFacts ? [...rows.filter((r) => r.id !== ECSDD_FACT_ROW_ID), ecsddFacts.row] : rows), [rows, ecsddFacts]);
   const facts = useMemo(
     () =>
-      rows.some((r) => r.status === "found") || csdd
-        ? buildAtraFacts({ vin, plate, title, year: csdd?.year ?? "", rows, dealer: null, csdd, hasListing })
+      factRows.some((r) => r.status === "found") || csdd
+        ? buildAtraFacts({ vin, plate, title, year: csdd?.year ?? "", rows: factRows, dealer: null, csdd, hasListing })
         : null,
-    [vin, plate, title, rows, csdd, hasListing],
+    [vin, plate, title, factRows, csdd, hasListing],
   );
   const flags = useMemo(() => {
     const extra = [...(extraFlags ?? [])];
+    const ta = ecsddFacts?.inspections[0];
+    for (const d of ta?.defects ?? []) {
+      extra.push({
+        text: `TA defekts${d.rating ? ` (${d.rating})` : ""}: ${d.description}`,
+        source: ["e.csdd", ta?.date ? `TA ${ta.date}` : "", d.code].filter(Boolean).join(" · "),
+      });
+    }
     if (smartId?.ltab?.state === "claims") extra.push({ text: "OCTA atlīdzība (LTAB)", source: smartId.ltab.message || "LTAB" });
     return buildVinScanV4Attention(facts, extra);
-  }, [facts, extraFlags, smartId]);
+  }, [facts, extraFlags, smartId, ecsddFacts]);
   const done = !busy;
   const at = shortAt(scannedAt);
   const statusLine = vinScanV4StatusLine(layout, busy);
@@ -553,27 +625,30 @@ export function AdminVinScanV4({
   const pendingNames = layout.pending.slice(0, 2).map((r) => r.label);
   const smartIdWait = Boolean(smartId && (smartId.sessionCode || smartId.ecsdd?.state === "awaiting_smartid" || smartId.ltab?.state === "awaiting_smartid"));
 
+  // «lasa…» beidzas, kad visi avoti atbildējuši, arī ja kāds fona pieprasījums vēl nav aizvērts (26.11).
+  const settled = done || (layout.counted > 0 && layout.pending.length === 0);
+
   if (!rows.length && !busy && !csdd) return null;
 
   /* --- kopsavilkums --- */
   const m = facts?.mileage;
   const last = m?.last ?? null;
   const vehicleTitle = title || [csdd?.make, csdd?.model].filter(Boolean).join(" ");
-  const nf = (k: string) => (done ? <Fact k={k} v="Nav datu" risk /> : <Fact k={k} v="lasa…" pending />);
+  const nf = (k: string) => (settled ? <Fact k={k} v="Nav datu" risk /> : <Fact k={k} v="lasa…" pending />);
+  const ltabState = smartId?.ltab?.state;
+  const inspectionUntil = facts?.inspection.until || (ecsddFacts?.nextInspectionIso ? ecsddIsoToLvDate(ecsddFacts.nextInspectionIso) : "");
+  const inspectionLine = ecsddInspectionLine(ecsddFacts);
   const theftRows = rows.filter((r) => ["nicb", "cz_patrani", "ca_cpic"].includes(r.id) && (r.status === "found" || r.status === "none"));
   const factsGrid = (
     <>
-      {m && m.points.length ? (
+      {facts && m && m.points.length ? <MileageFact facts={facts} /> : nf("Nobraukuma ieraksti")}
+      {facts && !facts.incidents.count && ltabState !== "claims" && (ecsddFacts?.csng.checked || ltabState === "no_claims") ? (
         <Fact
-          k="Nobraukuma ieraksti"
-          v={ieraksti(m.points.length)}
-          s={m.drop ? `kritums -${formatKmLv(m.drop.km)} km` : "bez neatbilstībām"}
-          sRisk={Boolean(m.drop)}
+          k="Negadījumi / bojājumi"
+          v="Nav reģistrēti"
+          s={[ecsddFacts?.csng.checked ? "e.csdd CSNg" : "", ltabState === "no_claims" ? "LTAB 0" : ""].filter(Boolean).join(" · ")}
         />
-      ) : (
-        nf("Nobraukuma ieraksti")
-      )}
-      {facts && (facts.incidents.count || smartId?.ltab?.state === "claims" || smartId?.ltab?.state === "no_claims") ? (
+      ) : facts && (facts.incidents.count || ltabState === "claims" || ltabState === "no_claims") ? (
         <Fact
           k="Negadījumi / bojājumi"
           v={ieraksti(facts.incidents.count + (smartId?.ltab?.state === "claims" ? 1 : 0))}
@@ -586,16 +661,26 @@ export function AdminVinScanV4({
         nf("Negadījumi / bojājumi")
       )}
       {facts?.countries.length ? <Fact k="Valstis" v={facts.countries.join(" · ")} /> : nf("Valstis")}
-      {facts && (facts.inspection.until || facts.inspection.last) ? (
+      {facts && (inspectionUntil || facts.inspection.last) ? (
         <Fact
           k="Tehniskā apskate"
-          v={facts.inspection.until ? `līdz ${facts.inspection.until}` : facts.inspection.last}
-          s={[facts.inspection.until ? facts.inspection.last : "", facts.inspection.sources.join(" · ")].filter(Boolean).join(" · ")}
+          v={inspectionUntil ? `līdz ${inspectionUntil}` : facts.inspection.last}
+          s={[
+            inspectionLine || (inspectionUntil ? facts.inspection.last : ""),
+            [...new Set([...facts.inspection.sources, ...(ecsddFacts?.nextInspectionIso ? ["e.csdd"] : [])])].join(" · "),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          sRisk={Boolean(ecsddFacts?.inspections[0]?.defects.some((d) => Number.parseInt(d.rating, 10) >= 2))}
         />
       ) : (
         nf("Tehniskā apskate")
       )}
-      <Fact k="Īpašnieki" v="Nav datu" s="CSDD maksas izziņa (3. solis)" risk={done} pending={!done} />
+      {ecsddFacts?.ownerCount ? (
+        <Fact k="Īpašnieki" v={ecsddFacts.ownerCount} s="Latvijā · e.csdd" />
+      ) : (
+        <Fact k="Īpašnieki" v={settled ? "Nav datu" : "lasa…"} s="CSDD maksas izziņa (3. solis)" risk={settled} pending={!settled} />
+      )}
       {facts?.wanted.length ? (
         <Fact k="Zādzība" v="Meklēšanā" s={facts.wanted.join(" · ")} risk />
       ) : theftRows.length ? (
@@ -639,20 +724,20 @@ export function AdminVinScanV4({
         </div>
         <div>
           <p className={LAB}>Pēdējais odometra rādījums</p>
-          {last ? (
+          {last && vinScanV4LastOdometerLine(last) ? (
             <>
               <p className={`mt-1.5 whitespace-nowrap text-[40px] font-extrabold leading-none tracking-[-0.035em] max-sm:text-[32px] ${INK}`}>
                 {formatKmLv(last.km)}
                 <small className={`ml-1 text-[0.42em] font-medium tracking-normal ${MUTE}`}>km</small>
               </p>
-              <p className={`mt-1.5 text-[12px] ${MUTE}`}>
+              <p className={`mt-1.5 text-[12px] ${MUTE}`} data-v4-last-odometer>
                 {lvDate(last.date)} · {last.source} · {ieraksti(m?.points.length ?? 0)}
               </p>
               {facts ? <MileageChart facts={facts} /> : null}
             </>
           ) : (
-            <p className="mt-1.5 text-[40px] font-extrabold leading-none text-[#d2d2d7] max-sm:text-[32px]">
-              {done ? <span className={`${RISK} text-[22px]`}>Nav datu</span> : "- km"}
+            <p className="mt-1.5 text-[22px] font-extrabold leading-none max-sm:text-[20px]">
+              {settled ? <span className={RISK}>nav datu</span> : <span className={`${MUTE} font-medium`}>lasa…</span>}
             </p>
           )}
         </div>
@@ -697,7 +782,12 @@ export function AdminVinScanV4({
         .join(" · ")
     : csddRow?.summary ?? "";
   const ev = ecsddView(smartId, busy);
-  const lv = ltabView(smartId, busy);
+  const ltabContradiction = vinScanV4LtabContradiction(smartId?.ltab?.message, {
+    apiPlate: csdd?.registrationNumber,
+    ecsddRegistered: ecsddFacts?.registeredLv,
+    ecsddPlate: ecsddFacts?.plate,
+  });
+  const lv = ltabView(smartId, busy, ltabContradiction);
   const ecsddText = smartId?.ecsdd?.state === "found" ? rawLines(smartId.ecsdd.rawText ?? "") : [];
   const ltabCert = smartId?.ltab?.certificate;
   const csddBlock = (

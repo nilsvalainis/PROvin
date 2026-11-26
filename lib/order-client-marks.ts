@@ -17,6 +17,8 @@ export type OrderClientMarks = {
   dealerSends?: DealerSendRecord[];
   reviewRequestedAt?: string;
   reviewRequestChannel?: DealerSendChannel;
+  /** Adminā «Nelūgt» / «Atcelt»: automātiski vairs nesūta. */
+  reviewOptOutAt?: string;
 };
 
 export const DEALER_SEND_LOG_MAX = 20;
@@ -52,6 +54,7 @@ export function parseOrderClientMarks(raw: unknown): OrderClientMarks {
   }
   if (typeof r.reviewRequestedAt === "string" && r.reviewRequestedAt) out.reviewRequestedAt = r.reviewRequestedAt;
   if (isDealerSendChannel(r.reviewRequestChannel)) out.reviewRequestChannel = r.reviewRequestChannel;
+  if (typeof r.reviewOptOutAt === "string" && r.reviewOptOutAt) out.reviewOptOutAt = r.reviewOptOutAt;
   return out;
 }
 
@@ -71,6 +74,19 @@ export function withReviewRequested(
   atIso: string,
 ): OrderClientMarks {
   return { ...marks, reviewRequestedAt: atIso, reviewRequestChannel: channel };
+}
+
+/** «Nelūgt» (pirms lūguma) / «Atcelt» (pēc lūguma) - ieslēgt vai noņemt. */
+export function withReviewOptOut(marks: OrderClientMarks, optOut: boolean, atIso: string): OrderClientMarks {
+  if (optOut) return marks.reviewOptOutAt ? marks : { ...marks, reviewOptOutAt: atIso };
+  const { reviewOptOutAt: _drop, ...rest } = marks;
+  void _drop;
+  return rest;
+}
+
+/** Dīlera sūtījums «Datu nav - atmaksa» vai «Atcelts»: pasūtījums nav izpildīts - atsauksmi nelūdz. */
+export function isOrderCancelledByClientMarks(marks: OrderClientMarks | null | undefined): boolean {
+  return (marks?.dealerSends ?? []).some((s) => s.situation === "cancelled" || s.situation === "no_data");
 }
 
 export function lastDealerSend(marks: OrderClientMarks | null | undefined): DealerSendRecord | null {

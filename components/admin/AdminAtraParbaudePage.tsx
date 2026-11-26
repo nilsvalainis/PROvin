@@ -6,6 +6,7 @@ import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder"
 import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
 import { AdminVinScanPanel, type VinScanPanelSnapshot } from "@/components/admin/AdminVinScanPanel";
 import { useVinScanSmartId } from "@/components/admin/vin-scan-v4/useVinScanSmartId";
+import { withEcsddFactRow } from "@/lib/vin-scan/ecsdd-facts";
 import { VinScanV4CsddSms, VinScanV4PaidServices } from "@/components/admin/vin-scan-v4/VinScanV4Paid";
 import { vinScanV4PaidServices } from "@/lib/vin-scan/v4-paid-services";
 import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
@@ -174,6 +175,12 @@ export function AdminAtraParbaudePage({
     return pickVinScanVehicle(rows);
   }, [plateInfo, csdd, rows]);
   const title = vehicleTitle(vehicle);
+  // VIN SCAN v4: e.csdd + LTAB automātiski skenēšanas laikā caur servera Smart-ID sesiju (tikai adminam).
+  const smartIdPlate = plate || csdd?.registrationNumber || "";
+  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
+  // e.csdd (2. solis) nobraukums / apskates / CSNg arī kopsavilkumā (26.11).
+  const ecsddRaw = smartId.state?.ecsdd?.state === "found" ? (smartId.state.ecsdd.rawText ?? "") : "";
+  const factRows = useMemo(() => withEcsddFactRow(rows, ecsddRaw), [rows, ecsddRaw]);
   const dealerRecordForFacts = dealerState?.record ?? null;
   const facts = useMemo(
     () =>
@@ -182,12 +189,12 @@ export function AdminAtraParbaudePage({
         plate,
         title,
         year: vehicle?.year ?? "",
-        rows,
+        rows: factRows,
         dealer: dealerRecordForFacts && normalizeVin(dealerRecordForFacts.vin) === vin ? dealerRecordForFacts : null,
         csdd,
         hasListing: isPlausibleListingUrl(listingUrl),
       }),
-    [vin, plate, title, vehicle, rows, dealerRecordForFacts, csdd, listingUrl],
+    [vin, plate, title, vehicle, factRows, dealerRecordForFacts, csdd, listingUrl],
   );
   const score = useMemo(() => atraStoryScore(facts), [facts]);
   // Augšējās kartītes: kamēr avoti ielādējas, paliek iepriekšējās (vai nav nekā) - jaunās parādās vienā reizē, bez lēcieniem.
@@ -199,9 +206,6 @@ export function AdminAtraParbaudePage({
   const conclusionScore = useMemo(() => (conclusionFacts ? atraStoryScore(conclusionFacts) : null), [conclusionFacts]);
   const summary = useMemo(() => atraSummaryText({ vin, title, year: vehicle?.year ?? "" }, facts, score), [vin, title, vehicle, facts, score]);
 
-  // VIN SCAN v4: e.csdd + LTAB automātiski skenēšanas laikā caur servera Smart-ID sesiju (tikai adminam).
-  const smartIdPlate = plate || csdd?.registrationNumber || "";
-  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
   const paidServices = useMemo(() => (isAdmin && valid ? vinScanV4PaidServices(vin) : []), [isAdmin, valid, vin]);
 
   /* ---------- vēsture: abas krātuves ---------- */

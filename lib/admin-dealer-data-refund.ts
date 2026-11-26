@@ -1,10 +1,14 @@
 /**
  * Admin dīlera no_data atmaksas paziņojums.
- * B2C Stripe: atmaksa un klienta e-pasts vienā solī (Freimanis / Top Line, 2026-10-25).
+ * B2C Stripe (Nils 26.11): automātiski NEKAD. Poga «Atgriezt maksājumu» atver logu (summa, kanāls,
+ * klienta valodā sagatavots temats + teksts, priekšskats); tikai pēc «Atgriezt X € un nosūtīt»
+ * notiek Stripe atmaksa un aiziet Nila apstiprinātais (rediģētais) teksts.
  * B2B: poga arī pie failed / trūkstoša job; tad API saņem override: true.
  */
 
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import type { DealerDataJob } from "@/lib/dealer-data-job-types";
+import { formatEurFromCents } from "@/lib/order-upsell";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
 export type DealerRefundActionKind = "stripe" | "wallet" | "credit";
@@ -40,33 +44,104 @@ export function resolveDealerRefundActionKind(opts: {
   return "stripe";
 }
 
-/**
- * Stripe B2C: sūtīt klienta e-pastu, ja vien operators nav skaidri atslēdzis.
- * Izlaists / undefined = sūtīt (iepriekšējais opt-in `=== true` izlaida paziņojumu).
- */
-export function shouldSendDealerStripeRefundEmail(notifyEmail: unknown): boolean {
-  return notifyEmail !== false;
-}
-
 export type DealerRefundRequestBody = {
   sessionId: string;
-  notifyEmail: boolean;
   override?: true;
 };
 
-/** Galvenā «Atgriezt maksājumu» poga: Stripe vienmēr prasa paziņojumu. */
+/** B2B kredīts / maks: esošais ceļš (B2C Stripe iet caur atmaksas logu, sk. `parseDealerStripeRefundMessage`). */
 export function buildDealerRefundRequestBody(opts: {
   sessionId: string;
   kind: DealerRefundActionKind;
   override?: boolean;
-  /** Stripe: operatora izvēle (noklusējums - sūtīt). */
-  notifyEmail?: boolean;
 }): DealerRefundRequestBody {
   return {
     sessionId: opts.sessionId,
-    notifyEmail: opts.kind === "stripe" && opts.notifyEmail !== false,
     ...(opts.override ? { override: true as const } : {}),
   };
+}
+
+export type DealerRefundChannel = "email" | "whatsapp";
+
+/** Nila apstiprinātais teksts, ko Stripe atmaksas API saņem no loga. */
+export type DealerStripeRefundMessage = {
+  channel: DealerRefundChannel;
+  subject: string;
+  text: string;
+  lang: ClientReportLang;
+};
+
+export const DEALER_REFUND_SUBJECT_MAX = 180;
+export const DEALER_REFUND_TEXT_MAX = 12_000;
+
+export type DealerStripeRefundMessageError = "channel_required" | "subject_required" | "text_required";
+
+/**
+ * Stripe atmaksa bez loga teksta nav iespējama (Nils 26.11): kanāls obligāts, tekstam jābūt,
+ * e-pastam arī temats. Bez tā API atmaksu neveic (vecais «uzreiz + šablons» ceļš slēgts).
+ */
+export function parseDealerStripeRefundMessage(
+  o: Record<string, unknown>,
+): { ok: true; message: DealerStripeRefundMessage } | { ok: false; error: DealerStripeRefundMessageError } {
+  const channel = o.channel === "email" || o.channel === "whatsapp" ? o.channel : null;
+  if (!channel) return { ok: false, error: "channel_required" };
+  const text = String(o.text ?? "").replace(/\r\n/g, "\n").trim().slice(0, DEALER_REFUND_TEXT_MAX);
+  if (!text) return { ok: false, error: "text_required" };
+  const subject = String(o.subject ?? "").trim().slice(0, DEALER_REFUND_SUBJECT_MAX);
+  if (channel === "email" && !subject) return { ok: false, error: "subject_required" };
+  const rawLang = String(o.lang ?? "").trim().toLowerCase();
+  const lang = (CLIENT_REPORT_LANGS as readonly string[]).includes(rawLang) ? (rawLang as ClientReportLang) : "lv";
+  return { ok: true, message: { channel, subject: channel === "email" ? subject : "", text, lang } };
+}
+
+/** LV e-pasta fakti (summa uz karti, 5-10 darba dienas) - kā agrāk atmaksas e-pastā; citās valodās nav. */
+export function dealerRefundEmailFacts(lang: string, amountCents: number): { value: string; label: string }[] {
+  if (lang !== "lv" || !(amountCents > 0)) return [];
+  return [
+    { value: formatEurFromCents(amountCents), label: "atmaksāts uz karti" },
+    { value: "5-10", label: "darba dienas bankā" },
+  ];
+}
+
+/** Galvenā loga poga: «Atgriezt 17,49 € un nosūtīt» (WhatsApp - «un atvērt WhatsApp»). */
+export function dealerStripeRefundButtonLabel(amountCents: number | null | undefined, channel: DealerRefundChannel): string {
+  const amount = typeof amountCents === "number" && amountCents > 0 ? `${formatEurFromCents(amountCents)} ` : "";
+  return channel === "whatsapp" ? `Atgriezt ${amount}un atvērt WhatsApp` : `Atgriezt ${amount}un nosūtīt`;
+}
+
+/** API kļūdas kods -> īss teksts logā (latviski). */
+export function dealerStripeRefundErrorLv(code: string | null | undefined, detail?: string | null): string {
+  switch (code) {
+    case "already_refunded":
+      return "Šis pasūtījums jau ir atmaksāts - otrreiz atmaksāt nevar.";
+    case "refund_in_progress":
+      return "Atmaksa jau notiek (cits pieprasījums). Pagaidi minūti un atjauno lapu.";
+    case "refund_failed":
+      return `Stripe atmaksa neizdevās - e-pasts NAV nosūtīts.${detail ? ` (${detail})` : ""}`;
+    case "not_no_data":
+      return "Ielases statuss nav «datu nav» - atmaksa šeit nav atļauta.";
+    case "not_paid":
+      return "Pasūtījums nav apmaksāts.";
+    case "amount_above_cap":
+      return "Summa pārsniedz dīlera datu cenu - atmaksā Stripe pārvaldē.";
+    case "amount_missing":
+      return "Nav zināma samaksātā summa.";
+    case "payment_intent_missing":
+      return "Stripe maksājums nav atrasts.";
+    case "no_recipient":
+    case "invalid_customer_email":
+      return "Nav derīga klienta e-pasta (sadaļa «Klienta dati»).";
+    case "subject_required":
+      return "Temats ir tukšs.";
+    case "text_required":
+      return "Teksts ir tukšs.";
+    case "channel_required":
+      return "Izvēlies kanālu.";
+    case "store_error":
+      return "Neizdevās saglabāt stāvokli - atmaksa netika sākta. Mēģini vēlreiz.";
+    default:
+      return code ? `Atmaksa neizdevās: ${code}` : "Atmaksa neizdevās.";
+  }
 }
 
 export function resolveDealerRefundClientEmail(
@@ -91,7 +166,7 @@ export function dealerRefundConfirmMessage(
       ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
       : kind === "credit"
         ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
-        : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. Nākamajā solī izvēlēsies, vai sūtīt klientam e-pastu.";
+        : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska.";
   if (!opts?.override) return base;
   return `${DEALER_REFUND_OVERRIDE_CONFIRM} ${base}`;
 }
@@ -174,10 +249,6 @@ export function dealerRefundEmailSheetHint(opts: {
   }
   return null;
 }
-
-/** C2 (Nils 06.11): atmaksai viens e-pasts - izvēle pēc apstiprinājuma. */
-export const DEALER_REFUND_EMAIL_CHOICE_PROMPT =
-  "E-pasts klientam par atmaksu:\nOK - atmaksāt un nosūtīt e-pastu\nAtcelt - atmaksāt BEZ e-pasta (atmaksa tik un tā tiks veikta)";
 
 /** Brīdinājums pirms otra e-pasta par to pašu atmaksu. */
 export function dealerRefundEmailAlreadySentPrompt(refund: { emailSentAt?: string } | null | undefined): string | null {

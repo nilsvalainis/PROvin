@@ -315,6 +315,8 @@ export function emailDocument(opts: {
   omitContacts?: boolean;
   /** false - tikai gaišs (iekšējie e-pasti ar krāsainām flīzēm). Noklusējums: true. */
   darkMode?: boolean;
+  /** Tekstu apstiprināja un sūta cilvēks (piem. atmaksas logs) - bez «nosūtīts automātiski». */
+  humanSent?: boolean;
 }): string {
   const dark = opts.darkMode !== false;
   const lang = opts.lang ?? "lv";
@@ -351,7 +353,11 @@ ${emailHeaderRow(b2b)}
 ${opts.rows}
 ${opts.omitContacts ? `<tr><td style="padding:0 0 28px;"></td></tr>` : emailFooterRows(b2b)}
 </table>
-<p class="c-mut" style="margin:18px 0 0;font-family:${F};font-size:12px;line-height:18px;color:${C.mut};text-align:center;">${FOOTER_AUTO[lang]}</p>
+${
+    opts.humanSent
+      ? ""
+      : `<p class="c-mut" style="margin:18px 0 0;font-family:${F};font-size:12px;line-height:18px;color:${C.mut};text-align:center;">${FOOTER_AUTO[lang]}</p>`
+  }
 </td></tr></table>
 </body>
 </html>`;

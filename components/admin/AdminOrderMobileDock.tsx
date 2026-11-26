@@ -5,6 +5,7 @@ import { openWindowSyncThen } from "@/lib/admin-open-window";
 import { useAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import {
   Bot,
+  Eye,
   FileText,
   MessageCircle,
   MessageSquareText,
@@ -33,6 +34,8 @@ import {
   useFlashMaxDraft,
 } from "@/components/admin/AdminFlashMaxPanel";
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
+import { DealerExtraList } from "@/components/admin/AdminDealerExtraMenu";
+import type { DealerExtraAvailability, DealerExtraKey } from "@/lib/dealer-pdf-extra";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 /**
@@ -68,6 +71,12 @@ type Props = {
   onGeneratePdfRu: () => void;
   onGeneratePdfDe: () => void;
   onGenerateDealerPdfDe: () => void;
+  /** Dīlera PDF «+ Extra»: izvēle (lapas stāvoklis) un pieejamās sadaļas. */
+  dealerExtra?: readonly DealerExtraKey[];
+  onDealerExtraChange?: (next: DealerExtraKey[]) => void;
+  getDealerExtraItems?: (selected: readonly DealerExtraKey[]) => DealerExtraAvailability[];
+  /** «Priekšskats» - nobraukums un negadījumi kā PDF, pilnekrāna logā. */
+  onPreview?: () => void;
   pdfProgressKey?: string | null;
   pdfProgressPct?: number | null;
   onGenerateAsvPdf: () => void;
@@ -176,6 +185,10 @@ export function AdminOrderMobileDock({
   onGeneratePdfRu,
   onGeneratePdfDe,
   onGenerateDealerPdfDe,
+  dealerExtra = [],
+  onDealerExtraChange,
+  getDealerExtraItems,
+  onPreview,
   pdfProgressKey = null,
   pdfProgressPct = null,
   onGenerateAsvPdf,
@@ -208,6 +221,12 @@ export function AdminOrderMobileDock({
   onDismissNotice,
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
+  const [extraOpen, setExtraOpen] = useState(false);
+  const extraItems = useMemo(
+    () => (sheet === "pdf" && extraOpen && getDealerExtraItems ? getDealerExtraItems(dealerExtra) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sheet, extraOpen, dealerExtra],
+  );
   const flashDraft = useFlashMaxDraft();
   const [localNotice, setLocalNotice] = useState<AdminMobileDockStatus | null>(null);
   const [flashResultHidden, setFlashResultHidden] = useState(false);
@@ -461,6 +480,39 @@ export function AdminOrderMobileDock({
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
             </span>
           </button>
+          {onDealerExtraChange && getDealerExtraItems ? (
+            <div data-mobile-dealer-extra>
+              <button
+                type="button"
+                className={`${sheetRow} pl-10`}
+                aria-expanded={extraOpen}
+                onClick={() => setExtraOpen((v) => !v)}
+              >
+                <span className="min-w-0 flex-1">+ Extra</span>
+                {dealerExtra.length > 0 ? (
+                  <span className="rounded-full bg-[var(--color-provin-accent)] px-2 text-[11px] font-bold leading-[18px] text-white tabular-nums">
+                    {dealerExtra.length}
+                  </span>
+                ) : null}
+                <span aria-hidden className="text-[var(--color-provin-muted)]">{extraOpen ? "▴" : "▾"}</span>
+              </button>
+              {extraOpen ? (
+                <div className="pb-1 pl-7">
+                  <DealerExtraList
+                    size="touch"
+                    items={extraItems}
+                    selected={dealerExtra}
+                    onToggle={(key, on) => {
+                      const set = new Set(dealerExtra);
+                      if (on) set.add(key);
+                      else set.delete(key);
+                      onDealerExtraChange([...set]);
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <PdfLangRow
             progressKey={pdfProgressKey}
             progressPct={pdfProgressPct}
@@ -497,6 +549,12 @@ export function AdminOrderMobileDock({
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Oriģinālie API dati bez tulkojuma</span>
             </span>
           </button>
+          {onPreview ? (
+            <button type="button" className={sheetRow} data-mobile-report-preview onClick={() => runPdf(onPreview)}>
+              <Eye className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
+              <span className="block">Priekšskats</span>
+            </button>
+          ) : null}
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePrintInkPdf)}>
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">

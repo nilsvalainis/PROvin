@@ -16,6 +16,7 @@ const m = vi.hoisted(() => ({
   draft: vi.fn(async () => null as unknown),
   partnerByEmail: vi.fn(async (_e: string) => null as { id: string } | null),
   delBlobUrls: vi.fn(async () => undefined),
+  enqueueReview: vi.fn(async (_input: unknown) => true),
 }));
 
 const BASE_ORDER = { id: SID, vin: "WDC0000000TEST001", customerEmail: "klients@example.com", paymentStatus: "paid", isManual: true, notes: null as string | null, partnerId: null as string | null };
@@ -46,6 +47,7 @@ vi.mock("@/lib/order-dropbox", () => ({
   }),
 }));
 vi.mock("@/lib/admin-audit-complete-store", () => ({ setAuditDeadlineComplete: m.complete }));
+vi.mock("@/lib/review-ask-store", () => ({ enqueueReviewAskAfterReport: m.enqueueReview }));
 
 import { POST } from "@/app/api/admin/notify-report-ready/route";
 
@@ -82,6 +84,18 @@ describe("Sūtīt atskaiti ar servera PDF", () => {
     expect(m.del).toHaveBeenCalledWith(PDF_PATH);
     expect(j.serverSend).toMatchObject({ version: 1, completedAt: "2026-11-17T20:00:00.000Z" });
     expect(j.serverSend.dropboxPath).toContain("/_PROv/");
+  });
+
+  it("pēc atskaites pasūtījums nonāk atsauksmes lūguma rindā (nākamajā darba dienā)", async () => {
+    await POST(req({ serverPdfPathname: PDF_PATH }));
+    expect(m.enqueueReview).toHaveBeenCalledTimes(1);
+    expect(m.enqueueReview.mock.calls[0]![0]).toMatchObject({ sessionId: SID, email: "klients@example.com", lang: "lv", vin: "WDC0000000TEST001" });
+  });
+
+  it("B2B partnera atskaitei atsauksmi nelūdz", async () => {
+    m.order.mockResolvedValue({ ...BASE_ORDER, partnerId: PARTNER_ID });
+    await POST(req({ serverPdfPathname: PDF_PATH }));
+    expect(m.enqueueReview).not.toHaveBeenCalled();
   });
 
   it("atkārtots sūtījums: tēmā «labota», Dropbox fails ar _v2, bez «Izpildīts», ja nav prasīts", async () => {

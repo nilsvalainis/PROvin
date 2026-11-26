@@ -70,6 +70,8 @@ export function buildWaReportReadyVars(opts: { kind: ReportReadyProductKind; vin
   return {
     jautajumu_rinda: whatsappQuestionsLine(opts.kind),
     vin: reportReadyVinVar(opts.vin),
+    // 26.11 (Nils): atsauksmes lūgums - atsevišķa WhatsApp ziņa; arī veca admina pārraksta bloks paliek tukšs.
+    google_atsauksme: "",
   };
 }
 

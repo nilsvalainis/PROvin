@@ -96,6 +96,8 @@ export async function POST(req: Request) {
     text,
     lang,
     b2bClient,
+    // Tekstu rediģē un sūta cilvēks - bez «nosūtīts automātiski».
+    humanSent: true,
     context: situation ? { situation, productKind: "dealer", vin: vinRaw || null } : null,
   });
   if (!emailSent) {

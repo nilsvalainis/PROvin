@@ -60,7 +60,8 @@ describe("LTAB vaicājums: tikai LV numurzīme pēc CSDD", () => {
       plate: "KG982",
       source: "csdd_form",
     });
-    expect(resolveLtabQueryTarget(csdd({ registrationNumber: "KG982", registrationStatus: "" }), VIN)).toEqual({ kind: "skip", reason: "not_registered_lv" });
+    expect(resolveLtabQueryTarget(csdd({ registrationNumber: "KG982", registrationStatus: "" }), VIN)).toEqual({ kind: "skip", reason: "no_csdd_data" });
+    expect(resolveLtabQueryTarget(csdd({ registrationNumber: "KG982", registrationStatus: "Kaut kas cits" }), VIN)).toEqual({ kind: "skip", reason: "not_registered_lv" });
     expect(resolveLtabQueryTarget(csdd({ registrationNumber: "DE-XY 123", registrationStatus: "Uzskaitē" }), VIN).kind).toBe("skip");
   });
 

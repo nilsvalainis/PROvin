@@ -41,6 +41,7 @@ import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summar
 import { vinScanCountBreakdown } from "@/lib/vin-scan/types";
 import { AdminAtraCopyButton, AdminAtraPotential } from "@/components/admin/AdminAtraParbaudeFacts";
 import { useVinScanSmartId } from "@/components/admin/vin-scan-v4/useVinScanSmartId";
+import { withEcsddFactRow } from "@/lib/vin-scan/ecsdd-facts";
 import { VinScanV4CsddSms, VinScanV4PaidServices } from "@/components/admin/vin-scan-v4/VinScanV4Paid";
 import { vinScanV4PaidServices } from "@/lib/vin-scan/v4-paid-services";
 import { ECSDD_URL, atraStoryScore, atraSummaryText, buildAtraFacts } from "@/lib/atra-parbaude-facts";
@@ -172,6 +173,9 @@ export function AdminVinScanPageClient({
     scanSnapshot?.scannedAt && scanSnapshot.rows.some((row) => row.status !== "idle"),
   );
   const scanBusy = Boolean(scanSnapshot?.busy);
+  const smartIdPlate = plates.lv || csddData?.registrationNumber || "";
+  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
+  const ecsddRaw = smartId.state?.ecsdd?.state === "found" ? (smartId.state.ecsdd.rawText ?? "") : "";
   // «Ātrā pārbaude» telefonā: stāsta potenciāls, faktu kartītes un kopsavilkums (kods, tie paši fakti kā datorā).
   const atraLive = useMemo(() => {
     if (!glass || !valid || !hasScanResult || !scanSnapshot) return null;
@@ -183,18 +187,16 @@ export function AdminVinScanPageClient({
       plate: plates.lv,
       title,
       year,
-      rows: scanSnapshot.rows,
+      rows: withEcsddFactRow(scanSnapshot.rows, ecsddRaw),
       dealer: null,
       csdd: csddData,
       hasListing: isPlausibleListingUrl(listingUrl),
     });
     const score = atraStoryScore(facts);
     return { facts, score, text: atraSummaryText({ vin, title, year }, facts, score) };
-  }, [glass, valid, hasScanResult, scanSnapshot, plate, vin, plates.lv, csddData, listingUrl]);
+  }, [glass, valid, hasScanResult, scanSnapshot, plate, vin, plates.lv, csddData, listingUrl, ecsddRaw]);
   // Kamēr avoti ielādējas, kartītes paliek iepriekšējās - jaunās parādās vienā reizē, bez lēcieniem.
   const atra = useSettledWhileBusy(atraLive, scanBusy, vin);
-  const smartIdPlate = plates.lv || csddData?.registrationNumber || "";
-  const smartId = useVinScanSmartId({ vin: valid ? vin : "", plate: smartIdPlate, enabled: isAdmin && valid, startNonce: scanNonce, force: scanForce });
   const paidServices = useMemo(() => (isAdmin && valid ? vinScanV4PaidServices(vin) : []), [isAdmin, valid, vin]);
   const onSnapshot = useCallback((snapshot: VinScanPanelSnapshot) => {
     setScanSnapshot(snapshot);
