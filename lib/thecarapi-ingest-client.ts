@@ -15,6 +15,7 @@ export type ThecarapiIngestBody = {
   cachedAt?: string;
   cacheHasDetail?: boolean;
   partial?: boolean;
+  parse?: { status?: string; summary?: string };
 };
 
 export type ThecarapiIngestOutcome = {
