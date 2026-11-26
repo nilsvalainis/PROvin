@@ -352,7 +352,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_DEALER_COMMENT_CONSTRUCTION_RULES).not.toMatch(/Agregātu \/ aprīkojuma identifikācija/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/does NOT write about engine oil changes or service intervals at all/);
-    expect(prompts).toMatch(/DO NOT re-list the individual steps or dates from that table/);
+    expect(prompts).toMatch(/DO NOT re-list the individual intervals or dates from that table/);
     expect(prompts).toMatch(/no „Lielo mezglu apkopes” paragraph/);
     const src = readRepo("lib/admin-ai-source-comment.ts");
     expect(src).toMatch(/DEALER_COMMENTS_NO_TABLE_REPEAT_DIRECTIVE/);
