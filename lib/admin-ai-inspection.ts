@@ -20,9 +20,17 @@ import {
 } from "@/lib/source-summary-comment-format";
 import { applyPaintGaugeStaticBlock } from "@/lib/paint-gauge-static-block";
 import { AI_ROUTE_BUDGET_MS, createAiRequestBudget } from "@/lib/ai-request-budget";
+import { applyExpertFieldGuards, type ExpertFieldGuardOptions } from "@/lib/ai-expert-field-guards";
+import { gearboxPromptBlock, resolveCanonicalGearbox } from "@/lib/gearbox-kind-guard";
 
-function finalizeInspectionComment(text: string): string {
-  return applyPaintGaugeStaticBlock(stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text)));
+/**
+ * 27.11 (S-AI1/S-AI2): pēc AI - EUR, remonta minējumi, bezavota kalibrēšana un kārbai pretrunīgi
+ * teikumi ārā PIRMS statiskā krāsas biezuma bloka (tas ir fiksēts teksts, to neaiztiek).
+ */
+function finalizeInspectionComment(text: string, guards: ExpertFieldGuardOptions = {}): string {
+  return applyPaintGaugeStaticBlock(
+    applyExpertFieldGuards(stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text)), guards),
+  );
 }
 
 export async function generateInspectionRecommendationsWithAi(
@@ -42,12 +50,16 @@ export async function generateInspectionRecommendationsWithAi(
     sourceBlocks: input.sourceBlocks,
     vin: input.vin,
   });
+  const gearbox = resolveCanonicalGearbox({ sourceBlocks: input.sourceBlocks, vin: input.vin, contextText: context });
+  const gearboxBlock = gearboxPromptBlock(gearbox);
+  const guards: ExpertFieldGuardOptions = { gearbox, sourceText: context };
+  const finalize = (t: string) => finalizeInspectionComment(t, guards);
 
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${identificationBrief}
-
+${gearboxBlock ? `\n${gearboxBlock}\n` : ""}
 ${context}
 ${techSection}
 ---
@@ -65,6 +77,7 @@ NERAKSTI krāsas biezuma lekciju un neizdomā citus mikronu diapazonus. Statiska
 Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI - extra sadaļa ar vietām no brīfa (arkas, sliekšņu apakšas, apakšdaļa; bagāžnieka vāks pie numura zīmes gaismām TIKAI ja brīfs saka tērauds). Nosauc tikai brīfa valstis. Ja bloka NAV, par Lietuvu/Igauniju/Zviedriju un „turpmāko sāli” NERAKSTI.
 Ja kontekstā ir „Itālija / Francija: vizuālā piesardzība” ar VIZUĀLA PIESARDZĪBA - īsa piezīme par pārkrāsotiem paneļiem un kosmētiku, ne rūsas joslas šablons. Ja bloka NAV, Itāliju/Franciju neizdomā.
 Ja aprīkojumā / sludinājumā / identifikācijas datos ir lūka vai panorāmas lūka - OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem, mitrumu un iespējami cietām jumta lūkas drenāžām (VW grupā, īpaši Volkswagen, tas ir tipiski). Ja lūkas datos nav - šo tēmu neizdomā.
+Kārbas tēmas TIKAI pēc IELĀDĒTĀS ĀTRUMKĀRBAS (ja bloks augstāk ir): manuālajai kārbai DSG / divsajūga / S tronic / automāta soļus NERAKSTI; automātam sajūga pedāļa soļus NERAKSTI.
 Ja šim auto ir 7 pakāpju S-Tronic / divsajūgs: ieteikumos jābūt lēnai uzsākšanai pēc bremžu atlaišanas un vieglas gāzes, plus straujai apstāšanās pēc brauciena (bez grūdieniem). Ja ir divmasu spararats: graboņa pie kreisā priekšējā riteņa, aukstam un siltam, un vibrācija paātrinoties. Ja ir Audi/VW 3.0 V6 TDI no ~2012: dzesēšanas / termostata / starpdzesētāja noplūdes GAN pirms, GAN pēc dinamiska brauciena. Sajūga stāstu NEKOPĒ uz Tiptronic.
 PIRMS ieteikt zobsiksnas, ķēdes, ūdenssūkņa vai kārbas eļļas maiņu (jebkura marka): izlasi dīlera Veiktos darbus un Komentārus. Ja darbs jau fiksēts, to kā „jāmaina” NERAKSTI. Ķēde pret zobsiksnu - tikai pēc šī motora koda vai fiksētas maiņas.
 ${!techPlain ? "Tehnisko risku sadaļas vēl nav - vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
@@ -91,8 +104,8 @@ NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/n
       budget: createAiRequestBudget(AI_ROUTE_BUDGET_MS.text),
       ...(techPlain ? {} : { maxSearches: 4 }),
     });
-    return throwIfBlankGeneratedComment(finalizeInspectionComment(raw));
+    return throwIfBlankGeneratedComment(finalize(raw));
   } catch (e) {
-    rethrowNormalizedIncompleteComment(e, finalizeInspectionComment);
+    rethrowNormalizedIncompleteComment(e, finalize);
   }
 }

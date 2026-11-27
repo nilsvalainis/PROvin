@@ -357,7 +357,7 @@ export async function claimDealerDataJobRun(args: {
       if (
         (args.respectNextRetry || Boolean(current?.pendingRequestId)) &&
         current &&
-        current.status === "failed" &&
+        (current.status === "failed" || current.status === "retry_wait") &&
         !dealerDataJobRetryDue(current, nowMs)
       ) {
         return { value: { ok: false, reason: "not_due", job: current } };

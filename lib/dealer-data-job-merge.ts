@@ -112,6 +112,12 @@ export function mergeDealerDataJobPatch(
     ...(patch.pendingRetries ?? current?.pendingRetries
       ? { pendingRetries: patch.pendingRetries ?? current?.pendingRetries }
       : {}),
+    // OneAuto servera kļūmju cikls: pabeigtam darbam (done / no_data) vairs nav aktuāls; 0 notīra.
+    ...(patch.status === "done" || patch.status === "no_data"
+      ? {}
+      : patch.upstreamRetries ?? current?.upstreamRetries
+        ? { upstreamRetries: patch.upstreamRetries ?? current?.upstreamRetries }
+        : {}),
     // runId: patch ar "" atbrīvo nomu; pabeigts darbs nomu neglabā.
     ...(patch.status === "done" || patch.status === "no_data" || patch.runId === ""
       ? {}
@@ -149,7 +155,7 @@ export function mergeDealerDataJobPatch(
 }
 
 /** Statusi, kas cron slaucītājam vēl jāpārņem. */
-const UNFINISHED: readonly DealerDataJobStatus[] = ["pending", "running", "failed"];
+const UNFINISHED: readonly DealerDataJobStatus[] = ["pending", "running", "failed", "retry_wait"];
 
 /**
  * Vai darbs paliek slaucīšanas indeksā. Gala kļūda (≥3 mēģinājumi) ar jau nosūtītu admina

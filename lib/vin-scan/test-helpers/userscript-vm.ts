@@ -138,12 +138,19 @@ export class FakeElement {
   removeAttribute(k: string) {
     this.attrs.delete(k);
   }
+  /** Skripta piesaistītie klausītāji (tests tos izsauc ar `emit`; `click()` tos neizsauc). */
+  handlers = new Map<string, ((ev: unknown) => unknown)[]>();
   appendChild(child: FakeElement) {
     this.children.push(child);
     return child;
   }
   remove() {}
-  addEventListener() {}
+  addEventListener(type: string, fn: (ev: unknown) => unknown) {
+    this.handlers.set(type, [...(this.handlers.get(type) ?? []), fn]);
+  }
+  emit(type: string, ev: Record<string, unknown> = {}) {
+    for (const fn of this.handlers.get(type) ?? []) fn({ type, isTrusted: true, ...ev });
+  }
   removeEventListener() {}
   dispatchEvent(ev: { type?: string }) {
     this.events.push(String(ev?.type ?? ""));
@@ -222,6 +229,8 @@ export type UserscriptRunOptions = {
   src?: string;
   /** Ja false, <html> setAttribute netiek saglabāts (TM sandbox imitācija). */
   htmlAttributesPersist?: boolean;
+  /** Papildu globālie (piem. fetch, FormData), ja tests tos imitē. */
+  globals?: Record<string, unknown>;
 };
 
 export type UserscriptRun = ReturnType<typeof runUserscriptAt>;
@@ -359,6 +368,7 @@ export function runUserscriptAt(href: string, opts: UserscriptRunOptions = {}) {
     GM_deleteValue: (k: string) => void gm.set.delete(k),
     GM_setClipboard() {},
     GM_xmlhttpRequest: (req: GmXhrRequest) => void gm.xhr.push(req),
+    ...(opts.globals ?? {}),
   };
   try {
     vm.runInNewContext(opts.src ?? readUserscriptSource(), ctx, { timeout: 2000 });

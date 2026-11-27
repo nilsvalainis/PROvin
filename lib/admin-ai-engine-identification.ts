@@ -2,6 +2,7 @@
  * Deterministiska agregātu identifikācija pirms tehnisko risku analīzes.
  * A = VIN / dīleris / Outvin / CSDD tieši; B = izsecināts; C = vairāki kandidāti.
  */
+import { decodeGearboxLabelLv } from "@/lib/gearbox-kind-guard";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import {
@@ -192,7 +193,8 @@ export function identifyEngineGearboxPlatform(input: EngineIdentificationInput):
 
   let gearbox = emptyField("C");
   if (ctx.transmissionDirect) {
-    gearbox = field(ctx.transmissionDirect, "A", "Dīleris / Outvin kārbas lauks");
+    // 27.11 (S-AI1): dīlera kods «MANU» kartē un promptā kā «manuālā (MANU)», ne neatšifrēts kods.
+    gearbox = field(decodeGearboxLabelLv(ctx.transmissionDirect), "A", "Dīleris / Outvin kārbas lauks");
   }
 
   let platform = emptyField("C");

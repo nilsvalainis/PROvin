@@ -5,6 +5,7 @@ import { adminUiOpenKey, readAdminUiOpen, writeAdminUiOpen } from "@/lib/admin-u
 import { ChevronDown, ChevronUp, ScanLine } from "lucide-react";
 
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
+import { AdminDealerForecastRow } from "@/components/admin/AdminDealerForecastRow";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
@@ -241,6 +242,8 @@ export function AdminOrderVinScanCard({
     [record, importNotes],
   );
   const v4Csdd = record?.indicators.find((r) => r.id === "csdd");
+  // Dīlera datu prognoze (27.11): CSDD marka + gads (pasūtījuma 1. reģ.), citādi VIN.
+  const forecastYear = v4Csdd?.vehicle?.year || kfz?.firstRegDate || null;
   const sourceCount = record?.indicators.length ?? 0;
   const clock = record?.at ? formatOrderVinScanClock(record.at) : "";
   const meta =
@@ -404,6 +407,14 @@ export function AdminOrderVinScanCard({
           </button>
         </span>
       ) : null}
+      {vin.trim() ? (
+        <AdminDealerForecastRow
+          className="basis-full"
+          make={v4Csdd?.vehicle?.make ?? ""}
+          year={forecastYear}
+          vin={vin.trim().toUpperCase()}
+        />
+      ) : null}
     </div>
   );
 
@@ -484,6 +495,7 @@ export function AdminOrderVinScanCard({
                   busy={record.status === "running" || busy}
                   scannedAt={record.at}
                   kfz={kfz ?? { orderId: sessionId, listingUrl }}
+                  forecastYear={forecastYear}
                   onRetry={(ids) => {
                     // Tas pats ceļš kā rindas «Atkārtot» (tikai lietotāja klikšķis).
                     const row = summary?.rows.find((x) => x.id === ids[0]);

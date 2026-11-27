@@ -25,6 +25,9 @@ import {
   dealerOeHistoryIsNoData,
   dealerPaidOutcomeFromResult,
   decideDealerDataRun,
+  DEALER_DATA_MAX_AUTO_ATTEMPTS,
+  isOneautoTransientUpstreamFailure,
+  planDealerUpstreamRetry,
   mergeDealerPaidOutcomes,
   planDealerVinDecodeStep,
   resolveDealerCommentOutputLang,
@@ -46,6 +49,7 @@ import {
   upsertDealerDataJob,
 } from "@/lib/dealer-data-job-store";
 import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import { recordDealerCoverageForSession } from "@/lib/dealer-coverage-store";
 import { dealerJobPatchForDraftData } from "@/lib/dealer-manual-data";
 import { runDealerShadowGate } from "@/lib/dealer-shadow-gate-run";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
@@ -275,6 +279,23 @@ async function generateDealerNotes(
 }
 
 /**
+ * Dīlera AI komentāri (eļļas intervāli + «Komentāri») pēc ārēji ievadītiem dīlera datiem (CheckThisReg, 27.11):
+ * tas pats ceļš un filtri kā OneAuto ielasei, valoda pēc pasūtījuma (RAW - oriģinālvaloda). Tikai tukšie lauki.
+ */
+export async function generateDealerNotesForExternalData(
+  sessionId: string,
+  vin: string,
+): Promise<{ oil: boolean; comments: boolean; lang: DealerCommentOutputLang }> {
+  const draft = await readOrderDraft(sessionId);
+  const marks = parseB2bWalletOrderMarks(draft?.orderEdits?.notes ?? "");
+  const job = await readDealerDataJob(sessionId).catch(() => null);
+  const skipTranslate = job?.skipTranslate ?? marks?.product === "dealer_raw";
+  const lang = resolveDealerCommentOutputLang({ walletProduct: marks?.product, reportLang: marks?.reportLang, skipTranslate });
+  const wrote = await generateDealerNotes(sessionId, normalizeVin(vin), lang);
+  return { oil: wrote.has("oilChangeIntervalNotes"), comments: wrote.has("comments"), lang };
+}
+
+/**
  * Atzīmē darbu kā gaidošu uzreiz pēc apmaksas. Ja fona izpilde nenotiek
  * (funkcija apturēta, deploy vidū), cron slaucītājs to atradīs pēc indeksa.
  */
@@ -345,9 +366,24 @@ export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResu
     // «Datu nav»: paziņojums tikai, ja atmaksa vēl nav veikta (B2B maka atmaksa notiek pirms tam).
     await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: args.trigger });
   }
+  // Pārklājuma prognoze (27.11): OneAuto iznākums agregātā (marka + gadu grupa; katrs pasūtījums vienreiz).
+  // «manual_data» - OneAuto datu nebija, operators ievadīja pats.
+  if (result.ok && (result.reason === "done" || result.reason === "no_data" || result.reason === "manual_data")) {
+    await recordDealerCoverageForSession({
+      sessionId: args.sessionId,
+      source: "oneauto",
+      hasData: result.reason === "done",
+      vin: args.vin,
+    });
+  }
   // Ēnu režīms (Nils 22.11): pēc ielases + AI kvalitātes pārbaude tikai spriedumam; nekas netiek sūtīts.
   // PDF ielase automātiski neveido - pārbaude (f) paliek «PDF vēl nav» līdz sūtīšanas formai.
-  if (result.status !== "running" && result.status !== "pending" && result.reason !== "lease_lost") {
+  if (
+    result.status !== "running" &&
+    result.status !== "pending" &&
+    result.status !== "retry_wait" &&
+    result.reason !== "lease_lost"
+  ) {
     await runDealerShadowGate(args.sessionId, { trigger: "job" });
   }
   return result;
@@ -488,6 +524,47 @@ async function runDealerDataJobInner(args: RunArgs): Promise<DealerDataRunResult
   };
   const leaseLost: DealerDataRunResult = { ok: true, status: "running", reason: "lease_lost" };
 
+  /**
+   * OneAuto serveris neatbildēja: mēģinājumu skaits nepieaug (tas nav «failed»), cron atkārto
+   * pēc grafika. Operatora «Atkārtot» sāk ciklu no jauna. Pēc 3 atkārtojumiem - «upstream_down»
+   * (automātika apstājas, admins saņem vienu paziņojumu; atmaksa netiek piedāvāta).
+   */
+  const saveUpstreamRetry = async (
+    error: string,
+    extra: Omit<Parameters<typeof save>[0], "status"> = {},
+  ): Promise<DealerDataRunResult> => {
+    const previousRetries = args.trigger === "manual" ? 0 : (claim.previous?.upstreamRetries ?? 0);
+    const plan = planDealerUpstreamRetry(previousRetries);
+    console.warn("[dealer-data-job] oneauto upstream failure", {
+      sessionId,
+      error: error.slice(0, 80),
+      next: plan.status,
+      retries: plan.upstreamRetries,
+    });
+    if (plan.status === "retry_wait") {
+      await save({
+        ...extra,
+        status: "retry_wait",
+        attempts: Math.max(0, attempts - 1),
+        upstreamRetries: plan.upstreamRetries,
+        nextRetryAt: plan.nextRetryAt,
+        error,
+        runId: "",
+      });
+      return { ok: false, status: "retry_wait", reason: "upstream_retry_wait" };
+    }
+    await save({
+      ...extra,
+      status: "failed",
+      // Gala stāvoklis visiem esošajiem vārtiem (cron neatkārto, viens admina paziņojums).
+      attempts: Math.max(attempts, DEALER_DATA_MAX_AUTO_ATTEMPTS),
+      upstreamRetries: plan.upstreamRetries,
+      error: plan.error,
+      runId: "",
+    });
+    return { ok: false, status: "failed", reason: plan.error };
+  };
+
   await save({ status: "running", paidOutcomes: storedOutcomes, startedAt: new Date().toISOString() });
 
   let mergedResults = storedResults;
@@ -515,6 +592,7 @@ async function runDealerDataJobInner(args: RunArgs): Promise<DealerDataRunResult
       });
     } catch (e) {
       const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
+      if (isOneautoTransientUpstreamFailure({ error })) return saveUpstreamRetry(error);
       await save({
         status: "failed",
         error,
@@ -536,6 +614,10 @@ async function runDealerDataJobInner(args: RunArgs): Promise<DealerDataRunResult
   if (historyTechnical) {
     const error = String(mergedResults[historyTechnical]?.error ?? `${historyTechnical}_failed`).slice(0, 200);
     const pending = paidOutcomes.oe_service_history === "pending";
+    // OneAuto 5xx / taimauts (Nils 27.11): nav kļūda, bet «retry_wait» ar 10 min / 30 min / 2 h.
+    if (!pending && isOneautoTransientUpstreamFailure(mergedResults[historyTechnical])) {
+      return saveUpstreamRetry(error, { paidOutcomes, oneautoResults: resultsRecord(mergedResults) });
+    }
     const pendingRetries = (claim.job.pendingRetries ?? 0) + (pending ? 1 : 0);
     const fastRetry = pending && pendingRetries <= DEALER_PENDING_MAX_RETRIES;
     await save({

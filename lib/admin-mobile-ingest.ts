@@ -5,6 +5,7 @@
  */
 
 import {
+  DEALER_UPSTREAM_DOWN_ERROR,
   dealerDataJobHistoryReady,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
@@ -75,7 +76,13 @@ function adminIngestFromDealerJobBase(
       return withSent({ state: "no_data", label: "Datu nav", source: "dealer" }, sent);
     case "no_vin":
       return { state: "error", label: "Nav VIN", source: "dealer" };
+    case "retry_wait":
+      // OneAuto serveris neatbild - cron atkārtos pats (10 min / 30 min / 2 h).
+      return { state: "running", label: "Gaida OneAuto", source: "dealer" };
     case "failed":
+      if (job.error === DEALER_UPSTREAM_DOWN_ERROR) {
+        return { state: "idle", label: "OneAuto nestrādā", source: "dealer" };
+      }
       // OneAuto vēl apstrādā - cron atkārtos pats.
       if (job.error === "pending" || job.error === "http_202") {
         return { state: "running", label: "Ielasa…", source: "dealer" };

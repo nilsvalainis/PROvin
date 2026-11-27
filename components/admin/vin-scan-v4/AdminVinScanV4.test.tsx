@@ -162,4 +162,27 @@ describe("AdminVinScanV4 - saliktais saraksts", () => {
     expect(text).toContain("nav datu");
     expect(text).not.toContain("- km");
   });
+
+  it("27.11: ārzemju auto - CSDD 1. solī pelēks «Nav LV reģistrā», virsraksts no WMI, nevis «Auto»", () => {
+    const rows = [
+      row({ id: "vin_decode", label: "WMI", summary: "Renault · Ražots: Francija" }),
+      row({ id: "mnt_ee", label: "mnt.ee", status: "none" }),
+    ];
+    const html = renderHtml(<AdminVinScanV4 vin="VF1KT1H0E38762689" rows={rows} busy={false} scannedAt="2026-11-27T18:47:00Z" csddNotLv />);
+    const text = renderText(<AdminVinScanV4 vin="VF1KT1H0E38762689" rows={rows} busy={false} scannedAt="2026-11-27T18:47:00Z" csddNotLv />);
+    expect(html).toContain("data-v4-csdd-not-lv");
+    expect(text).toContain("Nav LV reģistrā");
+    expect(text).toContain("Renault");
+    expect(text).not.toMatch(/Transportlīdzeklis\s*Auto/);
+  });
+
+  it("27.11: sludinājuma km ir odometra rādījums kopsavilkumā", () => {
+    const rows = [
+      row({ id: "listing_history", label: "Sludinājuma vēsture", summary: "Odometrs sludinājumā 208 000 km", mileage: [{ date: "27.11.2026", odometer: "208000", source: "Sludinājums" }] }),
+    ];
+    const text = renderText(<AdminVinScanV4 vin="VF1KT1H0E38762689" title="Renault Laguna" rows={rows} busy={false} scannedAt="2026-11-27T18:47:00Z" />);
+    expect(text).toContain("208 000");
+    expect(text).toContain("27.11.2026 · Sludinājums");
+    expect(text).toContain("1 ieraksts");
+  });
 });

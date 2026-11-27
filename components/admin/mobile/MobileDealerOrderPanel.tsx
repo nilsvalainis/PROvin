@@ -16,7 +16,13 @@ import {
   adminIngestSentLabel,
   type AdminOrderIngest,
 } from "@/lib/admin-mobile-ingest";
-import { dealerDataJobReadyAt, dealerDataRetryButtonLabel, type DealerDataJob } from "@/lib/dealer-data-job-types";
+import {
+  dealerDataJobReadyAt,
+  dealerDataJobWaitsForUpstream,
+  dealerDataRetryButtonLabel,
+  describeDealerDataJob,
+  type DealerDataJob,
+} from "@/lib/dealer-data-job-types";
 import { formatRigaDayTime } from "@/lib/order-client-marks";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import { requestOpenAdminBlock } from "@/lib/admin-mobile-ds";
@@ -34,6 +40,8 @@ import {
 } from "@/components/admin/useDealerDataJobControls";
 import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
 import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
+import { AdminCheckThisRegChip } from "@/components/admin/AdminCheckThisRegChip";
+import { AdminDealerForecastRow } from "@/components/admin/AdminDealerForecastRow";
 import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import {
   AmxButton,
@@ -227,6 +235,8 @@ export function mobileDealerPhotosLabel(ar: Pick<AutoRecordsBlockState, "dealerP
 
 export function mobileDealerStatusSub(job: DealerDataJob | null, nowMs: number = Date.now()): string {
   if (!job) return "";
+  // OneAuto serveris neatbild: telefonā tas pats skaidrais teksts kā datorā (laiks + n/3).
+  if (dealerDataJobWaitsForUpstream(job)) return describeDealerDataJob(job);
   const at = dealerDataJobReadyAt(job) || job.finishedAt || job.updatedAt || "";
   const t = Date.parse(at);
   if (!Number.isFinite(t)) return "OneAuto";
@@ -341,6 +351,14 @@ export function MobileDealerOrderPanel({
               variant="glass"
               vin={c.vin || orderVin}
               highlightMake={checkThisRegHighlighted(job?.status, ctrMake) ? ctrMake : null}
+            />
+            <AdminCheckThisRegChip sessionId={sessionId} />
+            <AdminDealerForecastRow
+              variant="glass"
+              className="mt-2 px-1"
+              blocks={sourceBlocks}
+              vin={c.vin || orderVin}
+              oneautoNoData={job?.status === "no_data"}
             />
             <AdminClientReportLinkControl sessionId={sessionId} variant="glass" />
             <AmxCard className="mt-2.5">

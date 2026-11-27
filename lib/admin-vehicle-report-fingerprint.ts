@@ -2,6 +2,7 @@
  * Transportlīdzekļa „pirkstu nospiedums” — salīdzina vēsturiskās PROVIN audita atskaites.
  */
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { classifyGearboxRaw } from "@/lib/gearbox-kind-guard";
 import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 
 export type VehicleReportFingerprint = {
@@ -112,6 +113,10 @@ function normTransmission(raw: string): string {
   if (!t) return "";
   if (/automat|automatic|auto\.|dsg|tiptronic|steptronic|s-tronic|7g|9g|8hp|zf8/.test(t)) return "auto";
   if (/manual|mehāni|mechan|schalt|getriebe.*manu/.test(t)) return "manual";
+  // 27.11 (S-AI1): dīlera kods «MANU», AutoDNA «MANUĀLS», «AUTO».
+  const kind = classifyGearboxRaw(raw);
+  if (kind === "manual") return "manual";
+  if (kind !== "unknown") return "auto";
   return normToken(raw);
 }
 

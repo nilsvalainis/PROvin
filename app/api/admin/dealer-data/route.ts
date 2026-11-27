@@ -16,6 +16,7 @@ import { readDealerDataJob } from "@/lib/dealer-data-job-store";
 import { syncDealerJobWithDraftData } from "@/lib/dealer-manual-data-sync";
 import {
   dealerDataJobSuggestsRefund,
+  dealerDataJobWaitsForUpstream,
   describeDealerDataJob,
 } from "@/lib/dealer-data-job-types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -124,6 +125,8 @@ export async function POST(req: Request) {
       ...result,
       job,
       label: describeDealerDataJob(job),
+      // OneAuto serveris neatbild: operators redz skaidru tekstu, nevis kodu «upstream_retry_wait».
+      ...(dealerDataJobWaitsForUpstream(job) ? { message: describeDealerDataJob(job) } : {}),
       suggestsRefund: dealerDataJobSuggestsRefund(job),
       ...(plateVin ? { plateVin } : {}),
     },

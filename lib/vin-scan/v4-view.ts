@@ -379,3 +379,33 @@ export function vinScanV4LtabContradiction(
   if (!r.registered) return null;
   return `CSDD: reģistrēts Latvijā${r.plate ? ` (${r.plate})` : ""} - LTAB vēl nav pārbaudīts, spied «Atkārtot»`;
 }
+
+/* ---------------- Transportlīdzekļa nosaukums ---------------- */
+
+const V4_VEHICLE_RANK = ["csdd", "tjekbil", "rdw", "vegvesen", "carinfo", "cz_rsv", "dvsa_mot", "carfax_eu", "esyn", "biluppgifter", "plc_auction"];
+
+type V4VehicleRow = VinScanV4RowLike & { vehicle?: { make?: string; model?: string; year?: string } };
+
+/**
+ * 27.11 (Nils): nekad tikai «Auto», ja kāds avots marku zina. Reģistri pirms citiem; WMI / vPIC (`vin_decode`)
+ * pēdējais - tikai marka («Renault · Ražots: Francija» -> «Renault»). Gads, ja zināms. Nav nekā - tukšs.
+ */
+export function vinScanV4VehicleTitle(rows: readonly V4VehicleRow[]): string {
+  const found = rows.filter((r) => r.status === "found");
+  const name = (r: V4VehicleRow) => [r.vehicle?.make, r.vehicle?.model].map((x) => String(x ?? "").trim()).filter(Boolean).join(" ");
+  const rank = (id: string) => {
+    const i = V4_VEHICLE_RANK.indexOf(id);
+    return i < 0 ? V4_VEHICLE_RANK.length + (id === "vin_decode" ? 1 : 0) : i;
+  };
+  const ranked = found.filter((r) => name(r)).sort((a, b) => rank(a.id) - rank(b.id));
+  const year = found.map((r) => String(r.vehicle?.year ?? "").trim()).find((y) => /^(19|20)\d{2}$/.test(y)) ?? "";
+  const best = ranked.find((r) => r.id !== "vin_decode" && r.vehicle?.make && r.vehicle?.model) ?? ranked[0];
+  let title = best ? name(best) : "";
+  if (!title) {
+    const wmi = found.find((r) => r.id === "vin_decode");
+    const head = String(wmi?.summary ?? "").split("·")[0]!.trim();
+    if (head && !/ražot|nav |nezin/i.test(head) && head.length <= 40) title = head;
+  }
+  if (!title) return "";
+  return year && !title.includes(year) ? `${title} · ${year}` : title;
+}

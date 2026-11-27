@@ -114,6 +114,8 @@ export async function generateTechnicalRiskMapWithAi(input: {
   tiers?: TechRiskV2Tiers;
   /** Manuāls Claude papildinājums tikai šiem agregātiem (operatora komanda `Claude: …`). */
   anthropicComponents?: string[];
+  /** 27.11 (S-AI1): IELĀDĒTĀ ĀTRUMKĀRBA bloks (gearboxPromptBlock). */
+  gearboxBrief?: string;
   stream?: AiTextStream;
 }): Promise<TechnicalRiskMap> {
   const tiers = input.tiers ?? resolveTechRiskV2Tiers(input.modelTier);
@@ -125,7 +127,7 @@ export async function generateTechnicalRiskMapWithAi(input: {
   ]);
   const userPrompt = `IDENTIFIKĀCIJA (jau noteikta, neizdomā citu kodu):
 ${formatEngineIdentificationForPrompt(input.identification)}
-
+${input.gearboxBrief?.trim() ? `\n${input.gearboxBrief.trim()}\n` : ""}
 ${input.identificationBrief}
 
 ${kbBlock}
