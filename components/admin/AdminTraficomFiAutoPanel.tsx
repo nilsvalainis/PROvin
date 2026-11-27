@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AdminTraficomBrowserCodeForm } from "@/components/admin/AdminTraficomBrowserCodeForm";
 import type { VinRegistryBlockState } from "@/lib/admin-source-blocks";
 import {
   applyTraficomFiResultToBlock,
@@ -76,11 +77,16 @@ export function AdminTraficomFiAutoPanel({ sessionId, orderVin, value, disabled,
   const active = isTraficomFiAutoActive(status);
   // eParaksts gaida līdz 5 min; ja relejs klusē 15 min - ļauj pieprasīt vēlreiz.
   const stale = active && Date.now() - Date.parse(status?.updatedAt ?? "") > 15 * 60_000;
+  // Pārlūka kods: no šī pasūtījuma statusa vai no releja sesijas (ja kodu gaida cits vaicājums, piem. VIN SCAN).
+  const codeSource = status?.state === "awaiting_browser_code" ? status : session?.state === "awaiting_browser_code" ? session : null;
+  const waitingBrowserCode = Boolean(codeSource);
   useEffect(() => {
-    if (!active) return;
-    const t = setInterval(() => void load(), 5000);
+    if (!active && !waitingBrowserCode) return;
+    // Kods derīgs ~1 min - kamēr to gaida, aptauja biežāk.
+    const t = setInterval(() => void load(), waitingBrowserCode ? 2000 : 5000);
     return () => clearInterval(t);
-  }, [active, load]);
+  }, [active, waitingBrowserCode, load]);
+
 
   const postApply = useCallback(
     async (body: Record<string, unknown>) => {
@@ -200,6 +206,7 @@ export function AdminTraficomFiAutoPanel({ sessionId, orderVin, value, disabled,
           {code ? <span className="ml-2 text-[11px] font-normal text-slate-600">Apstiprini tikai, ja kods lietotnē sakrīt</span> : null}
         </p>
       ) : null}
+      {codeSource ? <AdminTraficomBrowserCodeForm source={codeSource} disabled={disabled} readOnly={readOnly} onSent={() => void load()} /> : null}
       {data ? (
         <div className="mt-1 space-y-0.5">
           {data.vehicleTitle ? <p className="font-medium text-slate-900">{data.vehicleTitle}</p> : null}
@@ -261,7 +268,7 @@ export function AdminTraficomFiAutoPanel({ sessionId, orderVin, value, disabled,
             </button>
           ) : null}
           {relayConfigured && session && session.state !== "logged_out" ? (
-            <button type="button" className={btn} disabled={disabled || busy} title="Serveris aizver Traficom pārlūku; nākamais vaicājums prasīs eParaksts" onClick={() => void release()}>
+            <button type="button" className={btn} disabled={disabled || busy} title="Serveris aizver Traficom pārlūku; nākamais vaicājums prasīs eParaksts (pārlūka apstiprinājums paliek)" onClick={() => void release()}>
               Atbrīvot sesiju
             </button>
           ) : null}

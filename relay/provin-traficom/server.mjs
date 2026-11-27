@@ -27,7 +27,11 @@
  *   POST /traficom/lookup        {vin, ref, trigger, force?, vehicleType?} -> {jobId, state: queued|running|cached}
  *   GET  /traficom/jobs/:id      uzdevuma stāvoklis
  *   GET  /traficom/session       sesijas stāvoklis (tikai nolasa, bez pieteikšanās)
- *   POST /traficom/logout        "Atbrīvot sesiju": aizver pārlūku un izdzēš profilu (kill switch)
+ *   POST /traficom/session/browser-code  {code} - eParaksts pārlūka apstiprināšanas kods no lietotnes (4-8 burti/cipari),
+ *                                kad sesija ir `awaiting_browser_code`; {renew:true} - pārlādēt lapu (jauns kods lietotnē).
+ *                                "Send code via SMS" relejs nekad nespiež. Kods netiek logots.
+ *   POST /traficom/logout        "Atbrīvot sesiju": aizver pārlūku, izdzēš Traficom / Suomi.fi / VISS sīkdatnes, bet
+ *                                patur eParaksts pārlūka apstiprinājumu ({full:true} - izdzēš visu profilu, kill switch)
  */
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
@@ -35,11 +39,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
+import { createBrowserCodeBroker } from "./lib/browser-code.mjs";
 import { createResultCache } from "./lib/cache.mjs";
 import { createJobQueue } from "./lib/jobs.mjs";
 import { createTraficomSessionState } from "./lib/session-state.mjs";
 import { runTraficomLookup, TraficomFlowError } from "./lib/traficom-flow.mjs";
-import { isAllowedHost, isValidUserNumber, isValidVin, normalizeVin, redact } from "./lib/traficom-page.mjs";
+import { isAllowedHost, isEparakstsHost, isValidUserNumber, isValidVin, normalizeVin, redact } from "./lib/traficom-page.mjs";
 
 const HOST = process.env.TRAFICOM_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.TRAFICOM_RELAY_PORT || 8794);
@@ -69,10 +74,13 @@ if (!CALLBACK_URL.startsWith("https://")) {
 }
 
 const session = createTraficomSessionState({ ttlMs: SESSION_TTL_MS });
+const browserCode = createBrowserCodeBroker();
+/** Ievadītie pārlūka kodi (tikai atmiņā, lai žurnālā tie nekad neparādītos). */
+const transientSecrets = [];
 const cache = createResultCache({ dir: path.join(DATA_DIR, "cache"), ttlMs: CACHE_TTL_MS });
 
 function log(msg) {
-  console.log(`[traficom-relay] ${new Date().toISOString()} ${redact(msg, SECRETS)}`);
+  console.log(`[traficom-relay] ${new Date().toISOString()} ${redact(msg, [...SECRETS, ...transientSecrets])}`);
 }
 
 function bearerOk(req) {
@@ -190,6 +198,25 @@ async function closeContext() {
   if (c) await c.close().catch(() => undefined);
 }
 
+/** Vai sīkdatne pieder eParaksts (tur glabājas "confirm this browser" apstiprinājums). */
+function isEparakstsCookieDomain(domain) {
+  return isEparakstsHost(String(domain ?? "").replace(/^\./, ""));
+}
+
+/**
+ * "Atbrīvot sesiju" bez profila dzēšanas: izdzēš visas sīkdatnes, izņemot eParaksts (citādi nākamreiz atkal jāievada
+ * pārlūka kods no lietotnes), un aizver pārlūku. Ja pārlūks nav atvērts, atver to uz brīdi.
+ */
+async function logoutKeepBrowserTrust() {
+  const ctx = await openContext();
+  const cookies = await ctx.cookies().catch(() => []);
+  const keep = cookies.filter((c) => isEparakstsCookieDomain(c.domain));
+  await ctx.clearCookies();
+  if (keep.length) await ctx.addCookies(keep).catch((e) => log(`eParaksts sīkdatnes netika atjaunotas: ${e instanceof Error ? e.message : "?"}`));
+  await closeContext();
+  return { removed: cookies.length - keep.length, kept: keep.length };
+}
+
 async function runJob(job, onProgress) {
   // Kešs (7 d): tas pats VIN bez jauna eParaksts pieprasījuma, ja nav `force`.
   if (!job.force) {
@@ -213,6 +240,11 @@ async function runJob(job, onProgress) {
       debugDir: DEBUG_DIR,
       eparakstsTimeoutMs: EPARAKSTS_TIMEOUT_MS,
       maxPdfBytes: MAX_PDF_BYTES,
+      browserCode,
+      onSecret: (v) => {
+        transientSecrets.push(String(v));
+        if (transientSecrets.length > 10) transientSecrets.shift();
+      },
     });
     session.onSuccess();
     await cache.set(job.vin, result).catch((e) => log(`kešs netika saglabāts: ${e instanceof Error ? e.message : "?"}`));
@@ -324,11 +356,27 @@ const server = createServer(async (req, res) => {
       return sendJson(res, 200, { jobId: job.jobId, state: job.state, code: job.code ?? null });
     }
 
+    if (req.method === "POST" && p === "/session/browser-code") {
+      const body = await readJson(req, 2_000).catch(() => null);
+      if (!body || typeof body !== "object") return sendJson(res, 400, { error: "invalid_json" });
+      if (!browserCode.isWaiting()) return sendJson(res, 409, { error: "not_waiting", session: session.view() });
+      const out = body.renew === true ? browserCode.renew() : browserCode.submit(body.code);
+      if (!out.ok) return sendJson(res, out.error === "invalid_code" ? 400 : 409, { error: out.error });
+      log(body.renew === true ? "pārlūka kods: admins lūdz jaunu kodu" : "pārlūka kods saņemts no admina");
+      return sendJson(res, 202, { ok: true, session: session.view() });
+    }
+
     if (req.method === "POST" && p === "/logout") {
-      await closeContext();
-      await fs.rm(PROFILE_DIR, { recursive: true, force: true });
+      const body = await readJson(req, 2_000).catch(() => ({}));
+      if (body?.full === true) {
+        await closeContext();
+        await fs.rm(PROFILE_DIR, { recursive: true, force: true });
+        log("profils izdzēsts (logout full)");
+      } else {
+        const out = await logoutKeepBrowserTrust();
+        log(`logout: izdzēstas ${out.removed} sīkdatnes, eParaksts pārlūka apstiprinājums paturēts (${out.kept})`);
+      }
       session.onLogout();
-      log("profils izdzēsts (logout)");
       return sendJson(res, 200, { ok: true, session: session.view() });
     }
     return sendJson(res, 404, { error: "not_found" });
@@ -337,6 +385,20 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 500, { error: "internal" });
   }
 });
+
+/** Pareiza apstāšanās: Chrome paspēj ierakstīt sīkdatnes (arī eParaksts pārlūka apstiprinājumu) profilā. */
+let stopping = false;
+async function shutdown(sig) {
+  if (stopping) return;
+  stopping = true;
+  log(`${sig}: aizver pārlūku`);
+  server.close();
+  await Promise.race([closeContext(), sleepMs(20_000)]);
+  process.exit(0);
+}
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
 
 server.listen(PORT, HOST, () => {
   log(`klausās ${HOST}:${PORT}; lietotāja numurs ${isValidUserNumber(USER_NUMBER) ? "iestatīts" : "NAV iestatīts"}`);

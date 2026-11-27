@@ -216,6 +216,13 @@ function focusInAutoRecords(selector: string | null): void {
   }, 380);
 }
 
+/** «2 klientam · 5» - dīlera foto skaits telefona rindā. */
+export function mobileDealerPhotosLabel(ar: Pick<AutoRecordsBlockState, "dealerPhotos"> | null | undefined): string {
+  const items = ar?.dealerPhotos?.items ?? [];
+  if (items.length === 0) return "0";
+  return `${items.filter((i) => i.send).length} klientam · ${items.length}`;
+}
+
 export function mobileDealerStatusSub(job: DealerDataJob | null, nowMs: number = Date.now()): string {
   if (!job) return "";
   const at = dealerDataJobReadyAt(job) || job.finishedAt || job.updatedAt || "";
@@ -328,6 +335,17 @@ export function MobileDealerOrderPanel({
         afterActions={
           <>
             <AdminClientReportLinkControl sessionId={sessionId} variant="glass" />
+            <AmxCard className="mt-2.5">
+              <button
+                type="button"
+                className="amx-row w-full text-left text-[14px]"
+                onClick={() => focusInAutoRecords("[data-dealer-photos]")}
+              >
+                <span className="min-w-0 flex-1 font-semibold">Foto</span>
+                <span className="amx-mut tabular-nums">{mobileDealerPhotosLabel(autoRecords)}</span>
+                <AmxIcon name="chev" className="h-5 w-5 shrink-0 text-[var(--amx-soft)]" />
+              </button>
+            </AmxCard>
             <AdminAuctionArchivePanel sessionId={sessionId} refreshKey={archKey} onOpenSend={() => c.setDialog("archive")} />
           </>
         }

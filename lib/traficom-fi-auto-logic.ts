@@ -27,8 +27,12 @@ export type TraficomFiRelayEvent = {
   jobId: string;
   ref: string;
   vin: string;
-  state: "queued" | "awaiting_eparaksts" | "searching" | "result" | "error";
+  state: "queued" | "awaiting_eparaksts" | "awaiting_browser_code" | "searching" | "result" | "error";
   verificationCode?: string;
+  codeExpiresAt?: string;
+  codeExpired?: boolean;
+  browserCodeAttempt?: number;
+  browserCodeRejected?: boolean;
   found?: boolean;
   rawText?: string;
   data?: TraficomFiData;
@@ -63,7 +67,33 @@ const RELAY_ERROR_LV: Record<string, string> = {
   not_configured: "Relejam nav eParaksts lietotāja numura (serverī)",
   invalid_vin: "VIN nav derīgs Traficom meklēšanai",
   queue_full: "Traficom rinda pilna - mēģini vēlāk",
+  browser_code_timeout: "eParaksts pārlūka kods netika ievadīts laikā - spied «Pieprasīt vēlreiz»",
+  browser_code_refused: "eParaksts nepieņēma pārlūka kodu - spied «Pieprasīt vēlreiz»",
+  browser_code_required: "eParaksts prasa pārlūka kodu - relejs jāatjauno",
 };
+
+/**
+ * eParaksts pārlūka apstiprināšanas kods (no eParaksts mobile lietotnes): tikai burti/cipari, 4-8 zīmes
+ * (atstarpes / defises pa vidu noņem). Nederīgs -> "". Tāpat kā relejā (`normalizeBrowserCode`).
+ */
+export function normalizeTraficomBrowserCode(raw: unknown): string {
+  const t = String(raw ?? "")
+    .trim()
+    .replace(/[\s-]/g, "");
+  return /^[0-9A-Za-z]{4,8}$/.test(t) ? t.toUpperCase() : "";
+}
+
+/** Cik sekundes vēl derīgs pārlūka kods (0 = beidzies, null = termiņš nav zināms). */
+export function traficomBrowserCodeSecondsLeft(
+  s: Pick<TraficomFiAutoStatus, "codeExpiresAt" | "codeExpired"> | null | undefined,
+  nowMs: number,
+): number | null {
+  if (!s) return null;
+  if (s.codeExpired) return 0;
+  const exp = Date.parse(s.codeExpiresAt ?? "");
+  if (!Number.isFinite(exp)) return null;
+  return Math.max(0, Math.ceil((exp - nowMs) / 1000));
+}
 
 export function traficomFiRelayErrorLv(code: string | undefined, fallback?: string): string {
   return (code && RELAY_ERROR_LV[code]) || fallback?.slice(0, 200) || "Traficom pieprasījums neizdevās";
@@ -79,6 +109,28 @@ export function reduceTraficomFiProgress(prev: TraficomFiAutoStatus | null, ev: 
   };
   delete base.verificationCode;
   delete base.errorCode;
+  for (const k of ["codeExpiresAt", "codeExpired", "browserCodeAttempt", "browserCodeRejected"] as const) delete base[k];
+  if (ev.state === "awaiting_browser_code") {
+    const prevWaiting = prev?.state === "awaiting_browser_code";
+    // "Termiņš beidzies" paziņojums nes tikai karogu - iepriekšējo termiņu / mēģinājumu paturam.
+    const exp = ev.codeExpired ? (prevWaiting ? prev?.codeExpiresAt : undefined) : ev.codeExpiresAt;
+    const validExp = exp && Number.isFinite(Date.parse(exp)) ? exp : undefined;
+    const attempt = typeof ev.browserCodeAttempt === "number" && ev.browserCodeAttempt > 0 ? ev.browserCodeAttempt : prevWaiting ? prev?.browserCodeAttempt : undefined;
+    const rejected = ev.codeExpired ? prevWaiting && prev?.browserCodeRejected === true : ev.browserCodeRejected === true;
+    return {
+      ...base,
+      state: "awaiting_browser_code",
+      ...(validExp ? { codeExpiresAt: validExp } : {}),
+      ...(ev.codeExpired ? { codeExpired: true } : {}),
+      ...(attempt ? { browserCodeAttempt: Math.min(9, Math.floor(attempt)) } : {}),
+      ...(rejected ? { browserCodeRejected: true } : {}),
+      message: ev.codeExpired
+        ? "eParaksts pārlūka koda termiņš beidzies - spied «Pieprasīt jaunu kodu»"
+        : rejected
+          ? "eParaksts nepieņēma kodu - ievadi jauno kodu no lietotnes"
+          : "Ievadi kodu no eParaksts lietotnes (pārlūka apstiprināšana)",
+    };
+  }
   if (ev.state === "awaiting_eparaksts") {
     const code = /^[0-9A-Za-z]{2,8}$/.test(ev.verificationCode ?? "") ? ev.verificationCode : undefined;
     return { ...base, state: "awaiting_eparaksts", ...(code ? { verificationCode: code } : {}), message: "Gaida eParaksts apstiprinājumu telefonā" };
@@ -148,7 +200,22 @@ export function reduceTraficomFiResult(prev: TraficomFiAutoStatus | null, ev: Tr
     updatedAt: now,
     checkedAt: ev.at || now,
   };
-  for (const k of ["verificationCode", "appliedAt", "appliedBy", "restoredAt", "rawText", "data", "errorCode", "cached", "pdf"] as const) delete base[k];
+  for (const k of [
+    "verificationCode",
+    "codeExpiresAt",
+    "codeExpired",
+    "browserCodeAttempt",
+    "browserCodeRejected",
+    "appliedAt",
+    "appliedBy",
+    "restoredAt",
+    "rawText",
+    "data",
+    "errorCode",
+    "cached",
+    "pdf",
+  ] as const)
+    delete base[k];
   const raw = (ev.rawText ?? "").trim();
   const data = sanitizeTraficomFiData(ev.data);
   if (ev.found && (raw || data)) {
@@ -398,6 +465,8 @@ export function traficomFiSessionSummaryLv(s: TraficomFiRelaySession | null | un
       return `Serveris pieteicies Traficom${s.lastOkAt ? ` (pēdējais vaicājums ${fmtTime(s.lastOkAt)})` : ""}`;
     case "awaiting_eparaksts":
       return "Gaida eParaksts apstiprinājumu telefonā";
+    case "awaiting_browser_code":
+      return "eParaksts prasa apstiprināt servera pārlūku ar kodu no lietotnes";
     case "expired":
       return "Traficom sesija, visticamāk, beigusies - nākamais vaicājums prasīs eParaksts";
     default:
@@ -431,6 +500,12 @@ export function traficomFiScanRowView(status: TraficomFiAutoStatus | null | unde
     case "queued":
     case "searching":
       return { status: "checking", summary: `Traficom (FI): ${status.message || "Gaida rindā"}`, detail: "" };
+    case "awaiting_browser_code":
+      return {
+        status: "checking",
+        summary: `Traficom (FI): ${status.codeExpired ? "pārlūka koda termiņš beidzies" : "gaida kodu no eParaksts lietotnes"}`,
+        detail: "",
+      };
     case "awaiting_eparaksts":
       return {
         status: "checking",

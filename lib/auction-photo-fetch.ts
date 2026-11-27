@@ -6,6 +6,7 @@ import { createHash } from "crypto";
 
 import { ADMIN_PHOTO_UPLOAD_MAX_SOURCE_BYTES, jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
+import { isSafeThecarapiImageUrl } from "@/lib/thecarapi-photo-wait";
 
 export const AUCTION_PHOTO_FETCH_TIMEOUT_MS = 25_000;
 export const AUCTION_PHOTO_FETCH_ATTEMPTS = 3;
@@ -15,7 +16,7 @@ export const AUCTION_PHOTO_MAX_REDIRECTS = 3;
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 /** Atkārtošana neko nemaina: atbilde ir atkarīga no URL, ne no tīkla. */
-const NO_RETRY_REASONS = new Set(["host_not_allowed", "too_large", "redirect_not_allowed", "too_many_redirects"]);
+const NO_RETRY_REASONS = new Set(["host_not_allowed", "too_large", "redirect_not_allowed", "too_many_redirects", "not_image"]);
 
 export type AuctionPhotoFetchOk = {
   ok: true;
@@ -57,8 +58,18 @@ function leftMs(deadline?: number): number {
   return deadline == null ? Number.POSITIVE_INFINITY : deadline - Date.now();
 }
 
-async function fetchOnce(url: string, storedMaxBytes: number, deadline?: number): Promise<AuctionPhotoFetchResult> {
-  if (!isAllowedVinScanAuctionPhotoUrl(url)) {
+/**
+ * `trusted`: saites no TheCarApi `auction-images` atbildes (avota krātuve, hosts nav allowlistā).
+ * Tām: tikai publisks https, un atbildei jābūt `image/*`.
+ */
+async function fetchOnce(
+  url: string,
+  storedMaxBytes: number,
+  deadline?: number,
+  trusted?: ReadonlySet<string>,
+): Promise<AuctionPhotoFetchResult> {
+  const viaTrust = !isAllowedVinScanAuctionPhotoUrl(url) && Boolean(trusted?.has(url)) && isSafeThecarapiImageUrl(url);
+  if (!isAllowedVinScanAuctionPhotoUrl(url) && !viaTrust) {
     return { ok: false, url, reason: "host_not_allowed" };
   }
   const referer = refererForAuctionPhoto(url);
@@ -93,10 +104,16 @@ async function fetchOnce(url: string, storedMaxBytes: number, deadline?: number)
       return { ok: false, url, reason: "redirect_not_allowed" };
     }
     // Katrs solis: tikai https un tikai atļautie izsoļu hosti. Citādi allowlist apietu ar vienu 302.
-    if (!isAllowedVinScanAuctionPhotoUrl(next)) return { ok: false, url, reason: "redirect_not_allowed" };
+    if (!isAllowedVinScanAuctionPhotoUrl(next) && !(viaTrust && isSafeThecarapiImageUrl(next))) {
+      return { ok: false, url, reason: "redirect_not_allowed" };
+    }
     current = next;
   }
   if (!res.ok) return { ok: false, url, reason: `http_${res.status}` };
+  if (viaTrust && !/^image\//i.test(res.headers.get("content-type")?.trim() ?? "")) {
+    void res.body?.cancel().catch(() => undefined);
+    return { ok: false, url, reason: "not_image" };
+  }
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length === 0) return { ok: false, url, reason: "empty" };
   if (buf.length > ADMIN_PHOTO_UPLOAD_MAX_SOURCE_BYTES) return { ok: false, url, reason: "too_large" };
@@ -114,11 +131,12 @@ export async function fetchAuctionPhotoJpeg(
   url: string,
   storedMaxBytes: number,
   deadline?: number,
+  trusted?: ReadonlySet<string>,
 ): Promise<AuctionPhotoFetchResult> {
   let last: AuctionPhotoFetchResult = { ok: false, url, reason: "unknown" };
   for (let attempt = 0; attempt < AUCTION_PHOTO_FETCH_ATTEMPTS; attempt += 1) {
     if (attempt > 0 && leftMs(deadline) < 2_000) return last;
-    last = await fetchOnce(url, storedMaxBytes, deadline);
+    last = await fetchOnce(url, storedMaxBytes, deadline, trusted);
     if (last.ok) return last;
     if (NO_RETRY_REASONS.has(last.reason)) return last;
   }
@@ -129,7 +147,7 @@ export async function fetchAuctionPhotoJpegs(
   urls: readonly string[],
   storedMaxBytes: number,
   /** `deadline` (epoch ms): pēc tā jaunus URL nesāk; neiesāktie atgriežas kā failed «deadline». */
-  opts?: { concurrency?: number; deadline?: number },
+  opts?: { concurrency?: number; deadline?: number; trustedUrls?: ReadonlySet<string> },
 ): Promise<{ ok: AuctionPhotoFetchOk[]; failed: AuctionPhotoFetchFail[] }> {
   const wanted = [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
   const ok: AuctionPhotoFetchOk[] = [];
@@ -145,7 +163,7 @@ export async function fetchAuctionPhotoJpegs(
         failed.push({ ok: false, url, reason: "deadline" });
         continue;
       }
-      const result = await fetchAuctionPhotoJpeg(url, storedMaxBytes, opts?.deadline);
+      const result = await fetchAuctionPhotoJpeg(url, storedMaxBytes, opts?.deadline, opts?.trustedUrls);
       if (result.ok) ok.push(result);
       else failed.push(result);
     }

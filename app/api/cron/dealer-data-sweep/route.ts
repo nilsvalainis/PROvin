@@ -18,6 +18,7 @@ import { listUnfinishedDealerDataJobs, upsertDealerDataJob } from "@/lib/dealer-
 import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 import { retryDealerNoVinFromPlate } from "@/lib/order-plate-vin-resolve";
 import { sweepQuickEvalSmartId } from "@/lib/quick-eval-auto";
+import { sweepThecarapiPhotoWait } from "@/lib/thecarapi-photo-wait-index";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,8 +56,15 @@ export async function GET(req: Request) {
       console.warn("[cron/dealer-data-sweep] quick-eval smart-id", err instanceof Error ? err.message : "unknown");
       return null;
     });
+    // TheCarApi bildes, kuras avots vēl gatavoja: atkārto pēc 1/3/12/24 h (tikai bilžu saraksts). Max 1 pasūtījums, ≤60 s.
+    const thecarapiPhotos = await sweepThecarapiPhotoWait({ deadlineAt: Date.now() + 60_000, maxOrders: 1 }).catch((err) => {
+      console.warn("[cron/dealer-data-sweep] thecarapi photos", err instanceof Error ? err.message : "unknown");
+      return null;
+    });
     const unfinished = await listUnfinishedDealerDataJobs();
-    if (unfinished.length === 0) return NextResponse.json({ ok: true, unfinished: 0, processed: [], quickEvalSmartId });
+    if (unfinished.length === 0) {
+      return NextResponse.json({ ok: true, unfinished: 0, processed: [], quickEvalSmartId, thecarapiPhotos });
+    }
     const now = Date.now();
     const due = unfinished
       .filter((job) => job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS && dealerDataJobRetryDue(job, now))
@@ -94,6 +102,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       quickEvalSmartId,
+      thecarapiPhotos,
       unfinished: unfinished.length,
       processed,
       /** Operatoram: šie gaida manuālu lēmumu (atmaksa vai atkārtots mēģinājums). */

@@ -251,10 +251,13 @@ function pickRicherAutoRecordsBlock(
     baseline.photos,
   );
   const synced = syncAutoRecordsPhotoGroupsAndFlat(mergedGroups);
+  // Dīlera foto atlase - admina pēdējā izvēle (arī tad, ja «bagātākais» bloks ir bāzes).
+  const dealerPhotos = incoming.dealerPhotos ?? baseline.dealerPhotos;
   return {
     ...picked,
     photoGroups: synced.photoGroups,
     photos: synced.photos,
+    ...(dealerPhotos ? { dealerPhotos } : {}),
   };
 }
 

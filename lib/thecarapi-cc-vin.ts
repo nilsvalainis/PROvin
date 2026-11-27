@@ -10,12 +10,21 @@ import { emptyCcVinBlock, normalizeCcVinBlock, type CcVinBlockState } from "@/li
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
 import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
-import { storeThecarapiGallery, type ThecarapiGalleryFetch, type ThecarapiGalleryWrite } from "@/lib/thecarapi-photos";
+import { noteThecarapiPhotoWait } from "@/lib/thecarapi-photo-wait-index";
+import { applyThecarapiPhotoWaits, thecarapiPhotoWaitDue } from "@/lib/thecarapi-photo-wait";
+import {
+  storeThecarapiGallery,
+  thecarapiArchivePhotoSession,
+  type ThecarapiGalleryFetch,
+  type ThecarapiGalleryWrite,
+} from "@/lib/thecarapi-photos";
 import { forgetArchiveCountsCache } from "@/lib/vin-memory-auction-store";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCache, readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
-import { thecarapiJsonHasDetail, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiJsonHasDetail, thecarapiRecordKey, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiRecordWithImages, thecarapiRefFromParts, type ThecarapiAuctionRef } from "@/lib/vin-scan/parse-thecarapi";
 import {
+  fetchThecarapiAuctionImages,
   fetchThecarapiVinWithDetails,
   THECARAPI_SOURCE_ID,
   thecarapiAdminEnabled,
@@ -74,6 +83,8 @@ export async function fetchThecarapiCcVinMerge(opts: {
    */
   cacheOnly?: boolean;
   cacheSince?: string;
+  /** Testiem: pašreizējais laiks (foto gaidīšanas statusam). */
+  now?: number;
 }): Promise<{
   parse: VinScanParse;
   block: CcVinBlockState;
@@ -179,7 +190,10 @@ export async function fetchThecarapiCcVinMerge(opts: {
   });
   const partial = result.partial === true || gallery.partial;
   const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
-  let records = gallery.records;
+  const now = opts.now ?? Date.now();
+  // Bildes avotā vēl gatavo (pending) un nevienu nesaglabājām - statuss + vēlāki atkārtojumi.
+  let records = applyThecarapiPhotoWaits(gallery.records, prev.thecarapiRecords, { retried: false, now });
+  const waited = records;
   if (records.length > 0) {
     const marked = markThecarapiArchived(records, new Date().toISOString());
     const inputs = thecarapiArchiveInputs(opts.vin, marked);
@@ -191,9 +205,12 @@ export async function fetchThecarapiCcVinMerge(opts: {
           if (written.added > 0 || written.updated > 0) await forgetArchiveCountsCache().catch(() => undefined);
         }
       } catch {
-        records = gallery.records;
+        records = waited;
       }
     }
+  }
+  if (opts.sessionId && opts.sessionId !== thecarapiArchivePhotoSession(opts.vin)) {
+    await noteThecarapiPhotoWait(opts.sessionId, opts.vin, records, now).catch(() => undefined);
   }
   if (previous && records.length > 0) {
     await writeThecarapiVinCache(opts.vin, result.parse, {
@@ -240,5 +257,87 @@ export async function fetchThecarapiCcVinMerge(opts: {
     records,
     detailDiag: result.detailDiag ?? [],
     partial,
+  };
+}
+
+export type ThecarapiPhotoRetryResult = {
+  /** Vai bloks mainījās (jāsaglabā melnrakstā). */
+  changed: boolean;
+  block: CcVinBlockState;
+  /** Atjaunotie ieraksti (tikai tie, kas gaidīja). */
+  retried: ThecarapiAdminRecord[];
+  /** Jaunas pasūtījuma foto grupas. */
+  groups: CcVinBlockState["photoGroups"];
+  billable: boolean;
+};
+
+/**
+ * Automātisks atkārtojums lotēm, kuru bildes TheCarApi vēl gatavoja (`photoWait` pienācis laiks).
+ * Tikai `auction-images` (bilžu saraksts) - bez vēstures un detaļu pieprasījuma.
+ */
+export async function retryThecarapiPendingPhotos(opts: {
+  vin: string;
+  prev: CcVinBlockState;
+  sessionId: string;
+  now?: number;
+  deps?: ThecarapiDeps;
+  fetchJpegs?: ThecarapiGalleryFetch;
+  writeJpeg?: ThecarapiGalleryWrite;
+  deadline?: number;
+}): Promise<ThecarapiPhotoRetryResult> {
+  const now = opts.now ?? Date.now();
+  const env = opts.deps?.env ?? process.env;
+  const prev = opts.prev;
+  const all = prev.thecarapiRecords ?? [];
+  const due = all.filter((record) => thecarapiPhotoWaitDue(record.photoWait, now));
+  const none: ThecarapiPhotoRetryResult = { changed: false, block: prev, retried: [], groups: [], billable: false };
+  if (due.length === 0 || !thecarapiConfigured(env) || !thecarapiAdminFlag(env)) return none;
+  const refs = due
+    .map((record) => thecarapiRefFromParts(record.site, record.id))
+    .filter((ref): ref is ThecarapiAuctionRef => Boolean(ref));
+  const images = await fetchThecarapiAuctionImages(refs, { ...opts.deps, env, deadline: opts.deadline ?? opts.deps?.deadline });
+  const rebuilt = due.map((record) => {
+    const json = images.byKey[thecarapiRecordKey(record.site, record.id)];
+    return json !== undefined ? thecarapiRecordWithImages(record, json) : record;
+  });
+  const gallery = await storeThecarapiGallery({
+    vin: opts.vin,
+    sessionId: opts.sessionId,
+    records: rebuilt,
+    existing: prev.photoGroups,
+    fetchJpegs: opts.fetchJpegs,
+    writeJpeg: opts.writeJpeg,
+    deadline: opts.deadline ?? opts.deps?.deadline,
+  });
+  // Termiņš pārtrauca lejupielādi - mēģinājumu neskaitām.
+  const retried = gallery.partial
+    ? gallery.records
+    : applyThecarapiPhotoWaits(gallery.records, due, { retried: true, now });
+  const byKey = new Map(retried.map((record) => [thecarapiRecordKey(record.site, record.id), record]));
+  const merged = all.map((record) => byKey.get(thecarapiRecordKey(record.site, record.id)) ?? record);
+  let block: CcVinBlockState = { ...prev, thecarapiRecords: merged };
+  if (gallery.groups.length > 0) {
+    const synced = syncCcVinPhotoGroupsAndFlat([...(prev.photoGroups ?? []), ...gallery.groups]);
+    block = { ...block, photoGroups: synced.photoGroups, photos: synced.photos };
+  }
+  // VIN kešā tie paši ieraksti, lai admin avota skats un arhīvs redz bildes.
+  const cached = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
+  if (cached?.records?.length) {
+    const nextRecords = cached.records.map((record) => byKey.get(thecarapiRecordKey(record.site, record.id)) ?? record);
+    await writeThecarapiVinCache(opts.vin, cached.parse, {
+      httpStatus: cached.httpStatus,
+      etag: cached.etag,
+      refs: cached.refs,
+      records: nextRecords,
+      recordsComplete: cached.recordsComplete,
+      cachedAt: cached.cachedAt,
+    }).catch(() => undefined);
+  }
+  return {
+    changed: true,
+    block: normalizeCcVinBlock(block),
+    retried,
+    groups: gallery.groups,
+    billable: images.billable,
   };
 }

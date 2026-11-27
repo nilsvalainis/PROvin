@@ -7,7 +7,7 @@ import "server-only";
 import { CC_VIN_PHOTO_MAX_BYTES, makeCcVinPhotoId, writeCcVinPhotoJpeg } from "@/lib/admin-cc-vin-photo-store";
 import { fetchAuctionPhotoJpegs, type AuctionPhotoFetchOk } from "@/lib/auction-photo-fetch";
 import { makeCcVinPhotoGroupId, type CcVinPhotoGroup } from "@/lib/cc-vin-photo-types";
-import { thecarapiGalleryTitle, type ThecarapiAdminRecord, type ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiGalleryTitle, thecarapiTrustedImageUrls, type ThecarapiAdminRecord, type ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 
 export function thecarapiArchivePhotoSession(vin: string): string {
   const clean = vin.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
@@ -19,6 +19,8 @@ export type ThecarapiGalleryFetch = (
   urls: readonly string[],
   maxBytes: number,
   deadline?: number,
+  /** Saites no TheCarApi `auction-images` (hosts ārpus allowlist). */
+  trustedUrls?: ReadonlySet<string>,
 ) => Promise<{ ok: AuctionPhotoFetchOk[]; failed: { url: string; reason?: string }[] }>;
 
 /** Pasūtījuma/arhīva rakstīšanas paralēlisms (Blob PUT). */
@@ -77,10 +79,15 @@ export async function storeThecarapiGallery(opts: {
   deadline?: number;
 }): Promise<{ records: ThecarapiAdminRecord[]; groups: CcVinPhotoGroup[]; partial: boolean }> {
   const fetchJpegs =
-    opts.fetchJpegs ?? ((urls, max, deadline) => fetchAuctionPhotoJpegs(urls, max, { deadline }));
+    opts.fetchJpegs ??
+    ((urls, max, deadline, trustedUrls) => fetchAuctionPhotoJpegs(urls, max, { deadline, trustedUrls }));
   const writeJpeg = opts.writeJpeg ?? writeCcVinPhotoJpeg;
   const urls: string[] = [];
   const seenUrl = new Set<string>();
+  const trusted = new Set<string>();
+  for (const record of opts.records) {
+    for (const url of thecarapiTrustedImageUrls(record.rawImages)) trusted.add(url);
+  }
   for (const record of opts.records) {
     for (const url of record.photoUrls) {
       if (!url || seenUrl.has(url)) continue;
@@ -88,7 +95,7 @@ export async function storeThecarapiGallery(opts: {
       urls.push(url);
     }
   }
-  const fetched = urls.length > 0 ? await fetchJpegs(urls, CC_VIN_PHOTO_MAX_BYTES, opts.deadline) : { ok: [], failed: [] };
+  const fetched = urls.length > 0 ? await fetchJpegs(urls, CC_VIN_PHOTO_MAX_BYTES, opts.deadline, trusted) : { ok: [], failed: [] };
   const partial = fetched.failed.some((row) => row.reason === "deadline");
   const byUrl = new Map(fetched.ok.map((row) => [row.url, row]));
   const archiveSession = thecarapiArchivePhotoSession(opts.vin);
