@@ -26,7 +26,7 @@ const LV: Tp5MiniConfirmCopy = {
   continueMini: "Turpināt ar MINI",
   switchAudits: "Pāriet uz AUDITS",
   closeAria: "Aizvērt",
-  warnTitle: "Šim auto iesakām PROVIN AUDITS",
+  warnTitle: "Šim auto iesakām PROVIN AUDITU",
   warnBar: "⚠️ Auto Latvijā nav reģistrēts vai ir reģistrēts mazāk nekā 3 gadus.",
   warnBody:
     "Ārvalstu vēsturi (negadījumus, nobraukumu, dīlera datus) pārbauda tikai PROVIN AUDITS. MINI parāda tikai Latvijas datus un sniedz konsultāciju.",
