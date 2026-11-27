@@ -592,6 +592,11 @@ export async function sendReportReadyEmail(opts: {
   custom?: { subject: string; text: string } | null;
   /** HTML kartītei: kopsavilkuma fakti, auto, piemaksas saites termiņš (ja sūtīšanas brīdī zināms). */
   emailContext?: ReportEmailExtras | null;
+  /**
+   * AUDITS «Sūtīt atskaiti» (jaunā forma, Nils 27.11): B2B diskrēts (bez mārketinga, «Transportlīdzekļa pārbaude»),
+   * «Labota versija» kartē, B2C konsultācijas bloks. Tikai kopā ar `custom`.
+   */
+  audit?: { discreet: boolean; corrected: boolean; consult: boolean } | null;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -627,9 +632,13 @@ export async function sendReportReadyEmail(opts: {
           productKind: opts.productKind ?? "audits",
           vin: opts.carVin,
           attachments: sizedAttachments,
+          // AUDITS forma: bez piemaksas termiņa (piedāvājumu tur nav); B2B fakti un auto kartē paliek (makets).
           facts: extras?.facts ?? [],
           car: extras?.car ?? null,
-          offerExpiresAt: extras?.offerExpiresAt ?? null,
+          offerExpiresAt: opts.audit ? null : (extras?.offerExpiresAt ?? null),
+          ...(opts.audit?.discreet ? { discreet: true } : {}),
+          ...(opts.audit?.corrected ? { corrected: true } : {}),
+          ...(opts.audit?.consult && !b2b ? { consult: true } : {}),
         },
       }),
       from: b2b ? getB2bMailFromAddress() : undefined,

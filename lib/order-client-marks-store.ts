@@ -13,7 +13,9 @@ import { readPrivateBlobText } from "@/lib/blob-read";
 import { compareAndSwap } from "@/lib/conditional-write";
 import {
   parseOrderClientMarks,
+  withAuditSend,
   withDealerSend,
+  type AuditSendRecord,
   type DealerSendRecord,
   type OrderClientMarks,
 } from "@/lib/order-client-marks";
@@ -148,6 +150,18 @@ export async function recordDealerSendOnServer(
 ): Promise<OrderClientMarks | null> {
   try {
     return await updateOrderClientMarks(sessionId, (cur) => withDealerSend(cur, rec));
+  } catch {
+    return null;
+  }
+}
+
+/** AUDITS «Sūtīt atskaiti» žurnāls pēc veiksmīgas sūtīšanas. Kļūda sūtījumu neaptur (atgriež null). */
+export async function recordAuditSendOnServer(
+  sessionId: string,
+  rec: AuditSendRecord,
+): Promise<OrderClientMarks | null> {
+  try {
+    return await updateOrderClientMarks(sessionId, (cur) => withAuditSend(cur, rec));
   } catch {
     return null;
   }

@@ -1,7 +1,7 @@
 /**
  * Klienta saziņas atzīmes: dīlera datu «Sūtīt klientam» žurnāls un Google atsauksmes lūgums.
  * GET ?sessionId= - atzīmes + automātiskā atsauksmes lūguma stāvoklis.
- * POST action: dealer_send | review_request | review_queue | review_opt_out | review_settings.
+ * POST action: dealer_send | audit_send | review_request | review_queue | review_opt_out | review_settings.
  * Atsauksmes e-pastu automātiski sūta cron (`/api/cron/review-ask`) vai admina poga; WhatsApp tikai atzīmē
  * (ziņu atver admins). `review_opt_out` - «Nelūgt» / «Atcelt».
  */
@@ -16,9 +16,12 @@ import { decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { trySendReviewAskEmail } from "@/lib/email/send-transactional";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import {
+  auditSendRecordFromInput,
   isDealerSendChannel,
   isDealerSendSituation,
+  withAuditSend,
   withDealerSend,
   withReviewOptOut,
   withReviewRequested,
@@ -153,6 +156,20 @@ export async function POST(req: Request) {
     const marks = await updateOrderClientMarks(sessionId, (cur) =>
       withDealerSend(cur, { at: nowIso, channel, situation, offer, review }),
     );
+    if (!marks) return NextResponse.json({ error: "store_failed" }, { status: 503 });
+    return NextResponse.json({ ok: true, marks });
+  }
+
+  // AUDITS «Sūtīt atskaiti» ar WhatsApp: ziņu atver admins, šeit tikai žurnāla ieraksts (e-pastu ieraksta serveris).
+  if (action === "audit_send") {
+    const lang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(String(body.lang))
+      ? (body.lang as ClientReportLang)
+      : "lv";
+    const rec = auditSendRecordFromInput(
+      { situation: body.situation, consult: body.consult },
+      { channel, atIso: nowIso, lang, b2b: body.b2b === true },
+    );
+    const marks = await updateOrderClientMarks(sessionId, (cur) => withAuditSend(cur, rec));
     if (!marks) return NextResponse.json({ error: "store_failed" }, { status: 503 });
     return NextResponse.json({ ok: true, marks });
   }

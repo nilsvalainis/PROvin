@@ -1,6 +1,11 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { GOOGLE_REVIEW_URL, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+import {
+  B2B_DISCREET_PRODUCT,
+  GOOGLE_REVIEW_URL,
+  REPORT_CORRECTED_TITLE,
+  type ReportReadyProductKind,
+} from "@/lib/email/report-ready-copy";
 import { CLIENT_EMAIL_QUESTION_LINE } from "@/lib/email/client-email-contact";
 import {
   emailAttachmentsRow,
@@ -493,6 +498,22 @@ export function reviewAskEmailHtml(opts: {
   return emailDocument({ rows, lang, preheader: opts.preheader ?? null });
 }
 
+/** «Vajag konsultāciju par šo auto?» ietvars ar pogu «Uzdot jautājumu» (tikai B2C AUDITS). */
+function consultBoxRow(lang: ClientReportLang, vin: string): string {
+  const subject = `${CONSULT_MAIL_SUBJECT[lang]}${vin ? ` ${vin}` : ""}`;
+  return emailRow(
+    emailBorderedBox(
+      emailParagraph(esc(CONSULT_TITLE[lang]), "margin:0 0 4px;font-weight:600;") +
+        emailSmall(esc(CLIENT_EMAIL_QUESTION_LINE[lang]), "margin:0 0 14px;") +
+        emailButton(`mailto:info@provin.lv?subject=${encodeURIComponent(subject)}`, esc(CONSULT_BUTTON[lang]), "ghost"),
+    ),
+    "22px 36px 0",
+  );
+}
+
+const SIGN_OFF_START_RE = /^(Ar cieņu|Best regards|С уважением|Mit freundlichen Grüßen),/;
+const QUESTION_LINES = new Set<string>(Object.values(CLIENT_EMAIL_QUESTION_LINE));
+
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
 export function auditCompletedEmailHtml(opts: {
   carVin: string;
@@ -550,17 +571,7 @@ export function auditCompletedEmailHtml(opts: {
   ];
 
   if (kind === "audits") {
-    const subject = `${CONSULT_MAIL_SUBJECT[lang]}${vin ? ` ${vin}` : ""}`;
-    rows.push(
-      emailRow(
-        emailBorderedBox(
-          emailParagraph(esc(CONSULT_TITLE[lang]), "margin:0 0 4px;font-weight:600;") +
-            emailSmall(questionHtml, "margin:0 0 14px;") +
-            emailButton(`mailto:info@provin.lv?subject=${encodeURIComponent(subject)}`, esc(CONSULT_BUTTON[lang]), "ghost"),
-        ),
-        "22px 36px 0",
-      ),
-    );
+    rows.push(consultBoxRow(lang, vin));
   } else {
     rows.push(emailRow(emailSmall(questionHtml), "18px 36px 0"));
   }
@@ -758,6 +769,15 @@ export type OperatorEmailContext = {
   attachments?: readonly { filename: string; bytes?: number | null }[];
   /** AUDITS piemaksas saites termiņš (ISO) - «Saite derīga līdz DD.MM.YYYY». */
   offerExpiresAt?: string | null;
+  /**
+   * B2B diskrētais režīms (AUDITS forma, Nils 27.11): kartē «Transportlīdzekļa pārbaude», bez pogām,
+   * piedāvājuma bloka un atsauksmes zvaigznēm (arī, ja tekstā tādas rindas palikušas).
+   */
+  discreet?: boolean;
+  /** «Labota versija» statusa kartē. */
+  corrected?: boolean;
+  /** B2C: konsultācijas bloks («Vajag konsultāciju par šo auto?») pirms paraksta. */
+  consult?: boolean;
 };
 
 const OFFER_PAY_LINE_RE = /^(apmaksāt|pasūtīt)\s*:\s*(https?:\/\/\S*\/papildinajums\/[^\s)]+)\s*(.*)$/i;
@@ -877,8 +897,12 @@ function operatorStatusRow(ctx: OperatorEmailContext, lang: ClientReportLang): s
   if (ctx.situation === "ready") {
     return emailStatusCardRow({
       icon: "check",
-      eyebrow: STATUS_PRODUCT_EYEBROW[kind][lang],
-      title: kind === "auction_archive" && lang === "lv" ? "Izsoļu arhīvs gatavs" : STATUS_REPORT_READY[lang],
+      eyebrow: ctx.discreet ? B2B_DISCREET_PRODUCT[lang] : STATUS_PRODUCT_EYEBROW[kind][lang],
+      title: ctx.corrected
+        ? REPORT_CORRECTED_TITLE[lang]
+        : kind === "auction_archive" && lang === "lv"
+          ? "Izsoļu arhīvs gatavs"
+          : STATUS_REPORT_READY[lang],
       car: ctx.car,
       vin: vin || null,
       date,
@@ -925,11 +949,32 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
   // Strukturētais AUDITS piedāvājums - tikai dīlera «Dati gatavi» e-pastā (LV teksti).
   const offerKind = ctx?.productKind ?? "dealer";
   const offer =
-    lang === "lv" && ctx?.situation === "ready" && (offerKind === "dealer" || offerKind === "auction_archive")
+    !ctx?.discreet && lang === "lv" && ctx?.situation === "ready" && (offerKind === "dealer" || offerKind === "auction_archive")
       ? parseOfferFromParagraphs(paragraphs)
       : null;
+  // B2C konsultācijas bloks: pirms paraksta; jautājumu rinda ir blokā, tāpēc atsevišķi to neatkārto.
+  const consult = ctx?.consult === true && !b2bClient && !ctx.discreet;
+  const consultSkip = new Set<number>();
+  let consultAt = -1;
+  if (consult) {
+    paragraphs.forEach((p, i) => {
+      if (QUESTION_LINES.has(p)) consultSkip.add(i);
+    });
+    const signIdx = paragraphs.findIndex((p) => SIGN_OFF_START_RE.test(p));
+    consultAt = signIdx >= 0 ? signIdx : paragraphs.length;
+  }
 
+  const discreet = ctx?.discreet === true;
   const renderBlock = (block: string): string => {
+    if (discreet) {
+      // B2B diskrēts: tikai teksts (bez pogām / zvaigznēm), paraksts «PROVIN» zilā krāsā.
+      const dl = block.split("\n");
+      if ((dl[dl.length - 1] ?? "").trim() === "PROVIN" && dl.length >= 2) {
+        const head = dl.slice(0, -1).join("\n").trim();
+        return emailParagraph(`${esc(head).replace(/\n/g, "<br/>")}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span>`, "margin:0;");
+      }
+      return emailParagraph(esc(block).replace(/\n/g, "<br/>"), "margin:0;");
+    }
     const button = emailIntentButton(block);
     if (button) return button;
     const lines = block.split("\n");
@@ -984,17 +1029,21 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
     Boolean(p && /^pasūtīt(?:\s+provin\s+audits)?\s*:\s*https?:\/\/\S+$/i.test(p.trim()) && emailIntentButton(p));
   const boxedWithPrev = new Set<number>();
   paragraphs.forEach((p, i) => {
-    if (i > 0 && isOrderButton(p) && !offer?.consumed.has(i - 1) && !isOrderButton(paragraphs[i - 1]) && !emailIntentButton(paragraphs[i - 1]!)) {
+    if (i > 0 && !discreet && isOrderButton(p) && !offer?.consumed.has(i - 1) && !isOrderButton(paragraphs[i - 1]) && !emailIntentButton(paragraphs[i - 1]!)) {
       boxedWithPrev.add(i);
     }
   });
 
   paragraphs.forEach((block, i) => {
+    if (consult && i === consultAt) {
+      rows.push(consultBoxRow(lang, vinForCard(ctx?.vin)));
+      first = false;
+    }
     if (offer && i === offer.at) {
       rows.push(offerBlockFromParsed(offer, ctx?.offerExpiresAt, offerKind));
       first = false;
     }
-    if (!offer?.consumed.has(i) && !boxedWithPrev.has(i)) {
+    if (!offer?.consumed.has(i) && !boxedWithPrev.has(i) && !consultSkip.has(i)) {
       if (boxedWithPrev.has(i + 1)) {
         const boxed = `${renderBlock(block)}${emailIntentButton(paragraphs[i + 1]!)}`;
         const p = pad();
@@ -1008,12 +1057,13 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
       first = false;
     }
   });
+  if (consult && consultAt >= paragraphs.length) rows.push(consultBoxRow(lang, vinForCard(ctx?.vin)));
 
   return emailDocument({
     rows: rows.filter(Boolean).join("\n"),
     lang,
     b2b: b2bClient,
-    preheader: ctx ? (ctx.situation === "ready" ? STATUS_REPORT_READY[lang] : ctx.situation === "cancelled" ? STATUS_CANCELLED[lang] : STATUS_NO_DATA[lang]) : title || null,
+    preheader: ctx ? (ctx.situation === "ready" ? (ctx.corrected ? REPORT_CORRECTED_TITLE[lang] : STATUS_REPORT_READY[lang]) : ctx.situation === "cancelled" ? STATUS_CANCELLED[lang] : STATUS_NO_DATA[lang]) : title || null,
     ...(opts.humanSent ? { humanSent: true } : {}),
   });
 }

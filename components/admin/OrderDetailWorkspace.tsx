@@ -369,12 +369,15 @@ import {
   AdminSendReportDialog,
   type SendReportKind,
   type SendReportPrepared,
+  type SendReportRecipientRole,
   type SendReportResult,
 } from "@/components/admin/AdminSendReportDialog";
 import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
 import { parseOrderClientMarks } from "@/lib/order-client-marks";
 import { dealerExtraFileMime } from "@/lib/dealer-send-extra-files";
-import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { AdminAuditSendDialog, type AuditSendInput } from "@/components/admin/AdminAuditSendDialog";
+import { auditSendInitialLang, isAuditSendB2b } from "@/lib/audits-send-message";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
@@ -5496,7 +5499,7 @@ export function OrderDetailWorkspace({
             ) : null}
             <button
               type="button"
-              onClick={() => setSendReportOpen(true)}
+              onClick={() => openSendReport()}
               className={adminProBtn("client")}
               title="Atskaites PDF serverī, Skatīt PDF, sūtīšana ar versiju, kopija Dropbox /_PROv/"
             >
@@ -5832,6 +5835,32 @@ export function OrderDetailWorkspace({
     : b2bClientOrder
       ? "business"
       : "audits";
+  /**
+   * Jaunā AUDITS sūtīšanas forma (Nils 27.11, makets «A A A»): AUDITS un BUSINESS pasūtījumos.
+   * Dīlera dati, MINI un ASV vēsture - vecais logs; «Vecā forma» saite jaunajā formā 2 nedēļas.
+   */
+  const [auditSendOpen, setAuditSendOpen] = useState(false);
+  const auditSendFormEligible =
+    sendReportDefaultKind !== "dealer" &&
+    !isMiniHighlightAdminOrder({ checkoutLine: payload.checkoutLine, amountTotalCents: payload.amountTotal });
+  const auditSendRecipientRole: SendReportRecipientRole = isPartnerHighlightAdminOrder({
+    partnerId: payload.partnerId,
+    partnerCompanyName: payload.partnerCompanyName,
+    notes: payload.notes,
+  })
+    ? "partner"
+    : "client";
+  const auditSendB2b = isAuditSendB2b({
+    notes: payload.notes,
+    partnerId: payload.partnerId,
+    partnerCompanyName: payload.partnerCompanyName,
+    isDemo: payload.isDemo,
+    recipientRole: auditSendRecipientRole,
+  });
+  const openSendReport = () => {
+    if (auditSendFormEligible) setAuditSendOpen(true);
+    else setSendReportOpen(true);
+  };
 
   /**
    * Dīlera «Signāli» (Nils 27.11): dīlera -> AUDITS piedāvājumu izveido (vai atkārtoti izmanto) TIKAI sūtot klientam.
@@ -5944,6 +5973,8 @@ export function OrderDetailWorkspace({
     dealerSend?: { situation: string; offer: boolean; review: boolean };
     /** Dīlera «Sūtīt klientam»: papildu faili/bildes no loga (jau pārbaudīti logā). */
     extraFiles?: File[];
+    /** AUDITS «Sūtīt atskaiti» (jaunā forma): situācija, B2B diskrēts, konsultācijas bloks + žurnāls. */
+    auditSend?: AuditSendInput["auditSend"];
   }): Promise<SendReportResult> => {
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
@@ -5976,6 +6007,7 @@ export function OrderDetailWorkspace({
         ? { customSubject: input.customSubject, customText: input.customText }
         : {}),
       ...(input.dealerSend ? { dealerSend: input.dealerSend } : {}),
+      ...(input.auditSend ? { auditSend: input.auditSend } : {}),
     });
     if (!res.ok) {
       if (res.status === 409 && data.error === "recipient_mismatch") {
@@ -6104,6 +6136,21 @@ export function OrderDetailWorkspace({
     return null;
   };
 
+  /** AUDITS forma pēc nosūtīšanas «Aizvērt»: tāpat kā dīlera logs - saglabā melnrakstu un atgriežas sarakstā. */
+  const returnToOrdersAfterAuditSend = async () => {
+    setAuditSendOpen(false);
+    syncWsPersistRefFromState();
+    if (orderDraftPersistenceEnabled) {
+      const saved = await flushWorkspaceServerPatch({ showFlash: false });
+      if (!saved) {
+        window.alert("Nosūtīts, bet melnraksts nav saglabāts - paliec pasūtījumā un nospied «Saglabāt».");
+        return;
+      }
+    }
+    writeOrdersListFlash(dealerSentFlashText(payload.vin));
+    router.push(ADMIN_ORDERS_LIST_HREF);
+  };
+
   /** Dīlera bloks «Sūtīt klientam»: tas pats servera PDF un sūtīšanas ceļš kā «Sūtīt atskaiti». */
   const dealerSendBridge: DealerSendBridge = {
     onDealerDataSent: () => returnToOrdersAfterDealerSend(),
@@ -6170,7 +6217,7 @@ export function OrderDetailWorkspace({
       document.querySelector("[data-mobile-dealer-panel]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
-    setSendReportOpen(true);
+    openSendReport();
   };
   /** «Izsoļu arhīvs» kā atsevišķs PDF (Nils 23.11): apakšējā josla + «Vairāk» + izsoļu bloks. Tikai LV. */
   const [archivePdfBusy, setArchivePdfBusy] = useState(false);
@@ -6190,7 +6237,7 @@ export function OrderDetailWorkspace({
       label: "Atskaite",
       items: [
         { id: "pdf", label: "Ģenerēt PDF", sub: "LV · EN · RU · DE", onClick: () => setMobilePdfRequest((n) => n + 1) },
-        { id: "send-report", label: "Sūtīt atskaiti", onClick: () => setSendReportOpen(true) },
+        { id: "send-report", label: "Sūtīt atskaiti", onClick: () => openSendReport() },
         {
           id: "notify",
           label: "Nosūtīt klientam",
@@ -6312,6 +6359,68 @@ export function OrderDetailWorkspace({
           if (!(await postAdminAuditComplete(payload.sessionId, false))) throw new Error("undo_failed");
         }}
       />
+
+      {auditSendFormEligible ? (
+        <AdminAuditSendDialog
+          open={auditSendOpen}
+          onClose={() => setAuditSendOpen(false)}
+          sessionId={payload.sessionId}
+          vin={(payload.vin ?? "").trim()}
+          car={(blocksDisplaySafe.csdd.makeModel ?? "").trim() || null}
+          basicsLine={[(payload.vin ?? "").trim(), (blocksDisplaySafe.csdd.makeModel ?? "").trim(), plateBar]
+            .filter(Boolean)
+            .join(" · ")}
+          b2b={auditSendB2b}
+          recipientRole={auditSendRecipientRole}
+          customerEmail={(payload.customerEmail ?? "").trim()}
+          customerPhoneDigits={whatsappPhoneDigits ?? null}
+          initialLang={auditSendInitialLang({ b2b: auditSendB2b, orderLang: orderClientLang, lockedLang: pdfLangLock })}
+          autoLang={clientLangDecision.source === "auto_lv" || clientLangDecision.source === "site" ? clientLangDecision.lang : null}
+          lockedLang={pdfLangLock}
+          onUnlockLang={() => {
+            if (!partnerReportLang) return true;
+            if (!confirmUnlockB2bReportLang(partnerReportLang)) return false;
+            setPdfLangUnlocked(true);
+            return true;
+          }}
+          onLangPersist={partnerReportLang ? undefined : (l) => setClientLang(l)}
+          attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size, mime: p.mime }))}
+          criticalIssues={criticalIssues}
+          prepare={(lang) => prepareSendReportPdf(sendReportDefaultKind, lang)}
+          send={async (input) =>
+            sendPreparedReport({
+              prepared: input.prepared,
+              lang: input.lang,
+              attachmentIds: input.attachmentIds,
+              ...(input.extraFiles.length > 0 ? { extraFiles: input.extraFiles } : {}),
+              includeGoogleReview: false,
+              markComplete: input.markComplete,
+              saveDropbox: input.saveDropbox,
+              customSubject: input.subject,
+              customText: input.text,
+              auditSend: input.auditSend,
+              ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+            })
+          }
+          setComplete={async (complete) => {
+            if (!(await postAdminAuditComplete(payload.sessionId, complete))) throw new Error("complete_failed");
+          }}
+          recordWhatsapp={async ({ situation, lang, b2b }) => {
+            await fetch("/api/admin/order-client-marks", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "audit_send", sessionId: payload.sessionId, channel: "whatsapp", situation, lang, b2b }),
+            }).catch(() => null);
+          }}
+          onOpenOldForm={() => {
+            setAuditSendOpen(false);
+            setSendReportOpen(true);
+          }}
+          onDone={() => void returnToOrdersAfterAuditSend()}
+          whatsappPingHref={sendReportWhatsappHref}
+        />
+      ) : null}
 
       {notifyDialogOpen && typeof document !== "undefined"
         ? createPortal(

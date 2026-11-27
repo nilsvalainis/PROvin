@@ -65,6 +65,8 @@ export async function postNotifyReportReadyViaBlob(input: {
   customText?: string;
   /** Dīlera «Sūtīt klientam»: serveris ieraksta sūtījumu klienta saziņas žurnālā. */
   dealerSend?: { situation: string; offer: boolean; review: boolean };
+  /** AUDITS «Sūtīt atskaiti» (jaunā forma): situācija, B2B diskrēts, konsultācijas bloks; serveris ieraksta žurnālā. */
+  auditSend?: { situation: "ready" | "fixed"; b2b: boolean; consult: boolean };
 }): Promise<{ res: Response; rawText: string; data: Record<string, unknown> }> {
   const files: { blob: Blob; filename: string; mime: string }[] = [];
   for (const u of input.uploads) {
@@ -104,6 +106,7 @@ export async function postNotifyReportReadyViaBlob(input: {
         ? { customSubject: input.customSubject.trim(), customText: input.customText.trim() }
         : {}),
       ...(input.dealerSend ? { dealerSend: input.dealerSend } : {}),
+      ...(input.auditSend ? { auditSend: input.auditSend } : {}),
     }),
   });
   const rawText = await res.text();

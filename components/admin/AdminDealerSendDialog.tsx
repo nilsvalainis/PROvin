@@ -4,6 +4,18 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
+import {
+  AdminClientSendShell,
+  cachedAdminMessageTemplatesDoc,
+  ClientSendChannelTabs,
+  ClientSendSubjectField,
+  ClientSendTextField,
+  clientSendBtnClass,
+  clientSendPrimaryClass,
+  clientSendSegClass,
+  clientSendWaBtnClass,
+  loadAdminMessageTemplatesDoc,
+} from "@/components/admin/AdminClientSendShell";
 import type { SendReportPrepared } from "@/components/admin/AdminSendReportDialog";
 import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
@@ -18,7 +30,6 @@ import {
   type DealerSendSituation,
 } from "@/lib/dealer-send-message";
 import { applyB2bSignature } from "@/lib/messages/localized-templates";
-import { messageTemplatesDocFromOverrides } from "@/lib/messages/shared-block-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import type { OrderClientMarks } from "@/lib/order-client-marks";
 import { dealerToAuditPricing, formatEurFromCents } from "@/lib/order-upsell";
@@ -106,33 +117,13 @@ type Props = {
   review?: DealerReviewScore | null;
 };
 
-const seg = (on: boolean) =>
-  `min-h-9 flex-1 rounded-md px-2 text-[12px] font-medium transition ${
-    on ? "bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-slate-600 hover:text-slate-900"
-  }`;
-const btn =
-  "min-h-9 rounded-md border border-slate-300 bg-white px-3 text-[12px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
-const primary =
-  "min-h-9 rounded-md border border-transparent bg-[#1d1d1f] px-4 text-[12px] font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50";
-const waBtn =
-  "min-h-9 rounded-md border border-transparent bg-[#1f9d55] px-4 text-[12px] font-semibold text-white hover:bg-[#178246] disabled:cursor-not-allowed disabled:opacity-50";
+const seg = clientSendSegClass;
+const btn = clientSendBtnClass;
+const primary = clientSendPrimaryClass;
+const waBtn = clientSendWaBtnClass;
 
-let templatesDocCache: MessageTemplatesDoc | null = null;
-
-export async function loadAdminMessageTemplatesDoc(): Promise<MessageTemplatesDoc | null> {
-  if (templatesDocCache) return templatesDocCache;
-  try {
-    const res = await fetch("/api/admin/message-templates", { credentials: "include", cache: "no-store" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { templates?: { id: string; override?: { subject?: string; body: string } | null }[] };
-    const overrides: Record<string, { subject?: string; body: string }> = {};
-    for (const t of data.templates ?? []) if (t.override?.body) overrides[t.id] = t.override;
-    templatesDocCache = messageTemplatesDocFromOverrides(overrides);
-    return templatesDocCache;
-  } catch {
-    return null;
-  }
-}
+/** Saderībai: citi logi to importē no šejienes. */
+export { loadAdminMessageTemplatesDoc };
 
 async function recordSend(body: Record<string, unknown>): Promise<OrderClientMarks | null> {
   try {
@@ -168,7 +159,7 @@ export function AdminDealerSendDialog({
   const [situation, setSituation] = useState<DealerSendMode>(defaultSituation);
   const [opts, setOpts] = useState<DealerSendOptions>({ offer: false, review: false });
   const [offer, setOffer] = useState<DealerSendOffer | null>(null);
-  const [doc, setDoc] = useState<MessageTemplatesDoc | null>(templatesDocCache);
+  const [doc, setDoc] = useState<MessageTemplatesDoc | null>(cachedAdminMessageTemplatesDoc);
   // Sākuma temats un teksts jau pirmajā renderēšanā (no veidnes), nevis tukši līdz efektam.
   const [initialMsg] = useState(() =>
     buildDealerSendMessage({
@@ -177,7 +168,7 @@ export function AdminDealerSendDialog({
       b2b,
       vin,
       refundCents,
-      doc: templatesDocCache,
+      doc: cachedAdminMessageTemplatesDoc(),
       lang: pdfLang,
       signalsLine: bridge?.dealerSignalsOn === true,
     }),
@@ -562,254 +553,19 @@ export function AdminDealerSendDialog({
       : null;
 
   // Portālā uz body: dīlera bloka vecāku stacking konteksts citādi ielika logu zem telefona doka.
-  // 22.11 (Nils, dators): uz body logs manto vietnes tumšās tēmas baltu teksta krāsu (--site-body-fg),
-  // tāpēc temats un teksts bija balti uz balta («tukši»). Krāsas te jānorāda tieši.
+  // 22.11 (Nils, dators): uz body logs manto vietnes tumšās tēmas baltu teksta krāsu - krāsas čaulā norādītas tieši.
   const dialog = (
-    <div
-      data-dealer-send-dialog
-      className="fixed inset-0 z-[80] flex bg-black/40 sm:items-center sm:justify-center sm:p-3"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="dealer-send-title"
-      {...busyClose}
-    >
-      <div
-        className="amx amx-surface flex h-full max-h-[100dvh] w-full flex-col bg-white md:text-slate-900 sm:h-auto sm:max-h-[min(92vh,760px)] sm:max-w-lg sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-2 border-b border-slate-100 px-4 py-3 max-md:items-center max-md:border-b-0 max-md:pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <div className="min-w-0">
-            <h3 id="dealer-send-title" className="amx-tx text-[15px] font-semibold text-slate-900 max-md:text-[17px]">
-              Sūtīt klientam
-            </h3>
-            <p className="amx-mut mt-0.5 truncate font-mono text-[11px] text-slate-500 max-md:text-[13px]">{vin}</p>
-          </div>
-          <button
-            type="button"
-            aria-label="Aizvērt"
-            className="h-8 w-8 rounded-md text-[18px] leading-none text-slate-500 hover:bg-slate-100 max-md:h-11 max-md:w-11 max-md:shrink-0 max-md:rounded-full max-md:border max-md:border-[var(--amx-edge)] max-md:bg-[var(--amx-glass)] max-md:text-[22px] max-md:text-[var(--amx-tx)]"
-            disabled={busy !== null}
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
-
-        <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
-          <AdminClientLangSegments disabled={busy !== null} />
-          <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Kanāls">
-            {(["email", "whatsapp"] as const).map((c) => (
-              <button key={c} type="button" role="tab" aria-selected={channel === c} className={seg(channel === c)} onClick={() => setChannel(c)}>
-                {c === "whatsapp" ? (
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden
-                    className="mr-1.5 hidden h-[17px] w-[17px] align-[-3px] max-md:inline-block"
-                    fill="none"
-                    stroke="#1c8a4d"
-                    strokeWidth={1.6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 20l1.3-4A8 8 0 118 18.7z" />
-                  </svg>
-                ) : null}
-                {c === "email" ? "E-pasts" : "WhatsApp"}
-              </button>
-            ))}
-          </div>
-
-          <div>
-            <p className="amx-mut mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500 max-md:text-[11.5px]">Situācija</p>
-            <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Situācija">
-              {(archVisible ? (["ready", "no_data", "archive", "cancelled"] as const) : (["ready", "no_data", "cancelled"] as const)).map((s) => (
-                <button key={s} type="button" role="tab" aria-selected={situation === s} className={seg(situation === s)} onClick={() => setSituation(s)}>
-                  {s === "archive" ? (
-                    <>
-                      {archSuggested ? <span aria-label="Ieteikts" className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#0061D2] align-middle" /> : null}
-                      Izsoļu arhīvs
-                    </>
-                  ) : (
-                    DEALER_SEND_SITUATION_LV[s]
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {archMode ? (
-            arch ? (
-              <AuctionArchiveSendSection
-                state={arch}
-                previewIds={previewIds}
-                onPreviewIds={setPreviewIds}
-                manualSources={manualSources}
-                onManualSources={setManualSources}
-                disabled={busy !== null}
-                showPrices={showPrices}
-                onShowPrices={setShowPrices}
-              />
-            ) : (
-              <p className="amx-mut text-[11.5px] text-slate-500">Ielādē izsoļu arhīvu…</p>
-            )
-          ) : ready ? (
-            <div className="space-y-1.5">
-              {priceBox ? (
-                <label
-                  className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
-                    opts.offer ? "border-slate-900" : "border-slate-200"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
-                    checked={opts.offer}
-                    disabled={busy !== null}
-                    onChange={(e) => void toggle("offer", e.target.checked)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Piedāvājums PROVIN AUDITS</div>
-                    {opts.offer ? (
-                      <div className="mt-1 grid grid-cols-[auto_auto] justify-start gap-x-4 text-[12px] text-slate-700">
-                        <span>Jau samaksāts</span>
-                        <span className="tabular-nums">{formatEurFromCents(priceBox.priorCents)}</span>
-                        <span>Piemaksa</span>
-                        <span className="tabular-nums">{formatEurFromCents(priceBox.chargeCents)}</span>
-                        <span className="font-semibold">Kopā</span>
-                        <span className="font-semibold tabular-nums">{formatEurFromCents(priceBox.targetCents)}</span>
-                      </div>
-                    ) : null}
-                    {busy === "offer" ? <div className="text-[11px] text-slate-500">Veido saiti…</div> : null}
-                  </div>
-                </label>
-              ) : null}
-              <label
-                className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
-                  opts.review ? "border-slate-900" : "border-slate-200"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
-                  checked={opts.review}
-                  disabled={busy !== null}
-                  onChange={(e) => void toggle("review", e.target.checked)}
-                />
-                <div>
-                  <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Google atsauksmes lūgums</div>
-                  {review ? <AdminDealerReviewIndicator review={review} /> : null}
-                </div>
-              </label>
-            </div>
-          ) : (
-            <div>
-              {refundLabel ? (
-                <span className="inline-flex rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                  {refundLabel}
-                </span>
-              ) : (
-                <span className="inline-flex rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                  Nav atmaksāts
-                </span>
-              )}
-            </div>
-          )}
-
-          {channel === "email" ? (
-            <div>
-              <label htmlFor="dealer-send-subj" className="amx-mut mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-slate-500 max-md:text-[11.5px]">
-                Temats
-              </label>
-              <input
-                id="dealer-send-subj"
-                className="amx-fld w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] text-slate-900"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={busy !== null}
-              />
-              <p className="amx-mut mt-0.5 truncate text-[11px] text-slate-500 max-md:mt-1 max-md:text-[13px]">
-                Kam: {customerEmail.trim() || <span className="text-rose-600">nav e-pasta</span>}
-              </p>
-            </div>
-          ) : null}
-
-          <div>
-            <label htmlFor="dealer-send-msg" className="amx-mut mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-slate-500 max-md:text-[11.5px]">
-              Teksts
-            </label>
-            <textarea
-              id="dealer-send-msg"
-              spellCheck={false}
-              className="amx-fld amx-fld--ta min-h-[220px] w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[12.5px] leading-relaxed text-slate-900"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              disabled={busy !== null}
-            />
-          </div>
-
-          {ready ? (
-            <div className="amx-card flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 max-md:min-h-[54px] max-md:px-3.5">
-              <div className="amx-tx flex min-w-0 items-center gap-2 text-[11.5px] text-slate-700 max-md:text-[14px]">
-                <span className="rounded bg-rose-600 px-1 py-px text-[9px] font-bold text-white">PDF</span>
-                <span className="truncate">{filename}</span>
-              </div>
-              {channel === "email" ? (
-                <span className="flex items-center gap-2">
-                  <span className="amx-mut text-[11px] text-slate-500 max-md:text-[13px]">PDF pievienos automātiski</span>
-                  {/* Telefonā: servera PDF jaunā cilnē pilnā platumā (tas pats PDF, kas pievienosies). */}
-                  <button
-                    type="button"
-                    className="amx-btn amx-btn--sm md:hidden"
-                    disabled={busy !== null || !bridge}
-                    onClick={() => void downloadPdf()}
-                  >
-                    {busy === "pdf" ? "Gatavo…" : "Skatīt"}
-                  </button>
-                </span>
-              ) : pdfLink ? (
-                <a className={btn + " amx-btn amx-btn--sm inline-flex items-center"} href={pdfLink.downloadUrl} target="_blank" rel="noopener noreferrer">
-                  Atvērt PDF
-                </a>
-              ) : (
-                <button type="button" className={`${btn} amx-btn amx-btn--sm`} disabled={busy !== null || !bridge} onClick={() => void downloadPdf()}>
-                  {busy === "pdf" ? "Gatavo PDF…" : "Lejupielādēt PDF"}
-                </button>
-              )}
-            </div>
-          ) : null}
-
-          {ready && channel === "email" && bridge ? (
-            <AdminDealerSendExtraFiles items={extraItems} onChange={setExtraItems} disabled={busy !== null} />
-          ) : null}
-
-          {archReady ? (
-            <div className="amx-card flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 max-md:min-h-[54px] max-md:px-3.5">
-              <div className="amx-tx flex min-w-0 items-center gap-2 text-[11.5px] text-slate-700 max-md:text-[14px]">
-                <span className="rounded bg-rose-600 px-1 py-px text-[9px] font-bold text-white">PDF</span>
-                <span className="truncate">Izsoļu arhīvs · {arch?.offer?.photos.length ?? 0} bildes</span>
-              </div>
-              <span className="amx-mut text-[11px] text-slate-500 max-md:text-[13px]">
-                {channel === "email" ? "PDF pievienos automātiski" : "PDF lejupielādēsies"}
-              </span>
-            </div>
-          ) : null}
-
-          {shadow?.gate ? (
-            <AdminDealerShadowFeedback
-              gate={shadow.gate}
-              feedback={shadow.feedback}
-              busy={shadow.busy}
-              onSubmit={shadow.submitFeedback}
-            />
-          ) : null}
-
-          {err ? <p className="amx-tx--red text-[11.5px] text-rose-700 max-md:text-[14px]">{err}</p> : null}
-        </div>
-
-        <div
-          data-dealer-send-footer
-          className="sticky bottom-0 flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] amx-dock"
-        >
+    <AdminClientSendShell
+      kind="dealer"
+      titleId="dealer-send-title"
+      title="Sūtīt klientam"
+      subtitle={<p className="amx-mut mt-0.5 truncate font-mono text-[11px] text-slate-500 max-md:text-[13px]">{vin}</p>}
+      onClose={onClose}
+      closeDisabled={busy !== null}
+      backdropProps={busyClose}
+      scrollRef={scrollRef}
+      footer={
+        <>
           <button type="button" className={`${btn} amx-btn max-md:flex-none`} disabled={busy !== null} onClick={onClose}>
             ← Atpakaļ
           </button>
@@ -831,9 +587,178 @@ export function AdminDealerSendDialog({
                     : "Sūtīt e-pastu"
                   : "Atvērt WhatsApp"}
           </button>
+        </>
+      }
+    >
+      <AdminClientLangSegments disabled={busy !== null} />
+      <ClientSendChannelTabs channel={channel} onChange={setChannel} />
+
+      <div>
+        <p className="amx-mut mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500 max-md:text-[11.5px]">Situācija</p>
+        <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Situācija">
+          {(archVisible ? (["ready", "no_data", "archive", "cancelled"] as const) : (["ready", "no_data", "cancelled"] as const)).map((s) => (
+            <button key={s} type="button" role="tab" aria-selected={situation === s} className={seg(situation === s)} onClick={() => setSituation(s)}>
+              {s === "archive" ? (
+                <>
+                  {archSuggested ? <span aria-label="Ieteikts" className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#0061D2] align-middle" /> : null}
+                  Izsoļu arhīvs
+                </>
+              ) : (
+                DEALER_SEND_SITUATION_LV[s]
+              )}
+            </button>
+          ))}
         </div>
       </div>
-    </div>
+
+      {archMode ? (
+        arch ? (
+          <AuctionArchiveSendSection
+            state={arch}
+            previewIds={previewIds}
+            onPreviewIds={setPreviewIds}
+            manualSources={manualSources}
+            onManualSources={setManualSources}
+            disabled={busy !== null}
+            showPrices={showPrices}
+            onShowPrices={setShowPrices}
+          />
+        ) : (
+          <p className="amx-mut text-[11.5px] text-slate-500">Ielādē izsoļu arhīvu…</p>
+        )
+      ) : ready ? (
+        <div className="space-y-1.5">
+          {priceBox ? (
+            <label
+              className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
+                opts.offer ? "border-slate-900" : "border-slate-200"
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
+                checked={opts.offer}
+                disabled={busy !== null}
+                onChange={(e) => void toggle("offer", e.target.checked)}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Piedāvājums PROVIN AUDITS</div>
+                {opts.offer ? (
+                  <div className="mt-1 grid grid-cols-[auto_auto] justify-start gap-x-4 text-[12px] text-slate-700">
+                    <span>Jau samaksāts</span>
+                    <span className="tabular-nums">{formatEurFromCents(priceBox.priorCents)}</span>
+                    <span>Piemaksa</span>
+                    <span className="tabular-nums">{formatEurFromCents(priceBox.chargeCents)}</span>
+                    <span className="font-semibold">Kopā</span>
+                    <span className="font-semibold tabular-nums">{formatEurFromCents(priceBox.targetCents)}</span>
+                  </div>
+                ) : null}
+                {busy === "offer" ? <div className="text-[11px] text-slate-500">Veido saiti…</div> : null}
+              </div>
+            </label>
+          ) : null}
+          <label
+            className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
+              opts.review ? "border-slate-900" : "border-slate-200"
+            }`}
+          >
+            <input
+              type="checkbox"
+              className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
+              checked={opts.review}
+              disabled={busy !== null}
+              onChange={(e) => void toggle("review", e.target.checked)}
+            />
+            <div>
+              <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">Google atsauksmes lūgums</div>
+              {review ? <AdminDealerReviewIndicator review={review} /> : null}
+            </div>
+          </label>
+        </div>
+      ) : (
+        <div>
+          {refundLabel ? (
+            <span className="inline-flex rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+              {refundLabel}
+            </span>
+          ) : (
+            <span className="inline-flex rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+              Nav atmaksāts
+            </span>
+          )}
+        </div>
+      )}
+
+      {channel === "email" ? (
+        <ClientSendSubjectField
+          id="dealer-send-subj"
+          value={subject}
+          onChange={setSubject}
+          disabled={busy !== null}
+          recipient={customerEmail}
+        />
+      ) : null}
+
+      <ClientSendTextField id="dealer-send-msg" value={text} onChange={setText} disabled={busy !== null} />
+
+      {ready ? (
+        <div className="amx-card flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 max-md:min-h-[54px] max-md:px-3.5">
+          <div className="amx-tx flex min-w-0 items-center gap-2 text-[11.5px] text-slate-700 max-md:text-[14px]">
+            <span className="rounded bg-rose-600 px-1 py-px text-[9px] font-bold text-white">PDF</span>
+            <span className="truncate">{filename}</span>
+          </div>
+          {channel === "email" ? (
+            <span className="flex items-center gap-2">
+              <span className="amx-mut text-[11px] text-slate-500 max-md:text-[13px]">PDF pievienos automātiski</span>
+              {/* Telefonā: servera PDF jaunā cilnē pilnā platumā (tas pats PDF, kas pievienosies). */}
+              <button
+                type="button"
+                className="amx-btn amx-btn--sm md:hidden"
+                disabled={busy !== null || !bridge}
+                onClick={() => void downloadPdf()}
+              >
+                {busy === "pdf" ? "Gatavo…" : "Skatīt"}
+              </button>
+            </span>
+          ) : pdfLink ? (
+            <a className={btn + " amx-btn amx-btn--sm inline-flex items-center"} href={pdfLink.downloadUrl} target="_blank" rel="noopener noreferrer">
+              Atvērt PDF
+            </a>
+          ) : (
+            <button type="button" className={`${btn} amx-btn amx-btn--sm`} disabled={busy !== null || !bridge} onClick={() => void downloadPdf()}>
+              {busy === "pdf" ? "Gatavo PDF…" : "Lejupielādēt PDF"}
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {ready && channel === "email" && bridge ? (
+        <AdminDealerSendExtraFiles items={extraItems} onChange={setExtraItems} disabled={busy !== null} />
+      ) : null}
+
+      {archReady ? (
+        <div className="amx-card flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 max-md:min-h-[54px] max-md:px-3.5">
+          <div className="amx-tx flex min-w-0 items-center gap-2 text-[11.5px] text-slate-700 max-md:text-[14px]">
+            <span className="rounded bg-rose-600 px-1 py-px text-[9px] font-bold text-white">PDF</span>
+            <span className="truncate">Izsoļu arhīvs · {arch?.offer?.photos.length ?? 0} bildes</span>
+          </div>
+          <span className="amx-mut text-[11px] text-slate-500 max-md:text-[13px]">
+            {channel === "email" ? "PDF pievienos automātiski" : "PDF lejupielādēsies"}
+          </span>
+        </div>
+      ) : null}
+
+      {shadow?.gate ? (
+        <AdminDealerShadowFeedback
+          gate={shadow.gate}
+          feedback={shadow.feedback}
+          busy={shadow.busy}
+          onSubmit={shadow.submitFeedback}
+        />
+      ) : null}
+
+      {err ? <p className="amx-tx--red text-[11.5px] text-rose-700 max-md:text-[14px]">{err}</p> : null}
+    </AdminClientSendShell>
   );
 
   if (typeof document === "undefined") return dialog;
