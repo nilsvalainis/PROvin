@@ -533,7 +533,10 @@ function checkContradictions(input: DealerQualityGateInput): DealerGateCheck {
       );
     }
   }
-  const sourceIssue = (input.sourceIssues ?? []).find((i) => i.severity === "critical");
+  // BF 27.11 (S1): dīleris pret vēlāku reģistra km - arī «warn» līmenī (klienta tekstā to vēl nemin).
+  const sourceIssue =
+    (input.sourceIssues ?? []).find((i) => i.kind === "dealer_registry_mileage" && i.severity !== "info") ??
+    (input.sourceIssues ?? []).find((i) => i.severity === "critical");
   if (sourceIssue) {
     // Ēnu režīms: tikai brīdinājums (spriedumu nemaina), lai statistikā redzētu, cik bieži tas trāpa.
     return fail("contradictions", "warn", `Avotu pretruna: ${clip(formatSourceIssueLine(sourceIssue))}`, "service_table");
