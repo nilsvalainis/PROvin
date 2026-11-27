@@ -23,7 +23,7 @@ export const TP5_STRIPE_CHECKOUT_PRODUCT: Record<
   plus: {
     productName: "PROVIN MINI",
     productDesc:
-      "Latvijā ekspluatētiem auto. Bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITS.",
+      "Latvijā ekspluatētiem auto. Bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITU.",
     amountCents: 3999,
   },
   premium: {
@@ -55,7 +55,7 @@ export function isTp5CheckoutSource(sourcePage: string): boolean {
 }
 
 const TP5_MINI_CHECKOUT_NOTE = {
-  lv: "PROVIN MINI ir paredzēts Latvijā ekspluatētiem auto bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITS.",
+  lv: "PROVIN MINI ir paredzēts Latvijā ekspluatētiem auto bez maksas starptautisko datubāžu pārbaudes. Citiem auto izvēlies PROVIN AUDITU.",
   en: "PROVIN MINI is for cars used in Latvia and does not include paid international database checks. For other cars, choose PROVIN AUDITS.",
   de: "PROVIN MINI ist für Autos gedacht, die in Lettland genutzt wurden, und enthält keine kostenpflichtige Prüfung internationaler Datenbanken. Für andere Autos wählen Sie PROVIN AUDITS.",
   ru: "PROVIN MINI рассчитан на автомобили, которые эксплуатировались в Латвии, и не включает платную проверку международных баз. Для остальных машин выберите PROVIN AUDITS.",
