@@ -77,6 +77,8 @@ export async function POST(request: Request) {
             "image/png",
             "image/webp",
             "image/gif",
+            "image/heic",
+            "image/heif",
           ],
           maximumSizeInBytes: NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES,
           tokenPayload: clientPayload,

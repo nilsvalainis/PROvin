@@ -110,7 +110,7 @@ describe("pēc «Sūtīt klientam» - atpakaļ uz sarakstu", () => {
 
   it("dialogs pāriet tikai pēc veiksmīgas sūtīšanas (kļūdā - paliek un rāda kļūdu)", () => {
     const d = read("components/admin/AdminDealerSendDialog.tsx");
-    const ok = d.indexOf("await finish(`E-pasts ar PDF nosūtīts");
+    const ok = d.indexOf("await finish(`E-pasts ar PDF");
     const nav = d.indexOf("bridge.onDealerDataSent({ sentTo: r.sentTo })");
     const catchAt = d.indexOf("} catch (e) {", ok);
     expect(ok).toBeGreaterThan(-1);

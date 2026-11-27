@@ -346,6 +346,7 @@ import {
 } from "@/components/admin/AdminSendReportDialog";
 import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
 import { parseOrderClientMarks } from "@/lib/order-client-marks";
+import { dealerExtraFileMime } from "@/lib/dealer-send-extra-files";
 import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -5669,6 +5670,8 @@ export function OrderDetailWorkspace({
     customSubject?: string;
     customText?: string;
     dealerSend?: { situation: string; offer: boolean; review: boolean };
+    /** Dīlera «Sūtīt klientam»: papildu faili/bildes no loga (jau pārbaudīti logā). */
+    extraFiles?: File[];
   }): Promise<SendReportResult> => {
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
@@ -5679,6 +5682,11 @@ export function OrderDetailWorkspace({
       const mime = fileMimeForPortfolio(p, blob);
       if (!NOTIFY_ALLOWED_MIME.has(mime)) throw new Error(`Neatbalstīts faila veids: «${p.name}». Atļauti PDF un JPEG/PNG/WEBP/GIF.`);
       uploads.push({ buffer: await blob.arrayBuffer(), name: p.name, mime, lastModified: Date.now() });
+    }
+    for (const f of input.extraFiles ?? []) {
+      const mime = dealerExtraFileMime(f.name, f.type);
+      if (!mime) throw new Error(`Neatbalstīts faila veids: «${f.name}».`);
+      uploads.push({ buffer: await f.arrayBuffer(), name: f.name, mime, lastModified: f.lastModified });
     }
     const { res, data } = await postNotifyReportReadyViaBlob({
       sessionId: payload.sessionId,
@@ -5750,12 +5758,13 @@ export function OrderDetailWorkspace({
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
     prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
-    sendDealerReport: async ({ prepared, lang, subject, text, dealerSend }) => {
+    sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
         sendPreparedReport({
           prepared,
           lang,
           attachmentIds: [],
+          ...(extraFiles && extraFiles.length > 0 ? { extraFiles } : {}),
           includeGoogleReview: false,
           markComplete: true,
           saveDropbox: true,
