@@ -3,6 +3,7 @@
  * NEKAD nemaina tekstu: atgriež karodziņus adminam (E = pretruna ar verificētu faktu,
  * W = neavotots konkrēts apgalvojums vai strīdīgs fakts).
  */
+import { isFactCheckExemptSentence } from "@/lib/fact-check-context";
 import { UNIT_FACTS } from "@/lib/unit-facts/facts";
 import type {
   FactCheckFlag,
@@ -179,6 +180,8 @@ export function checkAiCommentFacts(
   if (contextCodes.length > 0 && !mentionedContextCode) {
     for (const s of sentences) {
       if (!RECALL_SUBJECT_RE.test(s) || !RECALL_DENIAL_RE.test(s) || RECALL_DENIAL_EXCEPT_RE.test(s)) continue;
+      // 27.11: hipotētisks teikums («tas nenozīmē, ka atsaukumu nav») nav noliegums.
+      if (isFactCheckExemptSentence(s)) continue;
       push({
         id: "recall_denied",
         level: "E",

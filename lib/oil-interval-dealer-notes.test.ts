@@ -50,7 +50,7 @@ const BMW_NOTES_SCREENSHOT =
   "Ražotāja intervāls: līdz 30 000 km / 24 mēn. (M57 D30).<br><br><strong>Eļļas maiņu regularitāte</strong><br>Dīlera vēsturē fiksētas 3 dzinēja eļļas maiņas. Pirmais fiksētais intervāls (18 553 km un aptuveni 12 mēneši) iekļaujas ražotāja maksimālajā intervālā. Otrais fiksētais intervāls dīlera datubāzē, starp 2007. gada februāri un 2011. gada februāri, ir 82 952 km un 48 mēneši, kas pārsniedz ražotāja pieļauto robežu.&nbsp;<br><br><strong>Pēdējā fiksētā eļļas maiņa</strong><br>Pēdējā dzinēja eļļas maiņa pie oficiālā dīlera reģistrēta 02.02.2011 ar nobraukumu 134 643 km.";
 
 const GENERIC_LV =
-  "Šajā periodā ir arī dīlera ieraksti bez detalizēta darbu apraksta (27.02.2007, 13.02.2008, 16.07.2010) - tie teorētiski var liecināt par eļļas maiņu, bet to nevaram apliecināt.";
+  "Šajā periodā ir arī dīlera ieraksti bez detalizēta darbu apraksta (27.02.2007, 13.02.2008, 16.07.2010) - tie teorētiski var liecināt par eļļas maiņu, taču ierakstos tas nav apstiprināts.";
 
 const count = (hay: string, needle: string) => hay.split(needle).length - 1;
 
@@ -108,7 +108,7 @@ describe("eļļas intervāla piebildes (Nils 26.11.2026, #1291 labojumi)", () =>
     expect(count(out, OIL_NOT_SKIPPED_NOTE.lv)).toBe(1);
     expect(count(out, "bez detalizēta darbu apraksta")).toBe(1);
     expect(out).toContain(
-      "Šajos periodos ir arī dīlera ieraksti bez detalizēta darbu apraksta (24.10.2012, 04.04.2014) - tie teorētiski var liecināt par eļļas maiņu, bet to nevaram apliecināt.",
+      "Šajos periodos ir arī dīlera ieraksti bez detalizēta darbu apraksta (24.10.2012, 04.04.2014) - tie teorētiski var liecināt par eļļas maiņu, taču ierakstos tas nav apstiprināts.",
     );
     // Pēc pēdējās rindkopas par pārsniegumu, pirms „Pēdējā fiksētā eļļas maiņa”.
     expect(out).toContain(
@@ -133,9 +133,31 @@ describe("eļļas intervāla piebildes (Nils 26.11.2026, #1291 labojumi)", () =>
     expect(out).not.toContain("Periodā ");
   });
 
+  it("27.11: vecais «bet to nevaram apliecināt» -> jaunais bezpersoniskais, bez dublikāta", () => {
+    const block = eightChangesBlock(EIGHT_NOTES);
+    const fresh = oilIntervalNotesWithRequiredNotes(block, EIGHT_NOTES, "lv");
+    const old = fresh.replace("taču ierakstos tas nav apstiprināts.", "bet to nevaram apliecināt.");
+    expect(old).toContain("bet to nevaram apliecināt.");
+    const out = oilIntervalNotesWithRequiredNotes(block, old, "lv");
+    expect(out).toBe(fresh);
+    expect(out).not.toMatch(/nevaram|mēs|mums/iu);
+    expect(count(out, "bez detalizēta darbu apraksta")).toBe(1);
+  });
+
+  it("27.11: piebildes bez «mēs» visās valodās", () => {
+    for (const n of [1, 2]) {
+      const d = n === 1 ? ["24.10.2012"] : ["24.10.2012", "04.04.2014"];
+      expect(oilGenericRecordsNote("lv", d, n)).not.toMatch(/nevaram|mēs|mums/iu);
+      expect(oilGenericRecordsNote("en", d, n)).not.toMatch(/\bwe\b|\bus\b|\bour\b/i);
+      expect(oilGenericRecordsNote("ru", d, n)).not.toMatch(/\bмы\b|\bнам\b|не можем/iu);
+      expect(oilGenericRecordsNote("de", d, n)).not.toMatch(/\bwir\b|\buns\b|können wir/iu);
+    }
+    expect(oilGenericRecordsNote("en", ["a", "b"], 2)).toContain("may theoretically indicate an oil change, but the records do not confirm it.");
+  });
+
   it("vienskaitlis: viens periods, viens ieraksts", () => {
     expect(oilGenericRecordsNote("lv", ["24.10.2012"], 1)).toBe(
-      "Šajā periodā ir arī dīlera ieraksts bez detalizēta darbu apraksta (24.10.2012) - tas teorētiski var liecināt par eļļas maiņu, bet to nevaram apliecināt.",
+      "Šajā periodā ir arī dīlera ieraksts bez detalizēta darbu apraksta (24.10.2012) - tas teorētiski var liecināt par eļļas maiņu, taču ierakstā tas nav apstiprināts.",
     );
   });
 
@@ -219,7 +241,7 @@ describe("eļļas intervāla piebildes (Nils 26.11.2026, #1291 labojumi)", () =>
 
   it("tulkojumi: vienskaitlis/daudzskaitlis un nozīme", () => {
     expect(oilGenericRecordsNote("en", ["24.10.2012"], 1)).toBe(
-      "In this period there is also a dealer record without a detailed description of work (24.10.2012) - in theory it could indicate an oil change, but we cannot confirm this.",
+      "In this period there is also a dealer record without a detailed description of work (24.10.2012) - it may theoretically indicate an oil change, but the record does not confirm it.",
     );
     expect(oilGenericRecordsNote("ru", ["24.10.2012", "04.04.2014"], 2)).toContain("В эти периоды есть также записи дилера");
     expect(oilGenericRecordsNote("de", ["24.10.2012"], 1)).toContain("In diesem Zeitraum gibt es auch einen Händlereintrag");

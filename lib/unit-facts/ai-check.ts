@@ -7,6 +7,7 @@ import "server-only";
 
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { extractJsonObject } from "@/lib/admin-ai-technical-risk-map-types";
+import { dropContextExemptFlags, FACT_CHECK_CONTEXT_DIRECTIVE } from "@/lib/fact-check-context";
 import { factAppliesToVehicle, splitSentences } from "@/lib/unit-facts/check";
 import { UNIT_FACTS } from "@/lib/unit-facts/facts";
 import type { FactCheckFlag, FactCheckInput, UnitFact } from "@/lib/unit-facts/types";
@@ -15,8 +16,9 @@ export function isUnitFactAiCheckEnabled(): boolean {
   return process.env.UNIT_FACT_CHECK_AI?.trim() === "1";
 }
 
-const SYSTEM = `Tu esi PROVIN faktu pārbaudītājs. Ievadā: VERIFICĒTI FAKTI (ar id) par šo auto un TEKSTS (latviski).
+export const UNIT_FACT_AI_SYSTEM = `Tu esi PROVIN faktu pārbaudītājs. Ievadā: VERIFICĒTI FAKTI (ar id) par šo auto un TEKSTS (latviski).
 Atrodi TIKAI tos teikumus, kas ir tiešā pretrunā ar kādu faktu. Neatzīmē stilu, neatzīmē apgalvojumus, par kuriem faktos nekas nav teikts.
+${FACT_CHECK_CONTEXT_DIRECTIVE}
 Atbildi tikai JSON: {"contradictions":[{"fact_id":"...","sentence":"precīzs teikums no TEKSTA","why":"īsi latviski"}]}. Ja nav, {"contradictions":[]}.`;
 
 type AiContradiction = { fact_id?: unknown; sentence?: unknown; why?: unknown };
@@ -43,7 +45,8 @@ export function parseAiFactCheck(raw: unknown, text: string, facts: readonly Uni
       sources: fact.sources,
     });
   }
-  return out;
+  // 27.11: deterministisks filtrs pēc AI - hipotētiski teikumi un obligātās eļļas piebildes nav pretruna.
+  return dropContextExemptFlags(out);
 }
 
 export async function aiCheckAgainstUnitFacts(
@@ -60,7 +63,7 @@ export async function aiCheckAgainstUnitFacts(
   try {
     const raw = await adminGenerateJsonText({
       modelTier: "gemini-flash",
-      systemInstruction: SYSTEM,
+      systemInstruction: UNIT_FACT_AI_SYSTEM,
       userPrompt,
       maxTokens: 2_000,
     });

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { oilIntervalNotesWithRequiredNotes } from "@/lib/oil-change-interval-chart";
+import { dropDealerRecommendationSentences } from "@/lib/dealer-comments-review-core";
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import {
   aiAutoRecordsOilIntervalSystemPrompt,
@@ -88,7 +89,7 @@ export const DEALER_MAJOR_ASSEMBLIES_DIRECTIVE =
 /**
  * Abiem dīlera laukiem (Nils 22.11.2026): tikai fakti. Ieteikumi pieder pilnajai audita atskaitei.
  */
-export const DEALER_FACTS_ONLY_DIRECTIVE = `TIKAI FAKTI, NEKĀDU IETEIKUMU (Nils 22.11.2026): ieteikumi un „ko pārbaudīt” ir pilnajā audita atskaitē, ne šeit. AIZLIEGTS: „jāpārbauda”, „ieteicams”, „iesakām”, „pārdevējam jālūdz”, „jāprasa dokumenti / rēķini”, „pārbaudīt apskatē”, padomi pircējam, vērtējoši stāsti un minējumi par iemesliem („raksturīga prakse”, „visticamāk apkopts citur”). Īsi, strukturēti, tikai tas, kas ir datos.
+export const DEALER_FACTS_ONLY_DIRECTIVE = `TIKAI FAKTI, NEKĀDU IETEIKUMU (Nils 22.11.2026): ieteikumi un „ko pārbaudīt” ir pilnajā audita atskaitē, ne šeit. AIZLIEGTS: „jāpārbauda”, „ieteicams”, „iesakām”, „pārdevējam jālūdz”, „jāprasa dokumenti / rēķini”, „pārbaudīt apskatē”, padomi pircējam, vērtējoši stāsti un minējumi par iemesliem („raksturīga prakse”, „visticamāk apkopts citur”). Īsi, strukturēti, tikai tas, kas ir datos. Raksti bezpersoniski: nekad «mēs», «mums», «nevaram» (pareizi: «ierakstos tas nav apstiprināts», ne «to nevaram apliecināt»).
 POZĪCIJA NAV DARBĪBA: dīlera rindas bieži ir detaļu / pozīciju saraksts. Rinda tikai ar nosaukumu bez darbības vārda (piem. „Particulate filter.”) = „ierakstā ir pozīcija: kvēpu filtrs (darbība nav norādīta)”. NERAKSTI „pārbaudīts”, „nomainīts”, „uzstādīts”, ja rindā tā nav.
 SERVISA VIETA: vietu sauc par oficiālo dīleri / servisu tikai, ja nosaukumā ir ražotāja zīmols vai dīlera / servisa pazīme. Ja koda faktu sarakstā vieta atzīmēta „nav autoserviss”, to NESAUC par servisu - raksti tikai „ieraksts (vieta: <nosaukums>)” vai vietu neraksti.
 TERMINI: nelieto vārdu „robs” / „robi” (žargons) - raksti „periods bez ierakstiem”.
@@ -357,10 +358,18 @@ ${
   if (isOilInterval) {
     // Nils 26.11.2026: pārsniegts OEM intervāls -> deterministiska piebilde, ne prompta lūgums.
     const lang = input.outputLang && input.outputLang !== "source" ? input.outputLang : null;
-    return oilIntervalNotesWithRequiredNotes(input.sourceBlocks.auto_records, dropAwd(generated), lang);
+    // 27.11 (BMW WBANX71070CS69827): prompts aizliedz ieteikumus (#1118), bet AI tos joprojām rakstīja
+    // («Ieteicams pieprasīt pārdevējam apkopju dokumentus…») - ✨ / FLASH MAX / dīlera pārbaude gāja bez filtra.
+    return oilIntervalNotesWithRequiredNotes(
+      input.sourceBlocks.auto_records,
+      dropDealerRecommendationSentences(dropAwd(generated)),
+      lang,
+    );
   }
   if (isServiceHistory) return dropAwd(generated);
-  const cleaned = dropAwd(keepSourceCommentAfterExpansionStrip(generated));
+  // 27.11: dīlera „Komentāri” - tikai fakti (#1118), deterministiski arī ārpus dīlera ielases darba.
+  const factsOnly = (text: string) => (isDealerComments ? dropDealerRecommendationSentences(text) : text);
+  const cleaned = factsOnly(dropAwd(keepSourceCommentAfterExpansionStrip(generated)));
   if (!commentContradictsPowertrain(cleaned, powertrainIdentity)) return cleaned;
   const retryPrompt = `${userPrompt}\n\n${powertrainBlock}\nVALIDATOR: iepriekšējā izeja runāja pretī ielādētajai degvielai vai dzinēja kodam. Pārraksti bez pretrunas.`;
   const retried = keepSourceCommentAfterExpansionStrip(
@@ -378,7 +387,7 @@ ${
   if (commentContradictsPowertrain(retried, powertrainIdentity)) {
     throw new Error("powertrain_contradiction");
   }
-  return dropAwd(retried);
+  return factsOnly(dropAwd(retried));
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";
