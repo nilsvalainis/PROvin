@@ -5922,6 +5922,87 @@ export function OrderDetailWorkspace({
     };
   };
 
+  /**
+   * VIN SCAN avotu kartīte. 27.11 (Nils): dīlera pasūtījumā tā pati josla arī «Dīleris» sadaļā; telefonā abas
+   * ir lapā - pārlūka importu / telefona «Skenēt» dara tikai Pārskata kartīte.
+   */
+  const renderVinScanCard = (placement: "main" | "dealer", sideEffects: boolean) => (
+    <AdminOrderVinScanCard
+      placement={placement}
+      sideEffects={sideEffects}
+      sessionId={payload.sessionId}
+      vin={payload.vin ?? ""}
+      listingUrl={payload.listingUrl ?? ""}
+      initial={payload.vinScan ?? null}
+      kfz={vinScanKfz}
+      onImportAuction={async (scan) => {
+        const applied = applyVinScanAuctionsToCcVin(wsPersistRef.current.sourceBlocks.cc_vin, scan.indicators);
+        updateSourceBlock("cc_vin", applied.block);
+        const plans = collectVinScanAuctionPhotoGroups(scan.indicators);
+        if (!plans.some((plan) => plan.urls.length > 0)) {
+          return { failed: 0 };
+        }
+        try {
+          const res = await fetch("/api/admin/order-vin-scan-photos", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: payload.sessionId,
+              groups: plans.map((plan) => ({ title: plan.title, urls: plan.urls })),
+            }),
+          });
+          if (!res.ok) return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
+          const json = (await res.json()) as {
+            groups?: Array<{
+              title?: string;
+              photos?: Array<{ id?: string; sourceUrl?: string; contentHash?: string }>;
+              failedUrls?: string[];
+            }>;
+            failed?: number;
+            failedUrls?: string[];
+          };
+          const incoming = (json.groups ?? [])
+            .map((group) => ({
+              title: group.title?.trim() || "VIN SCAN",
+              photos: (group.photos ?? [])
+                .filter((p): p is { id: string; sourceUrl?: string; contentHash?: string } =>
+                  Boolean(p.id),
+                )
+                .map((p) => ({
+                  id: p.id,
+                  ...(p.sourceUrl ? { sourceUrl: p.sourceUrl } : {}),
+                  ...(p.contentHash ? { contentHash: p.contentHash } : {}),
+                })),
+            }))
+            .filter((group) => group.photos.length > 0);
+          if (incoming.length > 0) {
+            const current = wsPersistRef.current.sourceBlocks.cc_vin;
+            await commitCcVinPhotoGroupsStructural(
+              mergeImportedPhotoGroups(current.photoGroups ?? [], incoming, makeCcVinPhotoGroupId),
+            );
+          }
+          return { failed: json.failed ?? json.failedUrls?.length ?? 0 };
+        } catch {
+          return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
+        }
+      }}
+      onImportCsdd={(scan) => {
+        const row = scan.indicators.find((item) => item.id === "csdd");
+        if (!row) return;
+        updateSourceBlock("csdd", applyVinScanCsddToBlock(wsPersistRef.current.sourceBlocks.csdd, row));
+      }}
+      onImportListing={(scan) => {
+        const row = scan.indicators.find((item) => item.id === "listing_history");
+        if (!row) return;
+        updateSourceBlock(
+          "listing_analysis",
+          applyVinScanListingToBlock(wsPersistRef.current.sourceBlocks.listing_analysis, row),
+        );
+      }}
+    />
+  );
+
   /** Dīlera atmaksa: Stripe cs_* vai B2B manuālais VIN (kredīts / maks). */
   const dealerCanRefund =
     payload.sessionId.startsWith("cs_") ||
@@ -6910,78 +6991,7 @@ export function OrderDetailWorkspace({
           <div id="admin-m-sec-kopsavilkums" className="space-y-6">
             {payload.checkoutLine === "provin_select" ? null : (
               <div className="amx amx-src">
-              <AdminOrderVinScanCard
-                sessionId={payload.sessionId}
-                vin={payload.vin ?? ""}
-                listingUrl={payload.listingUrl ?? ""}
-                initial={payload.vinScan ?? null}
-                kfz={vinScanKfz}
-                onImportAuction={async (scan) => {
-                  const applied = applyVinScanAuctionsToCcVin(wsPersistRef.current.sourceBlocks.cc_vin, scan.indicators);
-                  updateSourceBlock("cc_vin", applied.block);
-                  const plans = collectVinScanAuctionPhotoGroups(scan.indicators);
-                  if (!plans.some((plan) => plan.urls.length > 0)) {
-                    return { failed: 0 };
-                  }
-                  try {
-                    const res = await fetch("/api/admin/order-vin-scan-photos", {
-                      method: "POST",
-                      credentials: "include",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        sessionId: payload.sessionId,
-                        groups: plans.map((plan) => ({ title: plan.title, urls: plan.urls })),
-                      }),
-                    });
-                    if (!res.ok) return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
-                    const json = (await res.json()) as {
-                      groups?: Array<{
-                        title?: string;
-                        photos?: Array<{ id?: string; sourceUrl?: string; contentHash?: string }>;
-                        failedUrls?: string[];
-                      }>;
-                      failed?: number;
-                      failedUrls?: string[];
-                    };
-                    const incoming = (json.groups ?? [])
-                      .map((group) => ({
-                        title: group.title?.trim() || "VIN SCAN",
-                        photos: (group.photos ?? [])
-                          .filter((p): p is { id: string; sourceUrl?: string; contentHash?: string } =>
-                            Boolean(p.id),
-                          )
-                          .map((p) => ({
-                            id: p.id,
-                            ...(p.sourceUrl ? { sourceUrl: p.sourceUrl } : {}),
-                            ...(p.contentHash ? { contentHash: p.contentHash } : {}),
-                          })),
-                      }))
-                      .filter((group) => group.photos.length > 0);
-                    if (incoming.length > 0) {
-                      const current = wsPersistRef.current.sourceBlocks.cc_vin;
-                      await commitCcVinPhotoGroupsStructural(
-                        mergeImportedPhotoGroups(current.photoGroups ?? [], incoming, makeCcVinPhotoGroupId),
-                      );
-                    }
-                    return { failed: json.failed ?? json.failedUrls?.length ?? 0 };
-                  } catch {
-                    return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
-                  }
-                }}
-                onImportCsdd={(scan) => {
-                  const row = scan.indicators.find((item) => item.id === "csdd");
-                  if (!row) return;
-                  updateSourceBlock("csdd", applyVinScanCsddToBlock(wsPersistRef.current.sourceBlocks.csdd, row));
-                }}
-                onImportListing={(scan) => {
-                  const row = scan.indicators.find((item) => item.id === "listing_history");
-                  if (!row) return;
-                  updateSourceBlock(
-                    "listing_analysis",
-                    applyVinScanListingToBlock(wsPersistRef.current.sourceBlocks.listing_analysis, row),
-                  );
-                }}
-              />
+              {renderVinScanCard("main", true)}
               </div>
             )}
             {/* Telefonā Pielikumi / Klients / Maksājums / Auto - kompaktas rindas vienā stikla sarakstā. */}
@@ -7115,6 +7125,12 @@ export function OrderDetailWorkspace({
 
         {(phoneStack || wizardStep === 3) ? (
           <div id="admin-order-block-auto-records" className="min-w-0 amx amx-src">
+            {isDealerOrderForMobilePanel && payload.checkoutLine !== "provin_select" ? (
+              <div className="mb-4 min-w-0">
+                {/* Telefonā Pārskata kartīte arī ir lapā - šī tikai rāda un sinhronizē ierakstu. */}
+                {renderVinScanCard("dealer", !phoneStack)}
+              </div>
+            ) : null}
             <AdminAutoRecordsSourceBlock
               value={blocksDisplaySafe.auto_records}
               countryEvidence={workspaceCountryEvidence}

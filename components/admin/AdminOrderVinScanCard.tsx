@@ -27,6 +27,7 @@ import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import { browserImportRowNote, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
+  orderVinScanCollapsedDots,
   formatOrderVinScanClock,
   parseOrderVinScanRecord,
   sameOrderVinScanRecord,
@@ -67,6 +68,11 @@ function Counter({ state, count, label }: { state: DotState; count: number; labe
   );
 }
 
+/** Abas kartītes (Pārskats + Dīleris) vienā pasūtījumā rāda vienu un to pašu ierakstu. */
+const ORDER_VIN_SCAN_SYNC_EVENT = "provin-order-vin-scan-record";
+
+export type AdminOrderVinScanPlacement = "main" | "dealer";
+
 function actionLabel(action: OrderVinScanSourceRow["action"]): string {
   if (action === "import_auction") return "Ielikt AUCTION";
   if (action === "import_csdd") return "Ielikt CSDD";
@@ -85,6 +91,8 @@ export function AdminOrderVinScanCard({
   onImportCsdd,
   onImportListing,
   kfz,
+  placement = "main",
+  sideEffects = true,
 }: {
   sessionId: string;
   vin: string;
@@ -95,32 +103,44 @@ export function AdminOrderVinScanCard({
   onImportListing: (record: OrderVinScanRecord) => void;
   /** Austrija §57a: datums no pasūtījuma blokiem, CSDD iepriekšējā valsts, Tampermonkey tilts. */
   kfz?: VinScanV4KfzContext;
+  /**
+   * 27.11 (Nils): tā pati josla arī dīlera datu sadaļā. «dealer» - sava sakļaušanas atmiņa un bloka id
+   * (saraksts pēc noklusējuma sakļauts), dati tie paši.
+   */
+  placement?: AdminOrderVinScanPlacement;
+  /**
+   * Telefonā abas kartītes ir lapā vienlaikus - pārlūka imports, telefona «Skenēt» un aptauja tikai vienai
+   * (citādi dubults POST / userscript). Otra saņem ierakstu caur sinhronizācijas notikumu.
+   */
+  sideEffects?: boolean;
 }) {
+  const memSuffix = placement === "dealer" ? "-dileris" : "";
+  const blockId = placement === "dealer" ? "vin-scan-avoti-dileris" : "vin-scan-avoti";
   const [record, setRecord] = useState<OrderVinScanRecord | null>(initial);
   const [showFields, setShowFieldsState] = useState(
-    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields")) ?? true,
+    () => readAdminUiOpen(adminUiOpenKey(sessionId, `vin-scan-fields${memSuffix}`)) ?? true,
   );
   const [busy, setBusy] = useState(false);
   const [listExpanded, setListExpandedState] = useState(
-    () => readAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-list")) ?? false,
+    () => readAdminUiOpen(adminUiOpenKey(sessionId, `vin-scan-list${memSuffix}`)) ?? false,
   );
   // 24.11: stāvoklis paliek pēc FLASH MAX / vedņa soļa maiņas (komponente uzstādīta no jauna).
   const setShowFields = useCallback(
     (next: boolean) => {
-      writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-fields"), next);
+      writeAdminUiOpen(adminUiOpenKey(sessionId, `vin-scan-fields${memSuffix}`), next);
       setShowFieldsState(next);
     },
-    [sessionId],
+    [sessionId, memSuffix],
   );
   const setListExpanded = useCallback(
     (next: boolean | ((prev: boolean) => boolean)) => {
       setListExpandedState((prev) => {
         const v = typeof next === "function" ? next(prev) : next;
-        writeAdminUiOpen(adminUiOpenKey(sessionId, "vin-scan-list"), v);
+        writeAdminUiOpen(adminUiOpenKey(sessionId, `vin-scan-list${memSuffix}`), v);
         return v;
       });
     },
-    [sessionId],
+    [sessionId, memSuffix],
   );
   /**
    * Pārlūka importa piezīmes pa avotiem. Agrāk viens globāls paziņojums virs saraksta tika notīrīts katrā
@@ -130,20 +150,47 @@ export function AdminOrderVinScanCard({
   const [photoFail, setPhotoFail] = useState(0);
 
   // Tikai satura maiņa: jauns, bet tāds pats `initial` objekts (vecāka renderis) nedrīkst atiestatīt kartīti.
-  const adoptRecord = useCallback((next: OrderVinScanRecord | null) => {
+  const adoptLocal = useCallback((next: OrderVinScanRecord | null) => {
     setRecord((cur) => (sameOrderVinScanRecord(cur, next) ? cur : next));
   }, []);
+  /** Jauns ieraksts no servera - pieņem un padod otrai kartītei (ja tāda ir lapā). */
+  const adoptRecord = useCallback(
+    (next: OrderVinScanRecord | null) => {
+      adoptLocal(next);
+      if (!next) return;
+      try {
+        document.dispatchEvent(
+          new CustomEvent(ORDER_VIN_SCAN_SYNC_EVENT, { detail: { sessionId, placement, record: next } }),
+        );
+      } catch {
+        /* ignore */
+      }
+    },
+    [adoptLocal, sessionId, placement],
+  );
 
   useEffect(() => {
-    adoptRecord(initial);
-  }, [initial, adoptRecord]);
+    const onSync = (ev: Event) => {
+      const d = (ev as CustomEvent).detail as
+        | { sessionId?: string; placement?: string; record?: OrderVinScanRecord }
+        | undefined;
+      if (!d || d.sessionId !== sessionId || d.placement === placement || !d.record) return;
+      adoptLocal(d.record);
+    };
+    document.addEventListener(ORDER_VIN_SCAN_SYNC_EVENT, onSync);
+    return () => document.removeEventListener(ORDER_VIN_SCAN_SYNC_EVENT, onSync);
+  }, [sessionId, placement, adoptLocal]);
+
+  useEffect(() => {
+    adoptLocal(initial);
+  }, [initial, adoptLocal]);
 
   useEffect(() => {
     setImportNotes({});
   }, [vin]);
 
   useEffect(() => {
-    if (record?.status !== "running") return;
+    if (!sideEffects || record?.status !== "running") return;
     const started = Date.parse(record.at);
     const age = Number.isFinite(started) ? Date.now() - started : 0;
     if (age >= ORDER_VIN_SCAN_STUCK_MS) {
@@ -175,9 +222,10 @@ export function AdminOrderVinScanCard({
       window.clearInterval(timer);
       window.clearTimeout(stopAt);
     };
-  }, [sessionId, record?.status, record?.at, adoptRecord]);
+  }, [sideEffects, sessionId, record?.status, record?.at, adoptRecord]);
 
   useEffect(() => {
+    if (!sideEffects) return;
     const onResult = (ev: Event) => {
       const d = parseVinScanBrowserEventDetail((ev as CustomEvent).detail);
       if (!d || d.vin !== vin.trim().toUpperCase()) return;
@@ -225,7 +273,7 @@ export function AdminOrderVinScanCard({
     };
     document.addEventListener("provin-vin-scan-result", onResult);
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
-  }, [sessionId, vin, adoptRecord]);
+  }, [sideEffects, sessionId, vin, adoptRecord]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
   // VIN SCAN v4: tā pati komponente kā Ātrajā pārbaudē (pasūtījuma ieraksta rindas + pasūtījuma pogas).
@@ -249,16 +297,8 @@ export function AdminOrderVinScanCard({
         ? `skenēts automātiski ${clock}${sourceCount ? ` · ${sourceCount} bezmaksas avoti` : ""}`
         : "vēl nav skenēts";
 
-  const dotRows = useMemo(() => {
-    if (!summary) return [];
-    const main = summary.rows.map((row) => ({
-      id: row.id,
-      state: row.state,
-      label: row.label,
-    }));
-    const none = summary.noneRows.map((row) => ({ id: row.id, state: "none" as const, label: row.label }));
-    return [...main, ...none];
-  }, [summary]);
+  // 27.11 (Nils): sakļautajā joslā punkti tikai avotiem ar datiem; «Rādīt sarakstu» - visi.
+  const dotRows = useMemo(() => orderVinScanCollapsedDots(summary), [summary]);
 
   const startScan = useCallback(async (sourceId?: string): Promise<OrderVinScanRecord | null> => {
     if (busy || !vin.trim()) return null;
@@ -289,6 +329,7 @@ export function AdminOrderVinScanCard({
   }, [adoptRecord, busy, listingUrl, sessionId, vin]);
 
   useEffect(() => {
+    if (!sideEffects) return;
     const emit = (detail: AdminMobileVinScanState) => {
       try {
         document.dispatchEvent(new CustomEvent(ADMIN_MOBILE_VIN_SCAN_STATE_EVENT, { detail }));
@@ -311,7 +352,7 @@ export function AdminOrderVinScanCard({
     };
     document.addEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
     return () => document.removeEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
-  }, [busy, startScan]);
+  }, [sideEffects, busy, startScan]);
 
   const runAction = (row: OrderVinScanSourceRow) => {
     if (!record) return;
@@ -363,8 +404,8 @@ export function AdminOrderVinScanCard({
         <>
           <span className="flex flex-wrap items-center gap-1">
             <Counter state="found" count={summary.found} label="atrasta info" />
-            <Counter state="none" count={summary.none} label="nav datu" />
-            <Counter state="error" count={summary.error} label="kļūda" />
+            {summary.none > 0 ? <Counter state="none" count={summary.none} label="nav datu" /> : null}
+            {summary.error > 0 ? <Counter state="error" count={summary.error} label="kļūda" /> : null}
             {summary.blocked > 0 ? <Counter state="blocked" count={summary.blocked} label="bloķē" /> : null}
             {summary.timeout > 0 ? <Counter state="timeout" count={summary.timeout} label="noildze" /> : null}
             {summary.configMissing > 0 ? (
@@ -372,26 +413,12 @@ export function AdminOrderVinScanCard({
             ) : null}
             {summary.browserOnly > 0 ? <Counter state="browser_only" count={summary.browserOnly} label="pārlūks" /> : null}
           </span>
-          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avotu indikatori">
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avoti ar datiem">
             {dotRows.map((row) => (
               <span
                 key={row.id}
                 className="inline-flex p-0.5"
-                title={`${row.label}: ${
-                  row.state === "found"
-                    ? "atrasta info"
-                    : row.state === "blocked"
-                      ? "bloķē"
-                      : row.state === "timeout"
-                        ? "noildze"
-                        : row.state === "config_missing"
-                          ? "nav atslēgas"
-                          : row.state === "browser_only"
-                            ? "pārlūks"
-                            : row.state === "error"
-                              ? "kļūda"
-                              : "nav datu"
-                }`}
+                title={`${row.label}: atrasta info`}
               >
                 <Dot state={row.state} />
               </span>
@@ -431,7 +458,7 @@ export function AdminOrderVinScanCard({
   return (
     <AdminCollapsibleShell
       sessionId={sessionId}
-      blockId="vin-scan-avoti"
+      blockId={blockId}
       className="rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)]"
       header={
         <h2
@@ -443,13 +470,13 @@ export function AdminOrderVinScanCard({
       }
       headerActions={
         <AdminPdfIncludeToggle
-          id={`vin-scan-show-fields-${sessionId}`}
+          id={`vin-scan-show-fields-${sessionId}${memSuffix}`}
           checked={showFields}
           onChange={setShowFields}
         />
       }
     >
-      {record && record.status !== "running" ? (
+      {!sideEffects ? null : record && record.status !== "running" ? (
         <AdminVinScanBrowserFetchHandoff
           vin={vin}
           at={record.at}
