@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { AdminVendorArchivePhotosButton } from "@/components/admin/AdminVendorArchivePhotosButton";
+import { AdminVendorReportSummary } from "@/components/admin/AdminVendorReportSummary";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
-import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import type { VendorAvotuBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { insertedArchivePhotoCount, vendorReportSummary } from "@/lib/vendor-report-warnings";
 import { autodnaAutoCanApply, autodnaVinPageUrl, isLowCredits } from "@/lib/autodna-auto-logic";
 import {
   isAutodnaAutoActive,
@@ -33,6 +35,8 @@ function creditsLabel(n: number): string {
 
 type Props = {
   sessionId: string;
+  /** Šī avota bloks (brīdinājumu un foto kopsavilkumam pēc atskaites ievietošanas). */
+  block?: VendorAvotuBlockState;
   disabled?: boolean;
   readOnly?: boolean;
   getSourceBlocks: () => WorkspaceSourceBlocks;
@@ -44,7 +48,7 @@ type Props = {
  * "Pieslēgt AutoDNA". Saņemto atskaiti vienreiz automātiski ievieto blokā (sapludina, ar roku labotu nepārraksta).
  * Ja relejs nav pieslēgts un pieprasījumu nav bijis, neko nerāda.
  */
-export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSourceBlocks, applyPatchedBlocks }: Props) {
+export function AdminAutodnaAutoPanel({ sessionId, block, disabled, readOnly, getSourceBlocks, applyPatchedBlocks }: Props) {
   const vin = normalizeVin(useAdminVinHandoff()?.vin ?? "");
   const [status, setStatus] = useState<AutodnaAutoStatus | null>(null);
   const [balance, setBalance] = useState<AutodnaBalance | null>(null);
@@ -54,6 +58,8 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
   const [precheck, setPrecheck] = useState<AutodnaPrecheckGuard | null>(null);
   const [precheckBusy, setPrecheckBusy] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [photosBusy, setPhotosBusy] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [error, setError] = useState("");
   const inFlight = useRef(false);
   const appliedFor = useRef("");
@@ -108,6 +114,7 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
 
   const apply = useCallback(async () => {
     setBusy(true);
+    setApplying(true);
     setError("");
     try {
       const res = await fetch("/api/admin/autodna/fona/apply", {
@@ -131,6 +138,7 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
       setError("Neizdevās ievietot AutoDNA atskaiti");
     } finally {
       setBusy(false);
+      setApplying(false);
     }
   }, [applyPatchedBlocks, getSourceBlocks, sessionId]);
 
@@ -190,7 +198,25 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
     else if (data) setError("AutoDNA pieslēgšana neizdevās");
   };
 
-  if (!status && !relayConfigured) return null;
+  const baseSummary = useMemo(
+    () => (block ? vendorReportSummary({ source: "autodna", block, precheckPhotos: precheck?.photos ?? null }) : null),
+    [block, precheck?.photos],
+  );
+  // Foto skaits katrā renderī (ievietošana / «Ielādēt arhīva foto» maina citus blokus).
+  const summary = baseSummary
+    ? { ...baseSummary, photos: { ...baseSummary.photos, inserted: insertedArchivePhotoCount(getSourceBlocks(), "autodna") } }
+    : null;
+  const showSummary = Boolean(summary?.hasReport);
+  const summaryNode = showSummary && summary ? <AdminVendorReportSummary summary={summary} photosLoading={applying || photosBusy} /> : null;
+
+  if (!status && !relayConfigured) {
+    return summaryNode ? (
+      <div className="mb-2 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1.5 text-[11px] text-slate-700">
+        <span className="font-semibold">AutoDNA</span>
+        {summaryNode}
+      </div>
+    ) : null;
+  }
 
   const credits = balance?.credits;
   const low = isLowCredits(credits);
@@ -241,6 +267,7 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
           {!precheckOk ? <span className="text-red-600">{precheck && (precheck.photos != null || precheck.history != null) ? " · " : ""}{precheckBlock}</span> : null}
         </p>
       ) : null}
+      {summaryNode}
       {error ? <p className="mt-1 text-red-700">{error}</p> : null}
       {!readOnly ? (
         <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -274,6 +301,7 @@ export function AdminAutodnaAutoPanel({ sessionId, disabled, readOnly, getSource
               sessionId={sessionId}
               source="autodna"
               disabled={disabled || busy}
+              onBusyChange={setPhotosBusy}
               getSourceBlocks={getSourceBlocks}
               applyPatchedBlocks={applyPatchedBlocks}
             />
