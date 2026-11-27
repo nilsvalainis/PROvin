@@ -55,7 +55,106 @@ export type OilExceededInterval = {
   genericDates: string[];
   /** Iespējamās (nepierādītās) eļļas maiņas šajā periodā - eļļas filtra korpuss (Nils 27.11). */
   possibleDates?: string[];
+  /**
+   * Periods pēc pēdējās fiksētās eļļas maiņas līdz pēdējam dīlera ierakstam (S4 (4)), ne intervāls
+   * starp maiņām. Skaitļi deterministiskajam pārsnieguma teikumam (Nils 27.11).
+   */
+  afterLastChange?: OilAfterLastChangeSpan;
 };
+
+export type OilAfterLastChangeSpan = {
+  fromKm: number | null;
+  toKm: number | null;
+  /** Nobraukts kopš pēdējās maiņas (km). */
+  km: number | null;
+  /** Pagājušie mēneši kopš pēdējās maiņas. */
+  months: number | null;
+};
+
+function lvSingular(n: number): boolean {
+  return n % 10 === 1 && n % 100 !== 11;
+}
+
+function ruForm(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
+
+function formatKmInt(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+function formatNoteDate(d: string): string {
+  const t = (d ?? "").trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  return iso ? `${iso[3]}.${iso[2]}.${iso[1]}` : t;
+}
+
+/**
+ * Pārsnieguma teikums periodam pēc pēdējās fiksētās eļļas maiņas (Nils 27.11): AI raksta «visi
+ * intervāli iekļaujas» (tas attiecas uz intervāliem starp maiņām), bet pārsniegts ir periods pēc
+ * pēdējās maiņas - to nosauc skaidri, pirms piebildēm. Skaitļi no datiem.
+ */
+export function oilAfterLastChangeNote(
+  lang: OilNoteLang,
+  iv: Pick<OilExceededInterval, "fromDate" | "toDate" | "afterLastChange">,
+): string | null {
+  const span = iv.afterLastChange;
+  if (!span || !iv.fromDate || !iv.toDate) return null;
+  const km = span.km != null && span.km > 0 ? span.km : null;
+  const months = span.months != null && span.months > 0 ? span.months : null;
+  if (km == null && months == null) return null;
+  const unit = lang === "ru" ? "км" : "km";
+  const at = (date: string, k: number | null) => `${formatNoteDate(date)}${k != null && k > 0 ? `, ${formatKmInt(k)} ${unit}` : ""}`;
+  const from = at(iv.fromDate, span.fromKm);
+  const to = at(iv.toDate, span.toKm);
+  const kmS = km != null ? `${formatKmInt(km)} ${unit}` : "";
+  switch (lang) {
+    case "en": {
+      const mS = months != null ? `${months} ${months === 1 ? "month" : "months"}` : "";
+      const what = km != null && months != null ? `${kmS} were driven over ${mS}` : km != null ? `${kmS} were driven` : `${mS} passed`;
+      return `Since the last recorded oil change (${from}) up to the last dealer record (${to}), ${what} - this exceeds the manufacturer interval.`;
+    }
+    case "ru": {
+      const mS = months != null ? `${months} ${ruForm(months, "месяц", "месяца", "месяцев")}` : "";
+      const what =
+        km != null && months != null
+          ? `пройдено ${kmS} за ${mS}`
+          : km != null
+            ? `пройдено ${kmS}`
+            : `${ruForm(months!, "прошёл", "прошло", "прошло")} ${mS}`;
+      return `С последней зафиксированной замены масла (${from}) до последней записи дилера (${to}) ${what} - это превышает интервал производителя.`;
+    }
+    case "de": {
+      const mS = months != null ? `${months} ${months === 1 ? "Monat" : "Monaten"}` : "";
+      const mNom = months != null ? `${months} ${months === 1 ? "Monat" : "Monate"}` : "";
+      const what =
+        km != null && months != null
+          ? `wurden in ${mS} ${kmS} gefahren`
+          : km != null
+            ? `wurden ${kmS} gefahren`
+            : `${months === 1 ? "ist" : "sind"} ${mNom} vergangen`;
+      return `Seit dem letzten erfassten Ölwechsel (${from}) bis zum letzten Händlereintrag (${to}) ${what} - das überschreitet das Herstellerintervall.`;
+    }
+    default: {
+      const mS = months != null ? (lvSingular(months) ? `pagājis ${months} mēnesis` : `pagājuši ${months} mēneši`) : "";
+      const kmPart = km != null ? `nobraukti ${kmS}` : "";
+      const what = [kmPart, mS].filter(Boolean).join(" un ");
+      return `Kopš pēdējās fiksētās eļļas maiņas (${from}) līdz pēdējam dīlera ierakstam (${to}) ${what} - tas pārsniedz ražotāja intervālu.`;
+    }
+  }
+}
+
+/** Mūsu pārsnieguma teikuma sākums (4 valodas) - atpazīšanai un izņemšanai pirms atkārtotas ievietošanas. */
+const AFTER_LAST_CHANGE_SENTENCE_RE =
+  /(?:Kopš\s+pēdējās\s+fiksētās\s+eļļas\s+maiņas|Since\s+the\s+last\s+recorded\s+oil\s+change|С\s+последней\s+зафиксированной\s+замены\s+масла|Seit\s+dem\s+letzten\s+erfassten\s+Ölwechsel)\s*\(/giu;
+
+export function oilAfterLastChangeNotePresent(text: string): boolean {
+  return new RegExp(AFTER_LAST_CHANGE_SENTENCE_RE.source, "iu").test(plainForCheck(text));
+}
 
 /**
  * 3. piebilde (Nils 27.11, S8: «fiksējam, bet kā pilnībā nepierādītu»): pārsniegtajā periodā ir eļļas
@@ -63,18 +162,33 @@ export type OilExceededInterval = {
  */
 export function oilPossibleChangeNote(lang: OilNoteLang, dates: readonly string[], periodCount = 1): string {
   const n = dates.length;
-  const label = n <= OIL_GENERIC_DATES_MAX ? dates.join(", ") : String(n);
+  // Datumi iekavās, ja to ir maz; citādi skaits ar vārdu («5 eļļas filtra korpusa maiņas»), ne «(5)» (Nils 27.11).
+  const listed = n <= OIL_GENERIC_DATES_MAX;
+  const dl = listed ? ` (${dates.join(", ")})` : "";
   const many = periodCount > 1;
-  const one = n === 1;
   switch (lang) {
-    case "en":
-      return `${many ? "In these periods" : "In this period"} there ${one ? "is also an oil filter housing replacement" : "are also oil filter housing replacements"} (${label}) - an oil change may also have been done, but this is not proven.`;
-    case "ru":
-      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "замена корпуса масляного фильтра" : "замены корпуса масляного фильтра"} (${label}) - возможно, было заменено и масло, но это не доказано.`;
-    case "de":
-      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Austausch des Ölfiltergehäuses" : "Austausche des Ölfiltergehäuses"} (${label}) - möglicherweise wurde auch ein Ölwechsel durchgeführt, das ist aber nicht belegt.`;
-    default:
-      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "eļļas filtra korpusa maiņa" : "eļļas filtra korpusa maiņas"} (${label}) - iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts.`;
+    case "en": {
+      const one = n === 1;
+      const noun = one ? "an oil filter housing replacement" : listed ? "oil filter housing replacements" : `${n} oil filter housing replacements`;
+      return `${many ? "In these periods" : "In this period"} there ${one ? "is" : "are"} also ${noun}${dl} - an oil change may also have been done, but this is not proven.`;
+    }
+    case "ru": {
+      const noun = listed
+        ? n === 1 ? "замена корпуса масляного фильтра" : "замены корпуса масляного фильтра"
+        : `${n} ${ruForm(n, "замена", "замены", "замен")} корпуса масляного фильтра`;
+      return `${many ? "В эти периоды" : "В этот период"} есть также ${noun}${dl} - возможно, было заменено и масло, но это не доказано.`;
+    }
+    case "de": {
+      const noun = listed
+        ? n === 1 ? "einen Austausch des Ölfiltergehäuses" : "Austausche des Ölfiltergehäuses"
+        : `${n} Austausche des Ölfiltergehäuses`;
+      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${noun}${dl} - möglicherweise wurde auch ein Ölwechsel durchgeführt, das ist aber nicht belegt.`;
+    }
+    default: {
+      const one = listed ? n === 1 : lvSingular(n);
+      const noun = `${listed ? "" : `${n} `}${one ? "eļļas filtra korpusa maiņa" : "eļļas filtra korpusa maiņas"}`;
+      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${noun}${dl} - iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts.`;
+    }
   }
 }
 
@@ -86,18 +200,29 @@ export function oilPossibleChangeNote(lang: OilNoteLang, dates: readonly string[
  */
 export function oilGenericRecordsNote(lang: OilNoteLang, dates: readonly string[], periodCount = 1): string {
   const n = dates.length;
-  const label = n <= OIL_GENERIC_DATES_MAX ? dates.join(", ") : String(n);
+  // Datumi iekavās, ja to ir maz; citādi skaits ar vārdu («13 dīlera ieraksti»), ne «(13)» (Nils 27.11).
+  const listed = n <= OIL_GENERIC_DATES_MAX;
+  const dl = listed ? ` (${dates.join(", ")})` : "";
+  const num = listed ? "" : `${n} `;
   const many = periodCount > 1;
-  const one = n === 1;
   switch (lang) {
-    case "en":
-      return `${many ? "In these periods" : "In this period"} there ${one ? "is also a dealer record" : "are also dealer records"} without a detailed description of work (${label}) - ${one ? "it" : "they"} may theoretically indicate an oil change, but ${one ? "the record does" : "the records do"} not confirm it.`;
-    case "ru":
-      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "запись дилера" : "записи дилера"} без подробного описания работ (${label}) - теоретически ${one ? "она может" : "они могут"} свидетельствовать о замене масла, однако ${one ? "в записи" : "в записях"} это не подтверждено.`;
-    case "de":
-      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Händlereintrag" : "Händlereinträge"} ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch ${one ? "kann er" : "können sie"} auf einen Ölwechsel hindeuten, ${one ? "der Eintrag bestätigt" : "die Einträge bestätigen"} das jedoch nicht.`;
-    default:
-      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "dīlera ieraksts" : "dīlera ieraksti"} bez detalizēta darbu apraksta (${label}) - ${one ? "tas" : "tie"} teorētiski var liecināt par eļļas maiņu, taču ${one ? "ierakstā" : "ierakstos"} tas nav apstiprināts.`;
+    case "en": {
+      const one = n === 1;
+      return `${many ? "In these periods" : "In this period"} there ${one ? "is also a dealer record" : `are also ${num}dealer records`} without a detailed description of work${dl} - ${one ? "it" : "they"} may theoretically indicate an oil change, but ${one ? "the record does" : "the records do"} not confirm it.`;
+    }
+    case "ru": {
+      const one = listed ? n === 1 : ruForm(n, "1", "2", "5") === "1";
+      const noun = listed ? (one ? "запись дилера" : "записи дилера") : `${n} ${ruForm(n, "запись", "записи", "записей")} дилера`;
+      return `${many ? "В эти периоды" : "В этот период"} есть также ${noun} без подробного описания работ${dl} - теоретически ${one ? "она может" : "они могут"} свидетельствовать о замене масла, однако ${one ? "в записи" : "в записях"} это не подтверждено.`;
+    }
+    case "de": {
+      const one = n === 1;
+      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Händlereintrag" : `${num}Händlereinträge`} ohne detaillierte Arbeitsbeschreibung${dl} - theoretisch ${one ? "kann er" : "können sie"} auf einen Ölwechsel hindeuten, ${one ? "der Eintrag bestätigt" : "die Einträge bestätigen"} das jedoch nicht.`;
+    }
+    default: {
+      const one = listed ? n === 1 : lvSingular(n);
+      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${num}${one ? "dīlera ieraksts" : "dīlera ieraksti"} bez detalizēta darbu apraksta${dl} - ${one ? "tas" : "tie"} teorētiski var liecināt par eļļas maiņu, taču ${one ? "ierakstā" : "ierakstos"} tas nav apstiprināts.`;
+    }
   }
 }
 
@@ -335,6 +460,7 @@ export function stripInsertedOilNotes(text: string): string {
   cut(new RegExp(GENERIC_PRESENT_RE.source, "iu"), true);
   cut(new RegExp(POSSIBLE_PRESENT_RE.source, "iu"), true);
   cut(NOT_SKIPPED_SENTENCE_START_RE, false);
+  cut(new RegExp(AFTER_LAST_CHANGE_SENTENCE_RE.source, "giu"), false);
   return out
     .replace(/[ \t]{2,}/g, " ")
     .replace(/(?:&nbsp;|[ \t])+(<br\s*\/?>)/gi, "$1")
@@ -343,10 +469,75 @@ export function stripInsertedOilNotes(text: string): string {
     .replace(/(?:\s|&nbsp;|<br\s*\/?>)+$/gi, "");
 }
 
+/** Vai EXCEED_RE atradums ir apgalvojums (ne «nepārsniedz», «nav pārsniegts», «does not exceed»). */
+function exceedHitIsAffirmative(text: string, at: number, len: number): boolean {
+  if (at > 0 && /\p{L}/u.test(text[at - 1]!)) return false; // «ne|pārsniedz», «über…» vārda vidū
+  const sStart = sentenceStartBefore(text, at);
+  const prefix = plainForCheck(text.slice(sStart, at));
+  if (EXCEED_NEG_BEFORE_RE.test(prefix)) return false;
+  const after = plainForCheck(text.slice(at + len, sentenceEndAfter(text, at + len)));
+  return !EXCEED_NEG_AFTER_RE.test(after);
+}
+
+/** Pēdējā APGALVOJOŠĀ pārsnieguma vārda pozīcija (vai -1). Noliegumi enkuru nedod (Nils 27.11). */
+function lastAffirmativeExceedAt(text: string, from = 0): number {
+  let at = -1;
+  for (const m of text.matchAll(new RegExp(EXCEED_RE.source, "giu"))) {
+    const i = m.index ?? 0;
+    if (i < from) continue;
+    if (exceedHitIsAffirmative(text, i, m[0].length)) at = i;
+  }
+  return at;
+}
+
+/** Rindkopa / virsraksts par pēdējo ierakstu vai pēdējo eļļas maiņu (4 valodas). */
+const LAST_RECORD_RE =
+  /(?:pēdēj\p{L}*|last|latest|последн\p{L}*|letzte\p{L}*)\s+(?:\p{L}+\s+){0,2}?(?:ieraksts|ieraksta|ierakstam|eļļas\s+maiņa|entry|record|oil\s+change|запись|записи|замена\s+масла|eintrag|ölwechsel)/giu;
+/** Teikums tieši par periodu pēc pēdējās maiņas. */
+const SINCE_LAST_RE =
+  /kopš\s+pēdēj|pēc\s+pēdēj|since\s+the\s+last|after\s+the\s+last|с\s+(?:момента\s+)?последн|после\s+последн|seit\s+dem\s+letzten|nach\s+dem\s+letzten/iu;
+
+/** Rindkopu sākumi (0 un katra atdalītāja beigas). */
+function paragraphStarts(text: string): number[] {
+  const out = [0];
+  for (const m of text.matchAll(new RegExp(PARA_BREAK_RE.source, "giu"))) out.push((m.index ?? 0) + m[0].length);
+  return out;
+}
+
+function paragraphStartBefore(text: string, at: number): number {
+  let start = 0;
+  for (const p of paragraphStarts(text)) if (p <= at) start = p;
+  return start;
+}
+
+/**
+ * Periods pēc pēdējās maiņas: (a) kur teksts to jau nosauc kā pārsniegumu (pozīcija), (b) rindkopa
+ * par pēdējo ierakstu (pēdējā tāda), citādi pēdējā rindkopa.
+ */
+function locateAfterLastChange(text: string): { namedAt: number; paragraphAt: number } {
+  let lastRecordAt = -1;
+  for (const m of text.matchAll(new RegExp(LAST_RECORD_RE.source, "giu"))) lastRecordAt = m.index ?? lastRecordAt;
+  const paragraphAt = lastRecordAt >= 0 ? paragraphStartBefore(text, lastRecordAt) : paragraphStartBefore(text, Math.max(0, text.length - 1));
+  let namedAt = -1;
+  for (const m of text.matchAll(new RegExp(EXCEED_RE.source, "giu"))) {
+    const i = m.index ?? 0;
+    if (!exceedHitIsAffirmative(text, i, m[0].length)) continue;
+    const sentence = text.slice(sentenceStartBefore(text, i), sentenceEndAfter(text, i + m[0].length));
+    if (i >= paragraphAt || SINCE_LAST_RE.test(plainForCheck(sentence))) namedAt = i;
+  }
+  return { namedAt, paragraphAt };
+}
+
 /**
  * Pievieno piebildes eļļas komentāram: VIENREIZ, atsevišķā rindkopā tieši pēc (pēdējās) rindkopas
  * par pārsniegumu, vai sadaļas „Eļļas maiņu regularitāte” beigās. Nemaina tekstu, ja pārsniegumu nav.
  * Strādā gan ar HTML (`<br><br>`), gan ar vienkāršu tekstu (tukša rinda).
+ *
+ * Nils 27.11: enkurs ir tikai APGALVOTS pārsniegums («neviens nepārsniedz» nav enkurs). Ja pārsniegts
+ * ir periods pēc pēdējās eļļas maiņas, piebildes iet pēc rindkopas par pēdējo ierakstu; ja teksts šo
+ * periodu kā pārsniegumu nenosauc, pirms piebildēm nāk deterministisks teikums ar skaitļiem
+ * («Kopš pēdējās fiksētās eļļas maiņas (…) līdz pēdējam dīlera ierakstam (…) nobraukti … - tas
+ * pārsniedz ražotāja intervālu.»), lai «Šajā periodā» attiektos uz konkrētu periodu.
  */
 export function ensureOilIntervalNotes(
   text: string,
@@ -357,6 +548,14 @@ export function ensureOilIntervalNotes(
   if (!original.trim() || intervals.length === 0) return original;
   const src = stripInsertedOilNotes(original);
   const sentences: string[] = [];
+
+  const tail = intervals.find((iv) => iv.afterLastChange);
+  const tailLoc = tail ? locateAfterLastChange(src) : null;
+  if (tail && tailLoc && tailLoc.namedAt < 0) {
+    const s = oilAfterLastChangeNote(lang, tail);
+    if (s) sentences.push(s);
+  }
+
   if (!oilNotSkippedNotePresent(src)) sentences.push(OIL_NOT_SKIPPED_NOTE[lang]);
   const withGeneric = intervals.filter((iv) => iv.genericDates.length > 0);
   if (withGeneric.length > 0 && !oilGenericRecordsNotePresent(src)) {
@@ -377,8 +576,12 @@ export function ensureOilIntervalNotes(
   const addition = isHtml ? escapeHtmlText(sentences.join(" ")) : sentences.join(" ");
   const sep = isHtml ? "<br><br>" : "\n\n";
 
-  let anchor = -1;
-  for (const m of src.matchAll(new RegExp(EXCEED_RE.source, "giu"))) anchor = m.index ?? anchor;
+  let anchor = lastAffirmativeExceedAt(src);
+  if (tailLoc) {
+    // Pārsniegtais periods ir pēdējais hronoloģiski - piebildes pēc tā rindkopas (vai pēc vēlāka apgalvojuma).
+    const tailAnchor = tailLoc.namedAt >= 0 ? tailLoc.namedAt : tailLoc.paragraphAt;
+    anchor = Math.max(anchor, tailAnchor);
+  }
   if (anchor < 0) {
     const heading = REGULARITY_HEADING_RE.exec(src);
     if (heading) anchor = heading.index + heading[0].length;
