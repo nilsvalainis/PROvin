@@ -88,6 +88,9 @@ export function dealerExtraFilesError(files: readonly DealerExtraFileLike[], pdf
   const total = extra + Math.max(0, pdfBytes);
   if (total > DEALER_SEND_MAX_TOTAL_BYTES) {
     const lim = formatFileSize(DEALER_SEND_MAX_TOTAL_BYTES);
+    if (files.length === 0) {
+      return `PDF par lielu e-pastam: ${formatFileSize(pdfBytes)} (līdz ${lim}). Noņem kādu bildi no «Sūtīt klientam».`;
+    }
     return pdfBytes > 0
       ? `Par lielu e-pastam: PDF ${formatFileSize(pdfBytes)} + faili ${formatFileSize(extra)} (kopā līdz ${lim}). Noņem kādu failu.`
       : `Faili kopā ${formatFileSize(extra)} - e-pastam līdz ${lim} kopā ar PDF. Noņem kādu failu.`;

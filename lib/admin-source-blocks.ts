@@ -139,6 +139,7 @@ import {
   type DealerMajorWorkOverride,
 } from "@/lib/dealer-major-works-override-persist";
 import { dealerSignalsSnapshotField, parseDealerSignals } from "@/lib/dealer-signals-persist";
+import { normalizeDealerPhotos } from "@/lib/dealer-photos";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -1074,6 +1075,8 @@ export type AutoRecordsBlockState = {
   oneautoIngest?: AutoRecordsOneautoIngest;
   /** Speckr Tesla VIN specs — tikai manuāla maksas ielāde admin blokā. */
   speckrSnapshot?: import("@/lib/speckr-order").SpeckrOrderSnapshot;
+  /** Dīlera atskaites foto: atsauces uz pasūtījuma galeriju bildēm (Blur / Titulbilde / Sūtīt klientam). */
+  dealerPhotos?: import("@/lib/dealer-photos").DealerPhotosState;
 };
 
 export type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
@@ -2394,6 +2397,10 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       ...(() => {
         const chart = normalizeOilIntervalChart(raw.oilIntervalChart);
         return chart ? { oilIntervalChart: chart } : {};
+      })(),
+      ...(() => {
+        const dealerPhotos = normalizeDealerPhotos(raw.dealerPhotos);
+        return dealerPhotos ? { dealerPhotos } : {};
       })(),
     };
   }

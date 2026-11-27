@@ -114,7 +114,8 @@ import {
 } from "@/lib/admin-source-blocks";
 import { collectWorkspaceRecordDates } from "@/lib/csdd-first-registration-guard";
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
-import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
+import { emptyAutoRecordsPhotoGroup, syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
+import { appendUploadedPhotosToGroup } from "@/lib/photo-group-append";
 import {
   sourceBlockPhotoMaxForKey,
   syncSourceBlockPhotoGroupsAndFlat,
@@ -342,6 +343,15 @@ import {
   type DealerSignalsAuditLink,
   type DealerSignalsState,
 } from "@/lib/dealer-signals";
+import {
+  collectDealerPhotoGalleries,
+  dealerPhotosPdfPayload,
+  dealerPhotosPdfPlan,
+  emptyDealerPhotos,
+  type DealerPhotosPdfPayload,
+} from "@/lib/dealer-photos";
+import type { DealerPhotosUpdater } from "@/components/admin/AdminDealerPhotos";
+import { loadDealerPhotoDataUrls } from "@/lib/dealer-photos-client";
 import { detectDealerSignals } from "@/lib/dealer-signals-detect";
 import { isWithinBlackFridayWindow } from "@/lib/promo/black-friday";
 import { BF_DEALER_TO_AUDIT_CHARGE_CENTS } from "@/lib/order-upsell";
@@ -2514,6 +2524,57 @@ export function OrderDetailWorkspace({
       }
     },
     [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
+  /**
+   * Dīlera atskaites foto (atsauces). `uploadedIds` - jaunas dīlera augšupielādes: tās pievieno arī dīlera
+   * augšupielāžu galerijai tajā pašā saglabāšanā (oriģinālās galerijas netiek mainītas).
+   */
+  const commitDealerPhotos = useCallback(
+    async (update: DealerPhotosUpdater, uploadedIds?: string[]) => {
+      workspaceDirtyRef.current = true;
+      flushSync(() => {
+        setWs((prev) => {
+          const blocks = mergeSourceBlocksWithDefaults(prev.sourceBlocks);
+          const ar = blocks.auto_records;
+          let groups = ar.photoGroups ?? [];
+          if (uploadedIds?.length) {
+            const target = groups[0] ?? emptyAutoRecordsPhotoGroup();
+            const base = groups.length > 0 ? groups : [target];
+            groups = appendUploadedPhotosToGroup(base, target.id, uploadedIds.map((id) => ({ id })));
+          }
+          const synced = syncAutoRecordsPhotoGroupsAndFlat(groups);
+          const next = normalizeOrderWorkspacePersistBody({
+            ...workspaceToPersistBody(prev),
+            sourceBlocks: {
+              ...blocks,
+              auto_records: {
+                ...ar,
+                photoGroups: synced.photoGroups,
+                photos: synced.photos,
+                dealerPhotos: update(ar.dealerPhotos ?? emptyDealerPhotos()),
+              },
+            },
+          });
+          return applyPersistBodyToWs(next);
+        });
+      });
+      commitWorkspaceLocalNow({ force: true });
+      if (orderDraftPersistenceEnabled) {
+        await persistFullWorkspaceRef("dealer_photos", { showFlash: false });
+      }
+    },
+    [applyPersistBodyToWs, commitWorkspaceLocalNow, orderDraftPersistenceEnabled, persistFullWorkspaceRef],
+  );
+
+  const getDealerPhotoGalleries = useCallback(
+    () =>
+      collectDealerPhotoGalleries({
+        sourceBlocks: mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks) as unknown as Record<string, unknown>,
+        incidentPhotoGroups: wsPersistRef.current.incidentPhotoGroups,
+        incidentPhotos: wsPersistRef.current.incidentPhotos,
+      }),
+    [],
   );
 
   const commitCcVinPhotoGroupsStructural = useCallback(
@@ -4853,6 +4914,17 @@ export function OrderDetailWorkspace({
       }
     }
 
+    // Dīlera foto (Nils 27.11): titulbilde + «Sūtīt klientam» galerija, blur un saspiešana serverī.
+    const dealerPhotoDataUrls = new Map<string, string>();
+    let dealerPhotosForPdf: DealerPhotosPdfPayload | null = null;
+    if (dealerOnly && !preview) {
+      const plan = dealerPhotosPdfPlan(listingBlocks.auto_records.dealerPhotos);
+      if (plan.load.length > 0) {
+        await loadDealerPhotoDataUrls(payload.sessionId, plan.load, dealerPhotoDataUrls);
+        dealerPhotosForPdf = dealerPhotosPdfPayload(plan, dealerPhotoDataUrls);
+      }
+    }
+
     let manualVendorBlocks = isolate
       ? toPdfManualVendorBlocks(blocksDisplaySafe).filter((b) => extraVendorTitles.has(b.title))
       : toPdfManualVendorBlocks(blocksDisplaySafe);
@@ -4901,7 +4973,13 @@ export function OrderDetailWorkspace({
       carfaxBlock: isolate ? null : toPdfCarfaxBlock(blocksDisplaySafe.carfax),
       manualLtabBlock:
         isolate && !extraOn("ltab") ? null : toPdfLtabManualBlock(blocksDisplaySafe.ltab, { csdd: blocksDisplaySafe.csdd }),
-      autoRecordsBlock: asvOnly ? undefined : autoRecordsForPdf,
+      // Ar atlasītu dīlera galeriju augšupielāžu pielikums netiek drukāts otrreiz (tikai atlasītās bildes).
+      autoRecordsBlock: asvOnly
+        ? undefined
+        : dealerPhotosForPdf?.galleryIds.length
+          ? { ...autoRecordsForPdf, photos: [], photoGroups: [] }
+          : autoRecordsForPdf,
+      dealerPhotos: dealerPhotosForPdf,
       oneautoBlock: asvOnly ? undefined : blocksDisplaySafe.oneauto,
       ccVinBlock: isolate && !extraOn("cc_vin") ? null : ccVinForPdf,
       asvBlock: dealerOnly && !extraOn("asv") ? null : asvForPdf,
@@ -4966,6 +5044,7 @@ export function OrderDetailWorkspace({
       asvPhotoDataUrls,
       incidentPhotoDataUrls,
       sourceBlockPhotoDataUrls,
+      dealerPhotoDataUrls,
       printInk: Boolean(opts?.printInk),
     });
 
@@ -7157,6 +7236,9 @@ export function OrderDetailWorkspace({
               techRiskMap={ws.technicalRiskMap ?? null}
               dealerMajorWorkOverrides={dealerMajorWorkOverrides}
               onDealerMajorWorkOverridesChange={(next) => updateWs({ dealerMajorWorkOverrides: next })}
+              {...(isDealerOrderForMobilePanel
+                ? { getDealerPhotoGalleries, onDealerPhotosCommit: commitDealerPhotos }
+                : {})}
             />
           </div>
         ) : null}
