@@ -1,5 +1,6 @@
 "use client";
 
+import type { DealerSignalsAuditLink } from "@/lib/dealer-signals";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
@@ -42,7 +43,14 @@ export function sendReportLangOptions(kind: SendReportKind, b2b: boolean): Clien
 const SECONDARY_BTN =
   "rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[13px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50";
 
-export type SendReportPrepared = { pdfPathname: string; downloadUrl: string; filename: string; bytes: number };
+export type SendReportPrepared = {
+  pdfPathname: string;
+  downloadUrl: string;
+  filename: string;
+  bytes: number;
+  /** Dīlera PDF «Signāli»: audita saite, kas ir šajā PDF (`offer` - piedāvājuma saite, veidota sūtot). */
+  dealerSignalsAuditLink?: DealerSignalsAuditLink | null;
+};
 export type SendReportResult = {
   sentTo: string;
   version: number;

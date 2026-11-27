@@ -310,6 +310,7 @@ import {
   DEALER_SIGNALS_SECTION_TITLE,
   dealerSignalsAuditLinkLabel,
   dealerSignalsPdfRows,
+  type DealerSignalKind,
   type DealerSignalsAuditLink,
   type DealerSignalsState,
 } from "@/lib/dealer-signals";
@@ -516,6 +517,8 @@ export type ClientReportPayload = {
   dealerSignals?: DealerSignalsState | null;
   /** Klusā audita saite sadaļas beigās (BF laikā ar cenu). */
   dealerSignalsAuditLink?: DealerSignalsAuditLink | null;
+  /** Admina labotā signālu teksta AI tulkojums PDF valodā (no PDF tulkošanas; saglabātais `tr` ir prioritārs). */
+  dealerSignalsTranslated?: Partial<Record<DealerSignalKind, string>> | null;
   /** Stripe checkout līnija - dīlera-only pret AUDITS/MINI zarošanai. */
   checkoutLine?: string | null;
   partnerId?: string | null;
@@ -4404,11 +4407,11 @@ export function buildReportHistoryTablesHtml(
  * Tikai ja admins ieslēdzis un ir vismaz viens ķeksēts signāls. Bez skaitļiem, avotiem un verdikta.
  */
 export function buildDealerSignalsSectionHtml(
-  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerSignals" | "dealerSignalsAuditLink">,
+  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerSignals" | "dealerSignalsAuditLink" | "dealerSignalsTranslated">,
   lang: ClientReportLang,
 ): string {
   if (p.pdfReportKind !== "dealer") return "";
-  const rows = dealerSignalsPdfRows(p.dealerSignals, lang);
+  const rows = dealerSignalsPdfRows(p.dealerSignals, lang, p.dealerSignalsTranslated);
   if (rows.length === 0) return "";
   const head = sectionHeadBrand(sectionIconPdfHtml("flag"), DEALER_SIGNALS_SECTION_TITLE[lang]);
   const body = rows
