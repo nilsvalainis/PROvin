@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 export type PdfExtraLang = "en" | "ru" | "de";
@@ -13,7 +13,18 @@ const LANGS: { lang: PdfExtraLang; short: string; title: string }[] = [
 ];
 
 /**
- * Primārā poga paliek latviešu PDF. EN / RU / DE atveras ar bultiņu.
+ * Klienta valoda pasūtījumā (Nils 27.11: «ja klients izmantojis anglisko versiju, tad anglisko arī sūtam»).
+ * Pasūtījuma darba lapa to iedod visām PDF pogām; bez tās (vai LV) primārā poga paliek LV.
+ */
+export const AdminPdfClientLangContext = createContext<PdfLockLang | null>(null);
+
+/** Primārās pogas valoda: partnera fiksētā, citādi klienta valoda, citādi LV. */
+export function resolveSplitPrimaryLang(lockLang: PdfLockLang | null, clientLang: PdfLockLang | null): PdfLockLang {
+  return lockLang ?? clientLang ?? "lv";
+}
+
+/**
+ * Primārā poga: klienta valoda (LV, ja nav zināma). EN / RU / DE atveras ar bultiņu.
  */
 export function AdminPdfLangSplitButton({
   label,
@@ -66,6 +77,10 @@ export function AdminPdfLangSplitButton({
   const half =
     "inline-flex h-9 shrink-0 items-center justify-center text-[11px] font-semibold tracking-tight transition disabled:cursor-not-allowed disabled:opacity-40";
   const locked = Boolean(lockLang);
+  const clientLang = useContext(AdminPdfClientLangContext);
+  const primaryLang = resolveSplitPrimaryLang(lockLang, clientLang);
+  /** Klienta valoda nav LV un partnera fiksācijas nav - izvēlnē papildus LV. */
+  const showLvItem = !locked && primaryLang !== "lv";
 
   return (
     <div className="inline-flex shrink-0 items-center gap-1.5">
@@ -73,9 +88,15 @@ export function AdminPdfLangSplitButton({
         <button
           type="button"
           disabled={disabled}
-          title={locked ? `Pasūtījumā izvēlēta ${lockLang!.toUpperCase()}` : title}
+          title={
+            locked
+              ? `Pasūtījumā izvēlēta ${lockLang!.toUpperCase()}`
+              : primaryLang !== "lv"
+                ? `Klienta valoda: ${primaryLang.toUpperCase()}`
+                : title
+          }
           onClick={() => {
-            if (lockLang && lockLang !== "lv") onLang(lockLang);
+            if (primaryLang !== "lv") onLang(primaryLang);
             else onPrimary();
           }}
           className={`${half} ${toneClass} rounded-l-lg px-3`}
@@ -88,7 +109,7 @@ export function AdminPdfLangSplitButton({
           aria-expanded={open}
           aria-controls={menuId}
           aria-label={`${label}: citas valodas`}
-          title="EN, RU, DE"
+          title={showLvItem ? "LV, EN, RU, DE" : "EN, RU, DE"}
           onClick={() => setOpen((value) => !value)}
           className={`${half} ${toneClass} rounded-r-lg border-l ${dividerClass} px-1.5`}
         >
@@ -102,6 +123,21 @@ export function AdminPdfLangSplitButton({
               menuSide === "down" ? "top-full mt-1.5" : "bottom-full mb-1.5"
             }`}
           >
+            {showLvItem ? (
+              <button
+                type="button"
+                role="menuitem"
+                title="Latviešu"
+                className="flex w-full items-center justify-between px-3 py-1.5 text-left text-[12px] font-semibold text-slate-800 hover:bg-slate-50"
+                onClick={() => {
+                  setOpen(false);
+                  onPrimary();
+                }}
+              >
+                LV
+                <span className="ml-3 text-[10px] font-medium text-slate-500">Latviešu</span>
+              </button>
+            ) : null}
             {LANGS.map((item) => {
               const itemLocked = Boolean(lockLang) && item.lang !== lockLang;
               return (

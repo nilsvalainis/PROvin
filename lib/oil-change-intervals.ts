@@ -153,8 +153,16 @@ export type OilChangeIntervalPoint = {
   periodTone: OilIntervalTone;
 };
 
+/** Iespējama (nepierādīta) eļļas maiņa - eļļas filtra korpuss bez skaidras eļļas maiņas (Nils 27.11). */
+export type OilPossibleChangePoint = { date: string; odometer: string; km: number | null };
+
 export type OilChangeIntervalSeries = {
   points: OilChangeIntervalPoint[];
+  /**
+   * Iespējamās maiņas (nav `points` un nav intervālu aprēķinā - pārsniegumu tās neaizver).
+   * Tabulā / grafikā ar atzīmi «Iespējama». Nav dienā / pie km, kur jau ir pierādīta maiņa.
+   */
+  possiblePoints?: OilPossibleChangePoint[];
   changeCount: number;
   /** Vidējais Δ km tikai no dīlera soļiem (gredzens). */
   ringIntervalKm: number | null;
@@ -292,15 +300,61 @@ function engineOilSignalInFolded(folded: string): boolean {
   return false;
 }
 
-/** Vai rinda fiksē dzinēja eļļas maiņu (ne kārbu / tiltu / ATF atsevišķi). */
+/**
+ * Eļļas filtra korpuss / vāks / modulis / to blīve (Nils 27.11, S8: «fiksējam, bet kā pilnībā nepierādītu»).
+ * Šī pozīcija viena pati NAV pierādīta eļļas maiņa (BMW X3 04.04.2025: korpuss 3 nedēļas pēc maiņas);
+ * tā ir «iespējama eļļas maiņa» (`isPossibleOilChangeWork`). Ja tajā pašā ierakstā ir arī eļļa / eļļas
+ * filtrs / viskozitāte - maiņa paliek pierādīta. Pēc fold: bez garumzīmēm, ö->o, ä->a.
+ */
+const OIL_FILTER_HOUSING_RE =
+  /(?:motor)?ellas?\s+filtr\p{L}*\s+(?:korpus\p{L}*|vak\p{L}*|vacin\p{L}*|modul\p{L}*)(?:\s+blive\p{L}*)?|(?:motor)?ol[\s-]*filter[\s-]*(?:gehause|deckel|modul|dichtung)\p{L}*|(?:engine\s+)?oil\s+filter\s+(?:housing|cover|module|casing|cap)(?:\s+(?:gasket|seal)\p{L}*)?|(?:корпус|крышк|модул)\p{L}*\s+(?:масляного\s+фильтра|фильтра\s+масла)/gu;
+
+function engineOilClauses(folded: string): string {
+  NON_ENGINE_OIL_CHUNK_RE.lastIndex = 0;
+  return dropNotOilChangeClauses(folded.replace(NON_ENGINE_OIL_CHUNK_RE, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Vai rinda fiksē dzinēja eļļas maiņu (ne kārbu / tiltu / ATF atsevišķi, ne tikai eļļas filtra korpusu). */
 export function isEngineOilChangeWork(works: string): boolean {
   const folded = foldOilWorkText(works);
   if (!folded) return false;
-  NON_ENGINE_OIL_CHUNK_RE.lastIndex = 0;
-  const withoutGear = dropNotOilChangeClauses(folded.replace(NON_ENGINE_OIL_CHUNK_RE, " "))
-    .replace(/\s+/g, " ")
-    .trim();
-  return engineOilSignalInFolded(withoutGear);
+  OIL_FILTER_HOUSING_RE.lastIndex = 0;
+  return engineOilSignalInFolded(engineOilClauses(folded).replace(OIL_FILTER_HOUSING_RE, " "));
+}
+
+/**
+ * Iespējama (nepierādīta) eļļas maiņa: ierakstā ir eļļas filtra korpuss / vāks / modulis, bet nav
+ * skaidras eļļas vai eļļas filtra maiņas. Tabulā / grafikā to rāda ar atzīmi «Iespējama», intervālus
+ * pēc tās NErēķina (pārsniegumu tā «neaizver»), komentārā - «iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts».
+ */
+export function isPossibleOilChangeWork(works: string): boolean {
+  const folded = foldOilWorkText(works);
+  if (!folded || isEngineOilChangeWork(works)) return false;
+  OIL_FILTER_HOUSING_RE.lastIndex = 0;
+  return OIL_FILTER_HOUSING_RE.test(engineOilClauses(folded));
+}
+
+/** Iespējamo eļļas maiņu rindas (hronoloģiski, viena dienā / pie viena km). */
+export function collectPossibleOilChangeRows(
+  rows: readonly AutoRecordsServiceWorkRow[],
+): AutoRecordsServiceWorkRow[] {
+  const raw = (rows ?? [])
+    .map(normalizeAutoRecordsServiceWorkRow)
+    .filter((r) => autoRecordsServiceWorkRowIsPrintable(r) && isPossibleOilChangeWork(r.works))
+    .sort((a, b) => (parseRowMs(a.date) || Infinity) - (parseRowMs(b.date) || Infinity));
+  const out: AutoRecordsServiceWorkRow[] = [];
+  const seen = new Set<string>();
+  for (const row of raw) {
+    const day = row.date.trim();
+    const km = row.odometer.replace(/\D/g, "");
+    if ((day && seen.has(`d:${day}`)) || (km && seen.has(`k:${km}`))) continue;
+    if (day) seen.add(`d:${day}`);
+    if (km) seen.add(`k:${km}`);
+    out.push(row);
+  }
+  return out;
 }
 
 function parseRowMs(date: string): number {
@@ -499,8 +553,15 @@ export function buildOilChangeIntervalSeries(
   const coverGapKm =
     coverSpanKm != null ? Math.max(0, coverSpanKm - coverOkKm - coverOverKm) : 0;
 
+  const provenDays = new Set(points.map((p) => p.date).filter(Boolean));
+  const provenKm = new Set(points.map((p) => p.km).filter((k): k is number => k != null));
+  const possiblePoints: OilPossibleChangePoint[] = collectPossibleOilChangeRows(rows)
+    .map((r) => ({ date: r.date.trim(), odometer: r.odometer.trim(), km: parseKm(r.odometer) }))
+    .filter((p) => !(p.date && provenDays.has(p.date)) && !(p.km != null && provenKm.has(p.km)));
+
   return {
     points,
+    possiblePoints,
     changeCount: points.length,
     ringIntervalKm,
     ringIntervalMonths,
@@ -742,6 +803,11 @@ function kpiValue(raw: string): string {
   return escapeHtml(raw);
 }
 
+/** Tabulas atzīme iespējamai (nepierādītai) eļļas maiņai. PDF citās valodās tulko HTML tulkotājs. */
+export const OIL_POSSIBLE_TAG_LV = "Iespējama";
+export const OIL_POSSIBLE_TABLE_NOTE_LV =
+  "«Iespējama» - eļļas filtra korpusa maiņa: iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts. Intervālos to neskaitām.";
+
 /** PDF: KPI, nobraukuma segums, tabula ar joslām pret OEM. */
 export function buildOilChangeIntervalPdfHtml(
   series: OilChangeIntervalSeries,
@@ -757,18 +823,40 @@ export function buildOilChangeIntervalPdfHtml(
       <div class="pdf-oil-int__kpi"><b>${kpiValue(avgKm)}</b><span>vidējais intervāls</span></div>
       <div class="pdf-oil-int__kpi"><b>${kpiValue(avgMonths)}</b><span>vidējais laiks</span></div>
     </div>`;
-  const rows = series.points
-    .map((p) => {
-      const kmLabel = p.odometer ? formatServiceWorkOdometer(p.odometer) : "";
-      return `<tr class="pdf-oil-int__row pdf-oil-int__row--${p.tone}">
+  const proven = series.points.map((p) => {
+    const kmLabel = p.odometer ? formatServiceWorkOdometer(p.odometer) : "";
+    return {
+      ms: parseDotOrIsoDateToMs(p.date) || 0,
+      html: `<tr class="pdf-oil-int__row pdf-oil-int__row--${p.tone}">
         <td>${escapeHtml(p.date)}</td>
         <td>${escapeHtml(kmLabel)}</td>
         <td>${intervalKmCell(p)}</td>
         <td>${periodCell(p)}</td>
         <td>${stepBarHtml(p, series.oem)}</td>
-      </tr>`;
-    })
+      </tr>`,
+    };
+  });
+  const possible = series.possiblePoints ?? [];
+  const possibleRows = possible.map((p) => {
+    const kmLabel = p.odometer ? formatServiceWorkOdometer(p.odometer) : "";
+    return {
+      ms: parseDotOrIsoDateToMs(p.date) || 0,
+      html: `<tr class="pdf-oil-int__row pdf-oil-int__row--possible">
+        <td>${escapeHtml(p.date)}</td>
+        <td>${escapeHtml(kmLabel)}</td>
+        <td><div class="pdf-oil-int__gap-tag">${OIL_POSSIBLE_TAG_LV}</div></td>
+        <td></td>
+        <td><div class="pdf-oil-int__bw"><span class="pdf-oil-int__seg pdf-oil-int__seg--neutral pdf-oil-int__seg--dot"></span></div></td>
+      </tr>`,
+    };
+  });
+  // Iespējamās maiņas starp pierādītajām pēc datuma (stabils: tajā pašā dienā pierādītā pirmā).
+  const rows = [...proven, ...possibleRows]
+    .map((r, i) => ({ ...r, i }))
+    .sort((a, b) => (a.ms && b.ms && a.ms !== b.ms ? a.ms - b.ms : a.i - b.i))
+    .map((r) => r.html)
     .join("");
+  const possibleNote = possible.length > 0 ? `<div class="pdf-oil-int__ref">${escapeHtml(OIL_POSSIBLE_TABLE_NOTE_LV)}</div>` : "";
   return `<div class="pdf-oil-int">
     <p class="pdf-subhead">Eļļas maiņas intervāli</p>
     ${kpis}
@@ -778,6 +866,7 @@ export function buildOilChangeIntervalPdfHtml(
       <thead><tr><th>Datums</th><th>Nobraukums</th><th>Intervāls</th><th>Periods</th><th>Pret ražotāja intervālu</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    ${possibleNote}
     ${oilClaimCautionHtml(cautionOpts)}
   </div>`;
 }

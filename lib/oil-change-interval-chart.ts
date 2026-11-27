@@ -5,6 +5,7 @@ import { dropFutureDatedRows } from "@/lib/future-date-guard";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import {
   collectEngineOilChangeRows,
+  collectPossibleOilChangeRows,
   buildOilChangeIntervalSeries,
   type OilChangeIntervalSeries,
   type OilCurrentReading,
@@ -132,13 +133,28 @@ export function dealerOilIntervalSourceRows(b: AutoRecordsBlockState): AutoRecor
   return [...(b.serviceWorks ?? []), ...original, ...log];
 }
 
+/**
+ * Pierādītās eļļas maiņas + iespējamās (eļļas filtra korpuss bez eļļas maiņas, Nils 27.11) hronoloģiski.
+ * Iespējamās rindas paliek ar oriģinālo darbu tekstu - sērija tās atpazīst un intervālos neskaita.
+ */
 export function oilRowsFromServiceWorks(block: AutoRecordsBlockState): OilIntervalChartRow[] {
-  return collectEngineOilChangeRows(dealerOilIntervalSourceRows(block)).map((r) => ({
-    id: newOilIntervalRowId(),
-    date: r.date,
-    odometer: r.odometer,
-    works: r.works.trim() || "Eļļas maiņa",
-  }));
+  const source = dealerOilIntervalSourceRows(block);
+  const proven = collectEngineOilChangeRows(source);
+  const possible = collectPossibleOilChangeRows(source);
+  const ms = (d: string) => parseDotOrIsoDateToMs(d) || 0;
+  return [...proven, ...possible]
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const ta = ms(a.r.date);
+      const tb = ms(b.r.date);
+      return ta && tb && ta !== tb ? ta - tb : a.i - b.i;
+    })
+    .map(({ r }) => ({
+      id: newOilIntervalRowId(),
+      date: r.date,
+      odometer: r.odometer,
+      works: r.works.trim() || "Eļļas maiņa",
+    }));
 }
 
 export function chartRowsToServiceWorks(rows: OilIntervalChartRow[]): AutoRecordsServiceWorkRow[] {
@@ -306,6 +322,30 @@ function tailExceededInterval(
 }
 
 /**
+ * Iespējamās eļļas maiņas (eļļas filtra korpuss), kas ir pārsniegtā perioda iekšpusē (Nils 27.11):
+ * tās pārsniegumu neaizver, bet 3. piebilde tās nosauc («iespējams, veikta arī eļļas maiņa, bet tas nav
+ * pierādīts»). Periods bez beigu datuma (pēc pēdējās maiņas) - līdz šodienai.
+ */
+function withPossibleOilDates(
+  intervals: OilExceededInterval[],
+  series: OilChangeIntervalSeries,
+): OilExceededInterval[] {
+  const possible = (series.possiblePoints ?? [])
+    .map((p) => ({ date: p.date, ms: parseDotOrIsoDateToMs(p.date) || 0 }))
+    .filter((p) => p.ms > 0);
+  if (possible.length === 0) return intervals;
+  return intervals.map((iv) => {
+    const fromMs = parseDotOrIsoDateToMs(iv.fromDate) || 0;
+    const toMs = parseDotOrIsoDateToMs(iv.toDate) || 0;
+    if (!fromMs) return iv;
+    const possibleDates = possible
+      .filter((p) => p.ms > fromMs && (!toMs || p.ms <= toMs))
+      .map((p) => p.date);
+    return possibleDates.length > 0 ? { ...iv, possibleDates } : iv;
+  });
+}
+
+/**
  * Pārsniegtie eļļas intervāli piebildēm (`ensureOilIntervalNotes`). Vienmēr pret OEM -
  * arī ja adminā izslēgta pārsniegumu iekrāsošana (likums attiecas uz faktu, ne krāsu).
  * `oemText` - ja OEM jāņem no jauna (vēl nesaglabāta) komentāra teksta; tas pats teksts ir arī
@@ -331,11 +371,12 @@ export function oilExceededIntervalsForBlock(
   const out = findExceededOilIntervals(series, sourceRows);
   const tail = tailExceededInterval(series, sourceRows, oem);
   if (tail) out.push(tail);
-  if (out.length > 0) return out;
+  if (out.length > 0) return withPossibleOilDates(out, series);
   const claim = opts?.claimText ?? opts?.oemText ?? block.oilChangeIntervalNotes ?? "";
   if (!oilTextClaimsExceeded(claim)) return out;
-  const strict = findExceededOilIntervals(buildOilChangeIntervalSeries(rows, oem, { kmTolerance: 0 }), sourceRows);
-  if (strict.length > 0) return strict;
+  const strictSeries = buildOilChangeIntervalSeries(rows, oem, { kmTolerance: 0 });
+  const strict = findExceededOilIntervals(strictSeries, sourceRows);
+  if (strict.length > 0) return withPossibleOilDates(strict, strictSeries);
   // Teksts saka «pārsniedz», kods periodu nenosaka - 1. piebilde vienalga (bez 2. piebildes datumiem).
   return [{ fromDate: "", toDate: "", genericDates: [] }];
 }

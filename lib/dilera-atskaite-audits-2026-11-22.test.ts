@@ -23,6 +23,7 @@ import {
   buildOilChangeIntervalPdfHtml,
   buildOilChangeIntervalSeries,
   isEngineOilChangeWork,
+  isPossibleOilChangeWork,
 } from "@/lib/oil-change-intervals";
 import { buildDealerServiceVisitsHtml, formatDealerServicePlace } from "@/lib/pdf-dealer-service-visits";
 import {
@@ -164,9 +165,11 @@ describe("4. vizītes veids - noklusējums NAV remonts", () => {
 });
 
 describe("5. eļļas maiņu skaitīšana - nesašaurināt, izslēgt tikai nepārprotamas ne-maiņas", () => {
-  it("W0LJ7BJBSBV658020 13.10.2021 «Ölfiltergehäuse ersetzen» paliek skaitā (dīleris to dara ar eļļas maiņu)", () => {
-    expect(isEngineOilChangeWork("Ölfiltergehäuse  ersetzen.")).toBe(true);
-    expect(isEngineOilChangeWork("Eļļas filtra korpusa maiņa")).toBe(true);
+  it("W0LJ7BJBSBV658020 13.10.2021 «Ölfiltergehäuse ersetzen» - fiksēts, bet kā iespējama (nepierādīta) maiņa (Nils 27.11)", () => {
+    expect(isEngineOilChangeWork("Ölfiltergehäuse  ersetzen.")).toBe(false);
+    expect(isPossibleOilChangeWork("Ölfiltergehäuse  ersetzen.")).toBe(true);
+    expect(isEngineOilChangeWork("Eļļas filtra korpusa maiņa")).toBe(false);
+    expect(isPossibleOilChangeWork("Eļļas filtra korpusa maiņa")).toBe(true);
   });
   it("līmeņa pārbaude, noplūdes diagnostika un spiediena devējs nav maiņa", () => {
     expect(isEngineOilChangeWork("Eļļas līmeņa pārbaude")).toBe(false);

@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin-notify-blob-constants";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { sanitizeAttachmentFilename } from "@/lib/email/notify-attachments-parse";
+import { dealerAttachmentFilename } from "@/lib/dealer-send-extra-files";
 import type { ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 
 const ALLOWED_MIME = new Set([
@@ -16,6 +17,9 @@ const ALLOWED_MIME = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  // Dīlera «Sūtīt klientam» papildu bildes no iPhone, ja pārlūks HEIC nepārvērš uz JPEG.
+  "image/heic",
+  "image/heif",
 ]);
 
 function extMime(pathLower: string): string {
@@ -24,6 +28,8 @@ function extMime(pathLower: string): string {
   if (pathLower.endsWith(".png")) return "image/png";
   if (pathLower.endsWith(".webp")) return "image/webp";
   if (pathLower.endsWith(".gif")) return "image/gif";
+  if (pathLower.endsWith(".heic")) return "image/heic";
+  if (pathLower.endsWith(".heif")) return "image/heif";
   return "application/octet-stream";
 }
 
@@ -42,6 +48,8 @@ export async function fetchNotifyBlobAttachmentsForEmail(
   sessionId: string,
   items: NotifyBlobAttachmentRef[],
   blobToken: string,
+  /** Dīlera «Sūtīt klientam»: pielikumu nosaukumi kā oriģinālā (garumzīmes, atstarpes). */
+  opts?: { keepNames?: boolean },
 ): Promise<ReportReadyMailAttachment[]> {
   const sid = sessionId.trim();
   if (!isSafeStripeCheckoutSessionId(sid)) {
@@ -76,7 +84,9 @@ export async function fetchNotifyBlobAttachmentsForEmail(
       throw new Error("attachments_too_large");
     }
     const rawName = (item.filename ?? "").trim() || res.blob.pathname.split("/").pop() || "pielikums.pdf";
-    const filename = sanitizeAttachmentFilename(rawName, "pielikums.pdf");
+    const filename = opts?.keepNames
+      ? dealerAttachmentFilename(rawName, "pielikums")
+      : sanitizeAttachmentFilename(rawName, "pielikums.pdf");
     const contentType = normalizeMime(filename, res.blob.contentType);
     if (!ALLOWED_MIME.has(contentType)) {
       throw new Error("unsupported_file_type");
