@@ -5,6 +5,7 @@ import {
   CHECKTHISREG_MIN_YEAR,
   CHECKTHISREG_STRONG_MAKES,
   CHECKTHISREG_URL,
+  AUTO_RECORDS_URL,
   checkThisRegMakeFromBlocks,
   checkThisRegYear,
   checkThisRegYearFromText,
@@ -13,7 +14,7 @@ import {
   checkThisRegMake,
   checkThisRegMakeTexts,
 } from "@/lib/checkthisreg";
-import { AdminCheckThisRegButton } from "@/components/admin/AdminCheckThisRegButton";
+import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
 
 const NOW = new Date("2026-11-27T12:00:00Z");
 
@@ -99,37 +100,40 @@ describe("CheckThisReg markas noteikšana", () => {
     expect(checkThisRegMakeTexts(null)).toEqual([]);
   });
 
-  it("izcelšana tikai «datu nav»", () => {
-    expect(checkThisRegHighlighted("no_data")).toBe(true);
-    expect(checkThisRegHighlighted("failed")).toBe(false);
-    expect(checkThisRegHighlighted("done")).toBe(false);
-    expect(checkThisRegHighlighted(undefined)).toBe(false);
+  it("izcelšana tikai «datu nav» + marka sarakstā", () => {
+    expect(checkThisRegHighlighted("no_data", "Renault")).toBe(true);
+    expect(checkThisRegHighlighted("no_data", null)).toBe(false);
+    expect(checkThisRegHighlighted("failed", "Renault")).toBe(false);
+    expect(checkThisRegHighlighted("done", "Renault")).toBe(false);
+    expect(checkThisRegHighlighted(undefined, "Renault")).toBe(false);
     expect(checkThisRegHint("Renault")).toBe("Renault dati - CheckThisReg");
   });
 });
 
-describe("AdminCheckThisRegButton", () => {
-  it("parastā: poga bez markas vārda, saite jaunā cilnē", () => {
-    const html = renderToStaticMarkup(
-      createElement(AdminCheckThisRegButton, { make: "Renault", vin: "VF1RFB00X56123456", highlighted: false }),
-    );
+describe("AdminDealerExtLinks", () => {
+  it("jebkuram auto: abas pogas, jaunā cilnē, bez izcelšanas", () => {
+    expect(AUTO_RECORDS_URL).toBe("https://www.auto-records.com/");
+    const html = renderToStaticMarkup(createElement(AdminDealerExtLinks, { vin: "JTDXXXXXXXX000001" }));
     expect(html).toContain(">CheckThisReg</a>");
+    expect(html).toContain(">auto-records.com</a>");
     expect(html).toContain('href="https://www.checkthisreg.com/"');
-    expect(html).toContain('target="_blank"');
-    expect(html).not.toContain("Renault dati");
+    expect(html).toContain('href="https://www.auto-records.com/"');
+    expect(html.match(/target="_blank"/g)?.length).toBe(2);
+    expect(html).toContain('data-checkthisreg="default"');
+    expect(html).not.toContain("dati - CheckThisReg");
   });
-  it("izceltā: īss teksts", () => {
-    const html = renderToStaticMarkup(
-      createElement(AdminCheckThisRegButton, { make: "Renault", vin: "VF1RFB00X56123456", highlighted: true }),
-    );
+  it("izceltā: CheckThisReg primārā + īss teksts", () => {
+    const html = renderToStaticMarkup(createElement(AdminDealerExtLinks, { vin: "VF1RFB00X56123456", highlightMake: "Renault" }));
     expect(html).toContain("Renault dati - CheckThisReg");
     expect(html).toContain('data-checkthisreg="highlighted"');
+    expect(html).toMatch(/data-ext-link="checkthisreg"[^>]*bg-\[#1d1d1f\]/);
   });
-  it("telefona variants", () => {
+  it("telefona variants: abas pogas", () => {
     const html = renderToStaticMarkup(
-      createElement(AdminCheckThisRegButton, { make: "Renault", vin: "VF1", highlighted: true, variant: "glass" }),
+      createElement(AdminDealerExtLinks, { vin: "VF1", highlightMake: "Renault", variant: "glass" }),
     );
     expect(html).toContain("amx-btn--primary");
+    expect(html).toContain("auto-records.com");
     expect(html).toContain("Renault dati - CheckThisReg");
   });
 });

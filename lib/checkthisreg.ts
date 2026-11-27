@@ -1,7 +1,9 @@
 /**
- * CheckThisReg.com - ārējs dīlera datu avots (Nila prasība 27.11.2026). Dīlera datu pasūtījumā
- * blakus ielases pogai rāda pogu «CheckThisReg», kas atver vietni jaunā cilnē un nokopē VIN
- * starpliktuvē (vietnei nav publiska VIN URL parametra - pārbaudīts 27.11, tāpēc tikai sākumlapa).
+ * CheckThisReg.com - ārējs dīlera datu avots (Nila lēmums 27.11.2026). Dīlera datu pasūtījumā
+ * blakus ielases pogai JEBKURAM auto rāda pogas «CheckThisReg» un «auto-records.com», kas atver
+ * vietni jaunā cilnē un nokopē VIN starpliktuvē (CheckThisReg nav publiska VIN URL parametra -
+ * pārbaudīts 27.11, tāpēc tikai sākumlapa). Marku saraksts nosaka tikai CheckThisReg izcelšanu
+ * (dīlera ielase «datu nav» + marka/gads atbilst).
  *
  * Markas un gadu sliekšņus papildina tikai šeit: CHECKTHISREG_STRONG_MAKES, CHECKTHISREG_MIN_YEAR,
  * aizstājvārdi teksta atpazīšanai un WMI tabula (rezerve, ja markas teksta nav).
@@ -10,6 +12,9 @@
 import { vinModelYears } from "@/lib/vin-decode";
 
 export const CHECKTHISREG_URL = "https://www.checkthisreg.com/";
+
+/** Otra ārējā dīlera datu saite (Nila lēmums 27.11) - redzama jebkuram auto, VIN starpliktuvē. */
+export const AUTO_RECORDS_URL = "https://www.auto-records.com/";
 
 /** Markas, kurām CheckThisReg ir spēcīgs dīlera datu avots (izpēte 27.11). */
 export const CHECKTHISREG_STRONG_MAKES = [
@@ -166,7 +171,7 @@ export type CheckThisRegInput = {
 };
 
 /**
- * Atgriež markas nosaukumu (piem. «Renault»), ja CheckThisReg pogai jābūt redzamai; citādi null.
+ * Atgriež markas nosaukumu (piem. «Renault»), ja CheckThisReg ir spēcīgs šim auto (izcelšanai); citādi null.
  * Teksta marka ir noteicošā: ja tā ir aizpildīta un nav sarakstā, VIN WMI netiek ņemts vērā.
  * Markām ar gada slieksni: ja gads nav zināms vai mazāks par slieksni - null.
  */
@@ -219,9 +224,9 @@ export function checkThisRegMakeFromBlocks(blocks: BlocksLike, vin: string): str
   return checkThisRegMake({ vin, makeTexts: checkThisRegMakeTexts(blocks), year: checkThisRegYear(blocks) });
 }
 
-/** Izcelšana: tikai, ja dīlera ielase beidzās ar «datu nav». */
-export function checkThisRegHighlighted(jobStatus: string | null | undefined): boolean {
-  return jobStatus === "no_data";
+/** Izcelšana: dīlera ielase beidzās ar «datu nav» un marka/gads ir sarakstā. */
+export function checkThisRegHighlighted(jobStatus: string | null | undefined, make: string | null | undefined): boolean {
+  return jobStatus === "no_data" && Boolean(make);
 }
 
 export function checkThisRegHint(make: string): string {
