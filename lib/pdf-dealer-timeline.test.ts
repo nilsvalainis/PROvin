@@ -60,7 +60,7 @@ describe("dealer visit kind and gaps", () => {
       row("01.01.2018", "40000", "Eļļa"),
       row("01.08.2021", "95000", "Eļļa"),
     ]);
-    expect(summaryHtml).toContain("Garākais periods bez ierakstiem");
+    expect(summaryHtml).toContain("Garākais pārtraukums");
     expect(summaryHtml).not.toMatch(/robs/i);
     expect(summaryHtml).not.toMatch(/izlaist|kavēt|risk/i);
     const gapHtml = buildDealerGapMarkerHtml(gap!);
