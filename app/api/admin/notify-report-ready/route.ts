@@ -483,7 +483,7 @@ export async function POST(req: Request) {
         // esošo mapi pārvieto uz pareizo virsmapi (AUDITI -> BUSINESS / DILERA DATI), nevis veido jaunu.
         const productCategory = isManualOrderSessionId(sessionId) ? orderDropboxCategoryFromReportFilename(serverPdf.filename) : null;
         if (productCategory) await moveOrderDropboxFolderToCategory(sessionId, productCategory, client).catch(() => null);
-        // Jaunie pasūtījumi: tikai sava mape (AUDITI/..., DILERA DATI/...); vecajiem - mape pēc VIN `/_PROv` saknē.
+        // Jaunie pasūtījumi: tikai sava mape (pēc mapes id, arī arhīvā); vecajiem - mape pēc VIN `/_PROv` saknē.
         const saved = await saveFileToOrderFolderOrLegacy(sessionId, reportName, bytes, () =>
           saveFileToProvOrderFolder(client, car, reportName, bytes),
         );
