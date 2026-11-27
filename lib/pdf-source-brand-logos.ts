@@ -230,6 +230,23 @@ export function pdfDealerLogoDataUriFromVin(
   return pdfDealerLogoDataUriForKey(key, layout);
 }
 
+/**
+ * 27.11: dīlera sadaļas / dzīves ceļa logo. Ja nosaukumā ir tikai modelis («Passat Variant») un markas
+ * nav, `pdfDealerBrandFileKey` dod «passat» -> burta «P» monogramma. Tad marku ņem no VIN WMI (WVW -> VW).
+ * Monogramma paliek tikai tad, ja arī VIN marku nedod.
+ */
+export function pdfDealerLogoDataUriPreferBrand(
+  makeModel: string,
+  vin?: string | null,
+  layout: PdfDealerLogoLayout = "square",
+): string | null {
+  const fromName = pdfDealerLogoDataUri(makeModel, layout);
+  if (fromName && !pdfDealerLogoIsMonogram(fromName)) return fromName;
+  const fromVin = vin ? pdfDealerLogoDataUriFromVin(vin, layout) : null;
+  if (fromVin && !pdfDealerLogoIsMonogram(fromVin)) return fromVin;
+  return fromName ?? fromVin;
+}
+
 function listingHostname(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;

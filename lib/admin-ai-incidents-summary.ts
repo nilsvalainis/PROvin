@@ -18,6 +18,8 @@ import {
   toPdfManualVendorBlocks,
 } from "@/lib/admin-source-blocks";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
+import { applyExpertFieldGuards } from "@/lib/ai-expert-field-guards";
+import { stripUnauthorizedEuroAmounts } from "@/lib/source-summary-comment-format";
 
 export async function generateIncidentsSummaryWithAi(input: AiOrderContextInput): Promise<string> {
   const hasIncidents = orderHasIncidentDataForAi(input.sourceBlocks);
@@ -67,7 +69,8 @@ ${noIncidentHint}
 
 Sagatavo kopsavilkumu laukam „${ADMIN_INCIDENTS_SUMMARY_LABEL}”.
 ${hasIncidents ? "Analizē fiksētos negadījumu ierakstus visos avotos un to nozīmi pircējam. NEATKĀRTO jau uzrakstītos avotu komentārus gandrīz tādā pašā garumā - sintezē īsi un min tikai būtiskās pretrunas. OFICIĀLĀ DĪLERA DATU stikla / virsbūves remontu pie līdzīga datuma iekļauj kā tā paša notikuma papildinājumu." : hasDealerBodyWork ? "Nav apdrošināšanas ieraksta, bet ir dīlera virsbūves / stikla fakts - to pasaki, bez izdomātas avārijas." : "Šis ir „nav konstatēts” scenārijs - skaidri un mierīgi, bez dramatizēšanas."}
-Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; summas interpretē kontekstā, nevis kā pierādītu smagumu.`,
+Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; summas interpretē kontekstā, nevis kā pierādītu smagumu.
+EUR summas skaitļos NERAKSTI (tās ir negadījumu tabulā un avotu komentāros) - smagumu raksturo vārdos. Remontu neizdomā: bez „iespējams, nomainīts / pārkrāsots / kalibrēts”, ja avotā tāda darba nav.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
@@ -77,11 +80,14 @@ Garums: **2–4 rindkopas**. Tonis atturīgs: bez „kritisks”, „anomālija�
     },
   );
 
-  return adminGenerateExpertText({
+  const raw = await adminGenerateExpertText({
     modelTier: input.modelTier,
     systemInstruction: AI_INCIDENTS_SUMMARY_SYSTEM,
     userPrompt,
     qualityField: "incidents",
     temperature: 0.35,
   });
+  // 27.11 (S-AI2): deterministisks pēcfiltrs - EUR summas un remonta minējumi ārā (avotu komentāros EUR paliek).
+  const guarded = applyExpertFieldGuards(raw, { sourceText: orderContext });
+  return guarded.trim() ? guarded : stripUnauthorizedEuroAmounts(raw);
 }

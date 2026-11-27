@@ -213,7 +213,7 @@ import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import { CARFAX_ICON_SVG } from "@/lib/pdf-source-logo-svgs";
 import {
   pdfBrandLogoImgHtml,
-  pdfDealerLogoDataUri,
+  pdfDealerLogoDataUriPreferBrand,
   pdfListingPortalLogoDataUri,
   pdfListingPortalLogoId,
   PDF_SOURCE_LOGO_DATA_URI,
@@ -863,10 +863,11 @@ function buildPdfLifeImportHtml(e: LifecycleEvent): string {
   </li>`;
 }
 
-function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): string {
+function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = "", vin: string | null = null): string {
   const isAnomaly = e.kind === "anomaly";
   const isIncident = e.kind === "incident";
-  const dealerLogo = e.kind === "service" && dealerMakeHint ? pdfDealerLogoDataUri(dealerMakeHint) : null;
+  const dealerLogo =
+    e.kind === "service" && (dealerMakeHint || vin) ? pdfDealerLogoDataUriPreferBrand(dealerMakeHint, vin) : null;
   const titleIco =
     isAnomaly || isIncident
       ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
@@ -924,7 +925,7 @@ export function buildPdfLifecycleTimelineHtml(p: ClientReportPayload): string {
       items.push(buildPdfLifeImportHtml(e));
       continue;
     }
-    items.push(buildPdfLifeCardItemHtml(e, dealerMakeHint));
+    items.push(buildPdfLifeCardItemHtml(e, dealerMakeHint, p.vin ?? null));
   }
 
   const legend = buildPdfSourceLegendHtml(events.flatMap((e) => e.sources));
@@ -1254,8 +1255,8 @@ function ltabSectionIconHtml(): string {
   return pdfBrandLogoImgHtml(PDF_SOURCE_LOGO_DATA_URI.ltab);
 }
 
-function dealerSectionIconHtml(makeModel: string): string {
-  const uri = pdfDealerLogoDataUri(makeModel);
+function dealerSectionIconHtml(makeModel: string, vin?: string | null): string {
+  const uri = pdfDealerLogoDataUriPreferBrand(makeModel, vin);
   return uri ? pdfBrandLogoImgHtml(uri) : sectionIconPdfHtml("shieldCheck");
 }
 
@@ -2242,11 +2243,13 @@ function buildAutoRecordsAvotuSubsection(
   currentMileage?: import("@/lib/oil-change-intervals").OilCurrentReading | null,
   /** Nils 27.11.2026: BEV noteikšanai - CSDD degviela u.c. ārpus dīlera bloka. */
   bevHints?: { fuel?: string | null; engineCode?: string | null },
+  /** 27.11: markas logo no VIN, ja nosaukumā ir tikai modelis (citādi «P» monogramma Passat). */
+  vin?: string | null,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
   if (!b) {
-    const head = sectionHeadBrand(dealerSectionIconHtml(makeModel), PDF_SOURCE_DEALER_TITLE);
+    const head = sectionHeadBrand(dealerSectionIconHtml(makeModel, vin), PDF_SOURCE_DEALER_TITLE);
     return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${sparkHtml}</div></div>`;
   }
 
@@ -2369,7 +2372,7 @@ function buildAutoRecordsAvotuSubsection(
 
   const recordCount = dealerPdfRecordCount(b);
   const head = sectionHeadBrand(
-    dealerSectionIconHtml(makeModel),
+    dealerSectionIconHtml(makeModel, vin),
     PDF_SOURCE_DEALER_TITLE,
     sourceRecordCountBadgeHtml(recordCount),
   );
@@ -2387,7 +2390,12 @@ function buildAutoRecordsAvotuSubsection(
   if (hasComments) bodyParts.push(pdfAvotuCommentIsland(commentBlock));
   // Aprīkojums zem komentāra (dīlera PDF kanons).
   if (hasEquipment) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${equipmentHtml}</div>`);
-  return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${head}<div class="pdf-source-section-body">${bodyParts.join("\n")}</div></div>`;
+  // 27.11: virsraksts nedrīkst palikt lapas apakšā viens - tas un pirmais bloks ir viena nedalāma grupa
+  // (break-after:avoid vien Chromium neievēro, ja pirmais bloks ir nedalāms un nesaiet lapā).
+  const [firstPart, ...restParts] = bodyParts;
+  const keepHead = `<div class="pdf-keep-head pdf-keep-head--dealer">${head}<div class="pdf-source-section-body">${firstPart ?? ""}</div></div>`;
+  const rest = restParts.length > 0 ? `<div class="pdf-source-section-body">${restParts.join("\n")}</div>` : "";
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card ${sourceZoneClass(SOURCE_BLOCK_LABELS.auto_records)}" role="region">${keepHead}${rest}</div>`;
 }
 
 /** Starptautiskā vēsture - sarkanie karogi un vēsture; specifikācijas netiek dublētas. */
@@ -2911,6 +2919,7 @@ function buildAvotuDatiSectionHtml(
     countryEvidenceFromRows(sparkCtx.rows),
     latestMileageReading(sparkCtx.rows),
     { fuel: p.csddForm?.fuelType ?? null },
+    p.vin ?? null,
   );
   const ccVin = buildCcVinAvotuSubsection(
     p.ccVinBlock ?? null,
@@ -3162,6 +3171,7 @@ ${clientReportPageChromeCss(running)}
         break-after:avoid;page-break-after:avoid;
       }
       .pdf-keep-head{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-keep-head--dealer + .pdf-source-section-body{margin-top:var(--pdf-gap-block);}
       .pdf-sec-head + .pdf-unified-mileage-zone__body > :first-child,
       .pdf-sec-head + .pdf-unified-incidents-zone__body > :first-child,
       .pdf-sec-head + .pdf-source-section-body > :first-child,

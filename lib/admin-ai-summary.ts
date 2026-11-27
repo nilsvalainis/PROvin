@@ -19,11 +19,17 @@ import {
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
+import { applyExpertFieldGuards, type ExpertFieldGuardOptions } from "@/lib/ai-expert-field-guards";
+import { gearboxPromptBlock, resolveCanonicalGearbox } from "@/lib/gearbox-kind-guard";
 
-function finalizeSummaryComment(text: string): string {
+function finalizeSummaryComment(text: string, guards: ExpertFieldGuardOptions = {}): string {
   // PROVIN kopsavilkumā nav IRISS zīmoga (zīmolu nošķiršana).
+  // 27.11 (S-AI1/S-AI2): EUR, remonta minējumi, bezavota kalibrēšana, kārbai pretrunīgi teikumi.
   return stripIrissBrandStamp(
-    stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(stripSummaryDualismOpener(text))),
+    applyExpertFieldGuards(
+      stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(stripSummaryDualismOpener(text))),
+      guards,
+    ),
   );
 }
 
@@ -60,11 +66,19 @@ export async function generateSummaryAnalysisWithAi(input: AiOrderContextInput):
   const makeModel = blocks.csdd.makeModel.trim();
   const fuel = blocks.csdd.fuelType.trim();
   const vehicleHint = [makeModel, fuel].filter(Boolean).join(", ");
+  const gearbox = resolveCanonicalGearbox({ sourceBlocks: blocks, vin: input.vin, contextText: orderContext });
+  const gearboxBlock = gearboxPromptBlock(gearbox);
+  // Avotu teksts kalibrēšanas pārbaudei: konteksts + jau sagatavotās sadaļas.
+  const guards: ExpertFieldGuardOptions = {
+    gearbox,
+    sourceText: [orderContext, techText, inspectionText].filter(Boolean).join("\n"),
+  };
+  const finalize = (t: string) => finalizeSummaryComment(t, guards);
 
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
-
+${gearboxBlock ? `\n${gearboxBlock}\n` : ""}
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
 
 Uzdevums: apspriestie **fakti** + **tikai ja vajag** ieteikumi ar **pārbaudi servisā**. Sāc ar faktu, ne ar vēstures vērtējumu. Bez dual-history ievada, bez on-one-hand pretstatījuma.
@@ -103,8 +117,8 @@ OBLIGĀTI:
       temperature: 0.3,
       stream: input.stream,
     });
-    return throwIfBlankGeneratedComment(finalizeSummaryComment(raw));
+    return throwIfBlankGeneratedComment(finalize(raw));
   } catch (e) {
-    rethrowNormalizedIncompleteComment(e, finalizeSummaryComment);
+    rethrowNormalizedIncompleteComment(e, finalize);
   }
 }

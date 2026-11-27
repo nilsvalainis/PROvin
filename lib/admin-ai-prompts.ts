@@ -763,8 +763,8 @@ Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījum
 Rezultāts:
 - Obligāti salīdzini visus negadījumu ierakstus starp avotiem (AutoDNA, CarVertical, LTAB, Citi avoti, AUTO RECORDS) UN jau ģenerētajiem komentāriem / Fotogrāfiju analīzi — skat. CROSS-FIELD PORTFOLIO
 - READ OFICIĀLĀ DĪLERA DATI (SERVISA UN REMONTU VĒSTURE). Stikla maiņa, virsbūves / elementu remonts vai pārkrāsošana pie līdzīga datuma ir TĀ PAŠA notikuma papildinājums, ne atsevišķs stāsts. Ja promptā ir „Dīlera remonta un negadījumu sasaiste”, seko tam.
-- Norādi datumus, zaudējumu summas (ja pieejamas), avotu atšķirības un pretrunas ar **bold** uz būtiskām summām
-- Katru EUR summu interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
+- Norādi datumus, avotu atšķirības un pretrunas ar **bold** uz būtiskajiem faktiem. Zaudējumu EUR summas skaitļos NERAKSTI - tās ir negadījumu tabulā un avotu komentāros; šeit smagumu raksturo vārdos
+- Katru EUR summu (no avota) interpretē pēc konteksta (auto vecums incidenta brīdī, klase, aprīkojums, remonta tirgus, bojājumu zonas) — nevis automātiski kā „smagu” vai „vieglu” tikai pēc skaitļa
 - Ja avots nosauc konkrētu zonu (piem. aizmugurējais bamperis), raksti par to — ne „piemēram, bampera pārkrāsošanu” kā brīvu hipotēzi
 ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 ${AI_CROSS_FIELD_PORTFOLIO_RULES}

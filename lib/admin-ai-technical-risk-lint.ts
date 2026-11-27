@@ -18,6 +18,8 @@ import {
   textMentionsDealerCampaigns,
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
+import { findGearboxContradictions, type CanonicalGearbox } from "@/lib/gearbox-kind-guard";
+import { findExpertFieldIssues } from "@/lib/ai-expert-field-guards";
 
 export type TechnicalRiskLintLevel = "E" | "W";
 
@@ -34,6 +36,10 @@ export type TechnicalRiskLintInput = {
   allowCostBands?: boolean;
   /** OneAuto dīlera fakti (L14/L15). Bez tiem šīs pārbaudes neizpildās. */
   dealerFacts?: DealerFacts | null;
+  /** 27.11 (S-AI1): kanoniskā kārba no visiem avotiem. Bez tās L17 neizpildās. */
+  gearbox?: CanonicalGearbox | null;
+  /** 27.11 (S-AI2): avotu teksts «kalibrēšanas» pārbaudei (L18). */
+  sourceText?: string | null;
 };
 
 export type TechnicalRiskLintResult = {
@@ -312,6 +318,28 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
         message: "Dīlera datos ir kampaņa / servisa akcija, bet tekstā tā nav minēta (ID vai datums).",
       });
     }
+  }
+
+  if (input.gearbox) {
+    const hits = findGearboxContradictions(text, input.gearbox);
+    if (hits.length > 0) {
+      issues.push({
+        id: "L17",
+        level: "E",
+        message: `Teksts runā pretī ielādētajai kārbai (${input.gearbox.labelLv}): „${hits[0]!.sentence.slice(0, 160)}”. Šo tēmu izmet.`,
+      });
+    }
+  }
+
+  const speculation = findExpertFieldIssues(text, { sourceText: input.sourceText }).filter(
+    (i) => i.id === "repair_guess" || i.id === "calibration",
+  );
+  if (speculation.length > 0) {
+    issues.push({
+      id: "L18",
+      level: "E",
+      message: `Remonta minējums bez avota: „${speculation[0]!.sentence.slice(0, 160)}”. Raksti tikai avotā fiksēto.`,
+    });
   }
 
   const errors = issues.filter((i) => i.level === "E");

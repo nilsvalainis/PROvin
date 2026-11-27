@@ -53,6 +53,14 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
+import {
+  gearboxPromptBlock,
+  resolveCanonicalGearbox,
+  stripGearboxContradictions,
+  textContradictsGearbox,
+  type CanonicalGearbox,
+} from "@/lib/gearbox-kind-guard";
+import { stripRepairSpeculation } from "@/lib/ai-expert-field-guards";
 import { formatApplicableUnitFactsForPrompt, parseVehicleYear } from "@/lib/unit-facts/check";
 import { buildCanonicalFactsSheet } from "@/lib/canonical-facts-sheet";
 import {
@@ -98,7 +106,12 @@ function buildLegacyUserPrompt(input: AiOrderContextInput, identificationBrief: 
   const identity = extractLoadedPowertrainIdentity(blocks, { vin: input.vin });
   const fuel = identity.fuelRaw || blocks.csdd.fuelType.trim();
   const vehicleHint = [makeModel, fuel, identity.engineCode].filter(Boolean).join(", ");
-  const powertrainBlock = powertrainIdentityPromptBlock(identity);
+  const powertrainBlock = [
+    powertrainIdentityPromptBlock(identity),
+    gearboxPromptBlock(resolveCanonicalGearbox({ sourceBlocks: blocks, vin: input.vin, contextText: orderContext })),
+  ]
+    .filter((s) => s.trim())
+    .join("\n\n");
   const verifiedFacts = unitFactsPromptBlock(input, identificationBrief);
   // j26: v1 (noklusējums, ja TECH_RISK_V2 != "1") saņem to pašu dīlera faktu brīfu kā v2.
   const dealerFactsBrief = buildDealerFactsBrief(
@@ -172,7 +185,8 @@ async function generateV1(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       maxTokens: 16_000,
       stream: input.stream,
     });
-    return { text: finalizeText(raw) };
+    const gearbox = resolveCanonicalGearbox({ sourceBlocks: blocks, vin: input.vin, contextText: orderContext });
+    return applyTechRiskFinalGuards({ text: finalizeText(raw) }, gearbox, orderContext);
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
       stripUnauthorizedEuroAmounts(
@@ -199,6 +213,7 @@ async function generateTextFromMap(
   tiers: TechRiskV2Tiers,
   lintErrors?: string,
   dealerFactsBrief?: string,
+  gearbox?: CanonicalGearbox | null,
 ): Promise<string> {
   const hideEur = map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE;
   const verified = PROVIN_KB_EUR_ACTIVE ? verifiedKbCostBandsFromMap(map) : [];
@@ -213,7 +228,7 @@ async function generateTextFromMap(
 ${buildCanonicalFactsSheet(input)}
 
 ${powertrainIdentityPromptBlock(extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin }))}
-
+${gearbox ? `\n${gearboxPromptBlock(gearbox)}\n` : ""}
 ${costNote}
 
 Ja kartē unknowns[] vai confidence C, neraksti minējumu un NERAKSTI aizpildītāju. Sadaļu izlaiž.
@@ -291,6 +306,9 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     .filter((s) => s.trim())
     .join("\n\n");
   const safeOrderContext = redactDealerOriginalLanguage(orderContext, dealerFacts);
+  // 27.11 (S-AI1): kanoniskā kārba no dīlera / izsoles / AutoDNA / konteksta.
+  const gearbox = resolveCanonicalGearbox({ sourceBlocks: blocks, vin: input.vin, contextText: orderContext });
+  const gearboxBrief = gearboxPromptBlock(gearbox);
   try {
     const rawMap = {
       ...(await generateTechnicalRiskMapWithAi({
@@ -302,9 +320,12 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         unitFactsBrief: verifiedFacts,
         tiers,
         anthropicComponents,
+        gearboxBrief,
       })),
       ...(input.hideTechnicalRiskCostBands ? { hide_cost_bands: true as const } : {}),
     };
+    // Kartes riski, kas runā pretī kārbai (manuālajai - DSG / mehatronika), netiek tālāk tekstā.
+    rawMap.risks = rawMap.risks.filter((r) => !textContradictsGearbox(r.component, gearbox));
     const dealerMapIssues = checkMapAgainstDealerFacts(rawMap, dealerFacts);
     const filledMap = fillAlreadyDoneEvidenceFromDealer(rawMap, dealerFacts);
     const foreignBefore = collectForeignDealerLanguageFlags(null, filledMap, {
@@ -312,7 +333,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       facts: dealerFacts,
     });
     const map = replaceForeignAlreadyDoneEvidenceFromDealer(filledMap, dealerFacts);
-    let text = await generateTextFromMap(input, map, sourceFactsBrief, tiers, undefined, dealerFactsBrief);
+    let text = await generateTextFromMap(input, map, sourceFactsBrief, tiers, undefined, dealerFactsBrief, gearbox);
     const qa = await qaTechnicalRiskText({ text, map, dealerFactsBrief, modelTier: tiers.qa });
     if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
       text = finalizeText(qa.rewritten_text, keepVerifiedEur(map));
@@ -326,6 +347,8 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       map,
       allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
       dealerFacts,
+      gearbox,
+      sourceText: orderContext,
     });
     if (first.errors.length > 0) {
       text = await generateTextFromMap(
@@ -335,6 +358,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         tiers,
         formatTechnicalRiskLintErrors(first.errors),
         dealerFactsBrief,
+        gearbox,
       );
       const second = lintTechnicalRiskText({
         text,
@@ -342,9 +366,11 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         map,
         allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
         dealerFacts,
+        gearbox,
+        sourceText: orderContext,
       });
       if (second.errors.length > 0) {
-        return {
+        return applyTechRiskFinalGuards({
           text,
           technicalRiskMap: map,
           lintWarning: `Tehnisko risku validators joprojām redz kļūdas pēc vienas pārģenerēšanas: ${formatTechnicalRiskLintErrors(second.errors)}`,
@@ -356,10 +382,10 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
               facts: dealerFacts,
             }),
           ]),
-        };
+        }, gearbox, orderContext);
       }
     }
-    return {
+    return applyTechRiskFinalGuards({
       text,
       technicalRiskMap: map,
       operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), [
@@ -370,7 +396,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
           facts: dealerFacts,
         }),
       ]),
-    };
+    }, gearbox, orderContext);
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
       stripUnauthorizedEuroAmounts(
@@ -378,6 +404,20 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       ),
     );
   }
+}
+
+/**
+ * 27.11 (S-AI1/S-AI2): pēdējais drošības tīkls pēc lint/pārģenerēšanas - kārbai pretrunīgi teikumi
+ * un remonta minējumi ārā (EUR jau apstrādāts finalizeText).
+ */
+function applyTechRiskFinalGuards(
+  result: TechnicalRiskAnalysisResult,
+  gearbox: CanonicalGearbox,
+  sourceText: string,
+): TechnicalRiskAnalysisResult {
+  const cleaned = stripGearboxContradictions(stripRepairSpeculation(result.text, { sourceText }), gearbox);
+  if (cleaned === result.text || !cleaned.trim()) return result;
+  return { ...result, text: cleaned };
 }
 
 export async function generateTechnicalRiskAnalysisWithAi(
