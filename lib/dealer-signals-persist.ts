@@ -11,7 +11,9 @@ export const DEALER_SIGNAL_KINDS = [
   "incidents",
   "us_history",
   "auction_photos",
+  "archive_photos",
   "foreign_registry",
+  "extra_history",
 ] as const;
 export type DealerSignalKind = (typeof DEALER_SIGNAL_KINDS)[number];
 

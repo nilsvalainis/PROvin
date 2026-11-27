@@ -142,12 +142,15 @@ describe("«+ Pievienot signālu» (Nils 27.11)", () => {
     const html = renderToStaticMarkup(
       <DealerSignalsAddMenu state={{ enabled: false, items: [{ kind: "incidents", checked: true }] }} onAdd={() => {}} />,
     );
-    expect(html.match(/data-dealer-signals-add-kind=/g)).toHaveLength(6);
+    expect(html.match(/data-dealer-signals-add-kind=/g)).toHaveLength(8);
     expect(html).toMatch(/disabled="" data-dealer-signals-add-kind="incidents"/);
     expect(html).not.toMatch(/disabled="" data-dealer-signals-add-kind="mileage_mismatch"/);
     expect(html).toContain("Nobraukuma nesakritība");
     expect(html).toContain("ASV vēsture");
     expect(html).toContain("Īpašs statuss");
     expect(html).toMatch(/data-dealer-signals-add-kind="special_status" class="[^"]*text-\[#b42318\]/);
+    expect(html).toMatch(/data-dealer-signals-add-kind="archive_photos" class="[^"]*text-\[#B45309\]/);
+    expect(html).toContain("Arhīva fotogrāfijas");
+    expect(html).toContain("Papildu vēstures ieraksti");
   });
 });

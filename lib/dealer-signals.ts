@@ -64,11 +64,23 @@ export const DEALER_SIGNAL_TITLES: Record<DealerSignalKind, L4> = {
     ru: "Фотографии с аукционов",
     de: "Auktionsfotos",
   },
+  archive_photos: {
+    lv: "Arhīva fotogrāfijas",
+    en: "Archive photos",
+    ru: "Архивные фотографии",
+    de: "Archivfotos",
+  },
   foreign_registry: {
     lv: "Citas valsts reģistra dati",
     en: "Foreign registry data",
     ru: "Данные реестра другой страны",
     de: "Registerdaten aus einem anderen Land",
+  },
+  extra_history: {
+    lv: "Papildu vēstures ieraksti",
+    en: "Additional history records",
+    ru: "Дополнительные записи истории",
+    de: "Zusätzliche Historieneinträge",
   },
 };
 
@@ -103,11 +115,23 @@ export const DEALER_SIGNAL_DEFAULT_TEXTS: Record<DealerSignalKind, L4> = {
     ru: "Доступны фотографии с аукционов",
     de: "Auktionsfotos sind verfügbar",
   },
+  archive_photos: {
+    lv: "Pieejamas vēsturiskas fotogrāfijas (piem. bojājumi, izsoles, sludinājumi)",
+    en: "Historical photos are available (e.g. damage, auctions, listings)",
+    ru: "Доступны исторические фотографии (например, повреждения, аукционы, объявления)",
+    de: "Historische Fotos sind verfügbar (z. B. Schäden, Auktionen, Inserate)",
+  },
   foreign_registry: {
     lv: "Pieejami citas valsts reģistra dati",
     en: "Registry data from another country is available",
     ru: "Доступны данные реестра другой страны",
     de: "Registerdaten aus einem anderen Land sind verfügbar",
+  },
+  extra_history: {
+    lv: "Citos avotos pieejami papildu vēstures ieraksti",
+    en: "Additional history records are available from other sources",
+    ru: "В других источниках доступны дополнительные записи истории",
+    de: "In anderen Quellen sind zusätzliche Historieneinträge verfügbar",
   },
 };
 
@@ -121,9 +145,13 @@ export function isDealerSignalAlert(kind: DealerSignalKind): boolean {
   return DEALER_SIGNAL_ALERT_KINDS.has(kind);
 }
 
+/** Oranžā rinda pēc noklusējuma (Nils 27.11: maksas priekšskatu arhīva foto). */
+export const DEALER_SIGNAL_ORANGE_KINDS: ReadonlySet<DealerSignalKind> = new Set<DealerSignalKind>(["archive_photos"]);
+
 /** Noklusētā krāsa pēc tipa (vecie ieraksti bez `tone`). */
 export function dealerSignalDefaultTone(kind: DealerSignalKind): DealerSignalTone {
-  return isDealerSignalAlert(kind) ? "red" : "neutral";
+  if (isDealerSignalAlert(kind)) return "red";
+  return DEALER_SIGNAL_ORANGE_KINDS.has(kind) ? "orange" : "neutral";
 }
 
 /** Krāsa: admina izvēlētā vai noklusējums pēc tipa. */
@@ -159,7 +187,9 @@ export const DEALER_SIGNAL_ADMIN_KIND_LV: Record<DealerSignalKind, string> = {
   incidents: "Negadījumi",
   us_history: "ASV",
   auction_photos: "Foto",
+  archive_photos: "Arhīva foto",
   foreign_registry: "Reģistrs",
+  extra_history: "Vēsture",
 };
 
 /** Klusā audita saite. */
@@ -298,6 +328,18 @@ export function emptyDealerSignalsState(): DealerSignalsState {
 }
 
 /**
+ * Izsoļu foto un arhīva foto klientam ir viena doma: ja abi sarakstā un tieši viens ir manuāls,
+ * automātiski atrasto nepievieno (admina rinda to jau saka). Abi manuāli - paliek abi (admina izvēle).
+ */
+function withoutPhotoDuplicate(items: DealerSignalItem[]): DealerSignalItem[] {
+  const a = items.find((i) => i.kind === "auction_photos");
+  const b = items.find((i) => i.kind === "archive_photos");
+  if (!a || !b || Boolean(a.manual) === Boolean(b.manual)) return items;
+  const drop = a.manual ? b : a;
+  return items.filter((i) => i !== drop);
+}
+
+/**
  * «Pārģenerēt no datiem»: atrastie tipi (ķeksēti), esošie ķekši un labotie teksti paliek tiem tipiem,
  * kas joprojām ir datos. Slēdzis «Ir PDF» netiek mainīts (nekad neieslēdzas automātiski).
  */
@@ -322,7 +364,7 @@ export function regenerateDealerSignals(
     // Admina izvēlētā krāsa paliek arī atiestatot (Nils 27.11).
     items.push(kept ? { ...kept, kind } : { kind, checked: true, ...(p?.tone ? { tone: p.tone } : {}) });
   }
-  return { enabled: current?.enabled === true, items };
+  return { enabled: current?.enabled === true, items: withoutPhotoDuplicate(items) };
 }
 
 /** Tipi, ko var pievienot manuāli (vēl nav sarakstā - viens ieraksts uz tipu). */

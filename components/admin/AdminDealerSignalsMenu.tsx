@@ -15,7 +15,7 @@ import {
   dealerSignalsMissingTranslations,
   dealerSignalsPdfRows,
   dealerSignalsSectionOn,
-  isDealerSignalAlert,
+  dealerSignalDefaultTone,
   isDealerSignalTextAllowed,
   regenerateDealerSignals,
   dealerSignalTone,
@@ -33,6 +33,13 @@ const TONE_LABEL_CLASS: Record<DealerSignalTone, string> = {
   red: "text-[#b42318]",
   orange: "text-[#B45309]",
   neutral: "text-[var(--color-provin-muted)]",
+};
+
+/** «+ Pievienot signālu» izvēlnē - tipa noklusējuma krāsa. */
+const ADD_MENU_TONE_CLASS: Record<DealerSignalTone, string> = {
+  red: "text-[#b42318]",
+  orange: "text-[#B45309]",
+  neutral: "text-[var(--color-apple-text)]",
 };
 
 /** Krāsu apļi. */
@@ -190,7 +197,7 @@ function useDealerSignalsTranslation(
 
 /**
  * «+ Pievienot signālu» izvēlne (Nils 27.11): visi tipi; jau esošais (automātisks vai manuāls) - neaktīvs.
- * Sarkanā krāsā tipi, kas PDF ir sarkani.
+ * Teksta krāsa - tipa noklusējuma krāsa PDF (sarkans / oranžs / parasts).
  */
 export function DealerSignalsAddMenu({
   state,
@@ -214,7 +221,7 @@ export function DealerSignalsAddMenu({
             disabled={has}
             data-dealer-signals-add-kind={kind}
             onClick={() => onAdd(kind)}
-            className={`${touch ? "min-h-11 text-[15px]" : "h-7 text-[12px]"} rounded-lg border border-[var(--admin-border-subtle)] px-2.5 text-left font-semibold disabled:cursor-default disabled:opacity-40 ${isDealerSignalAlert(kind) ? "text-[#b42318]" : "text-[var(--color-apple-text)]"}`}
+            className={`${touch ? "min-h-11 text-[15px]" : "h-7 text-[12px]"} rounded-lg border border-[var(--admin-border-subtle)] px-2.5 text-left font-semibold disabled:cursor-default disabled:opacity-40 ${ADD_MENU_TONE_CLASS[dealerSignalDefaultTone(kind)]}`}
           >
             {DEALER_SIGNAL_TITLES[kind].lv}
           </button>
