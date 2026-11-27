@@ -211,6 +211,23 @@ describe("evaluateDealerQualityGate", () => {
     }
   });
 
+  it("(d) ieteikums EN / RU / DE (PRO klienta valodas) -> aizturētu; ražotāja «recommended interval» nav ieteikums", () => {
+    for (const sentence of [
+      "We recommend asking the seller for the 2022 service invoices.",
+      "Рекомендуется проверить пневматическую подвеску при осмотре.",
+      "Wir empfehlen, die Rechnungen beim Verkäufer anzufordern.",
+    ]) {
+      const gate = evaluateDealerQualityGate(base({ comments: `${COMMENTS_OK} ${sentence}` }));
+      const c = check(gate, "forbidden");
+      expect(c.state, sentence).toBe("fail");
+      expect(c.reason).toContain("ieteikums");
+    }
+    const okGate = evaluateDealerQualityGate(
+      base({ comments: `${COMMENTS_OK} The recommended interval is 30 000 km or 24 months.` }),
+    );
+    expect(check(okGate, "forbidden").state).toBe("ok");
+  });
+
   it("(e) reģistrs 1 dzenošā ass, AI raksta 4Motion -> aizturētu", () => {
     const gate = evaluateDealerQualityGate(
       base({
