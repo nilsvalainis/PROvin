@@ -5516,7 +5516,8 @@ export function OrderDetailWorkspace({
             ) : null}
           </h2>
           {/* 22.11: telefonā pogas pārnesas jaunā rindā, nevis iziet ārpus ekrāna. */}
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5 max-sm:min-w-0 max-sm:max-w-full max-sm:shrink">
+          {/* 27.11: pogas pārnesas jaunā rindā jebkurā platumā - nekas netiek nogriezts labajā malā. */}
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
             {payload.aiAllowed ? (
               <button
                 type="button"
@@ -6936,13 +6937,16 @@ export function OrderDetailWorkspace({
               }}
             />
           </span>
-          <span className="max-md:hidden">
+          {/* 27.11: AI izmaksu teksts ir mazāk svarīgs - šaurākā ekrānā (<1280 px) to slēpjam, lai paliek vieta soļiem. */}
+          <span className="max-xl:hidden">
             <AdminAiSessionCostBar />
           </span>
           </div>
           {/* Telefonā abas rindas saplūst vienā velkamā sliedē: `contents` izņem rindu
               iepakojumu, tāpēc soļi paliek pareizā secībā un desktop režģis nemainās. */}
-          <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
+          {/* 27.11 (Nils): soļu pārslēdzējam garantēts platums - ja rindā nepietiek vietas, tas pāriet
+              nākamajā rindā, nevis saspiežas līdz punktiem bez nosaukumiem. */}
+          <div className="order-1 flex min-w-0 flex-1 flex-col gap-1 md:min-w-[34rem] max-md:snap-x max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:order-2">
             {([1, 2] as const).map((row) => {
               const cols = row === 1 ? "grid-cols-7" : "grid-cols-8";
               return (
@@ -6983,7 +6987,7 @@ export function OrderDetailWorkspace({
             })}
           </div>
           <div
-            className={`order-3 ml-auto hidden min-w-0 max-w-full shrink-0 flex-col items-stretch gap-0.5 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 md:flex dark:bg-white/[0.06] ${
+            className={`order-3 ml-auto hidden max-w-full flex-none flex-col items-stretch gap-0.5 rounded-lg border border-[var(--admin-border-subtle)] bg-black/[0.03] px-1.5 py-0.5 md:flex dark:bg-white/[0.06] ${
               vinBar ? "" : "text-[var(--color-provin-muted)]"
             }`}
           >

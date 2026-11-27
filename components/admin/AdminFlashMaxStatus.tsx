@@ -36,7 +36,7 @@ export function AdminFlashMaxStatusChip({
       aria-controls={controlsId}
       data-flash-max-status={status.tone}
       title={status.chip}
-      className={`inline-flex h-7 min-w-0 max-w-[15rem] flex-none items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold transition hover:brightness-95 ${TONE_CHIP[status.tone]}`}
+      className={`inline-flex h-7 min-w-0 max-w-[15rem] shrink items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold transition hover:brightness-95 ${TONE_CHIP[status.tone]}`}
     >
       {status.tone === "busy" ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden /> : null}
       <span className="min-w-0 truncate">{status.chip}</span>
