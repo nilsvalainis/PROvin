@@ -10,7 +10,7 @@ export const maxDuration = 120;
 
 /** base64 no 3 MB PDF + dati + teksts. */
 const MAX_BODY_CHARS = 4_600_000;
-const STATES: readonly TraficomFiRelayEvent["state"][] = ["queued", "awaiting_eparaksts", "searching", "result", "error"];
+const STATES: readonly TraficomFiRelayEvent["state"][] = ["queued", "awaiting_eparaksts", "awaiting_browser_code", "searching", "result", "error"];
 
 function str(v: unknown, max: number): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -45,6 +45,12 @@ export async function POST(req: Request) {
     jobId: str(raw.jobId, 80),
     vin: str(raw.vin, 20).toUpperCase(),
     ...(str(raw.verificationCode, 8) ? { verificationCode: str(raw.verificationCode, 8) } : {}),
+    ...(str(raw.codeExpiresAt, 40) && Number.isFinite(Date.parse(str(raw.codeExpiresAt, 40))) ? { codeExpiresAt: str(raw.codeExpiresAt, 40) } : {}),
+    ...(raw.codeExpired === true ? { codeExpired: true } : {}),
+    ...(typeof raw.browserCodeAttempt === "number" && Number.isInteger(raw.browserCodeAttempt) && raw.browserCodeAttempt > 0 && raw.browserCodeAttempt < 10
+      ? { browserCodeAttempt: raw.browserCodeAttempt }
+      : {}),
+    ...(raw.browserCodeRejected === true ? { browserCodeRejected: true } : {}),
     ...(typeof raw.found === "boolean" ? { found: raw.found } : {}),
     ...(typeof raw.rawText === "string" && raw.rawText ? { rawText: raw.rawText.slice(0, 60_000) } : {}),
     ...(raw.data && typeof raw.data === "object" ? { data: raw.data as TraficomFiRelayEvent["data"] } : {}),

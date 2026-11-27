@@ -16,6 +16,7 @@ import { recordSourceOutcomes } from "@/lib/source-health-store";
 import {
   applyTraficomFiResultToBlock,
   isTraficomOrderRef,
+  normalizeTraficomBrowserCode,
   readTraficomFiRelayConfig,
   reduceTraficomFiProgress,
   reduceTraficomFiResult,
@@ -94,6 +95,30 @@ export async function releaseTraficomFiRelaySession(): Promise<{ ok: boolean; se
     return { ok: true, session: (out.json.session as TraficomFiRelaySession | undefined) ?? null };
   } catch {
     return { ok: false, session: null };
+  }
+}
+
+export type SubmitTraficomFiBrowserCodeResult =
+  | { ok: true; session: TraficomFiRelaySession | null }
+  | { ok: false; error: "invalid_code" | "not_waiting" | "relay_unavailable"; session: TraficomFiRelaySession | null };
+
+/**
+ * eParaksts "confirm this browser": kods no Nila eParaksts lietotnes -> relejs ievada un spiež "Confirm".
+ * `renew` - «Pieprasīt jaunu kodu» (relejs pārlādē eParaksts lapu; SMS nekad). Kods netiek logots / saglabāts.
+ */
+export async function submitTraficomFiBrowserCode(input: { code?: string; renew?: boolean }): Promise<SubmitTraficomFiBrowserCodeResult> {
+  const code = input.renew ? "" : normalizeTraficomBrowserCode(input.code);
+  if (!input.renew && !code) return { ok: false, error: "invalid_code", session: null };
+  try {
+    const out = await relayFetch("/session/browser-code", { method: "POST", body: input.renew ? { renew: true } : { code }, timeoutMs: 10_000 });
+    if (!out) return { ok: false, error: "relay_unavailable", session: null };
+    const session = (out.json.session as TraficomFiRelaySession | undefined) ?? null;
+    if (out.res.ok) return { ok: true, session };
+    if (out.json.error === "invalid_code") return { ok: false, error: "invalid_code", session };
+    if (out.json.error === "not_waiting") return { ok: false, error: "not_waiting", session };
+    return { ok: false, error: "relay_unavailable", session };
+  } catch {
+    return { ok: false, error: "relay_unavailable", session: null };
   }
 }
 
@@ -267,6 +292,17 @@ export async function handleTraficomFiRelayEvent(
           : "Apstiprini pieteikšanos eParaksts mobile lietotnē (Somijas Traficom, 5 min).",
         url: adminUrl,
         tag: "traficom-eparaksts",
+        audience: "pro",
+      });
+    }
+    if (ev.state === "awaiting_browser_code" && !ev.codeExpired && !(prev?.state === "awaiting_browser_code" && prev.browserCodeAttempt === status.browserCodeAttempt)) {
+      await sendAdminPush({
+        title: "Traficom: ievadi kodu no eParaksts",
+        body: status.browserCodeRejected
+          ? "Kods netika pieņemts. Atver eParaksts lietotni un ievadi jauno kodu FIN blokā."
+          : "eParaksts prasa apstiprināt servera pārlūku. Atver eParaksts lietotni un ievadi kodu FIN blokā.",
+        url: adminUrl,
+        tag: "traficom-browser-code",
         audience: "pro",
       });
     }

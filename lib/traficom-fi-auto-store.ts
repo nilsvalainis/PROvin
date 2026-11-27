@@ -23,6 +23,7 @@ const STATES: readonly TraficomFiAutoState[] = [
   "not_configured",
   "queued",
   "awaiting_eparaksts",
+  "awaiting_browser_code",
   "searching",
   "found",
   "not_found",
@@ -56,6 +57,12 @@ export function parseTraficomFiAutoStatus(raw: unknown): TraficomFiAutoStatus | 
     ...(str(o.vin, 20) ? { vin: str(o.vin, 20) } : {}),
     ...(str(o.jobId, 80) ? { jobId: str(o.jobId, 80) } : {}),
     ...(code && /^[0-9A-Za-z]{2,8}$/.test(code) ? { verificationCode: code } : {}),
+    ...(str(o.codeExpiresAt, 40) && Number.isFinite(Date.parse(str(o.codeExpiresAt, 40)!)) ? { codeExpiresAt: str(o.codeExpiresAt, 40) } : {}),
+    ...(o.codeExpired === true ? { codeExpired: true } : {}),
+    ...(typeof o.browserCodeAttempt === "number" && Number.isInteger(o.browserCodeAttempt) && o.browserCodeAttempt > 0 && o.browserCodeAttempt < 10
+      ? { browserCodeAttempt: o.browserCodeAttempt }
+      : {}),
+    ...(o.browserCodeRejected === true ? { browserCodeRejected: true } : {}),
     ...(str(o.message) ? { message: str(o.message) } : {}),
     ...(str(o.requestedAt, 40) ? { requestedAt: str(o.requestedAt, 40) } : {}),
     ...(str(o.checkedAt, 40) ? { checkedAt: str(o.checkedAt, 40) } : {}),

@@ -22,6 +22,7 @@ import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
+import { AdminTraficomBrowserCodeForm } from "@/components/admin/AdminTraficomBrowserCodeForm";
 import { useVinScanTraficom } from "@/components/admin/vin-scan-v4/useVinScanTraficom";
 import { traficomFiAutoSignal, traficomFiScanRowView } from "@/lib/traficom-fi-auto-logic";
 import { isTraficomFiAutoActive } from "@/lib/traficom-fi-auto-types";
@@ -779,6 +780,7 @@ export function AdminVinScanPanel({
                     {traficom.status?.state === "found" || traficom.status?.state === "not_found" ? "Traficom (FI) vēlreiz" : "Traficom (FI)"}
                   </button>
                 ) : null}
+                {traficom.status?.state === "awaiting_browser_code" ? <AdminTraficomBrowserCodeForm source={traficom.status} /> : null}
                 {canRetry ? (
                   <button type="button" onClick={() => void retryUnknown()} className={VIN_SCAN_V4_BTN}>
                     Atkārtot neizdevušos

@@ -15,6 +15,7 @@ import {
   buildTraficomData,
   buildTraficomRawText,
   classifySnapshot,
+  extractCodeValidSeconds,
   extractVerificationCode,
   isEparakstsHost,
   isFeeSectionTitle,
@@ -131,6 +132,8 @@ async function clickByText(page, re, { selector = 'button, input[type="submit"],
     const text = ((await el.textContent().catch(() => "")) || (await el.getAttribute("value").catch(() => "")) || "").replace(/\s+/g, " ").trim();
     if (!re.test(text)) continue;
     if (/cancel|atcelt|peruuta|keskeyt|log\s*out|kirjaudu\s+ulos|iziet/i.test(text)) continue;
+    // eParaksts "Send code via SMS" - nekad automātiski.
+    if (/\bsms\b|send\s+(the\s+)?code|resend|nos[uū]t[iī]t\s+kodu|s[uū]t[iī]t\s+kodu/i.test(text)) continue;
     if (!allowFeeWord && isFeeText(text)) continue;
     await el.click();
     return true;
@@ -429,6 +432,7 @@ async function waitForEparaksts(page, { onCode, timeoutMs, secrets }) {
       const kind = classifySnapshot(snap);
       if (kind === "ep_failed") return { status: "refused", codeSent: sent };
       if (kind === "ep_consent") return { status: "consent", codeSent: sent };
+      if (kind === "ep_browser_code") return { status: "browser_code", codeSent: sent };
       if (!sent) {
         const code = extractVerificationCode(redact(snap.text, secrets), snap.codeCandidates);
         if (code || Date.now() >= codeDeadline) {
@@ -440,6 +444,74 @@ async function waitForEparaksts(page, { onCode, timeoutMs, secrets }) {
     await sleep(2000);
   }
   return { status: "timeout", codeSent: sent };
+}
+
+/** Koda lauks lapā "confirm this browser" (ne lietotāja numura lauks). */
+async function findBrowserCodeInput(page) {
+  const preferred = page.locator('input[id*="code" i]:not([type="hidden"]), input[name*="code" i]:not([type="hidden"]), input[autocomplete="one-time-code"]');
+  const pn = await preferred.count();
+  for (let i = 0; i < pn; i++) {
+    const el = preferred.nth(i);
+    if (await el.isVisible().catch(() => false)) return el;
+  }
+  const any = page.locator('input[type="text"], input[type="tel"], input[type="number"], input[type="password"], input:not([type])');
+  const n = await any.count();
+  for (let i = 0; i < n; i++) {
+    const el = any.nth(i);
+    if (!(await el.isVisible().catch(() => false))) continue;
+    if ((await el.getAttribute("id").catch(() => "")) === "identifierForm-identifier") continue;
+    return el;
+  }
+  return null;
+}
+
+export const BROWSER_CODE_GRACE_MS = 3 * 60_000;
+const BROWSER_CODE_MAX_WAIT_MS = 10 * 60_000;
+
+/**
+ * Lapa "confirm this browser": paziņo PROVIN (awaiting_browser_code + termiņš) un gaida kodu no admina.
+ * Ja lietotne / lapa dod jaunu termiņu, paziņo vēlreiz. Atgriež { status: "code", code } | "renew" | "left" | "timeout".
+ */
+export async function awaitBrowserCode(page, { broker, onProgress, attempt, rejected, now = () => Date.now(), pollMs = 1000 }) {
+  const startedAt = now();
+  let announcedExpiry = -1;
+  let expiredAnnounced = false;
+  let expiredAt = 0;
+  broker.open();
+  try {
+    for (;;) {
+      const snap = await snapshot(page).catch(() => null);
+      if (snap && classifySnapshot(snap) !== "ep_browser_code") return { status: "left" };
+      const secs = snap ? extractCodeValidSeconds(snap.text) : null;
+      const t = now();
+      const expiresAt = secs === null ? 0 : t + secs * 1000;
+      // Jauns kods / pirmais paziņojums (termiņš pagarinājās vairāk par 5 s).
+      if (announcedExpiry < 0 || (expiresAt && announcedExpiry && expiresAt - announcedExpiry > 5000)) {
+        announcedExpiry = expiresAt;
+        expiredAnnounced = false;
+        expiredAt = 0;
+        await onProgress("awaiting_browser_code", {
+          ...(expiresAt ? { codeExpiresAt: new Date(expiresAt).toISOString() } : {}),
+          browserCodeAttempt: attempt,
+          ...(rejected ? { browserCodeRejected: true } : {}),
+        });
+      }
+      const expired = (secs !== null && secs <= 0) || (announcedExpiry > 0 && t >= announcedExpiry);
+      if (expired && !expiredAnnounced) {
+        expiredAnnounced = true;
+        expiredAt = t;
+        await onProgress("awaiting_browser_code", { codeExpired: true, browserCodeAttempt: attempt });
+      }
+      const msg = broker.take();
+      if (msg?.type === "code") return { status: "code", code: msg.code };
+      if (msg?.type === "renew") return { status: "renew" };
+      if (expiredAt && t - expiredAt > BROWSER_CODE_GRACE_MS) return { status: "timeout" };
+      if (t - startedAt > BROWSER_CODE_MAX_WAIT_MS) return { status: "timeout" };
+      await sleep(pollMs);
+    }
+  } finally {
+    broker.close();
+  }
 }
 
 /**
@@ -456,8 +528,14 @@ export async function runTraficomLookup({
   debugDir,
   eparakstsTimeoutMs = 300_000,
   maxPdfBytes = 3 * 1024 * 1024,
+  browserCode = null,
+  onSecret = () => undefined,
 }) {
   const secrets = [userNumber];
+  let browserCodeAttempts = 0;
+  let browserCodeRenews = 0;
+  let browserCodeSent = false;
+  let numberResentAfterCode = false;
   let numberSent = false;
   let approved = false;
   let searched = false;
@@ -510,6 +588,11 @@ export async function runTraficomLookup({
       continue;
     }
     if (kind === "ep_user_number") {
+      // Pēc pārlūka apstiprināšanas eParaksts var prasīt numuru vēlreiz (vienreiz atļauts).
+      if (numberSent && browserCodeSent && !numberResentAfterCode) {
+        numberResentAfterCode = true;
+        numberSent = false;
+      }
       if (numberSent) {
         await saveDebug(debugDir, `ep-number-again-${step}`, snap, secrets);
         throw new TraficomFlowError("eparaksts_refused", "eParaksts: lietotāja numura forma atkārtojas");
@@ -525,8 +608,46 @@ export async function runTraficomLookup({
       await page.waitForLoadState("domcontentloaded", { timeout: 30_000 }).catch(() => undefined);
       continue;
     }
+    if (kind === "ep_browser_code") {
+      // eParaksts jauna pārlūka apstiprinājums: kods redzams tikai Nila telefonā -> to ievada admins.
+      if (!browserCode) {
+        await saveDebug(debugDir, `ep-browser-code-${step}`, snap, secrets);
+        throw new TraficomFlowError("browser_code_required", "eParaksts prasa pārlūka kodu");
+      }
+      const rejected = browserCodeSent;
+      if (++browserCodeAttempts > 4) {
+        await saveDebug(debugDir, `ep-browser-code-again-${step}`, snap, secrets);
+        throw new TraficomFlowError("browser_code_refused", "eParaksts nepieņēma pārlūka kodu");
+      }
+      const res = await awaitBrowserCode(page, { broker: browserCode, onProgress, attempt: browserCodeAttempts, rejected });
+      log(`pārlūka kods: ${res.status}`);
+      if (res.status === "left") {
+        browserCodeAttempts--;
+        continue;
+      }
+      if (res.status === "timeout") throw new TraficomFlowError("browser_code_timeout");
+      if (res.status === "renew") {
+        browserCodeAttempts--;
+        browserCodeSent = false;
+        if (++browserCodeRenews > 3) throw new TraficomFlowError("browser_code_timeout", "pārāk daudz atkārtojumu");
+        await page.reload({ waitUntil: "domcontentloaded", timeout: 30_000 }).catch(() => undefined);
+        continue;
+      }
+      secrets.push(res.code);
+      onSecret(res.code);
+      const input = await findBrowserCodeInput(page);
+      if (!input) throw new TraficomFlowError("page_changed", "eParaksts: nav pārlūka koda lauka");
+      await input.fill(res.code);
+      await sleep(400 + Math.round(Math.random() * 400));
+      if (!(await clickByText(page, /^\s*(confirm|apstiprin[aā]t|kinnit[ae])\s*$/i))) {
+        throw new TraficomFlowError("page_changed", "eParaksts: nav pogas Confirm (pārlūka kods)");
+      }
+      browserCodeSent = true;
+      await page.waitForLoadState("domcontentloaded", { timeout: 30_000 }).catch(() => undefined);
+      continue;
+    }
     if (kind === "ep_wait") {
-      if (!numberSent && !approved) {
+      if (!numberSent && !approved && !browserCodeSent) {
         await saveDebug(debugDir, `ep-wait-unexpected-${step}`, snap, secrets);
         throw new TraficomFlowError("page_changed", "eParaksts: gaidīšanas lapa bez pieprasījuma");
       }
@@ -538,6 +659,7 @@ export async function runTraficomLookup({
       log(`eParaksts gaidīšana: ${res.status}`);
       if (res.status === "refused") throw new TraficomFlowError("eparaksts_refused");
       if (res.status === "timeout") throw new TraficomFlowError("eparaksts_timeout");
+      if (res.status === "browser_code") continue;
       approved = true;
       continue;
     }
