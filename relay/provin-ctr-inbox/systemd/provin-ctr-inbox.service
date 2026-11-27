@@ -1,0 +1,11 @@
+[Unit]
+Description=CheckThisReg e-pasti -> PROVIN pasūtījums (tikai lasīšana no CheckThisReg, nekad nepērk)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/provin-ctr-inbox/run.sh
+TimeoutStartSec=30min
+Nice=10
+MemoryMax=400M
