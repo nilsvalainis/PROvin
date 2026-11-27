@@ -10,6 +10,7 @@ import {
   thecarapiDownloadUrls,
   thecarapiFieldsOf,
   thecarapiImageUrls,
+  thecarapiTrustedImageUrls,
   thecarapiPhotoCaption,
   thecarapiPhotoDate,
   thecarapiRecordKey,
@@ -381,6 +382,30 @@ export function thecarapiDetailRows(json: unknown): Record<string, unknown>[] {
   return rowsOf(json);
 }
 
+/**
+ * Lejupielādējamās saites: zināmie izsoļu hosti + saites no TheCarApi `auction-images`
+ * (TheCarApi krātuve, kad oriģinālais CDN jau atbild 404).
+ */
+export function thecarapiRecordPhotoUrls(history: unknown, detail: unknown, images: unknown, merged: unknown): string[] {
+  const trusted = new Set(thecarapiTrustedImageUrls(images));
+  return thecarapiDownloadUrls(
+    thecarapiImageUrls(history, detail, images, merged),
+    (url) => isAllowedVinScanAuctionPhotoUrl(url) || trusted.has(url),
+  );
+}
+
+/** Esošam ierakstam pieliek jaunu `auction-images` atbildi (tikai bilžu saraksts, bez detaļu pieprasījuma). */
+export function thecarapiRecordWithImages(record: ThecarapiAdminRecord, images: unknown): ThecarapiAdminRecord {
+  const merged = mergeThecarapiRaw(record.rawHistory, record.rawDetail, images);
+  return {
+    ...record,
+    raw: merged,
+    rawImages: images,
+    photoUrls: thecarapiRecordPhotoUrls(record.rawHistory, record.rawDetail, images, merged),
+    fields: thecarapiFieldsOf(merged),
+  };
+}
+
 export function buildThecarapiAdminRecords(input: {
   historyJson: unknown;
   detailJson?: unknown;
@@ -410,7 +435,7 @@ export function buildThecarapiAdminRecords(input: {
     const merged = mergeThecarapiRaw(history, detail, images);
     const photoDate = thecarapiPhotoDate(merged);
     const venue = thecarapiSiteLabel(site || text(row.site_name));
-    const urls = thecarapiDownloadUrls(thecarapiImageUrls(history, detail, images, merged), isAllowedVinScanAuctionPhotoUrl);
+    const urls = thecarapiRecordPhotoUrls(history, detail, images, merged);
     out.push({
       site,
       id,

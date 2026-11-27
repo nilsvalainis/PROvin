@@ -528,3 +528,34 @@ export async function writeThecarapiMonthlyUsage(month: string, count: number): 
   const body: ThecarapiUsage = { month, count: Math.max(0, Math.floor(count)) };
   await writeJson(key, body);
 }
+
+/** Pasūtījumi, kuros TheCarApi bildes vēl gaida avotu (cron atkārtojumiem; neliels indekss). */
+export type ThecarapiPhotoWaitEntry = { sessionId: string; vin: string; nextAt: string; updatedAt: string };
+
+const THECARAPI_PHOTO_WAIT_KEY = "vin_scan/thecarapi/_photo_wait";
+export const THECARAPI_PHOTO_WAIT_INDEX_MAX = 200;
+
+export function asThecarapiPhotoWaitIndex(raw: unknown): ThecarapiPhotoWaitEntry[] {
+  const list = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as { entries?: unknown }).entries : null;
+  if (!Array.isArray(list)) return [];
+  const out: ThecarapiPhotoWaitEntry[] = [];
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    const sessionId = typeof rec.sessionId === "string" ? rec.sessionId : "";
+    const vin = typeof rec.vin === "string" ? snapshotKey(rec.vin) : "";
+    const nextAt = typeof rec.nextAt === "string" && Number.isFinite(Date.parse(rec.nextAt)) ? rec.nextAt : "";
+    if (!/^[A-Za-z0-9_]{1,200}$/.test(sessionId) || vin.length < 11 || !nextAt) continue;
+    const updatedAt = typeof rec.updatedAt === "string" ? rec.updatedAt.slice(0, 40) : "";
+    out.push({ sessionId, vin, nextAt, updatedAt });
+  }
+  return out.slice(-THECARAPI_PHOTO_WAIT_INDEX_MAX);
+}
+
+export async function readThecarapiPhotoWaitIndex(): Promise<ThecarapiPhotoWaitEntry[]> {
+  return asThecarapiPhotoWaitIndex(await readJson(THECARAPI_PHOTO_WAIT_KEY));
+}
+
+export async function writeThecarapiPhotoWaitIndex(entries: readonly ThecarapiPhotoWaitEntry[]): Promise<void> {
+  await writeJson(THECARAPI_PHOTO_WAIT_KEY, { entries: entries.slice(-THECARAPI_PHOTO_WAIT_INDEX_MAX) });
+}
