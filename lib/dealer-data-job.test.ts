@@ -376,6 +376,29 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(generateSourceCommentWithAi).not.toHaveBeenCalled();
   });
 
+  it("OneAuto datu nav, bet dīlera dati melnrakstā ievadīti manuāli -> «Ielasīts», bez atmaksas (BF 27.11, S7)", async () => {
+    const draft = emptyDraft("");
+    draft.workspace.sourceBlocks.auto_records = {
+      ...draft.workspace.sourceBlocks.auto_records,
+      serviceWorks: [
+        { date: "07.11.2025", odometer: "120432", location: "Renault dīleris", works: "Salona filtra maiņa" },
+        { date: "06.10.2023", odometer: "15566", location: "Renault dīleris", works: "Tehniskā operācija 0E22" },
+      ],
+      comments: "<p>Dīlera ierakstos fiksēti ražotāja segti remonti.</p>",
+    };
+    readOrderDraft.mockResolvedValue(draft);
+    fetchOneautoProducts.mockResolvedValue({
+      costEur: "0.00",
+      results: { oe_service_history: { ok: false, error: "no_data", payload: { success: false } } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
+    expect(r).toMatchObject({ ok: true, status: "done", reason: "manual_data", serviceEventCount: 2 });
+    expect(refundB2bWalletOrderIfNoData).not.toHaveBeenCalled();
+    const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+    expect(last).toMatchObject({ status: "done", serviceEventCount: 2, trigger: "manual", aiGenerated: true });
+  });
+
   it("pārraksta dīzeļa komentāru, kad VIN Lookup ieliek benzīnu", async () => {
     const draft = emptyDraft(
       "B2B dealer · wallet_product=dealer_pro · wallet_txn=wtx_1 · wallet_cents=2499 · report_lang=en",
