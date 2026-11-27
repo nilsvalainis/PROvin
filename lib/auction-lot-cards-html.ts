@@ -24,6 +24,7 @@ import {
   type ArchiveLotFacts,
 } from "@/lib/auction-archive-facts";
 import { translateAuctionTerms } from "@/lib/auction-terms-i18n";
+import { translateOpenlaneDamageText } from "@/lib/openlane-damage-locations";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, THECARAPI_NUMERIC_ZONE_RE, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
@@ -111,10 +112,17 @@ const ZONE_LABEL: Record<string, string> = {
   roof: "Jumts",
 };
 
-/** «Zona 13» (Openlane numurs bez nosaukuma) klienta valodā; citas zonas - izsoļu terminu vārdnīca. */
+/** «Zona 13» (nezināms Openlane numurs) klienta valodā; Openlane vietas/zonas - `openlane-damage-locations`; citas - izsoļu terminu vārdnīca. */
 function damageZoneText(zone: string, lang: ClientReportLang): string {
   const m = THECARAPI_NUMERIC_ZONE_RE.exec(zone.trim());
-  return m ? `${auctionCardText("Zona", lang)} ${m[1]}` : translateAuctionTerms(zone, lang);
+  if (m) return `${auctionCardText("Zona", lang)} ${m[1]}`;
+  return translateOpenlaneDamageText(zone, lang) ?? translateAuctionTerms(zone, lang);
+}
+
+/** Detaļa / bojājuma veids klienta valodā (Openlane vārdnīca, tad izsoļu termini); nezināms paliek kā ir. */
+function damageTermText(text: string, lang: ClientReportLang): string {
+  if (!text) return text;
+  return translateOpenlaneDamageText(text, lang) ?? translateAuctionTerms(text, lang);
 }
 
 /** Bojājumu bloks izsoles kartītē: shēma (6/12) + saraksts (6/12). Bez bojājumiem un atzīmēm - tukšs. */
@@ -149,8 +157,8 @@ export function auctionArchiveDamageBlockHtml(
   const rows = [
     ...damages.map(
       (d) =>
-        `<li><b>${esc([damageZoneText(d.zone, lang), d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
-          [translateAuctionTerms(d.type, lang), d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
+        `<li><b>${esc([damageZoneText(d.zone, lang), damageTermText(d.part, lang)].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
+          [damageTermText(d.type, lang), d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
         )}</span></li>`,
     ),
     ...marks.map(

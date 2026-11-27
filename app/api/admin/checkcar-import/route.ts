@@ -4,8 +4,9 @@
  * Operators pats atver nopirkto atskaiti checkcar.vin savā pārlūkā un nospiež „Nosūtīt uz PROVIN”.
  * Serveris checkcar.vin neatver (Cloudflare) un neko nepērk.
  *
- * JSON POST { action: "prepare", vin, text, html?, pageUrl?, groups: [{label, urls[]}], hint?: {kind, id} }
- *   -> mērķis pēc VIN: pasūtījums vai ātrais vērtējums (atvērtā lapa, ja tai ir šis VIN; citādi jaunākais),
+ * JSON POST { action: "prepare", vin, text, html?, pageUrl?, groups: [{label, urls[]}], hint?: {kind, id}, confirmHint? }
+ *   -> mērķis pēc VIN (Stripe, melnraksts, CSDD/VIN SCAN bloki, meklēšanas indekss): atvērtā lapa, ja tai ir
+ *      šis VIN (citādi 409 hint_vin_mismatch; ar confirmHint=true ieliek tur tik un tā); bez lapas - jaunākais,
  *      ieraksta `cc_vin` vēstures rindas + RAW tekstu, atgriež foto grupu plānu un jau zināmos foto URL.
  * multipart POST { action: "photo", kind, id, file } -> viens JPEG mērķa cc_vin krātuvē (ūdenszīmes kā ir).
  * JSON POST { action: "attach", kind, id, photos: [{title, id, sourceUrl}] } -> foto piesaiste grupām.
@@ -95,8 +96,25 @@ async function prepare(b: Record<string, unknown>) {
 
   const hintRaw = b.hint && typeof b.hint === "object" ? (b.hint as Record<string, unknown>) : {};
   const hint = parseTarget(hintRaw.kind, hintRaw.id);
-  const { target, alternatives } = await findCheckcarTarget(vin, hint);
-  if (!target) return bad("order_not_found", 404);
+  const { target, alternatives, hintMismatch } = await findCheckcarTarget(vin, hint, {
+    confirmHint: b.confirmHint === true,
+  });
+  if (hintMismatch) {
+    /* Atvērtā lapa ir cita auto (vai tai vēl nav VIN): userscript prasa operatoram apstiprinājumu. */
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "hint_vin_mismatch",
+        vin,
+        hint: { kind: hintMismatch.kind, id: hintMismatch.id },
+        hintVins: hintMismatch.vins,
+        alternatives: alternatives.slice(0, 10).map((a) => ({ kind: a.kind, id: a.id })),
+      },
+      { status: 409 },
+    );
+  }
+  if (!target) return NextResponse.json({ ok: false, error: "order_not_found", vin }, { status: 404 });
+  if (b.confirmHint === true && !(await checkcarTargetExists(target.kind, target.id))) return bad("not_found", 404);
 
   await loadEcbDailyRates().catch(() => undefined);
   const imported = parseCheckcarImport({ vin, text, html, pageUrl, groups: b.groups as never });

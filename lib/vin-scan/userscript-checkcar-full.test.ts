@@ -204,6 +204,40 @@ describe("PROVIN admin cilne: CheckCar darba pārsūtīšana", () => {
     expect(calls).toEqual([expect.objectContaining({ action: "prepare", hint: null })]);
   });
 
+  it("SPA pāreja uz pasūtījuma lapu: norāde no dzīvā ceļa; citam VIN prasa apstiprinājumu un sūta ar confirmHint", async () => {
+    const calls: Record<string, unknown>[] = [];
+    const confirms: string[] = [];
+    const run = runUserscriptAt("https://www.provin.lv/admin", {
+      gm: { provin_ccfull_job: JSON.stringify({ jobId: "j4", vin: VIN, text: REPORT_TEXT, groups: [], at: 1 }) },
+      globals: {
+        fetch: async (_url: string, init?: { body?: unknown }) => {
+          const body = JSON.parse(String(init?.body));
+          calls.push(body);
+          if (!body.confirmHint) {
+            return {
+              status: 409,
+              json: async () => ({ ok: false, error: "hint_vin_mismatch", vin: VIN, hintVins: [], alternatives: [] }),
+            };
+          }
+          return { status: 200, json: async () => ({ ok: true, target: { kind: "order", id: "cs_live_abc" }, groups: [], knownUrls: [] }) };
+        },
+      },
+    });
+    /* Admin ir SPA: operators no saraksta atvēra pasūtījumu bez lapas pārlādes. */
+    (run.window.location as { pathname: string }).pathname = "/admin/orders/cs_live_abc";
+    run.window.confirm = (msg: string) => {
+      confirms.push(msg);
+      return true;
+    };
+    run.tickIntervals(1000);
+    await flush(10);
+    expect(calls[0]).toMatchObject({ action: "prepare", hint: { kind: "order", id: "cs_live_abc" } });
+    expect(confirms[0]).toContain(VIN);
+    expect(confirms[0]).toContain("nav zināms");
+    expect(calls[1]).toMatchObject({ action: "prepare", confirmHint: true, hint: { kind: "order", id: "cs_live_abc" } });
+    expect(gmJson(run, "provin_ccfull_status")).toMatchObject({ jobId: "j4", stage: "ready", target: { id: "cs_live_abc" } });
+  });
+
   it("servera kļūdu nodod checkcar cilnei latviski", async () => {
     const run = runUserscriptAt("https://www.provin.lv/admin", {
       gm: { provin_ccfull_job: JSON.stringify({ jobId: "j2", vin: VIN, text: REPORT_TEXT, groups: [] }) },
@@ -214,7 +248,7 @@ describe("PROVIN admin cilne: CheckCar darba pārsūtīšana", () => {
     expect(gmJson(run, "provin_ccfull_status")).toMatchObject({
       jobId: "j2",
       stage: "error",
-      message: "PROVIN nav pasūtījuma ar šo VIN",
+      message: "PROVIN nav pasūtījuma ar VIN VF1AAAAA012345678 - atver pasūtījuma lapu adminā un nosūti vēlreiz",
     });
   });
 });

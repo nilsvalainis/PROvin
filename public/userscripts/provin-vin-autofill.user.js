@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.28.0
+// @version      1.28.1
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). checkcar.vin atvērtajā atskaitē poga «Nosūtīt uz PROVIN» nosūta vēsturi un foto pasūtījumam vai ātrajam vērtējumam (neko nepērk). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -115,7 +115,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.28.0";
+  const SCRIPT_VERSION = "1.28.1";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -267,9 +267,11 @@
     const ccfullTab = Math.random().toString(36).slice(2);
     /* Atvērtā pasūtījuma / ātrā vērtējuma lapa = operatora izvēlētais mērķis (serveris pārbauda VIN). */
     function ccfullPageHint() {
-      const q = path.match(/^\/admin\/atras-vertesanas\/([0-9a-f-]{36})(?:\/|$)/i);
+      /* Dzīvais ceļš: admin ir SPA, `path` paliek no pirmās ielādes (piem. /admin pēc pārejas uz pasūtījumu). */
+      const livePath = window.location.pathname || "";
+      const q = livePath.match(/^\/admin\/atras-vertesanas\/([0-9a-f-]{36})(?:\/|$)/i);
       if (q) return { kind: "quick_eval", id: q[1].toLowerCase() };
-      const o = path.match(/^\/admin\/orders\/([A-Za-z0-9_]+)(?:\/|$)/);
+      const o = livePath.match(/^\/admin\/orders\/([A-Za-z0-9_]+)(?:\/|$)/);
       if (o) return { kind: "order", id: o[1] };
       return null;
     }
@@ -314,19 +316,42 @@
     async function ccfullPrepare(job) {
       ccfullSetStatus({ jobId: job.jobId, stage: "working", message: "PROVIN nolasa atskaiti..." });
       ccfullToast("CheckCar.vin: nolasu atskaiti " + job.vin);
-      const r = await ccfullPost("/api/admin/checkcar-import", {
+      const hint = ccfullPageHint();
+      const body = {
         action: "prepare",
         vin: job.vin,
         text: job.text || "",
         html: job.html || "",
         pageUrl: job.pageUrl || "",
         groups: job.groups || [],
-        hint: ccfullPageHint(),
-      });
+        hint: hint,
+      };
+      let r = await ccfullPost("/api/admin/checkcar-import", body);
+      if (!r.data.ok && r.data.error === "hint_vin_mismatch") {
+        /* Atvērtajā lapā cits (vai vēl nezināms) VIN - operators apstiprina, ka ielikt tieši šeit. */
+        const pageVins = Array.isArray(r.data.hintVins) && r.data.hintVins.length ? r.data.hintVins.join(", ") : "nav zināms";
+        const others = Array.isArray(r.data.alternatives) ? r.data.alternatives.length : 0;
+        const ok = window.confirm(
+          "CheckCar.vin atskaite: VIN " + job.vin + ".\nAtvērtajā " +
+            (hint && hint.kind === "quick_eval" ? "ātrajā vērtējumā" : "pasūtījumā") + " VIN: " + pageVins + "." +
+            (others ? "\nAr VIN " + job.vin + " ir vēl " + others + " pasūtījums/vērtējums." : "") +
+            "\n\nIelikt atskaiti tieši šajā lapā?",
+        );
+        if (!ok) {
+          ccfullSetStatus({ jobId: job.jobId, stage: "error", message: "Atcelts - atvērtajā lapā cits VIN" });
+          ccfullToast("CheckCar.vin: atcelts - atvērtajā lapā cits VIN");
+          return;
+        }
+        r = await ccfullPost("/api/admin/checkcar-import", Object.assign({}, body, { confirmHint: true }));
+      }
       if (!r.data.ok) {
         const code = r.data.error || (r.status === 401 ? "unauthorized" : r.status === 403 ? "forbidden" : "http_" + r.status);
-        ccfullSetStatus({ jobId: job.jobId, stage: "error", message: ccfullErrorText(code) });
-        ccfullToast("CheckCar.vin: " + ccfullErrorText(code));
+        const text =
+          code === "order_not_found"
+            ? "PROVIN nav pasūtījuma ar VIN " + (r.data.vin || job.vin) + " - atver pasūtījuma lapu adminā un nosūti vēlreiz"
+            : ccfullErrorText(code);
+        ccfullSetStatus({ jobId: job.jobId, stage: "error", message: text });
+        ccfullToast("CheckCar.vin: " + text);
         return;
       }
       const target = r.data.target || { kind: "order", id: r.data.sessionId };
@@ -457,11 +482,19 @@
   const CCFULL_PHOTO_MAX = 400;
 
   function checkcarFullVin() {
-    const fromPath = (path.match(/([A-HJ-NPR-Z0-9]{17})/i) || [])[1] || "";
+    /* Dzīvais ceļš (checkcar.vin var pāriet uz citu atskaiti bez lapas pārlādes). */
+    const livePath = window.location.pathname || "";
+    const fromPath = (livePath.match(/(?:^|[^A-Z0-9])([A-HJ-NPR-Z0-9]{17})(?![A-Z0-9])/i) || [])[1] || "";
     if (fromPath) return fromPath.toUpperCase();
     const text = String((document.body && document.body.innerText) || "").toUpperCase();
-    const m = text.match(/\bVIN\s*:?\s*([A-HJ-NPR-Z0-9]{17})\b/);
-    return m ? m[1] : "";
+    /* Lapā var būt arī citu auto VIN (iepriekšējās pārbaudes) - ņem biežāko pie „VIN”. */
+    const counts = {};
+    let best = "";
+    for (const m of text.matchAll(/\bVIN\s*(?:CODE|KODS)?\s*:?\s*([A-HJ-NPR-Z0-9]{17})\b/g)) {
+      counts[m[1]] = (counts[m[1]] || 0) + 1;
+      if (!best || counts[m[1]] > counts[best]) best = m[1];
+    }
+    return best;
   }
 
   function isCheckcarReportPage() {

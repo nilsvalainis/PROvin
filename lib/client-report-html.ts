@@ -460,9 +460,10 @@ function collectPdfMileageSparkContext(
 function sourceMileageSparkHtml(
   ctx: { rows: UnifiedMileageDisplayRow[]; chartExclude: Set<number> },
   key: MileagePdfSourceKey,
+  minPoints = 1,
 ): string {
   if (ctx.rows.length === 0) return "";
-  return buildSourceMileageSparkHtml(ctx.rows, key, { chartExcludeSourceOrders: ctx.chartExclude });
+  return buildSourceMileageSparkHtml(ctx.rows, key, { chartExcludeSourceOrders: ctx.chartExclude, minPoints });
 }
 
 /** Mājaslapas primārais zils - grafiks, akcenti (`PDF_BRAND_BLUE_HEX`). */
@@ -2926,7 +2927,8 @@ function buildAvotuDatiSectionHtml(
     p.ccVinBlock ?? null,
     vis,
     ccVinPhotoDataUrls,
-    spark("intl"),
+    // Nils 27.11: viena punkta grafiks izsoļu sadaļā nav informatīvs - nerāda.
+    sourceMileageSparkHtml(sparkCtx, "intl", 2),
     collectPdfPhotoKeys([
       ...(p.autoRecordsBlock?.photoGroups ?? []),
       ...(p.asvBlock?.photoGroups ?? []),

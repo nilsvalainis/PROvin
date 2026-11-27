@@ -85,7 +85,7 @@ const ZONE_HATCH: Record<DamageZoneId, { x: number; y: number; w: number; h: num
 };
 
 /** Precīzas detaļas — pikseli mērīti no oriģinālā sedana. */
-const PANELS: Record<DamagePanelId, string> = {
+export const DAMAGE_PANEL_PATHS: Record<DamagePanelId, string> = {
   front_bumper: "M56 14 L124 14 L122 28 L58 28 Z",
   hood: "M62 28 L118 28 L116 68 L64 68 Z",
   front_left_fender: "M32 22 L64 22 L62 70 L30 70 Z",
@@ -101,7 +101,7 @@ const PANELS: Record<DamagePanelId, string> = {
   rear_bumper: "M56 244 L124 244 L122 262 L58 262 Z",
 };
 
-const PANEL_PIN: Record<DamagePanelId, { cx: number; cy: number }> = {
+export const DAMAGE_PANEL_PINS: Record<DamagePanelId, { cx: number; cy: number }> = {
   front_bumper: { cx: 90, cy: 21 },
   hood: { cx: 90, cy: 48 },
   front_left_fender: { cx: 47, cy: 46 },
@@ -222,7 +222,7 @@ function markShape(
 function pinMarks(panels: Iterable<DamagePanelId>): string {
   return [...panels]
     .map((id) => {
-      const { cx, cy } = PANEL_PIN[id];
+      const { cx, cy } = DAMAGE_PANEL_PINS[id];
       return `<g data-zone-pin="${id}">
         <circle cx="${cx}" cy="${cy}" r="7.5" fill="${MARK_RED}" fill-opacity="0.22" stroke="${MARK_RED}" stroke-width="1.6"/>
         <circle cx="${cx}" cy="${cy}" r="3.1" fill="${MARK_RED_DEEP}"/>
@@ -258,7 +258,7 @@ export function buildPanelDamageSilhouetteSvg(
   const zones = ZONE_ORDER.filter((id) => new Set(marks.zones as Iterable<string>).has(id));
   const wash = [
     ...zones.map((id) => markShape(uid, style, id, { kind: "rect", ...ZONE_HATCH[id] })),
-    ...panels.map((id) => markShape(uid, style, id, { kind: "path", d: PANELS[id] })),
+    ...panels.map((id) => markShape(uid, style, id, { kind: "path", d: DAMAGE_PANEL_PATHS[id] })),
   ].join("");
   const pins = style === "pin" ? pinMarks(panels) : "";
   const labels = opts?.labeled

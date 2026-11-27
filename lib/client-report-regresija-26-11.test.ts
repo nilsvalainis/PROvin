@@ -110,7 +110,9 @@ describe("3. izsoļu kartītes ar `lang`", () => {
 
   it("buildCcVinAuctionCardsHtml padod `lang`", () => {
     const html = buildCcVinAuctionCardsHtml({ ...emptyCcVinBlock(), thecarapiRecords: [record] } as ReturnType<typeof emptyCcVinBlock>, { lang: "en" });
-    expect(textNodes(html)).toContain("Auction 1");
+    // Nils 27.11 (makets A): izsoles kartīte bez kārtas numura - EN etiķetes («Lot no.», «Mileage»).
+    expect(textNodes(html)).toContain("Lot no.");
+    expect(textNodes(html)).toContain("Mileage");
     expect(textNodes(html).filter((t) => AUCTION_LV.test(t))).toEqual([]);
   });
 

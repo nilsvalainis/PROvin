@@ -21,6 +21,8 @@ import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import { flattenCcVinPhotoGroups, normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
 import {
   autobidOriginalHint,
+  orderHasListedVin,
+  orderKnownVins,
   orderTargetsForVin,
   pickCheckcarTarget,
   quickEvalCheckcarPhotoSession,
@@ -29,7 +31,9 @@ import {
   type CheckcarQuickEvalCandidate,
   type CheckcarTarget,
   type CheckcarTargetKind,
+  usableVin,
 } from "@/lib/checkcar-import-orders";
+import { loadAdminGlobalSearch } from "@/lib/admin-global-search-load";
 import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readQuickEval, updateQuickEval } from "@/lib/quick-eval-store";
 import { readVinMemory } from "@/lib/vin-memory-store";
@@ -71,17 +75,137 @@ async function quickEvalCandidates(vin: string): Promise<CheckcarQuickEvalCandid
   return out;
 }
 
-/** Visi mērķi ar šo VIN un izvēlētais (lapas norāde vai jaunākais). */
+/** Cik jaunāko pasūtījumu bez VIN (pasūtīti pēc numurzīmes) melnrakstus pārlasām, meklējot VIN. */
+const ORDER_DRAFT_SCAN = 120;
+const ORDER_DRAFT_SCAN_CONCURRENCY = 8;
+
+type OrderRow = Awaited<ReturnType<typeof listAdminOrders>>["rows"][number];
+
+function usableOrderRow(row: OrderRow | undefined): row is OrderRow {
+  return Boolean(row && !row.isDemo && row.checkoutLine !== "provin_select");
+}
+
+async function orderVinsFromDraft(row: { id: string; vin: string | null }, indexVin: string | null): Promise<string[]> {
+  const draft = await readOrderDraft(row.id).catch(() => null);
+  return orderKnownVins({ stripeVin: row.vin, indexVin, draft });
+}
+
+/** Pasūtījumi, kuru VIN ir tikai melnrakstā (CSDD bloks, numurzīmes atrisinājums, VIN SCAN u.c.). */
+async function orderTargetsFromDrafts(
+  vin: string,
+  rows: readonly OrderRow[],
+  indexVin: ReadonlyMap<string, string | null>,
+  skip: ReadonlySet<string>,
+): Promise<CheckcarTarget[]> {
+  const want = usableVin(vin);
+  const queue = rows
+    .filter((r) => usableOrderRow(r) && !skip.has(r.id) && !orderHasListedVin(r, indexVin.get(r.id)))
+    .slice(0, ORDER_DRAFT_SCAN);
+  const out: CheckcarTarget[] = [];
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(ORDER_DRAFT_SCAN_CONCURRENCY, queue.length) }, async () => {
+      while (next < queue.length) {
+        const row = queue[next++]!;
+        const vins = await orderVinsFromDraft(row, indexVin.get(row.id) ?? null);
+        if (vins.includes(want)) out.push({ kind: "order", id: row.id, at: row.created * 1000 });
+      }
+    }),
+  );
+  return out;
+}
+
+/** Admin meklēšanas indeksa trāpījumi (tas pats, ko rāda /api/admin/search). */
+async function orderIdsFromAdminSearch(vin: string): Promise<string[]> {
+  const groups = await loadAdminGlobalSearch(vin).catch(() => []);
+  return groups.flatMap((g) => g.hits.filter((h) => h.kind === "pro-order").map((h) => h.id));
+}
+
+export type CheckcarHintMismatch = {
+  kind: CheckcarTargetKind;
+  id: string;
+  /** Atvērtās lapas zināmie VIN (var būt tukšs). */
+  vins: string[];
+};
+
+export type CheckcarTargetResult = {
+  target: CheckcarTarget | null;
+  alternatives: CheckcarTarget[];
+  /** Atvērtā lapa ir cita auto - vajag operatora apstiprinājumu (`confirmHint`). */
+  hintMismatch?: CheckcarHintMismatch;
+};
+
+async function hintedTarget(
+  vin: string,
+  hint: { kind: CheckcarTargetKind; id: string },
+  rows: readonly OrderRow[],
+  indexVin: ReadonlyMap<string, string | null>,
+): Promise<{ target: CheckcarTarget | null; vins: string[]; exists: boolean }> {
+  const want = usableVin(vin);
+  if (hint.kind === "order") {
+    const listed = rows.find((r) => r.id === hint.id);
+    const detail = listed ?? (await getCheckoutSessionDetail(hint.id).catch(() => null));
+    if (!detail || detail.isDemo || detail.checkoutLine === "provin_select") return { target: null, vins: [], exists: false };
+    const vins = await orderVinsFromDraft(detail, indexVin.get(hint.id) ?? null);
+    const target: CheckcarTarget = { kind: "order", id: hint.id, at: detail.created * 1000 };
+    return { target: vins.includes(want) ? target : null, vins, exists: true };
+  }
+  const peek = await readQuickEval(hint.id).catch(() => null);
+  if (!peek) return { target: null, vins: [], exists: false };
+  const vins = [...new Set([usableVin(peek.vin), usableVin(peek.sourceBlocks.csdd.vin)].filter(Boolean))];
+  const target: CheckcarTarget = { kind: "quick_eval", id: hint.id, at: Date.parse(peek.createdAt ?? "") || 0 };
+  return { target: vins.includes(want) ? target : null, vins, exists: true };
+}
+
+/**
+ * Visi mērķi ar šo VIN un izvēlētais. VIN salīdzina ar VISIEM avotiem: Stripe, melnrakstā labotais /
+ * numurzīmes atrisinātais VIN, VIN SCAN, CSDD un citi avotu bloki, admin meklēšanas indekss.
+ * Atvērtā pasūtījuma lapa (hint) uzvar; ja tai ir cits VIN - `hintMismatch` (apstiprina operators,
+ * `confirmHint` = ielikt tik un tā).
+ */
 export async function findCheckcarTarget(
   vin: string,
-  hint?: { kind?: string; id?: string } | null,
-): Promise<{ target: CheckcarTarget | null; alternatives: CheckcarTarget[] }> {
+  hint?: { kind: CheckcarTargetKind; id: string } | null,
+  opts: { confirmHint?: boolean } = {},
+): Promise<CheckcarTargetResult> {
   const [{ rows }, index, quick] = await Promise.all([
     listAdminOrders(),
     listAllDashboardDraftIndexEntries().catch(() => []),
     quickEvalCandidates(vin),
   ]);
-  return pickCheckcarTarget([...orderTargetsForVin(vin, rows, index), ...quickEvalTargetsForVin(vin, quick)], hint);
+  const indexVin = new Map(index.map((e) => [e.sessionId, e.vin]));
+  const candidates = [...orderTargetsForVin(vin, rows, index), ...quickEvalTargetsForVin(vin, quick)];
+  const known = new Set(candidates.map((c) => c.id));
+
+  for (const id of await orderIdsFromAdminSearch(vin)) {
+    const row = rows.find((r) => r.id === id);
+    if (!usableOrderRow(row) || known.has(id)) continue;
+    candidates.push({ kind: "order", id, at: row.created * 1000 });
+    known.add(id);
+  }
+
+  if (hint && !known.has(hint.id)) {
+    const h = await hintedTarget(vin, hint, rows, indexVin);
+    if (h.target) {
+      candidates.push(h.target);
+      known.add(h.target.id);
+    } else if (opts.confirmHint && h.exists) {
+      /* Operators apstiprināja: atvērtajā lapā cits / nezināms VIN, bet ielikt tieši tur. */
+      return pickCheckcarTarget([{ kind: hint.kind, id: hint.id, at: Number.MAX_SAFE_INTEGER }, ...candidates], hint);
+    } else if (h.exists) {
+      const picked = pickCheckcarTarget(candidates);
+      return {
+        target: null,
+        alternatives: [...(picked.target ? [picked.target] : []), ...picked.alternatives],
+        hintMismatch: { ...hint, vins: h.vins },
+      };
+    }
+  }
+
+  if (!candidates.some((c) => c.kind === "order")) {
+    candidates.push(...(await orderTargetsFromDrafts(vin, rows, indexVin, known)));
+  }
+  return pickCheckcarTarget(candidates, hint);
 }
 
 /** Pārbauda, vai mērķis eksistē un der (pasūtījums nav konsultācija; ātrais vērtējums ir). */
