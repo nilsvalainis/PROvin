@@ -13,6 +13,7 @@ import {
   type ThecarapiPdfModel,
 } from "@/lib/thecarapi-pdf-model";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
+import { thecarapiPhotoWaitLabel } from "@/lib/thecarapi-photo-wait";
 import { thecarapiPhotoCaption, type ThecarapiAdminRecord, type ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 
 type Tone = "ok" | "warn" | "alert" | "neutral";
@@ -185,6 +186,7 @@ function RecordBlock({
   const chips = summaryChips(model);
   const photos = record.photos ?? [];
   const missingPhotos = Math.max(0, (record.photoUrls?.length ?? 0) - photos.length);
+  const waitLabel = photos.length === 0 ? thecarapiPhotoWaitLabel(record.photoWait) : "";
   const damages = damageCount(model);
   const priceConflict = useMemo(() => thecarapiSalePriceFromFields(record.fields).conflict, [record]);
   const serviceRows: ThecarapiPdfKv[] = [
@@ -197,6 +199,7 @@ function RecordBlock({
       <summary className="cursor-pointer px-3 py-2">
         <span className="text-[13px] font-semibold text-[var(--color-apple-text)]">{model.header}</span>
         {chips.length ? <span className="block text-[12px] text-[var(--color-provin-muted)]">{chips.join(" · ")}</span> : null}
+        {waitLabel ? <span className="block text-[12px] font-medium text-red-700">{waitLabel}</span> : null}
       </summary>
       <div className="border-t border-slate-100 px-3 pb-3">
         <Section title={`Pamatdati (${model.basics.length})`} empty={model.basics.length === 0}>
@@ -279,7 +282,11 @@ function RecordBlock({
             })}
           </div>
         </Section>
-        {missingPhotos > 0 ? <p className="mt-1 text-[12px] font-medium text-red-700">Nav saglabātas: {missingPhotos} bildes</p> : null}
+        {waitLabel ? (
+          <p className="mt-1 text-[12px] font-medium text-red-700" data-testid="tc-photo-wait">{waitLabel}</p>
+        ) : missingPhotos > 0 ? (
+          <p className="mt-1 text-[12px] font-medium text-red-700">Nav saglabātas: {missingPhotos} bildes</p>
+        ) : null}
 
         {technical.length ? (
           <details className="mt-3">

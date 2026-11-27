@@ -4,6 +4,8 @@
  * Pilnais JSON glabājas `raw`, `rawHistory`, `rawDetail`, `rawImages`.
  */
 
+import { isSafeThecarapiImageUrl, normalizeThecarapiPhotoWait, type ThecarapiPhotoWait } from "@/lib/thecarapi-photo-wait";
+
 export type ThecarapiField = {
   key: string;
   label: string;
@@ -32,6 +34,8 @@ export type ThecarapiAdminRecord = {
   rawDetail: unknown;
   rawImages: unknown;
   photos: ThecarapiStoredPhoto[];
+  /** Bildes avotā vēl tiek gatavotas (`pending`) vai avots tās nepiegādāja. */
+  photoWait?: ThecarapiPhotoWait;
 };
 
 /** Dokumentētie un tipiskie TheCarApi lauki. Nezināma atslēga paliek pati. */
@@ -374,6 +378,12 @@ export function thecarapiAllUrls(...parts: unknown[]): string[] {
   return out;
 }
 
+/** Bilžu saites no TheCarApi `auction-images` atbildes (avota krātuve; hosts iepriekš nav zināms). */
+export function thecarapiTrustedImageUrls(imagesJson: unknown): string[] {
+  if (imagesJson == null) return [];
+  return thecarapiImageUrls(imagesJson).filter(isSafeThecarapiImageUrl);
+}
+
 export function thecarapiDownloadUrls(urls: readonly string[], allow: (url: string) => boolean): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
@@ -461,6 +471,7 @@ export function normalizeThecarapiAdminRecords(raw: unknown): ThecarapiAdminReco
           })
           .filter((photo): photo is ThecarapiStoredPhoto => Boolean(photo))
       : [];
+    const photoWait = normalizeThecarapiPhotoWait(rec.photoWait);
     out.push({
       site: typeof rec.site === "string" ? rec.site.slice(0, 40) : "",
       id: typeof rec.id === "string" ? rec.id.slice(0, 80) : "",
@@ -474,6 +485,7 @@ export function normalizeThecarapiAdminRecords(raw: unknown): ThecarapiAdminReco
       rawDetail: rec.rawDetail ?? null,
       rawImages: rec.rawImages ?? null,
       photos,
+      ...(photoWait ? { photoWait } : {}),
     });
     if (out.length >= 100) break;
   }
