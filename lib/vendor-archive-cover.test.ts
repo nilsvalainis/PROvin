@@ -59,25 +59,25 @@ describe("titulbilde no arhīva", () => {
 
 describe("arhīva foto Dropbox plāns", () => {
   it("mapes un failu nosaukumi", () => {
-    expect(archiveDropboxGroupFolder("autodna", "12.11.2024")).toBe("AutoDNA 12.11.2024");
-    expect(archiveDropboxGroupFolder("carvertical", "07.2020")).toBe("CarVertical 07.2020");
-    expect(archiveDropboxGroupFolder("autodna", "")).toBe("AutoDNA");
+    expect(archiveDropboxGroupFolder("autodna", "12.11.2024")).toBe("Foto - AutoDNA arhīvs 12.11.2024");
+    expect(archiveDropboxGroupFolder("carvertical", "07.2020")).toBe("Foto - CarVertical arhīvs 07.2020");
+    expect(archiveDropboxGroupFolder("autodna", "")).toBe("Foto - AutoDNA arhīvs");
     expect(archiveDropboxFileName(0)).toBe("01.jpg");
     expect(archiveDropboxFileName(37)).toBe("38.jpg");
   });
 
   it("izlaiž jau esošos failus, pārraksta tikai aizstātās (pilnās) bildes", () => {
     const groups = [g("12.11.2024", ["p1", "p2", "p3"]), g("07.2020", ["q1"], "carvertical"), g("12.11.2024", ["p4"])];
-    expect(archiveDropboxFolders(groups, "autodna")).toEqual(["AutoDNA 12.11.2024"]);
-    const existing = new Map([["AutoDNA 12.11.2024", new Set(["01.jpg", "02.jpg"])]]);
+    expect(archiveDropboxFolders(groups, "autodna")).toEqual(["Foto - AutoDNA arhīvs 12.11.2024"]);
+    const existing = new Map([["Foto - AutoDNA arhīvs 12.11.2024", new Set(["01.jpg", "02.jpg"])]]);
     const plan = planArchiveDropboxUploads({ groups, source: "autodna", existing, upgraded: new Set(["p2"]) });
     expect(plan).toEqual([
-      { folder: "AutoDNA 12.11.2024", name: "02.jpg", photoId: "p2", overwrite: true },
-      { folder: "AutoDNA 12.11.2024", name: "03.jpg", photoId: "p3", overwrite: false },
-      { folder: "AutoDNA 12.11.2024", name: "04.jpg", photoId: "p4", overwrite: false },
+      { folder: "Foto - AutoDNA arhīvs 12.11.2024", name: "02.jpg", photoId: "p2", overwrite: true },
+      { folder: "Foto - AutoDNA arhīvs 12.11.2024", name: "03.jpg", photoId: "p3", overwrite: false },
+      { folder: "Foto - AutoDNA arhīvs 12.11.2024", name: "04.jpg", photoId: "p4", overwrite: false },
     ]);
     // Otrā palaišana - viss jau ir.
-    const all = new Map([["AutoDNA 12.11.2024", new Set(["01.jpg", "02.jpg", "03.jpg", "04.jpg"])]]);
+    const all = new Map([["Foto - AutoDNA arhīvs 12.11.2024", new Set(["01.jpg", "02.jpg", "03.jpg", "04.jpg"])]]);
     expect(planArchiveDropboxUploads({ groups, source: "autodna", existing: all })).toEqual([]);
   });
 });

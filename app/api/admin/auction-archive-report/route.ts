@@ -11,9 +11,10 @@
  *           «IZSOLU_ARHIVS_<VIN>.pdf»; WhatsApp - tikai žurnāla ieraksts (ziņu un PDF sūta Nils).
  * Klientam šeit sūta TIKAI pēc Nila pogas «Sūtīt e-pastu».
  */
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
+import { saveOrderDocumentToDropboxSafe } from "@/lib/order-documents-dropbox";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
@@ -201,6 +202,10 @@ export async function POST(req: Request) {
       },
     });
     if (!sent) return bad("email_failed", 502);
+    if (attachment) {
+      const { filename, content } = attachment;
+      after(() => saveOrderDocumentToDropboxSafe(sessionId, filename, new Uint8Array(content)));
+    }
   }
 
   const report = await updateAuctionArchiveReport(sessionId, (cur) =>

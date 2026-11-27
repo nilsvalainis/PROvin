@@ -18,8 +18,9 @@
  *                    «Izvēlējās arhīvu»): e-pasts ar PDF; WhatsApp - atzīme pēc tam, kad Nils PDF nosūtījis.
  *   - marks          {marks[]} - operatora «Redzams bildē» atzīmes PDF shēmai.
  */
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
+import { saveOrderDocumentToDropboxSafe } from "@/lib/order-documents-dropbox";
 import { getAdminSession } from "@/lib/admin-auth";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
@@ -297,6 +298,9 @@ export async function POST(req: Request) {
         attachments: [{ filename: built.filename, content: built.pdf, contentType: "application/pdf" }],
       });
       if (!sent) return bad("email_failed", 502);
+      const pdfCopy = new Uint8Array(built.pdf);
+      const pdfName = built.filename;
+      after(() => saveOrderDocumentToDropboxSafe(sessionId, pdfName, pdfCopy));
     } else if (!(await readAuctionArchivePdf(sessionId).catch(() => null))) {
       return bad("pdf_missing", 409);
     }

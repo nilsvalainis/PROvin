@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * Pēc arhīva foto importa (Nils 25.11):
- * 1) visas šī avota arhīva foto -> pasūtījuma Dropbox mapē `Arhīva foto/<Avots> <datums>/NN.jpg` (bez dublikātiem:
+ * 1) visas šī avota arhīva foto -> pasūtījuma Dropbox mapē `Foto - <Avots> arhīvs <datums>/NN.jpg` (bez dublikātiem:
  *    jau esošos failus izlaiž; releja pilnā bilde pārraksta PDF sīktēlu);
  * 2) ja «PDF augšas bilde» nekad nav aizpildīta - ieliek ārpuses priekšas foto no arhīva.
  * Nekad nemet kļūdu - imports paliek derīgs arī bez Dropbox.
@@ -19,7 +19,6 @@ import sharp from "sharp";
 import { archiveCoverAllowed, archiveCoverCandidates, pickArchiveCoverPhotoId } from "@/lib/vendor-archive-cover";
 import type { VendorArchiveSource } from "@/lib/vendor-archive-photo-group";
 import {
-  ARCHIVE_DROPBOX_ROOT,
   archiveDropboxFolders,
   planArchiveDropboxUploads,
 } from "@/lib/vendor-archive-photos-dropbox-path";
@@ -74,7 +73,7 @@ export async function mirrorVendorArchivePhotosToDropbox(args: {
   // Ceļš pēc mapes id (ne ieraksta `path`): ja mapi tikko pārdēvēja, foto nedrīkst izveidot otru mapi ar veco nosaukumu.
   const orderFolder = await currentOrderDropboxFolderPath(client, rec);
   if (!orderFolder) return { uploaded: 0, failed: 0, folder: null };
-  const root = `${orderFolder}/${ARCHIVE_DROPBOX_ROOT}`;
+  const root = orderFolder;
   const existing = new Map<string, Set<string>>();
   for (const f of folders) {
     try {
@@ -157,7 +156,7 @@ export async function finalizeVendorArchiveImport(args: {
   }
   try {
     const d = await mirrorVendorArchivePhotosToDropbox(args);
-    if (d.uploaded) notes.push(`${d.uploaded} foto saglabāti Dropbox mapē «${ARCHIVE_DROPBOX_ROOT}».`);
+    if (d.uploaded) notes.push(`${d.uploaded} foto saglabāti pasūtījuma Dropbox mapē.`);
     if (d.failed) notes.push(`${d.failed} foto neizdevās saglabāt Dropbox.`);
   } catch (e) {
     console.error(`${LOG} dropbox failed`, e instanceof Error ? e.message.slice(0, 120) : "unknown");

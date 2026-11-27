@@ -2,7 +2,7 @@
  * Nosūta dīlera PDF klientam no oficiālā dīlera bloka (vienas pogas plūsma).
  * PDF ģenerē operators (Drukāt → saglabāt), tad šeit pievieno un nosūta ar rediģējamu tekstu.
  */
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
@@ -22,6 +22,7 @@ import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
 import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { saveOrderDocumentToDropboxSafe } from "@/lib/order-documents-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -135,6 +136,8 @@ export async function POST(req: Request) {
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed" }, { status: 502 });
   }
+  // Nils 27.11: visi pasūtījuma faili arī pasūtījuma Dropbox mapē (dīlera datiem mape rodas šeit).
+  after(() => saveOrderDocumentToDropboxSafe(sessionId, filename, new Uint8Array(buf)));
   const marks = await recordDealerSendOnServer(
     sessionId,
     dealerSendRecordFromInput(

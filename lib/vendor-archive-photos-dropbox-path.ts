@@ -1,18 +1,21 @@
 /**
- * Arhīva foto kopija pasūtījuma Dropbox mapē (Nils 25.11): `Arhīva foto/<Avots> <datums>/NN.jpg`.
+ * Arhīva foto kopija pasūtījuma Dropbox mapē (Nils 25.11; 27.11: bildes tieši pasūtījuma mapē, mapes nosaukumā avots
+ * un datums): `Foto - AutoDNA arhīvs <datums>/NN.jpg`.
  * Tīrs modulis - plāns, ko augšupielādēt (bez Dropbox klienta).
  */
 
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import { VENDOR_ARCHIVE_SOURCE_LABEL, type VendorArchiveGroupMeta, type VendorArchiveSource } from "@/lib/vendor-archive-photo-group";
 
-export const ARCHIVE_DROPBOX_ROOT = "Arhīva foto";
+/** Bilžu mapes pasūtījuma mapes saknē (sk. order-photo-dropbox-plan). */
+export const ARCHIVE_DROPBOX_PREFIX = "Foto - ";
 
 type ArchiveGroupLike = { photos: { id: string }[]; archive?: Pick<VendorArchiveGroupMeta, "source" | "date"> };
 
-/** Apakšmapes nosaukums: «AutoDNA 12.11.2024» / «CarVertical 07.2020» (bez datuma - «AutoDNA»). */
+/** Mapes nosaukums: «Foto - AutoDNA arhīvs 12.11.2024» / «Foto - CarVertical arhīvs 07.2020» (bez datuma - «Foto - AutoDNA arhīvs»). */
 export function archiveDropboxGroupFolder(source: VendorArchiveSource, date: string): string {
-  return sanitizeDropboxName([VENDOR_ARCHIVE_SOURCE_LABEL[source], date.trim()].filter(Boolean).join(" "), 80) || "Arhīvs";
+  const name = sanitizeDropboxName([`${VENDOR_ARCHIVE_SOURCE_LABEL[source]} arhīvs`, date.trim()].filter(Boolean).join(" "), 80);
+  return `${ARCHIVE_DROPBOX_PREFIX}${name || "Arhīvs"}`;
 }
 
 export function archiveDropboxFileName(index: number): string {

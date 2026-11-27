@@ -20,6 +20,7 @@ import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 import { retryDealerNoVinFromPlate } from "@/lib/order-plate-vin-resolve";
 import { sweepQuickEvalSmartId } from "@/lib/quick-eval-auto";
 import { sweepThecarapiPhotoWait } from "@/lib/thecarapi-photo-wait-index";
+import { sweepOrderPhotoDropbox } from "@/lib/order-photo-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,9 +63,14 @@ export async function GET(req: Request) {
       console.warn("[cron/dealer-data-sweep] thecarapi photos", err instanceof Error ? err.message : "unknown");
       return null;
     });
+    // Pasūtījumu bildes, kuras Dropbox vēl nav saglabātas (kļūda / termiņš): max 2 pasūtījumi, ≤45 s.
+    const photoDropbox = await sweepOrderPhotoDropbox({ deadlineAt: Date.now() + 45_000, maxOrders: 2 }).catch((err) => {
+      console.warn("[cron/dealer-data-sweep] photo dropbox", err instanceof Error ? err.message : "unknown");
+      return null;
+    });
     const unfinished = await listUnfinishedDealerDataJobs();
     if (unfinished.length === 0) {
-      return NextResponse.json({ ok: true, unfinished: 0, processed: [], quickEvalSmartId, thecarapiPhotos });
+      return NextResponse.json({ ok: true, unfinished: 0, processed: [], quickEvalSmartId, thecarapiPhotos, photoDropbox });
     }
     const now = Date.now();
     const due = unfinished
@@ -109,6 +115,7 @@ export async function GET(req: Request) {
       ok: true,
       quickEvalSmartId,
       thecarapiPhotos,
+      photoDropbox,
       unfinished: unfinished.length,
       processed,
       /** Operatoram: šie gaida manuālu lēmumu (atmaksa vai atkārtots mēģinājums). */
