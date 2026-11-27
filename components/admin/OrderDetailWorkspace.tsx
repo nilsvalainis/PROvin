@@ -37,7 +37,7 @@ import { AdminOrderCountryTimelineStrip } from "@/components/admin/AdminOrderCou
 import { ADMIN_PRO_TONE, adminProBtn } from "@/lib/admin-pro-tones";
 import { AdminAutoIngestChipProvider } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
-import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
+import { autoIngestChipsWithCsddCountry, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
@@ -102,6 +102,7 @@ import {
   vendorAvotuBlockToPlainText,
   carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
+  vinRegistryBlockHasContent,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -5983,8 +5984,13 @@ export function OrderDetailWorkspace({
   ];
 
   const autoIngestChips = useMemo(
-    () => autoIngestChipsByBlock(payload.autoIngest),
-    [payload.autoIngest],
+    () =>
+      autoIngestChipsWithCsddCountry(payload.autoIngest, blocksDisplaySafe.csdd, (key) =>
+        key === "tjekbil" || key === "mnt_ee" || key === "carinfo"
+          ? vinRegistryBlockHasContent(blocksDisplaySafe[key])
+          : false,
+      ),
+    [payload.autoIngest, blocksDisplaySafe],
   );
 
   return (
