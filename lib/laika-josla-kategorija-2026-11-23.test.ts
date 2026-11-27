@@ -286,7 +286,7 @@ describe("„Periods bez ierakstiem” (ne „robs”), pilni vārdi", () => {
       null,
       "lv",
     );
-    expect(summary).toContain("Garākais periods bez ierakstiem");
+    expect(summary).toContain("Garākais pārtraukums");
     expect(summary).toContain("15 mēneši, 51 933 km");
   });
 });

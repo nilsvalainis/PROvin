@@ -3809,8 +3809,11 @@ ${sourceDotColorCss()}
         margin:10px 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      /* Etiķete vienmēr vienā rindā (Nils 27.11): gara etiķete nedrīkst nobīdīt vērtību un lauzt rindu līdzinājumu. */
+      .pdf-svc-summary__cell{min-width:0;}
       .pdf-svc-summary__cell span{
         display:block;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;
       }
       .pdf-svc-summary__cell b{display:block;margin-top:2px;font-size:12px;font-weight:750;color:#0f172a;line-height:1.3;}
       .pdf-svc-summary__cell--nodata b{color:#b91c1c;}

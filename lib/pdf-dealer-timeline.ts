@@ -319,7 +319,8 @@ export function formatDealerGapValue(gap: DealerVisitGap, lang: ClientReportLang
 
 /** Etiķete laika joslā un kopsavilkumā („robs” ir žargons - Nils 23.11). */
 export const DEALER_GAP_LABEL = "Periods bez ierakstiem";
-export const DEALER_LONGEST_GAP_LABEL = "Garākais periods bez ierakstiem";
+/** Kartītes etiķete īsa, lai neplīst 2 rindās (Nils 27.11: garais teksts lauza kartīti). */
+export const DEALER_LONGEST_GAP_LABEL = "Garākais pārtraukums";
 
 export function buildDealerVisitSummaryHtml(
   rows: readonly AutoRecordsServiceWorkRow[],
