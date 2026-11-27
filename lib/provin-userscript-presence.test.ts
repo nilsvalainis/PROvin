@@ -353,8 +353,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(50);
     await flushMany(10);
-    expect(versions.filter(Boolean).at(-1)).toBe("1.28.0");
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.28.0");
+    expect(versions.filter(Boolean).at(-1)).toBe("1.28.1");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.28.1");
     expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
     expect(dom.attrMutations).toBeLessThan(20);
     stop();
@@ -367,7 +367,7 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     await flushMany(10);
     vi.advanceTimersByTime(200);
     await flushMany(10);
-    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.28.0");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.28.1");
     expect(dom.attrMutations).toBeLessThan(8);
     expect(vinScanUserscriptUpdateNeeded("1.27.0")).toBe(false);
   });
@@ -409,8 +409,8 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     const after = dom.attrMutations;
     await runTasks(100);
     expect(dom.attrMutations).toBe(after);
-    expect(readProvinUserscriptVersion()).toBe("1.28.0");
-    expect(versions.at(-1)).toBe("1.28.0");
+    expect(readProvinUserscriptVersion()).toBe("1.28.1");
+    expect(versions.at(-1)).toBe("1.28.1");
     expect(versions.length).toBeLessThanOrEqual(3);
     stop();
   });
