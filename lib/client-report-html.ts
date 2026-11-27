@@ -316,6 +316,7 @@ import {
   type DealerSignalsState,
 } from "@/lib/dealer-signals";
 import { type OneautoBlockState } from "@/lib/oneauto-block";
+import { dealerPhotosGalleryTitle } from "@/lib/dealer-photos";
 import { OFFICIAL_DEALER_SECTION_TITLE, oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
 import { oneautoBlockHasFoldableContent, resolveDealerAutoRecords } from "@/lib/oneauto-to-auto-records";
@@ -539,6 +540,8 @@ export type ClientReportPayload = {
   odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[] | null;
   /** Operatora Lielie darbi labojumi. Nav veco pasūtījumu pārraksts. */
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null;
+  /** Dīlera PDF foto (Nils 27.11): titulbilde augšā + atlasītā galerija pirms kājenes. Tukšs - kā līdz šim. */
+  dealerPhotos?: import("@/lib/dealer-photos").DealerPhotosPdfPayload | null;
   /**
    * EN/RU/DE: oriģinālais (latviešu) payload PIRMS AI tulkojuma (`applyClientReportTranslatedTexts`).
    * Fakti (īpašnieku skaits, negadījumi, rādījumi, serviss, izsoles, vecums) 1. lapā un kopsavilkumā
@@ -4568,6 +4571,39 @@ export type ReportPreviewTab = "all" | "mileage" | "incidents";
  * payload bez «+ Extra» atgrieza tukšas tabulas -> «Nav datu», lai gan CSDD/avotu/dīlera dati bija).
  * Pilnā atskaite, visas sadaļas un visi avoti ieslēgti; «Izvilkums» kā pasūtījumā.
  */
+/** Dīlera PDF titulbilde zem augšējās joslas - tā pati figūra kā audita titulbildei. */
+export function buildDealerPhotosCoverHtml(
+  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerPhotos">,
+  dataUrls: Map<string, string> | undefined,
+): string {
+  if (p.pdfReportKind !== "dealer") return "";
+  const id = p.dealerPhotos?.coverId?.trim() ?? "";
+  const src = id ? (dataUrls?.get(id) ?? "") : "";
+  if (!src.startsWith("data:image/") || /["<>\s]/.test(src)) return "";
+  return `<figure class="pdf-cover-photo"><img class="pdf-cover-photo__img" src="${src}" alt=""/></figure>`;
+}
+
+/** Dīlera PDF galerija «Fotogrāfijas» (atlasītās «Sūtīt klientam») - tas pats režģis kā audita foto pielikumam. */
+export function buildDealerPhotosGalleryHtml(
+  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerPhotos">,
+  dataUrls: Map<string, string> | undefined,
+  lang: ClientReportLang,
+): string {
+  if (p.pdfReportKind !== "dealer") return "";
+  const ids = (p.dealerPhotos?.galleryIds ?? []).filter((id) => dataUrls?.get(id));
+  if (ids.length === 0) return "";
+  const inner = buildSourcePhotoGroupsPdfHtml(
+    [{ title: "", photos: ids.map((id) => ({ id })) }],
+    [],
+    dataUrls,
+    (g) => g as { title: string; photos: { id: string }[] }[],
+    "appendix",
+  );
+  if (!inner) return "";
+  const head = sectionHeadBrand(sectionIconPdfHtml("camera"), dealerPhotosGalleryTitle(lang));
+  return `<div class="pdf-unified-mileage-zone pdf-surface-card pdf-dealer-photos" role="region">${head}<div class="pdf-source-section-body">${inner}</div></div>`;
+}
+
 export function reportPreviewPayload(p: ClientReportPayload): ClientReportPayload {
   const vis = mergePdfVisibility(p.pdfVisibility);
   const allOn = Object.fromEntries(Object.keys(vis).map((k) => [k, true])) as PdfVisibilitySettings;
@@ -4634,6 +4670,8 @@ export function buildClientReportDocumentHtml(args: {
   asvPhotoDataUrls?: Map<string, string>;
   incidentPhotoDataUrls?: Map<string, string>;
   sourceBlockPhotoDataUrls?: Map<string, string>;
+  /** Dīlera PDF atlasītās bildes (jau saspiestas, ar blur), sk. `payload.dealerPhotos`. */
+  dealerPhotoDataUrls?: Map<string, string>;
   /** Papīra versija ar palielinātu kontrastu - digitālo PDF CSS nemaina. */
   printInk?: boolean;
   /** EN/RU: statiskais apvalks tiek tulkots ar "sweep" pāri gatavajam HTML. Dinamiskais teksts (✨ komentāri)
@@ -4650,6 +4688,7 @@ export function buildClientReportDocumentHtml(args: {
     asvPhotoDataUrls,
     incidentPhotoDataUrls,
     sourceBlockPhotoDataUrls,
+    dealerPhotoDataUrls,
     printInk = false,
   } = args;
   const withAuctionPrices = withAuctionPricesPayload;
@@ -4681,6 +4720,8 @@ export function buildClientReportDocumentHtml(args: {
   // Dīlera atskaitei 1. lapas kopsavilkuma nav - tikai tā pati augšējā josla (logo, veids, datums).
   if (dealerOnly) {
     lines.push(buildPdfTopBarOnlyHtml({ logoSvg, ...pdfTopKind(p, lang), dateLabel: pdfTopDateLabel(now) }));
+    const dealerCover = buildDealerPhotosCoverHtml(rawPayload, dealerPhotoDataUrls);
+    if (dealerCover) lines.push(dealerCover);
   }
 
   // Kopsavilkums, laikjosla, negadījumi: tikai PDF iekļautie avoti (CSDD identitātei kopsavilkumā paliek).
@@ -4816,6 +4857,11 @@ export function buildClientReportDocumentHtml(args: {
 
   if (p.isDemo) {
     lines.push('<p class="mirror-line"><strong>Demonstrācijas dati</strong> - daļa lauku ir parauga rakstura.</p>');
+  }
+
+  if (dealerOnly) {
+    const galleryHtml = buildDealerPhotosGalleryHtml(rawPayload, dealerPhotoDataUrls, lang);
+    if (galleryHtml) lines.push(galleryHtml);
   }
 
   if (aboutBlock) lines.push(aboutBlock);

@@ -477,8 +477,8 @@ export function AdminDealerSendDialog({
       try {
         const prepared = await bridge.prepareDealerPdf(pdfLang, { forSend: true });
         recheckWithPdf(prepared);
-        // PDF + faili kopā e-pasta limitā - kļūda logā pirms sūtīšanas.
-        const sizeErr = extraFiles.length > 0 ? dealerExtraFilesError(extraFiles, prepared.bytes) : null;
+        // PDF (ar bildēm) + faili kopā e-pasta limitā (18 MB) - kļūda logā pirms sūtīšanas.
+        const sizeErr = dealerExtraFilesError(extraFiles, prepared.bytes);
         if (sizeErr) {
           setErr(sizeErr);
           return;

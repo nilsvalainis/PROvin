@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminDealerPhotos, type DealerPhotosUpdater } from "@/components/admin/AdminDealerPhotos";
+import type { DealerPhotoGallery } from "@/lib/dealer-photos";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { inferServiceWorkCountries } from "@/lib/service-works-country";
@@ -173,6 +175,9 @@ type Props = {
   techRiskMap?: TechnicalRiskMap | null;
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
   onDealerMajorWorkOverridesChange?: (next: DealerMajorWorkOverride[]) => void;
+  /** Dīlera atskaites foto (tikai dīlera pasūtījumiem): galeriju saraksts + saglabāšana. */
+  getDealerPhotoGalleries?: () => DealerPhotoGallery[];
+  onDealerPhotosCommit?: (update: DealerPhotosUpdater, uploadedIds?: string[]) => void | Promise<void>;
   /** Citu avotu valstu laika josla: vizītei bez valsts rāda secināto valsti (nesaglabā). */
   countryEvidence?: CountryTimelineEntry[];
 };
@@ -219,6 +224,8 @@ export function AdminAutoRecordsSourceBlock({
   techRiskMap = null,
   dealerMajorWorkOverrides = [],
   onDealerMajorWorkOverridesChange,
+  getDealerPhotoGalleries,
+  onDealerPhotosCommit,
   countryEvidence,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
@@ -1066,6 +1073,16 @@ export function AdminAutoRecordsSourceBlock({
               onHidePhotoWatermarksChange={(next) =>
                 onChange({ ...value, hidePhotoWatermarks: next })
               }
+            />
+          ) : null}
+          {sessionId && getDealerPhotoGalleries && onDealerPhotosCommit ? (
+            <AdminDealerPhotos
+              sessionId={sessionId}
+              state={value.dealerPhotos}
+              getGalleries={getDealerPhotoGalleries}
+              onCommit={onDealerPhotosCommit}
+              uploadedCount={(value.photos ?? []).length}
+              disabled={readOnly || !!disabled || !photosPersistenceEnabled}
             />
           ) : null}
           <AdminSourceCommentField
