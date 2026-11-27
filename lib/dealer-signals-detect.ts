@@ -11,14 +11,50 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { DEALER_SIGNAL_KINDS, type DealerSignalKind } from "@/lib/dealer-signals-persist";
+import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
 import type { SourceIssue } from "@/lib/source-consistency";
+import { detectTotalLossFromPdfInput, textIndicatesTotalLoss } from "@/lib/total-loss-detect";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
+import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
 export type DealerSignalsDetectInput = {
   sourceBlocks: WorkspaceSourceBlocks | null | undefined;
   /** `checkSourceConsistency` rezultāts (ar admina atzīmēm - noraidītie ir `info`). */
   sourceIssues?: readonly Pick<SourceIssue, "kind" | "severity">[] | null;
+  /**
+   * Pasūtījuma VIN SCAN rezultāts (Nils 27.11): izsoles, bojājumi, dokumenta statuss arī tad,
+   * ja tie vēl nav importēti avotu blokos.
+   */
+  vinScan?: { indicators?: readonly VinScanIndicator[] | null } | null;
 };
+
+type Row = Record<string, unknown>;
+
+/**
+ * VIN SCAN avoti, kuru «found» ar izsoli nozīmē šī konkrētā auto ASV izsoļu vēsturi
+ * (ne modeļa līmeņa datus kā NHTSA sūdzības / atsaukumi).
+ */
+const US_AUCTION_SCAN_IDS = new Set<string>(["bid_cars", "bidfax", "poctra", "stat_vin", "joj_copart_iaai"]);
+
+/** ASV valsts nosaukums / kods avotu rindās (LV/EN/RU/DE). */
+const US_COUNTRY_RE =
+  /^(?:us|usa|u\.?s\.?a?\.?|asv|amerikas savienotās valstis|united states(?: of america)?|сша|соединённые штаты(?: америки)?|vereinigte staaten(?: von amerika)?)$/i;
+
+/** ASV izsoļu platformas (cc_vin pārdošanas rindās). */
+const US_AUCTION_VENUE_RE = /\b(?:iaai|insurance auto auctions)\b/i;
+
+/** Bojājuma apraksts bez faktiska bojājuma (izsoļu «Normal wear», «None», «Unknown»). */
+const NO_DAMAGE_PART_RE = /^(?:none|no damage|nav|nav bojājumu|normal wear(?:\s*(?:&|and)\s*tear)?|unknown|nezināms|n\/a|-)$/i;
+
+/**
+ * Īpašs dokumenta / titula statuss (salvage, rebuilt, flood u.c.). Tikai titula / zīmola / dokumenta laukos.
+ */
+const SPECIAL_STATUS_RE =
+  /\b(?:salvage|rebuilt|rebuildable|reconstructed|flood|water damage|junk|total loss|totaled|non-repairable|irreparable|certificate of destruction|parts only|lemon|hail damage|fire damage|bojāej\p{L}*|totalschaden)(?![\p{L}\p{N}])/iu;
+const STATUS_NEGATION_RE = /\b(?:no|not|none|nav|netika|clean|without|nein|kein\p{L}*|0)\b|ierakst\p{L}* nav|not found|no record/iu;
+
+/** VIN SCAN detaļu rindas ar dokumenta / titula statusu (piem. «Dokuments: Salvage (Georgia)»). */
+const SCAN_DOC_LINE_RE = /^\s*(?:dokuments|document|sale document|title(?: \(detalizēts\))?|title type|title brand)\s*:\s*(.+)$/gimu;
 
 /** Ārvalstu reģistri (lkf.ee - apdrošināšana, tā nonāk negadījumos). */
 const FOREIGN_REGISTRY_KEYS = ["tjekbil", "finnik", "mnt_ee", "carinfo", "traficom_fi"] as const;
@@ -44,23 +80,140 @@ export function hasMileageMismatchSignal(issues: DealerSignalsDetectInput["sourc
   );
 }
 
-/** Negadījumi: jebkurš avots ar negadījuma rindu (tā pati atlase kā kopējā negadījumu tabulā). */
-export function hasIncidentSignal(blocks: WorkspaceSourceBlocks): boolean {
+function str(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+function scanIndicators(input: Pick<DealerSignalsDetectInput, "vinScan">): VinScanIndicator[] {
+  return [...(input.vinScan?.indicators ?? [])].filter((i) => i && typeof i === "object");
+}
+
+/** VIN SCAN izsoles / bojājumi / tituli / nobraukums cc_vin formā (tas pats, ko imports ieliktu blokā). */
+function scanParsed(input: Pick<DealerSignalsDetectInput, "vinScan">) {
+  const ind = scanIndicators(input);
+  return ind.length > 0 ? vinScanAuctionsToCcVinParsed(ind) : null;
+}
+
+/** Bojājuma apraksts ar vismaz vienu faktisku daļu («Front end + Unknown» - jā, «Normal wear» - nē). */
+export function isMeaningfulDamageText(text: string): boolean {
+  const parts = text
+    .split(/\s*(?:\+|,|;|\/|·)\s*/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.some((p) => !NO_DAMAGE_PART_RE.test(p));
+}
+
+/** Bojājuma rinda (cc_vin / ASV / VIN SCAN): summa vai faktisks apraksts. */
+function damageRowCounts(d: Row): boolean {
+  if (filled(d.amount)) return true;
+  return isMeaningfulDamageText(str(d.description));
+}
+
+/**
+ * Negadījumi un bojājumi: kopējās negadījumu tabulas rindas (ar summu) + rindas bez summas
+ * (izsoļu / ASV bojājumi, apdrošināšanas ieraksti ar datumu) + VIN SCAN izsoļu bojājumi.
+ */
+export function hasIncidentSignal(blocks: WorkspaceSourceBlocks, input: Pick<DealerSignalsDetectInput, "vinScan"> = {}): boolean {
+  const vendor = toPdfManualVendorBlocks(blocks);
   const rows = collectUnifiedIncidentRows({
-    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    manualVendorBlocks: vendor,
     manualLtabBlock: toPdfLtabManualBlock(blocks.ltab, { csdd: blocks.csdd }),
     ccVinBlock: blocks.cc_vin,
     asvBlock: blocks.asv,
   });
-  return rows.length > 0;
+  if (rows.length > 0) return true;
+  // Negadījums ar datumu, bet bez summas (AutoDNA / CarVertical / citi avoti / reģistri).
+  if (vendor.some((b) => (b.incidentRows ?? []).some((r) => filled(r.csngDate) || filled(r.lossAmount)))) return true;
+  if ((blocks.ltab.rows ?? []).some((r) => filled(r.csngDate) && filled(r.lossAmount))) return true;
+  if ([...(blocks.cc_vin.damages ?? []), ...(blocks.asv.damages ?? [])].some((d) => damageRowCounts(d as Row))) return true;
+  const parsed = scanParsed(input);
+  return (parsed?.damages ?? []).some((d) => damageRowCounts(d as Row));
 }
 
-/** Izsoļu fotogrāfijas: izsoļu arhīva bildes vai izsoļu ierakstu (TheCarApi) bildes. */
-export function hasAuctionPhotoSignal(blocks: WorkspaceSourceBlocks): boolean {
+/** Izsoļu fotogrāfijas: izsoļu arhīva bildes, izsoļu ierakstu (TheCarApi) bildes vai VIN SCAN izsoļu foto. */
+export function hasAuctionPhotoSignal(blocks: WorkspaceSourceBlocks, input: Pick<DealerSignalsDetectInput, "vinScan"> = {}): boolean {
   const cc = blocks.cc_vin;
   if ((cc.photos ?? []).length > 0) return true;
   if ((cc.photoGroups ?? []).some((g) => (g.photos ?? []).length > 0)) return true;
-  return (cc.thecarapiRecords ?? []).some((r) => (r.photos ?? []).length > 0 || (r.photoUrls ?? []).some((u) => u.trim() !== ""));
+  if ((cc.thecarapiRecords ?? []).some((r) => (r.photos ?? []).length > 0 || (r.photoUrls ?? []).some((u) => u.trim() !== ""))) {
+    return true;
+  }
+  // VIN SCAN imports ieliek foto saites cc_vin RAW, arī ja bilžu augšupielāde neizdevās.
+  if (/VIN SCAN izsoles foto:\s*\n\s*https?:\/\//i.test(cc.rawUnprocessedData ?? "")) return true;
+  return scanIndicators(input).some(
+    (i) =>
+      i.status === "found" &&
+      (i.auctions ?? []).some((a) => (a.photoCount ?? 0) > 0 || Boolean(str(a.photoUrl)) || (a.photoUrls ?? []).some((u) => str(u))),
+  );
+}
+
+/** ASV vēsture: ASV rindas avotos, ASV vēstures bloks ar datiem vai ASV izsoļu ieraksts VIN SCAN. */
+export function hasUsHistorySignal(blocks: WorkspaceSourceBlocks, input: Pick<DealerSignalsDetectInput, "vinScan"> = {}): boolean {
+  const isUs = (v: unknown) => US_COUNTRY_RE.test(str(v));
+  const cc = blocks.cc_vin;
+  if ((cc.mileage ?? []).some((r) => isUs(r.country) && (filled(r.date) || filled(r.odometer)))) return true;
+  if ((cc.sales ?? []).some((r) => US_AUCTION_VENUE_RE.test(str(r.venue)))) return true;
+  if ((cc.damages ?? []).some((r) => US_AUCTION_VENUE_RE.test(str(r.region)) && damageRowCounts(r as Row))) return true;
+  // ASV vēstures bloks (CARFAX / AutoCheck ASV atskaite): jebkura aizpildīta faktu rinda.
+  const asv = blocks.asv as unknown as Record<string, Row[] | undefined>;
+  const asvFact = (r: Row) => filled(r.date) && Object.entries(r).some(([k, v]) => k !== "date" && filled(v));
+  if (["mileage", "damages", "titles", "sales", "brands"].some((k) => (asv[k] ?? []).some(asvFact))) return true;
+  for (const b of toPdfManualVendorBlocks(blocks)) {
+    if ((b.mileageRows ?? []).some((r) => isUs(r.country))) return true;
+    if ((b.incidentRows ?? []).some((r) => isUs(r.incidentNo) && (filled(r.csngDate) || filled(r.lossAmount)))) return true;
+    if ((b.vehicleHistoryTimeline ?? []).some((r) => isUs(r.country) && filled(r.date))) return true;
+  }
+  for (const i of scanIndicators(input)) {
+    if (i.status !== "found") continue;
+    if (US_AUCTION_SCAN_IDS.has(i.id) && ((i.auctions ?? []).length > 0 || (i.jojFacts?.sales ?? []).length > 0)) return true;
+    if ((i.flags?.countries ?? []).some((c) => isUs(c))) return true;
+  }
+  return false;
+}
+
+function statusTextPositive(text: string): boolean {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (!t || !SPECIAL_STATUS_RE.test(t)) return false;
+  if (STATUS_NEGATION_RE.test(t)) return false;
+  return true;
+}
+
+/**
+ * Īpašs statuss: totālā bojāeja / salvage / rebuilt / flood u.c. strukturētos avotu laukos
+ * (tituli, zīmoli, negadījumu rindas, reģistru statusi) un VIN SCAN dokumenta laukā.
+ * Komentāri (AI / admina) netiek skatīti.
+ */
+export function hasSpecialStatusSignal(blocks: WorkspaceSourceBlocks, input: Pick<DealerSignalsDetectInput, "vinScan"> = {}): boolean {
+  const parsed = scanParsed(input);
+  const asv = blocks.asv as unknown as { brands?: Row[]; titles?: Row[]; damages?: Row[] };
+  const loss = detectTotalLossFromPdfInput({
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    manualLtabBlock: { rows: blocks.ltab.rows ?? [] },
+    ccVinBlock: {
+      damages: [...(blocks.cc_vin.damages ?? []), ...(parsed?.damages ?? [])],
+      brands: [...(blocks.cc_vin.brands ?? []), ...((asv.brands ?? []) as never[])],
+      titles: [...(blocks.cc_vin.titles ?? []), ...((asv.titles ?? []) as never[]), ...(parsed?.titles ?? [])],
+    },
+    asvBlock: { damages: (asv.damages ?? []) as never[] },
+  });
+  if (loss.found) return true;
+  const titleLike: Row[] = [
+    ...(blocks.cc_vin.brands ?? []),
+    ...(blocks.cc_vin.titles ?? []),
+    ...(asv.brands ?? []),
+    ...(asv.titles ?? []),
+    ...(parsed?.titles ?? []),
+  ] as Row[];
+  if (titleLike.some((r) => statusTextPositive([r.label, r.detail, r.note].map(str).join(" ")))) return true;
+  for (const i of scanIndicators(input)) {
+    if (i.status !== "found") continue;
+    for (const m of str(i.detail).matchAll(SCAN_DOC_LINE_RE)) {
+      if (statusTextPositive(m[1] ?? "")) return true;
+    }
+    // NICB «total loss / salvage ieraksts» (bez noliegumu filtriem kopsavilkumā).
+    if (i.id === "nicb" && textIndicatesTotalLoss(str(i.summary))) return true;
+  }
+  return false;
 }
 
 /** Citas valsts reģistrs: kādā ārvalstu reģistrā ir nobraukuma vai hronoloģijas ieraksts. */
@@ -76,8 +229,10 @@ export function detectDealerSignals(input: DealerSignalsDetectInput): DealerSign
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks ?? {});
   const checks: Record<DealerSignalKind, () => boolean> = {
     mileage_mismatch: () => hasMileageMismatchSignal(input.sourceIssues),
-    incidents: () => hasIncidentSignal(blocks),
-    auction_photos: () => hasAuctionPhotoSignal(blocks),
+    special_status: () => hasSpecialStatusSignal(blocks, input),
+    incidents: () => hasIncidentSignal(blocks, input),
+    us_history: () => hasUsHistorySignal(blocks, input),
+    auction_photos: () => hasAuctionPhotoSignal(blocks, input),
     foreign_registry: () => hasForeignRegistrySignal(blocks),
   };
   return DEALER_SIGNAL_KINDS.filter((k) => {
