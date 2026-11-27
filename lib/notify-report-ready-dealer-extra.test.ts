@@ -110,14 +110,14 @@ describe("dīlera «Sūtīt klientam» ar papildu failiem", () => {
     expect(m.recordDealer.mock.calls[0]![1]).not.toHaveProperty("files");
   });
 
-  it("par daudz failu (>10): 413 ar skaidru tekstu, nekas netiek sūtīts, pagaidu faili dzēsti", async () => {
+  it("par daudz failu (>50): 413 ar skaidru tekstu, nekas netiek sūtīts, pagaidu faili dzēsti", async () => {
     m.fetchBlobs.mockResolvedValue(
-      Array.from({ length: 11 }, (_, i) => ({ filename: `${i}.jpg`, content: Buffer.alloc(10), contentType: "image/jpeg" })),
+      Array.from({ length: 51 }, (_, i) => ({ filename: `${i}.jpg`, content: Buffer.alloc(10), contentType: "image/jpeg" })),
     );
     const res = await POST(req({ blobAttachments: Array.from({ length: 11 }, () => ({ url: BLOB_URL })) }));
     const j = (await res.json()) as { error: string; message: string };
     expect(res.status).toBe(413);
-    expect(j.message).toMatch(/līdz 10/);
+    expect(j.message).toMatch(/līdz 50/);
     expect(m.send).not.toHaveBeenCalled();
     expect(m.delBlobUrls).toHaveBeenCalled();
   });
