@@ -110,6 +110,7 @@ const WORKSPACE_EXTRA_FIELDS = [
   "odometerAnomalyOverrides",
   "contradictionFeedback",
   "dealerMajorWorkOverrides",
+  "dealerSignals",
 ] as const;
 
 function same(a: unknown, b: unknown): boolean {

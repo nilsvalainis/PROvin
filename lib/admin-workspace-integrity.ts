@@ -33,6 +33,7 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
+    ...(w.dealerSignals != null ? { dealerSignals: w.dealerSignals } : {}),
   });
 }
 
@@ -60,6 +61,7 @@ export function stableWorkspaceChecksum(
     ...(normalized.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: normalized.dealerMajorWorkOverrides }
       : {}),
+    ...(normalized.dealerSignals != null ? { dealerSignals: normalized.dealerSignals } : {}),
   });
   let h = 5381;
   for (let i = 0; i < canonical.length; i++) {

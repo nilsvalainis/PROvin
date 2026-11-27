@@ -26,6 +26,7 @@ import {
   findDrivetrainContradictions,
 } from "@/lib/registry-drivetrain";
 import { findPurchaseVerdictHits } from "@/lib/provin-banned-vocabulary";
+import { isFactCheckExemptSentence, isHypotheticalNegationSentence } from "@/lib/fact-check-context";
 
 export type ContradictionCheckInput = {
   text: string;
@@ -328,6 +329,8 @@ const INSTRUCTION_RE = /\b(?:vai|lai)\s+(?:\S+\s+){0,3}nav\b|jāpārbauda|pārli
 
 function isNegationExempt(sentence: string): boolean {
   return (
+    // 27.11 (Nils): hipotētiski / neziņas teikumi un obligātās eļļas piebildes nav apgalvojums.
+    isFactCheckExemptSentence(sentence) ||
     PROPERTY_NEGATION_RE.test(sentence) ||
     PROPERTY_NEGATION_EXTRA_RE.test(sentence) ||
     CONDITIONAL_RE.test(sentence) ||
@@ -346,6 +349,16 @@ export function looksLikeHeading(sentence: string): boolean {
 
 /** «pēc 2019. gada», «kopš 2020», «līdz 2018» → filtrs gadiem. */
 function sentenceYearFilter(sentence: string): ((year: number) => boolean) | null {
+  // 27.11: periods «no 2012. gada jūnija līdz 2013. gada augustam», «starp 2019 un 2022», «2014-2016».
+  const range =
+    sentence.match(
+      /(?<!\p{L})(?:[Nn]o|[Ss]tarp)\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})(?:[^.!?]|\.(?!\s+\p{Lu})){0,40}?(?<!\p{L})(?:līdz|un)\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/u,
+    ) ?? sentence.match(/\b((?:19|20)\d{2})\s*-\s*((?:19|20)\d{2})\b/);
+  if (range) {
+    const a = Number(range[1]);
+    const b = Number(range[2]);
+    if (b >= a) return (y) => y >= a && y <= b;
+  }
   const after = sentence.match(/\bpēc\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/i);
   if (after) return (y) => y > Number(after[1]);
   const since = sentence.match(/\b(?:kopš|no)\s+(?:\d{1,2}\.\d{1,2}\.)?((?:19|20)\d{2})/i);
@@ -578,7 +591,7 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   const originForeign = originDe || (Boolean(iso) && iso !== "LV") || prevForeign;
   // 24.11 audits: sadaļu virsraksti («Pirmā reģistrācija Latvijā un TA») nav apgalvojumi.
   const firstRegLvSentence = sentences.find(
-    (s) => FIRST_REG_LV_RE.test(s) && !looksLikeHeading(s) && !CONDITIONAL_RE.test(s),
+    (s) => FIRST_REG_LV_RE.test(s) && !looksLikeHeading(s) && !CONDITIONAL_RE.test(s) && !isHypotheticalNegationSentence(s),
   );
   if (originForeign && firstRegLvSentence) {
     push({
@@ -697,13 +710,18 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
       sentence: bad,
     });
   }
-  if (facts.recallCodes.length > 0 && NO_RECALL_RE.test(text) && !/jāpārbauda|izpild/i.test(text)) {
+  // 27.11: teikuma līmenī (ne viss teksts) - hipotētisks teikums neattaisno un neapsūdz citu teikumu.
+  const noRecallSentence =
+    facts.recallCodes.length > 0 && !/jāpārbauda|izpild/i.test(text)
+      ? sentences.find((s) => NO_RECALL_RE.test(s) && !/jāpārbauda|izpild/i.test(s) && !isNegationExempt(s))
+      : undefined;
+  if (noRecallSentence) {
     push({
       id: "no_recalls_claim",
       kind: "no_recalls_claim",
       level: "E",
       message: `Teksts saka, ka atsaukumu nav, bet datos ir: ${facts.recallCodes.join(", ")}.`,
-      sentence: firstMatchingSentence(sentences, NO_RECALL_RE),
+      sentence: noRecallSentence,
     });
   }
 
@@ -734,7 +752,9 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
 
   // 5b) 23.11: „liegumu nav” bez avota - e.csdd tekstā sadaļas „Aizliegumi” nav, tātad nav pārbaudīts.
   if ((facts.csddSignalLines ?? []).includes(CSDD_RESTRICTIONS_NOT_CHECKED_LINE)) {
-    const bad = sentences.find((s) => NO_RESTRICTIONS_CLAIM_RE.test(s) && !/nav\s+pārbaudīt/i.test(s));
+    const bad = sentences.find(
+      (s) => NO_RESTRICTIONS_CLAIM_RE.test(s) && !/nav\s+pārbaudīt/i.test(s) && !isFactCheckExemptSentence(s),
+    );
     if (bad) {
       push({
         id: "unsourced_no_restrictions",

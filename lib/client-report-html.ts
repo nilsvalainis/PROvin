@@ -306,6 +306,13 @@ import {
   DEALER_EXTRA_ADMIN_LABELS,
   DEALER_EXTRA_KEYS,
 } from "@/lib/dealer-pdf-extra";
+import {
+  DEALER_SIGNALS_SECTION_TITLE,
+  dealerSignalsAuditLinkLabel,
+  dealerSignalsPdfRows,
+  type DealerSignalsAuditLink,
+  type DealerSignalsState,
+} from "@/lib/dealer-signals";
 import { type OneautoBlockState } from "@/lib/oneauto-block";
 import { OFFICIAL_DEALER_SECTION_TITLE, oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
@@ -505,6 +512,10 @@ export type ClientReportPayload = {
   pdfReportKind?: "full" | "dealer" | "asv" | "business";
   /** Dīlera PDF «EXTRA · Papildu dati» - izvēlētās bezmaksas sadaļas (tikai atmiņā, netiek saglabāts). */
   dealerExtra?: DealerExtraKey[] | null;
+  /** Dīlera PDF «Signāli ārpus dīlera datiem» (saglabāts workspace; noklusējums izslēgts). */
+  dealerSignals?: DealerSignalsState | null;
+  /** Klusā audita saite sadaļas beigās (BF laikā ar cenu). */
+  dealerSignalsAuditLink?: DealerSignalsAuditLink | null;
   /** Stripe checkout līnija - dīlera-only pret AUDITS/MINI zarošanai. */
   checkoutLine?: string | null;
   partnerId?: string | null;
@@ -3687,6 +3698,24 @@ ${clientReportPageChromeCss(running)}
       .pdf-mileage-history-row--anomaly td.pdf-mileage-cell-date{
         box-shadow:inset 3px 0 0 #FF4D4D;
       }
+      .pdf-dealer-signals{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-dealer-signals-table{
+        width:100%;border-collapse:collapse;table-layout:fixed;
+        font-family:Inter,sans-serif!important;font-size:11px;line-height:1.4;
+      }
+      .pdf-dealer-signals-table col.pdf-dealer-signal-col-title{width:38%;}
+      .pdf-dealer-signals-table td{
+        padding:8px 10px!important;border-bottom:1px solid #E0E0E0;vertical-align:top;color:#0f172a;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-dealer-signals-table tr:last-child td{border-bottom:none;}
+      .pdf-dealer-signal-title{font-weight:700;}
+      .pdf-dealer-signal-text{color:#475569;}
+      .pdf-dealer-signal-row--alert td{background:#FFF1F2!important;color:#B91C1C!important;}
+      .pdf-dealer-signal-row--alert td.pdf-dealer-signal-title{box-shadow:inset 3px 0 0 #FF4D4D;}
+      .pdf-dealer-signal-row--alert td.pdf-dealer-signal-text{font-weight:700;}
+      .pdf-dealer-signals-cta{margin:8px 0 0;font-size:10.5px;text-align:right;}
+      .pdf-dealer-signals-cta a{color:#0061D2;font-weight:700;text-decoration:none;}
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-src{text-align:center!important;}
@@ -4370,6 +4399,33 @@ export function buildReportHistoryTablesHtml(
   return { mileageHtml, incidentsHtml };
 }
 
+/**
+ * «Signāli ārpus dīlera datiem» - dīlera PDF pēc dīlera datiem (pirms EXTRA un kājenes).
+ * Tikai ja admins ieslēdzis un ir vismaz viens ķeksēts signāls. Bez skaitļiem, avotiem un verdikta.
+ */
+export function buildDealerSignalsSectionHtml(
+  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerSignals" | "dealerSignalsAuditLink">,
+  lang: ClientReportLang,
+): string {
+  if (p.pdfReportKind !== "dealer") return "";
+  const rows = dealerSignalsPdfRows(p.dealerSignals, lang);
+  if (rows.length === 0) return "";
+  const head = sectionHeadBrand(sectionIconPdfHtml("flag"), DEALER_SIGNALS_SECTION_TITLE[lang]);
+  const body = rows
+    .map(
+      (r) =>
+        `<tr class="pdf-dealer-signal-row${r.alert ? " pdf-dealer-signal-row--alert" : ""}" data-signal="${escapeHtml(r.kind)}"><td class="pdf-dealer-signal-title">${escapeHtml(r.title)}</td><td class="pdf-dealer-signal-text">${escapeHtml(r.text)}</td></tr>`,
+    )
+    .join("");
+  const link = p.dealerSignalsAuditLink;
+  const url = (link?.url ?? "").trim();
+  const cta =
+    link && /^https:\/\//.test(url)
+      ? `<p class="pdf-dealer-signals-cta"><a href="${escapeHtml(url)}">${escapeHtml(dealerSignalsAuditLinkLabel(lang, link))}</a></p>`
+      : "";
+  return `<section class="pdf-dealer-signals pdf-page-flow-chunk" data-dealer-signals="${escapeHtml(rows.map((r) => r.kind).join(","))}">${head}<div class="pdf-mileage-history-table-wrap"><table class="pdf-dealer-signals-table"><colgroup><col class="pdf-dealer-signal-col-title"/><col/></colgroup><tbody>${body}</tbody></table></div>${cta}</section>`;
+}
+
 /** «EXTRA · Papildu dati» - dīlera PDF beigās (pirms kājenes). Tukšs, ja nekas nav izvēlēts vai nav datu. */
 function buildDealerExtraSectionHtml(
   rawPayload: ClientReportPayload,
@@ -4664,6 +4720,11 @@ export function buildClientReportDocumentHtml(args: {
     lang,
   );
   if (avotuHtml) lines.push(avotuHtml);
+
+  if (dealerOnly) {
+    const signalsHtml = buildDealerSignalsSectionHtml(rawPayload, lang);
+    if (signalsHtml) lines.push(signalsHtml);
+  }
 
   if (dealerOnly) {
     const extraHtml = buildDealerExtraSectionHtml(rawPayload, {

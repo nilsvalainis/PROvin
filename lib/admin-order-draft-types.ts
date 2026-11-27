@@ -51,6 +51,7 @@ export type OrderDraftWorkspaceBody = {
   contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   /** Operatora Lielie darbi labojumi. Nav vecos pasūtījumos; servisa rindas nemaina. */
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[];
+  dealerSignals?: import("@/lib/dealer-signals-persist").DealerSignalsState;
 };
 
 export type OrderDraftState = {

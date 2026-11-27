@@ -36,6 +36,8 @@ import {
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { DealerExtraList } from "@/components/admin/AdminDealerExtraMenu";
 import type { DealerExtraAvailability, DealerExtraKey } from "@/lib/dealer-pdf-extra";
+import { DealerSignalsEditor, dealerSignalsEditorView } from "@/components/admin/AdminDealerSignalsMenu";
+import { dealerSignalsSectionOn, regenerateDealerSignals, type DealerSignalKind, type DealerSignalsState } from "@/lib/dealer-signals";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 /**
@@ -75,6 +77,10 @@ type Props = {
   dealerExtra?: readonly DealerExtraKey[];
   onDealerExtraChange?: (next: DealerExtraKey[]) => void;
   getDealerExtraItems?: (selected: readonly DealerExtraKey[]) => DealerExtraAvailability[];
+  /** «Signāli ārpus dīlera datiem» (saglabāts workspace). */
+  dealerSignals?: DealerSignalsState | null;
+  onDealerSignalsChange?: (next: DealerSignalsState) => void;
+  detectDealerSignals?: () => DealerSignalKind[];
   /** «Priekšskats» - nobraukums un negadījumi kā PDF, pilnekrāna logā. */
   onPreview?: () => void;
   pdfProgressKey?: string | null;
@@ -188,6 +194,9 @@ export function AdminOrderMobileDock({
   dealerExtra = [],
   onDealerExtraChange,
   getDealerExtraItems,
+  dealerSignals,
+  onDealerSignalsChange,
+  detectDealerSignals,
   onPreview,
   pdfProgressKey = null,
   pdfProgressPct = null,
@@ -222,6 +231,15 @@ export function AdminOrderMobileDock({
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
   const [extraOpen, setExtraOpen] = useState(false);
+  const [signalsOpen, setSignalsOpen] = useState(false);
+  const signalsView = useMemo(
+    () =>
+      sheet === "pdf" && signalsOpen && detectDealerSignals
+        ? dealerSignalsEditorView(dealerSignals, detectDealerSignals)
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sheet, signalsOpen, dealerSignals],
+  );
   const extraItems = useMemo(
     () => (sheet === "pdf" && extraOpen && getDealerExtraItems ? getDealerExtraItems(dealerExtra) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -508,6 +526,34 @@ export function AdminOrderMobileDock({
                       else set.delete(key);
                       onDealerExtraChange([...set]);
                     }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {onDealerSignalsChange && detectDealerSignals ? (
+            <div data-mobile-dealer-signals>
+              <button
+                type="button"
+                className={`${sheetRow} pl-10`}
+                aria-expanded={signalsOpen}
+                onClick={() => setSignalsOpen((v) => !v)}
+              >
+                <span className="min-w-0 flex-1">Signāli</span>
+                {dealerSignalsSectionOn(dealerSignals) ? (
+                  <span aria-label="Ir PDF" className="h-2.5 w-2.5 rounded-full bg-[#047857]" />
+                ) : null}
+                <span aria-hidden className="text-[var(--color-provin-muted)]">{signalsOpen ? "▴" : "▾"}</span>
+              </button>
+              {signalsOpen && signalsView ? (
+                <div className="pb-2 pl-4">
+                  <DealerSignalsEditor
+                    size="touch"
+                    state={signalsView}
+                    onChange={onDealerSignalsChange}
+                    onRegenerate={() =>
+                      onDealerSignalsChange(regenerateDealerSignals(signalsView, detectDealerSignals(), { keepEdits: false }))
+                    }
                   />
                 </div>
               ) : null}

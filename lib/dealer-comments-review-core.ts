@@ -175,7 +175,17 @@ export function dropDealerCommentsDuplicatingOil(comments: string, oil: string):
 
 /** Ieteikuma / padoma teikums (Nils 22.11: dīlera produktā tikai fakti). */
 const DEALER_RECOMMENDATION_RE =
-  /jāpārbauda|jāpārbauda\p{L}*|ieteicam\p{L}*|iesakām|ieteikum\p{L}*|pārdevējam\s+jā\p{L}*|jālūdz\p{L}*|jāprasa\p{L}*|lūdziet|pārbaudīt\s+apskat\p{L}*|apskatē\s+(?:jā)?pārbaud\p{L}*|vajadzētu|nepieciešams\s+(?:pārbaudīt|pieprasīt|lūgt)|pieprasīt\p{L}*\s+(?:dokument|rēķin|servisa\s+grāmatiņ)\p{L}*/iu;
+  /jāpārbauda|jāpārbauda\p{L}*|ieteicam\p{L}*|iesakām|ieteikum\p{L}*|pārdevējam\s+jā\p{L}*|jālūdz\p{L}*|jāprasa\p{L}*|lūdziet|pārbaudīt\s+apskat\p{L}*|apskatē\s+(?:jā)?pārbaud\p{L}*|vajadzētu|nepieciešams\s+(?:pārbaudīt|pieprasīt|lūgt)|pieprasīt\p{L}*\s+(?:\S+\s+){0,2}?(?:dokument|rēķin|servisa\s+grāmatiņ)\p{L}*|lūgt\s+pārdevēj\p{L}*/iu;
+/**
+ * 27.11: tas pats EN / RU / DE (PRO klienta valodas). «Recommended interval» (ražotāja norma) nav ieteikums.
+ */
+const DEALER_RECOMMENDATION_FOREIGN_RE =
+  /\bwe\s+(?:recommend|suggest|advise)|\bit\s+is\s+(?:recommended|advisable)\b|\brecommended\s+to\b|\bshould\s+be\s+(?:checked|inspected|verified|requested)|\bask\s+the\s+seller|\brequest\s+(?:\S+\s+){0,3}?(?:documents|invoices|records|receipts)\b|рекомендуется|рекомендуем|следует\s+(?:проверить|запросить|уточнить)|стоит\s+(?:проверить|запросить)|(?:запросить|попросить)\s+(?:\S+\s+){0,2}?продавц|\bwir\s+empfehlen|\bes\s+wird\s+empfohlen|\bempfiehlt\s+sich|\bsollte\s+(?:\S+\s+){0,3}?(?:geprüft|überprüft|angefordert|nachgefragt)|\b(?:beim|vom)\s+Verkäufer\s+(?:\S+\s+){0,3}?(?:anfordern|erfragen)/iu;
+
+/** Vai teikums ir ieteikums / padoms (LV, EN, RU, DE). */
+export function isDealerRecommendationSentence(sentence: string): boolean {
+  return DEALER_RECOMMENDATION_RE.test(sentence) || DEALER_RECOMMENDATION_FOREIGN_RE.test(sentence);
+}
 
 /**
  * Deterministisks drošības tīkls abiem dīlera laukiem: izmet ieteikumu teikumus.
@@ -195,7 +205,7 @@ export function dropDealerRecommendationSentences(text: string): string {
           // Teikumu robeža: pieturzīme + atstarpe + lielais burts (datumi „09.06.2020” nedala).
           return line
             .split(/(?<=[.!?])\s+(?=\p{Lu})/u)
-            .filter((sent) => !DEALER_RECOMMENDATION_RE.test(sent))
+            .filter((sent) => !isDealerRecommendationSentence(sent))
             .join(" ");
         })
         .filter((l) => l.trim());

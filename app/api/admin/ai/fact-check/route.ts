@@ -14,6 +14,7 @@ import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { collectFilledFactCheckFields } from "@/lib/admin-fact-check-client";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import { checkCommentContradictions, mergeFactCheckFlags } from "@/lib/comment-contradiction-check";
+import { dropContextExemptFlags } from "@/lib/fact-check-context";
 import { checkAiCommentFacts } from "@/lib/unit-facts/check";
 import { aiCheckAgainstUnitFacts, isUnitFactAiCheckEnabled } from "@/lib/unit-facts/ai-check";
 
@@ -74,7 +75,8 @@ export async function POST(req: Request) {
     sourceBlocks,
     vin: context.vin,
   });
-  const mergedFlags = mergeFactCheckFlags(result.flags, sheetFlags);
+  // 27.11 (Nils): neviens atradums uz hipotētiska teikuma vai obligātās eļļas piebildes.
+  const mergedFlags = dropContextExemptFlags(mergeFactCheckFlags(result.flags, sheetFlags));
   const merged = { ...result, flags: mergedFlags };
   const wantAi = b.useAi === true && isUnitFactAiCheckEnabled();
   if (!wantAi) return NextResponse.json({ ...merged, aiUsed: false });
@@ -86,7 +88,10 @@ export async function POST(req: Request) {
   return nextJsonBodyWithAiUsage(async () => {
     const aiFlags = await aiCheckAgainstUnitFacts(input);
     const seen = new Set(merged.flags.map((f) => `${f.factId ?? ""}|${f.sentence}`));
-    const withAi = [...merged.flags, ...aiFlags.filter((f) => !seen.has(`${f.factId ?? ""}|${f.sentence}`))];
+    const withAi = [
+      ...merged.flags,
+      ...dropContextExemptFlags(aiFlags).filter((f) => !seen.has(`${f.factId ?? ""}|${f.sentence}`)),
+    ];
     return { ...merged, flags: withAi, aiUsed: true };
   });
 }

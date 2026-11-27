@@ -379,6 +379,31 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(hydrateWorkspaceFromStorage(oldRaw)?.dealerMajorWorkOverrides).toBeUndefined();
   });
 
+  it("round-trips optional dealerSignals (Nils 27.11) and omits the field on old snapshots", () => {
+    const blocks = createDefaultSourceBlocks();
+    const base = {
+      sourceBlocks: blocks,
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
+    };
+    const signals = { enabled: true, items: [{ kind: "incidents" as const, checked: true, text: "Labots" }] };
+    const raw = serializeOrderWorkspaceSnapshotFromRef(
+      { ...base, dealerSignals: signals },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-11-27T10:00:00.000Z",
+    );
+    expect(hydrateWorkspaceFromStorage(raw)?.dealerSignals).toEqual(signals);
+    const oldRaw = serializeOrderWorkspaceSnapshotFromRef(base, DEFAULT_PDF_VISIBILITY, {}, "2026-11-27T10:00:00.000Z");
+    expect(JSON.parse(oldRaw).dealerSignals).toBeUndefined();
+    expect(hydrateWorkspaceFromStorage(oldRaw)?.dealerSignals).toBeUndefined();
+  });
+
   it("uses server revision when newer local snapshot has no workspaceRevision", () => {
     const server = snapshotWithAutodnaComment("Serveris 325", "2026-10-20T22:40:33.549Z");
     const parsedServer = JSON.parse(server) as { workspaceRevision?: number };

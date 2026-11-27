@@ -80,6 +80,8 @@ export function oilPossibleChangeNote(lang: OilNoteLang, dates: readonly string[
 
 /**
  * 2. piebilde: VIENS teikums visiem pārsniegtajiem periodiem kopā (Nils 26.11, #1291).
+ * 27.11 (Nils): bezpersoniski, bez «mēs» («…taču ierakstos tas nav apstiprināts»). Vecais formulējums
+ * («bet to nevaram apliecināt») tiek atpazīts pēc «bez detalizēta darbu apraksta» un aizstāts.
  * `periodCount` - cik pārsniegto periodu ir ar šādiem ierakstiem (1 -> «Šajā periodā»).
  */
 export function oilGenericRecordsNote(lang: OilNoteLang, dates: readonly string[], periodCount = 1): string {
@@ -89,13 +91,13 @@ export function oilGenericRecordsNote(lang: OilNoteLang, dates: readonly string[
   const one = n === 1;
   switch (lang) {
     case "en":
-      return `${many ? "In these periods" : "In this period"} there ${one ? "is also a dealer record" : "are also dealer records"} without a detailed description of work (${label}) - in theory ${one ? "it" : "they"} could indicate an oil change, but we cannot confirm this.`;
+      return `${many ? "In these periods" : "In this period"} there ${one ? "is also a dealer record" : "are also dealer records"} without a detailed description of work (${label}) - ${one ? "it" : "they"} may theoretically indicate an oil change, but ${one ? "the record does" : "the records do"} not confirm it.`;
     case "ru":
-      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "запись дилера" : "записи дилера"} без подробного описания работ (${label}) - теоретически ${one ? "она может" : "они могут"} свидетельствовать о замене масла, но подтвердить это мы не можем.`;
+      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "запись дилера" : "записи дилера"} без подробного описания работ (${label}) - теоретически ${one ? "она может" : "они могут"} свидетельствовать о замене масла, однако ${one ? "в записи" : "в записях"} это не подтверждено.`;
     case "de":
-      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Händlereintrag" : "Händlereinträge"} ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch ${one ? "kann er" : "können sie"} auf einen Ölwechsel hindeuten, das können wir aber nicht bestätigen.`;
+      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Händlereintrag" : "Händlereinträge"} ohne detaillierte Arbeitsbeschreibung (${label}) - theoretisch ${one ? "kann er" : "können sie"} auf einen Ölwechsel hindeuten, ${one ? "der Eintrag bestätigt" : "die Einträge bestätigen"} das jedoch nicht.`;
     default:
-      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "dīlera ieraksts" : "dīlera ieraksti"} bez detalizēta darbu apraksta (${label}) - ${one ? "tas" : "tie"} teorētiski var liecināt par eļļas maiņu, bet to nevaram apliecināt.`;
+      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "dīlera ieraksts" : "dīlera ieraksti"} bez detalizēta darbu apraksta (${label}) - ${one ? "tas" : "tie"} teorētiski var liecināt par eļļas maiņu, taču ${one ? "ierakstā" : "ierakstos"} tas nav apstiprināts.`;
   }
 }
 

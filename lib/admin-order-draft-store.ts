@@ -35,6 +35,7 @@ import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
 import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 import { dealerMajorWorkOverridesSnapshotField } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
@@ -338,6 +339,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         odometerAnomalyOverrides: w.odometerAnomalyOverrides,
         contradictionFeedback: w.contradictionFeedback,
         dealerMajorWorkOverrides: w.dealerMajorWorkOverrides,
+        dealerSignals: w.dealerSignals,
       });
     } catch {
       json = null;
@@ -362,6 +364,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
         ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
         ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
+        ...dealerSignalsSnapshotField(h.dealerSignals),
       };
     }
   }
@@ -766,6 +769,7 @@ async function patchOrderDraftUnlocked(
       ...odometerAnomalyOverridesSnapshotField(workspacePatch.odometerAnomalyOverrides),
       ...contradictionFeedbackSnapshotField(workspacePatch.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(workspacePatch.dealerMajorWorkOverrides),
+      ...dealerSignalsSnapshotField(workspacePatch.dealerSignals),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -790,6 +794,7 @@ async function patchOrderDraftUnlocked(
       ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
       ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
+      ...dealerSignalsSnapshotField(h.dealerSignals),
     };
   }
 

@@ -6,7 +6,7 @@
  * (~4/3 no failu apjoma). Tāpēc dīlera PDF + papildu faili kopā ≤ 18 MB.
  */
 
-export const DEALER_EXTRA_MAX_FILES = 10;
+export const DEALER_EXTRA_MAX_FILES = 50;
 /** PDF + papildu faili kopā (neapstrādāti baiti). */
 export const DEALER_SEND_MAX_TOTAL_BYTES = 18 * 1024 * 1024;
 
