@@ -32,4 +32,14 @@ describe("client-event beacon", () => {
     await POST(req({ sessionId: "cs_1", event: "drop_tables" }));
     expect(warn).not.toHaveBeenCalled();
   });
+
+  it("FLASH MAX darba kļūme: žurnālē darba id un iemeslu, sliktu id atmet", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await POST(req({ sessionId: "cs_live_a1", event: "flash_max_job_failed", reason: "network", job: "dealer_oil" }));
+    await POST(req({ sessionId: "cs_live_a1", event: "flash_max_job_failed", reason: "network", job: "<script>" }));
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]![0]).toBe("[workspace:client_flash_max_job_failed]");
+    expect(warn.mock.calls[0]![1]).toMatchObject({ sessionId: "cs_live_a1", reason: "network", job: "dealer_oil" });
+    expect(warn.mock.calls[1]![1]).not.toHaveProperty("job");
+  });
 });

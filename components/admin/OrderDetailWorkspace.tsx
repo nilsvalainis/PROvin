@@ -326,6 +326,7 @@ import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishR
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReviewPanel";
+import { AdminFlashMaxStatusChip, AdminFlashMaxStatusDetails } from "@/components/admin/AdminFlashMaxStatus";
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
@@ -452,7 +453,11 @@ import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
-import { generateAdminAiText, generateAdminAiTextWithNetworkRetry } from "@/lib/admin-ai-stream-client";
+import {
+  generateAdminAiText,
+  generateAdminAiTextWithNetworkRetry,
+  isTransientNetworkError,
+} from "@/lib/admin-ai-stream-client";
 import {
   technicalRiskMapSnapshotField,
   type TechnicalRiskMap,
@@ -462,10 +467,12 @@ import {
   flashMaxJobBreadth,
   flashMaxJobTier,
   flashMaxSelectedJobs,
+  formatFlashMaxNetworkError,
   formatFlashMaxNotice,
   formatFlashMaxSkipLabel,
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
+  summarizeFlashMaxStatus,
   type FlashMaxJobResult,
   type FlashMaxRunJob,
   type FlashMaxSelection,
@@ -595,6 +602,7 @@ const EMPTY_WORKSPACE: WorkspacePersist = {
   sourceBlockWipes: [],
 };
 
+const FLASH_MAX_STATUS_DETAILS_ID = "admin-flash-max-status-details";
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 80 * 1024 * 1024;
 
@@ -1123,6 +1131,9 @@ export function OrderDetailWorkspace({
   const [flashMaxPhase, setFlashMaxPhase] = useState<string | null>(null);
   const [flashMaxErr, setFlashMaxErr] = useState<string | null>(null);
   const [flashMaxNotice, setFlashMaxNotice] = useState<string | null>(null);
+  /** Pēdējā FLASH MAX gājiena rezultāti pa laukiem - kompaktajai čipai un detaļu panelim. */
+  const [flashMaxResults, setFlashMaxResults] = useState<FlashMaxJobResult[] | null>(null);
+  const [flashMaxStatusOpen, setFlashMaxStatusOpen] = useState(false);
   /** FLASH MAX noslēguma pārbaude (Opus): ieteikumi pa laukiem, tikai ar operatora klikšķi. */
   const [flashReview, setFlashReview] = useState<FlashMaxReviewState>({ status: "idle" });
   const [flashReviewOpen, setFlashReviewOpen] = useState(false);
@@ -2972,6 +2983,14 @@ export function OrderDetailWorkspace({
 
   const flashReviewPending =
     flashReview.status === "done" ? flashReview.findings.filter((f) => !flashReviewHandled[f.id]).length : 0;
+  const closeFlashMaxStatus = useCallback(() => setFlashMaxStatusOpen(false), []);
+  const flashMaxStatus = summarizeFlashMaxStatus({
+    busy: flashMaxBusy,
+    phase: flashMaxPhase,
+    results: flashMaxResults,
+    reviewStatus: flashReview.status,
+    reviewPending: flashReviewPending,
+  });
 
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
     if (!payload.aiAllowed || flashMaxBusy || !workspaceHydrated) return;
@@ -2980,6 +2999,8 @@ export function OrderDetailWorkspace({
     setFlashMaxBusy(true);
     setFlashMaxErr(null);
     setFlashMaxNotice(null);
+    setFlashMaxResults(null);
+    setFlashMaxStatusOpen(false);
     const results: FlashMaxJobResult[] = [];
     const okJobs: FlashMaxRunJob[] = [];
     const runs = expandFlashMaxRunJobs(picked, wsPersistRef.current.sourceBlocks, selection.selectedIds);
@@ -3157,16 +3178,30 @@ export function OrderDetailWorkspace({
               detail: generated.ok ? "AI: neizdevās" : generated.error,
             });
           }
-        } catch {
+        } catch (err) {
+          // Tīkla kļūda jau atkārtota 2x (generateAdminAiTextWithNetworkRetry). Cits izņēmums - klienta
+          // puses kļūme pēc atbildes (piem. ierakstot laukā). Abus žurnālē serverī, lai cēlonis ir redzams.
+          const network = isTransientNetworkError(err);
+          console.error("[flash-max]", job.runId, err);
+          sendWorkspaceClientEvent({
+            sessionId: payload.sessionId,
+            event: "flash_max_job_failed",
+            reason: network ? "network" : "client_exception",
+            job: job.runId,
+          });
+          const message = network
+            ? formatFlashMaxNetworkError(job.runLabel)
+            : `${job.runLabel}: neizdevās ierakstīt laukā - spied ✨ šim laukam`;
           results.push({
             id: job.runId,
             label: job.runLabel,
             status: "error",
-            detail: "Neizdevās savienoties",
+            detail: message.slice(job.runLabel.length + 2),
           });
-          setFlashMaxErr(`${job.runLabel}: neizdevās savienoties`);
+          setFlashMaxErr(message);
         }
       }
+      setFlashMaxResults(results);
       const notice = formatFlashMaxNotice(results);
       setFlashMaxNotice(notice);
       if (results.some((r) => r.status === "ok")) {
@@ -3187,6 +3222,7 @@ export function OrderDetailWorkspace({
     buildAiOrderPayload,
     flashMaxBusy,
     flashMaxJobPlain,
+    payload.sessionId,
     payload.vin,
     onInternalCommentChange,
     onMileageCommentChange,
@@ -6661,6 +6697,16 @@ export function OrderDetailWorkspace({
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm max-md:hidden"
         aria-label="Soli pa solim"
       >
+        {flashMaxStatusOpen && flashMaxStatus ? (
+          <div className="max-md:hidden">
+            <AdminFlashMaxStatusDetails
+              id={FLASH_MAX_STATUS_DETAILS_ID}
+              status={flashMaxStatus}
+              onClose={closeFlashMaxStatus}
+              onOpenReview={() => setFlashReviewOpen(true)}
+            />
+          </div>
+        ) : null}
         {/* Telefonā soļi ir pirmie (order-1); Saglabāt iet uz apakšējo doku. */}
         <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 md:flex-row md:flex-wrap md:items-center md:gap-2 ${ADMIN_CONTENT_MAX}`}>
           {workspaceRevisionConflict ? (
@@ -6736,11 +6782,18 @@ export function OrderDetailWorkspace({
               <AdminFlashMaxButton
                 disabled={!workspaceHydrated || prepareDraftBusy}
                 busy={flashMaxBusy}
-                phase={flashMaxPhase}
-                notice={flashMaxNotice}
-                error={flashMaxErr}
                 onRun={(selection) => void runFlashMax(selection)}
                 sourceBlocks={ws.sourceBlocks}
+              />
+            </span>
+          ) : null}
+          {payload.aiAllowed && flashMaxStatus ? (
+            <span className="flex min-w-0 max-md:hidden">
+              <AdminFlashMaxStatusChip
+                status={flashMaxStatus}
+                open={flashMaxStatusOpen}
+                onToggle={() => setFlashMaxStatusOpen((v) => !v)}
+                controlsId={FLASH_MAX_STATUS_DETAILS_ID}
               />
             </span>
           ) : null}
@@ -7003,8 +7056,14 @@ export function OrderDetailWorkspace({
         pdfRequest={mobilePdfRequest}
         flashRequest={mobileFlashRequest}
         flashMaxPhase={flashMaxPhase}
-        flashMaxNotice={flashMaxNotice}
-        flashMaxErr={flashMaxErr}
+        flashMaxNotice={flashMaxStatus && flashMaxStatus.tone !== "error" ? flashMaxStatus.chip : flashMaxNotice}
+        flashMaxErr={
+          flashMaxStatus?.tone === "error"
+            ? `${flashMaxStatus.chip}\n${flashMaxStatus.failed.map((f) => f.label).join(", ")} - spied ✨ šim laukam`
+            : flashMaxStatus
+              ? null
+              : flashMaxErr
+        }
         finalReviewPending={flashReviewPending}
         onOpenFinalReview={() => setFlashReviewOpen(true)}
         notice={mobileNotice}
@@ -7021,9 +7080,6 @@ export function OrderDetailWorkspace({
         workspaceHydrated={workspaceHydrated}
         prepareDraftBusy={prepareDraftBusy}
         flashMaxBusy={flashMaxBusy}
-        flashMaxPhase={null}
-        flashMaxNotice={null}
-        flashMaxErr={null}
         onFlashMax={(selection) => void runFlashMax(selection)}
         copilotOpen={copilotOpen}
         copilotBusy={copilotBusy}

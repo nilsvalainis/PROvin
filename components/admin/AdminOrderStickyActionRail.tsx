@@ -31,9 +31,6 @@ type Props = {
   workspaceHydrated: boolean;
   prepareDraftBusy: boolean;
   flashMaxBusy: boolean;
-  flashMaxPhase: string | null;
-  flashMaxNotice: string | null;
-  flashMaxErr: string | null;
   onFlashMax: (selection: FlashMaxSelection) => void;
   copilotOpen: boolean;
   copilotBusy: boolean;
@@ -53,9 +50,6 @@ export function AdminOrderStickyActionRail({
   workspaceHydrated,
   prepareDraftBusy,
   flashMaxBusy,
-  flashMaxPhase,
-  flashMaxNotice,
-  flashMaxErr,
   onFlashMax,
   copilotOpen,
   copilotBusy,
@@ -163,9 +157,6 @@ export function AdminOrderStickyActionRail({
               menuAlign="end"
               disabled={!workspaceHydrated || prepareDraftBusy}
               busy={flashMaxBusy}
-              phase={flashMaxPhase}
-              notice={flashMaxNotice}
-              error={flashMaxErr}
               onRun={onFlashMax}
               sourceBlocks={sourceBlocks}
             />

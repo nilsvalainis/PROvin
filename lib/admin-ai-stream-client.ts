@@ -121,21 +121,31 @@ export function isTransientNetworkError(err: unknown): boolean {
 }
 
 /**
- * FLASH MAX: tīkla kļūdai (piem. izvietošanas brīdī) 1x atkārto to pašu pieprasījumu.
- * HTTP kļūdas un atcelšanu neatkārto.
+ * FLASH MAX: tīkla kļūdai (piem. izvietošanas brīdī vai īslaicīgs pārrāvums) atkārto to pašu pieprasījumu
+ * līdz 2x ar pieaugošu pauzi (1,5 s, tad 4 s). HTTP kļūdas un atcelšanu neatkārto.
+ * Nils 27.11: «Eļļas maiņas intervāli: neizdevās savienoties» - pieprasījums serveri nesasniedza,
+ * viens atkārtojums pēc 1,5 s nepietika.
  */
 export async function generateAdminAiTextWithNetworkRetry(
   url: string,
   body: unknown,
   httpFallback: string,
-  opts?: Partial<AdminAiStreamOptions> & { retryDelayMs?: number; generate?: typeof generateAdminAiText },
+  opts?: Partial<AdminAiStreamOptions> & {
+    retryDelayMs?: number;
+    maxRetries?: number;
+    generate?: typeof generateAdminAiText;
+  },
 ): Promise<GeneratedAdminAiText> {
   const generate = opts?.generate ?? generateAdminAiText;
-  try {
-    return await generate(url, body, httpFallback, opts);
-  } catch (err) {
-    if (!isTransientNetworkError(err) || opts?.signal?.aborted) throw err;
-    await new Promise((r) => setTimeout(r, opts?.retryDelayMs ?? 1500));
-    return generate(url, body, httpFallback, opts);
+  const maxRetries = Math.max(0, opts?.maxRetries ?? 2);
+  const baseDelay = opts?.retryDelayMs ?? 1500;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await generate(url, body, httpFallback, opts);
+    } catch (err) {
+      if (!isTransientNetworkError(err) || opts?.signal?.aborted || attempt >= maxRetries) throw err;
+      const delay = attempt === 0 ? baseDelay : Math.round(baseDelay * 2.7);
+      await new Promise((r) => setTimeout(r, delay));
+    }
   }
 }

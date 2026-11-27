@@ -17,9 +17,6 @@ export default function ProOrderRailPreviewPage() {
         workspaceHydrated
         prepareDraftBusy={false}
         flashMaxBusy={false}
-        flashMaxPhase={null}
-        flashMaxNotice={null}
-        flashMaxErr={null}
         onFlashMax={() => {}}
         copilotOpen={false}
         copilotBusy={false}

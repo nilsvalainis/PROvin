@@ -39,8 +39,10 @@ export function shortBrowserLabel(ua: string): string {
 
 export type WorkspaceClientEvent = {
   sessionId: string;
-  event: "unsaved_not_sent" | "conflict_auto_merged" | "conflict_merge_failed" | "local_restore";
+  event: "unsaved_not_sent" | "conflict_auto_merged" | "conflict_merge_failed" | "local_restore" | "flash_max_job_failed";
   reason?: string;
+  /** FLASH MAX darba id (tikai `flash_max_job_failed`). */
+  job?: string;
   fields?: number;
   blocks?: number;
   unsavedMs?: number;

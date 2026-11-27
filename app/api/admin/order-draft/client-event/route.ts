@@ -8,8 +8,25 @@ import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 
 export const runtime = "nodejs";
 
-const EVENTS = new Set(["unsaved_not_sent", "conflict_auto_merged", "conflict_merge_failed", "local_restore"]);
-const REASONS = new Set(["persistence_off", "not_hydrated", "revision_conflict", "save_error", "pending", ""]);
+const EVENTS = new Set([
+  "unsaved_not_sent",
+  "conflict_auto_merged",
+  "conflict_merge_failed",
+  "local_restore",
+  "flash_max_job_failed",
+]);
+const REASONS = new Set([
+  "persistence_off",
+  "not_hydrated",
+  "revision_conflict",
+  "save_error",
+  "pending",
+  "network",
+  "client_exception",
+  "",
+]);
+/** FLASH MAX darba id (piem. `dealer_oil`, `citi_avoti:2`) - tikai identifikators, ne saturs. */
+const JOB_RE = /^[a-z0-9_:]{1,48}$/;
 
 function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(1_000_000, Math.floor(v))) : null;
@@ -31,9 +48,11 @@ export async function POST(req: Request) {
   if (!b || !isSafeOrderDraftSessionId(sessionId) || !EVENTS.has(event) || !REASONS.has(reason)) {
     return new NextResponse(null, { status: 204 });
   }
+  const job = typeof b.job === "string" && JOB_RE.test(b.job) ? b.job : undefined;
   console.warn(`[workspace:client_${event}]`, {
     sessionId,
     reason: reason || undefined,
+    ...(job ? { job } : {}),
     fields: num(b.fields),
     blocks: num(b.blocks),
     unsavedMs: num(b.unsavedMs),
