@@ -34,7 +34,7 @@ import {
 } from "@/components/admin/useDealerDataJobControls";
 import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
 import { AdminCheckThisRegButton } from "@/components/admin/AdminCheckThisRegButton";
-import { checkThisRegHighlighted, checkThisRegMake, checkThisRegMakeTexts } from "@/lib/checkthisreg";
+import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import {
   AmxButton,
   AmxCard,
@@ -301,7 +301,7 @@ export function MobileDealerOrderPanel({
   if (!c.loaded) return null;
 
   const job = c.job;
-  const ctrMake = checkThisRegMake({ vin: c.vin || orderVin, makeTexts: checkThisRegMakeTexts(sourceBlocks) });
+  const ctrMake = checkThisRegMakeFromBlocks(sourceBlocks, c.vin || orderVin);
   const refundLabel = c.refunded ? "Atmaksāts" : c.b2bRefund ? (walletRefund ? "Atmaksa uz atlikumu" : "Atgriezt kredītu") : "Atgriezt maksājumu";
 
   return (

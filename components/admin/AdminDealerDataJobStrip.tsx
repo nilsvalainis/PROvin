@@ -22,7 +22,7 @@ import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGa
 import { AdminDealerReviewCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
 import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { collectSourceBlockTexts } from "@/lib/dealer-review-score";
-import { checkThisRegHighlighted, checkThisRegMake, checkThisRegMakeTexts } from "@/lib/checkthisreg";
+import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import { AdminCheckThisRegButton } from "@/components/admin/AdminCheckThisRegButton";
 
 /**
@@ -145,11 +145,8 @@ export function AdminDealerDataJobStrip({
 
   if (!loaded) return null;
 
-  // CheckThisReg (27.11): markām no CHECKTHISREG_STRONG_MAKES poga redzama vienmēr.
-  const ctrMake = checkThisRegMake({
-    vin: vin || orderVin,
-    makeTexts: checkThisRegMakeTexts(getSourceBlocks ? getSourceBlocks() : null),
-  });
+  // CheckThisReg (27.11): markām no CHECKTHISREG_STRONG_MAKES (ar gada slieksni) poga redzama vienmēr.
+  const ctrMake = checkThisRegMakeFromBlocks(getSourceBlocks ? getSourceBlocks() : null, vin || orderVin);
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
