@@ -23,6 +23,7 @@ nonāk maksājuma solī - kļūda `paid`, stop.
 | `lib/jobs.mjs` | Rinda: viens uzdevums vienlaikus, 1 vaicājums / 30 s, 30/h, `jobs.json` |
 | `lib/cache.mjs` | Kešs pēc VIN 7 dienas (`cache/<VIN>.json` + `.pdf`) |
 | `lib/session-state.mjs` | `GET /traficom/session` skats |
+| `lib/browser-code.mjs` | eParaksts pārlūka koda "pastkastīte" (admins -> plūsma), tikai atmiņā |
 | `systemd/` | `provin-traficom.service` + `provin-traficom-xvfb.service` (Xvfb :93) |
 | `install.sh` | Backup + kods uz `/opt/provin-traficom` + systemd (Caddy neaiztiek) |
 
@@ -34,6 +35,9 @@ Testi: `npx vitest run lib/traficom-relay.test.ts lib/traficom-fi-auto.test.ts` 
 PROVIN  POST /traficom/lookup {vin, ref, trigger, force?}  -> {jobId, state: queued | running | cached}
 relejs  -> PROVIN /api/traficom/relay-callback:
           awaiting_eparaksts {verificationCode?}   -> push Nilam "Traficom: apstiprini eParaksts telefonā"
+          awaiting_browser_code {codeExpiresAt?, codeExpired?, browserCodeAttempt, browserCodeRejected?}
+                                                   -> push "Traficom: ievadi kodu no eParaksts lietotnes"
+PROVIN  POST /traficom/session/browser-code {code} | {renew:true}  -> 202 / 400 invalid_code / 409 not_waiting
           searching
           result {found, data, rawText, pdfBase64?, cached?}  -> Traficom (FI) bloks + PDF Dropbox mapē
           error {code}                             -> eparaksts_timeout | eparaksts_refused | captcha | page_changed | paid | ...
@@ -43,6 +47,12 @@ relejs  -> PROVIN /api/traficom/relay-callback:
 - `rawText` = teksta kopija tajā pašā formā, ko PROVIN `lib/traficom-report-parse.ts` jau lasa no Traficom PDF / ielīmējuma.
 - Viena sesija (profils `/var/lib/provin-traficom/profile`) apkalpo visus rindā gaidošos. Ja sesija dzīva, eParaksts netiek prasīts.
 - eParaksts apstiprinājumu gaida 5 min (`TRAFICOM_EPARAKSTS_TIMEOUT_SEC`). Nakts ierobežojuma nav (Nils 26.11).
+- **Pārlūka kods (27.11):** jaunam pārlūkam eParaksts rāda "Enter the code you see in the eParaksts mobile app ... confirm
+  this browser" (taimeris "Code valid for 00:43"). Relejs pāriet `awaiting_browser_code`, admin FIN blokā Nils ieraksta kodu
+  no lietotnes, relejs to ievada un spiež "Confirm". Termiņam beidzoties - "Pieprasīt jaunu kodu" (relejs pārlādē lapu);
+  bez darbības 3 min pēc termiņa - kļūda `browser_code_timeout`. "Send code via SMS" relejs nekad nespiež. Kods netiek logots.
+  Pēc apstiprināšanas eParaksts atceras profilu `/var/lib/provin-traficom/profile` (netiek dzēsts starp uzdevumiem; SIGTERM
+  aizver Chrome kārtīgi, lai sīkdatnes tiek ierakstītas).
 - Kešs: tas pats VIN 7 dienas atbild no keša (bez pārlūka un eParaksts); `force:true` ("Pieprasīt vēlreiz") kešu apiet.
 - Galvenā loga navigācija tikai uz `*.traficom.fi`, `*.suomi.fi`, `*.viss.gov.lv`, `*.eparaksts.lv`; viss cits tiek bloķēts.
 
@@ -52,7 +62,8 @@ relejs  -> PROVIN /api/traficom/relay-callback:
 - Žurnālā lietotāja numurs, personas kodi un tokeni aizvietoti ar `***`.
 - Pieteikšanās lapām netiek taisīti ekrānuzņēmumi vai HTML kopijas. `debug/`: Traficom lapu teksts; pieteikšanās lapām tikai
   pogas/lauki un teksts ar cipariem aizvietotiem ar `#`.
-- "Atbrīvot sesiju" = `POST /traficom/logout` (aizver pārlūku, izdzēš profilu). Kill switch arī `systemctl stop provin-traficom`;
+- "Atbrīvot sesiju" = `POST /traficom/logout` (aizver pārlūku, izdzēš visas sīkdatnes, izņemot eParaksts pārlūka
+  apstiprinājumu). `{"full":true}` izdzēš visu profilu (tad pārlūka kods būs jāievada vēlreiz). Kill switch arī `systemctl stop provin-traficom`;
   Vercel `TRAFICOM_AUTO_ENABLED=0`.
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)

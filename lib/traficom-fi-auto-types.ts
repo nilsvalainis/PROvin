@@ -9,6 +9,7 @@ export type TraficomFiAutoState =
   | "not_configured"
   | "queued"
   | "awaiting_eparaksts"
+  | "awaiting_browser_code"
   | "searching"
   | "found"
   | "not_found"
@@ -39,6 +40,14 @@ export type TraficomFiAutoStatus = {
   jobId?: string;
   /** eParaksts kontrolkods (ja lapa to rāda) - tikai kamēr `awaiting_eparaksts`. */
   verificationCode?: string;
+  /** eParaksts "confirm this browser": līdz kuram laikam derīgs kods lietotnē (ISO) - tikai kamēr `awaiting_browser_code`. */
+  codeExpiresAt?: string;
+  /** Koda termiņš beidzies - jāspiež «Pieprasīt jaunu kodu». */
+  codeExpired?: boolean;
+  /** Kurš mēģinājums (1, 2, ...). */
+  browserCodeAttempt?: number;
+  /** Iepriekšējo kodu eParaksts nepieņēma. */
+  browserCodeRejected?: boolean;
   /** Latvisks paskaidrojums adminam (bez personas datiem). */
   message?: string;
   requestedAt?: string;
@@ -66,8 +75,12 @@ export type TraficomFiAutoStatus = {
 
 /** Releja sesijas skats (`GET /traficom/session`). */
 export type TraficomFiRelaySession = {
-  state: "logged_out" | "awaiting_eparaksts" | "active" | "expired";
+  state: "logged_out" | "awaiting_eparaksts" | "awaiting_browser_code" | "active" | "expired";
   verificationCode?: string;
+  codeExpiresAt?: string;
+  codeExpired?: boolean;
+  browserCodeAttempt?: number;
+  browserCodeRejected?: boolean;
   activeSince?: string;
   lastOkAt?: string;
   lastLookupAt?: string;
@@ -75,7 +88,7 @@ export type TraficomFiRelaySession = {
   updatedAt?: string;
 };
 
-export const TRAFICOM_FI_ACTIVE_STATES: readonly TraficomFiAutoState[] = ["queued", "awaiting_eparaksts", "searching"];
+export const TRAFICOM_FI_ACTIVE_STATES: readonly TraficomFiAutoState[] = ["queued", "awaiting_eparaksts", "awaiting_browser_code", "searching"];
 
 export function isTraficomFiAutoActive(s: TraficomFiAutoStatus | null | undefined): boolean {
   return Boolean(s && TRAFICOM_FI_ACTIVE_STATES.includes(s.state));

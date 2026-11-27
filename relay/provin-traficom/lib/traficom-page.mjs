@@ -9,6 +9,9 @@
  *     ("eParaksts Mobile"; citas: eid_eidas, mobeid_eidas - nelietojam)
  *  4. eidas.eparaksts.lv/trustedx-authserver/lvrtc-eipsign-idp/mobileIdIdentification.xhtml:
  *     `#identifierForm-identifier` ("USER NUMBER") + `#identifierForm-submitButton` ("Confirm"), "Cancel" nekad.
+ *  4b. (27.11, jauns pārlūks) eParaksts "Enter the code you see in the eParaksts mobile app ... confirm this browser":
+ *     kods redzams tikai Nila telefonā -> relejs gaida kodu no admina (POST /traficom/session/browser-code), ievada,
+ *     spiež "Confirm". "Send code via SMS" un "Cancel" nekad. Pēc tam eParaksts šo pārlūka profilu atceras.
  *  5. (Nils telefonā apstiprina) -> userConsent "Agree" -> suomi.fi "Continue to service" -> Traficom.
  *  6. Traficom: 1. solis "Instructions" -> "Next"; 2. solis "Find vehicle information" -> "by vehicle identification
  *     number (VIN)" + VIN + "Vehicle type" + "Search"; 3. solis "Vehicle information" (bezmaksas dati).
@@ -55,6 +58,46 @@ export function isVpmHost(host) {
 export function isEparakstsHost(host) {
   const h = String(host ?? "").toLowerCase();
   return h === "eparaksts.lv" || h.endsWith(".eparaksts.lv");
+}
+
+/**
+ * eParaksts pārlūka apstiprināšanas kods (no eParaksts mobile lietotnes): tikai burti/cipari, 4-8 zīmes.
+ * Atstarpes un defises, ko cilvēks ieraksta pa vidu ("12 34"), noņem. Nederīgs -> "".
+ */
+export function normalizeBrowserCode(raw) {
+  const t = String(raw ?? "").trim().replace(/[\s-]/g, "");
+  return /^[0-9A-Za-z]{4,8}$/.test(t) ? t.toUpperCase() : "";
+}
+
+export function isValidBrowserCode(raw) {
+  return normalizeBrowserCode(raw) !== "";
+}
+
+/** "Code valid for: 00:43" / "Kods derīgs: 00:43" / "valid for 43 s" -> sekundes (null, ja nav). */
+export function extractCodeValidSeconds(text) {
+  const t = String(text ?? "").replace(/\s+/g, " ");
+  const lead = "(?:valid\\s+for|der[iī]gs(?:\\s+v[eē]l)?|der[iī]guma\\s+termi[nņ][sš]|voimassa|giltig)";
+  const mm = t.match(new RegExp(`${lead}\\s*:?\\s*(\\d{1,2}):(\\d{2})(?!\\d)`, "iu"));
+  if (mm) return Number(mm[1]) * 60 + Number(mm[2]);
+  const ss = t.match(new RegExp(`${lead}\\s*:?\\s*(\\d{1,3})\\s*(?:s|sec|seconds?|sek(?:undes|undēm)?)\\b`, "iu"));
+  if (ss) return Number(ss[1]);
+  return null;
+}
+
+const BROWSER_CODE_RE =
+  /confirm\s+this\s+browser|enter\s+the\s+code\s+you\s+see|code\s+from\s+the\s+(?:eparaksts\s+)?(?:mobile\s+)?app|apstipriniet\s+[sš]o\s+p[aā]rl[uū]k|apstiprin[aā]t\s+[sš]o\s+p[aā]rl[uū]k|ievadiet\s+kodu|kodu,?\s+ko\s+redzat/i;
+
+/** eParaksts lapa "confirm this browser" ar koda lauku (nevis lietotāja numura forma). */
+export function isBrowserCodeSnapshot(snap) {
+  if (!isEparakstsHost(snap?.host)) return false;
+  if (!BROWSER_CODE_RE.test(String(snap?.text ?? ""))) return false;
+  return (snap?.inputs ?? []).some(
+    (i) =>
+      i.visible !== false &&
+      i.id !== "identifierForm-identifier" &&
+      !/checkbox|radio|hidden|submit|button/.test(String(i.type ?? "")) &&
+      !/user\s*number|lietot[aā]ja\s+numur/i.test(String(i.label ?? "")),
+  );
 }
 
 /** Releja pārlūka galvenais logs drīkst atvērt tikai šos hostus (pārējo bloķē). */
@@ -129,7 +172,7 @@ const NOT_FOUND_RE =
  * Lapas veids pēc kopsavilkuma.
  * snapshot: { host, path, text, inputs:[{id,name,type,label,visible}], buttons:[{id,text,visible}], hasAgree,
  *             mobileChoice, hasCaptchaFrame, stepText (aktīvais vedņa solis), headings }
- * Atgriež: fi_choose_method | fi_choose_country | fi_continue | vpm_choose | ep_user_number | ep_wait | ep_consent |
+ * Atgriež: fi_choose_method | fi_choose_country | fi_continue | vpm_choose | ep_user_number | ep_browser_code | ep_wait | ep_consent |
  *          ep_failed | tf_instructions | tf_search | tf_result | tf_not_found | tf_payment | tf_other | captcha | unknown
  */
 export function classifySnapshot(snap) {
@@ -158,6 +201,8 @@ export function classifySnapshot(snap) {
   }
 
   if (isEparakstsHost(host)) {
+    // Pārlūka apstiprināšana ar kodu no lietotnes - pirms visa pārējā (lapā var būt arī "expired").
+    if (isBrowserCodeSnapshot(snap)) return "ep_browser_code";
     if (inputs.some((i) => i.id === "identifierForm-identifier" || /user\s*number|lietot[aā]ja\s+numur/i.test(String(i.label ?? "")))) {
       return EP_FAIL_RE.test(text) ? "ep_failed" : "ep_user_number";
     }

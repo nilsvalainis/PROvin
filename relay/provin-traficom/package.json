@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/cache.mjs && node --check lib/traficom-flow.mjs && node --check lib/traficom-page.mjs && node --check lib/session-state.mjs"
+    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/cache.mjs && node --check lib/traficom-flow.mjs && node --check lib/traficom-page.mjs && node --check lib/session-state.mjs && node --check lib/browser-code.mjs"
   },
   "dependencies": {
     "playwright": "^1.59.1"
