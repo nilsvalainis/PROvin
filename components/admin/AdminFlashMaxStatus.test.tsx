@@ -14,11 +14,13 @@ const status = summarizeFlashMaxStatus({
 })!;
 
 describe("FLASH MAX statuss rīkjoslā", () => {
-  it("čipa: viena rinda, nesaraujas citi elementi (flex-none, truncate, fiksēts augstums)", () => {
+  it("čipa: viena rinda, sašaurinās pirmā (shrink + truncate, fiksēts augstums)", () => {
     const html = renderHtml(<AdminFlashMaxStatusChip status={status} open={false} onToggle={() => undefined} controlsId="x" />);
     expect(html).toContain("FLASH MAX: 1 · 1 kļūda · 5 ieteikumi");
     expect(html).toContain("h-7");
-    expect(html).toContain("flex-none");
+    // 27.11 (Nils): čips sašaurinās pirmais, lai soļu pārslēdzējam un VIN kartītei paliek vieta.
+    expect(html).not.toContain("flex-none");
+    expect(html).toMatch(/\bshrink\b/);
     expect(html).toContain("truncate");
     expect(html).toContain("max-w-[15rem]");
     expect(html).not.toContain("Eļļas maiņas intervāli");

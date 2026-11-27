@@ -52,11 +52,9 @@ describe("Telefona doks nenosedz logu pogas", () => {
     expect(w).toContain('className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]"');
   });
 
-  it("1. Pielikumi pogu rinda telefonā pārnesas, datorā paliek shrink-0", () => {
+  it("1. Pielikumi pogu rinda pārnesas jebkurā platumā (27.11: arī datorā nekas netiek nogriezts)", () => {
     const w = src("components/admin/OrderDetailWorkspace.tsx");
-    expect(w).toContain(
-      'className="flex shrink-0 flex-wrap items-center gap-1.5 max-sm:min-w-0 max-sm:max-w-full max-sm:shrink"',
-    );
+    expect(w).toContain('className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5"');
   });
 
   it("doks pats ir tikai telefonā (md:hidden)", () => {
