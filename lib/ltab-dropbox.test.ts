@@ -76,5 +76,7 @@ describe("LTAB PDF -> pasūtījuma Dropbox mape", () => {
   it("names files and folders safely", () => {
     expect(ltabPdfFileName("ab1234")).toBe("LTAB - AB1234.pdf");
     expect(provOrderFolderName({ ...car, vin: "" })).toBe("BMW 640I 2012 AB1234");
+    // Nils 27.11: bez markas - marka no VIN, nevis «Auto»
+    expect(provOrderFolderName({ vin: "WAUZZZ4M4MD007799", make: "", model: "", year: "", plate: "" })).toBe("Audi WAUZZZ4M4MD007799");
   });
 });

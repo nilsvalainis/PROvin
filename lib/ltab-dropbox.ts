@@ -5,6 +5,8 @@ import {
   sanitizeDropboxName,
 } from "@/lib/iriss-autoparks-dropbox-path";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { dealerForecastMakeFromVin } from "@/lib/dealer-coverage-forecast";
+import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
 
 /**
  * Oriģinālais LTAB PDF -> pasūtījuma mape Dropbox `/_PROv/<Marka Modelis Gads VIN>/`
@@ -18,10 +20,14 @@ export function provOrdersDropboxRoot(env: NodeJS.ProcessEnv = process.env): str
 
 export type LtabOrderCar = { vin: string; make: string; model: string; year: string; plate: string };
 
-/** Jaunas mapes nosaukums kā Nila mapēm: "BMW 640i 2012 WBALW3C59CC891863". */
+/**
+ * Jaunas mapes nosaukums kā Nila mapēm: "BMW 640i 2012 WBALW3C59CC891863". Nils 27.11: mapei jāsākas ar marku -
+ * ja markas nav (ārzemju VIN bez CSDD), marka no VIN WMI, nevis «Auto».
+ */
 export function provOrderFolderName(car: LtabOrderCar): string {
   const vin = normalizeVin(car.vin);
-  const title = [car.make, car.model, car.year].map((s) => (s ?? "").trim()).filter(Boolean).join(" ");
+  const make = (car.make ?? "").trim() || (vin.length === 17 ? decodeVinLocal(vin).make || dealerForecastMakeFromVin(vin) || "" : "");
+  const title = [make, car.model, car.year].map((s) => (s ?? "").trim()).filter(Boolean).join(" ");
   const id = vin.length === 17 ? vin : car.plate.trim().toUpperCase();
   return sanitizeDropboxName([title || "Auto", id].filter(Boolean).join(" "), 160) || "Auto";
 }
