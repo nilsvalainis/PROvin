@@ -1,6 +1,7 @@
 import type { CheckoutLineKind } from "@/lib/stripe-session";
 import { parseAuditResultColor } from "@/lib/admin-audit-result-color";
 import { parseAdminOrderIngest, type AdminOrderIngest } from "@/lib/admin-mobile-ingest";
+import { parseOrderAdminNote, type OrderAdminNote } from "@/lib/order-admin-note";
 
 /**
  * RSC → client `AdminOrdersTable`: tikai string | number | null | boolean (bez Date, Decimal, Stripe instancēm).
@@ -61,6 +62,8 @@ export type SerializedAdminOrderTableRow = {
   archiveStatus?: { label: string; tone: "wait" | "todo" | "alert" | "done" | "muted" };
   /** Telefona saraksts: ielases indikācija (dīlera darbs vai VIN SCAN). */
   ingest?: AdminOrderIngest;
+  /** Iekšēja admina piezīme - krāsains punkts pie klienta (tikai adminā). */
+  adminNote?: OrderAdminNote;
 };
 
 type RowInput = {
@@ -98,6 +101,7 @@ type RowInput = {
   dealerJobAlert?: unknown;
   archiveStatus?: unknown;
   ingest?: unknown;
+  adminNote?: unknown;
 };
 
 function paymentAdjustmentFields(
@@ -220,6 +224,10 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(() => {
         const ingest = parseAdminOrderIngest(o.ingest);
         return ingest ? { ingest } : {};
+      })(),
+      ...(() => {
+        const adminNote = parseOrderAdminNote(o.adminNote);
+        return adminNote ? { adminNote } : {};
       })(),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),

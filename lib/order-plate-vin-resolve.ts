@@ -299,7 +299,7 @@ export async function ensureOrderDraftEditsFromCheckoutFields(
     if (!prevEdits.vin?.trim() || !isValidVin(prevEdits.vin)) orderEdits.vin = "";
   }
 
-  const setIfEmpty = (key: keyof OrderDraftOrderEdits, value: string | null | undefined) => {
+  const setIfEmpty = (key: "listingUrl" | "customerEmail" | "customerPhone" | "customerName" | "notes", value: string | null | undefined) => {
     const cur = typeof prevEdits[key] === "string" ? (prevEdits[key] as string).trim() : "";
     const next = value?.trim() ?? "";
     if (!cur && next) orderEdits[key] = next;

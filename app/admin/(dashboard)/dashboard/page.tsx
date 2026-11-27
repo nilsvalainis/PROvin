@@ -144,6 +144,7 @@ export default async function AdminOrdersPage({
       ...(partnerCompanyName ? { partnerCompanyName } : {}),
       ...(partnerAuditPurpose && !isPack ? { partnerAuditPurpose } : {}),
       ...(notes && !isPack ? { notes } : {}),
+      ...(draft?.adminNote && !isPack ? { adminNote: draft.adminNote } : {}),
     };
   });
   // Dīlera datu ielases problēmas sarakstā (Nils 20.11) + telefona ielases indikācija (22.11 makets v3).

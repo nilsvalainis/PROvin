@@ -1,3 +1,4 @@
+import type { OrderAdminNote } from "@/lib/order-admin-note";
 /**
  * Admin pasūtījuma melnraksts (kopīgi tipi — klients + serveris).
  * Portfeļa binārie faili paliek IndexedDB; serverī — tikai JSON (lauki + darba zona).
@@ -21,6 +22,11 @@ export type OrderDraftOrderEdits = {
   sourcesComparisonComment?: string;
   /** Admina izvēlēta klienta valoda (lv/en/ru/de); tukšs = automātiski (Nils 27.11). */
   clientLangOverride?: string;
+  /**
+   * Iekšēja admina piezīme (galvenes čips + saraksta punkts). TIKAI adminā - nekad PDF, e-pastos, AI vai klienta saitēs.
+   * PATCH: `null` = dzēst.
+   */
+  adminNote?: OrderAdminNote | null;
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */
