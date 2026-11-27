@@ -84,6 +84,11 @@ const GENERIC_RECORD_WORDS = new Set([
   "apkope", "apkopes", "apkopi", "serviss", "servisa", "servisu", "apmeklejums", "apmeklejuma",
   "vizite", "ieraksts", "tehniska", "tehniskā", "karteja", "planota", "periodiska", "regulara",
   "darbi", "veikta", "veikti",
+  // BF 27.11 (S4 (3)): plānotās apkopes veids bez detaļām («SERVICE MAJOR» -> «Lielā apkope»).
+  "liela", "lielā", "maza", "mazā", "starpposma", "pilna", "pamata", "ikgadeja", "gada",
+  "major", "minor", "intermediate", "interim", "full", "basic", "small", "big", "large", "annual",
+  "grosse", "kleine", "jahres", "zwischen",
+  "большое", "малое", "полное", "промежуточное",
   "service", "servicing", "maintenance", "visit", "workshop", "inspection", "routine", "regular",
   "scheduled", "periodic", "general", "check", "work", "done",
   "wartung", "inspektion", "werkstattbesuch", "besuch", "kundendienst", "durchgefuhrt",
@@ -183,6 +188,31 @@ export function oilNotSkippedNotePresent(text: string): boolean {
 
 export function oilGenericRecordsNotePresent(text: string): boolean {
   return GENERIC_PRESENT_RE.test(plainForCheck(text));
+}
+
+/** Apgalvojošs pārsnieguma vārds (ne «ne-pārsniedz»): LV / EN / RU / DE. */
+const EXCEED_CLAIM_RE =
+  /(?<![\p{L}])(?:pārsniedz\p{L}*|pārsniedza|pārsniegt\p{L}*|pārsniegum\p{L}*|exceed(?:s|ed|ing)?|превыша\p{L}*|превысил\p{L}*|überschreit\p{L}*|überschritt\p{L}*)(?![\p{L}])/giu;
+/** Noliegums tieši pirms (līdz 3 vārdiem) vai «… nav» tieši pēc. */
+const EXCEED_NEG_BEFORE_RE =
+  /(?:^|[^\p{L}])(?:nav|netika|netiek|nebija|neviens|nevienā|nevienu|nekad|bez|not|never|no|none|without|doesn['’]t|didn['’]t|isn['’]t|wasn['’]t|не|нет|ни|nicht|kein\p{L}*|nie)(?:\s+\p{L}+){0,3}\s*$/iu;
+const EXCEED_NEG_AFTER_RE = /^\s*(?:\p{L}+\s+){0,1}(?:nav|nebija|netika|nav\s+fiksēt\p{L}*)(?![\p{L}])/iu;
+
+/**
+ * Vai komentārs apgalvo, ka kāds intervāls pārsniedz ražotāja intervālu (BF 27.11, S4 (1)).
+ * Noliegumi («nepārsniedz», «nav pārsniegts», «does not exceed», «pārsniegumu nav») - nē.
+ */
+export function oilTextClaimsExceeded(text: string): boolean {
+  const plain = plainForCheck(text ?? "").replace(/&nbsp;/g, " ");
+  for (const sentence of plain.split(/(?<=[.!?])\s+|\n+/u)) {
+    for (const m of sentence.matchAll(new RegExp(EXCEED_CLAIM_RE.source, "giu"))) {
+      const at = m.index ?? 0;
+      if (EXCEED_NEG_BEFORE_RE.test(sentence.slice(0, at))) continue;
+      if (EXCEED_NEG_AFTER_RE.test(sentence.slice(at + m[0].length))) continue;
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Rindkopa, kas runā par pārsniegumu (ņem pēdējo). */

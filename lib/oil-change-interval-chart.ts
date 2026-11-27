@@ -10,7 +10,16 @@ import {
   type OilCurrentReading,
 } from "@/lib/oil-change-intervals";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
-import { parseOemOilIntervalFromText, type OemOilInterval } from "@/lib/oem-oil-interval";
+import {
+  defaultOemOilIntervalForVehicle,
+  formatOemOilCaption,
+  OEM_UNKNOWN_LINE_RE,
+  oilIntervalKmTolerance,
+  parseOemOilIntervalFromText,
+  type OemOilInterval,
+} from "@/lib/oem-oil-interval";
+import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { isImpossibleFutureDate } from "@/lib/future-date-guard";
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import { outvinDealerServiceRowHasData } from "@/lib/outvin-data-bundle";
@@ -18,6 +27,8 @@ import {
   detectOilNoteLang,
   ensureOilIntervalNotes,
   findExceededOilIntervals,
+  isGenericDealerRecordWork,
+  oilTextClaimsExceeded,
   replaceOilStepWordingLv,
   type OilExceededInterval,
   type OilNoteLang,
@@ -155,6 +166,41 @@ export function oemFallbackText(block: AutoRecordsBlockState): string {
   return `${block.oilChangeIntervalNotes ?? ""}\n${block.comments ?? ""}\n${block.serviceHistoryNotes ?? ""}`;
 }
 
+/** Teksta vērtības no OneAuto dekodēšanas atbildēm (marka, modelis, degviela, dzinējs). */
+function oneautoVehicleStrings(block: AutoRecordsBlockState, keyRe: RegExp): string[] {
+  const out: string[] = [];
+  const results = block.oneautoIngest?.results ?? {};
+  for (const row of Object.values(results)) {
+    const payload = (row as { payload?: unknown } | undefined)?.payload as { result?: unknown } | null | undefined;
+    const result = payload && typeof payload === "object" ? payload.result : null;
+    if (!result || typeof result !== "object" || Array.isArray(result)) continue;
+    for (const [k, v] of Object.entries(result as Record<string, unknown>)) {
+      if (typeof v === "string" && keyRe.test(k)) out.push(v);
+    }
+  }
+  return out;
+}
+
+/**
+ * Ražotāja / dzinēja saimes noklusējums šim auto (BF 27.11, S4), ja tāds ir kodā
+ * (`defaultOemOilIntervalForVehicle`: BMW dīzeļi 30 000 km / 24 mēn.). Citādi null - neizdomājam.
+ */
+export function defaultOemOilIntervalForBlock(block: AutoRecordsBlockState): OemOilInterval | null {
+  const vi = block.outvinReport?.vehicleInfo;
+  return defaultOemOilIntervalForVehicle({
+    vin: vi?.vinCode || block.oneautoIngest?.lastFetchedVin || "",
+    descriptions: [
+      vi?.model,
+      vi?.modelSeries,
+      vi?.modelCode,
+      vi?.developmentCode,
+      ...oneautoVehicleStrings(block, /desc|make|manufacturer|brand|model|derivative|variant/i),
+    ],
+    fuel: [vi?.fuel, ...oneautoVehicleStrings(block, /fuel/i)],
+    engineCodes: [vi?.engineCode, ...oneautoVehicleStrings(block, /engine/i)],
+  });
+}
+
 export function resolveOilIntervalOem(block: AutoRecordsBlockState): OemOilInterval | null {
   const chart = block.oilIntervalChart;
   if (chart?.oemKm != null) {
@@ -164,7 +210,7 @@ export function resolveOilIntervalOem(block: AutoRecordsBlockState): OemOilInter
       months: chart.oemMonths,
     };
   }
-  return parseOemOilIntervalFromText(oemFallbackText(block));
+  return parseOemOilIntervalFromText(oemFallbackText(block)) ?? defaultOemOilIntervalForBlock(block);
 }
 
 export function withOilIntervalHighlight(
@@ -200,14 +246,79 @@ export function buildOilIntervalSeriesForBlock(
   return withOilIntervalHighlight(series, chart?.highlightOverOem !== false);
 }
 
+function rowKm(odometer: string): number | null {
+  const d = (odometer ?? "").replace(/\D/g, "");
+  return d ? Number(d) : null;
+}
+
+function monthsBetweenMs(fromMs: number, toMs: number): number | null {
+  if (!fromMs || !toMs || toMs < fromMs) return null;
+  const days = (toMs - fromMs) / (24 * 60 * 60 * 1000);
+  if (days < 20) return null;
+  return Math.round(days / 30.437);
+}
+
+/**
+ * Periods pēc pēdējās fiksētās eļļas maiņas līdz pēdējam dīlera ierakstam (BF 27.11, S4 (4)) - ja dīleris
+ * auto redzēja, bet eļļas maiņa nav fiksēta ilgāk par OEM, tas ir tāds pats pārsniegums kā starp maiņām.
+ * Ja eļļas maiņu nav vispār - periods no pirmā līdz pēdējam dīlera ierakstam (piem. Toyota tikai «Apkope /
+ * Lielā apkope»). Vispārīgie ieraksti periodā (ieskaitot pēdējo) - 2. piebildei. Bez OEM - nekas.
+ */
+function tailExceededInterval(
+  series: ReturnType<typeof buildOilChangeIntervalSeries>,
+  sourceRows: readonly AutoRecordsServiceWorkRow[],
+  oem: OemOilInterval | null,
+): OilExceededInterval | null {
+  if (!oem) return null;
+  const dated = sourceRows
+    .filter((r) => (r.date ?? "").trim() && !isImpossibleFutureDate(r.date))
+    .map((r) => ({ row: r, ms: parseDotOrIsoDateToMs(r.date) || 0 }))
+    .filter((x) => x.ms > 0)
+    .sort((a, b) => a.ms - b.ms);
+  if (dated.length === 0) return null;
+  const lastOil = series.points.at(-1) ?? null;
+  const fromMs = lastOil ? parseDotOrIsoDateToMs(lastOil.date) || 0 : dated[0]!.ms;
+  if (!fromMs) return null;
+  const fromKm = lastOil ? lastOil.km : rowKm(dated[0]!.row.odometer);
+  const last = dated.at(-1)!;
+  if (last.ms <= fromMs) return null;
+  const lastKm = Math.max(0, ...dated.filter((x) => x.ms === last.ms).map((x) => rowKm(x.row.odometer) ?? 0));
+  const spanKm = fromKm != null && lastKm > fromKm ? lastKm - fromKm : null;
+  const spanMonths = monthsBetweenMs(fromMs, last.ms);
+  const overKm = spanKm != null && spanKm > oem.km + oilIntervalKmTolerance(oem.km);
+  const overMonths = spanMonths != null && oem.months != null && spanMonths > oem.months;
+  if (!overKm && !overMonths) return null;
+  const genericDates: string[] = [];
+  const seen = new Set<string>();
+  for (const x of dated) {
+    // Ar eļļas maiņu: pēc tās (ne pati maiņas diena); bez maiņām: viss periods.
+    if (lastOil ? x.ms <= fromMs : x.ms < fromMs) continue;
+    const d = x.row.date.trim();
+    if (seen.has(d) || !isGenericDealerRecordWork(x.row.works)) continue;
+    seen.add(d);
+    genericDates.push(d);
+  }
+  return {
+    fromDate: lastOil ? lastOil.date : dated[0]!.row.date.trim(),
+    toDate: last.row.date.trim(),
+    genericDates,
+  };
+}
+
 /**
  * Pārsniegtie eļļas intervāli piebildēm (`ensureOilIntervalNotes`). Vienmēr pret OEM -
  * arī ja adminā izslēgta pārsniegumu iekrāsošana (likums attiecas uz faktu, ne krāsu).
- * `oemText` - ja OEM jāņem no jauna (vēl nesaglabāta) komentāra teksta.
+ * `oemText` - ja OEM jāņem no jauna (vēl nesaglabāta) komentāra teksta; tas pats teksts ir arī
+ * `claimText` (ko saka komentārs), ja nav dots atsevišķi.
+ *
+ * BF 27.11 (S4): (1) ja teksts apgalvo pārsniegumu, bet km pielaide (3 % / 750 km) to slēpj (30 405 pret
+ * 30 000 km), pielaidi saskaņo ar tekstu - pārsniegums skaitās bez pielaides; ja kods pārsniegumu nerod
+ * vispār (piem. eļļas rindas nav atpazītas), 1. piebilde tomēr ir, jo teksts to apgalvo.
+ * (4) periods pēc pēdējās eļļas maiņas līdz pēdējam dīlera ierakstam arī tiek vērtēts.
  */
 export function oilExceededIntervalsForBlock(
   block: AutoRecordsBlockState,
-  opts?: { oemText?: string },
+  opts?: { oemText?: string; claimText?: string },
 ): OilExceededInterval[] {
   const rows = chartRowsToServiceWorks(resolveOilIntervalChartRows(block));
   const oem =
@@ -215,8 +326,29 @@ export function oilExceededIntervalsForBlock(
       ? (resolveOilIntervalOem({ ...block, oilChangeIntervalNotes: opts.oemText }) ??
         resolveOilIntervalOem(block))
       : resolveOilIntervalOem(block);
+  const sourceRows = dealerOilIntervalSourceRows(block);
   const series = buildOilChangeIntervalSeries(rows, oem);
-  return findExceededOilIntervals(series, dealerOilIntervalSourceRows(block));
+  const out = findExceededOilIntervals(series, sourceRows);
+  const tail = tailExceededInterval(series, sourceRows, oem);
+  if (tail) out.push(tail);
+  if (out.length > 0) return out;
+  const claim = opts?.claimText ?? opts?.oemText ?? block.oilChangeIntervalNotes ?? "";
+  if (!oilTextClaimsExceeded(claim)) return out;
+  const strict = findExceededOilIntervals(buildOilChangeIntervalSeries(rows, oem, { kmTolerance: 0 }), sourceRows);
+  if (strict.length > 0) return strict;
+  // Teksts saka «pārsniedz», kods periodu nenosaka - 1. piebilde vienalga (bez 2. piebildes datumiem).
+  return [{ fromDate: "", toDate: "", genericDates: [] }];
+}
+
+/**
+ * AI «Ražotāja intervāls: nav droši zināms», bet kodā ir ražotāja / dzinēja saimes noklusējums
+ * (BMW dīzeļi 30 000 km / 24 mēn.) -> pirmā rinda ar šo intervālu (tā pati vērtība, ko lieto tabula).
+ */
+export function applyDefaultOemLine(block: AutoRecordsBlockState, text: string): string {
+  if (!OEM_UNKNOWN_LINE_RE.test(text ?? "")) return text;
+  if (block.oilIntervalChart?.oemKm != null) return text;
+  const def = defaultOemOilIntervalForBlock(block);
+  return def ? text.replace(OEM_UNKNOWN_LINE_RE, formatOemOilCaption(def)) : text;
 }
 
 /** Eļļas komentārs ar obligātajām piebildēm (Nils 26.11.2026). */
@@ -226,7 +358,7 @@ export function oilIntervalNotesWithRequiredNotes(
   lang?: OilNoteLang | null,
 ): string {
   if (!(text ?? "").trim()) return text ?? "";
-  const worded = replaceOilStepWordingLv(text);
+  const worded = applyDefaultOemLine(block, replaceOilStepWordingLv(text));
   const intervals = oilExceededIntervalsForBlock(block, { oemText: worded });
   return ensureOilIntervalNotes(worded, intervals, lang ?? detectOilNoteLang(worded));
 }
