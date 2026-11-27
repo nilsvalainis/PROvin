@@ -581,6 +581,19 @@ export function parseOrderVinScanDashboardHint(raw: unknown): OrderVinScanDashbo
   return { at, vin, status: o.status, found, none, error, blocked, timeout, configMissing, browserOnly, foundLabels, hint };
 }
 
+/**
+ * Sakļautās VIN SCAN joslas punkti (Nils 27.11): tikai avoti, kas ielasīti ar datiem - arī pārlūka avots,
+ * kad tas atgriezis datus (imports to padara «found»). «Nav datu», «bloķē», kļūdas u.c. redzami tikai sarakstā.
+ */
+export function orderVinScanCollapsedDots(
+  summary: OrderVinScanSummary | null | undefined,
+): Array<{ id: string; state: "found"; label: string }> {
+  if (!summary) return [];
+  return summary.rows
+    .filter((row) => row.state === "found" && !row.blocked)
+    .map((row) => ({ id: row.id, state: "found" as const, label: row.label }));
+}
+
 export function shouldShowVinScanDashboardCard(args: {
   checkoutLine?: string | null;
   auditComplete?: boolean;
