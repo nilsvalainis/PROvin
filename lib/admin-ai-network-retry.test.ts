@@ -11,10 +11,29 @@ describe("FLASH MAX tīkla kļūdas atkārtojums", () => {
     expect(generate).toHaveBeenCalledTimes(2);
   });
 
-  it("otrā tīkla kļūda tiek izmesta (ne bezgalīgi)", async () => {
+  it("otrā tīkla kļūda: vēl 1 atkārtojums, tad izdodas", async () => {
+    const generate = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new TypeError("Load failed"))
+      .mockResolvedValueOnce(ok);
+    const out = await generateAdminAiTextWithNetworkRetry("/x", {}, "f", { generate: generate as never, retryDelayMs: 0 });
+    expect(out).toBe(ok);
+    expect(generate).toHaveBeenCalledTimes(3);
+  });
+
+  it("trešā tīkla kļūda tiek izmesta (ne bezgalīgi)", async () => {
     const generate = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     await expect(
       generateAdminAiTextWithNetworkRetry("/x", {}, "f", { generate: generate as never, retryDelayMs: 0 }),
+    ).rejects.toThrow("Failed to fetch");
+    expect(generate).toHaveBeenCalledTimes(3);
+  });
+
+  it("maxRetries: 1 - tikai viens atkārtojums", async () => {
+    const generate = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    await expect(
+      generateAdminAiTextWithNetworkRetry("/x", {}, "f", { generate: generate as never, retryDelayMs: 0, maxRetries: 1 }),
     ).rejects.toThrow("Failed to fetch");
     expect(generate).toHaveBeenCalledTimes(2);
   });

@@ -482,3 +482,74 @@ export function formatFlashMaxNotice(results: FlashMaxJobResult[]): string {
   const names = failed.map((f) => f.label).join(", ");
   return `FLASH MAX: sagatavoti ${ok}, kļūdas: ${names}.`;
 }
+
+/** Latviešu skaitļa forma: 1, 21, 31… - vienskaitlis (izņemot 11). */
+function lvCount(n: number, one: string, many: string): string {
+  return `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
+}
+
+export type FlashMaxStatusTone = "busy" | "ok" | "warn" | "error";
+
+export type FlashMaxStatusSummary = {
+  /** Viena īsa rinda rīkjoslai, piem. «FLASH MAX: 7 · 1 kļūda · 5 ieteikumi». */
+  chip: string;
+  tone: FlashMaxStatusTone;
+  okCount: number;
+  failed: FlashMaxJobResult[];
+  skipped: FlashMaxJobResult[];
+  reviewPending: number;
+  reviewLine: string | null;
+};
+
+/**
+ * FLASH MAX statuss kompaktai rīkjoslas čipai (Nils 27.11: garš teksts zem pogas izstiepa rīkjoslu un
+ * saspieda avotu sadaļas). Pilnās detaļas rāda atsevišķs panelis.
+ */
+export function summarizeFlashMaxStatus(input: {
+  busy: boolean;
+  phase?: string | null;
+  results: FlashMaxJobResult[] | null;
+  reviewStatus?: "idle" | "running" | "done" | "error";
+  reviewPending?: number;
+}): FlashMaxStatusSummary | null {
+  const results = input.results ?? [];
+  const okCount = results.filter((r) => r.status === "ok").length;
+  const failed = results.filter((r) => r.status === "error");
+  const skipped = results.filter((r) => r.status === "skipped");
+  const reviewPending = Math.max(0, input.reviewPending ?? 0);
+  const reviewStatus = input.reviewStatus ?? "idle";
+  const reviewLine =
+    reviewStatus === "running"
+      ? "Noslēguma pārbaude (Opus)…"
+      : reviewStatus === "error"
+        ? "Noslēguma pārbaude neizdevās - FLASH MAX teksti saglabāti."
+        : reviewStatus === "done"
+          ? reviewPending > 0
+            ? `Noslēguma pārbaude: ${lvCount(reviewPending, "ieteikums", "ieteikumi")} - pieņem vai noraidi.`
+            : "Noslēguma pārbaude: iebildumu nav."
+          : null;
+  const base = { okCount, failed, skipped, reviewPending, reviewLine };
+  if (input.busy) {
+    const phase = input.phase?.trim();
+    return { ...base, chip: `FLASH MAX: ${phase || "ģenerē…"}`, tone: "busy" };
+  }
+  if (!input.results) return null;
+  if (okCount === 0 && failed.length === 0) {
+    return { ...base, chip: `FLASH MAX: nav ko ģenerēt (${skipped.length} izlaisti)`, tone: "warn" };
+  }
+  const parts = [`FLASH MAX: ${okCount}`];
+  if (failed.length) parts.push(lvCount(failed.length, "kļūda", "kļūdas"));
+  if (reviewStatus === "running") parts.push("pārbauda…");
+  else if (reviewStatus === "error") parts.push("pārbaude neizdevās");
+  else if (reviewPending > 0) parts.push(lvCount(reviewPending, "ieteikums", "ieteikumi"));
+  return {
+    ...base,
+    chip: parts.join(" · "),
+    tone: failed.length ? "error" : reviewPending > 0 || reviewStatus === "error" ? "warn" : "ok",
+  };
+}
+
+/** Kļūdas teksts, kad pieprasījums nesasniedza serveri vai atbilde pārtrūka (arī pēc atkārtojuma). */
+export function formatFlashMaxNetworkError(label: string): string {
+  return `${label}: AI nepaguva (savienojums pārtrūka) - spied ✨ šim laukam`;
+}

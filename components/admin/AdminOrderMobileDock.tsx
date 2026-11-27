@@ -304,7 +304,13 @@ export function AdminOrderMobileDock({
     : flashResultHidden
       ? null
       : flashMaxErr
-        ? { text: flashMaxErr, tone: "error" }
+        ? {
+            text: flashMaxErr,
+            tone: "error",
+            ...(finalReviewPending > 0 && onOpenFinalReview
+              ? { action: { label: `Skatīt (${finalReviewPending})`, onClick: onOpenFinalReview } }
+              : {}),
+          }
         : flashMaxNotice
           ? {
               text: flashMaxNotice,

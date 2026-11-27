@@ -16,9 +16,6 @@ import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 type Props = {
   disabled?: boolean;
   busy?: boolean;
-  phase?: string | null;
-  notice?: string | null;
-  error?: string | null;
   onRun: (selection: FlashMaxSelection) => void;
   /** Sticky joslai: izvēlne atveras pa kreisi. */
   menuAlign?: "start" | "end";
@@ -48,9 +45,6 @@ const chip =
 export function AdminFlashMaxButton({
   disabled,
   busy,
-  phase,
-  notice,
-  error,
   onRun,
   menuAlign = "start",
   compact,
@@ -141,21 +135,8 @@ export function AdminFlashMaxButton({
           </div>
         </div>
       ) : null}
-      {compact || !phase ? null : (
-        <p className="mt-1 max-w-[18rem] text-[10px] leading-snug text-teal-800" role="status">
-          {phase}
-        </p>
-      )}
-      {compact || !notice ? null : (
-        <p className="mt-1 max-w-[22rem] text-[10px] leading-snug text-emerald-800/90" role="status">
-          {notice}
-        </p>
-      )}
-      {compact || !error ? null : (
-        <p className="mt-1 max-w-[22rem] text-[10px] leading-snug text-amber-800/90" role="alert">
-          {error}
-        </p>
-      )}
+      {/* Statuss (fāze, rezultāts, kļūdas) vairs netiek rādīts zem pogas - tas izstiepa rīkjoslu (Nils 27.11).
+          Rīkjoslā to rāda kompakta čipa AdminFlashMaxStatusChip. */}
     </div>
   );
 }
