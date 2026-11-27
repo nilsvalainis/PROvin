@@ -135,6 +135,12 @@ export function buildDealerCodeFactsForPrompt(
   );
   const oilSteps = formatOilStepRangeFactLine(oilSeries);
   if (oilSteps) lines.push(`- ${oilSteps}`);
+  const possibleOil = oilSeries.possiblePoints ?? [];
+  if (possibleOil.length > 0) {
+    lines.push(
+      `- Iespējamas eļļas maiņas (eļļas filtra korpuss bez eļļas maiņas, NAV pierādītas, neskaiti maiņās un intervālos): ${possibleOil.map((p) => `${p.date || "datums nav"} ${kmLabel(p.odometer)}`).join("; ")}. Raksti tikai «eļļas filtra korpusa maiņa - iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts».`,
+    );
+  }
 
   const gearbox = rows.filter((r) => isGearboxOilChangeWork(r.works));
   if (gearbox.length > 0) {
