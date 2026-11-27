@@ -25,6 +25,8 @@ import { buildLetterFacts, buildSourceCards, csddCardFacts, fmtLv, type QuickEva
 import { listQuickEvalExportCandidates } from "@/lib/quick-eval-service";
 import { readQuickEval } from "@/lib/quick-eval-store";
 import { mergeQuickEvalVinScan } from "@/lib/quick-eval-vin-scan";
+import { buildQuickEvalV4View } from "@/lib/quick-eval-v4";
+import { buildCheckcarVinReportUrl, CHECKCAR_VIN_HOME_URL, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import { AdminQuickEvalAutoPanel } from "@/components/admin/AdminQuickEvalAutoPanel";
 import { refreshQuickEvalSmartId } from "@/lib/quick-eval-auto";
 import { quickEvalAutoView, quickEvalProductPriceLabel } from "@/lib/quick-eval-auto-core";
@@ -121,16 +123,29 @@ export default async function QuickEvalDetailPage({
   const cards = input ? buildSourceCards(input) : [];
   const facts = input ? buildLetterFacts(input) : {};
   const csdd = blocks ? csddCardFacts(blocks.csdd, peek.vin ?? "") : [];
-  const title = csdd.find((f) => f.label === "Marka, modelis")?.value || "Auto";
+  const csddTitle = csdd.find((f) => f.label === "Marka, modelis")?.value || "";
   const plateVinRaw = csdd.find((f) => f.label === "Reģ. nr. · VIN")?.value.replace(/ \(VIN.*$/, "");
   const plateVin = plateVinRaw;
   const railPlate = (plateVinRaw ?? "").split(" · ")[0]?.trim() || "";
-  const year = csdd.find((f) => f.label === "Izlaiduma gads")?.value;
+  const csddYear = csdd.find((f) => f.label === "Izlaiduma gads")?.value;
   const vin = doc?.vin || peek.vin || "";
   // Kopīgais VIN SCAN kešs pēc VIN: userscript importi un «Ātrajā pārbaudē» palaistie avoti redzami arī šeit.
   const scanVin = normalizeVin(vin);
   const sharedScan = isValidVin(scanVin) ? await readVinScanSnapshot(scanVin).catch(() => null) : null;
   const vinScanView = mergeQuickEvalVinScan(doc?.vinScan ?? null, sharedScan);
+  // 27.11: kopsavilkums un kartītes no VISIEM avotiem (sludinājums, ārvalstu reģistri, priekšskati) vienā v4 skatā.
+  const v4View = buildQuickEvalV4View({
+    blocks: blocks ?? null,
+    parts: (doc?.seed?.parts ?? {}) as Record<string, string | undefined>,
+    sourceAt: doc?.sourceAt ?? {},
+    seedAt: doc?.seed?.at ?? null,
+    listingUrl,
+    vinScan: vinScanView,
+    ccVin: doc?.ccVin ?? null,
+    ccVinUrl: buildCheckcarVinReportUrl(normalizeVinForServiceUrls(vin)) ?? CHECKCAR_VIN_HOME_URL,
+  });
+  const title = csddTitle || v4View.title || "Auto";
+  const year = csddYear || v4View.year;
 
   const queue = all.filter((e) => e.status === "new" || e.status === "in_progress" || e.id === peek!.id);
   const idx = queue.findIndex((e) => e.id === peek!.id);
@@ -281,6 +296,8 @@ export default async function QuickEvalDetailPage({
           cards={cards}
           vinScan={vinScanView}
           ccVin={doc?.ccVin ?? null}
+          v4={{ ...v4View, absorbed: [...v4View.absorbed] }}
+          hasListing={Boolean(listingUrl)}
         />
       ) : (
         <p className="mt-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-[13px] text-[var(--color-provin-muted)]">

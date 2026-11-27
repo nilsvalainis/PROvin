@@ -11,6 +11,7 @@ import type { VinHistoryEntry } from "@/lib/vin-history";
 import { AdminVinHistoryList } from "@/components/admin/AdminVinHistoryList";
 import { quickEvalNordicSearchLinks } from "@/lib/quick-eval-vin-scan";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
+import type { QuickEvalV4View } from "@/lib/quick-eval-v4";
 import { isProvinUserscriptPresent } from "@/lib/provin-userscript-presence";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
@@ -193,7 +194,7 @@ function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; co
       data-provin-cc-photo-probe="1"
       data-provin-handoff-vin={effective || undefined}
       title={at ? `Pārbaudīts ${fmtLv(at)}. Klikšķis atver checkcar.vin jaunā cilnē.` : "Atver checkcar.vin jaunā cilnē un nolasa foto skaitu"}
-      className="inline-flex items-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-2.5 py-1 text-[12px] text-[var(--color-apple-text)] hover:bg-slate-50"
+      className="inline-flex h-[30px] items-center gap-1.5 whitespace-nowrap rounded-[6px] border border-[#d2d2d7] bg-white px-[11px] text-[12.5px] text-[#1d1d1f] hover:bg-[#f5f5f7] max-sm:h-9"
       onClick={(e) => {
         if (!effective || effective.length < 11) {
           e.preventDefault();
@@ -222,8 +223,6 @@ function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; co
   );
 }
 
-/** VIN SCAN indikatori, kuriem jau ir sava kartīte (nedublē). */
-const SCAN_HAS_OWN_CARD = new Set(["tjekbil", "mnt_ee", "lkf_ee", "carinfo", "csdd", "listing_history"]);
 
 type GridCard = {
   key: string;
@@ -252,10 +251,10 @@ function QeCard({ c }: { c: GridCard }) {
   const shown = c.facts.slice(0, 6);
   const rest = c.facts.slice(6);
   return (
-    <section className="flex h-full min-h-[214px] flex-col rounded-xl bg-white text-[12px] shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
+    <section className="flex h-full flex-col rounded-[10px] border border-[#d2d2d7] bg-white text-[13px]">
       <header className="flex items-center gap-1.5 border-b border-[#f0f0f2] px-3 py-2">
         <i className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: QE_DOT_HEX[c.tone] }} aria-hidden />
-        <h4 className="min-w-0 truncate text-[12.5px] font-semibold text-[#1d1d1f]">{c.title}</h4>
+        <h4 className="min-w-0 truncate text-[13.5px] font-semibold text-[#1d1d1f]">{c.title}</h4>
         <span className="ml-auto shrink-0 text-[11px] text-[#aeaeb2]">{c.meta}</span>
         {c.link ? (
           <a href={c.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[11px] text-[#8e8e93] hover:text-[#1d1d1f]" title="Atvērt avotu jaunā cilnē">
@@ -265,7 +264,7 @@ function QeCard({ c }: { c: GridCard }) {
       </header>
       <dl className="m-0 flex-1 px-3 py-1.5">
         {shown.map((f) => (
-          <div key={f.label} className="flex h-[22px] items-center justify-between gap-3">
+          <div key={f.label} className="flex min-h-[26px] items-center justify-between gap-3">
             <dt className="shrink-0 text-[#8e8e93]">{f.label}</dt>
             <dd className={`m-0 min-w-0 truncate text-right font-medium ${f.tone ? FACT_TONE[f.tone] : "text-[#1d1d1f]"}`} title={f.value}>
               {f.value}
@@ -274,7 +273,7 @@ function QeCard({ c }: { c: GridCard }) {
         ))}
         {c.extra ? <div className="mt-1.5">{c.extra}</div> : null}
       </dl>
-      <details className="border-t border-[#f0f0f2] px-3 py-1.5 text-[11.5px] text-[#8e8e93]">
+      <details className="border-t border-[#f0f0f2] px-3 py-1.5 text-[12px] text-[#8e8e93]">
         <summary className="cursor-pointer select-none">Detaļas</summary>
         <div className="mt-1 space-y-0.5 text-[#3a3a3c]">
           {rest.map((f) => (
@@ -342,17 +341,25 @@ export function AdminQuickEvalSourceGrid({
   cards,
   vinScan,
   ccVin,
+  v4,
+  hasListing = false,
 }: {
   peekId: string;
   vin: string;
   cards: SourceCardModel[];
   vinScan: { at: string; indicators: VinScanIndicator[] } | null;
   ccVin: { at: string; count: number | null } | null;
+  /** Ātrā vērtējuma bloki + VIN SCAN kā v4 rindas (`buildQuickEvalV4View`). */
+  v4: Pick<QuickEvalV4View, "rows" | "csdd" | "csddNotLv" | "title" | "year"> & { absorbed: readonly string[] };
+  hasListing?: boolean;
 }) {
   const router = useRouter();
   const data: GridCard[] = [];
   const empty: EmptyRow[] = [];
+  const absorbed = new Set(v4.absorbed);
   for (const c of cards) {
+    // Kartītes ar datiem, kuras jau zīmē v4 (sludinājums, DK/EE/SE reģistri, CSDD API), nedublē.
+    if (c.facts.length > 0 && absorbed.has(c.id)) continue;
     const meta = c.fetchedAt ? fmtLv(c.fetchedAt) : c.id === "ltab" ? "manuāli" : "nav ielasīts";
     if (c.facts.length > 0) {
       data.push({ key: c.id, title: c.title, tone: c.tone, meta, link: c.link, facts: c.facts, more: c.message });
@@ -367,26 +374,9 @@ export function AdminQuickEvalSourceGrid({
       });
     }
   }
-  const ccHas = typeof ccVin?.count === "number" && ccVin.count > 0;
-  const ccHref = buildCheckcarVinReportUrl(normalizeVinForServiceUrls(vin)) ?? CHECKCAR_VIN_HOME_URL;
-  data.push({
-    key: "cc_vin",
-    title: SOURCE_BLOCK_LABELS.cc_vin,
-    tone: ccHas ? "ok" : typeof ccVin?.count === "number" ? "none" : "pending",
-    meta: ccVin?.at ? fmtLv(ccVin.at) : "nav pārbaudīts",
-    link: ccHref,
-    facts: [
-      { label: "Dati", value: typeof ccVin?.count === "number" ? (ccHas ? "Ir" : "Nav") : "-", ...(ccHas ? { tone: "ok" as const } : {}) },
-      { label: "Foto", value: typeof ccVin?.count === "number" ? String(ccVin.count) : "-" },
-    ],
-    more: "checkcar.vin - atveras jaunā cilnē; foto skaitu nolasa PROVIN skripts.",
-    extra: <CcVinChip peekId={peekId} vin={vin} count={ccVin?.count} at={ccVin?.at} />,
-  });
   const nordic = quickEvalNordicSearchLinks(vin);
   // VIN SCAN v4: avotu rindas zīmē tā pati komponente kā Ātrajā pārbaudē un pasūtījumā.
-  const v4Rows = (vinScan?.indicators ?? [])
-    .filter((i) => !SCAN_HAS_OWN_CARD.has(i.id))
-    .map((i) => ({ ...i, openUrl: i.openUrl ?? "" }) as VinScanV4Row);
+  const v4Rows = v4.rows as unknown as VinScanV4Row[];
   const [v4Busy, setV4Busy] = useState(false);
   if (!vinScan) empty.push({ key: "scan", title: "Publiskie reģistri (VIN SCAN)", message: "Vēl nav skenēts", retry: "vin_scan", link: null });
 
@@ -420,13 +410,19 @@ export function AdminQuickEvalSourceGrid({
           ))}
         </div>
       ) : null}
-      {vinScan ? (
+      {v4Rows.length || v4.csdd ? (
         <AdminVinScanV4
           vin={vin}
+          title={v4.title}
+          spec={v4.year}
           rows={v4Rows}
           busy={v4Busy}
-          scannedAt={vinScan.at}
+          scannedAt={vinScan?.at ?? ""}
+          csdd={v4.csdd}
+          csddNotLv={v4.csddNotLv}
+          hasListing={hasListing}
           links={nordic}
+          toolbar={<CcVinChip peekId={peekId} vin={vin} count={ccVin?.count} at={ccVin?.at} />}
           onRetry={async () => {
             setV4Busy(true);
             await postAction(peekId, { action: "refresh", only: "vin_scan" });
@@ -435,14 +431,16 @@ export function AdminQuickEvalSourceGrid({
           }}
         />
       ) : null}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {data.map((c) => (
-          <QeCard key={c.key} c={c} />
-        ))}
-      </div>
+      {data.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {data.map((c) => (
+            <QeCard key={c.key} c={c} />
+          ))}
+        </div>
+      ) : null}
       {empty.length > 0 ? (
-        <details className="rounded-xl bg-white px-3 py-2 text-[12px] shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
-          <summary className="cursor-pointer select-none font-semibold text-[#3a3a3c]">
+        <details className="rounded-[10px] border border-[#d2d2d7] bg-white px-[18px] py-3 text-[13px] max-sm:rounded-[8px] max-sm:px-3">
+          <summary className="cursor-pointer select-none font-medium text-[#424245]">
             Bez datiem ({empty.length}) <span className="font-normal text-[#aeaeb2]">· nav atrasts, kļūda vai jāpārbauda pašam</span>
           </summary>
           <ul className="mt-1 divide-y divide-[#f0f0f2]">
