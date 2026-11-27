@@ -46,6 +46,8 @@ TheCarApi `/api/v1/sites` (publiskā dokumentācija 11.2026): auto1, openlane, b
 
 Vārdnīca: `lib/thecarapi-i18n-lv.ts`. Ja vērtībai nav tulkojuma, rezerve dod lasāmu tekstu un reģistrē to (`thecarapiUntranslated()`, žurnālā «[thecarapi-i18n] neiztulkots: ...»). Šīs vērtības pievieno vārdnīcai. AI tulkošana netiek lietota. Brīvs teksts (komentāri, servisa apraksti) paliek oriģinālvalodā.
 
+**Openlane bojājumu vietas (27.11.2026).** Openlane dod vietu tikai kā numuru (`DamageLocation`, `areaCode`/`areaName`, bilžu `locationId`). Numurs → vieta LV/EN/RU/DE: `lib/openlane-damage-locations.ts` (avots - Openlane tīmekļa lietotnes kods `index-*.js` karte `vehicleDetails.damages.*` un oficiālie teksti `labelsV2` EN/RU). Piem. 1 priekšējais buferis, 3 motora pārsegs, 13 aizmugurējais buferis, 16 jumts. Nezināms numurs paliek «Zona N». Karti lieto tikai Openlane ierakstiem.
+
 ## Testi
 
 Testi nelieto reālu tīklu. `api.thecarapi.com` ir aizliegts globālajā fetch, izņemot injicētu mock. CDN lejupielāde testos arī ir mock.
