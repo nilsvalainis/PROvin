@@ -155,3 +155,48 @@ describe("parseCopilotAiPayload - upsert_vehicle_history_timeline_row", () => {
     ]);
   });
 });
+
+import {
+  COPILOT_MONTHLY_USD_CAP_DEFAULT,
+  copilotBudgetStatus,
+  copilotHasOperatorInput,
+  formatCopilotBudgetLine,
+  formatCopilotEstimate,
+  parseCopilotMonthlyCap,
+} from "@/lib/admin-copilot-helpers";
+import { estimateAiUsd } from "@/lib/ai-usage";
+
+describe("Copilot mēneša griesti", () => {
+  it("noklusējums 32 $ (~30 €), env pārraksta", () => {
+    expect(COPILOT_MONTHLY_USD_CAP_DEFAULT).toBe(32);
+    expect(parseCopilotMonthlyCap(undefined)).toBe(32);
+    expect(parseCopilotMonthlyCap("50")).toBe(50);
+    expect(parseCopilotMonthlyCap("nē")).toBe(32);
+  });
+
+  it("80 % brīdinājums, 100 % izslēdz gudro režīmu", () => {
+    expect(copilotBudgetStatus(10, 32, "2026-11")).toMatchObject({ warn: false, exhausted: false });
+    expect(copilotBudgetStatus(26, 32, "2026-11")).toMatchObject({ warn: true, exhausted: false });
+    expect(copilotBudgetStatus(32, 32, "2026-11")).toMatchObject({ warn: true, exhausted: true });
+  });
+
+  it("panelī eiro: «šomēnes X € no 30 €»", () => {
+    expect(formatCopilotBudgetLine({ spentUsd: 1, capUsd: 32 })).toBe("šomēnes 0,93 € no 30 €");
+    expect(formatCopilotEstimate(0.25)).toBe("≈ 0,23 €");
+  });
+
+  it("bez ziņas un pielikuma - nav operatora ievades", () => {
+    expect(copilotHasOperatorInput({ message: "  ", pdfCount: 0, photoCount: 0 })).toBe(false);
+    expect(copilotHasOperatorInput({ message: "", pdfCount: 1, photoCount: 0 })).toBe(true);
+    expect(copilotHasOperatorInput({ message: "kas trūkst?", pdfCount: 0, photoCount: 0 })).toBe(true);
+  });
+
+  it("oficiālās cenas: Sonnet 5.5 2 $ / 10 $, kešs 0,10 $", () => {
+    expect(estimateAiUsd({ model: "claude-sonnet-5-5", inputTokens: 1_000_000, outputTokens: 0 })).toBe(2);
+    expect(estimateAiUsd({ model: "claude-sonnet-5-5", inputTokens: 0, outputTokens: 1_000_000 })).toBe(10);
+    expect(
+      estimateAiUsd({ model: "claude-sonnet-5-5", inputTokens: 0, outputTokens: 0, cacheReadInputTokens: 1_000_000 }),
+    ).toBe(0.1);
+    expect(estimateAiUsd({ model: "claude-sonnet-5", inputTokens: 1_000_000, outputTokens: 0 })).toBe(2);
+  });
+});

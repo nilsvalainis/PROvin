@@ -13,10 +13,20 @@ import {
   isLikelyCsddPdfText,
   selectCopilotClientPatch,
 } from "@/lib/admin-copilot-csdd";
-import { COPILOT_HISTORY_TURNS, runOrderCopilotAi } from "@/lib/admin-copilot-ai";
+import {
+  buildCopilotContextText,
+  COPILOT_HISTORY_TURNS,
+  runOrderCopilotAi,
+} from "@/lib/admin-copilot-ai";
+import { runCopilotSmartAgent } from "@/lib/admin-copilot-agent";
+import { addCopilotSpend, readCopilotBudgetStatus } from "@/lib/admin-copilot-budget";
+import { copilotAuditValuesFromRaw } from "@/lib/admin-copilot-smart-tools";
+import { withAiUsageMeter } from "@/lib/ai-usage-meter";
 import {
   appendCopilotActionsToContent,
   buildSourceDisabledNotice,
+  copilotHasOperatorInput,
+  type CopilotBudgetStatus,
   truncateCopilotHistoryContent,
 } from "@/lib/admin-copilot-helpers";
 import {
@@ -24,7 +34,10 @@ import {
   isCopilotSourceKey,
   isDestructiveCopilotAction,
   parseCopilotApplyMode,
+  parseCopilotMode,
   type CopilotAction,
+  type CopilotFieldProposal,
+  type CopilotMode,
   type CopilotChatMessage,
   type CopilotSourceKey,
 } from "@/lib/admin-copilot-types";
@@ -73,7 +86,8 @@ import {
 import { deleteSourcePdfBlobs, fetchSourcePdfsFromBlob } from "@/lib/admin-source-pdf-blob-fetch";
 import { vendorSourceKey } from "@/lib/vendor-report-extract";
 
-export const maxDuration = 120;
+/** Gudrā režīma rīku cilpa (līdz 8 soļiem) var būt garāka par 120 s. Lētais režīms paliek īss. */
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 const LOG_PREFIX = "[admin/copilot]";
@@ -232,14 +246,16 @@ export async function GET(req: Request) {
 
   const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim() ?? "";
   if (!sessionId) return NextResponse.json({ error: "missing_session" }, { status: 400 });
+  const budget = await readCopilotBudgetStatus().catch(() => null);
   if (!isCopilotChatStoreEnabled()) {
-    return NextResponse.json({ ok: true, enabled: false, messages: [], allowedSources: [] });
+    return NextResponse.json({ ok: true, enabled: false, messages: [], allowedSources: [], budget });
   }
 
   const doc = await readCopilotChat(sessionId);
   return NextResponse.json({
     ok: true,
     enabled: true,
+    budget,
     messages: doc?.messages ?? [],
     allowedSources: doc?.allowedSources ?? [],
     updatedAt: doc?.updatedAt ?? null,
@@ -279,6 +295,7 @@ export async function POST(req: Request) {
   let applyMode: "auto" | "preview" = "preview";
   let auditContextRaw: unknown = null;
   let citiAvotiSectionIndex: number | undefined;
+  let mode: CopilotMode = "cheap";
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -289,6 +306,7 @@ export async function POST(req: Request) {
       sourceBlocks = parseSourceBlocks(form.get("sourceBlocks"));
       allowedSources = parseAllowedSources(form.get("allowedSources"));
       applyMode = parseCopilotApplyMode(form.get("applyMode"));
+      mode = parseCopilotMode(form.get("mode"));
       auditContextRaw = form.get("auditContext");
       const citiIdxRaw = Number(str(form.get("citiAvotiSectionIndex")));
       if (Number.isInteger(citiIdxRaw) && citiIdxRaw >= 0) citiAvotiSectionIndex = citiIdxRaw;
@@ -429,6 +447,7 @@ export async function POST(req: Request) {
       allowedSources = parseAllowedSources(b.allowedSources);
       auditContextRaw = b.auditContext ?? null;
       applyMode = parseCopilotApplyMode(b.applyMode);
+      mode = parseCopilotMode(b.mode);
       const citiIdxJson = Number(str(b.citiAvotiSectionIndex));
       if (Number.isInteger(citiIdxJson) && citiIdxJson >= 0) citiAvotiSectionIndex = citiIdxJson;
     }
@@ -453,7 +472,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
     }
   }
-  if (!message && pdfs.length === 0 && photos.length === 0) {
+  // Copilot nekad nestrādā pats: bez operatora ziņas vai pielikuma AI netiek saukts.
+  if (!copilotHasOperatorInput({ message, pdfCount: pdfs.length, photoCount: photos.length })) {
     return NextResponse.json(
       { error: "empty_message", detail: "Ieraksti ziņu vai pievieno PDF / foto" },
       { status: 400 },
@@ -471,6 +491,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const budgetBefore: CopilotBudgetStatus | null = await readCopilotBudgetStatus().catch(() => null);
+  let modeNotice = "";
+  if (mode === "smart" && budgetBefore?.exhausted) {
+    mode = "cheap";
+    modeNotice = "Mēneša Copilot griesti sasniegti - gudrais režīms izslēgts, atbildēja parastais režīms.";
+  }
+
+  const { result: response, usage } = await withAiUsageMeter(async (): Promise<NextResponse> => {
   try {
     const allowedSet = new Set<CopilotSourceKey>(allowedSources);
     let workingBlocks = sourceBlocks;
@@ -663,6 +691,8 @@ export async function POST(req: Request) {
       }
     }
 
+    let fieldProposals: CopilotFieldProposal[] = [];
+    let smartModelUsed = "";
     const ai = skipGenericCopilot
       ? {
           reply:
@@ -679,15 +709,40 @@ export async function POST(req: Request) {
           actions: carinfoPasteActions,
           clarificationNeeded: "",
         }
-      : await runOrderCopilotAi({
-          message,
-          sourceBlocks: workingBlocks,
-          allowedSources,
-          history,
-          pdfs: remainingPdfs,
-          photos,
-          auditContext: auditContextText,
-        });
+      : mode === "smart"
+        ? await (async () => {
+            const agentInput = parseAuditContextInput(auditContextRaw, workingBlocks, sessionId);
+            const smart = await runCopilotSmartAgent({
+              sessionId,
+              message,
+              contextText: buildCopilotContextText({
+                sourceBlocks: workingBlocks,
+                allowedSources,
+                history,
+                auditContext: auditContextText,
+                pdfNames: remainingPdfs.map((p) => p.fileName),
+                photoNames: photos.map((p) => p.fileName),
+              }),
+              pdfs: remainingPdfs,
+              photos,
+              sourceBlocks: workingBlocks,
+              allowedSources,
+              auditInput: agentInput,
+              auditValues: copilotAuditValuesFromRaw(auditContextRaw),
+            });
+            fieldProposals = smart.fieldProposals;
+            smartModelUsed = smart.modelUsed;
+            return { reply: smart.reply, actions: smart.actions, clarificationNeeded: smart.clarificationNeeded };
+          })()
+        : await runOrderCopilotAi({
+            message,
+            sourceBlocks: workingBlocks,
+            allowedSources,
+            history,
+            pdfs: remainingPdfs,
+            photos,
+            auditContext: auditContextText,
+          });
 
     const blocked = ai.actions.filter((a) => !allowedSet.has(a.source));
     const allowedActions = mergeFactoryEquipmentIntoCopilotActions(
@@ -730,6 +785,12 @@ export async function POST(req: Request) {
       copilotSourceLabel,
     );
     if (sourceDisabledNotice) replyParts.push(sourceDisabledNotice);
+    if (fieldProposals.length > 0) {
+      replyParts.push(
+        `Priekšlikumi laukiem (nav ierakstīti, apstiprini zemāk): ${fieldProposals.map((p) => p.label).join("; ")}.`,
+      );
+    }
+    if (modeNotice) replyParts.push(modeNotice);
     if (applyMode === "preview" && previewConfirm.length > 0) {
       const lead = csddDeterministicPatches.csdd
         ? "Priekšskatījums: pārējās izmaiņas nav ierakstītas."
@@ -754,6 +815,9 @@ export async function POST(req: Request) {
       vendorAgentPdfs: vendorHandledFiles.size,
       vendorAgentApplied: vendorAgentApplied.length,
       csddImports: csddImportNotes.length,
+      mode,
+      smartModel: smartModelUsed || undefined,
+      fieldProposals: fieldProposals.length,
     });
 
     const replyText = replyParts.filter(Boolean).join("\n\n");
@@ -795,6 +859,9 @@ export async function POST(req: Request) {
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
       patchedSourceBlocks: clientPatch.patchedSourceBlocks,
       changedKeys: clientPatch.changedKeys,
+      fieldProposals,
+      mode,
+      ...(smartModelUsed ? { model: smartModelUsed } : {}),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
@@ -810,6 +877,27 @@ export async function POST(req: Request) {
     await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
   }
   });
+
+  // Mēneša griesti: šīs ziņas visu AI izsaukumu izmaksas (arī Opus pulēšana un avotu aģenti).
+  let budgetAfter = budgetBefore;
+  if (usage.usdEstimate > 0) {
+    budgetAfter = await addCopilotSpend(usage.usdEstimate).catch(() => budgetBefore);
+  }
+  return attachCopilotBudget(response, budgetAfter);
+  });
+}
+
+/** Pievieno `budget` JSON atbildei (panelim «šomēnes X $ no Y $»). */
+async function attachCopilotBudget(res: NextResponse, budget: CopilotBudgetStatus | null): Promise<NextResponse> {
+  if (!budget) return res;
+  if (!(res.headers.get("content-type") ?? "").includes("application/json")) return res;
+  try {
+    const body: unknown = await res.json();
+    if (!body || typeof body !== "object") return res;
+    return NextResponse.json({ ...(body as Record<string, unknown>), budget }, { status: res.status });
+  } catch {
+    return res;
+  }
 }
 
 /** Apstiprina / piespiež medium-confidence darbības ar to pašu apply loģiku. */

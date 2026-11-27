@@ -370,6 +370,7 @@ import {
 } from "@/components/admin/AdminCommonPhrasesDrawer";
 import {
   AdminOrderCopilotPanel,
+  type CopilotAuditFieldPatch,
   AdminOrderCopilotTrigger,
 } from "@/components/admin/AdminOrderCopilotPanel";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
@@ -2308,6 +2309,23 @@ export function OrderDetailWorkspace({
       }
     },
     [applyCopilotPatchedBlocks, payload.sessionId],
+  );
+
+  /** Copilot gudrā režīma audita lauki - tikai pēc operatora «Apstiprināt laukus». */
+  const applyCopilotAuditFields = useCallback(
+    (patch: CopilotAuditFieldPatch, opts?: { raw?: boolean }) => {
+      const html = (t: string) => (opts?.raw ? t : aiExpertSourceCommentToRichHtml(t));
+      const wsPatch: Partial<WorkspacePersist> = {};
+      if (patch.iriss != null) wsPatch.iriss = html(patch.iriss);
+      if (patch.apskatesPlāns != null) wsPatch.apskatesPlāns = html(patch.apskatesPlāns);
+      if (patch.tehniskoRiskuAnalize != null) wsPatch.tehniskoRiskuAnalize = html(patch.tehniskoRiskuAnalize);
+      if (patch.cenasAtbilstiba != null) wsPatch.cenasAtbilstiba = html(patch.cenasAtbilstiba);
+      if (Object.keys(wsPatch).length > 0) updateWs(wsPatch);
+      if (patch.internalComment != null) onInternalCommentChange(html(patch.internalComment));
+      if (patch.mileageComment != null) onMileageCommentChange(html(patch.mileageComment));
+      if (patch.sourcesComparisonComment != null) onSourcesComparisonCommentChange(html(patch.sourcesComparisonComment));
+    },
+    [onInternalCommentChange, onMileageCommentChange, onSourcesComparisonCommentChange, updateWs],
   );
 
   const restoreCopilotBlocksSnapshot = useCallback(
@@ -6173,6 +6191,7 @@ export function OrderDetailWorkspace({
         applyPatchedBlocks={applyCopilotPatchedBlocks}
         restoreBlocksSnapshot={restoreCopilotBlocksSnapshot}
         buildAuditContext={buildAiOrderPayload}
+        applyAuditFields={applyCopilotAuditFields}
         onBusyChange={setCopilotBusy}
       />
 

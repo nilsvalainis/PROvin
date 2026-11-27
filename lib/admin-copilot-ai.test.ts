@@ -70,3 +70,21 @@ describe("finalizeCopilotAiResponse", () => {
     expect(finalizeGeneratedComment).toHaveBeenCalledTimes(2);
   });
 });
+
+import { buildCopilotContextText } from "@/lib/admin-copilot-ai";
+
+describe("buildCopilotContextText", () => {
+  it("«atcel to, ko tikko ieliki»: vēsturē redzams darbību bloks", () => {
+    const out = buildCopilotContextText({
+      sourceBlocks: {} as never,
+      history: [
+        { role: "user", content: "ieliec nobraukumu" },
+        { role: "assistant", content: "Gatavs.\n\n[Copilot darbības:\nierakstīts:\n- upsert_mileage | autodna | 12.03.2020 | 123456 km]" },
+      ],
+      pdfNames: [],
+      photoNames: [],
+    });
+    expect(out).toContain("upsert_mileage | autodna | 12.03.2020");
+    expect(out).toContain("atcel / izdzēs to, ko tikko ieliki");
+  });
+});

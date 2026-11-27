@@ -34,7 +34,7 @@ export type CopilotChatDocument = {
 
 type BlobConfig = { token: string; prefix: string };
 
-function resolveBlob(): BlobConfig | null {
+export function resolveCopilotBlob(): BlobConfig | null {
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
   if (!token) return null;
   const explicit = (process.env.ADMIN_COPILOT_CHAT_BLOB_PREFIX ?? "").trim();
@@ -47,7 +47,7 @@ function resolveBlob(): BlobConfig | null {
   return { token, prefix: `${base}${DEFAULT_BLOB_SUBPREFIX}` };
 }
 
-function resolveDir(): string | null {
+export function resolveCopilotDir(): string | null {
   const raw = process.env.ADMIN_COPILOT_CHAT_DIR?.trim() ?? "";
   const off = ["0", "false", "no", "off", "disabled"];
   if (off.includes(raw.toLowerCase())) return null;
@@ -57,7 +57,7 @@ function resolveDir(): string | null {
 }
 
 export function isCopilotChatStoreEnabled(): boolean {
-  return resolveDir() !== null || resolveBlob() !== null;
+  return resolveCopilotDir() !== null || resolveCopilotBlob() !== null;
 }
 
 /** Stripe `cs_*` / demo id — tikai droši failsistēmas nosaukumi. */
@@ -121,7 +121,7 @@ export function normalizeCopilotChatDocument(raw: unknown): CopilotChatDocument 
 export async function readCopilotChat(sessionId: string): Promise<CopilotChatDocument | null> {
   if (!isSafeCopilotChatSessionId(sessionId)) return null;
 
-  const blob = resolveBlob();
+  const blob = resolveCopilotBlob();
   if (blob) {
     try {
       const res = await get(blobPathname(blob.prefix, sessionId), {
@@ -138,7 +138,7 @@ export async function readCopilotChat(sessionId: string): Promise<CopilotChatDoc
     }
   }
 
-  const dir = resolveDir();
+  const dir = resolveCopilotDir();
   if (!dir) return null;
   try {
     const text = await fs.readFile(chatFilePath(dir, sessionId), "utf8");
@@ -160,7 +160,7 @@ export async function writeCopilotChat(
   const body = JSON.stringify(normalized);
   let wrote = false;
 
-  const blob = resolveBlob();
+  const blob = resolveCopilotBlob();
   if (blob) {
     try {
       await put(blobPathname(blob.prefix, sessionId), body, {
@@ -176,7 +176,7 @@ export async function writeCopilotChat(
     }
   }
 
-  const dir = resolveDir();
+  const dir = resolveCopilotDir();
   if (dir) {
     try {
       await fs.mkdir(dir, { recursive: true });
@@ -223,7 +223,7 @@ const FEEDBACK_BLOB_SUBPREFIX = "copilot-feedback/";
 const FEEDBACK_RELATIVE_DIR = ".data/admin-copilot-feedback";
 
 function feedbackDir(): string | null {
-  const chatDir = resolveDir();
+  const chatDir = resolveCopilotDir();
   if (!chatDir) return null;
   if (process.env.VERCEL === "1") return path.join(os.tmpdir(), "provin-admin-copilot-feedback");
   if (process.env.ADMIN_COPILOT_CHAT_DIR?.trim()) return path.join(chatDir, "feedback");
@@ -239,7 +239,7 @@ export async function recordCopilotFeedback(entry: CopilotFeedbackEntry): Promis
   const body = JSON.stringify(entry);
   let wrote = false;
 
-  const blob = resolveBlob();
+  const blob = resolveCopilotBlob();
   if (blob) {
     try {
       const stamp = entry.at.replace(/[^0-9]/g, "").slice(0, 17);

@@ -260,3 +260,62 @@ export type CopilotApplyMode = "auto" | "preview";
 export function parseCopilotApplyMode(raw: unknown): CopilotApplyMode {
   return typeof raw === "string" && raw.trim() === "auto" ? "auto" : "preview";
 }
+
+/* ------------------------------------------------------------------ */
+/* Gudrais režīms: lauku priekšlikumi (raksta tikai pēc apstiprināšanas) */
+/* ------------------------------------------------------------------ */
+
+/** Audita teksta lauki (klienta PDF un iekšējie komentāri). */
+export const COPILOT_AUDIT_FIELD_KEYS = [
+  "iriss",
+  "apskatesPlāns",
+  "tehniskoRiskuAnalize",
+  "cenasAtbilstiba",
+  "internalComment",
+  "mileageComment",
+  "sourcesComparisonComment",
+] as const;
+
+export type CopilotAuditFieldKey = (typeof COPILOT_AUDIT_FIELD_KEYS)[number];
+
+export const COPILOT_AUDIT_FIELD_LABELS: Record<CopilotAuditFieldKey, string> = {
+  iriss: "3. Kopsavilkums",
+  apskatesPlāns: "2. Ieteikumi klātienes apskatei",
+  tehniskoRiskuAnalize: "1. Tehniskie riski",
+  cenasAtbilstiba: "Cenas atbilstība",
+  internalComment: "Negadījumu kopsavilkums",
+  mileageComment: "Nobraukuma komentārs",
+  sourcesComparisonComment: "Avotu salīdzinājums",
+};
+
+export function isCopilotAuditFieldKey(v: string): v is CopilotAuditFieldKey {
+  return (COPILOT_AUDIT_FIELD_KEYS as readonly string[]).includes(v);
+}
+
+/**
+ * Lauka priekšlikums no gudrā režīma. Nekad netiek ierakstīts automātiski:
+ * UI rāda priekšskatījumu un raksta tikai pēc «Apstiprināt laukus».
+ */
+export type CopilotFieldProposal =
+  | {
+      kind: "source_field";
+      /** Jebkurš avota bloks (arī csdd, tirgus, oneauto), izņemot listing_analysis. */
+      source: string;
+      field: string;
+      value: string;
+      previous: string;
+      label: string;
+    }
+  | {
+      kind: "audit_field";
+      field: CopilotAuditFieldKey;
+      value: string;
+      previous: string;
+      label: string;
+    };
+
+export type CopilotMode = "cheap" | "smart";
+
+export function parseCopilotMode(raw: unknown): CopilotMode {
+  return typeof raw === "string" && raw.trim() === "smart" ? "smart" : "cheap";
+}

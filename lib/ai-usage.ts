@@ -26,13 +26,18 @@ export type AiUsageSummary = {
 
 export const ADMIN_AI_USAGE_EVENT = "provin-admin-ai-usage";
 
-type Rate = { input: number; output: number };
+/** `cacheRead` - $/1M kešā nolasītiem tokeniem, ja tas nav 0,1× input (oficiālās cenas). */
+type Rate = { input: number; output: number; cacheRead?: number };
 
 const MODEL_RATES: Array<{ test: RegExp; rate: Rate }> = [
-  { test: /claude-opus-5-5/i, rate: { input: 4, output: 20 } },
+  { test: /claude-opus-5-5/i, rate: { input: 4, output: 20, cacheRead: 0.2 } },
   { test: /claude-opus-5(?![-.]5)/i, rate: { input: 5, output: 25 } },
   { test: /claude-opus/i, rate: { input: 15, output: 75 } },
+  // Oficiālās cenas: Sonnet 5.5 un Sonnet 5 - 2 $ / 10 $ (Sonnet 5.5 kešs 0,10 $).
+  { test: /claude-sonnet-5-5/i, rate: { input: 2, output: 10, cacheRead: 0.1 } },
+  { test: /claude-sonnet-5(?![-.]5)/i, rate: { input: 2, output: 10 } },
   { test: /claude-sonnet/i, rate: { input: 3, output: 15 } },
+  { test: /claude-haiku-5-5/i, rate: { input: 0.1, output: 0.5 } },
   { test: /claude-haiku/i, rate: { input: 1, output: 5 } },
   { test: /gemini-3\.8-flash/i, rate: { input: 0.75, output: 3.75 } },
   { test: /gemini-4-argon/i, rate: { input: 2, output: 10 } },
@@ -68,7 +73,7 @@ export function estimateAiUsd(opts: {
   const usd =
     (opts.inputTokens * rate.input +
       cacheCreate * rate.input * CACHE_WRITE_MULT +
-      cacheRead * rate.input * CACHE_READ_MULT +
+      cacheRead * (rate.cacheRead ?? rate.input * CACHE_READ_MULT) +
       opts.outputTokens * rate.output) /
     1_000_000;
   return Math.round(usd * 10_000) / 10_000;

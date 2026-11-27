@@ -232,6 +232,47 @@ export const COPILOT_HISTORY_CHARS_PER_TURN = 2_500;
 export const COPILOT_AUDIT_CONTEXT_MAX_CHARS = 80_000;
 export const COPILOT_AUDIT_CONTEXT_WITH_FILES_MAX_CHARS = 40_000;
 
+/** Teksta konteksts (tabulas, audits, avoti, vēsture, pielikumu saraksts) - kopīgs abiem režīmiem. */
+export function buildCopilotContextText(opts: {
+  sourceBlocks: WorkspaceSourceBlocks;
+  allowedSources?: CopilotSourceKey[];
+  history?: CopilotChatMessage[];
+  auditContext?: string;
+  pdfNames: string[];
+  photoNames: string[];
+}): string {
+  const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
+  const allowedSources = (opts.allowedSources ?? [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
+  const historyLines = (opts.history ?? [])
+    .slice(-COPILOT_HISTORY_TURNS)
+    .map(
+      (m) =>
+        `${m.role === "user" ? "Operator" : "Copilot"}: ${truncateCopilotHistoryContent(m.content, COPILOT_HISTORY_CHARS_PER_TURN)}`,
+    )
+    .join("\n");
+  const hasFiles = opts.pdfNames.length > 0 || opts.photoNames.length > 0;
+  const auditContext = prioritizeCopilotAuditContext(
+    opts.auditContext ?? "",
+    hasFiles ? COPILOT_AUDIT_CONTEXT_WITH_FILES_MAX_CHARS : COPILOT_AUDIT_CONTEXT_MAX_CHARS,
+  );
+  return [
+    "=== CURRENT TABLES ===",
+    summary,
+    auditContext
+      ? `\n=== REST OF THE AUDIT (read-only context: summaries, listing, operator notes) ===\n${auditContext}\nUse this only to understand the case and to resolve countries, dates and duplicates. Never copy expert commentary from here into table rows.`
+      : "",
+    `\n=== ENABLED TARGET SOURCES ===\n${allowedSources.join(", ")}`,
+    "\nOnly emit actions for the enabled target sources above. If a fact belongs elsewhere, skip it instead of redirecting it into another source. If auto_records is not enabled, do not emit set_service_history.",
+    historyLines
+      ? `\n=== RECENT CHAT ===\n${historyLines}\n(Lines "${COPILOT_HISTORY_ACTIONS_MARKER}" list what Copilot already wrote ("ierakstīts") or proposed ("piedāvāts"). Use them for "atcel / izdzēs to, ko tikko ieliki": emit the matching delete actions with the same source, date, km / amount.)`
+      : "",
+    `\n=== ATTACHED PDFs ===\n${opts.pdfNames.length ? opts.pdfNames.map((n, i) => `${i + 1}. ${n}`).join("\n") : "(none)"}`,
+    opts.photoNames.length ? `\n=== ATTACHED PHOTOS ===\n${opts.photoNames.map((n, i) => `${i + 1}. ${n}`).join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export async function runOrderCopilotAi(opts: {
   message: string;
   sourceBlocks: WorkspaceSourceBlocks;
@@ -246,16 +287,6 @@ export async function runOrderCopilotAi(opts: {
   /** @deprecated izmanto pdfs */
   pdf?: { fileName: string; buffer: ArrayBuffer };
 }): Promise<CopilotAiResponse> {
-  const summary = buildCopilotBlocksSummary(opts.sourceBlocks);
-  const allowedSources = (opts.allowedSources ?? [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
-  const historyLines = (opts.history ?? [])
-    .slice(-COPILOT_HISTORY_TURNS)
-    .map(
-      (m) =>
-        `${m.role === "user" ? "Operator" : "Copilot"}: ${truncateCopilotHistoryContent(m.content, COPILOT_HISTORY_CHARS_PER_TURN)}`,
-    )
-    .join("\n");
-
   const pdfs = [
     ...(opts.pdfs ?? []),
     ...(opts.pdf && opts.pdf.buffer.byteLength > 0 ? [opts.pdf] : []),
@@ -280,27 +311,16 @@ export async function runOrderCopilotAi(opts: {
     });
   }
 
-  const auditContext = prioritizeCopilotAuditContext(
-    opts.auditContext ?? "",
-    pdfs.length > 0 || photos.length > 0
-      ? COPILOT_AUDIT_CONTEXT_WITH_FILES_MAX_CHARS
-      : COPILOT_AUDIT_CONTEXT_MAX_CHARS,
-  );
-
   parts.push({
     text: [
-      "=== CURRENT TABLES ===",
-      summary,
-      auditContext
-        ? `\n=== REST OF THE AUDIT (read-only context: summaries, listing, operator notes) ===\n${auditContext}\nUse this only to understand the case and to resolve countries, dates and duplicates. Never copy expert commentary from here into table rows.`
-        : "",
-      `\n=== ENABLED TARGET SOURCES ===\n${allowedSources.join(", ")}`,
-      "\nOnly emit actions for the enabled target sources above. If a fact belongs elsewhere, skip it instead of redirecting it into another source. If auto_records is not enabled, do not emit set_service_history.",
-      historyLines
-        ? `\n=== RECENT CHAT ===\n${historyLines}\n(Lines "${COPILOT_HISTORY_ACTIONS_MARKER}" list what Copilot already wrote ("ierakstīts") or proposed ("piedāvāts"). Use them for "atcel / izdzēs to, ko tikko ieliki": emit the matching delete actions with the same source, date, km / amount.)`
-        : "",
-      `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
-      photos.length ? `\n=== ATTACHED PHOTOS ===\n${photos.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n")}` : "",
+      buildCopilotContextText({
+        sourceBlocks: opts.sourceBlocks,
+        allowedSources: opts.allowedSources,
+        history: opts.history,
+        auditContext: opts.auditContext,
+        pdfNames: pdfs.map((p) => p.fileName),
+        photoNames: photos.map((p) => p.fileName),
+      }),
       "\n=== OPERATOR MESSAGE ===",
       opts.message.trim() ||
         (pdfs.length > 1
@@ -309,9 +329,7 @@ export async function runOrderCopilotAi(opts: {
             ? "(Photos only — describe what is legibly readable and extract only certain values)"
             : "(PDF only — extract structured rows for the matching vendor)"),
       "\nReturn JSON matching the schema.",
-    ]
-      .filter(Boolean)
-      .join("\n"),
+    ].join("\n"),
   });
 
   const raw = await aiGenerateJsonWithSchema({

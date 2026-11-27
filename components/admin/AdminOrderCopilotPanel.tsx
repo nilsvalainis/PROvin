@@ -12,13 +12,30 @@ import {
   Loader2,
   Minimize2,
   Send,
+  Sparkles,
   ThumbsDown,
   ThumbsUp,
   Undo2,
   X,
 } from "lucide-react";
-import { appendCopilotActionsToContent, type CopilotFeedbackRating } from "@/lib/admin-copilot-helpers";
-import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
+import {
+  appendCopilotActionsToContent,
+  COPILOT_SMART_ESTIMATE_USD,
+  formatCopilotBudgetLine,
+  formatCopilotEstimate,
+  isCopilotBudgetStatus,
+  type CopilotBudgetStatus,
+  type CopilotFeedbackRating,
+} from "@/lib/admin-copilot-helpers";
+import { aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
+import {
+  COPILOT_SOURCE_KEYS,
+  type CopilotAction,
+  type CopilotAuditFieldKey,
+  type CopilotChatMessage,
+  type CopilotFieldProposal,
+  type CopilotSourceKey,
+} from "@/lib/admin-copilot-types";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import {
@@ -38,6 +55,8 @@ type UiMessage = {
   /** Kļūdas teksts, ja atbilde bija kļūda. */
   error?: string;
   feedback?: CopilotFeedbackRating;
+  /** Gudrā režīma lauku priekšlikumi - raksta tikai pēc «Apstiprināt laukus». */
+  fieldProposals?: CopilotFieldProposal[];
 };
 
 type CopilotApiOk = {
@@ -51,7 +70,11 @@ type CopilotApiOk = {
   changedKeys?: CopilotSourceKey[];
   /** Piem. «Avots X izslēgts - ieslēdz ķeksīti». */
   notice?: string;
+  fieldProposals?: CopilotFieldProposal[];
+  budget?: CopilotBudgetStatus;
 };
+
+export type CopilotAuditFieldPatch = Partial<Record<CopilotAuditFieldKey, string>>;
 
 type Props = {
   open: boolean;
@@ -63,6 +86,11 @@ type Props = {
   restoreBlocksSnapshot: (snapshot: WorkspaceSourceBlocks) => void;
   /** Pārējais audits (kopsavilkumi, sludinājums, operatora piezīmes) — Copilotam tikai lasīšanai. */
   buildAuditContext?: () => Record<string, unknown>;
+  /**
+   * Gudrā režīma audita lauku ieraksts (pēc apstiprināšanas). `raw` = vērtības jau ir rich HTML
+   * (atsaukšana), citādi vienkāršs teksts, ko vecāks pārveido HTML.
+   */
+  applyAuditFields?: (patch: CopilotAuditFieldPatch, opts?: { raw?: boolean }) => void;
 };
 
 type PanelPos = { left: number; top: number };
@@ -212,6 +240,7 @@ function loadStoredChat(sessionId: string): { messages: UiMessage[]; allowedSour
         ...(typeof o.command === "string" ? { command: o.command.slice(0, 1000) } : {}),
         ...(typeof o.error === "string" ? { error: o.error.slice(0, 500) } : {}),
         ...(o.feedback === "up" || o.feedback === "down" ? { feedback: o.feedback } : {}),
+        ...(Array.isArray(o.fieldProposals) ? { fieldProposals: o.fieldProposals as CopilotFieldProposal[] } : {}),
       });
     }
     if (messages.length === 0) return null;
@@ -236,6 +265,7 @@ function saveStoredChat(sessionId: string, messages: UiMessage[], allowedSources
       ...(m.command ? { command: m.command.slice(0, 1000) } : {}),
       ...(m.error ? { error: m.error.slice(0, 500) } : {}),
       ...(m.feedback ? { feedback: m.feedback } : {}),
+      ...(m.fieldProposals?.length ? { fieldProposals: m.fieldProposals } : {}),
     }));
     localStorage.setItem(
       chatStorageKey(sessionId),
@@ -315,6 +345,7 @@ export function AdminOrderCopilotPanel({
   applyPatchedBlocks,
   restoreBlocksSnapshot,
   buildAuditContext,
+  applyAuditFields,
   onBusyChange,
 }: Props & { onBusyChange?: (busy: boolean) => void }) {
   const inputId = useId();
@@ -350,6 +381,11 @@ export function AdminOrderCopilotPanel({
   const [error, setError] = useState<string | null>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<WorkspaceSourceBlocks | null>(null);
   const [allowedSources, setAllowedSources] = useState<CopilotSourceKey[]>([]);
+  /** «Gudrais režīms» - tikai nākamajai ziņai; pēc sūtīšanas atgriežas parastajā. */
+  const [smartMode, setSmartMode] = useState(false);
+  const [budget, setBudget] = useState<CopilotBudgetStatus | null>(null);
+  /** Audita lauku vērtības pirms pēdējā apstiprinājuma (rich HTML) - «Atsaukt». */
+  const [undoAudit, setUndoAudit] = useState<CopilotAuditFieldPatch | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -376,10 +412,12 @@ export function AdminOrderCopilotPanel({
         });
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as {
+          budget?: unknown;
           enabled?: boolean;
           messages?: Array<{ id?: string; role?: string; content?: string }>;
           allowedSources?: CopilotSourceKey[];
         };
+        if (!cancelled && isCopilotBudgetStatus(data.budget)) setBudget(data.budget);
         if (cancelled || !data.enabled) return;
         const serverMessages = (data.messages ?? [])
           .filter((m): m is { id?: string; role: "user" | "assistant" | "system"; content: string } =>
@@ -565,6 +603,9 @@ export function AdminOrderCopilotPanel({
       fd.set("sessionId", sessionId);
       fd.set("message", text);
       fd.set("applyMode", "preview");
+      const useSmart = smartMode && !budget?.exhausted;
+      fd.set("mode", useSmart ? "smart" : "cheap");
+      setSmartMode(false);
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
       fd.set("allowedSources", JSON.stringify(allowedSources));
@@ -591,6 +632,7 @@ export function AdminOrderCopilotPanel({
         usage?: unknown;
       };
       if (isAiUsageSummary(data.usage)) emitAdminAiUsage(data.usage);
+      if (isCopilotBudgetStatus(data.budget)) setBudget(data.budget);
 
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : "";
@@ -637,6 +679,7 @@ export function AdminOrderCopilotPanel({
           needsConfirm: data.needsConfirm,
           autoApplied: data.autoApplied,
           command: userLabel,
+          ...(data.fieldProposals?.length ? { fieldProposals: data.fieldProposals } : {}),
         },
       ]);
       setUnreadDone(true);
@@ -667,7 +710,47 @@ export function AdminOrderCopilotPanel({
     historyForApi,
     mergePatch,
     sessionId,
+    smartMode,
+    budget,
   ]);
+
+  /** Lauku priekšlikumi: avota lauki caur bloku patch, audita lauki caur vecāku. Nekas pats. */
+  const confirmFieldProposals = useCallback(
+    (messageId: string, proposals: CopilotFieldProposal[]) => {
+      if (!proposals.length) return;
+      const blocks = getSourceBlocks() as unknown as Record<string, Record<string, unknown>>;
+      const patched: Record<string, Record<string, unknown>> = {};
+      const auditPatch: CopilotAuditFieldPatch = {};
+      for (const p of proposals) {
+        if (p.kind === "source_field") {
+          const base = patched[p.source] ?? { ...(blocks[p.source] ?? {}) };
+          base[p.field] = /^comments?$|Comment$/i.test(p.field) ? aiExpertSourceCommentToRichHtml(p.value) : p.value;
+          patched[p.source] = base;
+        } else {
+          auditPatch[p.field] = p.value;
+        }
+      }
+      const keys = Object.keys(patched) as CopilotSourceKey[];
+      if (keys.length) mergePatch(patched as unknown as Partial<WorkspaceSourceBlocks>, keys);
+      const auditKeys = Object.keys(auditPatch) as CopilotAuditFieldKey[];
+      if (auditKeys.length && applyAuditFields) {
+        const current = (buildAuditContext?.() ?? {}) as Record<string, unknown>;
+        const previous: CopilotAuditFieldPatch = {};
+        for (const k of auditKeys) previous[k] = typeof current[k] === "string" ? (current[k] as string) : "";
+        setUndoAudit(previous);
+        applyAuditFields(auditPatch);
+      }
+      setMessages((prev) => [
+        ...prev.map((m) => (m.id === messageId ? { ...m, fieldProposals: [] } : m)),
+        {
+          id: newId(),
+          role: "assistant",
+          content: `Apstiprināti lauki: ${proposals.map((p) => p.label).join("; ")}`,
+        },
+      ]);
+    },
+    [applyAuditFields, buildAuditContext, getSourceBlocks, mergePatch],
+  );
 
   const confirmActions = useCallback(
     async (actions: CopilotAction[]) => {
@@ -741,14 +824,16 @@ export function AdminOrderCopilotPanel({
   );
 
   const undo = useCallback(() => {
-    if (!undoSnapshot) return;
-    restoreBlocksSnapshot(undoSnapshot);
+    if (!undoSnapshot && !undoAudit) return;
+    if (undoSnapshot) restoreBlocksSnapshot(undoSnapshot);
+    if (undoAudit && applyAuditFields) applyAuditFields(undoAudit, { raw: true });
     setUndoSnapshot(null);
+    setUndoAudit(null);
     setMessages((prev) => [
       ...prev,
       { id: newId(), role: "system", content: "Atsaukts pēdējais Copilot aizpildījums." },
     ]);
-  }, [restoreBlocksSnapshot, undoSnapshot]);
+  }, [applyAuditFields, restoreBlocksSnapshot, undoAudit, undoSnapshot]);
 
   const requestClose = useCallback(() => {
     if (busy) {
@@ -861,7 +946,7 @@ export function AdminOrderCopilotPanel({
           </div>
         </div>
         <div className="flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
-          {undoSnapshot ? (
+          {undoSnapshot || undoAudit ? (
             <button
               type="button"
               className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
@@ -950,6 +1035,28 @@ export function AdminOrderCopilotPanel({
                   );
                 })()
               : null}
+            {m.fieldProposals && m.fieldProposals.length > 0 ? (
+              <div className="mt-2 space-y-1.5 rounded-lg border border-[var(--admin-border-subtle)] p-2">
+                <ul className="space-y-1 text-[11px] leading-snug">
+                  {m.fieldProposals.map((p, i) => (
+                    <li key={`${p.label}-${i}`}>
+                      <span className="font-semibold">{p.label}:</span>{" "}
+                      <span className="whitespace-pre-wrap break-words">
+                        {p.value.length > 400 ? `${p.value.slice(0, 400)}…` : p.value}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="rounded-md bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                  onClick={() => confirmFieldProposals(m.id, m.fieldProposals ?? [])}
+                >
+                  Apstiprināt laukus ({m.fieldProposals.length})
+                </button>
+              </div>
+            ) : null}
             {m.role === "assistant" && m.command !== undefined ? (
               <div className="mt-1.5 flex items-center gap-1">
                 <button
@@ -1114,6 +1221,25 @@ export function AdminOrderCopilotPanel({
             </button>
             <button
               type="button"
+              aria-pressed={smartMode}
+              className={`inline-flex h-9 items-center gap-1 rounded-lg border px-2 text-xs font-medium disabled:opacity-50 ${
+                smartMode
+                  ? "border-violet-600 bg-violet-600 text-white"
+                  : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/5 dark:hover:bg-white/10"
+              }`}
+              title={
+                budget?.exhausted
+                  ? "Mēneša griesti sasniegti"
+                  : `Gudrais režīms tikai šai ziņai (${formatCopilotEstimate(COPILOT_SMART_ESTIMATE_USD)})`
+              }
+              disabled={busy || !aiAllowed || Boolean(budget?.exhausted)}
+              onClick={() => setSmartMode((v) => !v)}
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
+              Gudrais {formatCopilotEstimate(COPILOT_SMART_ESTIMATE_USD)}
+            </button>
+            <button
+              type="button"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
               disabled={busy || !aiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
               onClick={() => void send()}
@@ -1129,6 +1255,16 @@ export function AdminOrderCopilotPanel({
         <p className="mt-2 text-[10px] leading-snug text-[var(--color-provin-muted)]">
           AI raksta tikai ieslēgtajos avotos; dzēšana vienmēr prasa apstiprinājumu
           {files.length > 0 ? ` · ${files.length}/${MAX_ATTACHMENTS} pielikumi` : ""}.
+          {budget ? (
+            <span
+              className={budget.warn ? " font-semibold text-amber-700 dark:text-amber-300" : ""}
+              title={budget.exhausted ? "Gudrais režīms izslēgts līdz mēneša beigām; parastais strādā" : undefined}
+            >
+              {" "}
+              Copilot {formatCopilotBudgetLine(budget)}
+              {budget.exhausted ? " - griesti sasniegti" : budget.warn ? " - tuvu griestiem" : ""}
+            </span>
+          ) : null}
         </p>
       </div>
     </aside>

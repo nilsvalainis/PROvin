@@ -234,3 +234,79 @@ export function sanitizeCopilotFeedbackInput(
     at: (opts.now ?? new Date()).toISOString(),
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Mēneša izmaksu griesti                                              */
+/* ------------------------------------------------------------------ */
+
+/** Nila lēmums 27.11: gudrais režīms ar ~30 € mēneša griestiem (32 $). */
+export const COPILOT_MONTHLY_USD_CAP_DEFAULT = 32;
+/** Fiksēts kurss rādīšanai panelī (tikai orientējoši): 1 $ = 0,93 €. */
+export const COPILOT_USD_TO_EUR = 0.93;
+/** Brīdinājums adminā no 80 % griestu. */
+export const COPILOT_BUDGET_WARN_RATIO = 0.8;
+/**
+ * Aptuvenā cena vienai ziņai (USD), rādīta pie «Gudrais režīms» pogas.
+ * Gudrais: Sonnet 5.5 effort high, ~4 soļi ar kešu (~25k ievads, ~12k izvade) + Opus pulēšana.
+ * Lētais: viens Sonnet 5 izsaukums + Opus pulēšana.
+ */
+export const COPILOT_SMART_ESTIMATE_USD = 0.27;
+export const COPILOT_CHEAP_ESTIMATE_USD = 0.1;
+
+export function parseCopilotMonthlyCap(raw: string | undefined | null): number {
+  const n = Number.parseFloat(String(raw ?? "").replace(",", ".").trim());
+  return Number.isFinite(n) && n > 0 ? n : COPILOT_MONTHLY_USD_CAP_DEFAULT;
+}
+
+export type CopilotBudgetStatus = {
+  month: string;
+  spentUsd: number;
+  capUsd: number;
+  ratio: number;
+  /** ≥ 80 % - brīdinājums. */
+  warn: boolean;
+  /** ≥ 100 % - gudrais režīms izslēgts, lētais strādā. */
+  exhausted: boolean;
+};
+
+export function copilotBudgetStatus(spentUsd: number, capUsd: number, month: string): CopilotBudgetStatus {
+  const spent = Math.max(0, Number.isFinite(spentUsd) ? spentUsd : 0);
+  const cap = capUsd > 0 ? capUsd : COPILOT_MONTHLY_USD_CAP_DEFAULT;
+  const ratio = spent / cap;
+  return {
+    month,
+    spentUsd: Math.round(spent * 10_000) / 10_000,
+    capUsd: cap,
+    ratio,
+    warn: ratio >= COPILOT_BUDGET_WARN_RATIO,
+    exhausted: ratio >= 1,
+  };
+}
+
+export function copilotUsdToEur(usd: number): number {
+  return usd * COPILOT_USD_TO_EUR;
+}
+
+function eur2(usd: number): string {
+  return `${copilotUsdToEur(usd).toFixed(2).replace(".", ",")} €`;
+}
+
+/** «šomēnes 1,23 € no 30 €» (griesti noapaļoti līdz veselam eiro). */
+export function formatCopilotBudgetLine(status: Pick<CopilotBudgetStatus, "spentUsd" | "capUsd">): string {
+  return `šomēnes ${eur2(status.spentUsd)} no ${Math.round(copilotUsdToEur(status.capUsd))} €`;
+}
+
+export function formatCopilotEstimate(usd: number): string {
+  return `≈ ${eur2(usd)}`;
+}
+
+export function isCopilotBudgetStatus(v: unknown): v is CopilotBudgetStatus {
+  if (!v || typeof v !== "object") return false;
+  const o = v as CopilotBudgetStatus;
+  return typeof o.spentUsd === "number" && typeof o.capUsd === "number";
+}
+
+/** Bez ziņas un bez pielikuma AI netiek saukts (Copilot nekad nestrādā pats). */
+export function copilotHasOperatorInput(opts: { message: string; pdfCount: number; photoCount: number }): boolean {
+  return opts.message.trim().length > 0 || opts.pdfCount > 0 || opts.photoCount > 0;
+}
