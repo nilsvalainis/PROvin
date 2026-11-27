@@ -19,12 +19,14 @@ export function AdminVendorArchivePhotosButton({
   disabled,
   getSourceBlocks,
   applyPatchedBlocks,
+  onBusyChange,
 }: {
   sessionId: string;
   source: VendorArchiveSource;
   disabled?: boolean;
   getSourceBlocks: () => WorkspaceSourceBlocks;
   applyPatchedBlocks: (patched: Partial<WorkspaceSourceBlocks>, changedKeys: CopilotSourceKey[]) => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState("");
@@ -32,6 +34,7 @@ export function AdminVendorArchivePhotosButton({
 
   const run = async () => {
     setBusy(true);
+    onBusyChange?.(true);
     setLine("");
     setIsError(false);
     try {
@@ -67,6 +70,7 @@ export function AdminVendorArchivePhotosButton({
       setLine("Arhīva foto neizdevās ielādēt");
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   };
 

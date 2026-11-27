@@ -23,7 +23,8 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
     },
   },
   {
-    keys: ["manual", "schaltgetriebe", "mehāniskā", "механическая"],
+    // «MANU» - VW dīlera saīsinājums (27.11, WVWZZZ3CZNE054721).
+    keys: ["manual", "manu", "schaltgetriebe", "mehāniskā", "механическая"],
     out: { lv: "mehāniskā", en: "manual", ru: "механическая", de: "Schaltgetriebe" },
   },
   {
@@ -103,7 +104,7 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
     out: { lv: "sedans", en: "sedan", ru: "седан", de: "Limousine" },
   },
   {
-    keys: ["estate", "wagon", "touring", "tou", "universālis", "универсал", "kombi"],
+    keys: ["estate", "wagon", "touring", "tou", "univers", "universālis", "универсал", "kombi"],
     out: { lv: "universālis", en: "estate", ru: "универсал", de: "Kombi" },
   },
   {

@@ -1614,6 +1614,13 @@ function resolveFirstRegistration(events: LifecycleEvent[], previousRegistration
       group.find((c) => c.sources.includes("CSDD")) ??
       group.find((c) => !c.timelineInformational) ??
       earliest;
+    // 27.11 (WVWZZZ3CZNE054721): CarVertical dod tikai mēnesi («01.04.2022»), AutoDNA - dienu (22.04.2022).
+    // Tā paša mēneša precīzā diena ir labāka par mēneša sākuma aizvietotāju (nevis «agrākais»).
+    if (!world.sources.includes("CSDD") && /^01\.\d{2}\.\d{4}$/.test(world.date)) {
+      const monthKey = world.date.slice(3);
+      const exact = group.find((c) => c !== world && c.date.slice(3) === monthKey && !/^01\./.test(c.date) && (!c.timelineInformational || Boolean(world!.timelineInformational)));
+      if (exact) world = exact;
+    }
     for (const c of group) {
       if (c === world) continue;
       drop.add(c);
