@@ -178,7 +178,8 @@ const DAMAGE_TYPES: Record<string, string> = {
   missing: "Trūkst",
   crack: "Plaisa",
   cracked: "Plaisa",
-  chip: "Šķemba",
+  // Openlane RU oficiāli «Следы от камней» (labelsV2 damagekind.chip) - akmens trieciens, ne «šķemba» bez konteksta.
+  chip: "Akmens šķemba",
   "stone-chip": "Akmens šķemba",
   "stone-chips": "Akmens šķembas",
   rust: "Rūsa",

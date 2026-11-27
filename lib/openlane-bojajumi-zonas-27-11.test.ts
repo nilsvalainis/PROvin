@@ -1,7 +1,8 @@
 /**
  * 27.11.2026 (WVWZZZ3CZNE054721, Openlane x10): klienta PDF drukāja jēlas atslēgas
  * «Damage kind: Šķemba; Damage kind id: 1; Damage location: 1; …» un «Area code: 3; Code: 1; Nosaukums: Chip»,
- * bet 5 bojājumi saplūda 1 rindā. Jābūt: «Zona 3» + «Šķemba» / «Iespiedums», katrs veids sava rinda, bez dublikātiem.
+ * bet 5 bojājumi saplūda 1 rindā. Jābūt: katrs veids sava rinda, bez dublikātiem.
+ * Nils 27.11 vakarā: «Zona 13» klientam neko neizsaka - numurs → vieta (Openlane vārdnīca, openlane-damage-locations).
  */
 import { describe, expect, it } from "vitest";
 import { auctionArchiveDamageBlockHtml } from "@/lib/auction-archive-pdf-html";
@@ -45,28 +46,60 @@ function rec(detail: Record<string, unknown>): ThecarapiAdminRecord {
 
 const pairs = (r: ThecarapiAdminRecord) => buildThecarapiPdfModel(r).damages.map((d) => `${d.zone}|${d.type}|${d.notes}`);
 
-const EXPECTED = ["Zona 1|Šķemba|", "Zona 3|Šķemba|", "Zona 3|Iespiedums|", "Zona 13|Šķemba|", "Zona 16|Šķemba|", "Zona 16|Iespiedums|"];
+// Openlane vietas (openlane-damage-locations): 1 priekšējais buferis, 3 motora pārsegs, 13 aizmugurējais buferis, 16 jumts.
+const pairs3 = (r: ThecarapiAdminRecord) => buildThecarapiPdfModel(r).damages.map((d) => `${d.zone}|${d.part}|${d.type}`);
+const EXPECTED = ["Priekša|Akmens šķemba|", "Priekša|Akmens šķemba|", "Priekša|Iespiedums|", "Aizmugure|Akmens šķemba|", "Jumts|Akmens šķemba|", "Jumts|Iespiedums|"];
+const EXPECTED3 = [
+  "Priekša|Priekšējais buferis|Akmens šķemba",
+  "Priekša|Motora pārsegs|Akmens šķemba",
+  "Priekša|Motora pārsegs|Iespiedums",
+  "Aizmugure|Aizmugurējais buferis|Akmens šķemba",
+  "Jumts||Akmens šķemba",
+  "Jumts||Iespiedums",
+];
 
 describe("Openlane bojājumi ar numurētām zonām", () => {
   it("`Damages` (DamageKind / DamageLocation) - 6 rindas, bez tehniskajām atslēgām", () => {
     expect(pairs(rec({ car_identification: { Damages: DAMAGES_A } }))).toEqual(EXPECTED);
+    expect(pairs3(rec({ car_identification: { Damages: DAMAGES_A } }))).toEqual(EXPECTED3);
   });
   it("`damages` (areaCode + types[]) - katrs veids sava rinda", () => {
-    expect(pairs(rec({ vehicle_details: { damages: DAMAGES_B } }))).toEqual(EXPECTED);
+    expect(pairs3(rec({ vehicle_details: { damages: DAMAGES_B } }))).toEqual(EXPECTED3);
   });
   it("abi formāti vienā ierakstā - nedublējas", () => {
-    const got = pairs(rec({ car_identification: { Damages: DAMAGES_A, DamagesDetailed: DAMAGES_B }, vehicle_details: { damages: DAMAGES_B } }));
-    expect([...got].sort()).toEqual([...EXPECTED].sort());
+    const got = pairs3(rec({ car_identification: { Damages: DAMAGES_A, DamagesDetailed: DAMAGES_B }, vehicle_details: { damages: DAMAGES_B } }));
+    expect([...got].sort()).toEqual([...EXPECTED3].sort());
+  });
+  it("nezināms Openlane numurs paliek «Zona N» (nekādu minējumu)", () => {
+    expect(pairs3(rec({ car_identification: { Damages: [kind("Dent", 3, 99)] } }))).toEqual(["Zona 99||Iespiedums"]);
+  });
+  it("citas platformas numurētu zonu Openlane vārdnīcā nekarto", () => {
+    const r = { ...rec({ vehicle_details: { damages: [area("13", "Dent")] } }), site: "bca", venue: "BCA" } as ThecarapiAdminRecord;
+    expect(pairs3(r)).toEqual(["Zona 13||Iespiedums"]);
   });
   it("PDF kartītē nav «Area code», «Damage kind», «id» un ir zona klienta valodā", () => {
     const dmg = buildThecarapiPdfModel(rec({ vehicle_details: { damages: DAMAGES_B } })).damages;
     const lv = auctionArchiveDamageBlockHtml(dmg, [], "lv");
     expect(lv).not.toMatch(/Area code|Damage kind|Damage location|Code:|Nosaukums|Is for broken/i);
-    expect(lv).toContain("Zona 16");
+    expect(lv).not.toMatch(/Zona \d/);
+    expect(lv).toContain("Priekša, Motora pārsegs");
+    expect(lv).toContain("Aizmugure, Aizmugurējais buferis");
+    expect(lv).toContain("Jumts");
+    expect(lv).toContain("Akmens šķemba");
     expect(lv).toContain("6 bojājumi");
     const en = auctionArchiveDamageBlockHtml(dmg, [], "en");
-    expect(en).toContain("Zone 16");
-    expect(en).not.toContain("Zona");
+    expect(en).toContain("Front, Hood / bonnet");
+    expect(en).toContain("Rear, Rear bumper");
+    expect(en).toContain("Chip");
+    expect(en).not.toMatch(/Zona|Zone \d|šķemba|Iespiedums|Priekša/);
+    const ru = auctionArchiveDamageBlockHtml(dmg, [], "ru");
+    expect(ru).toContain("Спереди, Капот");
+    expect(ru).toContain("Сзади, Задний бампер");
+    expect(ru).toContain("Вмятина");
+    const de = auctionArchiveDamageBlockHtml(dmg, [], "de");
+    expect(de).toContain("Vorne, Motorhaube");
+    expect(de).toContain("Hinten, Heckstoßstange");
+    expect(de).toContain("Delle");
   });
 });
 
