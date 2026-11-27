@@ -200,21 +200,21 @@ describe("PDF sadaļa", () => {
   it("BF cena saitē: tikai BF laikā un BF piemaksai; citādi bez cenas", () => {
     const base = { vin: "WBA5R1C0XLFH42873", lang: "lv" as ClientReportLang, nowMs: NOW, bfChargeCents: 7999 };
     const bf = dealerSignalsAuditLinkFromOffer({ url: "https://x.lv/a", chargeCents: 7999 }, { ...base, bfWindow: () => true });
-    expect(bf).toEqual({ url: "https://x.lv/a", priceLabel: "79,99 €" });
+    expect(bf).toEqual({ url: "https://x.lv/a", priceLabel: "79,99 €", offer: true });
     expect(buildDealerSignalsSectionHtml(dealer(ALL_ON, bf), "lv")).toContain("Pasūtīt PROVIN AUDITU - 79,99 €");
     expect(
       dealerSignalsAuditLinkFromOffer({ url: "https://x.lv/a", chargeCents: 7999 }, { ...base, bfWindow: () => false }),
-    ).toEqual({ url: "https://x.lv/a" });
+    ).toEqual({ url: "https://x.lv/a", offer: true });
     expect(
       dealerSignalsAuditLinkFromOffer({ url: "https://x.lv/a", chargeCents: 7500 }, { ...base, bfWindow: () => true }),
-    ).toEqual({ url: "https://x.lv/a" });
+    ).toEqual({ url: "https://x.lv/a", offer: true });
     expect(dealerSignalsAuditLinkFromOffer(null, { ...base, bfWindow: () => true })).toEqual({
       url: "https://www.provin.lv/lv?plan=audits&vin=WBA5R1C0XLFH42873",
     });
     expect(dealerSignalsFallbackAuditUrl("", "en")).toBe("https://www.provin.lv/en?plan=audits");
   });
 
-  it("valodas: virsraksti tulkoti, labotais teksts tikai LV un bez cipariem", () => {
+  it("valodas: virsraksti tulkoti; labotais teksts bez tulkojuma -> standarta teksts klienta valodā", () => {
     const en = buildDealerSignalsSectionHtml(dealer(ALL_ON), "en");
     expect(en).toContain("Signals beyond dealer data");
     expect(en).toContain("Possible odometer correction");

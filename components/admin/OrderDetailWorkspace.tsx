@@ -334,6 +334,7 @@ import { AdminDealerSignalsMenu } from "@/components/admin/AdminDealerSignalsMen
 import {
   dealerSignalsAuditLinkFromOffer,
   dealerSignalsFallbackAuditUrl,
+  dealerSignalsPdfNeedsOffer,
   dealerSignalsSectionOn,
   type DealerSignalKind,
   type DealerSignalsAuditLink,
@@ -1085,6 +1086,8 @@ export function OrderDetailWorkspace({
   /** EN/DE/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
   const pdfBusyRef = useRef(false);
+  /** Dīlera «Signāli»: kura audita saite nonāca pēdējā PDF (lai sūtīšana zinātu, vai jāpārveido ar piedāvājumu). */
+  const dealerSignalsPdfLinkRef = useRef<DealerSignalsAuditLink | null>(null);
   const pdfTargetRef = useRef(0);
   /** Dīlera PDF «+ Extra» (Nils 26.11): tikai lapas stāvoklis - pasūtījumā netiek saglabāts, sākumā tukšs. */
   const [dealerExtra, setDealerExtraState] = useState<DealerExtraKey[]>([]);
@@ -4400,6 +4403,10 @@ export function OrderDetailWorkspace({
     onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
     /** «Priekšskats»: tas pats payload kā PDF (bez foto, tulkojuma, faktu pārbaudes) - PDF netiek veidots. */
     preview?: (payload: ClientReportPayload) => void;
+    /** Dīlera «Signāli»: piedāvājuma saite (tikai sūtīšanas brīdī). Bez tās - AUDITS ar VIN. */
+    dealerSignalsAuditLink?: DealerSignalsAuditLink | null;
+    /** Tas pats saturs jau pārbaudīts (PDF pārveido tikai ar piedāvājuma saiti sūtīšanas brīdī). */
+    skipFactCheck?: boolean;
   }) => {
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
@@ -4413,8 +4420,8 @@ export function OrderDetailWorkspace({
     const closePhonePre = () => {
       if (!phonePreUsed) phonePre?.close();
     };
-    if (opts?.preview) {
-      /* Priekšskats nav sūtīšana - faktu pārbaude pie PDF. */
+    if (opts?.preview || opts?.skipFactCheck) {
+      /* Priekšskats nav sūtīšana - faktu pārbaude pie PDF; atkārtots sūtīšanas PDF jau pārbaudīts. */
     } else if (factCheckPdfSkipRef.current) {
       factCheckPdfSkipRef.current = false;
     } else {
@@ -4806,35 +4813,19 @@ export function OrderDetailWorkspace({
 
     const reportLang: ClientReportLang = opts?.lang ?? "lv";
 
-    // «Signāli ārpus dīlera datiem»: tikai dīlera PDF, ja admins ieslēdzis. Audita saite - esošais
-    // dīlera -> AUDITS piedāvājums (priekšskatam bez piedāvājuma izveides).
+    // «Signāli ārpus dīlera datiem»: tikai dīlera PDF, ja admins ieslēdzis. Audita saite (Nils 27.11):
+    // ģenerējot / priekšskatot piedāvājums NETIEK veidots - saite uz AUDITS ar VIN; piedāvājuma saiti
+    // padod tikai sūtīšana (`dealerSignalsAuditLink`, sk. `prepareSendReportPdf(..., { forSend })`).
     const dealerSignalsForPdf: DealerSignalsState | null = dealerOnly
       ? (wsPersistRef.current.dealerSignals ?? null)
       : null;
     let dealerSignalsAuditLink: DealerSignalsAuditLink | null = null;
     if (dealerSignalsForPdf && dealerSignalsSectionOn(dealerSignalsForPdf)) {
-      dealerSignalsAuditLink = { url: dealerSignalsFallbackAuditUrl(payload.vin, reportLang) };
-      if (!preview) {
-        try {
-          const res = await fetch("/api/admin/order-upsell", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: payload.sessionId, kind: "dealer_to_audit" }),
-          });
-          const data = (await res.json().catch(() => ({}))) as { url?: string; chargeCents?: number };
-          dealerSignalsAuditLink = dealerSignalsAuditLinkFromOffer(res.ok ? data : null, {
-            vin: payload.vin,
-            lang: reportLang,
-            nowMs: Date.now(),
-            bfWindow: isWithinBlackFridayWindow,
-            bfChargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS,
-          });
-        } catch {
-          /* saite paliek rezerves (AUDITS ar VIN) */
-        }
-      }
+      dealerSignalsAuditLink = opts?.dealerSignalsAuditLink ?? {
+        url: dealerSignalsFallbackAuditUrl(payload.vin, reportLang),
+      };
     }
+    dealerSignalsPdfLinkRef.current = dealerSignalsAuditLink;
 
     const reportPayload: ClientReportPayload = {
       ...payload,
@@ -5699,22 +5690,77 @@ export function OrderDetailWorkspace({
       ? "business"
       : "audits";
 
-  const prepareSendReportPdf = (kind: SendReportKind, lang: ClientReportLang): Promise<SendReportPrepared> =>
-    new Promise((resolve, reject) => {
+  /**
+   * Dīlera «Signāli» (Nils 27.11): dīlera -> AUDITS piedāvājumu izveido (vai atkārtoti izmanto) TIKAI sūtot klientam.
+   * Neizdodas / jau apmaksāts -> `null` (PDF paliek ar AUDITS saiti pēc VIN).
+   */
+  const openDealerSignalsOfferLink = async (lang: ClientReportLang): Promise<DealerSignalsAuditLink | null> => {
+    try {
+      const res = await fetch("/api/admin/order-upsell", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: payload.sessionId, kind: "dealer_to_audit" }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; chargeCents?: number };
+      const link = dealerSignalsAuditLinkFromOffer(res.ok ? data : null, {
+        vin: payload.vin,
+        lang,
+        nowMs: Date.now(),
+        bfWindow: isWithinBlackFridayWindow,
+        bfChargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS,
+      });
+      return link.offer ? link : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const prepareSendReportPdf = async (
+    kind: SendReportKind,
+    lang: ClientReportLang,
+    prepOpts?: {
+      /** Sūtīšanas brīdis: ja dīlera PDF ir «Signāli» - vispirms piedāvājums, PDF ar tā saiti. */
+      forSend?: boolean;
+      skipFactCheck?: boolean;
+    },
+  ): Promise<SendReportPrepared> => {
+    if (pdfBusyRef.current) throw new Error("PDF jau tiek veidots - pagaidi.");
+    let offerLink: DealerSignalsAuditLink | null = null;
+    if (prepOpts?.forSend && kind === "dealer" && dealerSignalsSectionOn(wsPersistRef.current.dealerSignals ?? ws.dealerSignals)) {
+      // Neizdevās / jau apmaksāts: AUDITS ar VIN, `offer: false` - sūtīšana atkārtoti nemēģina.
+      offerLink = (await openDealerSignalsOfferLink(lang)) ?? {
+        url: dealerSignalsFallbackAuditUrl(payload.vin, lang),
+        offer: false,
+      };
+    }
+    return new Promise((resolve, reject) => {
       if (pdfBusyRef.current) {
         reject(new Error("PDF jau tiek veidots - pagaidi."));
         return;
       }
       let settled = false;
+      dealerSignalsPdfLinkRef.current = null;
       const opts = {
         dealerOnly: kind === "dealer",
         asvOnly: kind === "asv",
         businessBrand: kind === "business",
         lang,
         serverPdf: true,
+        ...(offerLink ? { dealerSignalsAuditLink: offerLink } : {}),
+        ...(prepOpts?.skipFactCheck ? { skipFactCheck: true } : {}),
         onServerPdf: (r: ServerReportPdfResult | null, err?: string) => {
           settled = true;
-          if (r) resolve({ pdfPathname: r.pdfPathname, downloadUrl: r.downloadUrl, filename: r.filename, bytes: r.bytes });
+          if (r)
+            resolve({
+              pdfPathname: r.pdfPathname,
+              downloadUrl: r.downloadUrl,
+              filename: r.filename,
+              bytes: r.bytes,
+              ...(kind === "dealer" && dealerSignalsPdfLinkRef.current
+                ? { dealerSignalsAuditLink: dealerSignalsPdfLinkRef.current }
+                : {}),
+            });
           else reject(new Error(err || "PDF netika izveidots."));
         },
       };
@@ -5727,6 +5773,19 @@ export function OrderDetailWorkspace({
           if (!settled) reject(e instanceof Error ? e : new Error("PDF netika izveidots."));
         });
     });
+  };
+
+  /**
+   * Sūtīšanas brīdis: dīlera PDF ar «Signāli», kas veidots bez piedāvājuma saites («Sūtīt atskaiti» logs
+   * PDF sagatavo pirms sūtīšanas) -> izveido piedāvājumu un pārveido to pašu PDF ar tā saiti.
+   */
+  const ensureDealerSignalsOfferPdf = async (
+    prepared: SendReportPrepared,
+    lang: ClientReportLang,
+  ): Promise<SendReportPrepared> => {
+    if (!dealerSignalsPdfNeedsOffer(prepared.dealerSignalsAuditLink)) return prepared;
+    return prepareSendReportPdf("dealer", lang, { forSend: true, skipFactCheck: true });
+  };
 
   const sendPreparedReport = async (input: {
     prepared: SendReportPrepared;
@@ -5746,6 +5805,8 @@ export function OrderDetailWorkspace({
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
     if (!email || !isValidOrderEmail(email)) throw new Error("Nepieciešams derīgs klienta e-pasts (sadaļā «Klienta dati»).");
+    // Dīlera «Signāli»: sūtītajā PDF jābūt piedāvājuma saitei (piedāvājums top tikai tagad).
+    const prepared = await ensureDealerSignalsOfferPdf(input.prepared, input.lang);
     const uploads: NotifyPortfolioUploadItem[] = [];
     for (const p of portfolio.filter((x) => input.attachmentIds.includes(x.id))) {
       const blob = await fetch(p.blobUrl).then((r) => r.blob());
@@ -5764,7 +5825,7 @@ export function OrderDetailWorkspace({
       uploads,
       includeGoogleReview: input.includeGoogleReview,
       lang: input.lang,
-      serverPdfPathname: input.prepared.pdfPathname,
+      serverPdfPathname: prepared.pdfPathname,
       markComplete: input.markComplete,
       saveDropbox: input.saveDropbox,
       ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
@@ -5828,7 +5889,7 @@ export function OrderDetailWorkspace({
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
     dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals),
-    prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
+    prepareDealerPdf: (lang, o) => prepareSendReportPdf("dealer", lang, o?.forSend ? { forSend: true } : undefined),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
         sendPreparedReport({
@@ -6687,6 +6748,8 @@ export function OrderDetailWorkspace({
         dealerSignals={ws.dealerSignals ?? null}
         onDealerSignalsChange={setDealerSignals}
         detectDealerSignals={detectDealerSignalKinds}
+        dealerSignalsPreviewLang={orderClientLang}
+        dealerSignalsSessionId={payload.sessionId}
         onPreview={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
         pdfProgressKey={pdfJob?.key ?? null}
         pdfProgressPct={pdfJob?.pct ?? null}
@@ -7729,6 +7792,8 @@ export function OrderDetailWorkspace({
           />
           <AdminDealerSignalsMenu
             toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            previewLang={orderClientLang}
+            sessionId={payload.sessionId}
             state={ws.dealerSignals}
             detect={detectDealerSignalKinds}
             onChange={setDealerSignals}

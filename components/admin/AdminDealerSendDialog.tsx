@@ -68,7 +68,8 @@ export type DealerSendBridge = {
   orderCreatedUnix?: number | null;
   /** Dīlera PDF sadaļa «Signāli ārpus dīlera datiem» ieslēgta (ar ķeksētu signālu) -> rinda e-pastā. */
   dealerSignalsOn?: boolean;
-  prepareDealerPdf: (lang: ClientReportLang) => Promise<SendReportPrepared>;
+  /** `forSend` - tikai «Sūtīt»: «Signāli» piedāvājums top tagad un tā saite ir PDF (Nils 27.11). */
+  prepareDealerPdf: (lang: ClientReportLang, opts?: { forSend?: boolean }) => Promise<SendReportPrepared>;
   /** Tas pats servera ceļš kā «Sūtīt atskaiti» (versijas, Dropbox, «Izpildīts»), ar admina tekstu. */
   sendDealerReport: (input: {
     prepared: SendReportPrepared;
@@ -473,7 +474,7 @@ export function AdminDealerSendDialog({
       }
       setBusy("pdf");
       try {
-        const prepared = await bridge.prepareDealerPdf(pdfLang);
+        const prepared = await bridge.prepareDealerPdf(pdfLang, { forSend: true });
         recheckWithPdf(prepared);
         // PDF + faili kopā e-pasta limitā - kļūda logā pirms sūtīšanas.
         const sizeErr = extraFiles.length > 0 ? dealerExtraFilesError(extraFiles, prepared.bytes) : null;

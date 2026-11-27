@@ -73,4 +73,45 @@ describe("«Signāli» admin bloks", () => {
     expect(src).toContain("updateWs({ dealerSignals: next })");
     expect(src).toContain("dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals)");
   });
+
+  it("priekšskats klienta valodā: labotā teksta tulkojums (saglabātais), LV lauks paliek rediģējams", () => {
+    const src = "Ieraksti liecina par virsbūves remontu";
+    const state = {
+      enabled: true,
+      items: [
+        {
+          kind: "incidents" as const,
+          checked: true,
+          text: src,
+          tr: { en: { src, text: "Records indicate body repair" } },
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <DealerSignalsEditor state={state} previewLang="en" onChange={() => {}} onRegenerate={() => {}} />,
+    );
+    expect(html).toContain("Signals beyond dealer data");
+    expect(html).toContain("Records indicate body repair");
+    expect(html).toContain("Order PROVIN AUDITS");
+    expect(html).toContain("data-dealer-signals-preview-lang");
+    // Teksta lauks - latviski (admins labo LV).
+    expect(html).toContain(`>${src}</textarea>`);
+    // Bez tulkojuma (vēl nav pieprasīts) priekšskatā standarta teksts, nekad LV.
+    const noTr = renderToStaticMarkup(
+      <DealerSignalsEditor
+        state={{ enabled: true, items: [{ kind: "incidents", checked: true, text: src }] }}
+        previewLang="ru"
+        onChange={() => {}}
+        onRegenerate={() => {}}
+      />,
+    );
+    expect(noTr).toContain("По этому автомобилю доступны записи о происшествиях");
+    expect(noTr.split(src).length - 1).toBe(1);
+  });
+
+  it("darba zona padod klienta valodu un sesiju priekšskata tulkojumam (galddators un telefons)", () => {
+    const src = read("components/admin/OrderDetailWorkspace.tsx");
+    expect(src).toMatch(/<AdminDealerSignalsMenu[\s\S]{0,200}previewLang=\{orderClientLang\}/);
+    expect(src).toContain("dealerSignalsPreviewLang={orderClientLang}");
+  });
 });

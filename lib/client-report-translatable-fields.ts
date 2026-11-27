@@ -10,6 +10,7 @@
  * brīvā teksta lauki.
  */
 import type { ClientReportPayload } from "@/lib/client-report-html";
+import { DEALER_SIGNAL_KINDS, dealerSignalsTextsToTranslate, type DealerSignalKind } from "@/lib/dealer-signals";
 
 export type TranslatableFieldMap = Record<string, string>;
 
@@ -78,6 +79,12 @@ export function collectClientReportTranslatableTexts(payload: ClientReportPayloa
     put(out, `banner.${i}.title`, banner.title);
     put(out, `banner.${i}.value`, banner.value);
   });
+
+  // Dīlera PDF «Signāli»: admina labotais LV teksts (Nils 27.11) - tulko, nevis aizstāj ar standarta tekstu.
+  if (payload.pdfReportKind === "dealer") {
+    const sig = dealerSignalsTextsToTranslate(payload.dealerSignals);
+    for (const kind of DEALER_SIGNAL_KINDS) put(out, `dealerSignal.${kind}`, sig[kind]);
+  }
 
   return out;
 }
@@ -179,6 +186,15 @@ export function applyClientReportTranslatedTexts(
       ...(banner.title != null ? { title: get(`banner.${i}.title`, banner.title) } : {}),
       ...(banner.value != null ? { value: get(`banner.${i}.value`, banner.value) } : {}),
     }));
+  }
+
+  if (payload.pdfReportKind === "dealer" && payload.dealerSignals) {
+    const tr: Partial<Record<DealerSignalKind, string>> = {};
+    for (const kind of DEALER_SIGNAL_KINDS) {
+      const v = texts[`dealerSignal.${kind}`];
+      if (typeof v === "string" && v.trim()) tr[kind] = v;
+    }
+    if (Object.keys(tr).length > 0) out.dealerSignalsTranslated = tr;
   }
 
   return out;

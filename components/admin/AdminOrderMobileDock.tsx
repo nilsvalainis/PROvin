@@ -36,7 +36,12 @@ import {
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { DealerExtraList } from "@/components/admin/AdminDealerExtraMenu";
 import type { DealerExtraAvailability, DealerExtraKey } from "@/lib/dealer-pdf-extra";
-import { DealerSignalsEditor, dealerSignalsEditorView } from "@/components/admin/AdminDealerSignalsMenu";
+import {
+  DealerSignalsEditor,
+  dealerSignalsEditorView,
+  dealerSignalsReportTranslate,
+} from "@/components/admin/AdminDealerSignalsMenu";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { dealerSignalsSectionOn, regenerateDealerSignals, type DealerSignalKind, type DealerSignalsState } from "@/lib/dealer-signals";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
@@ -81,6 +86,9 @@ type Props = {
   dealerSignals?: DealerSignalsState | null;
   onDealerSignalsChange?: (next: DealerSignalsState) => void;
   detectDealerSignals?: () => DealerSignalKind[];
+  /** Signālu priekšskats klienta valodā (+ labotā teksta tulkojums). */
+  dealerSignalsPreviewLang?: ClientReportLang;
+  dealerSignalsSessionId?: string | null;
   /** «Priekšskats» - nobraukums un negadījumi kā PDF, pilnekrāna logā. */
   onPreview?: () => void;
   pdfProgressKey?: string | null;
@@ -197,6 +205,8 @@ export function AdminOrderMobileDock({
   dealerSignals,
   onDealerSignalsChange,
   detectDealerSignals,
+  dealerSignalsPreviewLang = "lv",
+  dealerSignalsSessionId = null,
   onPreview,
   pdfProgressKey = null,
   pdfProgressPct = null,
@@ -232,6 +242,10 @@ export function AdminOrderMobileDock({
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
   const [extraOpen, setExtraOpen] = useState(false);
   const [signalsOpen, setSignalsOpen] = useState(false);
+  const signalsTranslate = useMemo(
+    () => (dealerSignalsSessionId ? dealerSignalsReportTranslate(dealerSignalsSessionId) : null),
+    [dealerSignalsSessionId],
+  );
   const signalsView = useMemo(
     () =>
       sheet === "pdf" && signalsOpen && detectDealerSignals
@@ -550,6 +564,8 @@ export function AdminOrderMobileDock({
                   <DealerSignalsEditor
                     size="touch"
                     state={signalsView}
+                    previewLang={dealerSignalsPreviewLang}
+                    translate={signalsTranslate}
                     onChange={onDealerSignalsChange}
                     onRegenerate={() =>
                       onDealerSignalsChange(regenerateDealerSignals(signalsView, detectDealerSignals(), { keepEdits: false }))
