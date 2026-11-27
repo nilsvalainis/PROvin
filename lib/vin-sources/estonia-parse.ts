@@ -27,6 +27,14 @@ export const LKF_NOT_IN_REGISTRY =
 export const LKF_CAPTCHA_ERROR = /captcha|reCAPTCHA|kinnitusväljakutse aegus/i;
 export const LKF_NO_CLAIMS =
   /(kahju|juhtum)\w*\s+(ei ole|puuduvad)|ei ole osalenud|puuduvad andmed|kindlustusjuhtumeid ei ole|kahjujuhtumeid ei ole|juhtumeid ei leitud|ei ole liikluskindlustuse juhtum|sõidukiga ei ole toimunud/i;
+/** lkf.ee apstiprina, ka auto ir (bijis) Igaunijas satiksmes reģistrā, piem. «Sõiduk HONDA CR-V (VIN) on liiklusregistris registreeritud». */
+export const LKF_IN_TRAFFIC_REGISTRY = /on liiklusregistris registreeritud/i;
+export const LKF_IN_TRAFFIC_REGISTRY_NOTE = "lkf.ee: auto ir Igaunijas satiksmes reģistrā (OCTA atlīdzību nav).";
+
+export function lkfConfirmsEstonianRegistry(text: string | null | undefined): boolean {
+  return LKF_IN_TRAFFIC_REGISTRY.test(String(text ?? ""));
+}
+
 const LKF_SEARCH_FORM = /Sõiduki registrimärk või VIN-kood|history_traffic_accidents_form|edit-vehicle/i;
 const COUNTRY_LV = "Igaunija";
 
@@ -208,6 +216,7 @@ export function parseLkfExtract(vin: string, data: ExtractedPage): VinSourceFetc
   }
 
   const noClaims = incidents.length === 0 && LKF_NO_CLAIMS.test(data.text);
+  if (noClaims && lkfConfirmsEstonianRegistry(data.text)) notes.push(LKF_IN_TRAFFIC_REGISTRY_NOTE);
   const stillSearchForm = incidents.length === 0 && !noClaims && LKF_SEARCH_FORM.test(data.text);
 
   return {

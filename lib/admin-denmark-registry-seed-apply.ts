@@ -10,6 +10,7 @@ import {
   type VinRegistryBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { lkfConfirmsEstonianRegistry } from "@/lib/vin-sources/estonia-parse";
 import { vinSourceResultToBlock } from "@/lib/vin-sources/to-block";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
@@ -42,7 +43,10 @@ export function applyRegistrySeedResult(
 ): VinRegistryBlockState | null {
   if (vinRegistryBlockHasContent(current)) return null;
   const message = `${DENMARK_AUTO_SEED_PREFIX}: ${result.message}`.slice(0, 400);
-  if (!result.found) {
+  // lkf.ee «atlīdzību nav» bez reģistra apstiprinājuma ir tukšs; ar «on liiklusregistris registreeritud»
+  // tas ir fakts (auto bijis Igaunijā), tāpēc RAW un piezīmi saglabājam kā admina pogā.
+  const keepNotFoundRaw = result.source === "lkf_ee" && lkfConfirmsEstonianRegistry(result.raw);
+  if (!result.found && !keepNotFoundRaw) {
     return { ...current, fetchedAt: result.fetchedAt, fetchMessage: message };
   }
   const fetched = vinSourceResultToBlock(result);
