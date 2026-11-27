@@ -10,11 +10,14 @@ import {
   OIL_NOT_SKIPPED_NOTE,
   ensureOilIntervalNotes,
   isGenericDealerRecordWork,
+  oilAfterLastChangeNote,
   oilGenericRecordsNote,
+  oilPossibleChangeNote,
   oilTextClaimsExceeded,
   replaceOilStepWordingLv,
   type OilNoteLang,
 } from "@/lib/oil-interval-dealer-notes";
+import { dropContextExemptFlags, isOilRequiredNoteSentence } from "@/lib/fact-check-context";
 import { formatOilStepRangeFactLine, formatOilStepRangeShortLv, buildOilChangeIntervalSeries } from "@/lib/oil-change-intervals";
 
 /**
@@ -163,7 +166,7 @@ describe("eļļas intervāla piebildes (Nils 26.11.2026, #1291 labojumi)", () =>
 
   it("vairāk par 4 datumiem -> tikai skaits", () => {
     const d = ["01.01.2010", "01.02.2010", "01.03.2010", "01.04.2010", "01.05.2010"];
-    expect(oilGenericRecordsNote("lv", d, 2)).toContain("bez detalizēta darbu apraksta (5) - tie");
+    expect(oilGenericRecordsNote("lv", d, 2)).toContain("ir arī 5 dīlera ieraksti bez detalizēta darbu apraksta - tie"); // Nils 27.11: skaits ar vārdu, ne «(5)»
   });
 
   it("AI paša formulējums teikuma vidū skaitās kā 1. piebilde (nedublē), 2. piebildi pievieno", () => {
@@ -417,7 +420,12 @@ describe("eļļas piebilde - BF 27.11 trūkumi (S4)", () => {
     };
     const text = "Ražotāja intervāls: 30 000 km / 24 mēn. (M57 D30).\n\nPēdējā eļļas maiņa 08.04.2015, 93 348 km.";
     expect(oilExceededIntervalsForBlock({ ...block, oilChangeIntervalNotes: text })).toEqual([
-      { fromDate: "08.04.2015", toDate: "19.06.2026", genericDates: ["20.06.2022", "19.06.2026"] },
+      {
+        fromDate: "08.04.2015",
+        toDate: "19.06.2026",
+        genericDates: ["20.06.2022", "19.06.2026"],
+        afterLastChange: { fromKm: 93348, toKm: 235239, km: 141891, months: 134 },
+      },
     ]);
     const out = oilIntervalNotesWithRequiredNotes(block, text, "lv");
     expect(out).toContain(OIL_NOT_SKIPPED_NOTE.lv);
@@ -425,5 +433,117 @@ describe("eļļas piebilde - BF 27.11 trūkumi (S4)", () => {
     // Pēdējais ieraksts drīz pēc maiņas (iekļaujas OEM) - nekā.
     const short = { ...block, serviceWorks: block.serviceWorks.slice(0, 2).concat([row("10.10.2015", "99000", "Apkope")]) };
     expect(oilIntervalNotesWithRequiredNotes(short, text, "lv")).toBe(text);
+  });
+});
+
+/**
+ * Nils 27.11 (BMW B57, anonimizēts): «visi intervāli iekļaujas … neviens nepārsniedz», bet pārsniegts ir
+ * periods pēc pēdējās maiņas (06.05.2021 78 095 km -> 15.07.2026 197 857 km). Piebildes nedrīkst stāvēt
+ * pēc noliegtā teikuma; pirms tām - pārsnieguma teikums ar skaitļiem; «13 dīlera ieraksti», ne «(13)».
+ */
+describe("eļļas piebilde - periods pēc pēdējās maiņas (Nils 27.11, loģika)", () => {
+  const row = (date: string, odometer: string, works: string) => ({ date, odometer, location: "", works });
+  const OIL = "Motoreļļas maiņa / Motoreļļa 0W-30 LL-04 / Eļļas filtrs";
+  const genericAfter = [
+    "12.08.2021", "20.01.2022", "15.07.2022", "10.01.2023", "20.06.2023", "05.12.2023", "10.05.2024",
+    "15.10.2024", "20.03.2025", "01.08.2025", "10.12.2025", "20.04.2026", "15.07.2026",
+  ];
+  const block = (notes: string): AutoRecordsBlockState => ({
+    ...emptyAutoRecordsBlock(),
+    oilChangeIntervalNotes: notes,
+    serviceWorks: [
+      row("06.09.2018", "25000", OIL),
+      row("18.12.2019", "48000", OIL),
+      row("24.02.2021", "75620", OIL),
+      row("06.05.2021", "78095", OIL),
+      ...genericAfter.map((d, i) => row(d, String(i === genericAfter.length - 1 ? 197857 : 80000 + i * 9000), "Apkope")),
+    ],
+  });
+  const DYN =
+    "Dīlera datos fiksētas 4 dzinēja eļļas maiņas (06.09.2018, 18.12.2019, 24.02.2021 un 06.05.2021). Intervāli starp eļļas maiņām ir no 2 475 līdz 27 620 km un no 2 līdz 15 mēnešiem. Visi reģistrētie intervāli iekļaujas ražotāja maksimālajā intervālā, un neviens no tiem nepārsniedz 30 000 km vai 24 mēnešu slieksni.";
+  const LAST =
+    "Pēdējā dzinēja eļļas maiņa ar norādītiem darbiem dīlera datos fiksēta 2021. gada 6. maijā ar nobraukumu 78 095 km. Nākamajos ierakstos līdz pat 2026. gada 15. jūlijam (197 857 km) fiksētas tikai vispārīgas apkopes bez atšifrētām dzinēja eļļas maiņas pozīcijām. Kopš pēdējā dīlera ieraksta pagājuši 4 mēneši.";
+  const AI = `Ražotāja intervāls: 30 000 km / 24 mēn. (B57 D30 A, CBS).<br><br><strong>Intervālu dinamika un atbilstība</strong><br>${DYN}<br><br><strong>Pēdējais fiksētais ieraksts</strong><br>${LAST}`;
+  const TAIL_LV =
+    "Kopš pēdējās fiksētās eļļas maiņas (06.05.2021, 78 095 km) līdz pēdējam dīlera ierakstam (15.07.2026, 197 857 km) nobraukti 119 762 km un pagājuši 62 mēneši - tas pārsniedz ražotāja intervālu.";
+  const GENERIC_13 =
+    "Šajā periodā ir arī 13 dīlera ieraksti bez detalizēta darbu apraksta - tie teorētiski var liecināt par eļļas maiņu, taču ierakstos tas nav apstiprināts.";
+
+  it("periods pēc pēdējās maiņas: skaitļi no datiem, tikai šī perioda ieraksti", () => {
+    const iv = oilExceededIntervalsForBlock(block(AI));
+    expect(iv).toEqual([
+      {
+        fromDate: "06.05.2021",
+        toDate: "15.07.2026",
+        genericDates: genericAfter,
+        afterLastChange: { fromKm: 78095, toKm: 197857, km: 119762, months: 62 },
+      },
+    ]);
+  });
+
+  it("piebildes pēc rindkopas par pēdējo ierakstu, ar pārsnieguma teikumu; nekas pēc «neviens nepārsniedz»", () => {
+    const out = oilIntervalNotesWithRequiredNotes(block(AI), AI, "lv");
+    expect(out).toBe(`${AI}<br><br>${TAIL_LV} ${OIL_NOT_SKIPPED_NOTE.lv} ${GENERIC_13}`);
+    expect(out).toContain(`slieksni.<br><br><strong>Pēdējais fiksētais ieraksts</strong>`);
+    expect(out).not.toContain("(13)");
+    // Idempotenti (pārģenerēšana / saglabāšana).
+    expect(oilIntervalNotesWithRequiredNotes(block(AI), out, "lv")).toBe(out);
+    // Vecais (kļūdainais) novietojums ar «(13)» -> sakārtots.
+    const old = AI.replace(
+      "slieksni.<br><br>",
+      `slieksni.<br><br>${OIL_NOT_SKIPPED_NOTE.lv} Šajā periodā ir arī dīlera ieraksti bez detalizēta darbu apraksta (13) - tie teorētiski var liecināt par eļļas maiņu, taču ierakstos tas nav apstiprināts.<br><br>`,
+    );
+    expect(oilIntervalNotesWithRequiredNotes(block(AI), old, "lv")).toBe(out);
+  });
+
+  it("ja AI pats nosauc pārsniegumu rindkopā par pēdējo ierakstu - teikumu nedublē, piebildes pēc tā", () => {
+    const named = AI.replace(
+      "Kopš pēdējā dīlera ieraksta pagājuši 4 mēneši.",
+      "Šis periods (119 762 km, 62 mēneši) pārsniedz ražotāja intervālu. Kopš pēdējā dīlera ieraksta pagājuši 4 mēneši.",
+    );
+    const out = oilIntervalNotesWithRequiredNotes(block(named), named, "lv");
+    expect(out).toBe(`${named}<br><br>${OIL_NOT_SKIPPED_NOTE.lv} ${GENERIC_13}`);
+    expect(out).not.toContain("Kopš pēdējās fiksētās eļļas maiņas (");
+  });
+
+  it("ja pēc «Pēdējais ieraksts» ir vēl rindkopa - piebildes tieši pēc rindkopas par pēdējo ierakstu", () => {
+    const more = `${AI}<br><br><strong>Piezīme</strong><br>Cits teksts.`;
+    const out = oilIntervalNotesWithRequiredNotes(block(more), more, "lv");
+    expect(out).toContain(`4 mēneši.<br><br>${TAIL_LV} ${OIL_NOT_SKIPPED_NOTE.lv} ${GENERIC_13}<br><br><strong>Piezīme</strong>`);
+  });
+
+  it("pārsnieguma teikums un skaits ar vārdu - EN/RU/DE, vienskaitlis/daudzskaitlis", () => {
+    const iv = {
+      fromDate: "06.05.2021",
+      toDate: "15.07.2026",
+      afterLastChange: { fromKm: 78095, toKm: 197857, km: 119762, months: 62 },
+    };
+    expect(oilAfterLastChangeNote("en", iv)).toBe(
+      "Since the last recorded oil change (06.05.2021, 78 095 km) up to the last dealer record (15.07.2026, 197 857 km), 119 762 km were driven over 62 months - this exceeds the manufacturer interval.",
+    );
+    expect(oilAfterLastChangeNote("ru", iv)).toBe(
+      "С последней зафиксированной замены масла (06.05.2021, 78 095 км) до последней записи дилера (15.07.2026, 197 857 км) пройдено 119 762 км за 62 месяца - это превышает интервал производителя.",
+    );
+    expect(oilAfterLastChangeNote("de", iv)).toBe(
+      "Seit dem letzten erfassten Ölwechsel (06.05.2021, 78 095 km) bis zum letzten Händlereintrag (15.07.2026, 197 857 km) wurden in 62 Monaten 119 762 km gefahren - das überschreitet das Herstellerintervall.",
+    );
+    expect(oilAfterLastChangeNote("lv", { ...iv, afterLastChange: { ...iv.afterLastChange, km: null, months: 31 } })).toContain(
+      "(15.07.2026, 197 857 km) pagājis 31 mēnesis - tas pārsniedz",
+    );
+    const d = (n: number) => Array.from({ length: n }, (_, i) => `0${(i % 9) + 1}.01.20${10 + i}`);
+    expect(oilGenericRecordsNote("lv", d(21))).toContain("ir arī 21 dīlera ieraksts bez detalizēta darbu apraksta - tas teorētiski");
+    expect(oilGenericRecordsNote("lv", d(13))).toContain("ir arī 13 dīlera ieraksti bez detalizēta darbu apraksta - tie teorētiski");
+    expect(oilGenericRecordsNote("en", d(13))).toContain("there are also 13 dealer records without a detailed description of work - they");
+    expect(oilGenericRecordsNote("ru", d(13))).toContain("есть также 13 записей дилера без подробного описания работ - теоретически они могут");
+    expect(oilGenericRecordsNote("ru", d(21))).toContain("есть также 21 запись дилера без подробного описания работ - теоретически она может");
+    expect(oilGenericRecordsNote("de", d(13))).toContain("gibt es auch 13 Händlereinträge ohne detaillierte Arbeitsbeschreibung - theoretisch können sie");
+    expect(oilPossibleChangeNote("lv", d(5))).toContain("ir arī 5 eļļas filtra korpusa maiņas - iespējams");
+  });
+
+  it("faktu pārbaude: pārsnieguma teikums ir mūsu piebilde, nav pretruna", () => {
+    expect(isOilRequiredNoteSentence(TAIL_LV)).toBe(true);
+    expect(
+      dropContextExemptFlags([{ kind: "contradiction", sentence: TAIL_LV }]),
+    ).toEqual([]);
   });
 });

@@ -10,6 +10,7 @@
  * palaists garām), gan kā filtru pēc AI atbildes.
  */
 import {
+  oilAfterLastChangeNotePresent,
   oilGenericRecordsNotePresent,
   oilNotSkippedNotePresent,
   oilPossibleChangeNotePresent,
@@ -35,11 +36,16 @@ export function isHypotheticalNegationSentence(sentence: string): boolean {
   return HYPOTHETICAL_NEGATION_RES.some((re) => re.test(s));
 }
 
-/** Viena no eļļas obligātajām piebildēm (1./2./3., visas valodas, arī vecie formulējumi). */
+/** Viena no eļļas obligātajām piebildēm (1./2./3. + pārsniegums pēc pēdējās maiņas, visas valodas, arī vecie formulējumi). */
 export function isOilRequiredNoteSentence(sentence: string): boolean {
   const s = (sentence ?? "").trim();
   if (!s) return false;
-  return oilNotSkippedNotePresent(s) || oilGenericRecordsNotePresent(s) || oilPossibleChangeNotePresent(s);
+  return (
+    oilNotSkippedNotePresent(s) ||
+    oilGenericRecordsNotePresent(s) ||
+    oilPossibleChangeNotePresent(s) ||
+    oilAfterLastChangeNotePresent(s)
+  );
 }
 
 /** Teikums nav apgalvojums par datiem - faktu pārbaude to neatzīmē. */
@@ -71,4 +77,4 @@ export function dropContextExemptFlags<T extends Pick<FactCheckFlag, "sentence" 
 }
 
 /** AI faktu pārbaudes norāde: vērtēt kontekstā, nekad neatzīmēt obligātās piebildes. */
-export const FACT_CHECK_CONTEXT_DIRECTIVE = `KONTEKSTS (obligāti): vērtē katru teikumu VISA teksta un rindkopas kontekstā, nevis izrautu frāzi. Hipotētisks, nosacījuma vai neziņas teikums («tas nenozīmē, ka … nav veikta», «nevar apgalvot, ka … nav», «ja … nav», «teorētiski var liecināt», «taču ierakstos tas nav apstiprināts», EN «does not mean», RU «не означает», DE «bedeutet nicht») NAV apgalvojums, ka darbs nav veikts - to neatzīmē. NEKAD neatzīmē obligātās eļļas piebildes: «Tas nenozīmē, ka eļļas maiņa nav veikta - tā var būt veikta neatkarīgā servisā…», «…ir arī dīlera ieraksti bez detalizēta darbu apraksta … teorētiski var liecināt par eļļas maiņu…», «…eļļas filtra korpusa maiņa … nav pierādīts» (arī tulkojumos).`;
+export const FACT_CHECK_CONTEXT_DIRECTIVE = `KONTEKSTS (obligāti): vērtē katru teikumu VISA teksta un rindkopas kontekstā, nevis izrautu frāzi. Hipotētisks, nosacījuma vai neziņas teikums («tas nenozīmē, ka … nav veikta», «nevar apgalvot, ka … nav», «ja … nav», «teorētiski var liecināt», «taču ierakstos tas nav apstiprināts», EN «does not mean», RU «не означает», DE «bedeutet nicht») NAV apgalvojums, ka darbs nav veikts - to neatzīmē. NEKAD neatzīmē obligātās eļļas piebildes: «Tas nenozīmē, ka eļļas maiņa nav veikta - tā var būt veikta neatkarīgā servisā…», «…ir arī dīlera ieraksti bez detalizēta darbu apraksta … teorētiski var liecināt par eļļas maiņu…», «…eļļas filtra korpusa maiņa … nav pierādīts», «Kopš pēdējās fiksētās eļļas maiņas (…) līdz pēdējam dīlera ierakstam (…) … - tas pārsniedz ražotāja intervālu.» (arī tulkojumos). «Visi intervāli starp eļļas maiņām iekļaujas … neviens nepārsniedz» un «periods kopš pēdējās eļļas maiņas pārsniedz ražotāja intervālu» NAV pretruna: pirmais runā par intervāliem STARP maiņām, otrais par periodu PĒC pēdējās maiņas - to neatzīmē.`;

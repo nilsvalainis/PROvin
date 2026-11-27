@@ -347,6 +347,9 @@ function tailExceededInterval(
     fromDate: lastOil ? lastOil.date : dated[0]!.row.date.trim(),
     toDate: last.row.date.trim(),
     genericDates,
+    ...(lastOil
+      ? { afterLastChange: { fromKm: fromKm ?? null, toKm: lastKm > 0 ? lastKm : null, km: spanKm, months: spanMonths } }
+      : {}),
   };
 }
 
