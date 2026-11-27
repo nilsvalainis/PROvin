@@ -17,6 +17,7 @@ import {
   vinScanV4MileageRows,
   vinScanV4Notice,
   vinScanV4StatusLine,
+  vinScanV4VehicleTitle,
   VIN_SCAN_V4_KFZ_ID,
   type VinScanV4Flag,
 } from "@/lib/vin-scan/v4-view";
@@ -530,6 +531,7 @@ export function AdminVinScanV4({
   scannedAt,
   csdd = null,
   csddMessage = "",
+  csddNotLv = false,
   smartId = null,
   onSmartIdRetry,
   smsStep,
@@ -554,6 +556,8 @@ export function AdminVinScanV4({
   /** CSDD API (1. solis). */
   csdd?: CsddTechData | null;
   csddMessage?: string;
+  /** Ārzemju auto: CSDD to nezina - 1. solī pelēks «Nav LV reģistrā», nevis sarkans «Nav datu». */
+  csddNotLv?: boolean;
   /** e.csdd + LTAB caur Smart-ID (2. solis un LTAB bloks). `null` - nerāda (piem. darbiniekam bez admina). */
   smartId?: VinScanV4SmartId | null;
   onSmartIdRetry?: () => void;
@@ -633,15 +637,30 @@ export function AdminVinScanV4({
   /* --- kopsavilkums --- */
   const m = facts?.mileage;
   const last = m?.last ?? null;
-  const vehicleTitle = title || [csdd?.make, csdd?.model].filter(Boolean).join(" ");
-  const nf = (k: string) => (settled ? <Fact k={k} v="Nav datu" risk /> : <Fact k={k} v="lasa…" pending />);
+  const vehicleTitle = title || [csdd?.make, csdd?.model].filter(Boolean).join(" ") || vinScanV4VehicleTitle(rows);
+  // Bezmaksas avotos datu nav, bet maksas atskaites priekšskatījumā ir ieraksti - tas nav «Nav datu» (27.11).
+  const previewHint = (facts?.previews ?? [])
+    .filter((p) => p.tone === "ok")
+    .map((p) => {
+      const key = p.items.filter((i) => i.key && i.value !== "-" && i.value !== "0" && i.value !== "nav").map((i) => `${i.label.toLowerCase()} ${i.value}`);
+      return `${p.label}: ${p.headline.charAt(0).toLowerCase()}${p.headline.slice(1)}${key.length ? ` (${key.join(", ")})` : ""}`;
+    })
+    .join(" · ");
+  const nf = (k: string, opts: { preview?: boolean } = {}) =>
+    !settled ? (
+      <Fact k={k} v="lasa…" pending />
+    ) : opts.preview && previewHint ? (
+      <Fact k={k} v="Maksas atskaitē" s={previewHint} />
+    ) : (
+      <Fact k={k} v="Nav datu" risk />
+    );
   const ltabState = smartId?.ltab?.state;
   const inspectionUntil = facts?.inspection.until || (ecsddFacts?.nextInspectionIso ? ecsddIsoToLvDate(ecsddFacts.nextInspectionIso) : "");
   const inspectionLine = ecsddInspectionLine(ecsddFacts);
   const theftRows = rows.filter((r) => ["nicb", "cz_patrani", "ca_cpic"].includes(r.id) && (r.status === "found" || r.status === "none"));
   const factsGrid = (
     <>
-      {facts && m && m.points.length ? <MileageFact facts={facts} /> : nf("Nobraukuma ieraksti")}
+      {facts && m && m.points.length ? <MileageFact facts={facts} /> : nf("Nobraukuma ieraksti", { preview: true })}
       {facts && !facts.incidents.count && ltabState !== "claims" && (ecsddFacts?.csng.checked || ltabState === "no_claims") ? (
         <Fact
           k="Negadījumi / bojājumi"
@@ -658,7 +677,7 @@ export function AdminVinScanV4({
           risk={facts.incidents.count > 0 || smartId?.ltab?.state === "claims"}
         />
       ) : (
-        nf("Negadījumi / bojājumi")
+        nf("Negadījumi / bojājumi", { preview: true })
       )}
       {facts?.countries.length ? <Fact k="Valstis" v={facts.countries.join(" · ")} /> : nf("Valstis")}
       {facts && (inspectionUntil || facts.inspection.last) ? (
@@ -678,6 +697,8 @@ export function AdminVinScanV4({
       )}
       {ecsddFacts?.ownerCount ? (
         <Fact k="Īpašnieki" v={ecsddFacts.ownerCount} s="Latvijā · e.csdd" />
+      ) : csddNotLv ? (
+        <Fact k="Īpašnieki" v="Nav LV reģistrā" s="ārzemju auto" pending />
       ) : (
         <Fact k="Īpašnieki" v={settled ? "Nav datu" : "lasa…"} s="CSDD maksas izziņa (3. solis)" risk={settled} pending={!settled} />
       )}
@@ -796,7 +817,18 @@ export function AdminVinScanV4({
         no={1}
         name="CSDD API"
         testId="csdd-api"
-        kf={csddKf || (busy ? <span className={MUTE}>lasa…</span> : <span className={RISK}>{csddMessage || "Nav datu"}</span>)}
+        kf={
+          csddKf ||
+          (busy ? (
+            <span className={MUTE}>lasa…</span>
+          ) : csddNotLv ? (
+            <span className={MUTE} data-v4-csdd-not-lv>
+              Nav LV reģistrā
+            </span>
+          ) : (
+            <span className={RISK}>{csddMessage || "Nav datu"}</span>
+          ))
+        }
         right={csddKf ? at : ""}
         open={Boolean(openIds.__csdd)}
         onToggle={csdd || csddRow ? () => toggle("__csdd") : undefined}
@@ -1073,7 +1105,7 @@ export function AdminVinScanV4({
     <div className="grid min-w-0 gap-4 rounded-[10px] bg-[#f2f2f4] p-4 text-[14px] leading-[1.5] text-[#1d1d1f] [font-variant-numeric:tabular-nums] max-sm:gap-3 max-sm:rounded-none max-sm:p-2.5" data-vin-scan-v4>
       {progressBar}
       {toolbar ? <div className="flex flex-wrap items-center justify-end gap-2">{toolbar}</div> : null}
-      <div className="grid min-w-0 items-start gap-4 max-sm:gap-3 xl:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+      <div className="grid min-w-0 items-start gap-4 max-sm:gap-3 xl:grid-cols-[minmax(0,340px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
         {/* 1. Galvenā informācija + «Uzmanību» (B: kreisā kolonna) */}
         <div className="grid min-w-0 gap-4 max-sm:gap-3">{summary}</div>
         <div className="grid min-w-0 gap-4 max-sm:gap-3">
