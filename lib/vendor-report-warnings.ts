@@ -60,33 +60,71 @@ export function normWarnText(s: string): string {
 }
 
 /** Paskaidrojoši teikumi (atskaites veidnes teksts) - nav fakts par šo auto. */
-const EXPLANATORY_RE = /var noradit|nenozime|piemeram|ja transportlidzekl|kad remonta|ieteicams|parbaudiet zinojuma|datu interpretacijas/;
-const NEGATION_RE =
-  /(?:^|[^a-z])(?:nav|netika|netiek|nekonstat\w*|neatrast\w*|neatrad\w*|bez|nebija|not|no records|none|no data|nav datu)(?:[^a-z]|$)/;
-const POSITIVE_RE = /registret|konstatet|fiksets|atrast[sai]?(?:[^a-z]|$)|(?:^|[^a-z])ja(?:[^a-z]|$)|ierakstu skaits:? ?[1-9]|(?:^|[^0-9])[1-9]\d* ierakst/;
+const EXPLANATORY_RE =
+  /var noradit|nenozime|piemeram|ja transportlidzekl|kad remonta|ieteicams|parbaudiet zinojuma|datu interpretacijas|mes parbaudijam|lauk, ko mes|skaidrojums/;
+
+/**
+ * Negatīva atbilde (LV/EN/LT/PL/DE/RU): «Ieraksti netika atrasti», «Nav fiksētu problēmu», «No records»,
+ * «Nėra», «Brak», «Keine Einträge», «Не найдено», «0 ieraksti», «✓ Clean».
+ */
+const NEGATION_RE = new RegExp(
+  [
+    "(?:^|[^a-z])(?:nav|netika|netiek|nekonstat\\w*|neatrad\\w*|neatrast\\w*|nebija|nav datu|nav fiksetu|bez ierakst\\w*)(?:[^a-z]|$)",
+    "(?:^|[^a-z])(?:not found|not registered|not stolen|no records?|no data|no issues?|no problems?|none|nothing found|clean|ok)(?:[^a-z]|$)",
+    "(?:^|[^a-z])(?:nera|nerasta|nerastas|nerasti|neuzregistruot\\w*|brak|nie znalezion\\w*|nie odnotowan\\w*|keine|nicht gefunden|nicht registriert)(?:[^a-z]|$)",
+    "(?:^|[^\\p{L}])(?:нет|не найден\\p{L}*|не обнаружен\\p{L}*|отсутству\\p{L}*|не зарегистрирован\\p{L}*)(?:[^\\p{L}]|$)",
+    "ierakstu skaits:? ?0(?:[^0-9]|$)|(?:^|[^0-9])0 ierakst|^0$|[\u2713\u2714]",
+  ].join("|"),
+  "u",
+);
+
+/**
+ * Pozitīvs apgalvojums (ar statusu / skaitu): «Reģistrēts», «Atrasts», «Jā», «Uzmanību», «Atradām 1 ierakstu»,
+ * «Ierakstu skaits: 2», «izmantots kā taksometrs», «Stolen: Yes».
+ */
+const POSITIVE_RE = new RegExp(
+  [
+    "registret\\w*|konstatet\\w*|fiksets|fikseta|uzmanibu|atrast[sai]?(?:[^a-z]|$)|atradam [1-9]",
+    "ierakstu skaits:? ?[1-9]|(?:^|[^0-9.,/])[1-9]\\d* ierakst|(?:izmantots|izmantota|atzimets|atzimeta|ir) ka(?: |$)",
+    "^(?:ja|yes|taip|tak|ja, ?\\S.*)$|(?:^|[^a-z])(?:stolen|wanted|registered|found|recorded|gestohlen|vogtas|skradzion\\w*)(?:[^a-z]|$)",
+    "(?:^|[^\\p{L}])(?:угнан\\p{L}*|в розыске|зарегистрирован\\p{L}*)(?:[^\\p{L}]|$)",
+  ].join("|"),
+  "u",
+);
 const SHORT_LINE = 110;
-const BARE_LABEL_LINE = 45;
+const STATUS_LINE = 200;
+const WINDOW_LINES = 3;
 
 type TextRule = {
   key: VendorReportWarningKey;
   level: VendorReportWarningLevel;
   label: string;
+  /** Neskaidram gadījumam (ir sadaļa, nav statusa) - «Pārbaudīt: …» (tikai sarkanajām kategorijām). */
+  checkLabel?: string;
   re: RegExp;
 };
 
 const TEXT_RULES: TextRule[] = [
-  { key: "theft", level: "red", label: "Zādzība", re: /zagt|zadzib|stolen|theft|meklesana/ },
+  {
+    key: "theft",
+    level: "red",
+    label: "Zādzība",
+    checkLabel: "zādzības sadaļa",
+    re: /zagt|zadzib|stolen|theft|meklesana|vogt|kradzi|gestohlen|diebstahl|угон|краж|розыск/u,
+  },
   {
     key: "total_loss",
     level: "red",
     label: "Totālā bojāeja / norakstīts",
-    re: /kopejie zaudejumi|pilnig\w* zaudejum|total loss|salvage|utilizet|norakstit|bojaej/,
+    checkLabel: "totālās bojāejas sadaļa",
+    re: /kopejie zaudejumi|pilnig\w* zaudejum|total loss|salvage|utilizet|norakstit|bojaej|totalschaden|szkoda calkowita|visisk\w* netekt|тотал/u,
   },
   {
     key: "mileage",
     level: "red",
     label: "Nobraukuma neatbilstība",
-    re: /odometra (?:radijumu )?(?:neatbilst|korekc|attis|manipul)|nobraukuma (?:neatbilst|attis|samazin|manipul|korekc)|viltots nobraukums|rollback|odometer (?:discrep|anomal)|mileage (?:discrep|mismatch|anomal)/,
+    checkLabel: "nobraukuma neatbilstības sadaļa",
+    re: /odometra (?:radijumu )?(?:neatbilst|korekc|attis|manipul)|nobraukuma (?:neatbilst|attis|samazin|manipul|korekc)|viltots nobraukums|rollback|odometer (?:discrep|anomal|rollback)|mileage (?:discrep|mismatch|anomal)/,
   },
   { key: "lien", level: "orange", label: "Līzings / ķīla", re: /lizing|(?:^|[^a-z])kil(?:a|as|u|ai)(?:[^a-z]|$)|apgrutinaj|finansu saistib|(?:^|[^a-z])lien|leasing/ },
   { key: "taxi", level: "orange", label: "Taksometrs", re: /taksomet|(?:^|[^a-z])taxi/ },
@@ -94,38 +132,89 @@ const TEXT_RULES: TextRule[] = [
     key: "rental",
     level: "orange",
     label: "Noma / komerclietošana",
-    re: /(?:^|[^a-z])nomas (?:auto|transport|lietosan|uznem)|rental|komercial\w* (?:izmanto|lieto)|commercial use/,
+    re: /^noma$|(?:^|[^a-z])nomas (?:auto|transport|lietosan|uznem)|rental|komercial\w* (?:izmanto|lieto)|commercial use/,
   },
   { key: "recall", level: "orange", label: "Atsaukšanas kampaņas", re: /atsauksan\w* kampan|atsaukum|(?:^|[^a-z])recall/ },
 ];
 
 function firstCount(s: string): number | null {
-  const m = /(?:^|[^0-9.,])(\d{1,3})(?:[^0-9.,]|$)/.exec(s);
+  const m = /(?:^|[^0-9.,/])(\d{1,3})(?:[^0-9.,/]|$)/.exec(s);
   return m ? Number(m[1]) : null;
 }
 
-/** Teksta rindu likumi: rinda ar atslēgvārdu + nākamā rinda kā statuss («Zādzība» / «Reģistrēts»). */
-function textRuleHits(lines: string[]): Map<VendorReportWarningKey, { count: number | null }> {
-  const hits = new Map<VendorReportWarningKey, { count: number | null }>();
+type Verdict = "neg" | "pos" | null;
+
+function verdictOf(s: string): Verdict {
+  if (!s.trim()) return null;
+  if (NEGATION_RE.test(s)) return "neg";
+  if (POSITIVE_RE.test(s)) return "pos";
+  return null;
+}
+
+/** Rindas daļa no atslēgvārda līdz nākamās kategorijas atslēgvārdam (AutoDNA divu kolonnu rindas). */
+function segmentAfter(line: string, rule: TextRule): string {
+  const m = rule.re.exec(line);
+  if (!m) return "";
+  const from = m.index;
+  const rest = line.slice(from + m[0].length);
+  let cut = rest.length;
+  for (const r of TEXT_RULES) {
+    if (r === rule) continue;
+    const o = r.re.exec(rest);
+    if (o && o.index < cut) cut = o.index;
+  }
+  return line.slice(from, from + m[0].length + cut);
+}
+
+type RuleHit = { count: number | null };
+type RuleHits = { pos: Map<VendorReportWarningKey, RuleHit>; neg: Set<VendorReportWarningKey>; unclear: Set<VendorReportWarningKey> };
+
+/**
+ * Teksta likumi: atslēgvārda rinda + statuss tajā pašā rindā vai nākamajās ≤3 rindās (līdz nākamajai kategorijai).
+ * Pirmais atrastais statuss izšķir: negatīvs -> tīrs, pozitīvs (ar statusu/skaitu) -> brīdinājums,
+ * bez statusa (tikai sadaļas virsraksts) -> neskaidrs.
+ */
+function textRuleHits(lines: string[]): RuleHits {
+  const pos = new Map<VendorReportWarningKey, RuleHit>();
+  const neg = new Set<VendorReportWarningKey>();
+  const unclear = new Set<VendorReportWarningKey>();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     if (!line || line.length > SHORT_LINE || EXPLANATORY_RE.test(line)) continue;
     for (const rule of TEXT_RULES) {
       if (!rule.re.test(line)) continue;
-      const next = lines[i + 1] ?? "";
-      const nextIsStatus = next.length > 0 && next.length <= 60 && !TEXT_RULES.some((r) => r.re.test(next)) && !EXPLANATORY_RE.test(next);
-      const ctx = nextIsStatus ? `${line} · ${next}` : line;
-      if (NEGATION_RE.test(ctx)) continue;
-      const positive = POSITIVE_RE.test(ctx);
-      // Tikai nosaukums bez statusa (piem. sadaļas virsraksts garākā teikumā) - nav fakts.
-      if (!positive && line.length > BARE_LABEL_LINE) continue;
-      if (!positive && !nextIsStatus && rule.level === "orange") continue;
-      const prev = hits.get(rule.key);
-      const count = firstCount(ctx.replace(rule.re, ""));
-      hits.set(rule.key, { count: Math.max(prev?.count ?? 0, count ?? 0) || null });
+      const seg = segmentAfter(line, rule);
+      let verdict = verdictOf(seg.replace(rule.re, " "));
+      let ctx = seg;
+      if (verdict == null && seg.length < line.length - 2) {
+        // Atslēgvārds teikuma beigās («Neatradām datus, ka … zagts», «… reģistrēts kā zagts»): skatās teikuma sākumu.
+        const prefix = line.slice(0, line.length - seg.length);
+        const v = verdictOf(prefix);
+        if (v === "neg" || (v === "pos" && /(?:^|[^a-z])(?:ka|as|kaip|jako|als|как)(?:[^a-z]|$)/u.test(prefix))) {
+          verdict = v;
+          ctx = line;
+        }
+      }
+      for (let j = i + 1, n = 0; verdict == null && j < lines.length && n < WINDOW_LINES; j++) {
+        const next = lines[j]!;
+        if (!next) continue;
+        if (next.length > STATUS_LINE || TEXT_RULES.some((r) => r.re.test(next))) break;
+        n++;
+        if (EXPLANATORY_RE.test(next)) continue;
+        // «Ierakstu skaits:» + nākamā rinda «0».
+        const joined = /:$/.test(next) && j + 1 < lines.length ? `${next} ${lines[j + 1]}` : next;
+        verdict = verdictOf(joined);
+        ctx = `${seg} · ${joined}`;
+      }
+      if (verdict === "neg") neg.add(rule.key);
+      else if (verdict === "pos") {
+        const prev = pos.get(rule.key);
+        const count = firstCount(ctx.replace(rule.re, ""));
+        pos.set(rule.key, { count: Math.max(prev?.count ?? 0, count ?? 0) || null });
+      } else unclear.add(rule.key);
     }
   }
-  return hits;
+  return { pos, neg, unclear };
 }
 
 /** «DD.MM.GGGG» / «MM.GGGG» / «GGGG-MM-DD» / «GGGG» -> salīdzināms skaitlis (GGGGMMDD). */
@@ -182,7 +271,7 @@ function textDamage(norm: string[]): { count: number; dates: string[] } {
   const dates: string[] = [];
   for (let i = 0; i < norm.length; i++) {
     const l = norm[i]!;
-    const m = /atrasto bojajumu skaits:? ?(\d{1,3})/.exec(l);
+    const m = /(?:^|atrasto )bojajumu skaits:? ?(\d{1,3})/.exec(l);
     if (m) cv = Math.max(cv, Number(m[1]));
     if (/^transportlidzekla zaudejumu apjoms$/.test(l)) {
       dna++;
@@ -206,19 +295,28 @@ export function reportPhotoCountFromText(source: VendorArchiveSource, text: stri
   let started = false;
   let sum = 0;
   let any = false;
-  for (const l of lines) {
+  /** Sadaļas galvene: «Arhīva fotogrāfijas / Ierakstu skaits: 0» vai «… / Pārbaudīts, dati nav reģistrēti». */
+  let header: number | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i]!;
     if (/arhiva fotografij/.test(l)) {
       started = true;
+      const after = lines.slice(i + 1, i + 3).filter(Boolean).join(" ");
+      const n = /^ierakstu skaits:? ?(\d{1,3})(?:[^0-9]|$)/.exec(after)?.[1];
+      if (n != null) header = Math.max(header ?? 0, Number(n));
+      else if (/^parbaudits,? dati nav registreti/.test(after)) header = Math.max(header ?? 0, 0);
       continue;
     }
     if (!started) continue;
-    const m = /^fotografijas:? ?(\d{1,3})$/.exec(l) ?? /^(\d{1,3}) fotografijas$/.exec(l);
+    // «Fotogrāfijas 20» vai PDF teksta kopā salipusi rinda «12.10.2026Fotogrāfijas 26».
+    const m = /^(?:\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})?\.? ?fotografijas:? ?(\d{1,3})$/.exec(l) ?? /^(\d{1,3}) fotografijas$/.exec(l);
     if (m) {
       sum += Number(m[1]);
       any = true;
     }
   }
-  return any ? sum : null;
+  if (any) return header != null ? Math.max(sum, header) : sum;
+  return header;
 }
 
 /** Šī avota arhīva foto visos blokos (grupas ar `archive.source`). */
@@ -261,7 +359,7 @@ export function vendorReportWarnings(block: VendorAvotuBlockState, pdfText: stri
     if (!out.has(w.key)) out.set(w.key, w);
   };
 
-  const hits = textRuleHits(lines);
+  const { pos: hits, neg, unclear } = textRuleHits(lines);
   const drop = biggestMileageDrop(block.serviceHistory);
   if (drop || hits.has("mileage")) {
     put({
@@ -291,6 +389,11 @@ export function vendorReportWarnings(block: VendorAvotuBlockState, pdfText: stri
     const h = hits.get(rule.key);
     if (!h || out.has(rule.key)) continue;
     put({ key: rule.key, level: rule.level, text: h.count && rule.key === "recall" ? `${rule.label}: ${h.count}` : rule.label });
+  }
+  // Sadaļa ir, bet nav ne pozitīva, ne negatīva statusa - oranžs «Pārbaudīt», nevis sarkans fakts.
+  for (const rule of TEXT_RULES) {
+    if (!rule.checkLabel || out.has(rule.key) || neg.has(rule.key) || !unclear.has(rule.key)) continue;
+    put({ key: rule.key, level: "orange", text: `Pārbaudīt: ${rule.checkLabel}` });
   }
 
   // CarVertical «Remonta izmaksu reitings» + nākamā rinda «Augsts» / «Ļoti augsts».

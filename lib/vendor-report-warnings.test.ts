@@ -143,12 +143,146 @@ describe("vendorReportWarnings - kategorijas", () => {
   });
 });
 
+describe("vendorReportWarnings - viltus trāpījumi (27.11, BMW 530d AutoDNA + CarVertical)", () => {
+  const b = emptyVendorAvotuBlock();
+  // Anonimizēti AutoDNA LV fragmenti: kopsavilkums divās kolonnās + navigācija + datubāžu saraksts.
+  const autodna = [
+    "Galvenā informācija",
+    "Bojājumi",
+    "Nav pilnīgu",
+    "zaudējumu",
+    "Vēstures pārskats",
+    "Zādzība Ieraksti netika atrastiValsts kasesķīla Ieraksti netika atrasti",
+    "Bojājumi ReģistrētsOdometra neatbilstība Ieraksti netika atrasti",
+    "Kopējie zaudējumi Ieraksti netika atrastiĪpašam mērķim Ieraksti netika atrasti",
+    "Pārskata navigācija",
+    "Transportlīdzekļa",
+    "informācija",
+    "Ierakstu skaits: 13",
+    "Ražotāju atsaukumi",
+    "Ierakstu skaits: ",
+    "0",
+    "Zagto transportlīdzekļu",
+    "datubāzes",
+    "Pārbaudītas datubāzēs: 14/14",
+    "Odometra lasījumi",
+    "Ierakstu skaits: 5",
+    "Arhīva fotogrāfijas",
+    "Ierakstu skaits: ",
+    "0",
+    "Ražotāju atsaukumi",
+    "Pārbaudīts, dati nav reģistrēti",
+    "Zagto transportlīdzekļu datubāzes",
+    "Pārbaudītas datubāzēs 14Ieraksti netika atrasti",
+    "Polija",
+    "Polijā nozagto transportlīdzekļu datubāze",
+    " Ieraksti netika atrasti",
+    "Transportlīdzekļa arhīva fotogrāfijas",
+    "Pārbaudīts, dati nav reģistrēti",
+  ].join("\n");
+  // Anonimizēti CarVertical LV fragmenti: kopsavilkuma kartītes + sadaļas ar jautājumiem.
+  const carvertical = [
+    "Bojājumi",
+    "Uzmanību",
+    "Transportlīdzeklim atrasto",
+    "bojājumu skaits: 1",
+    "Komerciālās izmantošanas",
+    "pārbaude",
+    "Nav fiksētu problēmu",
+    "Nav atrasti ieraksti par",
+    "komerciāla veida izmantošanu.",
+    "Zādzība",
+    "Nav fiksētu problēmu",
+    "Nav atrasti ieraksti par",
+    "zādzībām.",
+    "Komerciālās izmantošanas pārbaude",
+    "Mēs pārbaudījām, vai šis spēkrats ir izmantots komerciālām vajadzībām kā taksometrs, nomas vai pakalpojumu spēkrats. Šādi transportlīdzekļi bieži tiek pakļauti lielākai slodzei.",
+    "Taksometrs",
+    "Nav datu, ka izmantots kā taksometrs",
+    "Noma",
+    "Nav datu, ka izmantots kā nomas transportlīdzeklis",
+    "Neatradām datus, ka transportlīdzeklis būtu zagts.",
+    "Policijas datubāzē veikta zagtu transportlīdzekļu pārbaude 6 valstīs:",
+    "Zādzība",
+    "Mēs pārbaudījām, vai spēkrats ir šobrīd izsludināts meklēšanā, vai tas iepriekš ir izsludināts meklēšanā, kā arī, vai tas ir ticis atgūts.",
+    "Vai tas šobrīd tiek meklēts?",
+    "Nav datu, kas liecinātu, ka šī automašīna pašlaik būtu reģistrēta kā zagta un izsludināta meklēšanā.",
+    "Vai tas iepriekš ir zagts?",
+    "Šim transportlīdzeklim nav atrasti ieraksti par zādzībām",
+    "Juridiskā statusa pārbaude",
+    "Mēs pārbaudījām, vai transportlīdzeklim ir izieta tehniskā apskate. Tāpat izpētījām, vai tas nav atzīts par norakstāmu.",
+    "Vai tas ir norakstīts?",
+    "Nav datu par to, ka šis transportlīdzeklis būtu atzīmēts kā utilizēts.",
+    "Uzmanību",
+    "Šim transportlīdzeklim atradām 1 ierakstu.",
+    "nebūt saistīts ar avāriju, piemēram, zādzība, mehānisks bojājums u.c.",
+  ].join("\n");
+
+  it("AutoDNA: nav zādzības, atsaukumu, totālās bojāejas; ir 1 bojājums; foto atskaitē 0", () => {
+    const withIncident = { ...b, incidents: [{ incidentNo: "Vācija", csngDate: "08.2018", lossAmount: "800 - 900 €" }] };
+    const w = vendorReportWarnings(withIncident, autodna);
+    expect(w.map((x) => x.key)).toEqual(["damage"]);
+    expect(w[0]?.level).toBe("red");
+    expect(reportPhotoCountFromText("autodna", autodna)).toBe(0);
+  });
+
+  it("CarVertical: nav zādzības, norakstīšanas, nomas, taksometra; ir 1 bojājums", () => {
+    const w = vendorReportWarnings(b, carvertical);
+    expect(w.map((x) => x.key)).toEqual(["damage"]);
+    expect(w[0]?.text).toBe("Negadījumi / bojājumi: 1");
+  });
+
+  it("negatīvas atbildes citās valodās nedod brīdinājumus", () => {
+    const text = [
+      "Theft",
+      "No records found",
+      "Total loss: No records",
+      "Vagystė",
+      "Nėra įrašų",
+      "Kradzież",
+      "Brak wpisów",
+      "Diebstahl",
+      "Keine Einträge",
+      "Угон",
+      "Не найдено",
+      "Stolen vehicle check",
+      "✓ Clean",
+      "Taxi",
+      "None",
+      "Rental",
+      "0",
+    ].join("\n");
+    expect(keys(b, text)).toEqual([]);
+  });
+
+  it("pozitīvi apgalvojumi paliek sarkani", () => {
+    expect(keys(b, "Zādzība Reģistrēts")).toEqual(["theft"]);
+    expect(keys(b, "Transportlīdzeklis ir reģistrēts kā zagts")).toEqual(["theft"]);
+    expect(keys(b, "Vai tas ir norakstīts?\nJā")).toEqual(["total_loss"]);
+    expect(keys(b, "Stolen\nYes")).toEqual(["theft"]);
+    expect(keys(b, "Noma\nIzmantots kā nomas transportlīdzeklis")).toEqual(["rental"]);
+  });
+
+  it("AutoDNA divu kolonnu rinda: pozitīvais statuss otrajā kolonnā netiek pazaudēts", () => {
+    expect(keys(b, "Bojājumi Ieraksti netika atrastiOdometra neatbilstība Reģistrēts")).toEqual(["mileage"]);
+    expect(vendorReportWarnings(b, "Bojājumi Reģistrēts Zādzība").find((x) => x.key === "theft")?.level).not.toBe("red");
+  });
+
+  it("tikai sadaļas virsraksts bez statusa -> oranžs «Pārbaudīt», nevis sarkans", () => {
+    const w = vendorReportWarnings(b, ["Zādzība", "Mēs pārbaudījām policijas datubāzes 6 valstīs."].join("\n"));
+    expect(w).toEqual([{ key: "theft", level: "orange", text: "Pārbaudīt: zādzības sadaļa" }]);
+  });
+});
+
 describe("foto skaits", () => {
   it("AutoDNA «Fotogrāfijas N» summa arhīva sadaļā, CarVertical «atradām N fotogrāfijas»", () => {
     const dna = ["Transportlīdzekļa arhīva fotogrāfijas", "12.11.2024", "Fotogrāfijas 20", "03.02.2021", "Fotogrāfijas: 6"].join("\n");
     expect(reportPhotoCountFromText("autodna", dna)).toBe(26);
     expect(reportPhotoCountFromText("carvertical", "Fotogrāfijas\nMēs atradām 38 fotogrāfijas")).toBe(38);
     expect(reportPhotoCountFromText("carvertical", "Nekā")).toBeNull();
+    // PDF tekstā datums salīp ar «Fotogrāfijas N»; navigācijā «Arhīva fotogrāfijas / Ierakstu skaits: N».
+    expect(reportPhotoCountFromText("autodna", ["Transportlīdzekļa arhīva fotogrāfijas", "12.10.2026Fotogrāfijas 26"].join("\n"))).toBe(26);
+    expect(reportPhotoCountFromText("autodna", ["Arhīva fotogrāfijas", "Ierakstu skaits: 26", "Odometra lasījumi"].join("\n"))).toBe(26);
   });
 
   it("ievietotās foto skaita pēc grupas archive.source", () => {
