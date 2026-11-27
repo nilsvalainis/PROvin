@@ -99,7 +99,8 @@ function listingRow(blocks: WorkspaceSourceBlocks, listingUrl: string, at: strin
   return {
     id: "listing_history",
     label: "Sludinājuma vēsture",
-    country: "LV",
+    // Sludinājums LV portālā nenozīmē LV reģistrāciju - «Valstis» to neskaita.
+    country: "",
     status: "found",
     summary: facts.map((f) => `${f.label} ${f.value}`).join(" · "),
     openUrl: listingUrl ? `https://adify.lv/history?url=${encodeURIComponent(listingUrl)}` : "https://adify.lv/history",
