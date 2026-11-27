@@ -84,6 +84,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "CITI AVOTI": { en: "OTHER SOURCES", ru: "ДРУГИЕ ИСТОЧНИКИ" },
   "Servisa vēsture": { en: "Service history", ru: "Сервисная история" },
   "Eļļas maiņas intervāli": { en: "Oil change intervals", ru: "Интервалы замены масла" },
+  "Apkopju intervāli": { en: "Service intervals", ru: "Интервалы обслуживания" },
   "Servisa un remontu vēsture": { en: "Service and repair history", ru: "История обслуживания и ремонтов" },
   "Fotogrāfiju pielikums": { en: "Photo appendix", ru: "Приложение: фотографии" },
 
@@ -560,6 +561,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "CITI AVOTI": "WEITERE QUELLEN",
   "Servisa vēsture": "Servicehistorie",
   "Eļļas maiņas intervāli": "Ölwechselintervalle",
+  "Apkopju intervāli": "Wartungsintervalle",
   "Servisa un remontu vēsture": "Service- und Reparaturhistorie",
   "Fotogrāfiju pielikums": "Fotoanhang",
   " atskaites ģenerēšanā izmantotie avoti": " für diesen Bericht verwendete Quellen",

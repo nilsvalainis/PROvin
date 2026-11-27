@@ -1,6 +1,7 @@
 import "server-only";
 
-import { oilIntervalNotesWithRequiredNotes } from "@/lib/oil-change-interval-chart";
+import { oilBlockIsBev, oilIntervalNotesWithRequiredNotes } from "@/lib/oil-change-interval-chart";
+import { BEV_OIL_FIELD_DIRECTIVE_LV } from "@/lib/vehicle-bev";
 import { dropDealerRecommendationSentences } from "@/lib/dealer-comments-review-core";
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import {
@@ -148,6 +149,18 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
         .join("\n")
     : "";
   const powertrainIdentity = extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin });
+  // Nils 27.11.2026: elektroauto (BEV) - eļļas lauka AI neraksta rindkopu par eļļas maiņu.
+  const bevFingerprint =
+    oilFingerprint ??
+    (isOfficialDealerBlock(input.blockKey) ? extractVehicleReportFingerprint(input.sourceBlocks, { vin: input.vin }) : null);
+  const isBev =
+    isOfficialDealerBlock(input.blockKey) &&
+    oilBlockIsBev(input.sourceBlocks.auto_records, {
+      fuel: [bevFingerprint?.fuelType, powertrainIdentity.fuelRaw],
+      engineCodes: [bevFingerprint?.engineCode, powertrainIdentity.engineCode],
+      models: [bevFingerprint?.makeModel],
+      oilText: "",
+    });
   const powertrainBlock = powertrainIdentityPromptBlock(powertrainIdentity);
 
   const portfolioContext = isolateDealer
@@ -191,7 +204,7 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
   const isServiceHistory =
     isOfficialDealerBlock(input.blockKey) && targetField === "serviceHistoryNotes";
   const isDealerComments = isOfficialDealerBlock(input.blockKey) && targetField === "comments";
-  const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary);
+  const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary) && !isBev;
   const oilRoleHint = includeOilIntervalRole
     ? isolateDealer
       ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu tieši „<strong>Eļļas maiņas intervāli</strong><br>” (bez papildinājumiem virsrakstā; nākamā rinda sākas ar „Ražotāja intervāls:”), kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Rēķini TIKAI no oficiālā dīlera tabulas. Citus avotus ignorē. Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
@@ -217,7 +230,7 @@ ${focusDataText || "(dīlera tabulā nav atsevišķu rindu - rēķini no pārēj
 === Identifikācija šim motoram (OEM intervālam) ===
 ${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
 
-${buildEngineOilChangeListForPrompt(input.sourceBlocks)}
+${isBev ? `${BEV_OIL_FIELD_DIRECTIVE_LV}\n` : buildEngineOilChangeListForPrompt(input.sourceBlocks)}
 
 ${buildDealerCodeFactsForPrompt(input.sourceBlocks)}
 
@@ -364,6 +377,7 @@ ${
       input.sourceBlocks.auto_records,
       dropDealerRecommendationSentences(dropAwd(generated)),
       lang,
+      isBev ? { bev: true, engineCode: bevFingerprint?.engineCode || powertrainIdentity.engineCode } : undefined,
     );
   }
   if (isServiceHistory) return dropAwd(generated);
