@@ -94,7 +94,7 @@ describe("test-pricing-5 inline checkout", () => {
 
   it("uses Latvian product copy on Stripe Checkout", () => {
     expect(getTp5MiniCheckoutNote()).toContain("Latvijā ekspluatētiem");
-    expect(getTp5MiniCheckoutNote()).toContain("PROVIN AUDITS");
+    expect(getTp5MiniCheckoutNote()).toContain("PROVIN AUDITU");
     expect(getTp5MiniCheckoutNote()).not.toMatch(/[\u2013\u2014]/);
     expect(getTp5MiniCheckoutNote("en")).toContain("used in Latvia");
     expect(getTp5CheckoutSubmitMessage("plus")).toBe(getTp5MiniCheckoutNote());

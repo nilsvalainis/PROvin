@@ -92,7 +92,7 @@ describe("MINI confirm copy", () => {
     expect(lv.excludesItem).not.toMatch(/🟢|🔴/);
     expect(lv.switchAudits).toBe("Pāriet uz AUDITS");
     expect(lv.continueMini).toBe("Turpināt ar MINI");
-    expect(miniConfirmTitle(lv, "warning")).toBe("Šim auto iesakām PROVIN AUDITS");
+    expect(miniConfirmTitle(lv, "warning")).toBe("Šim auto iesakām PROVIN AUDITU");
     expect(lv.warnBar).toBe(
       "⚠️ Auto Latvijā nav reģistrēts vai ir reģistrēts mazāk nekā 3 gadus.",
     );
