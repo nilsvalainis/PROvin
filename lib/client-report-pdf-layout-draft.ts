@@ -5,6 +5,7 @@
 import { formatPdfCustomerFullName } from "@/lib/pdf-prepared-by-name";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
+import { clientVisibleComment } from "@/lib/client-comment-sanitize";
 
 /** Saitei atskaitē der tikai http(s) adrese; cits teksts paliek kā vienkāršs teksts. */
 function isHttpUrl(value: string): boolean {
@@ -286,7 +287,7 @@ export function buildPdfAboutReportBlock(args: {
 
   let notesHtml = "";
   if (show.notes && o.notes?.trim()) {
-    const plain = stripHeardAboutFromClientNotes(adminRichHtmlToPlainText(o.notes).replace(/\u00a0/g, " ")) ?? "";
+    const plain = clientVisibleComment(stripHeardAboutFromClientNotes(adminRichHtmlToPlainText(o.notes).replace(/\u00a0/g, " "))) ?? "";
     if (plain.trim()) {
       const body = plain
         .split(/\r?\n/)
@@ -321,7 +322,7 @@ export function buildPdfAboutReportBlock(args: {
 export function buildPdfAdminMirrorNotesBlock(notes: string | null | undefined, titleIconHtml = ""): string {
   const t = notes?.trim();
   if (!t) return "";
-  const plain = stripHeardAboutFromClientNotes(adminRichHtmlToPlainText(t).replace(/\u00a0/g, " ")) ?? "";
+  const plain = clientVisibleComment(stripHeardAboutFromClientNotes(adminRichHtmlToPlainText(t).replace(/\u00a0/g, " "))) ?? "";
   if (!plain.trim()) return "";
   const head = pdfV1PanelHead("klienta komentārs", titleIconHtml);
   const bodyEscaped = plain
