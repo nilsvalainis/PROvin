@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { autobidOriginalHint, pickLatestOrderForVin } from "@/lib/checkcar-import-orders";
+import {
+  autobidOriginalHint,
+  orderTargetsForVin,
+  pickCheckcarTarget,
+  pickLatestOrderForVin,
+  quickEvalCheckcarPhotoSession,
+  quickEvalTargetsForVin,
+} from "@/lib/checkcar-import-orders";
 
 const VIN = "VF1AAAAA012345678";
 
@@ -22,6 +29,32 @@ describe("pasūtījums pēc VIN", () => {
     expect(pickLatestOrderForVin(VIN, rows, [])).toBe("cs_moved");
     expect(pickLatestOrderForVin("WBA0000000000000X", rows, index)).toBeNull();
     expect(pickLatestOrderForVin("short", rows, index)).toBeNull();
+  });
+});
+
+describe("mērķis: pasūtījums vai ātrais vērtējums", () => {
+  const orders = orderTargetsForVin(VIN, [{ id: "cs_a", created: 1_764_000_000, vin: VIN }], []);
+  const quick = quickEvalTargetsForVin(VIN, [
+    { peekId: "8e51f2ea-0000-4000-8000-000000000001", createdAt: "2026-11-27T10:00:00.000Z", vin: VIN },
+    { peekId: "8e51f2ea-0000-4000-8000-000000000002", createdAt: "2026-11-27T11:00:00.000Z", vin: "WVWZZZ1KZAW000001" },
+  ]);
+
+  it("ja ir tikai ātrais vērtējums - tas; ja abi - jaunākais pēc laika, pārējie ir alternatīvas", () => {
+    expect(pickCheckcarTarget(quick).target).toMatchObject({ kind: "quick_eval", id: "8e51f2ea-0000-4000-8000-000000000001" });
+    const both = pickCheckcarTarget([...orders, ...quick]);
+    expect(both.target?.kind).toBe("quick_eval");
+    expect(both.alternatives.map((a) => a.id)).toEqual(["cs_a"]);
+  });
+
+  it("atvērtās lapas norāde uzvar, ja tai ir šis VIN; sveša norāde tiek ignorēta", () => {
+    expect(pickCheckcarTarget([...orders, ...quick], { kind: "order", id: "cs_a" }).target?.id).toBe("cs_a");
+    expect(pickCheckcarTarget([...orders, ...quick], { kind: "order", id: "cs_cits" }).target?.kind).toBe("quick_eval");
+    expect(pickCheckcarTarget([]).target).toBeNull();
+  });
+
+  it("ātrā vērtējuma foto krātuves sesija ir droša (bez defisēm)", () => {
+    expect(quickEvalCheckcarPhotoSession("8E51F2EA-4199-4af1-93f0-b6c3530b4904")).toBe("qe_8e51f2ea41994af193f0b6c3530b4904");
+    expect(quickEvalCheckcarPhotoSession("8e51f2ea-4199-4af1-93f0-b6c3530b4904")).toMatch(/^qe_[a-f0-9]{32}$/);
   });
 });
 

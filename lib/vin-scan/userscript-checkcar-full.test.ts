@@ -4,6 +4,7 @@ import { FakeElement, runUserscriptAt } from "@/lib/vin-scan/test-helpers/usersc
 
 /** Izdomāts VIN (anonimizēts). */
 const VIN = "VF1AAAAA012345678";
+const PEEK = "8e51f2ea-0000-4000-8000-000000000001";
 const REPORT_URL = `https://checkcar.vin/report/check/${VIN}`;
 const REPORT_TEXT = `Vehicle history report\nVIN: ${VIN}\nAuction sale history\nSOLD #1\nAUTOBID\n14/03/2025`;
 
@@ -129,23 +130,34 @@ describe("PROVIN admin cilne: CheckCar darba pārsūtīšana", () => {
     const fetchMock = async (url: string, init?: { body?: unknown }) => {
       calls.push({ url, body: init?.body });
       const json = (data: unknown) => ({ status: 200, json: async () => data });
-      if (url === "/api/admin/cc-vin-photo") return json({ ok: true, id: "ih_ph_000000000000000000000009" });
+      if (init?.body instanceof FormData) return json({ ok: true, id: "ih_ph_000000000000000000000009" });
       const body = JSON.parse(String(init?.body ?? "{}"));
       if (body.action === "prepare") {
-        return json({ ok: true, sessionId: "cs_test", summary: "2 pārdošanas", groups: [{ title: "T", urls: ["https://cdn.checkcar.vin/lots/2.jpg"] }], knownUrls: [] });
+        return json({
+          ok: true,
+          target: { kind: "quick_eval", id: PEEK },
+          summary: "2 pārdošanas",
+          groups: [{ title: "T", urls: ["https://cdn.checkcar.vin/lots/2.jpg"] }],
+          knownUrls: [],
+          alternatives: [],
+        });
       }
       return json({ ok: true, added: 1 });
     };
-    const run = runUserscriptAt("https://www.provin.lv/admin/orders/cs_test", {
+    const run = runUserscriptAt(`https://www.provin.lv/admin/atras-vertesanas/${PEEK}`, {
       gm: { provin_ccfull_job: JSON.stringify({ jobId: "j1", vin: VIN, text: REPORT_TEXT, groups: [], at: 1 }) },
       globals: { fetch: fetchMock, FormData, Blob, Uint8Array, atob },
     });
     run.tickIntervals(1000);
     await flush();
     expect(calls[0]?.url).toBe("/api/admin/checkcar-import");
-    expect(JSON.parse(String(calls[0]?.body))).toMatchObject({ action: "prepare", vin: VIN });
+    expect(JSON.parse(String(calls[0]?.body))).toMatchObject({
+      action: "prepare",
+      vin: VIN,
+      hint: { kind: "quick_eval", id: PEEK },
+    });
     expect(run.gm.set.has("provin_ccfull_job")).toBe(false);
-    expect(gmJson(run, "provin_ccfull_status")).toMatchObject({ jobId: "j1", stage: "ready", sessionId: "cs_test" });
+    expect(gmJson(run, "provin_ccfull_status")).toMatchObject({ jobId: "j1", stage: "ready", target: { kind: "quick_eval", id: PEEK } });
 
     run.gm.set.set(
       "provin_ccfull_batch",
@@ -154,20 +166,42 @@ describe("PROVIN admin cilne: CheckCar darba pārsūtīšana", () => {
     run.tickIntervals(1000);
     await flush(12);
     expect(calls.some((c) => c.url.startsWith("data:"))).toBe(false);
-    const upload = calls.find((c) => c.url === "/api/admin/cc-vin-photo");
-    expect(upload?.body).toBeInstanceOf(FormData);
-    expect((upload?.body as FormData).get("sessionId")).toBe("cs_test");
-    expect((upload?.body as FormData).get("hideWatermarks")).toBe("0");
+    const upload = calls.find((c) => c.body instanceof FormData);
+    expect(upload?.url).toBe("/api/admin/checkcar-import");
+    expect((upload?.body as FormData).get("action")).toBe("photo");
+    expect((upload?.body as FormData).get("kind")).toBe("quick_eval");
+    expect((upload?.body as FormData).get("id")).toBe(PEEK);
     expect(((upload?.body as FormData).get("file") as Blob).size).toBe(6);
     const attach = calls.map((c) => (typeof c.body === "string" ? JSON.parse(c.body) : null)).find((b) => b?.action === "attach");
     expect(attach).toEqual({
       action: "attach",
-      sessionId: "cs_test",
+      kind: "quick_eval",
+      id: PEEK,
       photos: [{ id: "ih_ph_000000000000000000000009", title: "T", sourceUrl: "https://cdn.checkcar.vin/lots/2.jpg" }],
     });
     expect(gmJson(run, "provin_ccfull_ack")).toMatchObject({ jobId: "j1", n: 0, uploaded: 1, failed: 0 });
     expect(gmJson(run, "provin_ccfull_status")).toMatchObject({ stage: "done", uploaded: 1 });
     expect(run.errors).toEqual([]);
+  });
+
+  it("vispārīga admin cilne dod priekšroku atvērtai detaļu lapai (3 s), tad paņem darbu bez norādes", async () => {
+    const calls: unknown[] = [];
+    const run = runUserscriptAt("https://www.provin.lv/admin", {
+      gm: { provin_ccfull_job: JSON.stringify({ jobId: "j3", vin: VIN, text: REPORT_TEXT, groups: [], at: Date.parse("2026-11-17T10:00:00.000Z") }) },
+      globals: {
+        fetch: async (_url: string, init?: { body?: unknown }) => {
+          calls.push(JSON.parse(String(init?.body)));
+          return { status: 200, json: async () => ({ ok: true, target: { kind: "order", id: "cs_x" }, groups: [], knownUrls: [] }) };
+        },
+      },
+    });
+    run.tickIntervals(1000);
+    await flush();
+    expect(calls).toEqual([]);
+    run.advance(3500);
+    run.tickIntervals(1000);
+    await flush();
+    expect(calls).toEqual([expect.objectContaining({ action: "prepare", hint: null })]);
   });
 
   it("servera kļūdu nodod checkcar cilnei latviski", async () => {

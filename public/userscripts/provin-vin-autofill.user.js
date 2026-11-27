@@ -2,7 +2,7 @@
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
 // @version      1.28.0
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). checkcar.vin atvērtajā atskaitē poga «Nosūtīt uz PROVIN» nosūta vēsturi un foto pasūtījumam (neko nepērk). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). checkcar.vin atvērtajā atskaitē poga «Nosūtīt uz PROVIN» nosūta vēsturi un foto pasūtījumam vai ātrajam vērtējumam (neko nepērk). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -265,6 +265,14 @@
   }
   if (IS_PROVIN_ADMIN && typeof fetch === "function") {
     const ccfullTab = Math.random().toString(36).slice(2);
+    /* Atvērtā pasūtījuma / ātrā vērtējuma lapa = operatora izvēlētais mērķis (serveris pārbauda VIN). */
+    function ccfullPageHint() {
+      const q = path.match(/^\/admin\/atras-vertesanas\/([0-9a-f-]{36})(?:\/|$)/i);
+      if (q) return { kind: "quick_eval", id: q[1].toLowerCase() };
+      const o = path.match(/^\/admin\/orders\/([A-Za-z0-9_]+)(?:\/|$)/);
+      if (o) return { kind: "order", id: o[1] };
+      return null;
+    }
     let ccfullBusy = false;
     let ccfullCurrent = null;
     function ccfullToast(text) {
@@ -313,6 +321,7 @@
         html: job.html || "",
         pageUrl: job.pageUrl || "",
         groups: job.groups || [],
+        hint: ccfullPageHint(),
       });
       if (!r.data.ok) {
         const code = r.data.error || (r.status === 401 ? "unauthorized" : r.status === 403 ? "forbidden" : "http_" + r.status);
@@ -320,11 +329,13 @@
         ccfullToast("CheckCar.vin: " + ccfullErrorText(code));
         return;
       }
-      ccfullCurrent = { jobId: job.jobId, sessionId: r.data.sessionId, nextN: 0, uploaded: 0, failed: 0 };
+      const target = r.data.target || { kind: "order", id: r.data.sessionId };
+      ccfullCurrent = { jobId: job.jobId, target: target, sessionId: target.id, nextN: 0, uploaded: 0, failed: 0 };
       ccfullSetStatus({
         jobId: job.jobId,
         stage: "ready",
-        sessionId: r.data.sessionId,
+        sessionId: target.id,
+        target: target,
         summary: r.data.summary || "",
         groups: r.data.groups || [],
         knownUrls: r.data.knownUrls || [],
@@ -332,7 +343,8 @@
       });
       const ab = r.data.autobid;
       ccfullToast(
-        "CheckCar.vin: dati ielikti pasūtījumā. " +
+        "CheckCar.vin: dati ielikti " + (target.kind === "quick_eval" ? "ātrajā vērtējumā" : "pasūtījumā") + ". " +
+          (r.data.alternatives && r.data.alternatives.length ? "(Ir vēl " + r.data.alternatives.length + " ar šo VIN - lai izvēlētos, atver vajadzīgo lapu un nosūti vēlreiz.) " : "") +
           (r.data.summary || "") +
           (ab && ab.photos ? " Izsoļu arhīvā ir Autobid bildes bez ūdenszīmēm (" + ab.photos + ") - pārbaudi /admin/izsolu-arhivs." : ""),
       );
@@ -346,15 +358,15 @@
       for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
       return new Blob([bytes], { type: m[1] || "image/jpeg" });
     }
-    async function ccfullUploadOne(sessionId, item) {
+    async function ccfullUploadOne(target, item) {
       const blob = ccfullDataUrlToBlob(item.dataUrl);
       if (!blob || !blob.size) return "";
       const form = new FormData();
-      form.append("sessionId", sessionId);
+      form.append("action", "photo");
+      form.append("kind", target.kind);
+      form.append("id", target.id);
       form.append("file", blob, "checkcar.jpg");
-      form.append("currentCount", "0");
-      form.append("hideWatermarks", "0");
-      const res = await fetch("/api/admin/cc-vin-photo", { method: "POST", credentials: "same-origin", body: form });
+      const res = await fetch("/api/admin/checkcar-import", { method: "POST", credentials: "same-origin", body: form });
       const data = await res.json().catch(() => ({}));
       return data && data.ok && data.id ? String(data.id) : "";
     }
@@ -364,7 +376,7 @@
       let failed = 0;
       for (const item of batch.items || []) {
         try {
-          const id = await ccfullUploadOne(cur.sessionId, item);
+          const id = await ccfullUploadOne(cur.target, item);
           if (id) photos.push({ id: id, title: item.title || "", sourceUrl: item.url || "" });
           else failed += 1;
         } catch {
@@ -374,7 +386,8 @@
       if (photos.length) {
         const r = await ccfullPost("/api/admin/checkcar-import", {
           action: "attach",
-          sessionId: cur.sessionId,
+          kind: cur.target.kind,
+          id: cur.target.id,
           photos: photos,
         });
         if (!r.data.ok) failed += photos.length;
@@ -385,11 +398,12 @@
       GM_deleteValue(GM_CCFULL_BATCH);
       GM_setValue(GM_CCFULL_ACK, JSON.stringify({ jobId: cur.jobId, n: batch.n, uploaded: cur.uploaded, failed: cur.failed }));
       if (batch.last) {
-        const text = "CheckCar.vin: gatavs - " + cur.uploaded + " foto" + (cur.failed ? ", neizdevās " + cur.failed : "") + ". Pārlādē pasūtījuma lapu.";
-        ccfullSetStatus({ jobId: cur.jobId, stage: "done", sessionId: cur.sessionId, message: text, uploaded: cur.uploaded, failed: cur.failed });
+        const where = cur.target.kind === "quick_eval" ? "ātrā vērtējuma" : "pasūtījuma";
+        const text = "CheckCar.vin: gatavs - " + cur.uploaded + " foto" + (cur.failed ? ", neizdevās " + cur.failed : "") + ". Pārlādē " + where + " lapu.";
+        ccfullSetStatus({ jobId: cur.jobId, stage: "done", sessionId: cur.sessionId, target: cur.target, message: text, uploaded: cur.uploaded, failed: cur.failed });
         ccfullToast(text);
         try {
-          document.dispatchEvent(new CustomEvent("provin-checkcar-import", { detail: { sessionId: cur.sessionId } }));
+          document.dispatchEvent(new CustomEvent("provin-checkcar-import", { detail: { sessionId: cur.sessionId, target: cur.target } }));
         } catch {
           /* ignore */
         }
@@ -402,6 +416,8 @@
       if (ccfullBusy) return;
       const job = ccfullGmJson(GM_CCFULL_JOB);
       if (job && job.jobId && (!ccfullCurrent || ccfullCurrent.jobId !== job.jobId)) {
+        /* Vispārīga admin cilne dod 3 s priekšroku atvērtai pasūtījuma / ātrā vērtējuma lapai. */
+        if (!ccfullPageHint() && Date.now() - Number(job.at || 0) < 3000) return;
         if (!ccfullClaim(job.jobId)) return;
         GM_deleteValue(GM_CCFULL_JOB);
         ccfullBusy = true;

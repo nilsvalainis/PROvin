@@ -30,6 +30,7 @@ import { refreshQuickEvalSmartId } from "@/lib/quick-eval-auto";
 import { quickEvalAutoView, quickEvalProductPriceLabel } from "@/lib/quick-eval-auto-core";
 import { readVinScanSnapshot } from "@/lib/vin-scan/store";
 import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
+import { AdminQuickEvalCheckcarSection } from "@/components/admin/AdminQuickEvalCheckcarSection";
 import { heardAboutDisplayLabel } from "@/lib/stripe-session";
 import { findVinHistory } from "@/lib/vin-history";
 import { saveQuickEvalContact, setQuickEvalStatus } from "../actions";
@@ -287,6 +288,7 @@ export default async function QuickEvalDetailPage({
           Bezmaksas avoti vēl nav ielasīti. Spied „Atjaunot visus avotus”.
         </p>
       )}
+      {doc ? <AdminQuickEvalCheckcarSection peekId={peek.id} block={doc.sourceBlocks.cc_vin} /> : null}
 
     <section className="mt-4 rounded-2xl bg-white px-4 py-3 shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
       <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--color-apple-text)]">
