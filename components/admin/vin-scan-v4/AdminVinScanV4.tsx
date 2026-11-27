@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
+import { AdminDealerForecastRow } from "@/components/admin/AdminDealerForecastRow";
 import { buildAtraFacts, type AtraFactRow, type AtraFacts } from "@/lib/atra-parbaude-facts";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { EcsddAutoStatus } from "@/lib/ecsdd-auto-types";
@@ -544,6 +545,7 @@ export function AdminVinScanV4({
   progressLead,
   hasListing = false,
   kfz,
+  forecastYear: forecastYearProp = null,
 }: {
   vin: string;
   plate?: string;
@@ -578,6 +580,8 @@ export function AdminVinScanV4({
   hasListing?: boolean;
   /** Austrija §57a (kfzgutachten.at): pasūtījuma dati datumam un Tampermonkey tiltam. */
   kfz?: VinScanV4KfzContext;
+  /** Dīlera datu prognozei: CSDD izlaiduma / 1. reģistrācijas gads, ja `csdd` nav padots. */
+  forecastYear?: string | number | null;
 }) {
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({});
   const [emptyOpen, setEmptyOpen] = useState(false);
@@ -654,6 +658,10 @@ export function AdminVinScanV4({
     ) : (
       <Fact k={k} v="Nav datu" risk />
     );
+  // Dīlera datu prognoze (27.11): marka no CSDD (API / rinda), gads tikai no CSDD; citādi VIN.
+  const csddVehicle = rows.find((r) => r.id === "csdd")?.vehicle;
+  const forecastMake = csdd?.make || csddVehicle?.make || vehicleTitle;
+  const forecastYear = forecastYearProp || csdd?.year || csdd?.firstRegistrationIso || csddVehicle?.year || null;
   const ltabState = smartId?.ltab?.state;
   const inspectionUntil = facts?.inspection.until || (ecsddFacts?.nextInspectionIso ? ecsddIsoToLvDate(ecsddFacts.nextInspectionIso) : "");
   const inspectionLine = ecsddInspectionLine(ecsddFacts);
@@ -742,6 +750,7 @@ export function AdminVinScanV4({
             </p>
           ) : null}
           {spec ? <p className={`mt-2 text-[12.5px] ${MUTE}`}>{spec}</p> : null}
+          {vin ? <AdminDealerForecastRow variant="v4" className="mt-2" make={forecastMake} year={forecastYear} vin={vin} /> : null}
         </div>
         <div>
           <p className={LAB}>Pēdējais odometra rādījums</p>

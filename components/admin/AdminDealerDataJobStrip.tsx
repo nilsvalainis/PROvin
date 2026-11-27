@@ -27,6 +27,7 @@ import { collectSourceBlockTexts } from "@/lib/dealer-review-score";
 import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
 import { AdminCheckThisRegChip } from "@/components/admin/AdminCheckThisRegChip";
+import { AdminDealerForecastRow } from "@/components/admin/AdminDealerForecastRow";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -273,6 +274,13 @@ export function AdminDealerDataJobStrip({
           </button>
         ) : null}
       </div>
+
+      <AdminDealerForecastRow
+        className="mt-1.5"
+        blocks={getSourceBlocks ? getSourceBlocks() : null}
+        vin={vin || orderVin}
+        oneautoNoData={job?.status === "no_data"}
+      />
 
       <p className="mt-1.5 text-[10.5px] text-[var(--color-provin-muted)] [overflow-wrap:anywhere]">
         {dealerSendStatusLine(lastDealerSend(marks))}

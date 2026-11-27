@@ -41,6 +41,7 @@ import {
 import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
 import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
 import { AdminCheckThisRegChip } from "@/components/admin/AdminCheckThisRegChip";
+import { AdminDealerForecastRow } from "@/components/admin/AdminDealerForecastRow";
 import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import {
   AmxButton,
@@ -352,6 +353,13 @@ export function MobileDealerOrderPanel({
               highlightMake={checkThisRegHighlighted(job?.status, ctrMake) ? ctrMake : null}
             />
             <AdminCheckThisRegChip sessionId={sessionId} />
+            <AdminDealerForecastRow
+              variant="glass"
+              className="mt-2 px-1"
+              blocks={sourceBlocks}
+              vin={c.vin || orderVin}
+              oneautoNoData={job?.status === "no_data"}
+            />
             <AdminClientReportLinkControl sessionId={sessionId} variant="glass" />
             <AmxCard className="mt-2.5">
               <button
