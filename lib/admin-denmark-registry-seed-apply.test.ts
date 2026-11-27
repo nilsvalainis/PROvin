@@ -110,7 +110,7 @@ describe("lkf.ee «atlīdzību nav», bet auto ir Igaunijas reģistrā", () => {
     expect(next.applied).toEqual(["lkf_ee"]);
     expect(next.blocks.lkf_ee.rawUnprocessedData).toContain("on liiklusregistris registreeritud");
     expect(next.blocks.lkf_ee.autoNotes).toContain("Igaunijas satiksmes reģistrā");
-    expect(next.blocks.lkf_ee.fetchMessage.startsWith(DENMARK_AUTO_SEED_PREFIX)).toBe(true);
+    expect(String(next.blocks.lkf_ee.fetchMessage ?? "").startsWith(DENMARK_AUTO_SEED_PREFIX)).toBe(true);
   });
 
   it("lkf.ee bez reģistra apstiprinājuma paliek tikai ar ziņu", () => {
