@@ -33,6 +33,8 @@ import {
   useDealerDataJobControls,
 } from "@/components/admin/useDealerDataJobControls";
 import { AdminDealerRefundDialog } from "@/components/admin/AdminDealerRefundDialog";
+import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
+import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import {
   AmxButton,
   AmxCard,
@@ -299,6 +301,7 @@ export function MobileDealerOrderPanel({
   if (!c.loaded) return null;
 
   const job = c.job;
+  const ctrMake = checkThisRegMakeFromBlocks(sourceBlocks, c.vin || orderVin);
   const refundLabel = c.refunded ? "Atmaksāts" : c.b2bRefund ? (walletRefund ? "Atmaksa uz atlikumu" : "Atgriezt kredītu") : "Atgriezt maksājumu";
 
   return (
@@ -334,6 +337,11 @@ export function MobileDealerOrderPanel({
         review={review}
         afterActions={
           <>
+            <AdminDealerExtLinks
+              variant="glass"
+              vin={c.vin || orderVin}
+              highlightMake={checkThisRegHighlighted(job?.status, ctrMake) ? ctrMake : null}
+            />
             <AdminClientReportLinkControl sessionId={sessionId} variant="glass" />
             <AmxCard className="mt-2.5">
               <button
