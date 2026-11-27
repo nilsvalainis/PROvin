@@ -108,6 +108,7 @@ import {
 } from "@/lib/pdf-dealer-timeline";
 import {
   buildOilIntervalSeriesForBlock,
+  oilBlockIsBev,
   oilIntervalNotesWithRequiredNotes,
 } from "@/lib/oil-change-interval-chart";
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
@@ -2091,6 +2092,8 @@ function buildTirgusListingHistoryBodyHtml(
 
 const PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL = "Servisa vēsture";
 const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
+/** BEV (Nils 27.11.2026): elektroauto eļļas lauks runā tikai par apkopju intervāliem. */
+const PDF_AUTO_RECORDS_SERVICE_INTERVAL_LABEL = "Apkopju intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 
@@ -2234,6 +2237,8 @@ function buildAutoRecordsAvotuSubsection(
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null,
   countryEvidence?: import("@/lib/vehicle-country-timeline").CountryTimelineEntry[],
   currentMileage?: import("@/lib/oil-change-intervals").OilCurrentReading | null,
+  /** Nils 27.11.2026: BEV noteikšanai - CSDD degviela u.c. ārpus dīlera bloka. */
+  bevHints?: { fuel?: string | null; engineCode?: string | null },
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -2298,13 +2303,20 @@ function buildAutoRecordsAvotuSubsection(
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
     : "";
   // Nils 26.11.2026: pārsniegts OEM intervāls -> vienmēr piebilde (arī manuāli rediģētam tekstam).
+  // Nils 27.11.2026: elektroauto (BEV) - bez eļļas maiņas rindkopām, bez eļļas tabulas.
+  const isBev = oilBlockIsBev(b, {
+    fuel: [bevHints?.fuel],
+    engineCodes: [bevHints?.engineCode],
+    models: [makeModel],
+  });
   const oilChangeIntervalNotes = oilIntervalNotesWithRequiredNotes(
     b,
     (b.oilChangeIntervalNotes ?? "").trim(),
     lang,
+    isBev ? { bev: true, engineCode: bevHints?.engineCode } : undefined,
   );
   const showOilInterval = vis.autoRecordsOilInterval !== false;
-  const oilTableHtml = showOilInterval
+  const oilTableHtml = showOilInterval && !isBev
     ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b, { current: currentMileage ?? null }), {
         // Dīlera datu / Business PDF: tikai fakti, bez ieteikumiem (ieteikumi ir AUDITS).
         omitRecommendation:
@@ -2314,7 +2326,10 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const oilIntervalBox =
     showOilInterval && oilChangeIntervalNotes
-      ? pdfReportCommentBox(oilChangeIntervalNotes, oilTableHtml ? "" : PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL)
+      ? pdfReportCommentBox(
+          oilChangeIntervalNotes,
+          oilTableHtml ? "" : isBev ? PDF_AUTO_RECORDS_SERVICE_INTERVAL_LABEL : PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL,
+        )
       : "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const hasComments = commentBlock.trim().length > 0;
@@ -2883,6 +2898,7 @@ function buildAvotuDatiSectionHtml(
     p.dealerMajorWorkOverrides,
     countryEvidenceFromRows(sparkCtx.rows),
     latestMileageReading(sparkCtx.rows),
+    { fuel: p.csddForm?.fuelType ?? null },
   );
   const ccVin = buildCcVinAvotuSubsection(
     p.ccVinBlock ?? null,

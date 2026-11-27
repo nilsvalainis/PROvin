@@ -2097,6 +2097,35 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("Dīlera komentārs paliek PDF.");
   });
 
+  it("BEV (Nils 27.11): bez eļļas tabulas un bez eļļas maiņas rindkopas, apkopju intervāli paliek", () => {
+    const autoRecords = {
+      ...createDefaultSourceBlocks().auto_records,
+      serviceWorks: [
+        { date: "29.06.2021", odometer: "14", location: "BMW Rīga", works: "Apkope" },
+        { date: "20.06.2024", odometer: "98671", location: "BMW Rīga", works: "Apkope, eļļas filtra pārbaude" },
+      ],
+      oilChangeIntervalNotes:
+        "Ražotāja intervāls: nav piemērojams (elektroauto, HA0).<br><br><strong>Eļļas maiņas ieraksti</strong><br>Dīlera datos nav fiksēta neviena dzinēja eļļas maiņa.<br><br><strong>Regulāro apkopju intervāli</strong><br>Dīlera datubāzē kopumā fiksēti 2 ieraksti.",
+      comments: "",
+    };
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        autoRecordsBlock: autoRecords,
+        pdfVisibility: mergePdfVisibility({ auto_records: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(doc).not.toContain('<table class="pdf-oil-int__table"');
+    expect(doc).not.toContain("Eļļas maiņas ieraksti");
+    expect(doc).not.toContain("dzinēja eļļas maiņa");
+    expect(doc).toContain("Ražotāja intervāls: nav piemērojams (elektroauto, HA0).");
+    expect(doc).toContain("Dīlera datubāzē kopumā fiksēti 2 ieraksti.");
+    expect(doc).toContain("Apkopju intervāli");
+  });
+
   it("renders Auto Records service works table in client PDF", () => {
     const autoRecords = {
       ...createDefaultSourceBlocks().auto_records,

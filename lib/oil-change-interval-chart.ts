@@ -34,6 +34,12 @@ import {
   type OilExceededInterval,
   type OilNoteLang,
 } from "@/lib/oil-interval-dealer-notes";
+import {
+  isBatteryElectricVehicle,
+  normalizeBevOemLine,
+  stripOilChangeContentForBev,
+  type BevSignals,
+} from "@/lib/vehicle-bev";
 
 export type OilIntervalChartRow = {
   id: string;
@@ -217,6 +223,29 @@ export function defaultOemOilIntervalForBlock(block: AutoRecordsBlockState): Oem
   });
 }
 
+/**
+ * Nils 27.11.2026: vai dīlera bloka auto ir tīrs elektroauto (BEV). `extra` - CSDD degviela, modelis,
+ * dzinēja kods no citiem blokiem; `oilText` - eļļas lauka pirmā rinda «nav piemērojams (elektroauto …)».
+ */
+export function oilBlockIsBev(
+  block: AutoRecordsBlockState | null | undefined,
+  extra?: BevSignals,
+): boolean {
+  const vi = block?.outvinReport?.vehicleInfo;
+  const b = block ?? ({} as AutoRecordsBlockState);
+  return isBatteryElectricVehicle({
+    fuel: [vi?.fuel, ...(block ? oneautoVehicleStrings(b, /fuel/i) : []), ...(extra?.fuel ?? [])],
+    engineCodes: [vi?.engineCode, ...(block ? oneautoVehicleStrings(b, /engine/i) : []), ...(extra?.engineCodes ?? [])],
+    models: [
+      vi?.model,
+      vi?.modelSeries,
+      ...(block ? oneautoVehicleStrings(b, /desc|model|derivative|variant/i) : []),
+      ...(extra?.models ?? []),
+    ],
+    oilText: extra?.oilText ?? block?.oilChangeIntervalNotes ?? "",
+  });
+}
+
 export function resolveOilIntervalOem(block: AutoRecordsBlockState): OemOilInterval | null {
   const chart = block.oilIntervalChart;
   if (chart?.oemKm != null) {
@@ -392,13 +421,23 @@ export function applyDefaultOemLine(block: AutoRecordsBlockState, text: string):
   return def ? text.replace(OEM_UNKNOWN_LINE_RE, formatOemOilCaption(def)) : text;
 }
 
-/** Eļļas komentārs ar obligātajām piebildēm (Nils 26.11.2026). */
+/**
+ * Eļļas komentārs ar obligātajām piebildēm (Nils 26.11.2026).
+ * BEV (Nils 27.11.2026): eļļas maiņas rindkopas izmet, piebildes nepievieno, pirmā rinda
+ * «Ražotāja intervāls: nav piemērojams (elektroauto, KODS).».
+ */
 export function oilIntervalNotesWithRequiredNotes(
   block: AutoRecordsBlockState,
   text: string,
   lang?: OilNoteLang | null,
+  opts?: { bev?: boolean; engineCode?: string | null },
 ): string {
   if (!(text ?? "").trim()) return text ?? "";
+  const bev = opts?.bev ?? oilBlockIsBev(block, { oilText: text });
+  if (bev) {
+    const code = opts?.engineCode ?? block.outvinReport?.vehicleInfo?.engineCode ?? "";
+    return stripOilChangeContentForBev(normalizeBevOemLine(replaceOilStepWordingLv(text), code));
+  }
   const worded = applyDefaultOemLine(block, replaceOilStepWordingLv(text));
   const intervals = oilExceededIntervalsForBlock(block, { oemText: worded });
   return ensureOilIntervalNotes(worded, intervals, lang ?? detectOilNoteLang(worded));

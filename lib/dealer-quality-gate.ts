@@ -15,6 +15,7 @@ import {
   serviceVisitDatesAreClose,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import { isDealerRecommendationSentence } from "@/lib/dealer-comments-review-core";
 import { commentContradictsPowertrain, extractLoadedPowertrainIdentity } from "@/lib/comment-powertrain-guard";
 import type { DealerDataJob } from "@/lib/dealer-data-job-types";
 import {
@@ -422,6 +423,13 @@ function checkTranslation(input: DealerQualityGateInput): DealerGateCheck {
 /** Ieteikumu frāzes (dīlera produktā tikai fakti, Nils 22.11). */
 export const DEALER_GATE_RECOMMENDATION_RE =
   /jāpārbauda|ieteicam\p{L}*|iesakām|iesak\p{L}*|ieteikum\p{L}*|pārdevējam\s+jā\p{L}*|jālūdz\p{L}*|jāprasa\p{L}*|lūdziet|pārbaudiet|pārbaudīt\s+apskat\p{L}*|apskatē\s+(?:jā)?pārbaud\p{L}*|vajadzētu|būtu\s+jā\p{L}*|jāpārliecinās|vērts\s+pārbaudīt|nepieciešams\s+(?:pārbaudīt|pieprasīt|lūgt)|pieprasīt\p{L}*\s+(?:dokument|rēķin|servisa\s+grāmatiņ)\p{L}*/iu;
+/**
+ * 27.11: vārti ķer ieteikumus visās PRO klienta valodās - LV vārtu regex + kopīgais
+ * `isDealerRecommendationSentence` (LV / EN / RU / DE), ko lieto arī automātiskā tīrīšana.
+ */
+export const DEALER_GATE_RECOMMENDATION_TEST = {
+  test: (s: string): boolean => DEALER_GATE_RECOMMENDATION_RE.test(s) || isDealerRecommendationSentence(s),
+};
 const EXPERT_RE = /eksper\p{L}*/iu;
 /** Vecā dīlera „Komentāri” lomu virsraksti, kas atkārto PDF tabulas (pirms #1115 / #1118). */
 export const DEALER_GATE_OLD_COMMENT_ROLE_RE =
@@ -429,7 +437,7 @@ export const DEALER_GATE_OLD_COMMENT_ROLE_RE =
 const LONG_DASH_RE = /[—–]/u;
 const IRISS_RE = /(?<!\p{L})[iī]riss(?!\p{L})/iu;
 
-function firstHit(text: string, re: RegExp): string | null {
+function firstHit(text: string, re: { test(s: string): boolean }): string | null {
   for (const s of sentencesOf(text)) if (re.test(s)) return s;
   return null;
 }
@@ -439,8 +447,8 @@ function checkForbidden(input: DealerQualityGateInput): DealerGateCheck {
     { text: input.oilNotes, place: "oil_notes", label: "Eļļas intervāli" },
     { text: input.comments, place: "comments", label: "Komentāri" },
   ];
-  const rules: { re: RegExp; what: string }[] = [
-    { re: DEALER_GATE_RECOMMENDATION_RE, what: "ieteikums" },
+  const rules: { re: { test(s: string): boolean }; what: string }[] = [
+    { re: DEALER_GATE_RECOMMENDATION_TEST, what: "ieteikums" },
     { re: EXPERT_RE, what: "vārds «eksperts»" },
     { re: LONG_DASH_RE, what: "garā domuzīme" },
     { re: IRISS_RE, what: "«IRISS»" },

@@ -27,6 +27,7 @@ import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import { browserImportRowNote, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
+  orderVinScanCollapsedDots,
   formatOrderVinScanClock,
   parseOrderVinScanRecord,
   sameOrderVinScanRecord,
@@ -249,16 +250,8 @@ export function AdminOrderVinScanCard({
         ? `skenēts automātiski ${clock}${sourceCount ? ` · ${sourceCount} bezmaksas avoti` : ""}`
         : "vēl nav skenēts";
 
-  const dotRows = useMemo(() => {
-    if (!summary) return [];
-    const main = summary.rows.map((row) => ({
-      id: row.id,
-      state: row.state,
-      label: row.label,
-    }));
-    const none = summary.noneRows.map((row) => ({ id: row.id, state: "none" as const, label: row.label }));
-    return [...main, ...none];
-  }, [summary]);
+  // 27.11 (Nils): sakļautajā joslā punkti tikai avotiem ar datiem; «Rādīt sarakstu» - visi.
+  const dotRows = useMemo(() => orderVinScanCollapsedDots(summary), [summary]);
 
   const startScan = useCallback(async (sourceId?: string): Promise<OrderVinScanRecord | null> => {
     if (busy || !vin.trim()) return null;
@@ -363,8 +356,8 @@ export function AdminOrderVinScanCard({
         <>
           <span className="flex flex-wrap items-center gap-1">
             <Counter state="found" count={summary.found} label="atrasta info" />
-            <Counter state="none" count={summary.none} label="nav datu" />
-            <Counter state="error" count={summary.error} label="kļūda" />
+            {summary.none > 0 ? <Counter state="none" count={summary.none} label="nav datu" /> : null}
+            {summary.error > 0 ? <Counter state="error" count={summary.error} label="kļūda" /> : null}
             {summary.blocked > 0 ? <Counter state="blocked" count={summary.blocked} label="bloķē" /> : null}
             {summary.timeout > 0 ? <Counter state="timeout" count={summary.timeout} label="noildze" /> : null}
             {summary.configMissing > 0 ? (
@@ -372,26 +365,12 @@ export function AdminOrderVinScanCard({
             ) : null}
             {summary.browserOnly > 0 ? <Counter state="browser_only" count={summary.browserOnly} label="pārlūks" /> : null}
           </span>
-          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avotu indikatori">
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avoti ar datiem">
             {dotRows.map((row) => (
               <span
                 key={row.id}
                 className="inline-flex p-0.5"
-                title={`${row.label}: ${
-                  row.state === "found"
-                    ? "atrasta info"
-                    : row.state === "blocked"
-                      ? "bloķē"
-                      : row.state === "timeout"
-                        ? "noildze"
-                        : row.state === "config_missing"
-                          ? "nav atslēgas"
-                          : row.state === "browser_only"
-                            ? "pārlūks"
-                            : row.state === "error"
-                              ? "kļūda"
-                              : "nav datu"
-                }`}
+                title={`${row.label}: atrasta info`}
               >
                 <Dot state={row.state} />
               </span>

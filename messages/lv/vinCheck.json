@@ -9,7 +9,7 @@
     "whyTitle": "Kāpēc nepietiek ar vienu auto atskaiti?",
     "whyBody": "Katrā atskaitē redzams tikai tas, kas iegūts no vienas konkrētas datubāzes, un dažādu datubāzu dati bieži ievērojami atšķiras. Mēs apvienojam vairāku datubāzu informāciju vienā pārskatā. Papildus VIN pārbaudei izvērtējam arī sludinājumu un konkrētā modeļa vājās vietas. Ja tev ir sludinājuma saite, noteikti pievieno to pasūtījumam.",
     "howTitle": "Kā notiek pārbaude PROVIN",
-    "howBody": "Sākumlapā ievadi VIN kodu vai valsts reģistrācijas numuru, izvēlies PROVIN AUDITS vai dīlera datus un pievieno sludinājuma saiti, ja tāda ir. AUDITS ir padziļināta pārbaude visiem auto, tostarp tiem, kas ievesti Latvijā: Latvijas reģistri, starptautiskās datubāzes, dīleru sistēmas un izsoļu arhīvi, ja tie ir pieejami. Rezultātu parasti saņemsi 24-72 stundu laikā, un pēc atskaites iespējama īsa konsultācija.",
+    "howBody": "Sākumlapā ievadi VIN kodu vai valsts reģistrācijas numuru, izvēlies PROVIN AUDITU vai dīlera datus un pievieno sludinājuma saiti, ja tāda ir. AUDITS ir padziļināta pārbaude visiem auto, tostarp tiem, kas ievesti Latvijā: Latvijas reģistri, starptautiskās datubāzes, dīleru sistēmas un izsoļu arhīvi, ja tie ir pieejami. Rezultātu parasti saņemsi 24-72 stundu laikā, un pēc atskaites iespējama īsa konsultācija.",
     "ctaServices": "Skatīt pakalpojumus un cenas",
     "ctaOrder": "Pasūtīt VIN pārbaudi",
     "ctaFaq": "Biežāk uzdotie jautājumi",
