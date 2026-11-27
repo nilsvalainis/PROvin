@@ -46,6 +46,7 @@ import {
   serializeOrderEditsForLocalStorage,
 } from "@/lib/admin-order-edits-persist";
 import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResultColorControl";
+import { AdminOrderNoteChip, useAdminOrderNote } from "@/components/admin/AdminOrderNote";
 import { AdminReviewAskPanel } from "@/components/admin/AdminReviewAskPanel";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
@@ -207,6 +208,12 @@ export function AdminOrderDetailView({
   auditResultColor?: AuditResultColor | null;
 }) {
   const [edits, setEdits] = useState<OrderEdits>(() => orderEditsFromServerDraft(serverOrderDraft));
+  /** Iekšēja piezīme (makets B 27.11) - saglabājas atsevišķi, nav `edits` (nekad PDF / klientam). */
+  const [adminNote, setAdminNote, adminNoteStatus] = useAdminOrderNote(
+    order.id,
+    serverOrderDraft?.orderEdits?.adminNote ?? null,
+    orderDraftPersistenceEnabled && !order.isDemo,
+  );
   const [hydrated, setHydrated] = useState(false);
   const [vinCopyFlash, setVinCopyFlash] = useState(false);
   const [listingCopyFlash, setListingCopyFlash] = useState(false);
@@ -812,6 +819,7 @@ export function AdminOrderDetailView({
           {/* Telefonā virsraksts ir mobilajā galvenē; šeit paliek rezultāta krāsa un produkts. */}
           <span className="max-md:sr-only">Pasūtījums</span>
           <AdminAuditResultColorControl sessionId={order.id} initialColor={auditResultColor} />
+          <AdminOrderNoteChip note={adminNote} onChange={setAdminNote} status={adminNoteStatus} />
         </h1>
         <p className="text-[11px] font-semibold text-[var(--color-provin-muted)]" title="Pasūtītais produkts">
           <span className="uppercase tracking-wide text-[var(--color-apple-text)]">
@@ -887,6 +895,7 @@ export function AdminOrderDetailView({
                 <span className="tabular-nums"> · {formatMoneyEur(order.amountTotal, order.currency)}</span>
               ) : null}
             </span>
+            <AdminOrderNoteChip note={adminNote} onChange={setAdminNote} status={adminNoteStatus} variant="mobile" />
           </>
         }
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}

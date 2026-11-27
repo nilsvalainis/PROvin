@@ -11,6 +11,7 @@ import {
   orderVinScanDashboardHintFromRecord,
   type OrderVinScanDashboardHint,
 } from "@/lib/order-vin-scan";
+import { parseOrderAdminNote, type OrderAdminNote } from "@/lib/order-admin-note";
 
 const INDEX_FILENAME = "admin-dashboard-draft-index.json";
 
@@ -29,6 +30,8 @@ export type DashboardDraftIndexEntry = {
   notes: string | null;
   /** Bezmaksas VIN SCAN kopsavilkums jaunajām dashboard kartītēm. */
   vinScan: OrderVinScanDashboardHint | null;
+  /** Iekšēja admina piezīme - saraksta krāsainais punkts (tikai adminā). */
+  adminNote?: OrderAdminNote | null;
 };
 
 type DashboardDraftIndexDoc = {
@@ -80,6 +83,7 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
     vin: typeof o.vin === "string" && o.vin.trim() ? o.vin.trim() : null,
     notes: typeof o.notes === "string" && o.notes.trim() ? o.notes.trim() : null,
     vinScan: parseOrderVinScanDashboardHint(o.vinScan),
+    adminNote: parseOrderAdminNote(o.adminNote),
   };
 }
 
@@ -194,6 +198,7 @@ export async function upsertDashboardDraftIndexEntry(
     vin: patch.vin !== undefined ? patch.vin : prev.vin,
     notes: patch.notes !== undefined ? patch.notes : prev.notes,
     vinScan: patch.vinScan !== undefined ? patch.vinScan : prev.vinScan,
+    adminNote: patch.adminNote !== undefined ? patch.adminNote : (prev.adminNote ?? null),
   };
   doc.updatedAt = new Date().toISOString();
   await writeDashboardDraftIndexDoc(doc);
@@ -444,6 +449,7 @@ export function dashboardDraftEntryFromOrderEdits(
     customerPhone?: string | null;
     vin?: string | null;
     notes?: string | null;
+    adminNote?: OrderAdminNote | null;
   } | null | undefined,
   invoicePdfUrl?: string | null,
   workspace?: unknown,
@@ -465,6 +471,7 @@ export function dashboardDraftEntryFromOrderEdits(
     makeModel: extractCsddMakeModelFromWorkspace(workspace),
     vin: vin || null,
     notes: notes || null,
+    adminNote: parseOrderAdminNote(orderEdits?.adminNote),
     ...(extras?.invoiceNumber !== undefined ? { invoiceNumber: extras.invoiceNumber } : {}),
     ...(extras?.clientReportReadyAt !== undefined ? { clientReportReadyAt: extras.clientReportReadyAt } : {}),
   };

@@ -37,6 +37,7 @@ import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-cl
 import { dealerMajorWorkOverridesSnapshotField } from "@/lib/dealer-major-works-override-persist";
 import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { parseOrderAdminNote } from "@/lib/order-admin-note";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import { parseOrderVinPlateResolution } from "@/lib/order-vin-plate-resolution";
@@ -316,6 +317,8 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       orderEdits.sourcesComparisonComment = e.sourcesComparisonComment;
     }
     if (typeof e.clientLangOverride === "string") orderEdits.clientLangOverride = e.clientLangOverride;
+    const adminNote = parseOrderAdminNote(e.adminNote);
+    if (adminNote) orderEdits.adminNote = adminNote;
   }
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -870,9 +873,14 @@ async function patchOrderDraftUnlocked(
       const lang = patch.orderEdits.clientLangOverride.trim().toLowerCase();
       sanitizedPatch.clientLangOverride = lang === "lv" || lang === "en" || lang === "ru" || lang === "de" ? lang : "";
     }
+    if (patch.orderEdits.adminNote !== undefined) {
+      sanitizedPatch.adminNote = parseOrderAdminNote(patch.orderEdits.adminNote);
+    }
   }
-  const nextOrderEdits =
+  const nextOrderEdits: OrderDraftOrderEdits =
     patch.orderEdits !== undefined ? { ...prevEdits, ...sanitizedPatch } : prevEdits;
+  // Iekšējā piezīme: `null` = dzēsta (atslēgu JSON neglabā).
+  if (nextOrderEdits.adminNote === null) delete nextOrderEdits.adminNote;
 
   let nextWorkspace =
     workspacePatch !== undefined ? workspacePatch : prev?.workspace ?? null;

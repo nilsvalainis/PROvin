@@ -5,6 +5,7 @@
  */
 import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
 import { NextResponse, after } from "next/server";
+import { parseOrderAdminNote } from "@/lib/order-admin-note";
 import { getAdminSession } from "@/lib/admin-auth";
 import { syncDealerJobWithDraftData } from "@/lib/dealer-manual-data-sync";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
@@ -159,6 +160,14 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.mileageComment === "string") out.mileageComment = o.mileageComment;
   if (typeof o.sourcesComparisonComment === "string") out.sourcesComparisonComment = o.sourcesComparisonComment;
   if (typeof o.clientLangOverride === "string") out.clientLangOverride = o.clientLangOverride;
+  if ("adminNote" in o) {
+    if (o.adminNote === null) out.adminNote = null;
+    else {
+      const note = parseOrderAdminNote(o.adminNote);
+      if (!note) return null;
+      out.adminNote = note;
+    }
+  }
   return out;
 }
 
