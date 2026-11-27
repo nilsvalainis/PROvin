@@ -175,7 +175,7 @@ describe("PDF sadaļa", () => {
   it("nosaukums, viena rinda uz tipu, sarkanā nobraukuma rinda, audita saite", () => {
     const html = buildDealerSignalsSectionHtml(dealer(ALL_ON), "lv");
     expect(html).toContain(DEALER_SIGNALS_SECTION_TITLE.lv);
-    expect(html.match(/<tr class="pdf-dealer-signal-row/g)).toHaveLength(6);
+    expect(html.match(/<tr class="pdf-dealer-signal-row/g)).toHaveLength(DEALER_SIGNAL_KINDS.length);
     expect(html.match(/pdf-dealer-signal-row--alert/g)).toHaveLength(2);
     expect(html).toMatch(/pdf-dealer-signal-row--alert" data-signal="mileage_mismatch"/);
     expect(html).toMatch(/pdf-dealer-signal-row--alert" data-signal="special_status"/);
