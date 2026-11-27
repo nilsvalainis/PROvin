@@ -517,15 +517,44 @@ export function dealerDataAlertText(
   }
 }
 
+/** Ielasīts, bet AI komentāri (eļļas intervāli + «Komentāri») nav ģenerēti - sarkans adminā. */
+export const DEALER_AI_MISSING_LABEL = "AI komentāri nav ģenerēti - spied «Ielasīt vēlreiz» (bez maksas)";
+
+/**
+ * Pabeigts darbs ar vēsturi, kuram AI komentāri nav ģenerēti (BF 27.11, S6: pēc OneAuto
+ * «insufficient_balance» darbs beidzās «done» bez AI). Tikai automātikas darbiem - manuāla pirkuma
+ * ieraksts (audits) AI dīlera komentārus negaida.
+ */
+export function dealerDataJobMissingAi(
+  job:
+    | (Pick<DealerDataJob, "status" | "aiGenerated" | "serviceEventCount" | "trigger"> &
+        Partial<Pick<DealerDataJob, "createdAt">>)
+    | null
+    | undefined,
+): boolean {
+  if (!job || job.status !== "done" || job.aiGenerated === true) return false;
+  if ((job.serviceEventCount ?? 0) <= 0) return false;
+  if (job.aiGenerated === false) return true;
+  // Lauka nav: automātikas darbs pēc #1104 (no tā brīža «done» vienmēr saglabā aiGenerated) - pabeigts citur bez AI.
+  return job.trigger !== "manual" && (job.createdAt ?? "") >= DEALER_AI_FLAG_SINCE;
+}
+
+/** Kopš #1104 (20.11.2026) automātika «done» brīdī vienmēr ieraksta `aiGenerated`; vecākiem darbiem lauka nav. */
+export const DEALER_AI_FLAG_SINCE = "2026-11-21T00:00:00.000Z";
+
 /** Statuss pasūtījumam, kuram datu nav un atmaksa vēl nav apstiprināta (sarkans adminā). */
 export const DEALER_REFUND_AWAITING_LABEL = "Gaida atmaksas apstiprinājumu";
 
 /** Īsa sarkanā atzīme pasūtījumu sarakstā (null - nekas nav jādara). */
 export function dealerDataListAlertLabel(
-  job: Pick<DealerDataJob, "status" | "attempts" | "error" | "refund"> | null,
+  job:
+    | (Pick<DealerDataJob, "status" | "attempts" | "error" | "refund"> &
+        Partial<Pick<DealerDataJob, "aiGenerated" | "serviceEventCount" | "trigger" | "createdAt">>)
+    | null,
 ): string | null {
   if (!job) return null;
   if (job.status === "no_vin") return "Nav VIN";
+  if (dealerDataJobMissingAi(job)) return "AI komentāri nav";
   if (job.status === "failed") {
     if (job.error === "draft_write_failed") return "Dīlera dati nav melnrakstā";
     return job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS ? "Dīlera ielase: kļūda" : null;
@@ -743,7 +772,10 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
   if (!job) return "Nav palaists";
   switch (job.status) {
     case "pending":
-      return "Gaida ielasi";
+      // Vēsture jau nopirkta (piem. manuāli pēc avota kļūdas) - gaida tikai AI komentārus.
+      return (job.serviceEventCount ?? 0) > 0
+        ? `Ielasīts: ${job.serviceEventCount} servisa ieraksti, AI komentāri tiek ģenerēti`
+        : "Gaida ielasi";
     case "running":
       return "Ielasa datus…";
     case "done": {
@@ -758,7 +790,10 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
               ? "VIN dekodēšana (nav datu)"
               : null;
       const parts = [decodeBit, `${job.serviceEventCount ?? 0} servisa ieraksti`].filter(Boolean);
-      return `Ielasīts: ${parts.join(", ")}`;
+      // BF 27.11 (S6): «Ielasīts» bez AI komentāriem nedrīkst izskatīties gatavs.
+      return dealerDataJobMissingAi(job)
+        ? `Ielasīts: ${parts.join(", ")} · ${DEALER_AI_MISSING_LABEL}`
+        : `Ielasīts: ${parts.join(", ")}`;
     }
     case "no_data":
       return job.refund ? "Dīlera dati nav pieejami" : `Dīlera dati nav pieejami · ${DEALER_REFUND_AWAITING_LABEL}`;
