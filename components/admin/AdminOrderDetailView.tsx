@@ -127,6 +127,8 @@ export type AdminOrderDetailClientModel = {
   partnerAuditPurpose?: "client" | "internal" | null;
   /** Stripe `metadata.checkout_line` — MINI vs AUDITS PDF nosaukumam. */
   checkoutLine?: string | null;
+  /** Stripe `session.locale` - vietnes valoda pasūtot (klienta PDF / e-pastu noklusētā valoda). */
+  locale?: string | null;
   selectBrandModel?: string | null;
   selectProductionYearsDpf?: string | null;
   selectPlannedBudget?: string | null;
@@ -902,6 +904,7 @@ export function AdminOrderDetailView({
           paymentStatus: order.paymentStatus,
           isManual: Boolean(order.isManual),
           checkoutLine: order.checkoutLine ?? null,
+          locale: order.locale ?? null,
           partnerCompanyName: order.partnerCompanyName?.trim() || null,
           partnerId: order.partnerId?.trim() || null,
           listingUrl: mergedListing.trim() || null,

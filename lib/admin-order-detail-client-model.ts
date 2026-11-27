@@ -81,6 +81,7 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     ...(typeof order.checkoutLine === "string" && order.checkoutLine.trim()
       ? { checkoutLine: order.checkoutLine.trim() }
       : {}),
+    ...(str(order.locale).trim() ? { locale: str(order.locale).trim().toLowerCase() } : {}),
     selectBrandModel: str(order.selectBrandModel) || null,
     selectProductionYearsDpf: str(order.selectProductionYearsDpf) || null,
     selectPlannedBudget: str(order.selectPlannedBudget) || null,

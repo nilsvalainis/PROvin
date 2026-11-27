@@ -326,7 +326,8 @@ import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReview
 import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
-import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { AdminPdfClientLangContext, AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
 import { AdminDealerExtraMenu } from "@/components/admin/AdminDealerExtraMenu";
 import { ADMIN_ORDERS_LIST_HREF, dealerSentFlashText, writeOrdersListFlash } from "@/lib/admin-orders-list-flash";
 import { AdminReportPreviewDialog, type ReportPreviewHtml } from "@/components/admin/AdminReportPreviewDialog";
@@ -500,6 +501,8 @@ export type OrderWorkspacePayload = {
   isManual?: boolean;
   /** Stripe checkout line — PDF faila nosaukumam (MINI vs AUDITS). */
   checkoutLine?: string | null;
+  /** Stripe `session.locale` - vietnes valoda pasūtot; klienta PDF / e-pasta noklusētā valoda. */
+  locale?: string | null;
   partnerCompanyName?: string | null;
   partnerId?: string | null;
   listingUrl: string | null;
@@ -992,6 +995,8 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
+  /** Klienta valoda (Nils 27.11): partnera izvēle, citādi vietnes valoda pasūtot, citādi LV. */
+  const orderClientLang = resolveOrderClientLang({ notes: payload.notes, locale: payload.locale });
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -3900,10 +3905,10 @@ export function OrderDetailWorkspace({
     setNotifyExtraPdfSaveBusy(false);
     setNotifyExtraPdfSaveMsg(null);
     setNotifyExtraPdfSaveOk(false);
-    setNotifyLang("lv");
+    setNotifyLang(orderClientLang);
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
-  }, []);
+  }, [orderClientLang]);
 
   const persistNotifyExtraAuditPdf = useCallback(async (file: File, filename: string) => {
     setNotifyExtraPdfSaveBusy(true);
@@ -5326,6 +5331,13 @@ export function OrderDetailWorkspace({
               >
                 Partnera atskaites valoda: {partnerReportLang.toUpperCase()}
               </span>
+            ) : orderClientLang !== "lv" ? (
+              <span
+                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700"
+                title="Klients pasūtīja šajā vietnes valodā. PDF un e-pasts pēc noklusējuma šajā valodā; LV - ar bultiņu."
+              >
+                Klienta valoda: {orderClientLang.toUpperCase()}
+              </span>
             ) : null}
             <AdminPdfIncludeToggle
               checked={pdfVisibility.portfolio}
@@ -5909,6 +5921,7 @@ export function OrderDetailWorkspace({
 
   return (
     <ContradictionFeedbackContext.Provider value={contradictionFeedbackCtx}>
+    <AdminPdfClientLangContext.Provider value={orderClientLang}>
     <AdminAutoIngestChipProvider chips={autoIngestChips}>
     <div className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]">
       {previewBody}
@@ -6674,7 +6687,7 @@ export function OrderDetailWorkspace({
             canRefund={dealerCanRefund}
             walletRefund={dealerWalletRefund}
             b2bClient={b2bClientOrder}
-            reportLang={partnerReportLang}
+            reportLang={orderClientLang}
             dealerSend={dealerSendBridge}
             serviceWorks={blocksDisplaySafe.auto_records.serviceWorks}
             serviceHistoryNotes={blocksDisplaySafe.auto_records.serviceHistoryNotes ?? ""}
@@ -6931,7 +6944,7 @@ export function OrderDetailWorkspace({
               pdfLangLock={pdfLangLock}
               onUnlockPdfLang={unlockPdfLang}
               b2bClient={b2bClientOrder}
-              reportLang={partnerReportLang}
+              reportLang={orderClientLang}
               walletProduct={walletMarks?.product ?? null}
               dealerPdfProgressKey={pdfJob?.key ?? null}
               dealerPdfProgressPct={pdfJob?.pct ?? null}
@@ -7684,6 +7697,7 @@ export function OrderDetailWorkspace({
         : null}
     </div>
     </AdminAutoIngestChipProvider>
+    </AdminPdfClientLangContext.Provider>
     </ContradictionFeedbackContext.Provider>
   );
 }
