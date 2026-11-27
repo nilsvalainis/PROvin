@@ -512,9 +512,20 @@ function relativeLeaves(value: unknown, skipImages = true): Leaf[] {
 
 // --- Bojājumi ---
 
-type DamageDraft = ThecarapiPdfDamage & { baseType: string; rawPart: string; qty: number | null };
+type DamageDraft = ThecarapiPdfDamage & { baseType: string; rawPart: string; qty: number | null; extraTypes?: string[] };
 
-const DAMAGE_TECH_KEYS = /^(id|uuid|index|sort|sortorder|position_index|quantitytype|imageid|damageid|areaid|partid|order)$/i;
+const DAMAGE_TECH_KEYS =
+  /^(id|uuid|index|sort|sortorder|position_index|quantitytype|imageid|damageid|areaid|partid|order|damagekindid|damagelocationid|damagelocationcategoryid|isforbrokencars|areacode|code)$/i;
+
+/**
+ * Openlane zonas ir tikai numuri («1», «13») bez nosaukuma - drukājam «Zona 13», nevis kailu «13»
+ * (27.11, WVWZZZ3CZNE054721: «Area code: 13; Code: 1; Nosaukums: Chip»).
+ */
+export const THECARAPI_NUMERIC_ZONE_RE = /^Zona (\d{1,3})$/;
+function zoneLabel(raw: string): string {
+  const t = raw.trim();
+  return /^\d{1,3}$/.test(t) ? `Zona ${t}` : translateZone(t);
+}
 
 function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null {
   const d: DamageDraft = {
@@ -539,10 +550,17 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
       else d.baseType = translateI18n(value);
     } else d.baseType = translateDamageType(value);
   }
+  const types: string[] = [];
   for (const leaf of relativeLeaves(value)) {
     const key = meaningName(leaf.segs);
     const nk = normKey(key);
     const raw = Array.isArray(leaf.value) ? leaf.value.join(", ") : leaf.value;
+    // Openlane `types: [{ code, name: "Chip" }, { code, name: "Dent" }]` - viena zona, vairāki bojājuma veidi.
+    if (nk === "name" && stringSegs(leaf.segs).some((sg) => /^types$/i.test(sg)) && typeof raw === "string" && raw.trim()) {
+      const t = translateDamageType(raw.trim());
+      if (t && !types.includes(t)) types.push(t);
+      continue;
+    }
     if (typeof raw === "string" && isI18nKey(raw)) {
       const fam = i18nFamily(raw);
       const text = translateI18n(raw);
@@ -564,14 +582,14 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
     }
     if (isStateKey(key) || DAMAGE_TECH_KEYS.test(nk)) continue;
     const str = typeof raw === "string" ? raw.trim() : raw;
-    if (/^(area|zone|region|section|areaname)$/.test(nk)) {
-      d.zone = d.zone || translateZone(String(str));
+    if (/^(area|zone|region|section|areaname|damagelocation)$/.test(nk)) {
+      d.zone = d.zone || zoneLabel(String(str));
     } else if (/^(part|partname|subarea|component|location|position|partkey)$/.test(nk)) {
       if (!d.part) {
         d.part = translatePart(String(str));
         d.rawPart = String(str);
       }
-    } else if (/^(type|damagetype|kind|damage|damagename)$/.test(nk)) {
+    } else if (/^(type|damagetype|kind|damage|damagename|damagekind)$/.test(nk)) {
       d.baseType = d.baseType || translateDamageType(String(str));
     } else if (/^(description|depth|severity|desc|details)$/.test(nk)) {
       // BCA u.c.: `description: "Dent"` ir bojājuma veids, nevis apraksts.
@@ -597,6 +615,10 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
       if (text) notes.push(`${keyLabel(key)}: ${text}`);
     }
   }
+  if (!d.baseType && types.length) {
+    d.baseType = types[0]!;
+    if (types.length > 1) d.extraTypes = types.slice(1);
+  }
   d.type = [d.baseType, desc].filter(Boolean).join(" ");
   d.notes = [...new Set(notes)].join("; ");
   if (!d.zone && d.rawPart) d.zone = zoneFromPart(d.rawPart);
@@ -617,7 +639,11 @@ function damageItems(value: unknown, inheritedZone = ""): DamageDraft[] {
       continue;
     }
     const d = parseDamage(item, inheritedZone);
-    if (d) out.push(d);
+    if (!d) continue;
+    const { extraTypes, ...first } = d;
+    out.push(first);
+    // Viena zona ar vairākiem veidiem (Openlane `types`) -> katrs veids sava rinda, kā `Damages` sarakstā.
+    for (const t of extraTypes ?? []) out.push({ ...first, baseType: t, type: [t, first.type.slice(first.baseType.length).trim()].filter(Boolean).join(" ") });
   }
   return out;
 }
@@ -665,12 +691,17 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
       }
     } else {
       for (const item of items) {
+        const sameZone = (row: DamageDraft): boolean => !item.zone || !row.zone || row.zone === item.zone;
         const match = rows.find(
-          (row) => (!item.part || row.part === item.part) && (!item.baseType || row.baseType === item.baseType) && (!item.size || !row.size || row.size === item.size),
+          (row) =>
+            sameZone(row) &&
+            (!item.part || row.part === item.part) &&
+            (!item.baseType || row.baseType === item.baseType) &&
+            (!item.size || !row.size || row.size === item.size),
         );
         if (!match) {
           // Papildu avots ar bojājumu, kura kanoniskajā avotā nav: nepazaudējam.
-          if (!rows.some((row) => row.part === item.part && row.baseType === item.baseType)) rows.push(item);
+          if (!rows.some((row) => sameZone(row) && row.part === item.part && row.baseType === item.baseType)) rows.push(item);
           continue;
         }
         if (!match.size && item.size) match.size = item.size;

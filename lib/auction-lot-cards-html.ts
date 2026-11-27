@@ -26,7 +26,7 @@ import {
 import { translateAuctionTerms } from "@/lib/auction-terms-i18n";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
-import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
+import { buildThecarapiPdfModel, THECARAPI_NUMERIC_ZONE_RE, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import { splitEquipmentText } from "@/lib/report-language-fixes";
@@ -111,6 +111,12 @@ const ZONE_LABEL: Record<string, string> = {
   roof: "Jumts",
 };
 
+/** «Zona 13» (Openlane numurs bez nosaukuma) klienta valodā; citas zonas - izsoļu terminu vārdnīca. */
+function damageZoneText(zone: string, lang: ClientReportLang): string {
+  const m = THECARAPI_NUMERIC_ZONE_RE.exec(zone.trim());
+  return m ? `${auctionCardText("Zona", lang)} ${m[1]}` : translateAuctionTerms(zone, lang);
+}
+
 /** Bojājumu bloks izsoles kartītē: shēma (6/12) + saraksts (6/12). Bez bojājumiem un atzīmēm - tukšs. */
 export function auctionArchiveDamageBlockHtml(
   damages: readonly ThecarapiPdfDamage[],
@@ -143,7 +149,7 @@ export function auctionArchiveDamageBlockHtml(
   const rows = [
     ...damages.map(
       (d) =>
-        `<li><b>${esc([translateAuctionTerms(d.zone, lang), d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
+        `<li><b>${esc([damageZoneText(d.zone, lang), d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
           [translateAuctionTerms(d.type, lang), d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
         )}</span></li>`,
     ),

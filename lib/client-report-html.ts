@@ -2407,9 +2407,18 @@ function buildCcVinAvotuSubsection(
   const tcKeys = collectPdfPhotoKeys((b?.thecarapiRecords ?? []).map((record) => ({ photos: record.photos })));
   const isTcPhoto = (photo: { id?: string; sourceUrl?: string; contentHash?: string }): boolean =>
     tcIds.has(photo.id ?? "") || [...collectPdfPhotoKeys([{ photos: [photo] }])].some((k) => !k.startsWith("id:") && tcKeys.has(k));
+  // 27.11 (WVWZZZ3CZNE054721): tā pati izsoles bilde 10 grupās (katrai atkārtotajai izsolei sava grupa) -
+  // bez dublikātu filtra PDF drukāja 190 bildes 19 vietā (12 MB, 13 lapas). Viena bilde = viena reize.
+  const groupTcSeen = new Set<string>();
   const groupTcPhotos = (b?.photoGroups ?? []).flatMap((group) =>
     group.photos
       .filter((photo) => !tcIds.has(photo.id) && isTcPhoto(photo))
+      .filter((photo) => {
+        const keys = [...collectPdfPhotoKeys([{ photos: [photo] }])];
+        if (keys.some((k) => groupTcSeen.has(k))) return false;
+        for (const k of keys) groupTcSeen.add(k);
+        return true;
+      })
       .map((photo) => ({ id: photo.id, sourceUrl: photo.sourceUrl ?? "", contentHash: photo.contentHash ?? "", date: "", venue: "", caption: "" })),
   );
   const otherGroups = (b?.photoGroups ?? []).map((group) => ({
