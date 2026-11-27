@@ -24,6 +24,7 @@ import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-s
 import { collectSourceBlockTexts } from "@/lib/dealer-review-score";
 import { checkThisRegHighlighted, checkThisRegMakeFromBlocks } from "@/lib/checkthisreg";
 import { AdminDealerExtLinks } from "@/components/admin/AdminDealerExtLinks";
+import { AdminCheckThisRegChip } from "@/components/admin/AdminCheckThisRegChip";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -238,6 +239,7 @@ export function AdminDealerDataJobStrip({
           vin={vin || orderVin}
           highlightMake={checkThisRegHighlighted(job?.status, ctrMake) ? ctrMake : null}
         />
+        <AdminCheckThisRegChip sessionId={sessionId} />
         {showRefund ? (
           <button
             type="button"

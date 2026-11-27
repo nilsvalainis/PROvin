@@ -275,6 +275,23 @@ async function generateDealerNotes(
 }
 
 /**
+ * Dīlera AI komentāri (eļļas intervāli + «Komentāri») pēc ārēji ievadītiem dīlera datiem (CheckThisReg, 27.11):
+ * tas pats ceļš un filtri kā OneAuto ielasei, valoda pēc pasūtījuma (RAW - oriģinālvaloda). Tikai tukšie lauki.
+ */
+export async function generateDealerNotesForExternalData(
+  sessionId: string,
+  vin: string,
+): Promise<{ oil: boolean; comments: boolean; lang: DealerCommentOutputLang }> {
+  const draft = await readOrderDraft(sessionId);
+  const marks = parseB2bWalletOrderMarks(draft?.orderEdits?.notes ?? "");
+  const job = await readDealerDataJob(sessionId).catch(() => null);
+  const skipTranslate = job?.skipTranslate ?? marks?.product === "dealer_raw";
+  const lang = resolveDealerCommentOutputLang({ walletProduct: marks?.product, reportLang: marks?.reportLang, skipTranslate });
+  const wrote = await generateDealerNotes(sessionId, normalizeVin(vin), lang);
+  return { oil: wrote.has("oilChangeIntervalNotes"), comments: wrote.has("comments"), lang };
+}
+
+/**
  * Atzīmē darbu kā gaidošu uzreiz pēc apmaksas. Ja fona izpilde nenotiek
  * (funkcija apturēta, deploy vidū), cron slaucītājs to atradīs pēc indeksa.
  */

@@ -1,0 +1,10 @@
+[Unit]
+Description=CheckThisReg ievade ik 10 min
+
+[Timer]
+OnCalendar=*:0/10
+AccuracySec=1min
+Persistent=false
+
+[Install]
+WantedBy=timers.target
