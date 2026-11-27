@@ -8,6 +8,7 @@ import {
   orderDropboxFolderPath,
   orderDropboxNameWithCategory,
   orderDropboxShouldRename,
+  makeFromVinForFolder,
   parseOrderDropboxRecord,
 } from "@/lib/order-dropbox-folder";
 
@@ -50,6 +51,17 @@ describe("nosaukums: marka modelis vispirms", () => {
     expect(orderDropboxFolderName({ ...base, category: "audits", plate: "RO8544" })).toBe("RO8544_2026-11-23_AUDITS");
     expect(orderDropboxFolderName({ ...base, category: "audits" })).toBe("2026-11-23_AUDITS_e5f6g7");
   });
+  it("Nils 27.11: bez CSDD markas mape sākas ar marku no VIN (WMI), nevis ar VIN", () => {
+    expect(orderDropboxFolderName({ ...base, category: "dealer", vin: "WAUZZZ8R9CA137496" })).toBe("AUDI_WAUZZZ8R9CA137496_2026-11-23_DILERA DATI");
+    expect(orderDropboxFolderName({ ...base, category: "audits", vin: "WDB2200261A291096" })).toBe("MERCEDES-BENZ_WDB2200261A291096_2026-11-23_AUDITS");
+    expect(orderDropboxFolderName({ ...base, category: "dealer", vin: "SJNFFAJ11U2507806" })).toBe("NISSAN_SJNFFAJ11U2507806_2026-11-23_DILERA DATI");
+    // CSDD marka/modelis ir noteicošā
+    expect(orderDropboxFolderName({ ...base, category: "audits", make: "VW", model: "Passat", vin: "WVWZZZ3CZNE054721" })).toBe(
+      "VW PASSAT_WVWZZZ3CZNE054721_2026-11-23_AUDITS",
+    );
+    expect(makeFromVinForFolder("")).toBe("");
+    expect(makeFromVinForFolder("RO8544")).toBe("");
+  });
   it("modelis neatkārto marku; slīpsvītras un _ netiek mapē", () => {
     expect(makeModelPart("BMW", "BMW 640i")).toBe("BMW 640I");
     expect(makeModelPart("VW", "Golf/Variant_1.6")).toBe("VW GOLF VARIANT 1.6");
@@ -65,6 +77,11 @@ describe("nosaukums: marka modelis vispirms", () => {
     expect(orderDropboxShouldRename("RO8544_2026-11-23_AUDITS", "LAND ROVER DISCOVERY_RO8544_2026-11-23_AUDITS")).toBe(true);
     expect(orderDropboxShouldRename("LAND ROVER DISCOVERY_RO8544_2026-11-23_AUDITS", "RO8544_2026-11-23_AUDITS")).toBe(false);
     expect(orderDropboxShouldRename("A", "A")).toBe(false);
+    // marka no VIN -> CSDD marka + modelis (īsāks, bet bagātāks)
+    expect(orderDropboxShouldRename("VOLKSWAGEN_WVWZZZ3CZNE054721_2026-11-23_AUDITS", "VW PASSAT_WVWZZZ3CZNE054721_2026-11-23_AUDITS")).toBe(true);
+    // ne atpakaļ uz marku no VIN, ne zaudējot numuru
+    expect(orderDropboxShouldRename("AUDI Q5_WAUZZZ8R9CA137496_2026-11-23_DILERA DATI", "AUDI_WAUZZZ8R9CA137496_2026-11-23_DILERA DATI")).toBe(false);
+    expect(orderDropboxShouldRename("VOLKSWAGEN_OR9970_WVWZZZ3CZNE054721_2026-11-23_AUDITS", "VW PASSAT_WVWZZZ3CZNE054721_2026-11-23_AUDITS")).toBe(false);
   });
 });
 

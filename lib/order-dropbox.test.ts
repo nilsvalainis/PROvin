@@ -108,7 +108,7 @@ describe("ensureOrderDropboxFolder", () => {
   it("dīlera dati - atsevišķa virsmape (izveido tikai pie pirmā faila)", async () => {
     const dbx = fakeDropbox();
     const r = await ensureOrderDropboxFolder("cs_test_dealer", { category: "dealer", createdMs: created, vin: "WBA5R1C0XLFH42873", client: dbx.client, materialize: true });
-    expect(r?.path).toBe("/_PROv/DILERA DATI/WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
+    expect(r?.path).toBe("/_PROv/DILERA DATI/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
   });
 
   it("dīlera dati (Nils 27.11): pie pasūtījuma mapi neveido - ieraksts pending; pirmais fails izveido mapi", async () => {
@@ -125,7 +125,7 @@ describe("ensureOrderDropboxFolder", () => {
 
     const saved = await saveFileToOrderFolderOrLegacy("cs_test_dlazy", "Dilera dati.pdf", new Uint8Array([1]), async () => ({ path: "/legacy" }));
     expect(saved.legacy).toBe(false);
-    expect(saved.path).toBe("/_PROv/DILERA DATI/WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
+    expect(saved.path).toBe("/_PROv/DILERA DATI/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
     expect(dbx.calls.create).toBe(1);
     const rec = await readOrderDropboxRecord("cs_test_dlazy");
     expect(rec?.state).toBe("ok");
@@ -254,7 +254,7 @@ describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
     expect(r2?.path).toBe(r1?.path);
     expect((await readOrderDropboxRecord("manual_order_t2"))?.category).toBe("audits");
     const r3 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", dbx.client);
-    expect(r3?.path).toBe("/_PROv/DILERA DATI/WBA00000000000002_2026-11-23_DILERA DATI");
+    expect(r3?.path).toBe("/_PROv/DILERA DATI/BMW_WBA00000000000002_2026-11-23_DILERA DATI");
   });
 
   it("vecs pasūtījums bez mapes ieraksta - neko neveido", async () => {
@@ -269,7 +269,7 @@ describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar ve
     const dbx = fakeDropbox();
     h.client = dbx.client;
     const r1 = await ensureOrderDropboxFolder("cs_test_race", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00001", client: dbx.client, materialize: true });
-    expect(r1?.path).toBe("/_PROv/DILERA DATI/WBAJB5101HWA00001_2026-11-23_DILERA DATI");
+    expect(r1?.path).toBe("/_PROv/DILERA DATI/BMW_WBAJB5101HWA00001_2026-11-23_DILERA DATI");
     h.drafts.set("cs_test_race", {
       workspace: { sourceBlocks: { csdd: { makeModel: "BMW 540I XDRIVE", registrationNumber: "BM0001", vin: "WBAJB5101HWA00001" } } },
     });

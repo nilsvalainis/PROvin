@@ -2,6 +2,8 @@ import { isTelegramGroupPayment } from "@/lib/admin-customer-identity";
 import { reportPdfKindFromFilename } from "@/lib/audit-report-pdf-filename";
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
+import { dealerForecastMakeFromVin } from "@/lib/dealer-coverage-forecast";
+import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
 
 /**
  * PROVIN pasūtījuma Dropbox mape (tīrā loģika). Nils 23.11: mape uzreiz pēc pasūtījuma, dīlera dati strikti atsevišķi
@@ -11,6 +13,8 @@ import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-fiel
  *  - root = `PROV_ORDERS_DROPBOX_ROOT` (noklusējums `/_PROv`, tur jau ir Nila veco auditu mapes);
  *  - VIRSMAPE: AUDITI | DILERA DATI | MINI | BUSINESS (produktus nekad nejauc vienā mapē);
  *  - trūkstošās daļas izlaiž; ja nav ne numura, ne VIN - beigās īss pasūtījuma id;
+ *  - Nils 27.11: «visiem folderiem jāsākas ar marka/modelis» - ja CSDD markas nav (ārzemju VIN, dīlera dati),
+ *    marku ņem no VIN (WMI), lai mape nekad nesāktos ar VIN / numuru;
  *  - marka/modelis vēlāk (CSDD) -> mapi pārdēvē (Dropbox move, tā pati mape pēc id).
  */
 
@@ -128,10 +132,16 @@ function vinPart(vin?: string | null): string {
   return isValidVin(v) ? v : "";
 }
 
+/** Marka pēc VIN WMI («WAU» -> AUDI), kad reģistra markas nav. Tukšs, ja WMI nav zināms. */
+export function makeFromVinForFolder(vin?: string | null): string {
+  const v = vinPart(vin);
+  return v ? cleanPart(decodeVinLocal(v).make || dealerForecastMakeFromVin(v), 40) : "";
+}
+
 export function orderDropboxFolderName(input: OrderDropboxNameInput): string {
-  const mm = makeModelPart(input.make, input.model);
   const plate = platePart(input.plate);
   const vin = vinPart(input.vin);
+  const mm = makeModelPart(input.make, input.model) || makeFromVinForFolder(vin);
   const parts = [mm, plate, vin, rigaYmdForFolder(input.createdMs), CATEGORY_LABEL[input.category]];
   if (!plate && !vin) parts.push(shortOrderId(input.sessionId));
   return sanitizeDropboxName(parts.filter(Boolean).join("_"), 200);
@@ -164,10 +174,19 @@ export function orderDropboxNameWithCategory(currentName: string, from: OrderDro
   return sanitizeDropboxName(next, 200);
 }
 
-/** Mape jāpārdēvē tikai uz bagātāku nosaukumu (parādījās marka/VIN/numurs), nekad "atpakaļ". */
+/**
+ * Mape jāpārdēvē tikai uz bagātāku nosaukumu (parādījās marka/VIN/numurs), nekad "atpakaļ".
+ * Arī īsāks var būt bagātāks: marka no VIN «VOLKSWAGEN_…» -> CSDD «VW PASSAT_…» (modelis klāt), ja visas pārējās
+ * daļas (numurs, VIN, datums, produkts) paliek.
+ */
 export function orderDropboxShouldRename(currentName: string, desiredName: string): boolean {
   if (!currentName || !desiredName || currentName === desiredName) return false;
-  return desiredName.length > currentName.length;
+  if (desiredName.length > currentName.length) return true;
+  const [curHead = "", ...curRest] = currentName.split("_");
+  const [desHead = "", ...desRest] = desiredName.split("_");
+  const words = (s: string) => s.split(" ").filter(Boolean).length;
+  if (words(desHead) <= words(curHead) || isValidVin(normalizeVin(desHead))) return false;
+  return curRest.every((part) => desRest.includes(part));
 }
 
 export type OrderDropboxRecord = {
