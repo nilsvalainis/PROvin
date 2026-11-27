@@ -15,6 +15,12 @@ import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
 import type { SourceIssue } from "@/lib/source-consistency";
 import { detectTotalLossFromPdfInput, textIndicatesTotalLoss } from "@/lib/total-loss-detect";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
+import {
+  AUTODNA_KEY_SECTIONS,
+  autodnaSectionCount,
+  parseAutodnaPrecheckDetail,
+  type AutodnaPrecheck,
+} from "@/lib/vin-scan/autodna-precheck";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
 export type DealerSignalsDetectInput = {
@@ -224,22 +230,80 @@ export function hasForeignRegistrySignal(blocks: WorkspaceSourceBlocks): boolean
   });
 }
 
+/* ---------- Maksas atskaišu bezmaksas priekšskatījumi (Nils 27.11) ---------- */
+
+/** AutoDNA priekšskata sadaļas ar negadījumiem / bojājumiem (ja lapa tādas rāda). */
+const PREVIEW_INCIDENT_SECTION_RE = /bojāj|negadīj|avārij|damage|accident|unfall|schaden/i;
+
+function scanRow(input: Pick<DealerSignalsDetectInput, "vinScan">, id: string): VinScanIndicator | undefined {
+  return scanIndicators(input).find((i) => i.id === id);
+}
+
+/** AutoDNA priekšskats (`autodna_precheck`): sadaļas un ierakstu skaits. Nav nolasīts -> null. */
+function autodnaPreview(input: Pick<DealerSignalsDetectInput, "vinScan">): AutodnaPrecheck | null {
+  const row = scanRow(input, "autodna_precheck");
+  if (!row || (row.status !== "found" && row.status !== "none")) return null;
+  return parseAutodnaPrecheckDetail(row.detail);
+}
+
+function countIn(text: string, re: RegExp): number {
+  const n = Number(re.exec(text)?.[1] ?? NaN);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Arhīva fotogrāfijas: maksas atskaites priekšskatā ir vēsturiskas bildes (AutoDNA «Auto arhīva fotogrāfijas»,
+ * CheckCar.vin atskaitē foto). Kas tieši tur ir, nav zināms (bojājumi, izsoles, sludinājumi u.c.).
+ */
+export function hasArchivePhotoSignal(input: Pick<DealerSignalsDetectInput, "vinScan">): boolean {
+  if ((autodnaSectionCount(autodnaPreview(input), AUTODNA_KEY_SECTIONS[1]) ?? 0) > 0) return true;
+  const cc = scanRow(input, "checkcar_vin");
+  return cc?.status === "found" && countIn(str(cc.summary), /(\d+)\s*foto/i) > 0;
+}
+
+/**
+ * Papildu vēstures ieraksti: maksas atskaites priekšskatā ir vēstures ieraksti (AutoDNA «Transportlīdzekļa vēsture»,
+ * CARFAX.eu nobraukums / apskates / serviss vai vairāki ieraksti), ko dīlera dati nesatur.
+ */
+export function hasExtraHistorySignal(input: Pick<DealerSignalsDetectInput, "vinScan">): boolean {
+  if ((autodnaSectionCount(autodnaPreview(input), AUTODNA_KEY_SECTIONS[0]) ?? 0) > 0) return true;
+  const cf = scanRow(input, "carfax_eu");
+  if (cf?.status !== "found") return false;
+  const detail = str(cf.detail);
+  // Viens ieraksts bez nobraukuma / apskates / servisa parasti ir tikai pati reģistrācija - nav pārdodama vēsture.
+  const records = Math.max(countIn(detail, /^Ieraksti:\s*(\d+)/m), countIn(str(cf.summary), /(\d+)\s*ierakst/i));
+  return (
+    records >= 2 ||
+    [/^Nobraukuma rādījumi:\s*(\d+)/m, /^Tehniskās apskates:\s*(\d+)/m, /^Serviss un remonti:\s*(\d+)/m].some((re) => countIn(detail, re) > 0)
+  );
+}
+
+/** Priekšskatā ir negadījumu / bojājumu sadaļa ar ierakstiem. */
+export function hasPreviewIncidentSignal(input: Pick<DealerSignalsDetectInput, "vinScan">): boolean {
+  const data = autodnaPreview(input);
+  return (data?.sections ?? []).some((s) => PREVIEW_INCIDENT_SECTION_RE.test(s.name) && s.available && (s.count ?? 0) > 0);
+}
+
 /** Atrastie signālu tipi kanoniskā secībā. Viena pārbaude ar dīvainiem datiem neaptur pārējās. */
 export function detectDealerSignals(input: DealerSignalsDetectInput): DealerSignalKind[] {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks ?? {});
   const checks: Record<DealerSignalKind, () => boolean> = {
     mileage_mismatch: () => hasMileageMismatchSignal(input.sourceIssues),
     special_status: () => hasSpecialStatusSignal(blocks, input),
-    incidents: () => hasIncidentSignal(blocks, input),
+    incidents: () => hasIncidentSignal(blocks, input) || hasPreviewIncidentSignal(input),
     us_history: () => hasUsHistorySignal(blocks, input),
     auction_photos: () => hasAuctionPhotoSignal(blocks, input),
+    archive_photos: () => hasArchivePhotoSignal(input),
     foreign_registry: () => hasForeignRegistrySignal(blocks),
+    extra_history: () => hasExtraHistorySignal(input),
   };
-  return DEALER_SIGNAL_KINDS.filter((k) => {
+  const found = DEALER_SIGNAL_KINDS.filter((k) => {
     try {
       return checks[k]();
     } catch {
       return false;
     }
   });
+  // Izsoļu + arhīva foto -> viena rinda «Arhīva fotogrāfijas» (tās teksts min arī izsoles), bez dublēšanās.
+  return found.includes("archive_photos") ? found.filter((k) => k !== "auction_photos") : found;
 }
