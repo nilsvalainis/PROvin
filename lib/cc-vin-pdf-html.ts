@@ -10,6 +10,7 @@ import { buildAuctionArchiveSummary, type AuctionArchivePhoto } from "@/lib/auct
 import { AUCTION_LOT_CARDS_CSS, auctionLotRecordKey, buildAuctionLotsHtml } from "@/lib/auction-lot-cards-html";
 import type { ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
+import { translateAuctionTerms } from "@/lib/auction-terms-i18n";
 import {
   CC_VIN_SUBTITLES,
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
@@ -63,7 +64,7 @@ function kmDisplay(raw: string): string {
 }
 
 /** Brīdinājumi - tikai reģistri ar atzīmi; „tīrie” netiek uzskaitīti. */
-function alertList(b: CcVinBlockState): string {
+function alertList(b: CcVinBlockState, lang: ClientReportLang): string {
   const alerts = ccVinAlertChecks(b).filter((c) => !CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS.has(c.label.trim()));
   if (alerts.length === 0) return "";
   const items = alerts
@@ -71,15 +72,18 @@ function alertList(b: CcVinBlockState): string {
       (c) =>
         `<li class="pdf-ccvin-flag"><span class="pdf-ccvin-flag-dot" aria-hidden="true"></span><span class="pdf-ccvin-flag-label">${escapeHtml(
           c.label.trim(),
-        )}</span><span class="pdf-ccvin-flag-value">${escapeHtml(c.status.trim() || "atrasts ieraksts")}</span></li>`,
+        )}</span><span class="pdf-ccvin-flag-value">${escapeHtml(translateAuctionTerms(c.status.trim(), lang) || "atrasts ieraksts")}</span></li>`,
     )
     .join("");
   return `<ul class="pdf-ccvin-flags">${items}</ul>`;
 }
 
-function recordTable(rows: CcVinRecordRow[], labelHead: string): string {
+function recordTable(rows: CcVinRecordRow[], labelHead: string, lang: ClientReportLang): string {
   const data = rows.filter(ccVinRecordRowHasData);
-  return logTable([labelHead, "Datums", "Detaļas"], data.map((r) => [r.label, r.date, r.detail]));
+  return logTable(
+    [labelHead, "Datums", "Detaļas"],
+    data.map((r) => [translateAuctionTerms(r.label, lang), r.date, translateAuctionTerms(r.detail, lang)]),
+  );
 }
 
 /** Kopsavilkuma rinda zem karogiem: atzīmju skaits un īpašnieku maiņas. */
@@ -142,8 +146,11 @@ export function buildCcVinAuctionCardsHtml(b: CcVinBlockState, opts: CcVinPdfAuc
 export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, auction: CcVinPdfAuctionOpts = {}): string {
   if (!b) return "";
   const parts: string[] = [];
+  // Izsoļu termini (Front End, Sold u.c.) klienta valodā; LV PDF arī (Nils 27.11).
+  const lang: ClientReportLang = auction.lang ?? "lv";
+  const tr = (v: string) => translateAuctionTerms(v, lang);
 
-  const flags = alertList(b);
+  const flags = alertList(b, lang);
   const facts = factLine(b);
   if (flags || facts) {
     parts.push(subhead(CC_VIN_SUBTITLES.flags));
@@ -159,18 +166,18 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
     parts.push(
       logTable(
         ["Datums", "Bojājums", "Vieta"],
-        damages.map((r) => [r.date, r.description, r.region]),
+        damages.map((r) => [r.date, tr(r.description), r.region]),
       ),
     );
   }
 
-  const brands = recordTable(b.brands ?? [], "Atzīme");
+  const brands = recordTable(b.brands ?? [], "Atzīme", lang);
   if (brands) {
     parts.push(subhead(CC_VIN_SUBTITLES.brands));
     parts.push(brands);
   }
 
-  const insurance = recordTable(b.insurance ?? [], "Reģistrs");
+  const insurance = recordTable(b.insurance ?? [], "Reģistrs", lang);
   if (insurance) {
     parts.push(subhead(CC_VIN_SUBTITLES.insurance));
     parts.push(insurance);
@@ -182,7 +189,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
     parts.push(
       logTable(
         ["Datums", "Reģions", "Odometrs, km", "Piezīme"],
-        titles.map((r) => [r.date, r.region, kmDisplay(r.odometer), r.note]),
+        titles.map((r) => [r.date, r.region, kmDisplay(r.odometer), tr(r.note)]),
       ),
     );
   }
@@ -199,7 +206,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
         ["Datums", "Vieta", "Odometrs, km", sharedLabel || "Cena", "Statuss"],
         sales.map((r) => {
           const price = ccVinAmountToEurDisplay(r.price) || r.price;
-          return [r.date, r.venue, kmDisplay(r.odometer), price && r.priceLabel && !sharedLabel ? `${price} (${r.priceLabel.toLowerCase()})` : price, r.status];
+          return [r.date, r.venue, kmDisplay(r.odometer), price && r.priceLabel && !sharedLabel ? `${price} (${r.priceLabel.toLowerCase()})` : price, tr(r.status)];
         }),
       ),
     );

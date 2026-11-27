@@ -4,6 +4,7 @@
  */
 
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { overlapStrongerDisplayLabel } from "@/lib/asv-source-merge";
 import {
   ASV_SUBTITLES,
@@ -63,13 +64,13 @@ function overlapCompareTable(b: AsvBlockState): string {
   return `${subhead("Avotu salīdzinājums (pārklājošie lauki)")}<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr><th>Lauks</th><th>OneAuto</th><th>JoJ</th><th>Spēcīgākais</th></tr></thead><tbody>${body}</tbody></table>`;
 }
 
-export function buildAsvPdfInnerHtml(b: AsvBlockState | null | undefined): string {
+export function buildAsvPdfInnerHtml(b: AsvBlockState | null | undefined, lang: ClientReportLang = "lv"): string {
   if (!b) return "";
   const view = asvBlockToCcVinView(b);
   const parts: string[] = [];
   const overlap = overlapCompareTable(b);
   if (overlap) parts.push(overlap);
-  if (view) parts.push(buildCcVinPdfInnerHtml(view));
+  if (view) parts.push(buildCcVinPdfInnerHtml(view, { lang }));
 
   const liens = recordTable(b.liens ?? [], "Ieraksts");
   if (liens) {

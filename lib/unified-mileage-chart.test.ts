@@ -397,3 +397,43 @@ describe("splitMileageChartRuns", () => {
     ]);
   });
 });
+
+describe("buildSourceMileageSparkHtml - nav līknes bez datiem (Nils 27.11)", () => {
+  const row = (date: string, km: string, t: number, order: number, label: string): UnifiedMileageRow => ({
+    date,
+    odometer: km,
+    country: "",
+    sortableTime: t,
+    sourceOrder: order,
+    sourceLabel: label,
+  });
+  const dna2016 = row("01.03.2016", "50000", Date.UTC(2016, 2, 1), 0, "AutoDNA");
+  const dna2019 = row("01.06.2019", "100000", Date.UTC(2019, 5, 1), 1, "AutoDNA");
+  const csdd2026 = row("01.06.2026", "190000", Date.UTC(2026, 5, 1), 2, "CSDD");
+  const csdd2023 = row("01.06.2023", "160000", Date.UTC(2023, 5, 1), 3, "CSDD");
+
+  it("ar 1 rādījumu zīmē tikai punktu - bez pelēkās līknes līdz 2026", () => {
+    const html = buildSourceMileageSparkHtml([dna2016, csdd2023, csdd2026], "autodna");
+    expect(html).toContain("pdf-src-mileage-spark-dot");
+    expect(html).not.toContain('class="pdf-src-mileage-spark-ghost"');
+    expect(html).not.toContain('class="pdf-src-mileage-spark-path"');
+    expect(html).not.toContain('class="pdf-src-mileage-spark-fill"');
+  });
+
+  it("visi rādījumi vienā datumā - tikai punkts", () => {
+    const same = row("01.03.2016", "50100", Date.UTC(2016, 2, 1), 4, "AutoDNA");
+    const html = buildSourceMileageSparkHtml([dna2016, same, csdd2026], "autodna");
+    expect(html).toContain("pdf-src-mileage-spark-dot");
+    expect(html).not.toContain('class="pdf-src-mileage-spark-path"');
+    expect(html).not.toContain('class="pdf-src-mileage-spark-ghost"');
+  });
+
+  it("pelēkā līkne nepārsniedz šī avota pēdējo datumu", () => {
+    const html = buildSourceMileageSparkHtml([dna2016, dna2019, csdd2023, csdd2026], "autodna");
+    const ghost = /class="pdf-src-mileage-spark-ghost" fill="none" d="([^"]+)"/.exec(html)?.[1] ?? "";
+    const path = /class="pdf-src-mileage-spark-path" fill="none" stroke="[^"]+" d="([^"]+)"/.exec(html)?.[1] ?? "";
+    const maxX = (d: string) => Math.max(...[...d.matchAll(/(-?[\d.]+)[ ,](-?[\d.]+)/g)].map((m) => Number(m[1])));
+    expect(path).not.toBe("");
+    if (ghost) expect(maxX(ghost)).toBeLessThanOrEqual(maxX(path) + 0.05);
+  });
+});

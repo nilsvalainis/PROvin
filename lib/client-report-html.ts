@@ -2434,10 +2434,11 @@ function buildAsvAvotuSubsection(
   vis: PdfVisibilitySettings,
   photoDataUrls?: Map<string, string>,
   sparkHtml = "",
+  lang: ClientReportLang = "lv",
 ): string {
   if (!vis.asv) return "";
   if ((!b || !asvBlockHasContent(b)) && !sparkHtml) return "";
-  const inner = b && asvBlockHasContent(b) ? buildAsvPdfInnerHtml(b) : "";
+  const inner = b && asvBlockHasContent(b) ? buildAsvPdfInnerHtml(b, lang) : "";
   const photosHtml = b
     ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeAsvPhotoGroups)
     : "";
@@ -2897,7 +2898,7 @@ function buildAvotuDatiSectionHtml(
     ]),
     lang,
   );
-  const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
+  const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"), lang);
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
   const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);
   const lkfEe = vendorHtml(SOURCE_BLOCK_LABELS.lkf_ee);
