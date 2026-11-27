@@ -92,8 +92,8 @@ describe("dealer-data-job-store CAS", () => {
     expect(await dealerDataRunLeaseHeld("s_m", "run_auto")).toBe(true);
   });
 
-  it("manuāla ielase ar vēsturi -> statuss «Ielasīts»", async () => {
-    await upsertDealerDataJob("s_n", { vin: VIN, status: "failed", attempts: 3, error: "http_502" });
+  it("manuāla ielase pēc automātikas kļūdas -> atpakaļ rindā AI komentāriem, ne «Ielasīts» bez AI (BF 27.11, S6)", async () => {
+    await upsertDealerDataJob("s_n", { vin: VIN, status: "failed", attempts: 3, error: "insufficient_balance", trigger: "webhook" });
     await recordManualOneautoPurchase({
       sessionId: "s_n",
       vin: VIN,
@@ -102,7 +102,38 @@ describe("dealer-data-job-store CAS", () => {
       },
     });
     const job = await readDealerDataJob("s_n");
+    expect(job?.status).toBe("pending");
+    expect(job?.serviceEventCount).toBe(1);
+    expect(job?.paidOutcomes?.oe_service_history).toBe("ok");
+    expect(Date.parse(job?.nextRetryAt ?? "")).toBeLessThanOrEqual(Date.now());
+    // Cron to pārņem: maksas vēsture jau «ok», tātad jauns maksas solis netiks pirkts.
+    const claim = await claimDealerDataJobRun({ sessionId: "s_n", vin: VIN, runId: "r_n", trigger: "cron", respectNextRetry: true });
+    expect(claim.ok).toBe(true);
+  });
+
+  it("manuāla ielase bez dīlera automātikas (audits) -> «Ielasīts» kā līdz šim", async () => {
+    await recordManualOneautoPurchase({
+      sessionId: "s_o",
+      vin: VIN,
+      results: {
+        oe_service_history: { ok: true, payload: { result: { service_events: [{ date: "2024-01-10", odometer: "12000", works: "Oil" }] } } },
+      },
+    });
+    const job = await readDealerDataJob("s_o");
     expect(job?.status).toBe("done");
+    expect(job?.trigger).toBe("manual");
     expect(job?.error).toBeUndefined();
+  });
+
+  it("darbs ar jau ģenerētiem AI komentāriem paliek «Ielasīts»", async () => {
+    await upsertDealerDataJob("s_p", { vin: VIN, status: "done", trigger: "webhook", aiGenerated: true, serviceEventCount: 4 });
+    await recordManualOneautoPurchase({
+      sessionId: "s_p",
+      vin: VIN,
+      results: {
+        oe_service_history: { ok: true, payload: { result: { service_events: [{ date: "2024-01-10", odometer: "12000", works: "Oil" }] } } },
+      },
+    });
+    expect((await readDealerDataJob("s_p"))?.status).toBe("done");
   });
 });
