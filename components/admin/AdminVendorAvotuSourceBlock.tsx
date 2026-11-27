@@ -220,6 +220,7 @@ export function AdminVendorAvotuSourceBlock({
         {blockKey === "carvertical" && getSourceBlocks && applyPatchedBlocks ? (
           <AdminCarVerticalAutoPanel
             sessionId={sessionId}
+            block={block}
             disabled={disabled}
             readOnly={readOnly}
             getSourceBlocks={getSourceBlocks}
@@ -232,6 +233,7 @@ export function AdminVendorAvotuSourceBlock({
         {blockKey === "autodna" && getSourceBlocks && applyPatchedBlocks ? (
           <AdminAutodnaAutoPanel
             sessionId={sessionId}
+            block={block}
             disabled={disabled}
             readOnly={readOnly}
             getSourceBlocks={getSourceBlocks}

@@ -124,3 +124,12 @@ export function upsertVendorPdfAiContext(
   if (next === current) return block;
   return { ...block, aiContextRaw: next };
 }
+
+/** Automātiski ieliktais šī avota PDF teksts (bez marķieru rindām); nav - tukša virkne. */
+export function readVendorPdfAiContextText(block: Pick<VendorAvotuBlockState, "aiContextRaw">, sourceLabel: string): string {
+  const label = sanitizeLabel(sourceLabel);
+  const m = autoBlockRegex(label).exec(block.aiContextRaw ?? "");
+  if (!m) return "";
+  const lines = m[0].split("\n");
+  return lines.slice(1, -1).join("\n").trim();
+}
