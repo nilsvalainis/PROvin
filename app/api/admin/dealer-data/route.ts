@@ -13,6 +13,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { reparseDealerDataFromRaw, runDealerDataJob } from "@/lib/dealer-data-job";
 import { readDealerDataJob } from "@/lib/dealer-data-job-store";
+import { syncDealerJobWithDraftData } from "@/lib/dealer-manual-data-sync";
 import {
   dealerDataJobSuggestsRefund,
   describeDealerDataJob,
@@ -33,7 +34,8 @@ export async function GET(req: Request) {
   if (!isSafeOrderDraftSessionId(sessionId)) {
     return NextResponse.json({ error: "invalid_session" }, { status: 400 });
   }
-  const job = await readDealerDataJob(sessionId);
+  // «Datu nav», bet dīlera dati melnrakstā ievadīti manuāli -> «Ielasīts», bez atmaksas ieteikuma (BF 27.11, S7).
+  const job = await syncDealerJobWithDraftData(sessionId, { job: await readDealerDataJob(sessionId) });
   return NextResponse.json({
     ok: true,
     job,

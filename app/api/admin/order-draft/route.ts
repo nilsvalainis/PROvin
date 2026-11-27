@@ -6,6 +6,7 @@
 import { contradictionFeedbackSnapshotField, parseContradictionFeedback } from "@/lib/contradiction-feedback";
 import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { syncDealerJobWithDraftData } from "@/lib/dealer-manual-data-sync";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { parseOrderVinScanRecord, shouldStartOrderVinScanOnDraftPatch } from "@/lib/order-vin-scan";
@@ -317,6 +318,11 @@ export async function PATCH(req: Request) {
           (err) => console.error("[order-draft] free VIN SCAN:", err),
         ),
       );
+    }
+
+    if (patch.workspace) {
+      // Manuāli ievadīti dīlera dati «datu nav» darbam -> statuss «Ielasīts» (BF 27.11, S7; bez naudas kustības).
+      after(() => syncDealerJobWithDraftData(sessionId).then(() => undefined));
     }
 
     return NextResponse.json({
