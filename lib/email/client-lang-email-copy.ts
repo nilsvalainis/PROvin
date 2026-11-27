@@ -5,7 +5,7 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { provinEmailSubject } from "@/lib/email/email-subject";
-import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
+import { decideOrderClientLang, type ClientLangSignals } from "@/lib/client-lang-detect";
 
 export { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
 
@@ -19,12 +19,16 @@ export function resolveClientEmailLang(raw: string | null | undefined): ClientRe
 /**
  * Pasūtījuma klienta valoda e-pastiem bez savas valodas izvēles (upsell, izsoļu arhīvs, maka atmaksa):
  * 1) B2B maka pirkumā partnera izvēlētā atskaites valoda (`report_lang=` piezīmēs),
- * 2) Stripe `session.locale` (vietnes valoda pasūtot), 3) citādi LV.
+ * 2) admina izvēle (`override`), 3) EN/DE vietne + Latvijas signāli -> LV,
+ * 4) Stripe `session.locale` (vietnes valoda pasūtot), 5) citādi LV. Sk. `decideOrderClientLang`.
  */
-export function resolveOrderClientLang(args: { notes?: string | null; locale?: string | null }): ClientReportLang {
-  const b2b = parseB2bWalletOrderMarks(args.notes ?? "")?.reportLang ?? null;
-  if (b2b) return resolveClientEmailLang(b2b);
-  return resolveClientEmailLang(args.locale);
+export function resolveOrderClientLang(args: {
+  notes?: string | null;
+  locale?: string | null;
+  override?: string | null;
+  signals?: ClientLangSignals | null;
+}): ClientReportLang {
+  return decideOrderClientLang(args).lang;
 }
 
 type ForeignLang = Exclude<ClientReportLang, "lv">;

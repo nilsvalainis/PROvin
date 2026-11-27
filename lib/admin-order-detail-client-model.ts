@@ -1,6 +1,7 @@
 import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
 import { parseAdminOrderAttribution } from "@/lib/ad-attribution";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
+import { parseClientLangStoredSignals } from "@/lib/client-lang-detect";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -82,6 +83,10 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
       ? { checkoutLine: order.checkoutLine.trim() }
       : {}),
     ...(str(order.locale).trim() ? { locale: str(order.locale).trim().toLowerCase() } : {}),
+    ...(() => {
+      const sig = parseClientLangStoredSignals(order.clientLangSignals);
+      return sig ? { clientLangSignals: sig } : {};
+    })(),
     selectBrandModel: str(order.selectBrandModel) || null,
     selectProductionYearsDpf: str(order.selectProductionYearsDpf) || null,
     selectPlannedBudget: str(order.selectPlannedBudget) || null,

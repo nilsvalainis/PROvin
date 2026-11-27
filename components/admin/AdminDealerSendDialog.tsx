@@ -28,6 +28,7 @@ import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow
 import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerReviewScore } from "@/lib/dealer-review-score";
 import { AdminDealerReviewIndicator } from "@/components/admin/AdminDealerReviewCard";
+import { AdminClientLangSegments } from "@/components/admin/AdminClientLangControl";
 import { AdminDealerSendExtraFiles, type DealerExtraItem } from "@/components/admin/AdminDealerSendExtraFiles";
 import { dealerExtraFilesError } from "@/lib/dealer-send-extra-files";
 import {
@@ -594,6 +595,7 @@ export function AdminDealerSendDialog({
         </div>
 
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
+          <AdminClientLangSegments disabled={busy !== null} />
           <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Kanāls">
             {(["email", "whatsapp"] as const).map((c) => (
               <button key={c} type="button" role="tab" aria-selected={channel === c} className={seg(channel === c)} onClick={() => setChannel(c)}>

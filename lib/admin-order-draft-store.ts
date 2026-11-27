@@ -315,6 +315,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     if (typeof e.sourcesComparisonComment === "string") {
       orderEdits.sourcesComparisonComment = e.sourcesComparisonComment;
     }
+    if (typeof e.clientLangOverride === "string") orderEdits.clientLangOverride = e.clientLangOverride;
   }
   let workspace: OrderDraftWorkspaceBody | null = null;
   if (o.workspace && typeof o.workspace === "object") {
@@ -864,6 +865,10 @@ async function patchOrderDraftUnlocked(
       sanitizedPatch.sourcesComparisonComment = sanitizeDraftTextForStorage(
         patch.orderEdits.sourcesComparisonComment,
       );
+    }
+    if (typeof patch.orderEdits.clientLangOverride === "string") {
+      const lang = patch.orderEdits.clientLangOverride.trim().toLowerCase();
+      sanitizedPatch.clientLangOverride = lang === "lv" || lang === "en" || lang === "ru" || lang === "de" ? lang : "";
     }
   }
   const nextOrderEdits =

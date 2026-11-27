@@ -26,6 +26,7 @@ import { isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-custome
 import { b2bPaidServiceLabelLv } from "@/lib/b2b-paid-service-label";
 import { b2bChosenReportLangLabel } from "@/lib/b2b-report-lang-lock";
 import { AdminManualOrderPaymentPanel } from "@/components/admin/AdminManualOrderPaymentPanel";
+import type { ClientLangStoredSignals } from "@/lib/client-lang-detect";
 import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 import {
   isPartnerVinAdminOrder,
@@ -129,6 +130,8 @@ export type AdminOrderDetailClientModel = {
   checkoutLine?: string | null;
   /** Stripe `session.locale` - vietnes valoda pasūtot (klienta PDF / e-pastu noklusētā valoda). */
   locale?: string | null;
+  /** Latvijas signāli klienta valodai (valstu kodi, numurzīme). */
+  clientLangSignals?: ClientLangStoredSignals | null;
   selectBrandModel?: string | null;
   selectProductionYearsDpf?: string | null;
   selectPlannedBudget?: string | null;
@@ -905,6 +908,9 @@ export function AdminOrderDetailView({
           isManual: Boolean(order.isManual),
           checkoutLine: order.checkoutLine ?? null,
           locale: order.locale ?? null,
+          clientLangSignals: order.clientLangSignals ?? null,
+          clientLangOverride: serverOrderDraft?.orderEdits?.clientLangOverride ?? null,
+          licensePlate: serverOrderDraft?.orderEdits?.licensePlate ?? null,
           partnerCompanyName: order.partnerCompanyName?.trim() || null,
           partnerId: order.partnerId?.trim() || null,
           listingUrl: mergedListing.trim() || null,

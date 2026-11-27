@@ -11,6 +11,7 @@ import {
 } from "@/lib/dealer-data-job-types";
 import { dealerSendStatusLine, lastDealerSend } from "@/lib/order-client-marks";
 import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
+import { AdminClientLangChip } from "@/components/admin/AdminClientLangControl";
 import { dealerRefundCentsOf as refundCentsOf, resolveDealerPdfLang, useDealerDataJobControls } from "@/components/admin/useDealerDataJobControls";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
@@ -179,7 +180,7 @@ export function AdminDealerDataJobStrip({
         <AdminDealerShadowGateRow gate={job.shadowGate} busy={shadowBusy} onRecheck={() => void recheckShadow("manual")} />
       ) : null}
 
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <button
           type="button"
           className="min-h-9 w-full rounded-md border border-transparent bg-[#1d1d1f] px-4 text-[12.5px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
@@ -188,6 +189,7 @@ export function AdminDealerDataJobStrip({
         >
           Sūtīt klientam
         </button>
+        <AdminClientLangChip />
       </div>
       <div className="mt-2">
         <AdminClientReportLinkControl sessionId={sessionId} />

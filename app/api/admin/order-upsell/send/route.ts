@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "offer_not_open" }, { status: 400 });
   }
   const draft = await readOrderDraft(sessionId).catch(() => null);
-  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
+  const lang = decideClientLangForOrder(order, draft).lang;
   let url = `${getPublicSiteOrigin()}${upsellPublicPath(offer.token, lang)}`;
   if (kindRaw === "mini_to_audit") {
     const pay = await ensureOrderUpsellStripePaymentUrl({

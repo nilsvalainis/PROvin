@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
@@ -65,7 +65,7 @@ async function loadContext(sessionId: string) {
     createdUnix: order.created,
   };
   /** Piedāvājuma valoda: B2B partnera atskaites valoda / vietnes valoda pasūtot / LV. */
-  const lang = resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
+  const lang = decideClientLangForOrder(order, draft).lang;
   return { order, offers, email: email.trim(), phone, customerName, vin, car, snapshot, lang };
 }
 
