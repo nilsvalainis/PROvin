@@ -89,8 +89,8 @@ describe("Traficom relejs: lapu atpazīšana", () => {
   });
 
   it("navigācija tikai uz atļautajiem hostiem", () => {
-    for (const h of ["asiointi.traficom.fi", "tunnistautuminen.suomi.fi", "vpm.viss.gov.lv", "eidas.eparaksts.lv"]) expect(isAllowedHost(h)).toBe(true);
-    for (const h of ["evil.example", "traficom.fi.evil.example", "google.com"]) expect(isAllowedHost(h)).toBe(false);
+    for (const h of ["asiointi.traficom.fi", "tunnistautuminen.suomi.fi", "vpm.viss.gov.lv", "eidas.eparaksts.lv", "nodefi1.eidas.tunnistus.fi"]) expect(isAllowedHost(h)).toBe(true);
+    for (const h of ["evil.example", "traficom.fi.evil.example", "google.com", "tunnistus.fi.evil.example"]) expect(isAllowedHost(h)).toBe(false);
   });
 
   it("lietotāja numurs nekad neparādās žurnālā", () => {
