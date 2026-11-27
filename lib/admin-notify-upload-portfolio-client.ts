@@ -20,7 +20,12 @@ export async function uploadNotifyPortfolioBlobs(input: NotifyPortfolioUploadInp
 
   for (const f of input.files) {
     const safe = f.filename.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 100) || "pielikums";
-    const pathname = `${prefix}/${Date.now()}-${safe}`;
+    // Neuzminams ceļš (privāts Blob; atsauci serveris pārbauda pēc pasūtījuma prefiksa).
+    const rnd =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID().replace(/-/g, "").slice(0, 16)
+        : Math.random().toString(36).slice(2, 12);
+    const pathname = `${prefix}/${Date.now()}-${rnd}-${safe}`;
     const r = await upload(pathname, f.blob, {
       access: "private",
       handleUploadUrl: "/api/admin/notify-blob-upload",

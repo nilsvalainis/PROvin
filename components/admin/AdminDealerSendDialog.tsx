@@ -28,6 +28,8 @@ import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow
 import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerReviewScore } from "@/lib/dealer-review-score";
 import { AdminDealerReviewIndicator } from "@/components/admin/AdminDealerReviewCard";
+import { AdminDealerSendExtraFiles, type DealerExtraItem } from "@/components/admin/AdminDealerSendExtraFiles";
+import { dealerExtraFilesError } from "@/lib/dealer-send-extra-files";
 import {
   AuctionArchiveSendSection,
   auctionArchiveErrorLv,
@@ -73,6 +75,8 @@ export type DealerSendBridge = {
     text: string;
     /** Serveris ieraksta sūtījumu klienta saziņas žurnālā. */
     dealerSend?: { situation: DealerSendSituation; offer: boolean; review: boolean };
+    /** Papildu faili/bildes e-pastā blakus dīlera PDF (Nils 27.11). */
+    extraFiles?: File[];
   }) => Promise<{ sentTo: string; dealerMarks?: OrderClientMarks }>;
   /**
    * Pēc veiksmīgas dīlera datu (PDF) nosūtīšanas e-pastā: saglabā melnrakstu un atgriežas uz pasūtījumu sarakstu.
@@ -190,6 +194,7 @@ export function AdminDealerSendDialog({
   const [busy, setBusy] = useState<null | "offer" | "pdf" | "send">(null);
   const [err, setErr] = useState<string | null>(null);
   const [pdfLink, setPdfLink] = useState<SendReportPrepared | null>(null);
+  const [extraItems, setExtraItems] = useState<DealerExtraItem[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   // Logs vienmēr atveras augšā (kanāls, situācija, piedāvājums redzami).
@@ -204,6 +209,7 @@ export function AdminDealerSendDialog({
     setOpts({ offer: false, review: false });
     setErr(null);
     setPdfLink(null);
+    setExtraItems([]);
     setPreviewIds([]);
     setManualSources([]);
     setShowPrices(false);
@@ -455,10 +461,22 @@ export function AdminDealerSendDialog({
         setErr("PDF sūtīšana šeit nav pieejama.");
         return;
       }
+      const extraFiles = extraItems.map((x) => x.file);
+      const preErr = dealerExtraFilesError(extraFiles);
+      if (preErr) {
+        setErr(preErr);
+        return;
+      }
       setBusy("pdf");
       try {
         const prepared = await bridge.prepareDealerPdf(pdfLang);
         recheckWithPdf(prepared);
+        // PDF + faili kopā e-pasta limitā - kļūda logā pirms sūtīšanas.
+        const sizeErr = extraFiles.length > 0 ? dealerExtraFilesError(extraFiles, prepared.bytes) : null;
+        if (sizeErr) {
+          setErr(sizeErr);
+          return;
+        }
         setBusy("send");
         const r = await bridge.sendDealerReport({
           prepared,
@@ -466,8 +484,10 @@ export function AdminDealerSendDialog({
           subject: subject.trim(),
           text: text.trim(),
           dealerSend: sendFlags(),
+          ...(extraFiles.length > 0 ? { extraFiles } : {}),
         });
-        await finish(`E-pasts ar PDF nosūtīts uz ${r.sentTo}.`, r.dealerMarks ?? null);
+        const withFiles = extraFiles.length > 0 ? ` un ${extraFiles.length} ${extraFiles.length === 1 ? "failu" : "failiem"}` : "";
+        await finish(`E-pasts ar PDF${withFiles} nosūtīts uz ${r.sentTo}.`, r.dealerMarks ?? null);
         if (bridge.onDealerDataSent) {
           const navErr = await bridge.onDealerDataSent({ sentTo: r.sentTo });
           if (navErr) window.alert(navErr);
@@ -749,6 +769,10 @@ export function AdminDealerSendDialog({
                 </button>
               )}
             </div>
+          ) : null}
+
+          {ready && channel === "email" && bridge ? (
+            <AdminDealerSendExtraFiles items={extraItems} onChange={setExtraItems} disabled={busy !== null} />
           ) : null}
 
           {archReady ? (

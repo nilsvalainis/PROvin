@@ -36,6 +36,7 @@ import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { dealerExtraFilesError, dealerSentFilesFromAttachments } from "@/lib/dealer-send-extra-files";
 import { reviewCarLabel } from "@/lib/review-ask";
 import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
 import { getB2bPartnerByEmail } from "@/lib/b2b-partner-store";
@@ -288,7 +289,9 @@ export async function POST(req: Request) {
           { status: 503 },
         );
       }
-      manualAttachments = await fetchNotifyBlobAttachmentsForEmail(sessionId, jsonBlobAttachments, blobRw);
+      manualAttachments = await fetchNotifyBlobAttachmentsForEmail(sessionId, jsonBlobAttachments, blobRw, {
+        keepNames: dealerSendInput != null,
+      });
     } else {
       const { attachments } = collectAttachmentsFromJsonBase64(jsonAttachmentsBase64);
       manualAttachments = attachments.map((a) => ({
@@ -320,6 +323,21 @@ export async function POST(req: Request) {
     };
     // Atskaite vienmēr pirmā; ja tāda paša nosaukuma fails ir arī pielikumos, to neliek divreiz.
     manualAttachments = [serverPdf, ...manualAttachments.filter((a) => a.filename !== serverPdf!.filename)];
+  }
+
+  // Dīlera «Sūtīt klientam» papildu faili: ≤10, PDF + faili ≤ 18 MB (Gmail SMTP 25 MB pēc base64).
+  const dealerExtraAttachments =
+    dealerSendInput && serverPdf ? manualAttachments.filter((a) => a !== serverPdf) : [];
+  if (dealerSendInput && serverPdf && dealerExtraAttachments.length > 0) {
+    const extraErr = dealerExtraFilesError(
+      dealerExtraAttachments.map((a) => ({ name: a.filename, size: a.content.length, type: a.contentType })),
+      serverPdf.content.length,
+    );
+    if (extraErr) {
+      const tmp = jsonBlobAttachments?.map((x) => x.url.trim()).filter(Boolean) ?? [];
+      if (tmp.length > 0 && blobRw) void deleteNotifyBlobUrls(tmp, blobRw);
+      return NextResponse.json({ error: "dealer_extra_files_invalid", message: extraErr }, { status: 413 });
+    }
   }
 
   const to = toCandidate;
@@ -522,7 +540,13 @@ export async function POST(req: Request) {
   const dealerMarks = dealerSendInput
     ? await recordDealerSendOnServer(
         sessionId,
-        dealerSendRecordFromInput(dealerSendInput, "email", new Date().toISOString(), "ready"),
+        dealerSendRecordFromInput(
+          dealerSendInput,
+          "email",
+          new Date().toISOString(),
+          "ready",
+          dealerSentFilesFromAttachments(dealerExtraAttachments),
+        ),
       )
     : null;
 

@@ -4,6 +4,19 @@
  */
 import type { DealerSendChannel, DealerSendSituation } from "@/lib/dealer-send-message";
 import { DEALER_SEND_CHANNEL_LV } from "@/lib/dealer-send-message";
+import type { DealerSentFile } from "@/lib/dealer-send-extra-files";
+
+function parseSentFiles(raw: unknown): DealerSentFile[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((f): f is Record<string, unknown> => Boolean(f) && typeof f === "object")
+    .filter((f) => typeof f.name === "string" && f.name.trim() !== "")
+    .slice(0, 10)
+    .map((f) => ({
+      name: String(f.name).slice(0, 150),
+      bytes: typeof f.bytes === "number" && Number.isFinite(f.bytes) && f.bytes >= 0 ? Math.round(f.bytes) : 0,
+    }));
+}
 
 export type DealerSendRecord = {
   at: string;
@@ -11,6 +24,8 @@ export type DealerSendRecord = {
   situation: DealerSendSituation;
   offer: boolean;
   review: boolean;
+  /** Papildu faili e-pastā blakus dīlera PDF (nosaukums, izmērs); laiks = `at`. */
+  files?: DealerSentFile[];
 };
 
 export type OrderClientMarks = {
@@ -43,13 +58,17 @@ export function parseOrderClientMarks(raw: unknown): OrderClientMarks {
     const list = r.dealerSends
       .filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === "object")
       .filter((x) => typeof x.at === "string" && isDealerSendChannel(x.channel) && isDealerSendSituation(x.situation))
-      .map((x) => ({
-        at: x.at as string,
-        channel: x.channel as DealerSendChannel,
-        situation: x.situation as DealerSendSituation,
-        offer: x.offer === true,
-        review: x.review === true,
-      }));
+      .map((x) => {
+        const files = parseSentFiles(x.files);
+        return {
+          at: x.at as string,
+          channel: x.channel as DealerSendChannel,
+          situation: x.situation as DealerSendSituation,
+          offer: x.offer === true,
+          review: x.review === true,
+          ...(files.length > 0 ? { files } : {}),
+        };
+      });
     if (list.length > 0) out.dealerSends = list;
   }
   if (typeof r.reviewRequestedAt === "string" && r.reviewRequestedAt) out.reviewRequestedAt = r.reviewRequestedAt;
@@ -143,6 +162,7 @@ export function dealerSendStatusLine(rec: DealerSendRecord | null): string {
     DEALER_SEND_CHANNEL_LV[rec.channel].toLowerCase(),
     rec.offer ? "ar piedāvājumu" : "",
     rec.review ? "ar atsauksmi" : "",
+    rec.files?.length ? `+${rec.files.length} ${rec.files.length === 1 ? "fails" : "faili"}` : "",
   ].filter(Boolean);
   return `Nosūtīts klientam: ${formatRigaDateTime(rec.at)} (${extra.join(", ")})`;
 }
@@ -153,11 +173,13 @@ export function dealerSendRecordFromInput(
   channel: DealerSendChannel,
   atIso: string,
   fallbackSituation: DealerSendSituation,
+  files?: DealerSentFile[],
 ): DealerSendRecord {
   const situation = isDealerSendSituation(raw.situation) ? raw.situation : fallbackSituation;
   const offer = situation === "ready" && (raw.offer === true || raw.offer === "true");
   const review = situation === "ready" && (raw.review === true || raw.review === "true");
-  return { at: atIso, channel, situation, offer, review };
+  const sent = parseSentFiles(files);
+  return { at: atIso, channel, situation, offer, review, ...(sent.length > 0 ? { files: sent } : {}) };
 }
 
 /** Pēc cik ilga laika gatavi dīlera dati bez sūtījuma sarakstā kļūst sarkani. */
