@@ -3717,6 +3717,9 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-signal-row--alert td{background:#FFF1F2!important;color:#B91C1C!important;}
       .pdf-dealer-signal-row--alert td.pdf-dealer-signal-title{box-shadow:inset 3px 0 0 #FF4D4D;}
       .pdf-dealer-signal-row--alert td.pdf-dealer-signal-text{font-weight:700;}
+      .pdf-dealer-signal-row--warn td{background:#FFF7ED!important;color:#B45309!important;}
+      .pdf-dealer-signal-row--warn td.pdf-dealer-signal-title{box-shadow:inset 3px 0 0 #F59E0B;}
+      .pdf-dealer-signal-row--warn td.pdf-dealer-signal-text{font-weight:700;}
       .pdf-dealer-signals-cta{margin:8px 0 0;font-size:10.5px;text-align:right;}
       .pdf-dealer-signals-cta a{color:#0061D2;font-weight:700;text-decoration:none;}
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
@@ -4417,7 +4420,7 @@ export function buildDealerSignalsSectionHtml(
   const body = rows
     .map(
       (r) =>
-        `<tr class="pdf-dealer-signal-row${r.alert ? " pdf-dealer-signal-row--alert" : ""}" data-signal="${escapeHtml(r.kind)}"><td class="pdf-dealer-signal-title">${escapeHtml(r.title)}</td><td class="pdf-dealer-signal-text">${escapeHtml(r.text)}</td></tr>`,
+        `<tr class="pdf-dealer-signal-row${r.tone === "red" ? " pdf-dealer-signal-row--alert" : r.tone === "orange" ? " pdf-dealer-signal-row--warn" : ""}" data-signal="${escapeHtml(r.kind)}"><td class="pdf-dealer-signal-title">${escapeHtml(r.title)}</td><td class="pdf-dealer-signal-text">${escapeHtml(r.text)}</td></tr>`,
     )
     .join("");
   const link = p.dealerSignalsAuditLink;
