@@ -373,7 +373,8 @@ async function startPaidOrderDownstream(
     }
   }
 
-  // Dropbox pasūtījuma mape uzreiz (Nils 23.11): dīlera dati / AUDITI / MINI / BUSINESS atsevišķās virsmapēs.
+  // Dropbox pasūtījuma mape uzreiz (Nils 23.11): AUDITI / MINI / BUSINESS atsevišķās virsmapēs; dīlera datiem tikai
+  // ieraksts - mapi izveido pirmais saglabātais fails (Nils 27.11).
   const isDealerData =
     fulfillment !== "b2b_pack" && isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total });
   const dropboxCategory = orderDropboxCategory({

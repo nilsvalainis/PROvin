@@ -19,7 +19,8 @@ import {
 } from "@/lib/order-dropbox-folder";
 
 /**
- * PROVIN pasūtījuma Dropbox mape (servera puse): izveide uzreiz pēc pasūtījuma, pārdēvēšana, kad zināma marka/modelis,
+ * PROVIN pasūtījuma Dropbox mape (servera puse): izveide uzreiz pēc pasūtījuma (AUDITS / MINI / BUSINESS; dīlera
+ * datiem - pie pirmā saglabātā faila, Nils 27.11), pārdēvēšana, kad zināma marka/modelis,
  * failu saglabāšana. Nekad neizmet kļūdu uz augšu - pasūtījums neapstājas; kļūda paliek ierakstā (admin rāda sarkanā).
  * Ieraksts: {draft dir|blob prefix}/order_dropbox/<sessionId>.json
  */
@@ -127,6 +128,8 @@ export async function ensureOrderDropboxFolder(
     client?: DropboxClient | null;
     /** Produkts mainījies (manuālais pasūtījums: AUDITI -> BUSINESS): `category` ir noteicošā, esošo mapi pārvieto. */
     recategorize?: boolean;
+    /** Izveidot mapi arī dīlera datiem (tikai faila saglabāšana - Nils 27.11: dīlera datiem mapi neveido uzreiz). */
+    materialize?: boolean;
   } = {},
 ): Promise<OrderDropboxRecord | null> {
   if (!isSafeOrderDraftSessionId(sessionId)) return null;
@@ -147,6 +150,19 @@ export async function ensureOrderDropboxFolder(
     createdAt: prev?.createdAt ?? now,
     updatedAt: now,
   };
+  // Dīlera dati (Nils 27.11): mape NEtiek veidota pie pasūtījuma ienākšanas - tikai ieraksts `pending` (kategorija,
+  // datums), lai pirmais saglabātais fails (dīlera PDF, CheckThisReg, CSDD PDF) izveidotu pareizo mapi DILERA DATI/...
+  if (category === "dealer" && !opts.materialize && !(prev?.state === "ok" && prev.folderId)) {
+    const vin = (opts.vin ?? "").trim() || prev?.vin;
+    const plate = (opts.plate ?? "").trim() || prev?.plate;
+    if (prev?.state === "pending" && prev.category === category && prev.vin === vin && prev.plate === plate) return prev;
+    const rec: OrderDropboxRecord = { ...base, state: "pending", ...(vin ? { vin } : {}), ...(plate ? { plate } : {}) };
+    delete rec.folderId;
+    delete rec.path;
+    delete rec.error;
+    await writeRecord(rec).catch(() => undefined);
+    return rec;
+  }
   const client = opts.client === undefined ? getDropboxClient() : opts.client;
   if (!client) {
     if (prev?.state === "ok") return prev;
@@ -155,7 +171,10 @@ export async function ensureOrderDropboxFolder(
     return rec;
   }
   try {
-    const car = await carFromDraft(sessionId, opts);
+    const car = await carFromDraft(sessionId, {
+      vin: (opts.vin ?? "").trim() || prev?.vin || null,
+      plate: (opts.plate ?? "").trim() || prev?.plate || null,
+    });
     const desiredName = orderDropboxFolderName({ sessionId, category, createdMs: orderCreatedMs, ...car });
     const parent = orderDropboxParentPath(category);
     if (prev?.state === "ok" && prev.folderId) {
@@ -225,7 +244,7 @@ export async function saveFileToOrderDropboxFolder(
 ): Promise<{ path: string; duplicate: boolean } | null> {
   const client = getDropboxClient();
   if (!client) return null;
-  const rec = await ensureOrderDropboxFolder(sessionId, { client });
+  const rec = await ensureOrderDropboxFolder(sessionId, { client, materialize: true });
   if (!rec || rec.state !== "ok" || !rec.path) return null;
   const name = sanitizeDropboxName(fileName, 140) || "fails.pdf";
   const folder = await currentOrderDropboxFolderPath(client, rec);

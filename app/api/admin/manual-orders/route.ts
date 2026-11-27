@@ -29,7 +29,7 @@ import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
 import type { OrderDropboxCategory } from "@/lib/order-dropbox-folder";
 
 /**
- * Dropbox pasūtījuma mape uzreiz pēc izveides; kļūda pasūtījumu neaptur. Virsmape pēc produkta: dīlera pārbaude ->
+ * Dropbox pasūtījuma mape uzreiz pēc izveides (dīlera datiem - pie pirmā faila, Nils 27.11); kļūda pasūtījumu neaptur. Virsmape pēc produkta: dīlera pārbaude ->
  * DILERA DATI, pārējie -> AUDITI. Ja produkts vēlāk mainās (admins sūta Business / Dīlera PDF), mapi pārvieto
  * `notify-report-ready` (`moveOrderDropboxFolderToCategory`).
  */

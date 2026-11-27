@@ -173,7 +173,11 @@ export function orderDropboxShouldRename(currentName: string, desiredName: strin
 export type OrderDropboxRecord = {
   sessionId: string;
   category: OrderDropboxCategory;
-  state: "ok" | "error";
+  /**
+   * `pending` - dīlera dati (Nils 27.11): mape vēl nav izveidota; to izveido pirmā faila saglabāšana
+   * (`saveFileToOrderDropboxFolder`). AUDITS / MINI / BUSINESS mapi veido uzreiz.
+   */
+  state: "ok" | "error" | "pending";
   /** Dropbox mapes id (`id:...`) - derīgs arī pēc pārdēvēšanas. */
   folderId?: string;
   path?: string;
@@ -182,6 +186,9 @@ export type OrderDropboxRecord = {
   createdAt: string;
   updatedAt: string;
   error?: string;
+  /** `pending` ierakstam: VIN / numurs no pasūtījuma - mapes nosaukumam, kad to izveidos pirmais fails. */
+  vin?: string;
+  plate?: string;
 };
 
 export function parseOrderDropboxRecord(raw: unknown): OrderDropboxRecord | null {
@@ -195,12 +202,14 @@ export function parseOrderDropboxRecord(raw: unknown): OrderDropboxRecord | null
   return {
     sessionId,
     category,
-    state: o.state === "ok" ? "ok" : "error",
+    state: o.state === "ok" ? "ok" : o.state === "pending" ? "pending" : "error",
     ...(s(o.folderId) ? { folderId: s(o.folderId) } : {}),
     ...(s(o.path) ? { path: s(o.path) } : {}),
     ...(typeof o.orderCreatedMs === "number" && Number.isFinite(o.orderCreatedMs) ? { orderCreatedMs: o.orderCreatedMs } : {}),
     createdAt: s(o.createdAt, 40) ?? new Date(0).toISOString(),
     updatedAt: s(o.updatedAt, 40) ?? new Date(0).toISOString(),
     ...(s(o.error, 200) ? { error: s(o.error, 200) } : {}),
+    ...(s(o.vin, 40) ? { vin: s(o.vin, 40) } : {}),
+    ...(s(o.plate, 40) ? { plate: s(o.plate, 40) } : {}),
   };
 }

@@ -32,7 +32,7 @@ const LOGIN_WAIT_MS = 3 * 60_000;
 
 type AutoInfo = {
   job: { state: string; label: string; plate: string; appliedAt: string | null; rawText?: string; fields?: CsddFormFields } | null;
-  dropbox: { state: "ok" | "error"; path: string | null; error: string | null } | null;
+  dropbox: { state: "ok" | "error" | "pending"; path: string | null; error: string | null } | null;
 };
 const storeKey = (sessionId: string) => `provin:ecsdd-paid:${sessionId}`;
 
@@ -345,7 +345,7 @@ export function AdminCsddPaidReportButton({ sessionId, orderVin, value, disabled
             ) : null}
           </span>
         ) : null}
-        {autoInfo.dropbox ? (
+        {autoInfo.dropbox && autoInfo.dropbox.state !== "pending" ? (
           autoInfo.dropbox.state === "ok" && autoInfo.dropbox.path ? (
             <span className="break-all text-slate-500">Dropbox: {autoInfo.dropbox.path}</span>
           ) : (
