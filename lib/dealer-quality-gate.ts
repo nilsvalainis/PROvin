@@ -138,6 +138,8 @@ function checkJobStatus(input: DealerQualityGateInput): DealerGateCheck {
     case "pending":
     case "running":
       return fail("job_status", "block", "Ielase vēl nav pabeigta.", "job");
+    case "retry_wait":
+      return fail("job_status", "block", "OneAuto serveris neatbild - ielase atkārtosies automātiski.", "job");
     case "failed":
       return fail("job_status", "block", `Ielase beidzās ar kļūdu (${clip(job.error ?? "nezināma", 60)}).`, "job");
     default:

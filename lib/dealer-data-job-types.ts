@@ -22,6 +22,11 @@ export type DealerDataJobStatus =
   | "no_data"
   /** Tehniska kļūda; operators var mēģināt vēlreiz. */
   | "failed"
+  /**
+   * OneAuto serveris neatbildēja (5xx / taimauts / tīkls) - nav kļūda, cron atkārtos pats
+   * pēc 10 min, 30 min, 2 h (Nils 27.11). Atmaksa nav pamatota, klientam nekas netiek sūtīts.
+   */
+  | "retry_wait"
   /** Klients ievadīja numurzīmi, bet VIN caur CSDD neizdevās atrast - ielase nav iespējama. */
   | "no_vin";
 
@@ -60,6 +65,8 @@ export type DealerDataJob = {
   nextRetryAt?: string;
   /** Cik reizes OneAuto atbildēja 202 «apstrādē» (ātrie atkārtojumi, neskaita pie griestiem). */
   pendingRetries?: number;
+  /** Cik automātisko atkārtojumu jau ieplānots pēc OneAuto 5xx / taimauta (0-3, sk. `retry_wait`). */
+  upstreamRetries?: number;
   /** Pašreizējās palaišanas nomas id (CAS slēdzene): maksas soļi notiek tikai, kamēr tas sakrīt. */
   runId?: string;
   /** Kad vēsture pirmoreiz ierakstīta melnrakstā (atkārtojumi vairs netulko un nepārraksta auto laukus). */
@@ -363,7 +370,7 @@ export function dealerCommentLanguageDirective(lang: DealerCommentOutputLang): s
 }
 
 export function dealerDataRetryButtonLabel(job: DealerDataJob | null): string {
-  if (job?.status === "failed") return "Atkārtot";
+  if (job?.status === "failed" || job?.status === "retry_wait") return "Atkārtot";
   if (job?.status === "no_vin") return "Palaist ar VIN";
   return "Ielasīt vēlreiz";
 }
@@ -501,6 +508,12 @@ export function dealerDataAlertText(
         body: `${who} - samaksātie dati saņemti, bet melnrakstā nav ierakstīti. Atver pasūtījumu un spied «Atkārtot».`,
       };
     case "failed_final":
+      if (job.error === DEALER_UPSTREAM_DOWN_ERROR) {
+        return {
+          title: "Dīlera dati: OneAuto serveris nestrādā",
+          body: `${who} - OneAuto neatbildēja arī pēc ${DEALER_UPSTREAM_MAX_RETRIES} automātiskiem atkārtojumiem. Spied «Atkārtot» vēlāk. Atmaksa nav vajadzīga, klientam nekas nav sūtīts.`,
+        };
+      }
       return {
         title: "Dīlera dati: ielase neizdevās",
         body: `${who} - ${job.attempts} mēģinājumi beidzās ar kļūdu (${job.error ?? "nezināma"}). Vajag operatoru.`,
@@ -557,6 +570,7 @@ export function dealerDataListAlertLabel(
   if (dealerDataJobMissingAi(job)) return "AI komentāri nav";
   if (job.status === "failed") {
     if (job.error === "draft_write_failed") return "Dīlera dati nav melnrakstā";
+    if (dealerDataJobUpstreamDown(job)) return "OneAuto nestrādā";
     return job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS ? "Dīlera ielase: kļūda" : null;
   }
   // Nils 26.11: atmaksa nekad nenotiek automātiski - pasūtījums gaida viņa apstiprinājumu.
@@ -593,6 +607,81 @@ export function dealerDataJobRetryDue(
   return !Number.isFinite(t) || t <= nowMs;
 }
 
+/**
+ * OneAuto 5xx / taimauts / tīkla kļūme (Nils 27.11, WBAMX31060C796522: «Kļūda: upstream_error»).
+ * Tā ir OneAuto servera problēma, nevis «datu nav»: darbs gaida un atkārtojas pats.
+ */
+export const DEALER_UPSTREAM_RETRY_DELAYS_MS = [10 * 60 * 1000, 30 * 60 * 1000, 2 * 60 * 60 * 1000] as const;
+export const DEALER_UPSTREAM_MAX_RETRIES = DEALER_UPSTREAM_RETRY_DELAYS_MS.length;
+/** Kļūdas kods pēc visiem automātiskajiem atkārtojumiem (statuss «failed»). */
+export const DEALER_UPSTREAM_DOWN_ERROR = "upstream_down";
+export const DEALER_UPSTREAM_DOWN_LABEL = "OneAuto serveris nestrādā - spied «Atkārtot» vēlāk";
+
+const TRANSIENT_ERROR_RE =
+  /timeout|timed out|aborted|abort|network|fetch failed|econnreset|econnrefused|etimedout|enotfound|eai_again|socket|und_err|bad gateway|gateway|service unavailable/i;
+
+/** Vai OneAuto rezultāts/kļūda ir pārejoša servera kļūme (5xx, taimauts, tīkls), nevis atbilde par datiem. */
+export function isOneautoTransientUpstreamFailure(
+  result: { error?: string; httpStatus?: number } | null | undefined,
+): boolean {
+  if (!result) return false;
+  const err = (result.error ?? "").trim();
+  if (err === "upstream_error" || err === "api_unavailable" || err === DEALER_UPSTREAM_DOWN_ERROR) return true;
+  if (typeof result.httpStatus === "number" && result.httpStatus >= 500 && result.httpStatus <= 599) return true;
+  if (/^http_5\d\d$/.test(err)) return true;
+  // Galīgi kodi nekad nav pārejoši.
+  if (/^(no_data|pending|http_20\d|insufficient_balance|invalid_vin|unauthorized_upstream|service_not_enabled)$/.test(err)) {
+    return false;
+  }
+  return TRANSIENT_ERROR_RE.test(err);
+}
+
+export type DealerUpstreamRetryPlan =
+  | { status: "retry_wait"; upstreamRetries: number; nextRetryAt: string }
+  | { status: "failed"; upstreamRetries: number; error: typeof DEALER_UPSTREAM_DOWN_ERROR };
+
+/**
+ * Nākamais solis pēc OneAuto servera kļūmes. `previousRetries` - cik atkārtojumu jau ieplānots
+ * (operatora «Atkārtot» sāk ciklu no 0). 1./2./3. kļūme -> gaida 10 min / 30 min / 2 h;
+ * pēc 3 atkārtojumiem -> «failed» ar `upstream_down` (automātika apstājas).
+ */
+export function planDealerUpstreamRetry(previousRetries: number, nowMs: number = Date.now()): DealerUpstreamRetryPlan {
+  const prev = Math.max(0, Math.floor(Number.isFinite(previousRetries) ? previousRetries : 0));
+  if (prev >= DEALER_UPSTREAM_MAX_RETRIES) {
+    return { status: "failed", upstreamRetries: prev, error: DEALER_UPSTREAM_DOWN_ERROR };
+  }
+  const delay = DEALER_UPSTREAM_RETRY_DELAYS_MS[prev]!;
+  return { status: "retry_wait", upstreamRetries: prev + 1, nextRetryAt: new Date(nowMs + delay).toISOString() };
+}
+
+/** Automātika izsmelta pēc OneAuto servera kļūmēm (oranžs, ne sarkans; atmaksa netiek piedāvāta). */
+export function dealerDataJobUpstreamDown(job: Pick<DealerDataJob, "status" | "error"> | null | undefined): boolean {
+  return job?.status === "failed" && job.error === DEALER_UPSTREAM_DOWN_ERROR;
+}
+
+/** Darbs gaida OneAuto servera atkopšanos (automātiski vai operators) - atmaksas ieteikums nav pamatots. */
+export function dealerDataJobWaitsForUpstream(job: Pick<DealerDataJob, "status" | "error"> | null | undefined): boolean {
+  return job?.status === "retry_wait" || dealerDataJobUpstreamDown(job);
+}
+
+/** «HH:MM» Europe/Riga. */
+function rigaHhMm(iso: string | undefined): string {
+  const t = Date.parse(iso ?? "");
+  if (!Number.isFinite(t)) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Riga",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(t));
+}
+
+export function describeDealerUpstreamRetryWait(job: Pick<DealerDataJob, "nextRetryAt" | "upstreamRetries">): string {
+  const n = Math.min(DEALER_UPSTREAM_MAX_RETRIES, Math.max(1, job.upstreamRetries ?? 1));
+  const at = rigaHhMm(job.nextRetryAt);
+  return `OneAuto serveris neatbild - automātiski mēģinās vēlreiz${at ? ` ${at}` : ""} (${n}/${DEALER_UPSTREAM_MAX_RETRIES})`;
+}
+
 /** Vai statuss ir pamats piedāvāt atmaksu operatoram. */
 export function dealerDataJobSuggestsRefund(job: DealerDataJob | null): boolean {
   return job?.status === "no_data";
@@ -604,6 +693,7 @@ const STATUSES: readonly DealerDataJobStatus[] = [
   "done",
   "no_data",
   "failed",
+  "retry_wait",
   "no_vin",
 ];
 
@@ -764,6 +854,9 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(typeof o.pendingRetries === "number" && Number.isFinite(o.pendingRetries)
       ? { pendingRetries: Math.max(0, Math.floor(o.pendingRetries)) }
       : {}),
+    ...(typeof o.upstreamRetries === "number" && Number.isFinite(o.upstreamRetries) && o.upstreamRetries > 0
+      ? { upstreamRetries: Math.floor(o.upstreamRetries) }
+      : {}),
   };
 }
 
@@ -797,7 +890,10 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
     }
     case "no_data":
       return job.refund ? "Dīlera dati nav pieejami" : `Dīlera dati nav pieejami · ${DEALER_REFUND_AWAITING_LABEL}`;
+    case "retry_wait":
+      return describeDealerUpstreamRetryWait(job);
     case "failed":
+      if (dealerDataJobUpstreamDown(job)) return DEALER_UPSTREAM_DOWN_LABEL;
       if (job.error?.startsWith("vin_decode:")) {
         return `Ielasīts: ${job.serviceEventCount ?? 0} servisa ieraksti, VIN dekodēšana atkārtosies`;
       }

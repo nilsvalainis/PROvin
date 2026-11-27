@@ -16,7 +16,13 @@ import {
   adminIngestSentLabel,
   type AdminOrderIngest,
 } from "@/lib/admin-mobile-ingest";
-import { dealerDataJobReadyAt, dealerDataRetryButtonLabel, type DealerDataJob } from "@/lib/dealer-data-job-types";
+import {
+  dealerDataJobReadyAt,
+  dealerDataJobWaitsForUpstream,
+  dealerDataRetryButtonLabel,
+  describeDealerDataJob,
+  type DealerDataJob,
+} from "@/lib/dealer-data-job-types";
 import { formatRigaDayTime } from "@/lib/order-client-marks";
 import { openWindowSyncThen, PDF_PREPARING_HTML } from "@/lib/admin-open-window";
 import { requestOpenAdminBlock } from "@/lib/admin-mobile-ds";
@@ -227,6 +233,8 @@ export function mobileDealerPhotosLabel(ar: Pick<AutoRecordsBlockState, "dealerP
 
 export function mobileDealerStatusSub(job: DealerDataJob | null, nowMs: number = Date.now()): string {
   if (!job) return "";
+  // OneAuto serveris neatbild: telefonā tas pats skaidrais teksts kā datorā (laiks + n/3).
+  if (dealerDataJobWaitsForUpstream(job)) return describeDealerDataJob(job);
   const at = dealerDataJobReadyAt(job) || job.finishedAt || job.updatedAt || "";
   const t = Date.parse(at);
   if (!Number.isFinite(t)) return "OneAuto";
