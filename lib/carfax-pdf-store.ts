@@ -13,7 +13,7 @@ import { normalizeVin } from "@/lib/order-field-validation";
 /**
  * CARFAX oriģinālā PDF glabāšana (kā AutoDNA / LTAB PDF):
  *   carfax/{sessionId}.pdf  - privāts Blob (pasūtījuma pielikums)
- *   Dropbox pasūtījuma mapē - jaunajiem pasūtījumiem sava mape (AUDITI/...), vecajiem mape pēc VIN `/_PROv`.
+ *   Dropbox pasūtījuma mapē - jaunajiem pasūtījumiem sava mape (pēc mapes id), vecajiem mape pēc VIN `/_PROv`.
  * Kļūda neaptur ielasi - atgriež, kas izdevās.
  */
 

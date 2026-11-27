@@ -9,24 +9,31 @@ import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { DropboxApiError, getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
 import { sanitizeDropboxName } from "@/lib/iriss-autoparks-dropbox-path";
 import {
+  dropboxParentDir,
+  matchPartnerFolderName,
   orderDropboxFolderName,
   orderDropboxNameWithCategory,
   orderDropboxParentPath,
   orderDropboxShouldRename,
   parseOrderDropboxRecord,
+  partnerFolderName,
+  provPartnersPath,
   type OrderDropboxCategory,
   type OrderDropboxRecord,
 } from "@/lib/order-dropbox-folder";
 
 /**
- * PROVIN pasūtījuma Dropbox mape (servera puse): izveide uzreiz pēc pasūtījuma (AUDITS / MINI / BUSINESS; dīlera
- * datiem - pie pirmā saglabātā faila, Nils 27.11), pārdēvēšana, kad zināma marka/modelis,
- * failu saglabāšana. Nekad neizmet kļūdu uz augšu - pasūtījums neapstājas; kļūda paliek ierakstā (admin rāda sarkanā).
+ * PROVIN pasūtījuma Dropbox mape (servera puse): izveide uzreiz pēc pasūtījuma (AUDITS / MINI / BUSINESS - `_PROv`
+ * saknē; B2B partneriem - `PARTNERI/<partneris>/`; dīlera datiem - `DĪLERA DATU ARHĪVS/` pie pirmā saglabātā faila,
+ * Nils 27.11), pārdēvēšana, kad zināma marka/modelis (tajā pašā vietā - ja Nils mapi pārvietojis uz arhīvu, tā tur
+ * paliek), failu saglabāšana. Nekad neizmet kļūdu uz augšu - pasūtījums neapstājas; kļūda paliek ierakstā (admin rāda sarkanā).
  * Ieraksts: {draft dir|blob prefix}/order_dropbox/<sessionId>.json
  */
 
 const LOG = "[order-dropbox]";
 const DIR = "order_dropbox";
+/** Partnera mapes ieraksts (pēc partnera id): `{dir|prefix}/order_dropbox_partners/<partnerId>.json`. */
+const PARTNER_DIR = "order_dropbox_partners";
 
 /**
  * Ieraksts + vai lasīšana izdevās. `readError` - krātuve neatbildēja (nevis "nav ieraksta"): tad jaunu mapi NEVEIDO,
@@ -69,8 +76,10 @@ export async function readOrderDropboxRecord(sessionId: string): Promise<OrderDr
 }
 
 async function writeRecord(rec: OrderDropboxRecord): Promise<void> {
-  const file = `${DIR}/${rec.sessionId}.json`;
-  const body = JSON.stringify(rec);
+  await writeJson(`${DIR}/${rec.sessionId}.json`, JSON.stringify(rec));
+}
+
+async function writeJson(file: string, body: string): Promise<void> {
   const blob = getOrderDraftBlobConfig();
   if (blob) {
     try {
@@ -91,6 +100,101 @@ async function writeRecord(rec: OrderDropboxRecord): Promise<void> {
   const fp = path.join(dir, file);
   await fs.mkdir(path.dirname(fp), { recursive: true });
   await fs.writeFile(fp, body, "utf8");
+}
+
+async function readJson(file: string): Promise<unknown | null> {
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      const res = await get(`${blob.prefix}${file}`, { access: "private", token: blob.token, useCache: false });
+      if (res?.statusCode === 200 && res.stream) return JSON.parse(await new Response(res.stream).text());
+      if (!res) return null;
+    } catch {
+      if (process.env.VERCEL === "1") return null;
+    }
+  }
+  const dir = getOrderDraftStorageDir();
+  if (dir && process.env.VERCEL !== "1") {
+    try {
+      return JSON.parse(await fs.readFile(path.join(dir, file), "utf8"));
+    } catch {
+      /* nav */
+    }
+  }
+  return null;
+}
+
+function isSafePartnerId(id: string): boolean {
+  return /^[A-Za-z0-9_-]{2,80}$/.test(id);
+}
+
+/**
+ * Partnera mape `PARTNERI/<partneris>` (Nils 27.11): vispirms pēc saglabātā mapes id (derīgs arī pēc pārdēvēšanas),
+ * tad esošā mape pēc uzņēmuma nosaukuma («Pērc un brauc (RKG GROUP)»), citādi jauna `PARTNERI/<Uzņēmums>`.
+ * null - partnera nav / nav nosaukuma (tad pasūtījums iet uz sakni kā parasts).
+ */
+export async function resolvePartnerDropboxFolder(
+  client: DropboxClient,
+  partnerId: string | undefined,
+  partnerName: string | undefined,
+): Promise<string | null> {
+  if (!partnerId || !isSafePartnerId(partnerId)) return null;
+  const file = `${PARTNER_DIR}/${partnerId}.json`;
+  const saved = (await readJson(file)) as { folderId?: unknown } | null;
+  if (saved && typeof saved.folderId === "string" && saved.folderId) {
+    const meta = await client.getMetadata(saved.folderId).catch(() => null);
+    if (meta && meta.tag === "folder" && meta.pathDisplay) return meta.pathDisplay;
+  }
+  const name = (partnerName ?? "").trim();
+  if (!name) return null;
+  const parent = provPartnersPath();
+  const listed = await client.listAll(parent).catch(() => null);
+  const folders = (listed?.entries ?? []).filter((e) => e.tag === "folder");
+  const hit = matchPartnerFolderName(
+    folders.map((e) => e.name),
+    name,
+  );
+  const entry = hit
+    ? folders.find((e) => e.name === hit)!
+    : await client.ensureFolder(`${parent}/${partnerFolderName(name) || partnerId}`);
+  const folderPath = entry.pathDisplay || `${parent}/${entry.name}`;
+  await writeJson(file, JSON.stringify({ partnerId, folderId: entry.id, path: folderPath, updatedAt: new Date().toISOString() })).catch(
+    () => undefined,
+  );
+  return folderPath;
+}
+
+/** Virsmape jaunai mapei / produkta maiņai: partnera mape vai produkta virsmape (sakne / DĪLERA DATU ARHĪVS). */
+async function targetParentPath(client: DropboxClient, category: OrderDropboxCategory, rec: OrderDropboxRecord): Promise<string> {
+  const partner = await resolvePartnerDropboxFolder(client, rec.partnerId, rec.partnerName);
+  return partner ?? orderDropboxParentPath(category);
+}
+
+/**
+ * B2B partnera pasūtījums (Nils 27.11): ieraksts ar partneri, lai mape (Business uzreiz, dīlera datiem - pie pirmā
+ * faila) tiktu veidota `PARTNERI/<partneris>/`. Dropbox šeit netiek saukts - tikai ieraksts.
+ */
+export async function notePartnerOrderDropbox(
+  sessionId: string,
+  args: { category: OrderDropboxCategory; partnerId: string; partnerName?: string | null; createdMs: number; vin?: string | null },
+): Promise<void> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return;
+  const { record: prev, readError } = await readOrderDropboxRecordResult(sessionId);
+  if (readError || prev) return;
+  const now = new Date().toISOString();
+  const vin = (args.vin ?? "").trim();
+  const name = (args.partnerName ?? "").trim();
+  await writeRecord({
+    sessionId,
+    category: args.category,
+    state: "pending",
+    orderCreatedMs: args.createdMs,
+    createdAt: now,
+    updatedAt: now,
+    partnerId: args.partnerId,
+    ...(name ? { partnerName: name } : {}),
+    ...(vin ? { vin } : {}),
+  }).catch((e) => console.warn(`${LOG} partner note failed`, { sessionId: sessionId.slice(-8), error: errCode(e) }));
 }
 
 type CarParts = { make: string; model: string; plate: string; vin: string };
@@ -149,6 +253,8 @@ export async function ensureOrderDropboxFolder(
     orderCreatedMs,
     createdAt: prev?.createdAt ?? now,
     updatedAt: now,
+    ...(prev?.partnerId ? { partnerId: prev.partnerId } : {}),
+    ...(prev?.partnerName ? { partnerName: prev.partnerName } : {}),
   };
   // Dīlera dati (Nils 27.11): mape NEtiek veidota pie pasūtījuma ienākšanas - tikai ieraksts `pending` (kategorija,
   // datums), lai pirmais saglabātais fails (dīlera PDF, CheckThisReg, CSDD PDF) izveidotu pareizo mapi DILERA DATI/...
@@ -176,13 +282,15 @@ export async function ensureOrderDropboxFolder(
       plate: (opts.plate ?? "").trim() || prev?.plate || null,
     });
     const desiredName = orderDropboxFolderName({ sessionId, category, createdMs: orderCreatedMs, ...car });
-    const parent = orderDropboxParentPath(category);
     if (prev?.state === "ok" && prev.folderId) {
       const meta = await client.getMetadata(prev.folderId);
       if (meta && meta.tag === "folder") {
         let current = meta.pathDisplay || prev.path || "";
         // Produkta maiņa: tā pati mape (ar visiem failiem) uz citu virsmapi - nevis otra mape.
         const categoryChange = prev.category !== category;
+        // Bez produkta maiņas - pārdēvē tajā pašā vietā: mape, ko Nils pārvietojis uz AUDITU ARHĪVS (vai vecā
+        // AUDITI / BUSINESS), tur arī paliek - kods to atpakaļ uz sakni nevelk.
+        const parent = categoryChange ? await targetParentPath(client, category, base) : dropboxParentDir(current);
         let finalCategory = category;
         // Jaunajā virsmapē nosaukums nedrīkst kļūt nabadzīgāks (marka / VIN, kas jau bija nosaukumā, paliek).
         const swapped = categoryChange ? orderDropboxNameWithCategory(meta.name, prev.category, category) : meta.name;
@@ -197,7 +305,7 @@ export async function ensureOrderDropboxFolder(
             // ir novecojis ceļš - augšupielāde uz to izveidotu otru mapi ar veco nosaukumu (Nils 26.11, 540i).
             const fresh = await client.getMetadata(prev.folderId).catch(() => null);
             if (fresh && fresh.tag === "folder" && fresh.pathDisplay) current = fresh.pathDisplay;
-            const movedByOther = current.toLowerCase().startsWith(`${parent.toLowerCase()}/`);
+            const movedByOther = dropboxParentDir(current).toLowerCase() === parent.toLowerCase();
             if (categoryChange && !movedByOther) finalCategory = prev.category;
             console.warn(`${LOG} ${categoryChange ? "move" : "rename"} skipped`, {
               sessionId: sessionId.slice(-8),
@@ -214,6 +322,7 @@ export async function ensureOrderDropboxFolder(
       }
       // Mape izdzēsta vai pārvietota ārpus Dropbox - izveido no jauna.
     }
+    const parent = await targetParentPath(client, category, base);
     const entry = await client.ensureFolder(`${parent}/${desiredName}`);
     const rec: OrderDropboxRecord = { ...base, state: "ok", folderId: entry.id || undefined, path: entry.pathDisplay || `${parent}/${desiredName}` };
     delete rec.error;
@@ -272,10 +381,6 @@ export async function currentOrderDropboxFolderPath(client: DropboxClient, rec: 
   return rec.path ?? "";
 }
 
-function parentDir(p: string): string {
-  const i = p.lastIndexOf("/");
-  return i > 0 ? p.slice(0, i) : "";
-}
 
 /**
  * Pēc augšupielādes: ja mapi tieši tobrīd pārdēvēja (fails nonāca jaunizveidotā mapē ar veco nosaukumu),
@@ -293,7 +398,7 @@ export async function keepFileInOrderFolder(
   if (!now || now.toLowerCase() === usedFolder.toLowerCase()) return filePath;
   try {
     const moved = await client.move(filePath, `${now}/${filePath.slice(filePath.lastIndexOf("/") + 1)}`, { autorename: true });
-    const stray = parentDir(filePath);
+    const stray = dropboxParentDir(filePath);
     if (stray && stray.toLowerCase() !== now.toLowerCase()) {
       const left = await client.listFolder(stray).catch(() => null);
       if (left && left.entries.length === 0 && !left.hasMore) await client.deleteFile(stray).catch(() => undefined);
@@ -335,7 +440,7 @@ export function ensureOrderDropboxFolderSafe(
 
 /**
  * Fails pasūtījuma mapē visiem avotiem (CarVertical, AutoDNA, LTAB, CARFAX, atskaites PDF kopija):
- *  - pasūtījumam ir mapes ieraksts (jaunie, no 23.11) -> TIKAI tā mape (`AUDITI/...`, `DILERA DATI/...`);
+ *  - pasūtījumam ir mapes ieraksts (jaunie, no 23.11) -> TIKAI tā mape (pēc mapes id - arī pēc pārvietošanas uz arhīvu);
  *    ja saglabāt neizdodas - kļūda (nevis otra mape `/_PROv` saknē);
  *  - ieraksta nav (vecie pasūtījumi) -> `legacy()` (mape pēc VIN `/_PROv` saknē kā līdz šim).
  */

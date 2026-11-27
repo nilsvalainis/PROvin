@@ -367,7 +367,7 @@ async function saveResult(sessionId: string, prev: AutodnaAutoStatus | null, ev:
       const draft = await readOrderDraft(sessionId);
       const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
       const car = orderCarFromCsdd(csdd, "", vin || draft?.orderEdits?.vin || "");
-      // Jaunie pasūtījumi: tikai sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē.
+      // Jaunie pasūtījumi: tikai sava mape (pēc mapes id, arī arhīvā); vecajiem - mape pēc VIN `/_PROv` saknē.
       const saved = await saveFileToOrderFolderOrLegacy(sessionId, name, bytes, () =>
         saveFileToProvOrderFolder(client, { ...car, vin: vin || car.vin }, name, bytes),
       );

@@ -27,6 +27,7 @@ import {
   downloadOrderDropboxFile,
   ensureOrderDropboxFolder,
   moveOrderDropboxFolderToCategory,
+  notePartnerOrderDropbox,
   readOrderDropboxRecord,
   saveFileToOrderFolderOrLegacy,
 } from "@/lib/order-dropbox";
@@ -85,7 +86,7 @@ describe("ensureOrderDropboxFolder", () => {
     const dbx = fakeDropbox();
     const r1 = await ensureOrderDropboxFolder("cs_test_order1", { category: "audits", createdMs: created, vin: "RO8544", client: dbx.client });
     expect(r1?.state).toBe("ok");
-    expect(r1?.path).toBe("/_PROv/AUDITI/RO8544_2026-11-23_AUDITS");
+    expect(r1?.path).toBe("/_PROv/RO8544_2026-11-23_AUDITS");
 
     // Atkārtots webhook: nekas jauns netiek veidots.
     const again = await ensureOrderDropboxFolder("cs_test_order1", { category: "audits", createdMs: created + 999_999, vin: "RO8544", client: dbx.client });
@@ -96,7 +97,7 @@ describe("ensureOrderDropboxFolder", () => {
       workspace: { sourceBlocks: { csdd: { makeModel: "LAND ROVER DISCOVERY", registrationNumber: "RO8544", vin: "SALLAAAM6FA743824" } } },
     });
     const r2 = await ensureOrderDropboxFolder("cs_test_order1", { client: dbx.client });
-    expect(r2?.path).toBe("/_PROv/AUDITI/LAND ROVER DISCOVERY_RO8544_SALLAAAM6FA743824_2026-11-23_AUDITS");
+    expect(r2?.path).toBe("/_PROv/LAND ROVER DISCOVERY_RO8544_SALLAAAM6FA743824_2026-11-23_AUDITS");
     expect(r2?.folderId).toBe(r1?.folderId);
     expect(dbx.calls.move).toBe(1);
     expect((await readOrderDropboxRecord("cs_test_order1"))?.path).toBe(r2?.path);
@@ -108,7 +109,7 @@ describe("ensureOrderDropboxFolder", () => {
   it("dīlera dati - atsevišķa virsmape (izveido tikai pie pirmā faila)", async () => {
     const dbx = fakeDropbox();
     const r = await ensureOrderDropboxFolder("cs_test_dealer", { category: "dealer", createdMs: created, vin: "WBA5R1C0XLFH42873", client: dbx.client, materialize: true });
-    expect(r?.path).toBe("/_PROv/DILERA DATI/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
+    expect(r?.path).toBe("/_PROv/DĪLERA DATU ARHĪVS/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
   });
 
   it("dīlera dati (Nils 27.11): pie pasūtījuma mapi neveido - ieraksts pending; pirmais fails izveido mapi", async () => {
@@ -125,7 +126,7 @@ describe("ensureOrderDropboxFolder", () => {
 
     const saved = await saveFileToOrderFolderOrLegacy("cs_test_dlazy", "Dilera dati.pdf", new Uint8Array([1]), async () => ({ path: "/legacy" }));
     expect(saved.legacy).toBe(false);
-    expect(saved.path).toBe("/_PROv/DILERA DATI/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
+    expect(saved.path).toBe("/_PROv/DĪLERA DATU ARHĪVS/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
     expect(dbx.calls.create).toBe(1);
     const rec = await readOrderDropboxRecord("cs_test_dlazy");
     expect(rec?.state).toBe("ok");
@@ -135,12 +136,12 @@ describe("ensureOrderDropboxFolder", () => {
     expect(dbx.calls.create).toBe(1);
   });
 
-  it("dīlera dati pending -> produkts mainās uz AUDITI: mapi izveido uzreiz", async () => {
+  it("dīlera dati pending -> produkts mainās uz AUDITS: mapi izveido uzreiz saknē", async () => {
     const dbx = fakeDropbox();
     await ensureOrderDropboxFolder("manual_order_dl", { category: "dealer", createdMs: created, vin: "AB1236", client: dbx.client });
     const r = await moveOrderDropboxFolderToCategory("manual_order_dl", "audits", dbx.client);
     expect(r?.state).toBe("ok");
-    expect(r?.path?.startsWith("/_PROv/AUDITI/")).toBe(true);
+    expect(r?.path).toBe("/_PROv/AB1236_2026-11-23_AUDITS");
     expect(dbx.calls.create).toBe(1);
   });
 
@@ -183,9 +184,9 @@ describe("viena mape uz pasūtījumu (Nils 25.11: divas mapes)", () => {
     expect(legacy).not.toHaveBeenCalled();
     expect(saved.legacy).toBe(false);
     // Tā pati mape (pārdēvēta, kad parādījās marka), jauna netiek veidota.
-    expect(saved.path).toBe("/_PROv/AUDITI/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS/CarVertical - WAUZZZ4G5JN000001.pdf");
+    expect(saved.path).toBe("/_PROv/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS/CarVertical - WAUZZZ4G5JN000001.pdf");
     expect(dbx.calls.create).toBe(1);
-    expect(dbx.byId.get(r1!.folderId!)).toBe("/_PROv/AUDITI/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS");
+    expect(dbx.byId.get(r1!.folderId!)).toBe("/_PROv/AUDI A6_WAUZZZ4G5JN000001_2026-11-23_AUDITS");
   });
 
   it("ja pasūtījuma mapē saglabāt neizdodas - kļūda, nevis otra mape", async () => {
@@ -225,13 +226,13 @@ describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
     const moved = await moveOrderDropboxFolderToCategory("manual_order_t1", "business", dbx.client);
     expect(moved?.category).toBe("business");
     expect(moved?.folderId).toBe(r1?.folderId);
-    expect(moved?.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS");
+    expect(moved?.path).toBe("/_PROv/BMW 325_WBA00000000000001_2026-11-23_BUSINESS");
     expect(dbx.byId.get(r1!.folderId!)).toBe(moved?.path);
     expect(dbx.calls.create).toBe(1);
     expect((await readOrderDropboxRecord("manual_order_t1"))?.category).toBe("business");
 
     const saved = await saveFileToOrderFolderOrLegacy("manual_order_t1", "PROVIN_BUSINESS_WBA00000000000001.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
-    expect(saved.path).toBe("/_PROv/BUSINESS/BMW 325_WBA00000000000001_2026-11-23_BUSINESS/PROVIN_BUSINESS_WBA00000000000001.pdf");
+    expect(saved.path).toBe("/_PROv/BMW 325_WBA00000000000001_2026-11-23_BUSINESS/PROVIN_BUSINESS_WBA00000000000001.pdf");
     expect(dbx.calls.create).toBe(1);
 
     // Tā pati kategorija vēlreiz - nekas nenotiek.
@@ -254,7 +255,7 @@ describe("produkta maiņa: mapi pārvieto, nevis veido jaunu", () => {
     expect(r2?.path).toBe(r1?.path);
     expect((await readOrderDropboxRecord("manual_order_t2"))?.category).toBe("audits");
     const r3 = await moveOrderDropboxFolderToCategory("manual_order_t2", "dealer", dbx.client);
-    expect(r3?.path).toBe("/_PROv/DILERA DATI/BMW_WBA00000000000002_2026-11-23_DILERA DATI");
+    expect(r3?.path).toBe("/_PROv/DĪLERA DATU ARHĪVS/BMW_WBA00000000000002_2026-11-23_DILERA DATI");
   });
 
   it("vecs pasūtījums bez mapes ieraksta - neko neveido", async () => {
@@ -269,11 +270,11 @@ describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar ve
     const dbx = fakeDropbox();
     h.client = dbx.client;
     const r1 = await ensureOrderDropboxFolder("cs_test_race", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00001", client: dbx.client, materialize: true });
-    expect(r1?.path).toBe("/_PROv/DILERA DATI/BMW_WBAJB5101HWA00001_2026-11-23_DILERA DATI");
+    expect(r1?.path).toBe("/_PROv/DĪLERA DATU ARHĪVS/BMW_WBAJB5101HWA00001_2026-11-23_DILERA DATI");
     h.drafts.set("cs_test_race", {
       workspace: { sourceBlocks: { csdd: { makeModel: "BMW 540I XDRIVE", registrationNumber: "BM0001", vin: "WBAJB5101HWA00001" } } },
     });
-    const renamed = "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0001_WBAJB5101HWA00001_2026-11-23_DILERA DATI";
+    const renamed = "/_PROv/DĪLERA DATU ARHĪVS/BMW 540I XDRIVE_BM0001_WBAJB5101HWA00001_2026-11-23_DILERA DATI";
     // Šis izsaukums nolasa metadatus ar veco nosaukumu, bet pirms tā pārdēvē paralēls izsaukums.
     let first = true;
     const racing = {
@@ -305,16 +306,16 @@ describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar ve
     h.client = dbx.client;
     const r1 = await ensureOrderDropboxFolder("cs_test_stale", { category: "audits", createdMs: created, vin: "AB1234", client: dbx.client });
     // Mape pārdēvēta ārpus šī izsaukuma (piem. Nils Dropbox), ieraksts vēl rāda veco ceļu.
-    dbx.byId.set(r1!.folderId!, "/_PROv/AUDITI/AUDI A6_AB1234_2026-11-23_AUDITS");
+    dbx.byId.set(r1!.folderId!, "/_PROv/AUDI A6_AB1234_2026-11-23_AUDITS");
     const saved = await saveFileToOrderFolderOrLegacy("cs_test_stale", "CarVertical - X.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
-    expect(saved.path).toBe("/_PROv/AUDITI/AUDI A6_AB1234_2026-11-23_AUDITS/CarVertical - X.pdf");
+    expect(saved.path).toBe("/_PROv/AUDI A6_AB1234_2026-11-23_AUDITS/CarVertical - X.pdf");
   });
 
   it("mapi pārdēvē tieši augšupielādes brīdī - fails pārcelts uz īsto mapi, tukšā liekā mape uz atkritni", async () => {
     const dbx = fakeDropbox();
     const r1 = await ensureOrderDropboxFolder("cs_test_mid", { category: "audits", createdMs: created, vin: "AB1235", client: dbx.client });
     const oldPath = r1!.path!;
-    const newPath = "/_PROv/AUDITI/AUDI A6_AB1235_2026-11-23_AUDITS";
+    const newPath = "/_PROv/AUDI A6_AB1235_2026-11-23_AUDITS";
     const deleted: string[] = [];
     const moved: Array<[string, string]> = [];
     const client = {
@@ -362,19 +363,19 @@ describe("PDF pēc saglabātā ceļa, kad dubultmapes apvienotas (Nils 26.11)", 
 
   it("ceļš derīgs - lasa to pašu, rezervi nemeklē", async () => {
     const dbx = fakeDropbox();
-    const { client, downloads } = withFiles(dbx, { "/_PROv/AUDITI/X/LTAB - AB1.pdf": [1, 2] });
-    const got = await downloadOrderDropboxFile(client, "cs_test_dl1", "/_PROv/AUDITI/X/LTAB - AB1.pdf");
-    expect(got).toEqual({ bytes: new Uint8Array([1, 2]), path: "/_PROv/AUDITI/X/LTAB - AB1.pdf", fallback: false });
+    const { client, downloads } = withFiles(dbx, { "/_PROv/X/LTAB - AB1.pdf": [1, 2] });
+    const got = await downloadOrderDropboxFile(client, "cs_test_dl1", "/_PROv/X/LTAB - AB1.pdf");
+    expect(got).toEqual({ bytes: new Uint8Array([1, 2]), path: "/_PROv/X/LTAB - AB1.pdf", fallback: false });
     expect(downloads).toHaveLength(1);
   });
 
   it("vecā mape pārvietota uz arhīvu - fails atrasts pasūtījuma kanoniskajā mapē pēc nosaukuma", async () => {
     const dbx = fakeDropbox();
     const r = await ensureOrderDropboxFolder("cs_test_dl2", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00002", client: dbx.client, materialize: true });
-    dbx.byId.set(r!.folderId!, "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI");
-    const canon = "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf";
+    dbx.byId.set(r!.folderId!, "/_PROv/DĪLERA DATU ARHĪVS/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI");
+    const canon = "/_PROv/DĪLERA DATU ARHĪVS/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf";
     const { client } = withFiles(dbx, { [canon]: [7] });
-    const got = await downloadOrderDropboxFile(client, "cs_test_dl2", "/_PROv/DILERA DATI/WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf");
+    const got = await downloadOrderDropboxFile(client, "cs_test_dl2", "/_PROv/DĪLERA DATU ARHĪVS/WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf");
     expect(got).toEqual({ bytes: new Uint8Array([7]), path: canon, fallback: true });
     // Saknes mape («Auto VIN») - tas pats.
     const got2 = await downloadOrderDropboxFile(client, "cs_test_dl2", "/_PROv/Auto WBAJB5101HWA00002/LTAB - BM0002.pdf");
@@ -393,5 +394,93 @@ describe("PDF pēc saglabātā ceļa, kad dubultmapes apvienotas (Nils 26.11)", 
     const dbx = fakeDropbox();
     const client = { ...dbx.client, download: async () => { throw new DropboxApiError(503, "x"); } } as unknown as DropboxClient;
     await expect(downloadOrderDropboxFile(client, "cs_test_dl5", "/_PROv/a.pdf")).rejects.toThrow();
+  });
+});
+
+describe("_PROv struktūra (Nils 27.11): sakne + arhīvi + PARTNERI", () => {
+  it("Nils mapi pārvietoja uz AUDITU ARHĪVS - pārdēvēšana notiek tur pat, mape netiek vilkta atpakaļ uz sakni", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("cs_test_arch", { category: "audits", createdMs: created, vin: "RO8545", client: dbx.client });
+    expect(r1?.path).toBe("/_PROv/RO8545_2026-11-23_AUDITS");
+    dbx.byId.set(r1!.folderId!, "/_PROv/AUDITU ARHĪVS/RO8545_2026-11-23_AUDITS");
+    h.drafts.set("cs_test_arch", {
+      workspace: { sourceBlocks: { csdd: { makeModel: "LAND ROVER DISCOVERY", registrationNumber: "RO8545", vin: "SALLAAAM6FA743825" } } },
+    });
+    const r2 = await ensureOrderDropboxFolder("cs_test_arch", { client: dbx.client });
+    expect(r2?.path).toBe("/_PROv/AUDITU ARHĪVS/LAND ROVER DISCOVERY_RO8545_SALLAAAM6FA743825_2026-11-23_AUDITS");
+    expect(r2?.folderId).toBe(r1?.folderId);
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_arch", "LTAB - RO8545.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe(`${r2!.path}/LTAB - RO8545.pdf`);
+    expect(dbx.calls.create).toBe(1);
+  });
+
+  it("vecs ieraksts ar ceļu /_PROv/AUDITI/... (mape tagad AUDITU ARHĪVS pēc id) - fails nonāk īstajā mapē", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r1 = await ensureOrderDropboxFolder("cs_test_old", { category: "audits", createdMs: created, vin: "AB1299", client: dbx.client });
+    dbx.byId.set(r1!.folderId!, "/_PROv/AUDITU ARHĪVS/AUDI A6_AB1299_2026-11-23_AUDITS");
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_old", "CarVertical - X.pdf", new Uint8Array([1]), async () => ({ path: "/x" }));
+    expect(saved.path).toBe("/_PROv/AUDITU ARHĪVS/AUDI A6_AB1299_2026-11-23_AUDITS/CarVertical - X.pdf");
+  });
+
+  it("partnera Business: esošā partnera mape pēc nosaukuma (RKG GROUP), id saglabāts nākamajiem", async () => {
+    const dbx = fakeDropbox();
+    const rkgId = "id:rkg";
+    dbx.byId.set(rkgId, "/_PROv/PARTNERI/Pērc un brauc (RKG GROUP)");
+    const lists: string[] = [];
+    const client = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      ensureFolder: dbx.client.ensureFolder,
+      move: dbx.client.move,
+      upload: dbx.client.upload,
+      async listAll(p: string) {
+        lists.push(p);
+        const kids = [...dbx.byId].filter(([, cur]) => cur.startsWith(`${p}/`) && !cur.slice(p.length + 1).includes("/"));
+        return { entries: kids.map(([id, cur]) => entry("folder", cur, id)), cursor: "" };
+      },
+    } as unknown as DropboxClient;
+    await notePartnerOrderDropbox("manual_order_pb1", { category: "business", partnerId: "p_rkg", partnerName: "RKG Group SIA", createdMs: created, vin: "TMBJJ9NS7J8097121" });
+    const r = await ensureOrderDropboxFolder("manual_order_pb1", { category: "business", vin: "TMBJJ9NS7J8097121", client });
+    expect(r?.state).toBe("ok");
+    expect(r?.path).toBe("/_PROv/PARTNERI/Pērc un brauc (RKG GROUP)/ŠKODA_TMBJJ9NS7J8097121_2026-11-23_BUSINESS");
+    expect(r?.partnerId).toBe("p_rkg");
+    // Partnera mapi pārdēvē - nākamais pasūtījums to atrod pēc id, nevis pēc nosaukuma.
+    dbx.byId.set(rkgId, "/_PROv/PARTNERI/RKG");
+    await notePartnerOrderDropbox("manual_order_pb2", { category: "business", partnerId: "p_rkg", partnerName: "RKG Group SIA", createdMs: created, vin: "WBA00000000000009" });
+    const r2 = await ensureOrderDropboxFolder("manual_order_pb2", { category: "business", vin: "WBA00000000000009", client });
+    expect(r2?.path?.startsWith("/_PROv/PARTNERI/RKG/")).toBe(true);
+    expect(lists).toEqual(["/_PROv/PARTNERI"]);
+  });
+
+  it("jauns partneris - izveido PARTNERI/<Uzņēmums>; partnera dīlera dati - pending, mape partnera mapē pie pirmā faila", async () => {
+    const dbx = fakeDropbox();
+    const client = {
+      ...dbx.client,
+      getMetadata: dbx.client.getMetadata,
+      ensureFolder: dbx.client.ensureFolder,
+      move: dbx.client.move,
+      upload: dbx.client.upload,
+      async listAll() {
+        return { entries: [], cursor: "" };
+      },
+    } as unknown as DropboxClient;
+    h.client = client;
+    await notePartnerOrderDropbox("manual_order_pd1", { category: "dealer", partnerId: "p_new", partnerName: "Jauns Auto SIA", createdMs: created, vin: "WBA5R1C0XLFH42873" });
+    const pend = await ensureOrderDropboxFolder("manual_order_pd1", { category: "dealer", vin: "WBA5R1C0XLFH42873", client });
+    expect(pend?.state).toBe("pending");
+    expect(pend?.partnerId).toBe("p_new");
+    const saved = await saveFileToOrderFolderOrLegacy("manual_order_pd1", "Dilera dati.pdf", new Uint8Array([1]), async () => ({ path: "/legacy" }));
+    expect(saved.path).toBe("/_PROv/PARTNERI/Jauns Auto SIA/BMW_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
+  });
+
+  it("notePartnerOrderDropbox esošu ierakstu nepārraksta", async () => {
+    const dbx = fakeDropbox();
+    const r1 = await ensureOrderDropboxFolder("manual_order_pn", { category: "audits", createdMs: created, vin: "AB1300", client: dbx.client });
+    await notePartnerOrderDropbox("manual_order_pn", { category: "business", partnerId: "p_x", partnerName: "X", createdMs: created });
+    const rec = await readOrderDropboxRecord("manual_order_pn");
+    expect(rec?.path).toBe(r1?.path);
+    expect(rec?.partnerId).toBeUndefined();
   });
 });

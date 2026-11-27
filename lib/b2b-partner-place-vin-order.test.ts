@@ -5,6 +5,7 @@ const scan = vi.fn(async () => ({ ran: true }));
 const dealerJob = vi.fn(async (_args: Record<string, unknown>) => undefined);
 const csddPaid = vi.fn(async (_id: string, _args: Record<string, unknown>) => null);
 const dropbox = vi.fn(async (_id: string, _opts: Record<string, unknown>) => undefined);
+const note = vi.fn(async (_id: string, _args: Record<string, unknown>) => undefined);
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/server", () => ({ after: (fn: () => unknown) => void fn() }));
@@ -12,13 +13,29 @@ vi.mock("@/lib/b2b-order-notify", () => ({ notifyAdminB2bCreditOrders: vi.fn(asy
 vi.mock("@/lib/admin-order-draft-store", () => ({ patchOrderDraft: vi.fn(async () => undefined) }));
 vi.mock("@/lib/admin-paid-order-source-seed", () => ({ seedPaidOrderAutoSources: seed }));
 vi.mock("@/lib/b2b-partner-orders", () => ({ buildPartnerOrderNotes: () => "" }));
-vi.mock("@/lib/create-operator-order", () => ({ createOperatorOrderWithFields: vi.fn() }));
-vi.mock("@/lib/dealer-data-job", () => ({ enqueueDealerDataJob: vi.fn(), runDealerDataJob: dealerJob }));
+vi.mock("@/lib/create-operator-order", () => ({
+  createOperatorOrderWithFields: vi.fn(async () => ({ ok: true, orderId: "manual_order_p1" })),
+}));
+vi.mock("@/lib/dealer-data-job", () => ({ enqueueDealerDataJob: vi.fn(async () => true), runDealerDataJob: dealerJob }));
 vi.mock("@/lib/order-vin-scan-run", () => ({ runOrderFreeVinScan: scan }));
 vi.mock("@/lib/csdd-paid-auto", () => ({ enqueueCsddPaidAutoForOrder: csddPaid }));
-vi.mock("@/lib/order-dropbox", () => ({ ensureOrderDropboxFolderSafe: dropbox }));
+vi.mock("@/lib/order-dropbox", () => ({ ensureOrderDropboxFolderSafe: dropbox, notePartnerOrderDropbox: note }));
 
-const { runPartnerCreditVinOrderFollowup } = await import("@/lib/b2b-partner-place-vin-order");
+const { createPartnerCreditVinOrder, runPartnerCreditVinOrderFollowup } = await import("@/lib/b2b-partner-place-vin-order");
+
+describe("partnera pasūtījuma Dropbox mape (Nils 27.11: PARTNERI/<partneris>)", () => {
+  it("jaunais pasūtījums atzīmē partneri (Business un dīlera dati)", async () => {
+    note.mockClear();
+    const partner = { id: "p_rkg", email: "a@b.lv", phone: "1", contactName: "X", companyName: "RKG GROUP SIA" };
+    await createPartnerCreditVinOrder({ partner, vin: "TMBJJ9NS7J8097121", plan: "business", listingUrl: "", lotId: "l1" });
+    expect(note).toHaveBeenCalledWith(
+      "manual_order_p1",
+      expect.objectContaining({ category: "business", partnerId: "p_rkg", partnerName: "RKG GROUP SIA", vin: "TMBJJ9NS7J8097121" }),
+    );
+    await createPartnerCreditVinOrder({ partner, vin: "TMBJJ9NS7J8097121", plan: "dealer", listingUrl: "", lotId: "l2" });
+    expect(note).toHaveBeenLastCalledWith("manual_order_p1", expect.objectContaining({ category: "dealer", partnerId: "p_rkg" }));
+  });
+});
 
 const base = { orderId: "manual_order_x1", plan: "dealer" as const, vin: "WVWZZZ1KZAW000123", listingUrl: "", dealerQueued: true };
 

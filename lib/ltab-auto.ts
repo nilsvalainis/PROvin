@@ -184,7 +184,7 @@ async function saveLtabPdf(
   const client = getDropboxClient();
   if (!client) return { pdf: undefined, note: " · Dropbox nav konfigurēts, PDF nav saglabāts" };
   try {
-    // Jaunie pasūtījumi: tikai sava mape (AUDITI/...); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
+    // Jaunie pasūtījumi: tikai sava mape (pēc mapes id, arī arhīvā); vecajiem - mape pēc VIN `/_PROv` saknē kā līdz šim.
     const saved = await saveFileToOrderFolderOrLegacy(sessionId, ltabPdfFileName(car.plate), bytes, () =>
       saveLtabPdfToOrderFolder(client, car, bytes),
     );
