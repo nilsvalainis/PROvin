@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   AdminDealerSignalsMenu,
+  DealerSignalsAddMenu,
   DealerSignalsEditor,
   dealerSignalsEditorView,
 } from "@/components/admin/AdminDealerSignalsMenu";
@@ -113,5 +114,40 @@ describe("«Signāli» admin bloks", () => {
     const src = read("components/admin/OrderDetailWorkspace.tsx");
     expect(src).toMatch(/<AdminDealerSignalsMenu[\s\S]{0,200}previewLang=\{orderClientLang\}/);
     expect(src).toContain("dealerSignalsPreviewLang={orderClientLang}");
+  });
+});
+
+describe("«+ Pievienot signālu» (Nils 27.11)", () => {
+  it("redaktorā poga; manuālā rinda ar atzīmi un noņemšanu, automātiskā - bez", () => {
+    const html = renderToStaticMarkup(
+      <DealerSignalsEditor
+        state={{
+          enabled: false,
+          items: [
+            { kind: "special_status", checked: true, manual: true },
+            { kind: "incidents", checked: true },
+          ],
+        }}
+        onChange={() => {}}
+        onRegenerate={() => {}}
+      />,
+    );
+    expect(html).toContain("+ Pievienot signālu");
+    expect(html.match(/data-dealer-signal-manual/g)).toHaveLength(1);
+    expect(html).toContain('data-dealer-signal-remove="special_status"');
+    expect(html).not.toContain('data-dealer-signal-remove="incidents"');
+  });
+
+  it("izvēlne: visi tipi, esošie neaktīvi, sarkanie tipi sarkanā", () => {
+    const html = renderToStaticMarkup(
+      <DealerSignalsAddMenu state={{ enabled: false, items: [{ kind: "incidents", checked: true }] }} onAdd={() => {}} />,
+    );
+    expect(html.match(/data-dealer-signals-add-kind=/g)).toHaveLength(6);
+    expect(html).toMatch(/disabled="" data-dealer-signals-add-kind="incidents"/);
+    expect(html).not.toMatch(/disabled="" data-dealer-signals-add-kind="mileage_mismatch"/);
+    expect(html).toContain("Nobraukuma nesakritība");
+    expect(html).toContain("ASV vēsture");
+    expect(html).toContain("Īpašs statuss");
+    expect(html).toMatch(/data-dealer-signals-add-kind="special_status" class="[^"]*text-\[#b42318\]/);
   });
 });

@@ -5,7 +5,14 @@
  */
 
 /** Signālu tipi - viens ieraksts uz tipu neatkarīgi no avotu skaita. Secība = PDF secība. */
-export const DEALER_SIGNAL_KINDS = ["mileage_mismatch", "incidents", "auction_photos", "foreign_registry"] as const;
+export const DEALER_SIGNAL_KINDS = [
+  "mileage_mismatch",
+  "special_status",
+  "incidents",
+  "us_history",
+  "auction_photos",
+  "foreign_registry",
+] as const;
 export type DealerSignalKind = (typeof DEALER_SIGNAL_KINDS)[number];
 
 export type DealerSignalItem = {
@@ -19,6 +26,11 @@ export type DealerSignalItem = {
    * Derīgs tikai, kamēr `src` sakrīt ar pašreizējo `text`.
    */
   tr?: DealerSignalTranslations;
+  /**
+   * Admina pievienots ar «+ Pievienot signālu» (Nils 27.11), arī ja automātika to neatrada.
+   * «Pārģenerēt no datiem» manuālos neizdzēš.
+   */
+  manual?: true;
 };
 
 export const DEALER_SIGNAL_TR_LANGS = ["en", "ru", "de"] as const;
@@ -50,7 +62,13 @@ export function parseDealerSignals(raw: unknown): DealerSignalsState | undefined
     if (!isDealerSignalKind(r.kind) || byKind.has(r.kind)) continue;
     const text = typeof r.text === "string" ? r.text.trim().slice(0, DEALER_SIGNAL_TEXT_MAX) : "";
     const tr = text ? parseTranslations(r.tr) : undefined;
-    byKind.set(r.kind, { kind: r.kind, checked: r.checked === true, ...(text ? { text } : {}), ...(tr ? { tr } : {}) });
+    byKind.set(r.kind, {
+      kind: r.kind,
+      checked: r.checked === true,
+      ...(text ? { text } : {}),
+      ...(tr ? { tr } : {}),
+      ...(r.manual === true ? { manual: true as const } : {}),
+    });
   }
   return {
     enabled: rec.enabled === true,

@@ -60,7 +60,7 @@ describe("labotā signāla teksta tulkojums", () => {
 
   it("tulkojums neizdevās vai atgriež LV / ciparus / avotu -> standarta teksts klienta valodā", () => {
     const item = STATE.items[1]!;
-    const std = "Accident records are available for this car";
+    const std = "Accident or damage records are available for this car";
     expect(dealerSignalText(item, "en")).toBe(std);
     expect(dealerSignalText(item, "en", CUSTOM)).toBe(std);
     expect(dealerSignalText(item, "en", "3 records found")).toBe(std);
@@ -72,9 +72,9 @@ describe("labotā signāla teksta tulkojums", () => {
     expect(isDealerSignalTextAllowed("Pēc AutoDNA datiem bijis negadījums")).toBe(false);
     expect(isDealerSignalTextAllowed("Divi ieraksti")).toBe(true);
     const bad = { kind: "incidents" as const, text: "Pēc AutoDNA datiem bijis negadījums" };
-    expect(dealerSignalText(bad, "lv")).toBe("Par šo auto pieejami negadījumu ieraksti");
+    expect(dealerSignalText(bad, "lv")).toBe("Par šo auto pieejami negadījumu vai bojājumu ieraksti");
     expect(dealerSignalText(bad, "en", "According to records there was an accident")).toBe(
-      "Accident records are available for this car",
+      "Accident or damage records are available for this car",
     );
     expect(dealerSignalsTextsToTranslate({ enabled: true, items: [{ ...bad, checked: true }] })).toEqual({});
   });
@@ -97,7 +97,7 @@ describe("labotā signāla teksta tulkojums", () => {
       ...saved,
       items: saved.items.map((i) => (i.kind === "incidents" ? { ...i, text: "Cits teksts" } : i)),
     };
-    expect(dealerSignalText(edited.items[1]!, "de")).toBe("Für dieses Fahrzeug liegen Unfalleinträge vor");
+    expect(dealerSignalText(edited.items[1]!, "de")).toBe("Für dieses Fahrzeug liegen Unfall- oder Schadenseinträge vor");
     expect(dealerSignalsMissingTranslations(edited, "de")).toEqual({ incidents: "Cits teksts" });
     // Neatbilstošs src netiek saglabāts.
     expect(withDealerSignalTranslations(edited, "de", { incidents: { src: CUSTOM, text: "x" } })).toBe(edited);

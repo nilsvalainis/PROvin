@@ -5002,8 +5002,9 @@ export function OrderDetailWorkspace({
 
   /** «Signāli ārpus dīlera datiem»: atrastie tipi (aprēķina tikai atverot / pārģenerējot). */
   const detectDealerSignalKinds = useCallback(
-    (): DealerSignalKind[] => detectDealerSignals({ sourceBlocks: blocksDisplaySafe, sourceIssues }),
-    [blocksDisplaySafe, sourceIssues],
+    (): DealerSignalKind[] =>
+      detectDealerSignals({ sourceBlocks: blocksDisplaySafe, sourceIssues, vinScan: payload.vinScan ?? null }),
+    [blocksDisplaySafe, sourceIssues, payload.vinScan],
   );
   const setDealerSignals = useCallback((next: DealerSignalsState) => updateWs({ dealerSignals: next }), [updateWs]);
 

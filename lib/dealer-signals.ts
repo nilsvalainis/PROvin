@@ -36,11 +36,23 @@ export const DEALER_SIGNAL_TITLES: Record<DealerSignalKind, L4> = {
     ru: "Несоответствие пробега",
     de: "Abweichung beim Kilometerstand",
   },
+  special_status: {
+    lv: "Īpašs statuss",
+    en: "Special status",
+    ru: "Особый статус",
+    de: "Sonderstatus",
+  },
   incidents: {
-    lv: "Negadījumu ieraksti",
-    en: "Accident records",
-    ru: "Записи о происшествиях",
-    de: "Unfalleinträge",
+    lv: "Negadījumu un bojājumu ieraksti",
+    en: "Accident and damage records",
+    ru: "Записи о происшествиях и повреждениях",
+    de: "Unfall- und Schadenseinträge",
+  },
+  us_history: {
+    lv: "ASV vēsture",
+    en: "US history",
+    ru: "История в США",
+    de: "US-Historie",
   },
   auction_photos: {
     lv: "Izsoļu fotogrāfijas",
@@ -63,11 +75,23 @@ export const DEALER_SIGNAL_DEFAULT_TEXTS: Record<DealerSignalKind, L4> = {
     ru: "Возможна корректировка одометра",
     de: "Mögliche Korrektur des Kilometerzählers",
   },
+  special_status: {
+    lv: "Vēsturē ir ieraksts par totālo bojāeju vai īpašu statusu",
+    en: "The history includes a total loss or special status record",
+    ru: "В истории есть запись о полной гибели или особом статусе",
+    de: "Die Historie enthält einen Eintrag zu Totalschaden oder Sonderstatus",
+  },
   incidents: {
-    lv: "Par šo auto pieejami negadījumu ieraksti",
-    en: "Accident records are available for this car",
-    ru: "По этому автомобилю доступны записи о происшествиях",
-    de: "Für dieses Fahrzeug liegen Unfalleinträge vor",
+    lv: "Par šo auto pieejami negadījumu vai bojājumu ieraksti",
+    en: "Accident or damage records are available for this car",
+    ru: "По этому автомобилю доступны записи о происшествиях или повреждениях",
+    de: "Für dieses Fahrzeug liegen Unfall- oder Schadenseinträge vor",
+  },
+  us_history: {
+    lv: "Auto vēsturē ir ieraksti no ASV",
+    en: "The car's history includes records from the USA",
+    ru: "В истории автомобиля есть записи из США",
+    de: "Die Fahrzeughistorie enthält Einträge aus den USA",
   },
   auction_photos: {
     lv: "Pieejamas izsoļu fotogrāfijas",
@@ -84,7 +108,10 @@ export const DEALER_SIGNAL_DEFAULT_TEXTS: Record<DealerSignalKind, L4> = {
 };
 
 /** Sarkanā rinda (kā PDF sarkanie brīdinājumi). */
-export const DEALER_SIGNAL_ALERT_KINDS: ReadonlySet<DealerSignalKind> = new Set<DealerSignalKind>(["mileage_mismatch"]);
+export const DEALER_SIGNAL_ALERT_KINDS: ReadonlySet<DealerSignalKind> = new Set<DealerSignalKind>([
+  "mileage_mismatch",
+  "special_status",
+]);
 
 export function isDealerSignalAlert(kind: DealerSignalKind): boolean {
   return DEALER_SIGNAL_ALERT_KINDS.has(kind);
@@ -93,7 +120,9 @@ export function isDealerSignalAlert(kind: DealerSignalKind): boolean {
 /** Admin rindas īsais tips (latviski). */
 export const DEALER_SIGNAL_ADMIN_KIND_LV: Record<DealerSignalKind, string> = {
   mileage_mismatch: "Nobraukums",
+  special_status: "Statuss",
   incidents: "Negadījumi",
+  us_history: "ASV",
   auction_photos: "Foto",
   foreign_registry: "Reģistrs",
 };
@@ -245,11 +274,43 @@ export function regenerateDealerSignals(
   const keep = opts.keepEdits !== false;
   const prev = new Map((current?.items ?? []).map((i) => [i.kind, i]));
   const found = new Set(detected);
-  const items = DEALER_SIGNAL_KINDS.filter((k) => found.has(k)).map((kind): DealerSignalItem => {
-    const p = keep ? prev.get(kind) : undefined;
-    return p ? { ...p, kind } : { kind, checked: true };
-  });
+  const items: DealerSignalItem[] = [];
+  for (const kind of DEALER_SIGNAL_KINDS) {
+    const p = prev.get(kind);
+    // Manuāli pievienotie paliek ar admina ķeksi un tekstu arī pēc «Pārģenerēt no datiem».
+    if (p?.manual) {
+      items.push({ ...p, kind });
+      continue;
+    }
+    if (!found.has(kind)) continue;
+    const kept = keep ? p : undefined;
+    items.push(kept ? { ...kept, kind } : { kind, checked: true });
+  }
   return { enabled: current?.enabled === true, items };
+}
+
+/** Tipi, ko var pievienot manuāli (vēl nav sarakstā - viens ieraksts uz tipu). */
+export function dealerSignalsAddableKinds(state: DealerSignalsState | null | undefined): DealerSignalKind[] {
+  const have = new Set((state?.items ?? []).map((i) => i.kind));
+  return DEALER_SIGNAL_KINDS.filter((k) => !have.has(k));
+}
+
+/**
+ * «+ Pievienot signālu» (Nils 27.11): standarta teksts, ķeksis ieslēgts, atzīme `manual`.
+ * Ja tips jau ir (automātisks vai manuāls) - stāvoklis nemainās. Slēdzis «Ir PDF» netiek mainīts.
+ */
+export function addManualDealerSignal(state: DealerSignalsState | null | undefined, kind: DealerSignalKind): DealerSignalsState {
+  const base = state ?? emptyDealerSignalsState();
+  if (base.items.some((i) => i.kind === kind)) return base;
+  const byKind = new Map(base.items.map((i) => [i.kind, i]));
+  byKind.set(kind, { kind, checked: true, manual: true });
+  return { ...base, items: DEALER_SIGNAL_KINDS.filter((k) => byKind.has(k)).map((k) => byKind.get(k)!) };
+}
+
+/** Noņem signālu (izmanto manuāli pievienotajiem). */
+export function removeDealerSignal(state: DealerSignalsState, kind: DealerSignalKind): DealerSignalsState {
+  if (!state.items.some((i) => i.kind === kind)) return state;
+  return { ...state, items: state.items.filter((i) => i.kind !== kind) };
 }
 
 /** PDF rindas: tikai ieslēgts + ķeksēts; viens uz tipu. Tukšs -> sadaļas nav. */

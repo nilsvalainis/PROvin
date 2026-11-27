@@ -3,16 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
+  addManualDealerSignal,
   DEALER_SIGNAL_ADMIN_KIND_LV,
   DEALER_SIGNAL_DEFAULT_TEXTS,
   DEALER_SIGNAL_KINDS,
+  DEALER_SIGNAL_TITLES,
   DEALER_SIGNALS_AUDIT_LINK_LABEL,
   DEALER_SIGNALS_SECTION_TITLE,
   dealerSignalsMissingTranslations,
   dealerSignalsPdfRows,
   dealerSignalsSectionOn,
+  isDealerSignalAlert,
   isDealerSignalTextAllowed,
   regenerateDealerSignals,
+  removeDealerSignal,
   tidyDealerSignalText,
   withDealerSignalTranslations,
   type DealerSignalKind,
@@ -119,6 +123,42 @@ function useDealerSignalsTranslation(
   return phase;
 }
 
+/**
+ * «+ Pievienot signālu» izvēlne (Nils 27.11): visi tipi; jau esošais (automātisks vai manuāls) - neaktīvs.
+ * Sarkanā krāsā tipi, kas PDF ir sarkani.
+ */
+export function DealerSignalsAddMenu({
+  state,
+  onAdd,
+  touch = false,
+}: {
+  state: DealerSignalsState;
+  onAdd: (kind: DealerSignalKind) => void;
+  touch?: boolean;
+}) {
+  const present = new Set(state.items.map((i) => i.kind));
+  return (
+    <div role="menu" aria-label="Pievienot signālu" data-dealer-signals-add-menu className="flex flex-col gap-1">
+      {DEALER_SIGNAL_KINDS.map((kind) => {
+        const has = present.has(kind);
+        return (
+          <button
+            key={kind}
+            type="button"
+            role="menuitem"
+            disabled={has}
+            data-dealer-signals-add-kind={kind}
+            onClick={() => onAdd(kind)}
+            className={`${touch ? "min-h-11 text-[15px]" : "h-7 text-[12px]"} rounded-lg border border-[var(--admin-border-subtle)] px-2.5 text-left font-semibold disabled:cursor-default disabled:opacity-40 ${isDealerSignalAlert(kind) ? "text-[#b42318]" : "text-[var(--color-apple-text)]"}`}
+          >
+            {DEALER_SIGNAL_TITLES[kind].lv}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function DealerSignalsEditor({
   state,
   onChange,
@@ -137,6 +177,7 @@ export function DealerSignalsEditor({
 }) {
   const touch = size === "touch";
   const on = state.enabled === true;
+  const [addOpen, setAddOpen] = useState(false);
   const rows = dealerSignalsPdfRows({ ...state, enabled: true }, previewLang);
   const trPhase = useDealerSignalsTranslation(state, previewLang, onChange, translate);
   const setItem = (kind: DealerSignalKind, patch: { checked?: boolean; text?: string }) => {
@@ -210,8 +251,28 @@ export function DealerSignalsEditor({
                   onChange={(e) => setItem(it.kind, { text: e.target.value })}
                   className={`w-full resize-y rounded-md border bg-transparent px-2 py-1 ${touch ? "text-[16px]" : "text-[12px]"} leading-snug text-[var(--color-apple-text)] ${bad ? "border-[#b42318]" : "border-[var(--admin-border-subtle)]"}`}
                 />
-                <span className="mt-1.5 whitespace-nowrap text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-muted)]">
-                  {DEALER_SIGNAL_ADMIN_KIND_LV[it.kind]}
+                <span className="mt-1.5 flex flex-col items-end gap-1">
+                  <span
+                    className={`whitespace-nowrap text-[10px] font-bold uppercase tracking-wide ${isDealerSignalAlert(it.kind) ? "text-[#b42318]" : "text-[var(--color-provin-muted)]"}`}
+                  >
+                    {DEALER_SIGNAL_ADMIN_KIND_LV[it.kind]}
+                  </span>
+                  {it.manual ? (
+                    <span className="flex items-center gap-1">
+                      <span data-dealer-signal-manual className="text-[10px] font-medium text-[var(--color-provin-muted)]">
+                        Manuāls
+                      </span>
+                      <button
+                        type="button"
+                        data-dealer-signal-remove={it.kind}
+                        aria-label={`Noņemt: ${DEALER_SIGNAL_TITLES[it.kind].lv}`}
+                        onClick={() => onChange(removeDealerSignal(state, it.kind))}
+                        className={`${touch ? "min-h-11 min-w-11 text-[18px]" : "h-5 w-5 text-[13px]"} rounded leading-none text-[var(--color-provin-muted)] hover:text-[#b42318]`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ) : null}
                 </span>
               </div>
             );
@@ -222,7 +283,27 @@ export function DealerSignalsEditor({
         <button type="button" className={btn} data-dealer-signals-regenerate onClick={onRegenerate}>
           Pārģenerēt no datiem
         </button>
+        <button
+          type="button"
+          className={btn}
+          data-dealer-signals-add
+          aria-haspopup="true"
+          aria-expanded={addOpen}
+          onClick={() => setAddOpen((v) => !v)}
+        >
+          + Pievienot signālu
+        </button>
       </div>
+      {addOpen ? (
+        <DealerSignalsAddMenu
+          state={state}
+          touch={touch}
+          onAdd={(kind) => {
+            onChange(addManualDealerSignal(state, kind));
+            setAddOpen(false);
+          }}
+        />
+      ) : null}
       <div
         data-dealer-signals-preview
         className="rounded-lg border border-[var(--admin-border-subtle)] bg-white p-3 text-[11px] leading-snug text-[#0f172a]"
