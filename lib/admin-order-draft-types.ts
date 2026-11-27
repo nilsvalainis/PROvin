@@ -19,6 +19,8 @@ export type OrderDraftOrderEdits = {
   mileageComment?: string;
   /** Avotu salīdzinājums — tikai admin; nav PDF (bloga / mārketinga materiāls). */
   sourcesComparisonComment?: string;
+  /** Admina izvēlēta klienta valoda (lv/en/ru/de); tukšs = automātiski (Nils 27.11). */
+  clientLangOverride?: string;
 };
 
 /** Tīrs JSON — `sourceBlocks` validē serverī ar `hydrateWorkspaceFromStorage`. */

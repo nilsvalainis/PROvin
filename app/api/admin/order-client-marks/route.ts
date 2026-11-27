@@ -12,6 +12,7 @@ import { getAuditCompletedAtMap } from "@/lib/admin-audit-complete-store";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { trySendReviewAskEmail } from "@/lib/email/send-transactional";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
@@ -79,7 +80,7 @@ async function customerEmailFor(
   const entry = await readReviewAskEntry(sessionId);
   const csddCar = orderCarFromCsdd(mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd, "", vin);
   const car = entry?.car ?? reviewCarLabel(csddCar.make, csddCar.model);
-  const lang = entry?.lang ?? resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order.notes, locale: order.locale });
+  const lang = entry?.lang ?? decideClientLangForOrder(order, draft).lang;
   return { to, vin, car, lang };
 }
 

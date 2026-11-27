@@ -7,6 +7,7 @@
  * Rāda tikai telefonā (OrderDetailWorkspace montē tikai `phoneStack`).
  */
 
+import { AdminClientLangChip } from "@/components/admin/AdminClientLangControl";
 import { useMemo, useState, type ReactNode } from "react";
 import { AdminClientReportLinkControl } from "@/components/admin/AdminClientReportLinkControl";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
@@ -122,6 +123,7 @@ export function MobileDealerOrderPanelView(p: MobileDealerOrderPanelViewProps) {
         </div>
         <AmxStatusDot tone={p.sentLabel === "Nosūtīts" ? "outline" : "neutral"}>{p.sentLabel}</AmxStatusDot>
       </AmxCard>
+      <AdminClientLangChip className="mt-2" />
       {p.onShadowRecheck ? (
         <AdminDealerShadowGateRow glass gate={p.shadowGate} busy={p.shadowBusy} onRecheck={p.onShadowRecheck} />
       ) : null}

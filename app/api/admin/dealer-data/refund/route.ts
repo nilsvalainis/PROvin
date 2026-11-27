@@ -41,6 +41,7 @@ import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
 import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { dealerSendRecipientErrorBody, resolveDealerSendRecipient } from "@/lib/dealer-send-recipient";
 import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
+import { clientLangSignalsFromSession, decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { getStripe } from "@/lib/stripe";
 import { getCheckoutLineFromSession } from "@/lib/stripe-session";
 
@@ -101,8 +102,21 @@ export async function GET(req: Request) {
     ...(decision.allowed ? {} : { reason: decision.reason }),
     ...(lock.ok ? {} : { reason: lock.reason }),
     amountCents: decision.allowed ? decision.amountCents : (session.amount_total ?? null),
-    // Klienta valoda = vietnes lapa, kurā pasūtīja (#1274), ne pārlūka valoda.
-    lang: checkoutSessionSiteLang(session),
+    // Klienta valoda: admina izvēle / vietnes lapa, kurā pasūtīja (#1274) / EN-DE + Latvijas signāli -> LV.
+    lang: decideClientLangForOrder(
+      {
+        notes: null,
+        locale: checkoutSessionSiteLang(session),
+        vin: session.metadata?.vin ?? null,
+        customerEmail: session.customer_email ?? null,
+        customerDetailsEmail: session.customer_details?.email ?? null,
+        phone: session.metadata?.phone ?? null,
+        customerDetailsPhone: session.customer_details?.phone ?? null,
+        customerName: session.metadata?.customer_name ?? session.customer_details?.name ?? null,
+        clientLangSignals: clientLangSignalsFromSession(session),
+      },
+      draft,
+    ).lang,
     customerEmail: resolveDealerRefundClientEmail([
       draft?.orderEdits?.customerEmail,
       session.customer_details?.email,

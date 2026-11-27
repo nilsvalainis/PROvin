@@ -329,7 +329,8 @@ import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfClientLangContext, AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
-import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideOrderClientLang, type ClientLangStoredSignals } from "@/lib/client-lang-detect";
+import { AdminClientLangChip, AdminClientLangControlContext, type AdminClientLangControl } from "@/components/admin/AdminClientLangControl";
 import { AdminDealerExtraMenu } from "@/components/admin/AdminDealerExtraMenu";
 import { AdminDealerSignalsMenu } from "@/components/admin/AdminDealerSignalsMenu";
 import {
@@ -519,6 +520,12 @@ export type OrderWorkspacePayload = {
   checkoutLine?: string | null;
   /** Stripe `session.locale` - vietnes valoda pasūtot; klienta PDF / e-pasta noklusētā valoda. */
   locale?: string | null;
+  /** Latvijas signāli (valstu kodi, numurzīme) - EN/DE vietne -> LV noklusējums. */
+  clientLangSignals?: ClientLangStoredSignals | null;
+  /** Admina izvēlētā klienta valoda melnrakstā (`orderEdits.clientLangOverride`). */
+  clientLangOverride?: string | null;
+  /** Melnraksta `orderEdits.licensePlate` (pasūtīts pēc LV numura). */
+  licensePlate?: string | null;
   partnerCompanyName?: string | null;
   partnerId?: string | null;
   listingUrl: string | null;
@@ -1013,8 +1020,62 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
-  /** Klienta valoda (Nils 27.11): partnera izvēle, citādi vietnes valoda pasūtot, citādi LV. */
-  const orderClientLang = resolveOrderClientLang({ notes: payload.notes, locale: payload.locale });
+  /**
+   * Klienta valoda (Nils 27.11): partnera izvēle, admina izvēle, EN/DE vietne + Latvijas signāli -> LV,
+   * citādi vietnes valoda pasūtot, citādi LV.
+   */
+  const [clientLangOverride, setClientLangOverride] = useState<string>(() => payload.clientLangOverride ?? "");
+  const [clientLangBusy, setClientLangBusy] = useState(false);
+  const clientLangDecision = useMemo(
+    () =>
+      decideOrderClientLang({
+        notes: payload.notes,
+        locale: payload.locale,
+        override: clientLangOverride,
+        signals: {
+          ...(payload.clientLangSignals ?? {}),
+          plates: [payload.licensePlate, payload.vin],
+          phones: [payload.customerPhone],
+          emails: [payload.customerEmail],
+          customerName: payload.customerName,
+        },
+      }),
+    [
+      payload.notes,
+      payload.locale,
+      clientLangOverride,
+      payload.clientLangSignals,
+      payload.licensePlate,
+      payload.vin,
+      payload.customerPhone,
+      payload.customerEmail,
+      payload.customerName,
+    ],
+  );
+  const orderClientLang = clientLangDecision.lang;
+  const setClientLang = useCallback(
+    (lang: ClientReportLang | null) => {
+      const next = lang ?? "";
+      const prev = clientLangOverride;
+      setClientLangOverride(next);
+      setClientLangBusy(true);
+      void fetch("/api/admin/order-draft", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: payload.sessionId, orderEdits: { clientLangOverride: next } }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(String(res.status));
+        })
+        .catch(() => {
+          setClientLangOverride(prev);
+          window.alert("Valodu neizdevās saglabāt.");
+        })
+        .finally(() => setClientLangBusy(false));
+    },
+    [clientLangOverride, payload.sessionId],
+  );
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -5296,6 +5357,10 @@ export function OrderDetailWorkspace({
     partnerCompanyName: payload.partnerCompanyName,
   });
   const pdfLangLock = pdfLangUnlocked ? null : partnerReportLang;
+  const clientLangControl = useMemo<AdminClientLangControl>(
+    () => ({ decision: clientLangDecision, locked: Boolean(partnerReportLang), busy: clientLangBusy, setLang: setClientLang }),
+    [clientLangDecision, partnerReportLang, clientLangBusy, setClientLang],
+  );
   const unlockPdfLang = () => {
     if (!partnerReportLang) return;
     if (confirmUnlockB2bReportLang(partnerReportLang)) setPdfLangUnlocked(true);
@@ -5384,14 +5449,9 @@ export function OrderDetailWorkspace({
               >
                 Partnera atskaites valoda: {partnerReportLang.toUpperCase()}
               </span>
-            ) : orderClientLang !== "lv" ? (
-              <span
-                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700"
-                title="Klients pasūtīja šajā vietnes valodā. PDF un e-pasts pēc noklusējuma šajā valodā; LV - ar bultiņu."
-              >
-                Klienta valoda: {orderClientLang.toUpperCase()}
-              </span>
-            ) : null}
+            ) : (
+              <AdminClientLangChip />
+            )}
             <AdminPdfIncludeToggle
               checked={pdfVisibility.portfolio}
               onChange={(next) => onPdfVisibilityChange({ portfolio: next })}
@@ -6058,6 +6118,7 @@ export function OrderDetailWorkspace({
 
   return (
     <ContradictionFeedbackContext.Provider value={contradictionFeedbackCtx}>
+    <AdminClientLangControlContext.Provider value={clientLangControl}>
     <AdminPdfClientLangContext.Provider value={orderClientLang}>
     <AdminAutoIngestChipProvider chips={autoIngestChips}>
     <div className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]">
@@ -7848,6 +7909,7 @@ export function OrderDetailWorkspace({
     </div>
     </AdminAutoIngestChipProvider>
     </AdminPdfClientLangContext.Provider>
+    </AdminClientLangControlContext.Provider>
     </ContradictionFeedbackContext.Provider>
   );
 }

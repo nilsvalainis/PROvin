@@ -19,6 +19,7 @@ import {
   stripeMetaCapiMetadataFromRequest,
 } from "@/lib/meta-capi";
 import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
+import { checkoutIpCountryMetadata } from "@/lib/client-lang-detect";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,7 +98,10 @@ export async function POST(req: Request) {
   try {
     const session = await stripe.checkout.sessions.create({
       ...params,
-      metadata: mergeStripeCheckoutMetadata(stripeMetaCapiMetadataFromRequest(req), params.metadata),
+      metadata: mergeStripeCheckoutMetadata(stripeMetaCapiMetadataFromRequest(req), {
+        ...params.metadata,
+        ...checkoutIpCountryMetadata(req.headers),
+      }),
     });
     if (!session.url) {
       return NextResponse.json({ error: "session_failed" }, { status: 500 });

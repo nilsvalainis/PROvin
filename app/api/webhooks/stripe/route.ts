@@ -7,6 +7,7 @@ import { sendB2bWalletTopupInvoiceEmail, sendPaymentConfirmationEmail } from "@/
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
 import { renderB2bTopupInvoiceEmail } from "@/lib/b2b-topup-invoice";
 import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
+import { clientLangSignalsFromSession, decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { attachB2bWalletTopupInvoice, applyB2bWalletTopup, formatB2bWalletEuro } from "@/lib/b2b-wallet";
 import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
@@ -241,7 +242,18 @@ async function fulfillPaidCheckoutSession(
                 amountTotal: payload.amountTotal,
                 currency: payload.currency,
                 vin: payload.vin,
-                lang: checkoutSessionSiteLang(session),
+                // Vietnes valoda; EN/DE + Latvijas signāli (maksātājs, IP valsts, +371, .lv, LV numurs) -> LV.
+                lang: decideClientLangForOrder({
+                  notes: null,
+                  locale: checkoutSessionSiteLang(session),
+                  vin: session.metadata?.vin ?? null,
+                  customerEmail: email,
+                  customerDetailsEmail: session.customer_details?.email ?? null,
+                  phone: session.metadata?.phone ?? null,
+                  customerDetailsPhone: session.customer_details?.phone ?? null,
+                  customerName: session.metadata?.customer_name ?? session.customer_details?.name ?? null,
+                  clientLangSignals: clientLangSignalsFromSession(session),
+                }).lang,
                 invoiceAttachment,
               });
               console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id });
