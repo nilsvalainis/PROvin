@@ -46,6 +46,7 @@ import {
   upsertDealerDataJob,
 } from "@/lib/dealer-data-job-store";
 import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import { recordDealerCoverageForSession } from "@/lib/dealer-coverage-store";
 import { dealerJobPatchForDraftData } from "@/lib/dealer-manual-data";
 import { runDealerShadowGate } from "@/lib/dealer-shadow-gate-run";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
@@ -344,6 +345,16 @@ export async function runDealerDataJob(args: RunArgs): Promise<DealerDataRunResu
     // Neviens klients nedrīkst palikt nepamanīts: push + e-pasts, ja problēma prasa operatoru.
     // «Datu nav»: paziņojums tikai, ja atmaksa vēl nav veikta (B2B maka atmaksa notiek pirms tam).
     await sendDealerDataAlertIfNeeded(args.sessionId, { trigger: args.trigger });
+  }
+  // Pārklājuma prognoze (27.11): OneAuto iznākums agregātā (marka + gadu grupa; katrs pasūtījums vienreiz).
+  // «manual_data» - OneAuto datu nebija, operators ievadīja pats.
+  if (result.ok && (result.reason === "done" || result.reason === "no_data" || result.reason === "manual_data")) {
+    await recordDealerCoverageForSession({
+      sessionId: args.sessionId,
+      source: "oneauto",
+      hasData: result.reason === "done",
+      vin: args.vin,
+    });
   }
   // Ēnu režīms (Nils 22.11): pēc ielases + AI kvalitātes pārbaude tikai spriedumam; nekas netiek sūtīts.
   // PDF ielase automātiski neveido - pārbaude (f) paliek «PDF vēl nav» līdz sūtīšanas formai.

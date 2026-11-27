@@ -74,6 +74,10 @@ const reviewDealerCommentsWithOpus = vi.fn(async (args: { fields: { id: string; 
 vi.mock("@/lib/dealer-data-alert", () => ({
   sendDealerDataAlertIfNeeded: (id: string, opts?: unknown) => sendDealerDataAlertIfNeeded(id, opts),
 }));
+const recordDealerCoverageForSession = vi.fn(async (_args: unknown) => true);
+vi.mock("@/lib/dealer-coverage-store", () => ({
+  recordDealerCoverageForSession: (args: unknown) => recordDealerCoverageForSession(args),
+}));
 const runDealerShadowGate = vi.fn(async (_id: string, _opts?: unknown) => null);
 vi.mock("@/lib/dealer-shadow-gate-run", () => ({
   runDealerShadowGate: (id: string, opts?: unknown) => runDealerShadowGate(id, opts),
@@ -192,6 +196,8 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(reviewDealerCommentsWithOpus).not.toHaveBeenCalled();
     const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
     expect(last).toMatchObject({ status: "done", aiGenerated: true });
+    // Pārklājuma prognoze (27.11): OneAuto iznākums agregātā.
+    expect(recordDealerCoverageForSession).toHaveBeenCalledWith({ sessionId: SESSION, source: "oneauto", hasData: true, vin: VIN });
   });
 
   it("retry neizsauc jau settled maksas produktus, tikai trūkstošo", async () => {
@@ -317,6 +323,7 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(refundB2bWalletOrderIfNoData).toHaveBeenCalledWith(SESSION);
     // «Datu nav»: admina paziņojums (atmaksa manuāla) - sūtītājs pats pārbauda, vai jau atmaksāts.
     expect(sendDealerDataAlertIfNeeded).toHaveBeenCalledWith(SESSION, { trigger: "webhook" });
+    expect(recordDealerCoverageForSession).toHaveBeenCalledWith({ sessionId: SESSION, source: "oneauto", hasData: false, vin: VIN });
   });
 
   it("VIN Lookup HTTP 206 neaptur vēstures ierakstu - darbs pabeigts", async () => {
@@ -397,6 +404,8 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(refundB2bWalletOrderIfNoData).not.toHaveBeenCalled();
     const last = upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
     expect(last).toMatchObject({ status: "done", serviceEventCount: 2, trigger: "manual", aiGenerated: true });
+    // OneAuto pašam datu nebija - prognozē skaitās kā «nav».
+    expect(recordDealerCoverageForSession).toHaveBeenCalledWith({ sessionId: SESSION, source: "oneauto", hasData: false, vin: VIN });
   });
 
   it("pārraksta dīzeļa komentāru, kad VIN Lookup ieliek benzīnu", async () => {
@@ -635,6 +644,7 @@ describe("runDealerDataJob paid idempotency", () => {
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
     expect(r.reason).toBe("in_flight");
     expect(fetchOneautoProducts).not.toHaveBeenCalled();
+    expect(recordDealerCoverageForSession).not.toHaveBeenCalled();
   });
 
   it("OneAuto rezultāts saglabāts darbā uzreiz (onResults) ar nomas pārbaudi", async () => {
