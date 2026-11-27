@@ -1,8 +1,9 @@
 /**
  * Avotu sadaļu fotogrāfijas (JPEG — Blob + lokālais disks).
  */
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
+import { stashOrderPhotoOriginal } from "@/lib/order-photo-dropbox";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
   SOURCE_BLOCK_PHOTO_MAX_BYTES,
@@ -131,6 +132,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "write_failed", detail }, { status: 503 });
     }
 
+    // Oriģināls (pirms saspiešanas) pasūtījuma Dropbox kopijai - fonā, UI negaida (Nils 27.11).
+    const original = new Uint8Array(ab);
+    const storedBytes = buf.length;
+    after(() => stashOrderPhotoOriginal(sessionId, photoId, original, storedBytes));
     return NextResponse.json({ ok: true, id: photoId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

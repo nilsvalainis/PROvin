@@ -62,12 +62,11 @@ function leftMs(deadline?: number): number {
  * `trusted`: saites no TheCarApi `auction-images` atbildes (avota krātuve, hosts nav allowlistā).
  * Tām: tikai publisks https, un atbildei jābūt `image/*`.
  */
-async function fetchOnce(
+async function fetchBytesOnce(
   url: string,
-  storedMaxBytes: number,
   deadline?: number,
   trusted?: ReadonlySet<string>,
-): Promise<AuctionPhotoFetchResult> {
+): Promise<{ ok: true; buf: Buffer } | AuctionPhotoFetchFail> {
   const viaTrust = !isAllowedVinScanAuctionPhotoUrl(url) && Boolean(trusted?.has(url)) && isSafeThecarapiImageUrl(url);
   if (!isAllowedVinScanAuctionPhotoUrl(url) && !viaTrust) {
     return { ok: false, url, reason: "host_not_allowed" };
@@ -117,7 +116,18 @@ async function fetchOnce(
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length === 0) return { ok: false, url, reason: "empty" };
   if (buf.length > ADMIN_PHOTO_UPLOAD_MAX_SOURCE_BYTES) return { ok: false, url, reason: "too_large" };
-  const normalized = await jpegFromAdminPhotoUpload(buf, storedMaxBytes);
+  return { ok: true, buf };
+}
+
+async function fetchOnce(
+  url: string,
+  storedMaxBytes: number,
+  deadline?: number,
+  trusted?: ReadonlySet<string>,
+): Promise<AuctionPhotoFetchResult> {
+  const raw = await fetchBytesOnce(url, deadline, trusted);
+  if (!raw.ok) return raw;
+  const normalized = await jpegFromAdminPhotoUpload(raw.buf, storedMaxBytes);
   if (!normalized.ok) return { ok: false, url, reason: normalized.error };
   return {
     ok: true,
@@ -170,4 +180,24 @@ export async function fetchAuctionPhotoJpegs(
   });
   await Promise.all(workers);
   return { ok, failed };
+}
+
+/**
+ * Oriģinālā (nesaspiestā) bilde no saglabātā `sourceUrl` - pasūtījuma Dropbox kopijai (Nils 27.11).
+ * Tās pašas SSRF pārbaudes kā importam; TheCarApi krātuves saites - tikai publisks https + `image/*`.
+ */
+export async function fetchAuctionPhotoOriginal(
+  url: string,
+  deadline?: number,
+): Promise<{ ok: true; bytes: Buffer } | AuctionPhotoFetchFail> {
+  const trusted = isSafeThecarapiImageUrl(url) ? new Set([url]) : undefined;
+  let last: AuctionPhotoFetchFail = { ok: false, url, reason: "unknown" };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0 && leftMs(deadline) < 2_000) break;
+    const res = await fetchBytesOnce(url, deadline, trusted);
+    if (res.ok) return { ok: true, bytes: res.buf };
+    last = res;
+    if (NO_RETRY_REASONS.has(last.reason)) break;
+  }
+  return last;
 }

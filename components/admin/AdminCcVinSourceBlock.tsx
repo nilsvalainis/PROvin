@@ -13,6 +13,7 @@ import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea"
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
+import { AdminOrderDropboxSync } from "@/components/admin/AdminOrderDropboxSync";
 import { AdminThecarapiIngestBar } from "@/components/admin/AdminThecarapiIngestBar";
 import { AdminThecarapiRecords } from "@/components/admin/AdminThecarapiRecords";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
@@ -281,6 +282,7 @@ export function AdminCcVinSourceBlock({
           onClear={() => onChange(emptyCcVinBlock())}
         >
           <AdminCcVinPhotoProbeButton vin={handoffVin} variant="quiet" />
+          {sessionId && !readOnly ? <AdminOrderDropboxSync sessionId={sessionId} /> : null}
           <AdminPdfIncludeToggle
             checked={pdfInclude}
             onChange={onPdfIncludeChange}

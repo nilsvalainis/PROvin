@@ -81,7 +81,7 @@ describe("mirrorVendorArchivePhotosToDropbox", () => {
       client: client as never,
     });
     expect(res.uploaded).toBe(1);
-    expect(uploads).toEqual([{ path: "/PROVIN/Pasutijumi/2026-11-25 Audi A6/Arhīva foto/AutoDNA 12.11.2024/02.jpg", mode: "add" }]);
+    expect(uploads).toEqual([{ path: "/PROVIN/Pasutijumi/2026-11-25 Audi A6/Foto - AutoDNA arhīvs 12.11.2024/02.jpg", mode: "add" }]);
   });
 
   it("bez Dropbox - nekas nenotiek", async () => {

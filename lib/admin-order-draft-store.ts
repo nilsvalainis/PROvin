@@ -726,7 +726,20 @@ export async function patchOrderDraft(
   options: OrderDraftPatchOptions = {},
 ): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLockOrError(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
+  const res = await withDraftWriteLockOrError(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
+  if (res.ok && patch.workspace) scheduleOrderPhotoDropboxAfterSave(sessionId, patch.workspace);
+  return res;
+}
+
+/**
+ * Jaunās galeriju bildes -> pasūtījuma Dropbox mape (fonā, Nils 27.11). Dinamisks imports - bez cikla
+ * (order-photo-dropbox lasa melnrakstu). Testos un bez Dropbox - nekas.
+ */
+function scheduleOrderPhotoDropboxAfterSave(sessionId: string, workspace: OrderDraftWorkspaceBody): void {
+  if (process.env.VITEST || !(process.env.DROPBOX_ACCESS_TOKEN || process.env.DROPBOX_REFRESH_TOKEN)) return;
+  void import("@/lib/order-photo-dropbox")
+    .then((m) => m.scheduleOrderPhotoDropboxSync(sessionId, workspace as Parameters<typeof m.scheduleOrderPhotoDropboxSync>[1]))
+    .catch(() => undefined);
 }
 
 async function patchOrderDraftUnlocked(
