@@ -5923,13 +5923,11 @@ export function OrderDetailWorkspace({
   };
 
   /**
-   * VIN SCAN avotu kartīte. 27.11 (Nils): dīlera pasūtījumā tā pati josla arī «Dīleris» sadaļā; telefonā abas
-   * ir lapā - pārlūka importu / telefona «Skenēt» dara tikai Pārskata kartīte.
+   * VIN SCAN avotu josla. 27.11 (Nils): «jābūt visur» - datorā virs jebkuras cilnes satura (nav sticky),
+   * telefonā (visas sadaļas vienā lapā) vienreiz Pārskata vietā. Viena kartīte skatā - bez dublikātiem.
    */
-  const renderVinScanCard = (placement: "main" | "dealer", sideEffects: boolean) => (
+  const vinScanCard = (
     <AdminOrderVinScanCard
-      placement={placement}
-      sideEffects={sideEffects}
       sessionId={payload.sessionId}
       vin={payload.vin ?? ""}
       listingUrl={payload.listingUrl ?? ""}
@@ -6987,11 +6985,16 @@ export function OrderDetailWorkspace({
         ) : null}
         {showPortfolioInline ? portfolioSection : null}
 
+        {/* Datorā VIN SCAN josla redzama jebkurā cilnē (Nils 27.11: «jābūt visur»), nav sticky. */}
+        {!phoneStack && payload.checkoutLine !== "provin_select" ? (
+          <div className="amx amx-src">{vinScanCard}</div>
+        ) : null}
+
         {(phoneStack || wizardStep === 0) ? (
           <div id="admin-m-sec-kopsavilkums" className="space-y-6">
-            {payload.checkoutLine === "provin_select" ? null : (
+            {!phoneStack || payload.checkoutLine === "provin_select" ? null : (
               <div className="amx amx-src">
-              {renderVinScanCard("main", true)}
+              {vinScanCard}
               </div>
             )}
             {/* Telefonā Pielikumi / Klients / Maksājums / Auto - kompaktas rindas vienā stikla sarakstā. */}
@@ -7125,12 +7128,6 @@ export function OrderDetailWorkspace({
 
         {(phoneStack || wizardStep === 3) ? (
           <div id="admin-order-block-auto-records" className="min-w-0 amx amx-src">
-            {isDealerOrderForMobilePanel && payload.checkoutLine !== "provin_select" ? (
-              <div className="mb-4 min-w-0">
-                {/* Telefonā Pārskata kartīte arī ir lapā - šī tikai rāda un sinhronizē ierakstu. */}
-                {renderVinScanCard("dealer", !phoneStack)}
-              </div>
-            ) : null}
             <AdminAutoRecordsSourceBlock
               value={blocksDisplaySafe.auto_records}
               countryEvidence={workspaceCountryEvidence}

@@ -86,21 +86,4 @@ describe("VIN SCAN josla (Nils 27.11)", () => {
     expect(html).toContain("Sakļaut");
     expect(html).toMatch(/<b class="tabular-nums">1<\/b>kļūda/);
   });
-
-  it("dīlera sadaļas josla: savs bloka id, saraksts pēc noklusējuma sakļauts, atsevišķa atmiņa", () => {
-    writeAdminUiOpen(adminUiOpenKey("s1", "vin-scan-list"), true);
-    const html = card({ placement: "dealer", sideEffects: false });
-    expect(html).toContain('data-admin-block="vin-scan-avoti-dileris"');
-    expect(html).toContain("VIN SCAN avoti");
-    expect(html).toContain("Rādīt sarakstu");
-    expect(dotCount(html)).toBe(3);
-    writeAdminUiOpen(adminUiOpenKey("s1", "vin-scan-list-dileris"), true);
-    expect(card({ placement: "dealer", sideEffects: false })).toContain("Sakļaut");
-  });
-
-  it("dīlera josla bez blakusefektiem nedublē userscript tiltu; Pārskata kartīte to atstāj", () => {
-    expect(card()).toContain('data-provin-order-session="s1"');
-    const dealer = card({ placement: "dealer", sideEffects: false });
-    expect(dealer).not.toContain("data-provin-order-session");
-  });
 });
