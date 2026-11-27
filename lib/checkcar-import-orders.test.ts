@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   autobidOriginalHint,
+  orderHasListedVin,
+  orderKnownVins,
   orderTargetsForVin,
   pickCheckcarTarget,
   pickLatestOrderForVin,
   quickEvalCheckcarPhotoSession,
   quickEvalTargetsForVin,
+  usableVin,
 } from "@/lib/checkcar-import-orders";
 
 const VIN = "VF1AAAAA012345678";
@@ -72,5 +75,41 @@ describe("Autobid oriģinālās bildes", () => {
     expect(hint).toEqual({ lots: 2, photos: 3, lastDate: "2025-03-14", auctionId: "A1" });
     expect(autobidOriginalHint({ vin: VIN, updatedAt: "", observations: [{ date: "2024-01-01", source: "order", km: 1 }] })).toBeNull();
     expect(autobidOriginalHint(null)).toBeNull();
+  });
+});
+
+describe("pasūtījuma VIN no visiem avotiem", () => {
+  const REAL = "VF1KT1H0E38762689";
+
+  it("pasūtīts pēc numurzīmes: Stripe VIN ir numurs, VIN tikai CSDD blokā", () => {
+    const vins = orderKnownVins({
+      stripeVin: "AB1234",
+      indexVin: null,
+      draft: { orderEdits: {}, workspace: { sourceBlocks: { csdd: { vin: REAL.toLowerCase() } } }, vinScan: null },
+    });
+    expect(vins).toEqual([REAL]);
+    expect(orderHasListedVin({ id: "cs_x", created: 1, vin: "AB1234" }, null)).toBe(false);
+  });
+
+  it("ņem orderEdits, VIN SCAN un dziļākos avotu laukus; numurzīmes un tukšumus ignorē", () => {
+    const vins = orderKnownVins({
+      stripeVin: "",
+      draft: {
+        orderEdits: { vin: "" },
+        vinScan: { vin: REAL },
+        workspace: {
+          sourceBlocks: {
+            csdd: { vin: "" },
+            auto_records: {
+              outvinReport: { vehicleInfo: { vinCode: REAL } },
+              oneautoIngest: { lastFetchedVin: "WVWZZZ1KZAW000001" },
+            },
+          },
+        },
+      },
+    });
+    expect(vins.sort()).toEqual([REAL, "WVWZZZ1KZAW000001"].sort());
+    expect(usableVin("AB 1234")).toBe("");
+    expect(usableVin("vf1kt1h0e3876268-9")).toBe(REAL);
   });
 });
