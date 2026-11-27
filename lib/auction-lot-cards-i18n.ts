@@ -36,6 +36,7 @@ const CARD_TEXT: Record<string, Tr> = {
   "Izsoles apraksts": t("Auction description", "Описание аукциона", "Auktionsbeschreibung"),
   "citi izsoļu avoti": t("other auction sources", "другие источники аукционов", "weitere Auktionsquellen"),
   "Redzams bildē": t("Visible in photo", "Видно на фото", "Auf Foto sichtbar"),
+  Zona: t("Zone", "Зона", "Zone"),
   "Redzams bildē (PROVIN atzīme)": t("Visible in photo (PROVIN mark)", "Видно на фото (отметка PROVIN)", "Auf Foto sichtbar (PROVIN-Markierung)"),
   Virsbūve: t("Body", "Кузов", "Karosserie"),
   Izsole: t("Auction", "Аукцион", "Auktion"),

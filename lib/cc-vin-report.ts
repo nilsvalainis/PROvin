@@ -354,6 +354,8 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     .filter(ccVinSaleRowHasData);
 
   const synced = syncCcVinPhotoGroupsAndFlat(normalizeCcVinPhotoGroups(o.photoGroups, o.photos));
+  const thecarapiRecords = normalizeThecarapiAdminRecords(o.thecarapiRecords);
+  const salesAligned = alignCcVinSaleDatesWithRecords(sales, thecarapiRecords);
 
   return {
     reportDate: str(o.reportDate, 40),
@@ -365,16 +367,47 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     insurance: withFallback(records("insurance"), emptyCcVinRecordRow),
     brands: withFallback(records("brands"), emptyCcVinRecordRow),
     titles: withFallback(titles, emptyCcVinTitleRow),
-    sales: withFallback(sales, emptyCcVinSaleRow),
+    sales: withFallback(salesAligned, emptyCcVinSaleRow),
     comments: str(o.comments, 12000),
     rawUnprocessedData: str(o.rawUnprocessedData, 200000),
     aiContextRaw: str(o.aiContextRaw, 200000),
     photos: synced.photos,
     photoGroups: synced.photoGroups,
-    thecarapiRecords: normalizeThecarapiAdminRecords(o.thecarapiRecords),
+    thecarapiRecords,
     hidePhotoWatermarks: o.hidePhotoWatermarks === true,
     ...("pdfChecklist" in o ? { pdfChecklist: normalizeChecklist(o.pdfChecklist) } : {}),
   };
+}
+
+/**
+ * Izsoļu vēstures rindas datums = izsoles ieraksta (detaļu) datums, ja rinda atsaucas uz to pašu loti.
+ * 27.11 (WVWZZZ3CZNE054721): vēsture dod `last_seen_at` (rāpuļa pēdējā redzēšana, UTC), detaļas - izsoles beigas;
+ * tabulā / laika joslā bija 11.11, izsoles kartītē 12.11 (tāpat 08.10 / 09.10, 05.11 / 06.11).
+ * Tikai, ja atšķirība ≤ 7 dienas (cita lote ar to pašu id nav iespējama, bet nepareizu datumu neievedam).
+ */
+export function alignCcVinSaleDatesWithRecords<T extends { date: string; status: string }>(
+  sales: readonly T[],
+  records: readonly { id: string; date: string }[] | null | undefined,
+): T[] {
+  if (!records?.length) return [...sales];
+  const dotDay = (iso: string): string => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso.trim());
+    return m ? `${m[3]}.${m[2]}.${m[1]}` : "";
+  };
+  const ms = (dot: string): number => {
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(dot.trim());
+    return m ? Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : NaN;
+  };
+  return sales.map((row) => {
+    const ids = row.status.split("·").map((x) => x.trim()).filter(Boolean);
+    const rec = records.find((r) => r.id && ids.includes(r.id));
+    const recDay = rec ? dotDay(rec.date) : "";
+    if (!recDay || recDay === row.date.trim()) return row;
+    const a = ms(recDay);
+    const b = ms(row.date);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || Math.abs(a - b) > 7 * 86_400_000) return row;
+    return { ...row, date: recDay };
+  });
 }
 
 /** AI konteksts / avotu žurnāls - bloka saturs vienkāršā tekstā. */

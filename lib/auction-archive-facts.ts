@@ -829,9 +829,13 @@ export function auctionArchiveKeyFindings(
   }
   const keyed = lots.filter((l) => l.facts.keys != null);
   if (keyed.length >= 2 && new Set(keyed.map((l) => l.facts.keys)).size > 1) {
-    out.push({ text: `Atslēgu skaits izsolēs atšķiras: ${keyed.map((l) => `${l.platform} - ${l.facts.keys}`).join(", ")}.`, alert: true });
+    // 27.11 (WVWZZZ3CZNE054721): 11 izsoles -> «Openlane - 2, Openlane - 2, … Autorola - 1». Katrs pāris vienreiz.
+    const pairs = [...new Set(keyed.map((l) => `${l.platform} - ${l.facts.keys}`))];
+    out.push({ text: `Atslēgu skaits izsolēs atšķiras: ${pairs.join(", ")}.`, alert: true });
   }
-  const dmg = lots.reduce((s, l) => s + l.damageCount, 0);
+  // Atkārtotas izsoles ir viens un tas pats auto ar tiem pašiem bojājumiem - summa (10 x 4 = «30 bojājumi»)
+  // maldina. Rādām lielāko skaitu vienā izsolē.
+  const dmg = lots.reduce((m, l) => Math.max(m, l.damageCount), 0);
   // Tikai fakti (bez ieteikumiem «vērtējiet / pārbaudiet») - bloks tiek drukāts arī Business / dīlera PDF.
   if (dmg > 0) out.push({ text: dmg === 1 ? "Izsolēs norādīts 1 bojājums." : `Izsolēs norādīti ${dmg} bojājumi.`, alert: true });
   else if (lots.length && lots.every((l) => l.facts.damagesDeclared !== true))

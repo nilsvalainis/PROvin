@@ -113,12 +113,36 @@ export type OemVehicleHints = {
   engineCodes?: readonly (string | null | undefined)[];
 };
 
+/**
+ * VAG (VW, Audi, Škoda, SEAT/Cupra) LongLife / Flexible Service (QI6): maksimums 30 000 km / 24 mēn.
+ * (27.11, WVWZZZ3CZNE054721 Passat B8 2.0 TDI DTSA: dīlera solis 112 485 km / 39 mēn. bija «ražotāja intervāls
+ * nav droši zināms» -> bez piebildes). Tikai modeļu gadi no 2010 (VIN 10. zīme burts) - vecajiem PD dīzeļiem
+ * LongLife bija līdz 50 000 km, tos neminam. Fiksētais serviss (15 000 km / 12 mēn.) ir stingrāks, tāpēc
+ * 30 000 / 24 ir droša augšējā robeža: solis virs tās pārsniedz jebkuru VAG plānu.
+ */
+export const VAG_LONGLIFE_OIL_INTERVAL: OemOilInterval = { km: 30_000, kmMin: null, months: 24 };
+const VAG_WMI_RE = /^(?:WVW|WVG|WAU|WA1|WUA|TRU|TMB|VSS)/i;
+const VAG_MAKE_RE = /(?:^|[^\p{L}])(?:Volkswagen|VW|Audi|[ŠS]koda|SEAT|Cupra)(?:[^\p{L}]|$)/iu;
+/** VIN 10. zīme - modeļa gads; burti A-Y (bez I, O, Q, U, Z) = 2010-2030 (vecāki gadi ar burtiem PROVIN nav aktuāli). */
+const VIN_YEAR_2010_PLUS_RE = /^[A-HJ-NPR-TV-Y]$/i;
+const ICE_FUEL_RE = /diesel|d[iī]zel|дизел|petrol|benz|gasoline|бензин/i;
+
+function vagLongLifeDefault(vin: string, descs: readonly string[], fuels: readonly string[]): OemOilInterval | null {
+  const v = vin.trim().toUpperCase();
+  const vag = VAG_WMI_RE.test(v) || descs.some((d) => VAG_MAKE_RE.test(d));
+  if (!vag) return null;
+  if (v.length !== 17 || !VIN_YEAR_2010_PLUS_RE.test(v.charAt(9))) return null;
+  if (fuels.some((f) => /electric|elektr|hybrid|hibr|e-?tron|gte|plug/i.test(f))) return null;
+  if (!fuels.some((f) => ICE_FUEL_RE.test(f))) return null;
+  return { ...VAG_LONGLIFE_OIL_INTERVAL };
+}
+
 export function defaultOemOilIntervalForVehicle(h: OemVehicleHints): OemOilInterval | null {
   const descs = (h.descriptions ?? []).map((d) => (d ?? "").trim()).filter(Boolean);
   const codes = (h.engineCodes ?? []).map((c) => (c ?? "").trim()).filter(Boolean);
   const fuels = (h.fuel ?? []).map((f) => (f ?? "").trim()).filter(Boolean);
   const bmw = BMW_WMI_RE.test((h.vin ?? "").trim()) || descs.some((d) => BMW_MAKE_RE.test(d));
-  if (!bmw) return null;
+  if (!bmw) return vagLongLifeDefault(h.vin ?? "", descs, fuels);
   // Ja kāds avots saka benzīns / elektro - noklusējuma nav (pretrunu neatrisinām ar minējumu).
   if (fuels.some((f) => /petrol|benz|gasoline|electric|elektr|hybrid|hibr/i.test(f))) return null;
   const diesel =
