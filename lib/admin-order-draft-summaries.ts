@@ -2,6 +2,7 @@ import "server-only";
 
 import { readDashboardDraftSummaries } from "@/lib/admin-dashboard-draft-index";
 import type { OrderVinScanDashboardHint } from "@/lib/order-vin-scan";
+import type { OrderAdminNote } from "@/lib/order-admin-note";
 
 export type OrderDraftDashboardSummary = {
   customerEmail: string | null;
@@ -15,6 +16,8 @@ export type OrderDraftDashboardSummary = {
   vin: string | null;
   notes: string | null;
   vinScan: OrderVinScanDashboardHint | null;
+  /** Iekšēja admina piezīme (saraksta punkts). */
+  adminNote?: OrderAdminNote | null;
 };
 
 /** Viena JSON lasīšana — nevis N× Blob/FS melnrakstu lasījumi. */

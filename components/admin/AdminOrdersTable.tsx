@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
+import { AdminOrderNoteDot } from "@/components/admin/AdminOrderNote";
 import { AdminBusinessLinkButton } from "@/components/admin/AdminBusinessLinkButton";
 import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
@@ -1197,7 +1198,14 @@ export function AdminOrdersTable({
                 </span>
               ) : null}
               <div className="min-w-0 flex-1">
-                <p className="amx-row-title min-w-0 break-words max-md:line-clamp-2">{title}</p>
+                {o.adminNote ? (
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <AdminOrderNoteDot note={o.adminNote} />
+                    <p className="amx-row-title min-w-0 break-words max-md:line-clamp-2">{title}</p>
+                  </div>
+                ) : (
+                  <p className="amx-row-title min-w-0 break-words max-md:line-clamp-2">{title}</p>
+                )}
                 <p className={`mt-0.5 truncate ${!v.isPack && v.hasVin ? "amx-row-vin" : "amx-row-sub"}`}>
                   {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
                   {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
@@ -1546,6 +1554,7 @@ export function AdminOrdersTable({
                           {primaryClient}
                         </Link>
                       )}
+                      <AdminOrderNoteDot note={o.adminNote} />
                       <SourceIcon source={o.heardAbout} />
                       {o.clientOrders?.length ? <AdminClientOrdersChip items={o.clientOrders.map((c) => ({ ...c, href: `${detailBaseNormalized}/${encodeURIComponent(c.id)}` }))} /> : null}
                       {o.repeatVin ? (
