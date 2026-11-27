@@ -6,8 +6,10 @@
  * netiek drukātas - tās jau ir citās sadaļās vai nesniedz informāciju.
  */
 
-import { buildAuctionArchiveSummary, type AuctionArchivePhoto } from "@/lib/auction-archive-offer";
-import { AUCTION_LOT_CARDS_CSS, auctionLotRecordKey, buildAuctionLotsHtml } from "@/lib/auction-lot-cards-html";
+import { AUCTION_LOT_CARDS_CSS } from "@/lib/auction-lot-cards-html";
+import { AUCTION_HISTORY_CSS, buildAuctionHistoryHtml } from "@/lib/auction-history-pdf-html";
+import { auctionArchiveVehicleRows } from "@/lib/auction-archive-facts";
+import { translateAuctionKvRows } from "@/lib/auction-lot-cards-i18n";
 import type { ThecarapiStoredPhoto } from "@/lib/vin-scan/thecarapi-fields";
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { translateAuctionTerms } from "@/lib/auction-terms-i18n";
@@ -119,28 +121,27 @@ export type CcVinPdfAuctionOpts = {
 export function buildCcVinAuctionCardsHtml(b: CcVinBlockState, opts: CcVinPdfAuctionOpts = {}): string {
   const records = (b.thecarapiRecords ?? []).filter((r) => r.fields.length > 0 || r.photos.length > 0);
   if (records.length === 0) return "";
-  const summary = buildAuctionArchiveSummary({ vin: opts.vin ?? "", title: "", block: { thecarapiRecords: records, photoGroups: [] } });
-  // Bilde → izsole pēc id, saites vai satura (bilžu grupā tā pati bilde var būt ar citu id).
-  const lotByKey = new Map<string, { key: string; date: string }>();
-  const keysOf = (p: { id?: string; sourceUrl?: string; contentHash?: string }): string[] =>
-    [p.id ? `id:${p.id}` : "", p.sourceUrl?.trim() ? `url:${p.sourceUrl.trim()}` : "", p.contentHash?.trim() ? `hash:${p.contentHash.trim().toLowerCase()}` : ""].filter(Boolean);
-  for (const r of records) {
-    for (const p of r.photos) for (const k of keysOf(p)) if (!lotByKey.has(k)) lotByKey.set(k, { key: auctionLotRecordKey(r), date: p.date || r.photoDate || r.date });
-  }
-  const photos: AuctionArchivePhoto[] = [];
-  for (const p of opts.photos ?? []) {
-    const lot = keysOf(p).map((k) => lotByKey.get(k)).find(Boolean);
-    if (lot) photos.push({ id: p.id, auctionKey: lot.key, date: p.date || lot.date, caption: "" });
-  }
-  const parts = buildAuctionLotsHtml({
-    summary,
+  // Nils 27.11 (makets, variants A): faktu kartītes + grupas kartīte ar solījumu tabulu; foto visas, pa 2 rindā, vienreiz.
+  return buildAuctionHistoryHtml({
     records,
-    photos,
+    photos: opts.photos ?? [],
     dataUrls: opts.dataUrls ?? new Map(),
     showPrices: true,
     lang: opts.lang,
+    vehicleRows: translateAuctionKvRows(auctionArchiveVehicleRows(records), opts.lang ?? "lv"),
   });
-  return `<div class="aa-embed">${parts.timeline}${parts.findings}${parts.vehicle}${parts.lots.join("\n")}${parts.galleries}</div>`;
+}
+
+/** Pārdošanas rinda, ko jau rāda izsoles kartīte (`status` = «Venue · id» vai tas pats datums + platforma). */
+function saleRowCoveredByRecord(r: { date: string; venue: string; status: string }, records: readonly { id: string; date: string; venue: string }[]): boolean {
+  const ids = r.status.split(" · ").map((x) => x.trim());
+  const day = (s: string) => {
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s.trim());
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : s.trim().slice(0, 10);
+  };
+  return records.some(
+    (rec) => (rec.id && ids.includes(rec.id)) || (day(r.date) === (rec.date || "").slice(0, 10) && r.venue.trim().toLowerCase() === (rec.venue || "").trim().toLowerCase()),
+  );
 }
 
 export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, auction: CcVinPdfAuctionOpts = {}): string {
@@ -194,7 +195,9 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
     );
   }
 
-  const sales = (b.sales ?? []).filter(ccVinSaleRowHasData);
+  // Izsoles, kas ir izsoļu kartītēs, tabulā neatkārto (Nils 27.11: «Pārdošanas un izsoļu vēsture» + hronoloģija → viens bloks).
+  const auctionRecords = (b.thecarapiRecords ?? []).filter((r) => r.fields.length > 0 || r.photos.length > 0);
+  const sales = (b.sales ?? []).filter((r) => ccVinSaleRowHasData(r) && !saleRowCoveredByRecord(r, auctionRecords));
   if (sales.length > 0) {
     parts.push(subhead(CC_VIN_SUBTITLES.sales));
     // Cenas kolonna ar nozīmes etiķeti: visām rindām viena (piem. «Pēdējais solījums») → virsrakstā, citādi pie vērtības.
@@ -219,7 +222,7 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
 }
 
 /** Sadaļas CSS - mērogs un krāsas seko PDF dizaina marķieriem. */
-export const CC_VIN_PDF_CSS = AUCTION_LOT_CARDS_CSS + `
+export const CC_VIN_PDF_CSS = AUCTION_LOT_CARDS_CSS + AUCTION_HISTORY_CSS + `
       /* Izsoļu kartītes AUDITS sadaļā: tās pašas kā «Izsoļu arhīvs» PDF; atkāpe no iepriekšējā bloka. */
       .aa-embed{margin:14px 0 0}
       .aa-embed .aa-card:last-child{margin-bottom:0}

@@ -111,8 +111,8 @@ describe("izsoles kartīte: tulkoti fakti, nevis tehnisks izmetiens", () => {
     const block = emptyCcVinBlock();
     block.thecarapiRecords = [openlane()];
     const html = buildCcVinPdfInnerHtml(block);
-    expect(html).toContain('class="aa-embed"');
-    expect(html).toContain("Openlane izsole");
+    expect(html).toContain('class="ah"');
+    expect(html).toContain('<span class="ah-plat__name">Openlane</span>');
     expect(html).toContain("Pēdējais solījums");
     expect(html).toContain("7 300 €");
     expect(html).not.toContain("Noslēguma cena");

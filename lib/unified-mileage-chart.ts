@@ -423,7 +423,7 @@ ${mileageSeriesSpanHtml(series)}
 export function buildSourceMileageSparkHtml(
   rows: UnifiedMileageRow[],
   sourceKey: MileagePdfSourceKey,
-  opts?: { chartExcludeSourceOrders?: Set<number> },
+  opts?: { chartExcludeSourceOrders?: Set<number>; minPoints?: number },
 ): string {
   const chartExclude =
     opts?.chartExcludeSourceOrders ?? analyzeUnifiedMileageAnomalies(rows).chartExcludeSourceOrders;
@@ -432,6 +432,8 @@ export function buildSourceMileageSparkHtml(
   const mine = series.filter((s) => s.sourceKeys.includes(sourceKey));
   // Nils 24.11: mini grafiks rādās arī ar 1-2 rādījumiem (1 punkts = punkts); gadu ass paliek (D37).
   if (mine.length === 0) return "";
+  // Nils 27.11 (izsoļu sadaļa): viena punkta grafiku nerāda.
+  if (mine.length < (opts?.minPoints ?? 1)) return "";
 
   const tMin = series[0]!.time;
   const tMax = series[series.length - 1]!.time;

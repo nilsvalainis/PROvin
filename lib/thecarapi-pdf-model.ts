@@ -32,6 +32,7 @@ import {
   translateZone,
   zoneFromPart,
 } from "@/lib/thecarapi-i18n-lv";
+import { openlaneDamageLocation } from "@/lib/openlane-damage-locations";
 import { thecarapiSiteLabel } from "@/lib/vin-scan/parse-thecarapi";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -481,6 +482,8 @@ type Ctx = {
   currency: string;
   history: Record<string, unknown> | null;
   detail: Record<string, unknown> | null;
+  /** Openlane: bojājuma vieta ir numurs (`DamageLocation`, `areaName`, bilžu `locationId`) - `openlane-damage-locations`. */
+  openlane: boolean;
 };
 
 function mark(ctx: Ctx, prefix: string, status: ThecarapiPdfLeafStatus = "section"): void {
@@ -518,8 +521,9 @@ const DAMAGE_TECH_KEYS =
   /^(id|uuid|index|sort|sortorder|position_index|quantitytype|imageid|damageid|areaid|partid|order|damagekindid|damagelocationid|damagelocationcategoryid|isforbrokencars|areacode|code)$/i;
 
 /**
- * Openlane zonas ir tikai numuri («1», «13») bez nosaukuma - drukājam «Zona 13», nevis kailu «13»
- * (27.11, WVWZZZ3CZNE054721: «Area code: 13; Code: 1; Nosaukums: Chip»).
+ * Openlane zonas ir tikai numuri («1», «13»). Zināmos numurus pārvērš vietā (Openlane vārdnīca,
+ * `openlane-damage-locations`: 1 = priekšējais buferis, 13 = aizmugurējais buferis…); nezināms numurs
+ * paliek «Zona 13», nevis kails «13» (27.11, WVWZZZ3CZNE054721).
  */
 export const THECARAPI_NUMERIC_ZONE_RE = /^Zona (\d{1,3})$/;
 function zoneLabel(raw: string): string {
@@ -527,7 +531,7 @@ function zoneLabel(raw: string): string {
   return /^\d{1,3}$/.test(t) ? `Zona ${t}` : translateZone(t);
 }
 
-function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null {
+function parseDamage(value: unknown, inheritedZone: string, openlane = false): DamageDraft | null {
   const d: DamageDraft = {
     zone: inheritedZone,
     part: "",
@@ -583,6 +587,12 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
     if (isStateKey(key) || DAMAGE_TECH_KEYS.test(nk)) continue;
     const str = typeof raw === "string" ? raw.trim() : raw;
     if (/^(area|zone|region|section|areaname|damagelocation)$/.test(nk)) {
+      const loc = openlane ? openlaneDamageLocation(str) : null;
+      if (loc) {
+        d.zone = d.zone || loc.zone;
+        if (!d.part) d.part = loc.part;
+        continue;
+      }
       d.zone = d.zone || zoneLabel(String(str));
     } else if (/^(part|partname|subarea|component|location|position|partkey)$/.test(nk)) {
       if (!d.part) {
@@ -626,7 +636,7 @@ function parseDamage(value: unknown, inheritedZone: string): DamageDraft | null 
   return d;
 }
 
-function damageItems(value: unknown, inheritedZone = ""): DamageDraft[] {
+function damageItems(value: unknown, inheritedZone = "", openlane = false): DamageDraft[] {
   if (!Array.isArray(value)) return [];
   const out: DamageDraft[] = [];
   for (const item of value) {
@@ -635,10 +645,10 @@ function damageItems(value: unknown, inheritedZone = ""): DamageDraft[] {
     if (rec && nested) {
       const zoneRaw = rec.area ?? rec.zone ?? "";
       const zone = typeof zoneRaw === "string" && zoneRaw ? (isI18nKey(zoneRaw) ? translateI18n(zoneRaw) : translateZone(zoneRaw)) : inheritedZone;
-      out.push(...damageItems(nested[1], zone));
+      out.push(...damageItems(nested[1], zone, openlane));
       continue;
     }
-    const d = parseDamage(item, inheritedZone);
+    const d = parseDamage(item, inheritedZone, openlane);
     if (!d) continue;
     const { extraTypes, ...first } = d;
     out.push(first);
@@ -673,7 +683,7 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
   const partByUrl = new Map<string, string>();
   let canonicalDone = false;
   for (const node of sorted) {
-    const items = damageItems(node.value);
+    const items = damageItems(node.value, "", ctx.openlane);
     if (!canonicalDone && items.length > 0) {
       canonicalDone = true;
       const seen = new Set<string>();
@@ -685,7 +695,7 @@ function extractDamages(ctx: Ctx, root: unknown): { rows: ThecarapiPdfDamage[]; 
       }
       if (Array.isArray(node.value)) {
         for (const raw of node.value) {
-          const item = parseDamage(raw, "");
+          const item = parseDamage(raw, "", ctx.openlane);
           for (const url of collectUrls(raw)) partByUrl.set(url, item?.part || "");
         }
       }
@@ -1434,7 +1444,12 @@ function extractOther(ctx: Ctx): ThecarapiPdfKv[] {
 
 // --- Bilžu kategorijas ---
 
-function photoCategories(root: unknown, damageParts: Map<string, string>, documentNames: Map<string, string>): Record<string, string> {
+function photoCategories(
+  root: unknown,
+  damageParts: Map<string, string>,
+  documentNames: Map<string, string>,
+  openlane = false,
+): Record<string, string> {
   const out: Record<string, string> = {};
   const walk = (value: unknown, category: string, depth: number): void => {
     if (depth > 10 || value == null) return;
@@ -1450,6 +1465,14 @@ function photoCategories(root: unknown, damageParts: Map<string, string>, docume
     const rec = asRecord(value);
     if (!rec) return;
     const own = typeof rec.category === "string" ? rec.category : typeof rec.image_source === "string" ? rec.image_source : "";
+    // Openlane bojājuma foto: `{ type: "damage", locationId: 13, url }` (Openlane pats birko ar vietas nosaukumu).
+    const olLoc = openlane ? openlaneDamageLocation(rec.locationId ?? rec.LocationId) : null;
+    if (olLoc) {
+      for (const v of Object.values(rec)) {
+        if (typeof v === "string" && /^https?:\/\//i.test(v.trim()) && !damageParts.has(v.trim())) out[v.trim()] = `Bojājums: ${olLoc.lv.toLowerCase()}`;
+      }
+      return;
+    }
     const ownCat = /interior|salon/i.test(own) ? "Salons" : /exterior/i.test(own) ? "Ārpuse" : /damage/i.test(own) ? "Bojājums" : /service/i.test(own) ? "Serviss" : /document/i.test(own) ? "Dokuments" : "";
     for (const [k, v] of Object.entries(rec)) {
       const nk = normKey(k);
@@ -1487,6 +1510,7 @@ export function buildThecarapiPdfModel(record: ThecarapiAdminRecord): ThecarapiP
     currency: typeof root.currency === "string" ? root.currency : "EUR",
     history: asRecord(record.rawHistory),
     detail: asRecord(record.rawDetail),
+    openlane: [record.site, record.venue, root.site_name, root.site, root.platform].some((v) => typeof v === "string" && /openlane/i.test(v)),
   };
   for (const leaf of leaves) if (isExcludedLeaf(leaf)) ctx.status.set(leaf.path, "excluded");
 
@@ -1539,7 +1563,7 @@ export function buildThecarapiPdfModel(record: ThecarapiAdminRecord): ThecarapiP
     service: { summary: service.summary, rows: service.rows, entries: service.entries },
     documents: documents.names,
     other,
-    photoCategories: photoCategories(root, damages.partByUrl, documents.urlNames),
+    photoCategories: photoCategories(root, damages.partByUrl, documents.urlNames, ctx.openlane),
     coverage: leaves.map((leaf) => ({ path: leaf.path, status: ctx.status.get(leaf.path) ?? "other" })),
   };
 }

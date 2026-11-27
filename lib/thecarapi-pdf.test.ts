@@ -90,10 +90,12 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     block.thecarapiRecords = records;
     // Klienta PDF (Nils 23.11): kopīgā izsoles kartīte - bez «Citi dati» tehniskā izmetiena; pilns saraksts tikai adminā.
     const section = buildCcVinPdfInnerHtml(block);
-    expect(section).toContain('class="aa-embed"');
-    expect(section).toContain("Izsoļu hronoloģija");
+    // Nils 27.11 (makets A): faktu kartītes + izsoles kartīte; hronoloģijas kartīšu vairs nav.
+    expect(section).toContain('class="ah"');
+    expect(section).toContain("ah-tiles");
+    expect(section).not.toContain("Izsoļu hronoloģija");
     expect(section).toContain("Priekšējais bamperis");
-    expect(section).toContain("Bojājumi un defekti");
+    expect(section).toContain("Bojājumi");
     expect(section).not.toContain("Citi dati");
     expect(section).not.toContain("Keep zone");
     expect(section).not.toContain("TheCarApi");
