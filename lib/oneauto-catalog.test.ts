@@ -76,6 +76,37 @@ describe("OneAuto katalogs", () => {
     expect(text).not.toMatch(/manufactured year/);
   });
 
+  it("VIN Decoder kārba netiek rādīta - tā nāk no VIN šablona, ne no auto (27.11)", () => {
+    // Jeep Grand Cherokee 2014: dīlera ierakstā «Replace 8 Speed Automatic», VIN Decoder - «MANUAL».
+    const display = buildOneautoDisplay({
+      vin_decoder: {
+        success: true,
+        result: {
+          manufacturer_desc: "JEEP",
+          model_range_desc: "GRAND CHEROKEE",
+          derivative_desc: "CRD",
+          fuel_type_desc: "DIESEL",
+          transmission_desc: "MANUAL",
+          manufactured_year: 2022,
+        },
+      },
+    });
+    const text = display.powertrain.map((r) => `${r.label}: ${r.value}`).join("\n");
+    expect(text).toMatch(/fuel type desc: DIESEL/);
+    expect(text).not.toMatch(/transmission/i);
+    expect(text).not.toMatch(/MANUAL/);
+  });
+
+  it("OE VIN Lookup kārba paliek", () => {
+    const display = buildOneautoDisplay({
+      oe_vin_lookup: {
+        result: { oem_transmission_type_desc: "Automatic Transmission (GA8HP-50X)", oem_fuel_type_desc: "Petrol" },
+      },
+    });
+    const text = display.powertrain.map((r) => `${r.label}: ${r.value}`).join("\n");
+    expect(text).toMatch(/GA8HP-50X/);
+  });
+
   it("OE Build Sheet (Europe) sauc oficiālo asinhrono /v2 ceļu", () => {
     expect(ONEAUTO_PRODUCTS.find((p) => p.id === "oe_build_sheet")?.path).toBe(
       "/oneauto/oebuildsheeteuropefromvin/v2",
