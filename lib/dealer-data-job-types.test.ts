@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  dealerDataJobMissingAi,
+  DEALER_AI_MISSING_LABEL,
   DEALER_AUTO_PRODUCT_IDS,
   DEALER_DATA_MAX_AUTO_ATTEMPTS,
   DEALER_DATA_RETRY_NO_RECHARGE_HINT,
@@ -476,5 +478,29 @@ describe("dealer alerts (Nils 20.11)", () => {
     expect(dealerDataJobRetryDue({}, 1000)).toBe(true);
     expect(dealerDataJobRetryDue({ nextRetryAt: new Date(5000).toISOString() }, 1000)).toBe(false);
     expect(dealerDataJobRetryDue({ nextRetryAt: new Date(500).toISOString() }, 1000)).toBe(true);
+  });
+});
+
+describe("«Ielasīts» bez AI komentāriem (BF 27.11, S6)", () => {
+  const base = { status: "done" as const, attempts: 1, serviceEventCount: 20, createdAt: "2026-11-27T07:37:33.999Z" };
+
+  it("automātikas darbs bez aiGenerated - sarkana atzīme un skaidrs iemesls", () => {
+    const job = normalizeDealerDataJob({ ...base, vin: "WBAVU910X0KT03947", trigger: "webhook" }, "s")!;
+    expect(dealerDataJobMissingAi(job)).toBe(true);
+    expect(describeDealerDataJob(job)).toContain(DEALER_AI_MISSING_LABEL);
+    expect(dealerDataListAlertLabel(job)).toBe("AI komentāri nav");
+  });
+
+  it("aiGenerated: true, manuāla pirkuma ieraksts vai vecs darbs - bez atzīmes", () => {
+    expect(dealerDataJobMissingAi({ ...base, trigger: "webhook", aiGenerated: true })).toBe(false);
+    expect(dealerDataJobMissingAi({ ...base, trigger: "manual" })).toBe(false);
+    expect(dealerDataJobMissingAi({ ...base, trigger: "webhook", createdAt: "2026-11-10T10:00:00.000Z" })).toBe(false);
+    expect(dealerDataJobMissingAi({ ...base, trigger: "webhook", serviceEventCount: 0 })).toBe(false);
+    expect(dealerDataJobMissingAi({ ...base, trigger: "manual", aiGenerated: false })).toBe(true);
+  });
+
+  it("gaida AI pēc manuāla pirkuma - statuss to pasaka", () => {
+    const job = normalizeDealerDataJob({ status: "pending", vin: "WBAVU910X0KT03947", serviceEventCount: 20 }, "s")!;
+    expect(describeDealerDataJob(job)).toBe("Ielasīts: 20 servisa ieraksti, AI komentāri tiek ģenerēti");
   });
 });

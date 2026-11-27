@@ -4,6 +4,10 @@
  * - pēc manuāla pirkuma rezultāti uzreiz tiek saglabāti serverī (dīlera darba ierakstā), lai
  *   tie nepazūd, ja lapu aizver pirms melnraksta saglabāšanas, un «Atkārtot» tos izmanto bez maksas;
  * - ja vēsture ar ierakstiem ir nopirkta, darba statuss kļūst «Ielasīts».
+ * - BF 27.11 (S6): ja automātiskā ielase iepriekš krita (piem. OneAuto «insufficient_balance») un vēsture
+ *   tagad nopirkta manuāli, darbs NEDRĪKST beigties «Ielasīts» bez AI komentāriem. Tas atgriežas rindā
+ *   («pending», bez maksas soļiem - viss jau nopirkts) un cron no jau esošā RAW ieraksta vēsturi melnrakstā,
+ *   ģenerē abus AI komentārus un tikai tad atzīmē «Ielasīts».
  */
 import "server-only";
 
@@ -13,6 +17,7 @@ import {
   DEALER_AUTO_PRODUCT_IDS,
   dealerPaidOutcomeFromResult,
   type DealerAutoProductId,
+  type DealerDataJob,
   type DealerPaidProductOutcome,
 } from "@/lib/dealer-data-job-types";
 import { parseResultMap, type OneautoProductResult } from "@/lib/oneauto-block";
@@ -25,6 +30,19 @@ import { mergeOneautoProductResults } from "@/lib/oneauto-to-auto-records";
 import { normalizeVin } from "@/lib/order-field-validation";
 
 type ResultMap = Partial<Record<OneautoProductId, OneautoProductResult>>;
+
+/**
+ * Vai pēc manuāla vēstures pirkuma dīlera darbs jāpabeidz automātikai (AI komentāri no RAW), nevis
+ * jāatzīmē «Ielasīts» uzreiz. Darbs, ko izveidoja automātika (webhook / cron) vai kas nav pabeigts, un
+ * kuram AI komentāri vēl nav ģenerēti. Tikai manuāla pirkuma ieraksts (audits, bez dīlera produkta) - nē.
+ */
+export function manualPurchaseNeedsDealerAiRun(
+  existing: Pick<DealerDataJob, "status" | "trigger" | "aiGenerated"> | null,
+): boolean {
+  if (!existing || existing.aiGenerated === true) return false;
+  if (existing.status === "running") return false;
+  return existing.status !== "done" || existing.trigger !== "manual";
+}
 
 /** Saglabā manuāli nopirkto serverī uzreiz (dīlera darba ierakstā). Kļūda pirkumu neaptur. */
 export async function recordManualOneautoPurchase(args: {
@@ -53,9 +71,18 @@ export async function recordManualOneautoPurchase(args: {
     if (!existing && !historyOk) return; // bez dīlera darba un bez vēstures - nekādu jaunu ierakstu
     const record: Record<string, unknown> = {};
     for (const [id, row] of Object.entries(merged)) if (row) record[id] = row;
+    const requeueForAi = historyOk && sameVin && manualPurchaseNeedsDealerAiRun(existing);
     await upsertDealerDataJob(args.sessionId, {
       vin,
-      ...(historyOk && existing?.status !== "running"
+      ...(requeueForAi
+        ? {
+            // Bez AI komentāriem «Ielasīts» nav: cron pabeidz no jau nopirktā RAW (bez jauna maksas soļa).
+            status: "pending" as const,
+            serviceEventCount: events,
+            nextRetryAt: new Date().toISOString(),
+            runId: "",
+          }
+        : historyOk && existing?.status !== "running"
         ? {
             status: "done" as const,
             serviceEventCount: events,

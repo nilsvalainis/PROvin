@@ -634,6 +634,12 @@ function walkPowertrain(node: unknown, out: OneautoKvRow[], seen: Set<string>, d
 }
 
 const DECODER_BUILD_DATE_KEY_RE = /^manufactured(?:[_\s-]?(?:year|date))?$/i;
+/**
+ * 27.11 (Black Friday pasūtījumi): VIN Decoder `transmission_desc` nāk no VIN šablona, ne no
+ * konkrētā auto - Jeep Grand Cherokee ar 8 pakāpju automātu (dīlera ierakstā «Replace 8 Speed
+ * Automatic») un Alfa Romeo Stelvio (tikai automāts) abi saņēma «MANUAL». Kārbu rādām tikai no OE.
+ */
+const DECODER_TRANSMISSION_KEY_RE = /^transmission(?:[_\s-]?(?:desc|type|type[_\s-]?desc))?$/i;
 
 function withoutDecoderBuildDates(node: unknown, depth = 0): unknown {
   if (depth > 6 || node == null) return node;
@@ -642,7 +648,7 @@ function withoutDecoderBuildDates(node: unknown, depth = 0): unknown {
   if (!o) return node;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(o)) {
-    if (DECODER_BUILD_DATE_KEY_RE.test(k)) continue;
+    if (DECODER_BUILD_DATE_KEY_RE.test(k) || DECODER_TRANSMISSION_KEY_RE.test(k)) continue;
     out[k] = withoutDecoderBuildDates(v, depth + 1);
   }
   return out;
@@ -657,6 +663,7 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
 
   // 24.11 (BMW WBAUY…): VIN Decoder `manufactured_year` nāk no VIN 10. pozīcijas - Eiropas BMW tur gads nav
   // kodēts. Ražošanas datums tikai no OE (VIN Lookup / build sheet / dīlera izdruka).
+  // 27.11: tāpat VIN Decoder kārba (`transmission_desc`) - tikai no OE.
   const decoder = withoutDecoderBuildDates(unwrapResult(results.vin_decoder));
   const oeLookup = unwrapResult(results.oe_vin_lookup);
   const build = unwrapResult(results.oe_build_sheet);

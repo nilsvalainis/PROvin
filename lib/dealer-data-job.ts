@@ -46,6 +46,7 @@ import {
   upsertDealerDataJob,
 } from "@/lib/dealer-data-job-store";
 import { sendDealerDataAlertIfNeeded } from "@/lib/dealer-data-alert";
+import { dealerJobPatchForDraftData } from "@/lib/dealer-manual-data";
 import { runDealerShadowGate } from "@/lib/dealer-shadow-gate-run";
 import { reviewDealerCommentsWithOpus } from "@/lib/dealer-comments-review";
 import {
@@ -632,6 +633,20 @@ async function runDealerDataJobInner(args: RunArgs): Promise<DealerDataRunResult
   }
 
   if (oeNoData) {
+    // BF 27.11 (S7): OneAuto datu nav, bet operators dīlera datus melnrakstā jau ievadīja manuāli -
+    // tas nav «datu nav» (nav atmaksas ieteikuma, nav maka atmaksas, nav paziņojuma).
+    const manual = dealerJobPatchForDraftData(
+      { vin, status: "no_data", refund: claim.job.refund, refundPendingAt: claim.job.refundPendingAt },
+      mergeSourceBlocksWithDefaults(
+        (await readOrderDraft(sessionId))?.workspace?.sourceBlocks ?? emptyWorkspaceBody().sourceBlocks,
+      ).auto_records,
+    );
+    if (manual) {
+      const { vin: _vin, ...manualPatch } = manual;
+      void _vin;
+      await save({ ...manualPatch, paidOutcomes, oneautoResults: resultsRecord(mergedResults) });
+      return { ok: true, status: "done", reason: "manual_data", serviceEventCount: manual.serviceEventCount };
+    }
     await save({
       status: "no_data",
       serviceEventCount: 0,

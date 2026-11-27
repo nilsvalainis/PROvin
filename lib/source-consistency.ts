@@ -47,6 +47,7 @@ import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart"
 import { oilIntervalStepRange } from "@/lib/oil-change-intervals";
 import { findOwnerClaimIssues } from "@/lib/owner-claims-check";
 import { printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
+import { findDealerOdometerOutliers } from "@/lib/dealer-odometer-checks";
 import { extractVehicleDrivetrain, findDrivetrainContradictions, resolveVehicleDrivetrain } from "@/lib/registry-drivetrain";
 import { thecarapiSalePriceFromFields } from "@/lib/thecarapi-sale-price";
 import {
@@ -70,6 +71,7 @@ export type SourceIssueKind =
   | "owners"
   | "mileage_drop"
   | "mileage_same_day"
+  | "dealer_registry_mileage"
   | "future_date"
   | "country"
   | "first_registration"
@@ -588,6 +590,58 @@ function checkMileage(rows: UnifiedMileageRow[], out: SourceIssue[], opts: { vin
       ],
     });
   }
+}
+
+/* ---------- 2a. Dīleris pret vēlāku reģistra rādījumu (BF 27.11, S1) ---------- */
+
+/**
+ * Lielākais oficiālā dīlera nobraukums pret VĒLĀKU valsts reģistra rādījumu (CSDD, citas valsts reģistrs).
+ * Dīlera rindas ir «dokumenta» vērtības, tāpēc vispārīgajā avotu kritumā (2b) nepiedalās - šeit atsevišķi.
+ * BF 27.11: Mercedes dīleris 2023 ~324 000 km, CSDD 2026 ~287 000 km; BMW dīleris 2016 ~216 000 km,
+ * CSDD 2022 ~189 000 km - neviens AI komentārs to neminēja. Tikai brīdinājums adminā un ēnu pārbaudē
+ * (klienta teksts nemainās). Viena dīlera izlecējs (pārrakstīšanās) nav salīdzināšanas punkts.
+ */
+function checkDealerVsRegistryMileage(rows: UnifiedMileageRow[], out: SourceIssue[], opts: { vin?: string | null; nowMs: number }): void {
+  type P = { row: UnifiedMileageRow; km: number; t: number };
+  const usable = (r: UnifiedMileageRow): P | null => {
+    const km = parseOdometerKm(r.odometer);
+    if (km == null || km <= 0 || !(r.sortableTime > 0)) return null;
+    if (isSentinelOdometerKm(km) || isInvalidMileageDate(r.date)) return null;
+    if (r.sortableTime > opts.nowMs + DAY_MS || r.datePrecision === "month") return null;
+    return { row: r, km, t: r.sortableTime };
+  };
+  const dealerAll = rows.filter((r) => DEALER_LABEL_RE.test(r.sourceLabel ?? "") && !LOW_TRUST_LABEL_RE.test(r.sourceLabel ?? ""));
+  const outliers = findDealerOdometerOutliers(dealerAll);
+  const dealer = dealerAll.filter((r) => !outliers.has(r)).map(usable).filter((p): p is P => p != null);
+  if (dealer.length === 0) return;
+  const top = dealer.reduce((a, b) => (b.km > a.km || (b.km === a.km && b.t < a.t) ? b : a));
+  const min = Math.max(CROSS_SOURCE_DROP_MIN_KM, top.km * CROSS_SOURCE_DROP_RATIO);
+  let hit: { reg: P; drop: number } | null = null;
+  for (const r of rows) {
+    if (DEALER_LABEL_RE.test(r.sourceLabel ?? "") || r.documentValue) continue;
+    const p = usable(r);
+    if (!p || mileageRowTrust(r, p.km) !== 1) continue;
+    if (p.t - top.t < 31 * DAY_MS) continue;
+    const drop = top.km - p.km;
+    if (drop < min) continue;
+    if (!hit || drop > hit.drop) hit = { reg: p, drop };
+  }
+  if (!hit) return;
+  const { reg, drop } = hit;
+  const milesCountry = /^(?:us|usa|ca|gb|uk|asv|kanād|lielbritān|amerik)/i.test((reg.row.country ?? "").trim());
+  const miles = looksLikeMilesAsKm(top.km, reg.km) || isNorthAmericanVin(opts.vin) || milesCountry;
+  const big = drop >= CROSS_SOURCE_DROP_CRITICAL_KM || drop >= top.km * CROSS_SOURCE_DROP_CRITICAL_RATIO;
+  const regLabel = reg.row.sourceLabel.trim() || "reģistrs";
+  push(out, {
+    id: `dealer_registry_mileage_${top.row.date}_${reg.row.date}`,
+    kind: "dealer_registry_mileage",
+    severity: miles ? "info" : big ? "critical" : "warn",
+    title: `Iespējama nobraukuma pretruna: ${fmtKm(top.km)} (${top.row.date}, dīleris) pret ${fmtKm(reg.km)} (${reg.row.date}, ${regLabel})${miles ? " - iespējamas jūdzes" : ""}`,
+    values: [
+      { source: top.row.sourceLabel || "Oficiālā dīlera dati", value: `${fmtKm(top.km)} (${top.row.date})` },
+      { source: regLabel, value: `${fmtKm(reg.km)} (${reg.row.date})` },
+    ],
+  });
 }
 
 /* ---------- 2b. Datumi nākotnē (drukājamajā laika joslā / tabulās nedrīkst palikt) ---------- */
@@ -1501,6 +1555,7 @@ export function checkSourceConsistency(input: SourceConsistencyInput): SourceIss
     () => checkOwners(blocks, out),
     () => checkForeignOwnerCounts(blocks, out),
     () => checkMileage(mileageRows(blocks, input.listingUrl), out, { vin: input.vin, nowMs }),
+    () => checkDealerVsRegistryMileage(mileageRows(blocks, input.listingUrl), out, { vin: input.vin, nowMs }),
     () => checkFutureDates(blocks, nowMs, input.listingUrl, out),
     () => checkCountry(blocks, lots, out),
     () => checkFirstRegistration(blocks, lots, out),

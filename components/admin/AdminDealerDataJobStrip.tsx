@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import {
+  dealerDataJobMissingAi,
   dealerDataRetryButtonLabel,
   describeDealerDataJob,
   type DealerDataJob,
@@ -150,7 +151,9 @@ export function AdminDealerDataJobStrip({
           </span>
           <span
             className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
-              job.status === "no_data" && !job.refund ? STATUS_TONE.failed : STATUS_TONE[job.status]
+              (job.status === "no_data" && !job.refund) || dealerDataJobMissingAi(job)
+                ? STATUS_TONE.failed
+                : STATUS_TONE[job.status]
             }`}
           >
             {describeDealerDataJob(job)}
