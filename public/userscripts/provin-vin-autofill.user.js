@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.27.2
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.28.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. kfzgutachten.at (Austrijas §57a) sarakstu pēc «Suchen» nosūta pasūtījumam (atzinumus nepērk, neko nespiež). checkcar.vin atvērtajā atskaitē poga «Nosūtīt uz PROVIN» nosūta vēsturi un foto pasūtījumam (neko nepērk). Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -115,7 +115,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.27.2";
+  const SCRIPT_VERSION = "1.28.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -225,6 +225,524 @@
   const GM_CV_PURCHASE = "provin_cv_purchase";
   const GM_CV_PURCHASE_VIN = "provin_cv_purchase_vin";
   const GM_CV_PURCHASE_RESULT = "provin_cv_purchase_result";
+
+  /* ---------- CheckCar.vin pilnā atskaite: admin cilne pārsūta uz PROVIN serveri ----------
+     checkcar.vin cilne (Nila nopirktā/atvērtā atskaite) ieliek GM krātuvē darbu (teksts, HTML, foto
+     grupas) un pēc tam foto partijās (data URL, lejupielādēti Nila pārlūkā). Šī admin cilne tos sūta
+     uz /api/admin/checkcar-import un /api/admin/cc-vin-photo ar savu sesiju (tā pati izcelsme). */
+  const GM_CCFULL_JOB = "provin_ccfull_job";
+  const GM_CCFULL_STATUS = "provin_ccfull_status";
+  const GM_CCFULL_BATCH = "provin_ccfull_batch";
+  const GM_CCFULL_ACK = "provin_ccfull_ack";
+  const GM_CCFULL_CLAIM = "provin_ccfull_claim";
+  const CCFULL_ERROR_LV = {
+    order_not_found: "PROVIN nav pasūtījuma ar šo VIN",
+    vin_mismatch: "Lapā redzams cits VIN",
+    page_not_ready: "Atskaite vēl nav ielādēta",
+    too_large: "Lapa par lielu",
+    unauthorized: "Ielogojies PROVIN adminā",
+    forbidden: "Nav piekļuves PROVIN adminam",
+    invalid_vin: "Nederīgs VIN",
+  };
+  function ccfullGmJson(key) {
+    try {
+      const raw = GM_getValue(key, "");
+      return raw ? JSON.parse(String(raw)) : null;
+    } catch {
+      return null;
+    }
+  }
+  function ccfullSetStatus(obj) {
+    try {
+      GM_setValue(GM_CCFULL_STATUS, JSON.stringify(Object.assign({ at: Date.now() }, obj)));
+    } catch (e) {
+      console.warn("PROVIN checkcar imports: statuss", e);
+    }
+  }
+  function ccfullErrorText(code) {
+    const c = String(code || "");
+    return CCFULL_ERROR_LV[c] || (c ? "Kļūda: " + c : "Kļūda");
+  }
+  if (IS_PROVIN_ADMIN && typeof fetch === "function") {
+    const ccfullTab = Math.random().toString(36).slice(2);
+    let ccfullBusy = false;
+    let ccfullCurrent = null;
+    function ccfullToast(text) {
+      try {
+        let el = document.getElementById("provin-ccfull-toast");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "provin-ccfull-toast";
+          el.style.cssText =
+            "position:fixed;z-index:2147483647;left:16px;bottom:16px;max-width:420px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;font:500 13px/1.4 Inter,system-ui,sans-serif";
+          document.body.appendChild(el);
+        }
+        el.textContent = text;
+      } catch {
+        /* ignore */
+      }
+    }
+    async function ccfullPost(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+      return { status: res.status, data: data || {} };
+    }
+    function ccfullClaim(jobId) {
+      const c = ccfullGmJson(GM_CCFULL_CLAIM);
+      if (c && c.jobId === jobId && c.tab !== ccfullTab && Date.now() - Number(c.at || 0) < 20000) return false;
+      GM_setValue(GM_CCFULL_CLAIM, JSON.stringify({ jobId: jobId, tab: ccfullTab, at: Date.now() }));
+      return true;
+    }
+    async function ccfullPrepare(job) {
+      ccfullSetStatus({ jobId: job.jobId, stage: "working", message: "PROVIN nolasa atskaiti..." });
+      ccfullToast("CheckCar.vin: nolasu atskaiti " + job.vin);
+      const r = await ccfullPost("/api/admin/checkcar-import", {
+        action: "prepare",
+        vin: job.vin,
+        text: job.text || "",
+        html: job.html || "",
+        pageUrl: job.pageUrl || "",
+        groups: job.groups || [],
+      });
+      if (!r.data.ok) {
+        const code = r.data.error || (r.status === 401 ? "unauthorized" : r.status === 403 ? "forbidden" : "http_" + r.status);
+        ccfullSetStatus({ jobId: job.jobId, stage: "error", message: ccfullErrorText(code) });
+        ccfullToast("CheckCar.vin: " + ccfullErrorText(code));
+        return;
+      }
+      ccfullCurrent = { jobId: job.jobId, sessionId: r.data.sessionId, nextN: 0, uploaded: 0, failed: 0 };
+      ccfullSetStatus({
+        jobId: job.jobId,
+        stage: "ready",
+        sessionId: r.data.sessionId,
+        summary: r.data.summary || "",
+        groups: r.data.groups || [],
+        knownUrls: r.data.knownUrls || [],
+        autobid: r.data.autobid || null,
+      });
+      const ab = r.data.autobid;
+      ccfullToast(
+        "CheckCar.vin: dati ielikti pasūtījumā. " +
+          (r.data.summary || "") +
+          (ab && ab.photos ? " Izsoļu arhīvā ir Autobid bildes bez ūdenszīmēm (" + ab.photos + ") - pārbaudi /admin/izsolu-arhivs." : ""),
+      );
+    }
+    /* Admin CSP connect-src neatļauj data:, tāpēc data URL atkodē bez fetch. */
+    function ccfullDataUrlToBlob(dataUrl) {
+      const m = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(String(dataUrl || ""));
+      if (!m || !m[2]) return null;
+      const bin = atob(m[3]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: m[1] || "image/jpeg" });
+    }
+    async function ccfullUploadOne(sessionId, item) {
+      const blob = ccfullDataUrlToBlob(item.dataUrl);
+      if (!blob || !blob.size) return "";
+      const form = new FormData();
+      form.append("sessionId", sessionId);
+      form.append("file", blob, "checkcar.jpg");
+      form.append("currentCount", "0");
+      form.append("hideWatermarks", "0");
+      const res = await fetch("/api/admin/cc-vin-photo", { method: "POST", credentials: "same-origin", body: form });
+      const data = await res.json().catch(() => ({}));
+      return data && data.ok && data.id ? String(data.id) : "";
+    }
+    async function ccfullBatch(batch) {
+      const cur = ccfullCurrent;
+      const photos = [];
+      let failed = 0;
+      for (const item of batch.items || []) {
+        try {
+          const id = await ccfullUploadOne(cur.sessionId, item);
+          if (id) photos.push({ id: id, title: item.title || "", sourceUrl: item.url || "" });
+          else failed += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      if (photos.length) {
+        const r = await ccfullPost("/api/admin/checkcar-import", {
+          action: "attach",
+          sessionId: cur.sessionId,
+          photos: photos,
+        });
+        if (!r.data.ok) failed += photos.length;
+        else cur.uploaded += Number(r.data.added || 0);
+      }
+      cur.failed += failed + Number(batch.downloadFailed || 0);
+      cur.nextN = Number(batch.n) + 1;
+      GM_deleteValue(GM_CCFULL_BATCH);
+      GM_setValue(GM_CCFULL_ACK, JSON.stringify({ jobId: cur.jobId, n: batch.n, uploaded: cur.uploaded, failed: cur.failed }));
+      if (batch.last) {
+        const text = "CheckCar.vin: gatavs - " + cur.uploaded + " foto" + (cur.failed ? ", neizdevās " + cur.failed : "") + ". Pārlādē pasūtījuma lapu.";
+        ccfullSetStatus({ jobId: cur.jobId, stage: "done", sessionId: cur.sessionId, message: text, uploaded: cur.uploaded, failed: cur.failed });
+        ccfullToast(text);
+        try {
+          document.dispatchEvent(new CustomEvent("provin-checkcar-import", { detail: { sessionId: cur.sessionId } }));
+        } catch {
+          /* ignore */
+        }
+        ccfullCurrent = null;
+      } else {
+        ccfullToast("CheckCar.vin: augšupielādēti " + cur.uploaded + " foto...");
+      }
+    }
+    window.setInterval(function () {
+      if (ccfullBusy) return;
+      const job = ccfullGmJson(GM_CCFULL_JOB);
+      if (job && job.jobId && (!ccfullCurrent || ccfullCurrent.jobId !== job.jobId)) {
+        if (!ccfullClaim(job.jobId)) return;
+        GM_deleteValue(GM_CCFULL_JOB);
+        ccfullBusy = true;
+        ccfullPrepare(job)
+          .catch(function (e) {
+            ccfullSetStatus({ jobId: job.jobId, stage: "error", message: ccfullErrorText("network") });
+            console.warn("PROVIN checkcar imports", e);
+          })
+          .finally(function () {
+            ccfullBusy = false;
+          });
+        return;
+      }
+      if (!ccfullCurrent) return;
+      ccfullClaim(ccfullCurrent.jobId);
+      const batch = ccfullGmJson(GM_CCFULL_BATCH);
+      if (!batch || batch.jobId !== ccfullCurrent.jobId || Number(batch.n) !== ccfullCurrent.nextN) return;
+      ccfullBusy = true;
+      ccfullBatch(batch)
+        .catch(function (e) {
+          console.warn("PROVIN checkcar foto", e);
+        })
+        .finally(function () {
+          ccfullBusy = false;
+        });
+    }, 1000);
+  }
+
+  /* ---------- CheckCar.vin pilnā atskaite: poga „Nosūtīt uz PROVIN” ----------
+     Tikai atskaites lapā ar VIN. Neko nepērk un nespiež („buy / unlock” dara Nils). Pēc klikšķa savāc
+     lapas tekstu, HTML un foto (pilnā izmērā, ja lapa to dod), foto lejupielādē šajā pārlūkā un caur
+     GM krātuvi partijās nodod PROVIN admin cilnei (ja tādas nav, to atver). Ūdenszīmes netiek apstrādātas. */
+  const CCFULL_SKIP_RE = /logo|icon|flag|sprite|avatar|payment|visa|mastercard|favicon|banner|badge|placeholder|spinner/i;
+  const CCFULL_DATE_RE = /\b\d{1,2}[./]\d{1,2}[./]\d{4}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s+[A-Z][a-z]{2,8}\.?\s+\d{4}\b/;
+  const CCFULL_AUCTION_RE = /autobid|openlane|adesa|auto1|\bbca\b|copart|iaai|manheim|caronsale|ecarstrade|troostwijk|autorola|auction|izsole/i;
+  const CCFULL_BATCH_SIZE = 4;
+  const CCFULL_PHOTO_MAX = 400;
+
+  function checkcarFullVin() {
+    const fromPath = (path.match(/([A-HJ-NPR-Z0-9]{17})/i) || [])[1] || "";
+    if (fromPath) return fromPath.toUpperCase();
+    const text = String((document.body && document.body.innerText) || "").toUpperCase();
+    const m = text.match(/\bVIN\s*:?\s*([A-HJ-NPR-Z0-9]{17})\b/);
+    return m ? m[1] : "";
+  }
+
+  function isCheckcarReportPage() {
+    if (!/report/i.test(path)) {
+      const text = String((document.body && document.body.innerText) || "");
+      if (!/vehicle\s+history\s+report|attention\s+marks|auction\s+sale\s+history/i.test(text)) return false;
+    }
+    return checkcarFullVin().length === 17;
+  }
+
+  function ccfullAbsUrl(raw) {
+    const s = String(raw || "").trim();
+    if (!s || s.startsWith("data:") || s.startsWith("blob:")) return "";
+    try {
+      const u = new URL(s, location.href);
+      return u.protocol === "https:" ? u.toString().split("#")[0] : "";
+    } catch {
+      return "";
+    }
+  }
+
+  function ccfullLargestSrcset(srcset) {
+    let best = "";
+    let bestW = 0;
+    for (const part of String(srcset || "").split(",")) {
+      const bits = part.trim().split(/\s+/);
+      const w = parseFloat((bits[1] || "").replace(/[^\d.]/g, "")) || 1;
+      if (bits[0] && w >= bestW) {
+        best = bits[0];
+        bestW = w;
+      }
+    }
+    return best;
+  }
+
+  /** Pilnā izmēra foto URL: saites href uz attēlu, data-* lauki, lielākais srcset, tad src. */
+  function ccfullPhotoUrl(img) {
+    const a = img.closest ? img.closest("a[href]") : null;
+    const href = a ? ccfullAbsUrl(a.getAttribute("href")) : "";
+    if (href && /\.(jpe?g|png|webp)(\?|$)/i.test(href)) return href;
+    const attrs = ["data-full", "data-large", "data-zoom", "data-zoom-image", "data-original", "data-src", "data-lazy-src"];
+    for (const name of attrs) {
+      const v = ccfullAbsUrl(img.getAttribute(name));
+      if (v) return v;
+    }
+    const set = ccfullAbsUrl(ccfullLargestSrcset(img.getAttribute("srcset") || img.getAttribute("data-srcset")));
+    if (set) return set;
+    return ccfullAbsUrl(img.currentSrc || img.getAttribute("src"));
+  }
+
+  /** Tuvākais bloks ar datumu vai izsoles nosaukumu - grupas nosaukumam. */
+  function ccfullGroupLabel(img) {
+    let el = img.parentElement;
+    for (let depth = 0; el && depth < 10; depth += 1) {
+      const text = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+      if (text && text.length <= 2500 && (CCFULL_DATE_RE.test(text) || CCFULL_AUCTION_RE.test(text))) {
+        return text.slice(0, 500);
+      }
+      el = el.parentElement;
+    }
+    return "";
+  }
+
+  function collectCheckcarFullGroups() {
+    const groups = [];
+    const byLabel = Object.create(null);
+    const seen = new Set();
+    let total = 0;
+    for (const img of document.querySelectorAll("img")) {
+      if (total >= CCFULL_PHOTO_MAX) break;
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if ((w && w < 100) || (h && h < 80)) continue;
+      const url = ccfullPhotoUrl(img);
+      if (!url || CCFULL_SKIP_RE.test(url) || seen.has(url)) continue;
+      seen.add(url);
+      const label = ccfullGroupLabel(img);
+      let g = byLabel[label];
+      if (!g) {
+        g = { label: label, urls: [] };
+        byLabel[label] = g;
+        groups.push(g);
+      }
+      g.urls.push(url);
+      total += 1;
+    }
+    return groups;
+  }
+
+  function ccfullBlobToDataUrl(blob) {
+    return new Promise(function (resolve) {
+      try {
+        const reader = new FileReader();
+        reader.onload = function () {
+          resolve(String(reader.result || ""));
+        };
+        reader.onerror = function () {
+          resolve("");
+        };
+        reader.readAsDataURL(blob);
+      } catch {
+        resolve("");
+      }
+    });
+  }
+
+  /** Foto lejupielāde Nila pārlūkā: tā pati izcelsme ar fetch, citādi GM_xmlhttpRequest. */
+  function ccfullDownload(url) {
+    let sameOrigin = false;
+    try {
+      sameOrigin = new URL(url).origin === location.origin;
+    } catch {
+      sameOrigin = false;
+    }
+    if (sameOrigin && typeof fetch === "function") {
+      return fetch(url, { credentials: "include" })
+        .then(function (res) {
+          return res.ok ? res.blob() : null;
+        })
+        .then(function (blob) {
+          return blob && blob.size > 0 && blob.size < 12 * 1024 * 1024 ? ccfullBlobToDataUrl(blob) : "";
+        })
+        .catch(function () {
+          return "";
+        });
+    }
+    const xhr =
+      typeof GM_xmlhttpRequest === "function"
+        ? GM_xmlhttpRequest
+        : typeof GM !== "undefined" && GM && typeof GM.xmlHttpRequest === "function"
+          ? GM.xmlHttpRequest.bind(GM)
+          : null;
+    if (!xhr) return Promise.resolve("");
+    return new Promise(function (resolve) {
+      xhr({
+        method: "GET",
+        url: url,
+        responseType: "blob",
+        timeout: 30000,
+        headers: { Referer: location.href, Accept: "image/avif,image/webp,image/*,*/*;q=0.8" },
+        onload: function (res) {
+          const blob = res && res.response;
+          if (res.status >= 200 && res.status < 300 && blob && blob.size > 0 && blob.size < 12 * 1024 * 1024) {
+            ccfullBlobToDataUrl(blob).then(resolve);
+          } else resolve("");
+        },
+        onerror: function () {
+          resolve("");
+        },
+        ontimeout: function () {
+          resolve("");
+        },
+      });
+    });
+  }
+
+  function ccfullWait(check, timeoutMs) {
+    return new Promise(function (resolve) {
+      const started = Date.now();
+      const timer = window.setInterval(function () {
+        const v = check();
+        if (v) {
+          window.clearInterval(timer);
+          resolve(v);
+        } else if (Date.now() - started > timeoutMs) {
+          window.clearInterval(timer);
+          resolve(null);
+        }
+      }, 500);
+    });
+  }
+
+  async function sendCheckcarFullReport(btn) {
+    const vinNow = checkcarFullVin();
+    const say = function (t) {
+      btn.textContent = t;
+    };
+    btn.disabled = true;
+    const jobId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const groups = collectCheckcarFullGroups();
+    const text = String((document.body && document.body.innerText) || "").slice(0, 400000);
+    let html = "";
+    try {
+      html = String(pageDocumentElement().outerHTML || "");
+    } catch {
+      html = "";
+    }
+    if (html.length > 900000) html = "";
+    GM_deleteValue(GM_CCFULL_STATUS);
+    GM_deleteValue(GM_CCFULL_BATCH);
+    GM_deleteValue(GM_CCFULL_ACK);
+    GM_setValue(
+      GM_CCFULL_JOB,
+      JSON.stringify({ jobId: jobId, vin: vinNow, pageUrl: location.href, text: text, html: html, groups: groups, at: Date.now() }),
+    );
+    say("Gaidu PROVIN admin cilni...");
+    let openedAdmin = false;
+    const status = await ccfullWait(function () {
+      const s = ccfullGmJson(GM_CCFULL_STATUS);
+      if (s && s.jobId === jobId && (s.stage === "ready" || s.stage === "error")) return s;
+      if (!openedAdmin && !s) {
+        const job = ccfullGmJson(GM_CCFULL_JOB);
+        if (job && job.jobId === jobId && Date.now() - Number(job.at || 0) > 6000) {
+          openedAdmin = true;
+          say("Atveru PROVIN adminu...");
+          window.open("https://www.provin.lv/admin", "_blank");
+        }
+      }
+      return null;
+    }, 180000);
+    if (!status) {
+      say("PROVIN neatbildēja - atver adminu un mēģini vēlreiz");
+      btn.disabled = false;
+      return;
+    }
+    if (status.stage === "error") {
+      say(status.message || "Kļūda");
+      btn.disabled = false;
+      return;
+    }
+    const known = new Set(status.knownUrls || []);
+    const queue = [];
+    for (const g of status.groups || []) {
+      for (const url of g.urls || []) if (!known.has(url)) queue.push({ title: g.title, url: url });
+    }
+    const autobidNote =
+      status.autobid && status.autobid.photos ? " Izsoļu arhīvā ir Autobid oriģinālās bildes (" + status.autobid.photos + ")." : "";
+    let n = 0;
+    let done = 0;
+    for (let i = 0; i < queue.length || n === 0; i += CCFULL_BATCH_SIZE) {
+      const slice = queue.slice(i, i + CCFULL_BATCH_SIZE);
+      const items = [];
+      let downloadFailed = 0;
+      for (const q of slice) {
+        say("Lejupielādēju foto " + (done + 1) + "/" + queue.length + "...");
+        const dataUrl = await ccfullDownload(q.url);
+        done += 1;
+        if (dataUrl) items.push({ title: q.title, url: q.url, dataUrl: dataUrl });
+        else downloadFailed += 1;
+      }
+      const last = i + CCFULL_BATCH_SIZE >= queue.length;
+      GM_setValue(
+        GM_CCFULL_BATCH,
+        JSON.stringify({ jobId: jobId, n: n, items: items, last: last, downloadFailed: downloadFailed }),
+      );
+      const myN = n;
+      const ack = await ccfullWait(function () {
+        const a = ccfullGmJson(GM_CCFULL_ACK);
+        return a && a.jobId === jobId && Number(a.n) === myN ? a : null;
+      }, 180000);
+      if (!ack) {
+        say("PROVIN admin cilne nepieņēma foto - mēģini vēlreiz");
+        btn.disabled = false;
+        return;
+      }
+      n += 1;
+      if (last) break;
+    }
+    const fin = await ccfullWait(function () {
+      const s = ccfullGmJson(GM_CCFULL_STATUS);
+      return s && s.jobId === jobId && s.stage === "done" ? s : null;
+    }, 30000);
+    say((fin ? fin.message : "Nosūtīts uz PROVIN") + autobidNote);
+    btn.disabled = false;
+  }
+
+  function mountCheckcarFullButton() {
+    if (document.getElementById("provin-ccfull-send")) return true;
+    if (!document.body || !isCheckcarReportPage()) return false;
+    const btn = document.createElement("button");
+    btn.id = "provin-ccfull-send";
+    btn.type = "button";
+    btn.textContent = "Nosūtīt uz PROVIN";
+    btn.style.cssText =
+      "position:fixed;z-index:2147483647;right:16px;top:16px;background:#0f172a;color:#fff;border:0;padding:10px 14px;border-radius:10px;font:600 14px/1.3 Inter,system-ui,sans-serif;cursor:pointer";
+    btn.addEventListener("click", function (ev) {
+      if (ev && ev.isTrusted === false) return;
+      sendCheckcarFullReport(btn).catch(function (e) {
+        console.warn("PROVIN checkcar: sūtīšana", e);
+        btn.textContent = "Kļūda - mēģini vēlreiz";
+        btn.disabled = false;
+      });
+    });
+    document.body.appendChild(btn);
+    return true;
+  }
+
+  if (host.endsWith("checkcar.vin")) {
+    let ccfullTries = 0;
+    if (!mountCheckcarFullButton()) {
+      const ccfullTimer = window.setInterval(function () {
+        ccfullTries += 1;
+        if (mountCheckcarFullButton() || ccfullTries > 60) window.clearInterval(ccfullTimer);
+      }, 1000);
+    }
+  }
+
 
   /* ---------- kfzgutachten.at (Austrijas §57a apskates): saraksts -> PROVIN pasūtījums ----------
      Saite no pasūtījuma: https://kfzgutachten.at/?vin=…&date=…&provin=<sessionId>.
@@ -3036,6 +3554,12 @@
       const probeVin = (pathVin || probeStored || vin || "").replace(/[\s-]/g, "").toUpperCase();
       if (!pathVin) {
         if (probeVin.length < 11) return;
+        /* Atvērta pilnā atskaite citā ceļā: nepāradresē, tur ir poga „Nosūtīt uz PROVIN”. */
+        if (isCheckcarReportPage()) {
+          done = true;
+          window.clearInterval(interval);
+          return;
+        }
         done = true;
         window.clearInterval(interval);
         console.log("PROVIN checkcar: atveru atskaiti", probeVin);

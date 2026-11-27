@@ -172,6 +172,7 @@ import {
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
 import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
+import { checkcarPdfGroupTitle } from "@/lib/checkcar-full-report";
 import {
   collectPdfPhotoKeys,
   selectThecarapiPdfPhotos,
@@ -2423,7 +2424,7 @@ function buildCcVinAvotuSubsection(
   );
   const otherGroups = (b?.photoGroups ?? []).map((group) => ({
     ...group,
-    title: thecarapiPdfGroupTitle(group.title),
+    title: checkcarPdfGroupTitle(thecarapiPdfGroupTitle(group.title)),
     photos: group.photos.filter((photo) => !isTcPhoto(photo)),
   }));
   const usedKeys = collectPdfPhotoKeys(otherGroups);
