@@ -5,7 +5,7 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 
 export const MAX_NOTIFY_ATTACHMENTS_BYTES = NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES;
-export const MAX_NOTIFY_FILES = 20;
+export const MAX_NOTIFY_FILES = 51;
 
 const ALLOWED_MIME = new Set([
   "application/pdf",

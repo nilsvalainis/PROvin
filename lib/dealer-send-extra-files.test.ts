@@ -32,10 +32,10 @@ describe("dīlera papildu faili: tipi", () => {
 });
 
 describe("dīlera papildu faili: skaits un izmērs", () => {
-  it("līdz 10 failiem", () => {
+  it("līdz 50 failiem", () => {
     const ten = Array.from({ length: DEALER_EXTRA_MAX_FILES }, (_, i) => ({ name: `${i}.jpg`, size: 100, type: "image/jpeg" }));
     expect(dealerExtraFilesError(ten)).toBeNull();
-    expect(dealerExtraFilesError([...ten, { name: "11.jpg", size: 100, type: "image/jpeg" }])).toMatch(/līdz 10/);
+    expect(dealerExtraFilesError([...ten, { name: "11.jpg", size: 100, type: "image/jpeg" }])).toMatch(/līdz 50/);
   });
   it("tukšs fails nav derīgs", () => {
     expect(dealerExtraFilesError([{ name: "a.pdf", size: 0, type: "application/pdf" }])).toMatch(/tukšs/);
