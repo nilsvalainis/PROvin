@@ -836,6 +836,30 @@ function cardsHtml(cards: PdfTopCard[], lang: Lang): string {
   return `<div class="pdf-top6__kc"><p class="pdf-top6__hd">${esc(pdfTopText("keyInfo", lang))}</p><div class="pdf-top6__grid" style="grid-template-columns:repeat(${cols * 2},minmax(0,1fr))">${items}</div></div>`;
 }
 
+/** Markas logo avotu rindā: augstums ne lielāks par to (≈ CSDD logo un teksta nosaukumi). */
+export const PDF_TOP_MAKE_LOGO_MAX_H = 20;
+const MAKE_LOGO_MIN_H = 9;
+const MAKE_LOGO_MAX_W = 64;
+const MAKE_LOGO_AREA = PDF_TOP_MAKE_LOGO_MAX_H * PDF_TOP_MAKE_LOGO_MAX_H;
+
+/**
+ * Markas logo izmērs pēc vienāda optiskā laukuma (Nils 27.11: «škoda logo neadekvāti liels»): kvadrātveida
+ * zīmes (BMW, VW, Mercedes) - 20 px augstas; platas vārdzīmes (Škoda, Jaguar, Kia) - zemākas, lai platums
+ * nepārsniedz 64 px un ≤ 65 % kolonnas.
+ */
+export function pdfTopMakeLogoBox(aspect: number, cellW: number): { w: number; h: number } {
+  const a = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
+  const maxW = Math.min(MAKE_LOGO_MAX_W, cellW * 0.65);
+  let h = Math.min(PDF_TOP_MAKE_LOGO_MAX_H, Math.max(MAKE_LOGO_MIN_H, Math.sqrt(MAKE_LOGO_AREA / a)));
+  let w = h * a;
+  if (w > maxW) {
+    w = maxW;
+    h = w / a;
+  }
+  const r = (n: number) => Math.round(n * 10) / 10;
+  return { w: r(w), h: r(h) };
+}
+
 function sourcesHtml(m: PdfTopModel): string {
   if (m.sources.length === 0) return "";
   const { lang } = m;
@@ -857,7 +881,8 @@ function sourcesHtml(m: PdfTopModel): string {
         nm = `<img class="pdf-top6-src__logo" style="height:${h}px" src="${sourceLogoUri(s.logo.key)}" alt="${esc(s.name)}"/>`;
       } else if (s.logo && "uri" in s.logo) {
         // Rezerve: ja pārlūks/PDF renderis logo neielādē - paslēpj attēlu un rāda nosaukumu (nekad salauzta ikona).
-        nm = `<img class="pdf-top6-src__logo pdf-top6-src__logo--make" src="${s.logo.uri}" alt="${esc(s.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/><span style="display:none;${fitStyle(pdfTopFitPx(s.name, cellW, 11.5, 8), 8)}">${esc(s.name)}</span>`;
+        const box = pdfTopMakeLogoBox(pdfTopSvgAspect(s.logo.uri), cellW);
+        nm = `<img class="pdf-top6-src__logo pdf-top6-src__logo--make" style="width:${box.w}px;height:${box.h}px" src="${s.logo.uri}" alt="${esc(s.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"/><span style="display:none;${fitStyle(pdfTopFitPx(s.name, cellW, 11.5, 8), 8)}">${esc(s.name)}</span>`;
       } else {
         nm = `<span style="${fitStyle(pdfTopFitPx(s.name, cellW, 11.5, 8), 8)}">${esc(s.name)}</span>`;
       }
@@ -996,7 +1021,7 @@ export const PDF_TOP6_CSS = `
 .pdf-top6__cells .pdf-top6-src{border-top:0;}
 .pdf-top6-src__nm{height:22px;display:flex;align-items:center;font-size:11.5px;font-weight:650;letter-spacing:-0.01em;color:var(--t6-ink);white-space:nowrap;}
 .pdf-top6-src__logo{display:block;height:13px;width:auto;max-width:100%;}
-.pdf-top6-src__logo--make{height:22px;margin-left:-1px;}
+.pdf-top6-src__logo--make{max-height:20px;max-width:64px;object-fit:contain;object-position:left center;margin-left:-1px;}
 .pdf-top6-src__cat{margin-top:7px!important;}
 .pdf-top6-src__cnt{margin-top:3px!important;font-size:10.5px;font-weight:500;color:var(--t6-ink);}
 `;
