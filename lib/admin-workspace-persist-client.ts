@@ -445,6 +445,7 @@ export function workspacePersistFromDraftWorkspace(
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
+    ...(w.dealerSignals != null ? { dealerSignals: w.dealerSignals } : {}),
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -470,5 +471,6 @@ export function workspacePersistFromDraftWorkspace(
     ...(h.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: h.dealerMajorWorkOverrides }
       : {}),
+    ...(h.dealerSignals != null ? { dealerSignals: h.dealerSignals } : {}),
   };
 }

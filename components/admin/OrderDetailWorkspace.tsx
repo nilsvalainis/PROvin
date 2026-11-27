@@ -246,6 +246,7 @@ import {
   dealerMajorWorkOverridesSnapshotField,
   type DealerMajorWorkOverride,
 } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
@@ -329,6 +330,18 @@ import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-over
 import { AdminPdfClientLangContext, AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
 import { AdminDealerExtraMenu } from "@/components/admin/AdminDealerExtraMenu";
+import { AdminDealerSignalsMenu } from "@/components/admin/AdminDealerSignalsMenu";
+import {
+  dealerSignalsAuditLinkFromOffer,
+  dealerSignalsFallbackAuditUrl,
+  dealerSignalsSectionOn,
+  type DealerSignalKind,
+  type DealerSignalsAuditLink,
+  type DealerSignalsState,
+} from "@/lib/dealer-signals";
+import { detectDealerSignals } from "@/lib/dealer-signals-detect";
+import { isWithinBlackFridayWindow } from "@/lib/promo/black-friday";
+import { BF_DEALER_TO_AUDIT_CHARGE_CENTS } from "@/lib/order-upsell";
 import { ADMIN_ORDERS_LIST_HREF, dealerSentFlashText, writeOrdersListFlash } from "@/lib/admin-orders-list-flash";
 import { AdminReportPreviewDialog, type ReportPreviewHtml } from "@/components/admin/AdminReportPreviewDialog";
 import {
@@ -546,6 +559,7 @@ type WorkspacePersist = {
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
   contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  dealerSignals?: import("@/lib/dealer-signals-persist").DealerSignalsState;
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -697,6 +711,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
   ...contradictionFeedbackSnapshotField(ws.contradictionFeedback),
   ...dealerMajorWorkOverridesSnapshotField(ws.dealerMajorWorkOverrides),
+  ...dealerSignalsSnapshotField(ws.dealerSignals),
   };
 }
 
@@ -1405,6 +1420,7 @@ export function OrderDetailWorkspace({
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(normalized.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(normalized.dealerSignals),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1482,6 +1498,7 @@ export function OrderDetailWorkspace({
         ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
         ...contradictionFeedbackSnapshotField(body.contradictionFeedback),
         ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
+        ...dealerSignalsSnapshotField(body.dealerSignals),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -3230,6 +3247,7 @@ export function OrderDetailWorkspace({
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       ...contradictionFeedbackSnapshotField(chosen.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
+      ...dealerSignalsSnapshotField(chosen.dealerSignals),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -3264,6 +3282,7 @@ export function OrderDetailWorkspace({
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       ...contradictionFeedbackSnapshotField(chosen.contradictionFeedback),
       ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
+      ...dealerSignalsSnapshotField(chosen.dealerSignals),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -4787,6 +4806,36 @@ export function OrderDetailWorkspace({
 
     const reportLang: ClientReportLang = opts?.lang ?? "lv";
 
+    // «Signāli ārpus dīlera datiem»: tikai dīlera PDF, ja admins ieslēdzis. Audita saite - esošais
+    // dīlera -> AUDITS piedāvājums (priekšskatam bez piedāvājuma izveides).
+    const dealerSignalsForPdf: DealerSignalsState | null = dealerOnly
+      ? (wsPersistRef.current.dealerSignals ?? null)
+      : null;
+    let dealerSignalsAuditLink: DealerSignalsAuditLink | null = null;
+    if (dealerSignalsForPdf && dealerSignalsSectionOn(dealerSignalsForPdf)) {
+      dealerSignalsAuditLink = { url: dealerSignalsFallbackAuditUrl(payload.vin, reportLang) };
+      if (!preview) {
+        try {
+          const res = await fetch("/api/admin/order-upsell", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: payload.sessionId, kind: "dealer_to_audit" }),
+          });
+          const data = (await res.json().catch(() => ({}))) as { url?: string; chargeCents?: number };
+          dealerSignalsAuditLink = dealerSignalsAuditLinkFromOffer(res.ok ? data : null, {
+            vin: payload.vin,
+            lang: reportLang,
+            nowMs: Date.now(),
+            bfWindow: isWithinBlackFridayWindow,
+            bfChargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS,
+          });
+        } catch {
+          /* saite paliek rezerves (AUDITS ar VIN) */
+        }
+      }
+    }
+
     const reportPayload: ClientReportPayload = {
       ...payload,
       ...flatSources,
@@ -4817,6 +4866,8 @@ export function OrderDetailWorkspace({
           : pdfVisibility,
       pdfReportKind: dealerOnly ? "dealer" : asvOnly ? "asv" : businessBrand ? "business" : "full",
       dealerExtra: dealerOnly ? dealerExtra : null,
+      dealerSignals: dealerSignalsForPdf,
+      dealerSignalsAuditLink,
       pdfBannerInclude: dealerOnly ? {} : pdfBannerInclude,
       manualBanners: dealerOnly ? [] : manualBanners,
       internalComment: isolate ? "" : internalCommentDraft,
@@ -4957,6 +5008,13 @@ export function OrderDetailWorkspace({
       }, 700);
     }
   };
+
+  /** «Signāli ārpus dīlera datiem»: atrastie tipi (aprēķina tikai atverot / pārģenerējot). */
+  const detectDealerSignalKinds = useCallback(
+    (): DealerSignalKind[] => detectDealerSignals({ sourceBlocks: blocksDisplaySafe, sourceIssues }),
+    [blocksDisplaySafe, sourceIssues],
+  );
+  const setDealerSignals = useCallback((next: DealerSignalsState) => updateWs({ dealerSignals: next }), [updateWs]);
 
   /** «+ Extra» izvēlne: kurām bezmaksas sadaļām ir dati (aprēķina tikai atverot izvēlni). */
   const getDealerExtraItems = useCallback(
@@ -5769,6 +5827,7 @@ export function OrderDetailWorkspace({
     customerPhoneDigits: whatsappPhoneDigits ?? null,
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
+    dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals),
     prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
@@ -6625,6 +6684,9 @@ export function OrderDetailWorkspace({
         dealerExtra={dealerExtra}
         onDealerExtraChange={setDealerExtra}
         getDealerExtraItems={getDealerExtraItems}
+        dealerSignals={ws.dealerSignals ?? null}
+        onDealerSignalsChange={setDealerSignals}
+        detectDealerSignals={detectDealerSignalKinds}
         onPreview={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
         pdfProgressKey={pdfJob?.key ?? null}
         pdfProgressPct={pdfJob?.pct ?? null}
@@ -7664,6 +7726,12 @@ export function OrderDetailWorkspace({
             getItems={getDealerExtraItems}
             selected={dealerExtra}
             onChange={setDealerExtra}
+          />
+          <AdminDealerSignalsMenu
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            state={ws.dealerSignals}
+            detect={detectDealerSignalKinds}
+            onChange={setDealerSignals}
           />
           <button
             type="button"

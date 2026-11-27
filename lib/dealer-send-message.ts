@@ -9,6 +9,7 @@ import { GOOGLE_REVIEW_URL } from "@/lib/messages/shared-blocks";
 import { reportReadyVinVar } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { formatEurFromCents } from "@/lib/order-upsell";
+import { withDealerSignalsEmailLine } from "@/lib/dealer-signals";
 
 export type DealerSendChannel = "email" | "whatsapp";
 export type DealerSendSituation = "ready" | "no_data" | "cancelled";
@@ -63,6 +64,8 @@ export type DealerSendMessageInput = {
   doc?: MessageTemplatesDoc | null;
   /** Klienta (PDF) valoda; noklusējums LV. */
   lang?: ClientReportLang | null;
+  /** PDF ieslēgta sadaļa «Signāli ārpus dīlera datiem» -> viena nemainīga e-pasta rinda (tikai «Dati gatavi»). */
+  signalsLine?: boolean;
 };
 
 function tidy(text: string): string {
@@ -95,7 +98,11 @@ export function buildDealerSendVars(input: DealerSendMessageInput): Record<strin
 export function buildDealerSendMessage(input: DealerSendMessageInput): { subject?: string; text: string } {
   const id = dealerSendTemplateId(input.channel, input.situation);
   const rendered = renderTemplateById(id, buildDealerSendVars(input), input.doc, { lang: input.lang });
-  const raw = tidy(rendered?.text ?? "");
+  const base = tidy(rendered?.text ?? "");
+  const raw =
+    input.signalsLine === true && input.channel === "email" && input.situation === "ready"
+      ? withDealerSignalsEmailLine(base, input.lang ?? "lv")
+      : base;
   // B2B paraksts tikai «PROVIN» (Nils 25.11) - arī, ja admina pārrakstā palicis «Nils».
   const text = input.b2b ? applyB2bSignature(raw) : raw;
   const subject = input.channel === "email" ? rendered?.subject?.trim() : undefined;

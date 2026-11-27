@@ -75,6 +75,7 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(w.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
       : {}),
+    ...(w.dealerSignals != null ? { dealerSignals: w.dealerSignals } : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
     savedAt: draft.workspaceSavedAt ?? draft.updatedAt,
@@ -104,6 +105,7 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(hydrated.dealerMajorWorkOverrides != null
       ? { dealerMajorWorkOverrides: hydrated.dealerMajorWorkOverrides }
       : {}),
+    ...(hydrated.dealerSignals != null ? { dealerSignals: hydrated.dealerSignals } : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
     savedAt: draft.workspaceSavedAt ?? draft.updatedAt,

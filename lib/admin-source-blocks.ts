@@ -138,6 +138,7 @@ import {
   parseDealerMajorWorkOverrides,
   type DealerMajorWorkOverride,
 } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField, parseDealerSignals } from "@/lib/dealer-signals-persist";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -3283,6 +3284,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
   contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  dealerSignals?: import("@/lib/dealer-signals-persist").DealerSignalsState;
 } | null {
   if (!raw) return null;
   try {
@@ -3342,6 +3344,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(p.odometerAnomalyOverrides)),
       ...contradictionFeedbackSnapshotField(parseContradictionFeedback(p.contradictionFeedback)),
       ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(p.dealerMajorWorkOverrides)),
+      ...dealerSignalsSnapshotField(parseDealerSignals(p.dealerSignals)),
     };
   } catch {
     return null;

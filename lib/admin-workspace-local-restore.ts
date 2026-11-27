@@ -12,6 +12,7 @@ import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map
 import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 import { contradictionFeedbackSnapshotField } from "@/lib/contradiction-feedback";
 import { dealerMajorWorkOverridesSnapshotField } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 
 export type LocalRestoreCandidate = {
   body: OrderWorkspacePersistBody;
@@ -46,6 +47,7 @@ export function hydratedSnapshotToPersistBody(h: HydratedSnapshot): OrderWorkspa
     ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(h.dealerSignals),
   };
 }
 
