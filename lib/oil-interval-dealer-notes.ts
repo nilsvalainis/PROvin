@@ -53,7 +53,30 @@ export type OilExceededInterval = {
   toDate: string;
   /** Dīlera ieraksti bez darbu apraksta šajā periodā (datumi, hronoloģiski). */
   genericDates: string[];
+  /** Iespējamās (nepierādītās) eļļas maiņas šajā periodā - eļļas filtra korpuss (Nils 27.11). */
+  possibleDates?: string[];
 };
+
+/**
+ * 3. piebilde (Nils 27.11, S8: «fiksējam, bet kā pilnībā nepierādītu»): pārsniegtajā periodā ir eļļas
+ * filtra korpusa maiņa bez skaidras eļļas maiņas. VIENS teikums visiem periodiem kopā.
+ */
+export function oilPossibleChangeNote(lang: OilNoteLang, dates: readonly string[], periodCount = 1): string {
+  const n = dates.length;
+  const label = n <= OIL_GENERIC_DATES_MAX ? dates.join(", ") : String(n);
+  const many = periodCount > 1;
+  const one = n === 1;
+  switch (lang) {
+    case "en":
+      return `${many ? "In these periods" : "In this period"} there ${one ? "is also an oil filter housing replacement" : "are also oil filter housing replacements"} (${label}) - an oil change may also have been done, but this is not proven.`;
+    case "ru":
+      return `${many ? "В эти периоды" : "В этот период"} есть также ${one ? "замена корпуса масляного фильтра" : "замены корпуса масляного фильтра"} (${label}) - возможно, было заменено и масло, но это не доказано.`;
+    case "de":
+      return `${many ? "In diesen Zeiträumen" : "In diesem Zeitraum"} gibt es auch ${one ? "einen Austausch des Ölfiltergehäuses" : "Austausche des Ölfiltergehäuses"} (${label}) - möglicherweise wurde auch ein Ölwechsel durchgeführt, das ist aber nicht belegt.`;
+    default:
+      return `${many ? "Šajos periodos" : "Šajā periodā"} ir arī ${one ? "eļļas filtra korpusa maiņa" : "eļļas filtra korpusa maiņas"} (${label}) - iespējams, veikta arī eļļas maiņa, bet tas nav pierādīts.`;
+  }
+}
 
 /**
  * 2. piebilde: VIENS teikums visiem pārsniegtajiem periodiem kopā (Nils 26.11, #1291).
@@ -190,6 +213,14 @@ export function oilGenericRecordsNotePresent(text: string): boolean {
   return GENERIC_PRESENT_RE.test(plainForCheck(text));
 }
 
+/** 3. piebilde (jebkurā valodā): eļļas filtra korpuss + «nav pierādīts». */
+const POSSIBLE_PRESENT_RE =
+  /eļļas\s+filtra\s+korpus\p{L}*(?:[^.!?]|[.!?](?!\s)){0,120}?nav\s+pierādīt\p{L}*|oil\s+filter\s+housing(?:[^.!?]|[.!?](?!\s)){0,120}?not\s+proven|корпус\p{L}*\s+масляного\s+фильтра(?:[^.!?]|[.!?](?!\s)){0,120}?не\s+доказано|Ölfiltergehäuse\p{L}*(?:[^.!?]|[.!?](?!\s)){0,120}?nicht\s+belegt/iu;
+
+export function oilPossibleChangeNotePresent(text: string): boolean {
+  return POSSIBLE_PRESENT_RE.test(plainForCheck(text));
+}
+
 /** Apgalvojošs pārsnieguma vārds (ne «ne-pārsniedz»): LV / EN / RU / DE. */
 const EXCEED_CLAIM_RE =
   /(?<![\p{L}])(?:pārsniedz\p{L}*|pārsniedza|pārsniegt\p{L}*|pārsniegum\p{L}*|exceed(?:s|ed|ing)?|превыша\p{L}*|превысил\p{L}*|überschreit\p{L}*|überschritt\p{L}*)(?![\p{L}])/giu;
@@ -300,6 +331,7 @@ export function stripInsertedOilNotes(text: string): string {
     }
   };
   cut(new RegExp(GENERIC_PRESENT_RE.source, "iu"), true);
+  cut(new RegExp(POSSIBLE_PRESENT_RE.source, "iu"), true);
   cut(NOT_SKIPPED_SENTENCE_START_RE, false);
   return out
     .replace(/[ \t]{2,}/g, " ")
@@ -328,6 +360,11 @@ export function ensureOilIntervalNotes(
   if (withGeneric.length > 0 && !oilGenericRecordsNotePresent(src)) {
     const dates = [...new Set(withGeneric.flatMap((iv) => iv.genericDates))];
     sentences.push(oilGenericRecordsNote(lang, dates, withGeneric.length));
+  }
+  const withPossible = intervals.filter((iv) => (iv.possibleDates?.length ?? 0) > 0);
+  if (withPossible.length > 0 && !oilPossibleChangeNotePresent(src)) {
+    const dates = [...new Set(withPossible.flatMap((iv) => iv.possibleDates ?? []))];
+    sentences.push(oilPossibleChangeNote(lang, dates, withPossible.length));
   }
   if (sentences.length === 0) {
     const norm = (t: string) => t.replace(/\s|&nbsp;|<br\s*\/?>/gi, "");

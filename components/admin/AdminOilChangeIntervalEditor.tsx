@@ -5,7 +5,7 @@ import { oilChangeIntervalAdminPreviewCss } from "@/lib/oil-change-interval-pdf-
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
-import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
+import { buildOilChangeIntervalPdfHtml, isPossibleOilChangeWork } from "@/lib/oil-change-intervals";
 import {
   buildOilIntervalSeriesForBlock,
   emptyOilIntervalChart,
@@ -183,9 +183,16 @@ export function AdminOilChangeIntervalEditor({
                 </thead>
                 <tbody>
                   {displayRows.map((row, i) => {
-                    const pt = series.points[i];
-                    const intervalLabel =
-                      pt?.kind === "start"
+                    // Pēc datuma + km (ne indeksa): iespējamās maiņas nav `points` (Nils 27.11).
+                    const possibleRow = isPossibleOilChangeWork(row.works);
+                    const provenIdx = displayRows.slice(0, i).filter((r) => !isPossibleOilChangeWork(r.works)).length;
+                    const pt =
+                      series.points.find((p) => p.date === row.date.trim() && p.odometer === row.odometer.trim()) ??
+                      (possibleRow ? undefined : series.points[provenIdx]);
+                    const possible = !pt && possibleRow;
+                    const intervalLabel = possible
+                      ? "Iespējama"
+                      : pt?.kind === "start"
                         ? "Sākums"
                         : pt?.intervalKm != null
                           ? `${String(pt.intervalKm).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} km`
