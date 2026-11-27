@@ -8,13 +8,17 @@ import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   DEALER_SIGNAL_KINDS,
   DEALER_SIGNAL_TEXT_MAX,
+  DEALER_SIGNAL_TONES,
   type DealerSignalItem,
   type DealerSignalKind,
   type DealerSignalsState,
+  type DealerSignalTone,
 } from "@/lib/dealer-signals-persist";
 
 export {
   DEALER_SIGNAL_KINDS,
+  DEALER_SIGNAL_TONES,
+  type DealerSignalTone,
   type DealerSignalItem,
   type DealerSignalKind,
   type DealerSignalsState,
@@ -115,6 +119,37 @@ export const DEALER_SIGNAL_ALERT_KINDS: ReadonlySet<DealerSignalKind> = new Set<
 
 export function isDealerSignalAlert(kind: DealerSignalKind): boolean {
   return DEALER_SIGNAL_ALERT_KINDS.has(kind);
+}
+
+/** Noklusētā krāsa pēc tipa (vecie ieraksti bez `tone`). */
+export function dealerSignalDefaultTone(kind: DealerSignalKind): DealerSignalTone {
+  return isDealerSignalAlert(kind) ? "red" : "neutral";
+}
+
+/** Krāsa: admina izvēlētā vai noklusējums pēc tipa. */
+export function dealerSignalTone(item: Pick<DealerSignalItem, "kind" | "tone">): DealerSignalTone {
+  return item.tone && (DEALER_SIGNAL_TONES as readonly string[]).includes(item.tone) ? item.tone : dealerSignalDefaultTone(item.kind);
+}
+
+/** Admina krāsu izvēles nosaukumi (LV). */
+export const DEALER_SIGNAL_TONE_LABEL_LV: Record<DealerSignalTone, string> = {
+  red: "Sarkans",
+  orange: "Oranžs",
+  neutral: "Parasts",
+};
+
+/** Maina krāsu; noklusējuma krāsa -> lauks noņemts (vecie ieraksti paliek tīri). */
+export function setDealerSignalTone(state: DealerSignalsState, kind: DealerSignalKind, tone: DealerSignalTone): DealerSignalsState {
+  let changed = false;
+  const items = state.items.map((it) => {
+    if (it.kind !== kind || dealerSignalTone(it) === tone) return it;
+    changed = true;
+    const next: DealerSignalItem = { ...it };
+    if (tone === dealerSignalDefaultTone(kind)) delete next.tone;
+    else next.tone = tone;
+    return next;
+  });
+  return changed ? { ...state, items } : state;
 }
 
 /** Admin rindas īsais tips (latviski). */
@@ -284,7 +319,8 @@ export function regenerateDealerSignals(
     }
     if (!found.has(kind)) continue;
     const kept = keep ? p : undefined;
-    items.push(kept ? { ...kept, kind } : { kind, checked: true });
+    // Admina izvēlētā krāsa paliek arī atiestatot (Nils 27.11).
+    items.push(kept ? { ...kept, kind } : { kind, checked: true, ...(p?.tone ? { tone: p.tone } : {}) });
   }
   return { enabled: current?.enabled === true, items };
 }
@@ -313,20 +349,30 @@ export function removeDealerSignal(state: DealerSignalsState, kind: DealerSignal
   return { ...state, items: state.items.filter((i) => i.kind !== kind) };
 }
 
+export type DealerSignalPdfRow = {
+  kind: DealerSignalKind;
+  title: string;
+  text: string;
+  /** `tone === "red"` (saderībai). */
+  alert: boolean;
+  tone: DealerSignalTone;
+};
+
 /** PDF rindas: tikai ieslēgts + ķeksēts; viens uz tipu. Tukšs -> sadaļas nav. */
 export function dealerSignalsPdfRows(
   state: DealerSignalsState | null | undefined,
   lang: ClientReportLang,
   translated?: Partial<Record<DealerSignalKind, string>> | null,
-): { kind: DealerSignalKind; title: string; text: string; alert: boolean }[] {
+): DealerSignalPdfRow[] {
   if (!state || state.enabled !== true) return [];
   const seen = new Set<DealerSignalKind>();
-  const out: { kind: DealerSignalKind; title: string; text: string; alert: boolean }[] = [];
+  const out: DealerSignalPdfRow[] = [];
   for (const kind of DEALER_SIGNAL_KINDS) {
     const item = state.items.find((i) => i.kind === kind && i.checked);
     if (!item || seen.has(kind)) continue;
     seen.add(kind);
-    out.push({ kind, title: DEALER_SIGNAL_TITLES[kind][lang], text: dealerSignalText(item, lang, translated?.[kind]), alert: isDealerSignalAlert(kind) });
+    const tone = dealerSignalTone(item);
+    out.push({ kind, title: DEALER_SIGNAL_TITLES[kind][lang], text: dealerSignalText(item, lang, translated?.[kind]), alert: tone === "red", tone });
   }
   return out;
 }

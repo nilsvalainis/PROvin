@@ -31,7 +31,21 @@ export type DealerSignalItem = {
    * «Pārģenerēt no datiem» manuālos neizdzēš.
    */
   manual?: true;
+  /**
+   * Admina izvēlētā krāsa (Nils 27.11): sarkans / oranžs / parasts. Nav - noklusējums pēc tipa.
+   * «Pārģenerēt no datiem» to saglabā.
+   */
+  tone?: DealerSignalTone;
 };
+
+/** Signāla krāsa PDF un priekšskatā. */
+export const DEALER_SIGNAL_TONES = ["red", "orange", "neutral"] as const;
+export type DealerSignalTone = (typeof DEALER_SIGNAL_TONES)[number];
+const TONE_SET = new Set<string>(DEALER_SIGNAL_TONES);
+
+export function isDealerSignalTone(v: unknown): v is DealerSignalTone {
+  return typeof v === "string" && TONE_SET.has(v);
+}
 
 export const DEALER_SIGNAL_TR_LANGS = ["en", "ru", "de"] as const;
 export type DealerSignalTrLang = (typeof DEALER_SIGNAL_TR_LANGS)[number];
@@ -68,6 +82,7 @@ export function parseDealerSignals(raw: unknown): DealerSignalsState | undefined
       ...(text ? { text } : {}),
       ...(tr ? { tr } : {}),
       ...(r.manual === true ? { manual: true as const } : {}),
+      ...(isDealerSignalTone(r.tone) ? { tone: r.tone } : {}),
     });
   }
   return {

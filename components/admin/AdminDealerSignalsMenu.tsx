@@ -8,6 +8,8 @@ import {
   DEALER_SIGNAL_DEFAULT_TEXTS,
   DEALER_SIGNAL_KINDS,
   DEALER_SIGNAL_TITLES,
+  DEALER_SIGNAL_TONE_LABEL_LV,
+  DEALER_SIGNAL_TONES,
   DEALER_SIGNALS_AUDIT_LINK_LABEL,
   DEALER_SIGNALS_SECTION_TITLE,
   dealerSignalsMissingTranslations,
@@ -16,12 +18,75 @@ import {
   isDealerSignalAlert,
   isDealerSignalTextAllowed,
   regenerateDealerSignals,
+  dealerSignalTone,
   removeDealerSignal,
+  setDealerSignalTone,
   tidyDealerSignalText,
   withDealerSignalTranslations,
   type DealerSignalKind,
   type DealerSignalsState,
+  type DealerSignalTone,
 } from "@/lib/dealer-signals";
+
+/** Admin etiķetes krāsa pēc signāla krāsas. */
+const TONE_LABEL_CLASS: Record<DealerSignalTone, string> = {
+  red: "text-[#b42318]",
+  orange: "text-[#B45309]",
+  neutral: "text-[var(--color-provin-muted)]",
+};
+
+/** Krāsu apļi. */
+const TONE_DOT_CLASS: Record<DealerSignalTone, string> = {
+  red: "bg-[#DC2626]",
+  orange: "bg-[#F59E0B]",
+  neutral: "bg-white border border-slate-400",
+};
+
+/** Priekšskata rinda (kā PDF). */
+const TONE_PREVIEW_ROW: Record<DealerSignalTone, string> = {
+  red: "bg-[#FFF1F2] text-[#B91C1C]",
+  orange: "bg-[#FFF7ED] text-[#B45309]",
+  neutral: "",
+};
+
+/** Krāsas izvēle: 3 apļi (Sarkans / Oranžs / Parasts), strādā ar tap. */
+export function DealerSignalTonePicker({
+  kind,
+  tone,
+  onPick,
+  touch = false,
+}: {
+  kind: DealerSignalKind;
+  tone: DealerSignalTone;
+  onPick: (tone: DealerSignalTone) => void;
+  touch?: boolean;
+}) {
+  return (
+    <span role="radiogroup" aria-label="Krāsa" data-dealer-signal-tone-picker={kind} className="flex items-center gap-0.5">
+      {DEALER_SIGNAL_TONES.map((t) => {
+        const sel = t === tone;
+        return (
+          <button
+            key={t}
+            type="button"
+            role="radio"
+            aria-checked={sel}
+            aria-label={DEALER_SIGNAL_TONE_LABEL_LV[t]}
+            title={DEALER_SIGNAL_TONE_LABEL_LV[t]}
+            data-dealer-signal-tone={t}
+            onClick={() => onPick(t)}
+            className={`${touch ? "h-11 w-11" : "h-6 w-6"} inline-flex items-center justify-center rounded-full`}
+          >
+            <span
+              aria-hidden="true"
+              className={`${touch ? "h-6 w-6" : "h-3.5 w-3.5"} rounded-full ${TONE_DOT_CLASS[t]} ${sel ? "ring-2 ring-[#1d1d1f] ring-offset-1" : "opacity-60"}`}
+            />
+          </button>
+        );
+      })}
+    </span>
+  );
+}
 
 /**
  * Dīlera PDF «Signāli ārpus dīlera datiem» (Nils 27.11): slēdzis «Nav PDF / Ir PDF» (noklusējums izslēgts),
@@ -231,6 +296,7 @@ export function DealerSignalsEditor({
           {state.items.map((it) => {
             const text = it.text ?? DEALER_SIGNAL_DEFAULT_TEXTS[it.kind].lv;
             const bad = !isDealerSignalTextAllowed(text);
+            const tone = dealerSignalTone(it);
             return (
               <div
                 key={it.kind}
@@ -253,10 +319,17 @@ export function DealerSignalsEditor({
                 />
                 <span className="mt-1.5 flex flex-col items-end gap-1">
                   <span
-                    className={`whitespace-nowrap text-[10px] font-bold uppercase tracking-wide ${isDealerSignalAlert(it.kind) ? "text-[#b42318]" : "text-[var(--color-provin-muted)]"}`}
+                    data-dealer-signal-kind-label={tone}
+                    className={`whitespace-nowrap text-[10px] font-bold uppercase tracking-wide ${TONE_LABEL_CLASS[tone]}`}
                   >
                     {DEALER_SIGNAL_ADMIN_KIND_LV[it.kind]}
                   </span>
+                  <DealerSignalTonePicker
+                    kind={it.kind}
+                    tone={tone}
+                    touch={touch}
+                    onPick={(t) => onChange(setDealerSignalTone(state, it.kind, t))}
+                  />
                   {it.manual ? (
                     <span className="flex items-center gap-1">
                       <span data-dealer-signal-manual className="text-[10px] font-medium text-[var(--color-provin-muted)]">
@@ -325,11 +398,12 @@ export function DealerSignalsEditor({
                 {rows.map((r) => (
                   <tr
                     key={r.kind}
-                    className={r.alert ? "bg-[#FFF1F2] text-[#B91C1C]" : ""}
+                    className={TONE_PREVIEW_ROW[r.tone]}
                     data-dealer-signal-preview-row={r.kind}
+                    data-dealer-signal-preview-tone={r.tone}
                   >
                     <td className="w-[38%] border-b border-[#E0E0E0] px-2 py-1.5 align-top font-bold">{r.title}</td>
-                    <td className={`border-b border-[#E0E0E0] px-2 py-1.5 align-top ${r.alert ? "font-bold" : "text-[#475569]"}`}>
+                    <td className={`border-b border-[#E0E0E0] px-2 py-1.5 align-top ${r.tone === "neutral" ? "text-[#475569]" : "font-bold"}`}>
                       {r.text}
                     </td>
                   </tr>

@@ -231,6 +231,7 @@ describe("PDF sadaļa", () => {
       title: "Unfall- und Schadenseinträge",
       text: "Für dieses Fahrzeug liegen Unfall- oder Schadenseinträge vor",
       alert: false,
+      tone: "neutral",
     });
   });
 });
