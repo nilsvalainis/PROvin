@@ -1,5 +1,6 @@
 import "server-only";
 
+import { copyQuickEvalCheckcarPhotosToOrder } from "@/lib/checkcar-import-server";
 import { computeFreeSourceSeed } from "@/lib/admin-free-source-seed";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { quickEvalVinScanInput } from "@/lib/quick-eval-vin-scan";
@@ -239,6 +240,12 @@ export async function exportQuickEvalToOrder(
   const blocks = withLtabMark(doc);
   const r = await importBlocksIntoOrder(sessionId, blocks, { photoSessions: photoSessionsOf(doc) });
   if (!r.ok) return r;
+  // CheckCar.vin foto (pārlūka imports) glabājas ātrā vērtējuma cc_vin krātuvē - līdzi uz pasūtījumu.
+  if (r.copied.includes("cc_vin")) {
+    await copyQuickEvalCheckcarPhotosToOrder(doc.peekId, sessionId, blocks.cc_vin).catch((err) => {
+      console.warn("[quick-eval] checkcar photo copy failed", { sessionId, err });
+    });
+  }
   await updateQuickEval(doc.peekId, (d) => ({
     ...d,
     exports: [

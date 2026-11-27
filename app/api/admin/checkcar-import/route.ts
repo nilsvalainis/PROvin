@@ -4,18 +4,27 @@
  * Operators pats atver nopirkto atskaiti checkcar.vin savā pārlūkā un nospiež „Nosūtīt uz PROVIN”.
  * Serveris checkcar.vin neatver (Cloudflare) un neko nepērk.
  *
- * POST { action: "prepare", vin, text, html?, pageUrl?, groups: [{label, urls[]}] }
- *   -> atrod jaunāko pasūtījumu pēc VIN, ieraksta `cc_vin` vēstures rindas + RAW tekstu,
- *      atgriež foto grupu plānu (nosaukumi) un jau zināmos foto URL.
- * POST { action: "attach", sessionId, vin, photos: [{title, id, sourceUrl}] }
- *   -> foto, kas jau augšupielādēti ar `/api/admin/cc-vin-photo`, piesaista galerijas grupām.
+ * JSON POST { action: "prepare", vin, text, html?, pageUrl?, groups: [{label, urls[]}], hint?: {kind, id} }
+ *   -> mērķis pēc VIN: pasūtījums vai ātrais vērtējums (atvērtā lapa, ja tai ir šis VIN; citādi jaunākais),
+ *      ieraksta `cc_vin` vēstures rindas + RAW tekstu, atgriež foto grupu plānu un jau zināmos foto URL.
+ * multipart POST { action: "photo", kind, id, file } -> viens JPEG mērķa cc_vin krātuvē (ūdenszīmes kā ir).
+ * JSON POST { action: "attach", kind, id, photos: [{title, id, sourceUrl}] } -> foto piesaiste grupām.
+ * GET ?kind=quick_eval&id=&photoId= -> ātrā vērtējuma CheckCar foto (pasūtījumam - /api/admin/cc-vin-photo).
  */
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeCcVinPhotoId } from "@/lib/admin-cc-vin-photo-store";
+import {
+  CC_VIN_PHOTO_MAX_BYTES,
+  isSafeCcVinPhotoId,
+  makeCcVinPhotoId,
+  readCcVinPhotoJpeg,
+  writeCcVinPhotoJpeg,
+} from "@/lib/admin-cc-vin-photo-store";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
-import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
+import { describeCcVinParsedReport } from "@/lib/cc-vin-report-apply";
+import { CC_VIN_MAX_PHOTOS, flattenCcVinPhotoGroups, normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
 import {
   applyCheckcarImportToBlock,
   attachCheckcarPhotos,
@@ -27,13 +36,17 @@ import {
   parseCheckcarImport,
   type CheckcarAttachPhoto,
 } from "@/lib/checkcar-full-report";
+import type { CheckcarTargetKind } from "@/lib/checkcar-import-orders";
 import {
-  findLatestOrderIdByVin,
+  checkcarPhotoSession,
+  checkcarTargetExists,
+  findCheckcarTarget,
   readAutobidOriginalHint,
-  writeCcVinBlock,
+  writeCheckcarBlock,
 } from "@/lib/checkcar-import-server";
-import { describeCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
+import { isSafeListingPeekId } from "@/lib/listing-peek-photos";
+import { readQuickEval } from "@/lib/quick-eval-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,9 +73,13 @@ function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
 }
 
-async function orderOk(sessionId: string): Promise<boolean> {
-  const order = await getCheckoutSessionDetail(sessionId).catch(() => null);
-  return Boolean(order && order.checkoutLine !== "provin_select");
+/** Mērķis no klienta: tikai zināmi veidi un drošs id. */
+function parseTarget(kindRaw: unknown, idRaw: unknown): { kind: CheckcarTargetKind; id: string } | null {
+  const kind = str(kindRaw);
+  const id = str(idRaw).trim();
+  if (kind === "order" && isSafeOrderDraftSessionId(id)) return { kind, id };
+  if (kind === "quick_eval" && isSafeListingPeekId(id.toLowerCase())) return { kind, id: id.toLowerCase() };
+  return null;
 }
 
 async function prepare(b: Record<string, unknown>) {
@@ -76,18 +93,25 @@ async function prepare(b: Record<string, unknown>) {
   if (!readable.trim()) return bad("page_not_ready");
   if (checkcarPageVinMismatch(readable, pageUrl, vin)) return bad("vin_mismatch");
 
-  const sessionId = await findLatestOrderIdByVin(vin);
-  if (!sessionId) return bad("order_not_found", 404);
+  const hintRaw = b.hint && typeof b.hint === "object" ? (b.hint as Record<string, unknown>) : {};
+  const hint = parseTarget(hintRaw.kind, hintRaw.id);
+  const { target, alternatives } = await findCheckcarTarget(vin, hint);
+  if (!target) return bad("order_not_found", 404);
 
   await loadEcbDailyRates().catch(() => undefined);
   const imported = parseCheckcarImport({ vin, text, html, pageUrl, groups: b.groups as never });
-  const written = await writeCcVinBlock(sessionId, (prev) => applyCheckcarImportToBlock(prev, imported, rigaToday()));
+  const written = await writeCheckcarBlock(target.kind, target.id, (prev) =>
+    applyCheckcarImportToBlock(prev, imported, rigaToday()),
+  );
   if (!written.ok) return bad(`write_failed:${written.error}`, 503);
 
   const autobid = await readAutobidOriginalHint(vin);
   return NextResponse.json({
     ok: true,
-    sessionId,
+    target: { kind: target.kind, id: target.id },
+    /** Saderība ar 1.28.0 skriptu: pasūtījuma id. */
+    sessionId: target.kind === "order" ? target.id : "",
+    alternatives: alternatives.slice(0, 10).map((a) => ({ kind: a.kind, id: a.id })),
     summary: describeCcVinParsedReport(imported.parsed),
     fallbackRows: imported.fallbackRows,
     notes: imported.parsed.notes.slice(0, 20),
@@ -95,6 +119,31 @@ async function prepare(b: Record<string, unknown>) {
     knownUrls: knownCcVinSourceUrls(written.block),
     autobid,
   });
+}
+
+async function photo(form: FormData) {
+  const target = parseTarget(form.get("kind"), form.get("id"));
+  if (!target) return bad("invalid_target");
+  if (!(await checkcarTargetExists(target.kind, target.id))) return bad("not_found", 404);
+  const file = form.get("file");
+  if (!(file instanceof Blob)) return bad("missing_file");
+  if (target.kind === "quick_eval") {
+    const doc = await readQuickEval(target.id);
+    const block = doc?.sourceBlocks.cc_vin;
+    const count = block ? flattenCcVinPhotoGroups(normalizeCcVinPhotoGroups(block.photoGroups, block.photos)).length : 0;
+    if (count >= CC_VIN_MAX_PHOTOS) return bad("photo_limit");
+  }
+  const normalized = await jpegFromAdminPhotoUpload(Buffer.from(await file.arrayBuffer()), CC_VIN_PHOTO_MAX_BYTES, {
+    coverCheckcarWatermark: false,
+  });
+  if (!normalized.ok) return bad(normalized.error);
+  const photoId = makeCcVinPhotoId();
+  try {
+    await writeCcVinPhotoJpeg(checkcarPhotoSession(target.kind, target.id), photoId, normalized.jpeg);
+  } catch (e) {
+    return bad(`write_failed:${e instanceof Error ? e.message : "unknown"}`, 503);
+  }
+  return NextResponse.json({ ok: true, id: photoId });
 }
 
 function parsePhotos(raw: unknown): CheckcarAttachPhoto[] {
@@ -112,13 +161,13 @@ function parsePhotos(raw: unknown): CheckcarAttachPhoto[] {
 }
 
 async function attach(b: Record<string, unknown>) {
-  const sessionId = str(b.sessionId).trim();
-  if (!isSafeOrderDraftSessionId(sessionId)) return bad("invalid_session");
-  if (!(await orderOk(sessionId))) return bad("not_found", 404);
+  const target = parseTarget(b.kind ?? (b.sessionId ? "order" : ""), b.id ?? b.sessionId);
+  if (!target) return bad("invalid_target");
+  if (!(await checkcarTargetExists(target.kind, target.id))) return bad("not_found", 404);
   const photos = parsePhotos(b.photos);
   if (photos.length === 0) return NextResponse.json({ ok: true, added: 0 });
   let added = 0;
-  const written = await writeCcVinBlock(sessionId, (prev) => {
+  const written = await writeCheckcarBlock(target.kind, target.id, (prev) => {
     const r = attachCheckcarPhotos(prev, photos);
     added = r.added;
     return r.block;
@@ -130,6 +179,11 @@ async function attach(b: Record<string, unknown>) {
 export async function POST(req: Request) {
   try {
     if (!(await getAdminSession())) return bad("unauthorized", 401);
+    if ((req.headers.get("content-type") ?? "").toLowerCase().startsWith("multipart/form-data")) {
+      const form = await req.formData();
+      if (String(form.get("action") ?? "") !== "photo") return bad("invalid_action");
+      return await photo(form);
+    }
     let body: unknown;
     try {
       body = await req.json();
@@ -143,6 +197,25 @@ export async function POST(req: Request) {
     return bad("invalid_action");
   } catch (e) {
     console.error("[checkcar-import] POST", e instanceof Error ? e.message : e);
+    return bad("server_error", 500);
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    if (!(await getAdminSession())) return bad("unauthorized", 401);
+    const url = new URL(req.url);
+    const target = parseTarget(url.searchParams.get("kind"), url.searchParams.get("id"));
+    const photoId = (url.searchParams.get("photoId") ?? "").trim();
+    if (!target || target.kind !== "quick_eval" || !isSafeCcVinPhotoId(photoId)) return bad("invalid_request");
+    const buf = await readCcVinPhotoJpeg(checkcarPhotoSession(target.kind, target.id), photoId);
+    if (!buf) return bad("not_found", 404);
+    return new NextResponse(new Uint8Array(buf), {
+      status: 200,
+      headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=300" },
+    });
+  } catch (e) {
+    console.error("[checkcar-import] GET", e instanceof Error ? e.message : e);
     return bad("server_error", 500);
   }
 }

@@ -1,6 +1,6 @@
 /**
- * CheckCar.vin importa tīrās palīgfunkcijas: pasūtījuma izvēle pēc VIN un Autobid oriģinālo
- * bilžu ieteikums no VIN atmiņas. Bez tīkla un krātuves (testējams).
+ * CheckCar.vin importa tīrās palīgfunkcijas: mērķa izvēle pēc VIN (pasūtījums vai ātrais vērtējums)
+ * un Autobid oriģinālo bilžu ieteikums no VIN atmiņas. Bez tīkla un krātuves (testējams).
  */
 
 import type { VinMemoryEntry } from "@/lib/vin-memory";
@@ -13,31 +13,76 @@ export type CheckcarOrderCandidate = {
   checkoutLine?: string;
 };
 
+export type CheckcarQuickEvalCandidate = {
+  peekId: string;
+  createdAt: string;
+  vin: string | null;
+};
+
+export type CheckcarTargetKind = "order" | "quick_eval";
+
+export type CheckcarTarget = { kind: CheckcarTargetKind; id: string; at: number };
+
 function vinKey(raw: string | null | undefined): string {
   return String(raw || "").replace(/[\s-]/g, "").toUpperCase();
 }
 
+/** Pasūtījumi ar šo VIN (Stripe VIN vai melnrakstā labotais VIN). Demo un PROVIN SELECT neder. */
+export function orderTargetsForVin(
+  vin: string,
+  rows: readonly CheckcarOrderCandidate[],
+  index: readonly { sessionId: string; vin: string | null }[],
+): CheckcarTarget[] {
+  const want = vinKey(vin);
+  if (want.length !== 17) return [];
+  const draftVin = new Map(index.map((e) => [e.sessionId, vinKey(e.vin)]));
+  const out: CheckcarTarget[] = [];
+  for (const row of rows) {
+    if (row.isDemo || row.checkoutLine === "provin_select") continue;
+    const edited = draftVin.get(row.id);
+    const matches = edited ? edited === want : vinKey(row.vin) === want;
+    if (matches) out.push({ kind: "order", id: row.id, at: row.created * 1000 });
+  }
+  return out;
+}
+
+/** Ātrie vērtējumi ar šo VIN (pieteikuma VIN vai CSDD VIN vērtējuma failā). */
+export function quickEvalTargetsForVin(vin: string, rows: readonly CheckcarQuickEvalCandidate[]): CheckcarTarget[] {
+  const want = vinKey(vin);
+  if (want.length !== 17) return [];
+  return rows
+    .filter((r) => vinKey(r.vin) === want)
+    .map((r) => ({ kind: "quick_eval" as const, id: r.peekId, at: Date.parse(r.createdAt) || 0 }));
+}
+
 /**
- * Jaunākais pasūtījums ar šo VIN. VIN var būt Stripe rindā vai melnrakstā labots (dashboard indekss).
- * Demo un PROVIN SELECT konsultācijas neder (tām nav `cc_vin` bloka).
+ * Mērķis: ja operators atvēra konkrēta pasūtījuma / ātrā vērtējuma lapu un tam ir šis VIN - tas;
+ * citādi jaunākais pēc laika no abiem. Pārējie atgriežas kā alternatīvas (adminā var izvēlēties,
+ * atverot vajadzīgo lapu un nospiežot pogu vēlreiz).
  */
+export function pickCheckcarTarget(
+  candidates: readonly CheckcarTarget[],
+  hint?: { kind?: string; id?: string } | null,
+): { target: CheckcarTarget | null; alternatives: CheckcarTarget[] } {
+  const sorted = [...candidates].sort((a, b) => b.at - a.at);
+  const hinted = hint?.id ? sorted.find((c) => c.kind === hint.kind && c.id === hint.id) : undefined;
+  const target = hinted ?? sorted[0] ?? null;
+  return { target, alternatives: sorted.filter((c) => c !== target) };
+}
+
+/** Saderība: tikai pasūtījumi, jaunākais. */
 export function pickLatestOrderForVin(
   vin: string,
   rows: readonly CheckcarOrderCandidate[],
   index: readonly { sessionId: string; vin: string | null }[],
 ): string | null {
-  const want = vinKey(vin);
-  if (want.length !== 17) return null;
-  const draftVin = new Map(index.map((e) => [e.sessionId, vinKey(e.vin)]));
-  let best: CheckcarOrderCandidate | null = null;
-  for (const row of rows) {
-    if (row.isDemo || row.checkoutLine === "provin_select") continue;
-    const edited = draftVin.get(row.id);
-    const matches = edited ? edited === want : vinKey(row.vin) === want;
-    if (!matches) continue;
-    if (!best || row.created > best.created) best = row;
-  }
-  return best?.id ?? null;
+  return pickCheckcarTarget(orderTargetsForVin(vin, rows, index)).target?.id ?? null;
+}
+
+/** Ātrā vērtējuma foto glabātuves „sesija” (tā pati JPEG krātuve kā pasūtījuma cc_vin foto). */
+export function quickEvalCheckcarPhotoSession(peekId: string): string {
+  const clean = peekId.trim().toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 64);
+  return clean ? `qe_${clean}` : "";
 }
 
 export type CheckcarAutobidHint = {
