@@ -4481,11 +4481,52 @@ export function dealerExtraAvailability(
 /** Admin «Priekšskats»: cilnes saturs ar PDF CSS (bez Chromium, bez PDF faila). */
 export type ReportPreviewTab = "all" | "mileage" | "incidents";
 
-export function buildReportPreviewDocumentHtml(payload: ClientReportPayload, tab: ReportPreviewTab = "all"): string {
+/**
+ * «Priekšskats» (Nils 27.11): rāda VISUS pasūtījumā esošos datus - arī dīlera datu pasūtījumam (agrāk dīlera
+ * payload bez «+ Extra» atgrieza tukšas tabulas -> «Nav datu», lai gan CSDD/avotu/dīlera dati bija).
+ * Pilnā atskaite, visas sadaļas un visi avoti ieslēgti; «Izvilkums» kā pasūtījumā.
+ */
+export function reportPreviewPayload(p: ClientReportPayload): ClientReportPayload {
+  const vis = mergePdfVisibility(p.pdfVisibility);
+  const allOn = Object.fromEntries(Object.keys(vis).map((k) => [k, true])) as PdfVisibilitySettings;
+  allOn.izvilkums = vis.izvilkums === true;
+  return {
+    ...p,
+    pdfReportKind: p.pdfReportKind === "business" ? "business" : "full",
+    dealerExtra: null,
+    pdfVisibility: allOn,
+  };
+}
+
+const PREVIEW_DATE_FMT = new Intl.DateTimeFormat("lv-LV", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: "Europe/Riga",
+});
+
+function previewFormatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function buildReportPreviewDocumentHtml(
+  rawPayload: ClientReportPayload,
+  tab: ReportPreviewTab = "all",
+): string {
+  const payload = reportPreviewPayload(rawPayload);
+  if (tab === "all") {
+    return buildClientReportDocumentHtml({
+      payload,
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: PREVIEW_DATE_FMT,
+      formatBytes: previewFormatBytes,
+      lang: "lv",
+    });
+  }
   const { mileageHtml, incidentsHtml } = buildReportHistoryTablesHtml(payload);
-  const parts =
-    tab === "mileage" ? [mileageHtml] : tab === "incidents" ? [incidentsHtml] : [mileageHtml, incidentsHtml];
-  const body = parts.filter(Boolean).join("\n") || '<p class="pdf-preview-empty">Nav datu</p>';
+  const body = (tab === "mileage" ? mileageHtml : incidentsHtml) || '<p class="pdf-preview-empty">Nav datu</p>';
   return `<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>${clientReportPrintCss()}

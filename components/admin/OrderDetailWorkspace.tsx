@@ -4994,13 +4994,15 @@ export function OrderDetailWorkspace({
 
   const closeReportPreview = useCallback(() => setReportPreview(null), []);
 
-  /** «Priekšskats»: tas pats payload kā PDF -> servera HTML fragments (bez Chromium) iframe logā. */
-  const openReportPreview = (kind: "dealer" | "full") => {
+  /**
+   * «Priekšskats»: pilnās atskaites payload (arī dīlera datu pasūtījumam - dīlera payload bez «+ Extra» ir tukšs)
+   * -> servera HTML (bez Chromium) iframe logā. Visi pasūtījuma dati: Viss / Nobraukums / Negadījumi.
+   */
+  const openReportPreview = () => {
     if (pdfBusyRef.current) return;
     setReportPreview({ busy: true, html: null, error: null });
     let called = false;
     void openPrintReport({
-      ...(kind === "dealer" ? { dealerOnly: true } : {}),
       preview: (reportPayload) => {
         called = true;
         void (async () => {
@@ -6625,7 +6627,7 @@ export function OrderDetailWorkspace({
         dealerExtra={dealerExtra}
         onDealerExtraChange={setDealerExtra}
         getDealerExtraItems={getDealerExtraItems}
-        onPreview={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
+        onPreview={() => openReportPreview()}
         pdfProgressKey={pdfJob?.key ?? null}
         pdfProgressPct={pdfJob?.pct ?? null}
         onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
@@ -7669,7 +7671,7 @@ export function OrderDetailWorkspace({
             type="button"
             data-report-preview-button
             disabled={pdfJob !== null}
-            onClick={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
+            onClick={() => openReportPreview()}
             className={`inline-flex h-9 shrink-0 items-center rounded-lg px-3 text-[11px] font-semibold tracking-tight disabled:opacity-40 ${PDF_FOOTER_NEUTRAL_TONE}`}
           >
             Priekšskats
