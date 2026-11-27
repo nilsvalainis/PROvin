@@ -88,3 +88,45 @@ export function formatOemOilCaption(oem: OemOilInterval): string {
     ? `Ražotāja intervāls: ${max} km / ${oem.months} mēn.`
     : `Ražotāja intervāls: ${max} km.`;
 }
+
+/**
+ * Ražotāja / dzinēja saimes noklusējums, ja AI tekstā ražotāja intervāls nav droši zināms
+ * (BF 27.11, S4: BMW X5 M57 «nav droši zināms» -> 52 592 km / 39 mēn. intervālam nebija piebildes,
+ * lai gan citos tās pašas dienas M57 pasūtījumos AI lietoja 30 000 km / 24 mēn.).
+ * Tikai tas, kas zināms droši: BMW dīzeļi (M47, M57, N47, N57, B37, B47, B57) ar CBS / Longlife-04 -
+ * maksimums 30 000 km / 24 mēn. Citiem dzinējiem noklusējuma nav (neizdomājam).
+ */
+export const BMW_DIESEL_CBS_OIL_INTERVAL: OemOilInterval = { km: 30_000, kmMin: null, months: 24 };
+
+const BMW_DIESEL_ENGINE_RE = /(?:^|[^A-Z0-9])(?:M47|M57|N47|N57|B37|B47|B57)(?:[^A-Z0-9]|D|TU|$)/i;
+const BMW_WMI_RE = /^(?:WBA|WBS|WBX)/i;
+const BMW_MAKE_RE = /(?:^|[^\p{L}])BMW(?:[^\p{L}]|$)/iu;
+const DIESEL_FUEL_RE = /diesel|d[iī]zel|дизел/i;
+/** BMW modeļu apzīmējumi ar «d»: 330d, 330 d, 530d, xDrive30d, sDrive18d, X5 3.0sd, 35d. */
+const BMW_DIESEL_MODEL_RE = /(?:^|[^\p{L}\p{N}])(?:\d{3}\s?d|[xs]Drive\s?\d{2}d|\d\.\d\s?s?d|\d{2}d)(?:[^\p{L}\p{N}]|$)/iu;
+
+export type OemVehicleHints = {
+  vin?: string | null;
+  /** Marka / modelis / apraksts (jebkurš teksts, kur var būt «BMW», «330d»). */
+  descriptions?: readonly (string | null | undefined)[];
+  fuel?: readonly (string | null | undefined)[];
+  engineCodes?: readonly (string | null | undefined)[];
+};
+
+export function defaultOemOilIntervalForVehicle(h: OemVehicleHints): OemOilInterval | null {
+  const descs = (h.descriptions ?? []).map((d) => (d ?? "").trim()).filter(Boolean);
+  const codes = (h.engineCodes ?? []).map((c) => (c ?? "").trim()).filter(Boolean);
+  const fuels = (h.fuel ?? []).map((f) => (f ?? "").trim()).filter(Boolean);
+  const bmw = BMW_WMI_RE.test((h.vin ?? "").trim()) || descs.some((d) => BMW_MAKE_RE.test(d));
+  if (!bmw) return null;
+  // Ja kāds avots saka benzīns / elektro - noklusējuma nav (pretrunu neatrisinām ar minējumu).
+  if (fuels.some((f) => /petrol|benz|gasoline|electric|elektr|hybrid|hibr/i.test(f))) return null;
+  const diesel =
+    codes.some((c) => BMW_DIESEL_ENGINE_RE.test(c)) ||
+    fuels.some((f) => DIESEL_FUEL_RE.test(f)) ||
+    descs.some((d) => BMW_DIESEL_ENGINE_RE.test(d) || BMW_DIESEL_MODEL_RE.test(d));
+  return diesel ? { ...BMW_DIESEL_CBS_OIL_INTERVAL } : null;
+}
+
+/** AI pirmā rinda «Ražotāja intervāls: nav droši zināms» (ar vai bez punkta). */
+export const OEM_UNKNOWN_LINE_RE = /Ražotāja intervāls:\s*nav(?:\s+droši)?\s+zināms\.?/i;

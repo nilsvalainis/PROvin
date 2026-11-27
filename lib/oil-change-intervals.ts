@@ -376,9 +376,9 @@ function ratioTone(value: number | null, oem: number | null | undefined): OilInt
   return oilRatioTone(value, oem);
 }
 
-/** Km solis pret OEM ar pielaidi (3 % vai 750 km). */
-function kmRatioTone(value: number | null, oemKm: number | null | undefined): OilIntervalTone {
-  return oilRatioTone(value, oemKm, oilIntervalKmTolerance(oemKm));
+/** Km solis pret OEM ar pielaidi (3 % vai 750 km); `tolerance` - cita pielaide (0 = bez pielaides). */
+function kmRatioTone(value: number | null, oemKm: number | null | undefined, tolerance?: number): OilIntervalTone {
+  return oilRatioTone(value, oemKm, tolerance ?? oilIntervalKmTolerance(oemKm));
 }
 
 export function classifyOilIntervalKind(
@@ -421,7 +421,12 @@ function buildAvgNote(ringSteps: number, gapSteps: number, changeCount: number):
 export function buildOilChangeIntervalSeries(
   rows: readonly AutoRecordsServiceWorkRow[],
   oem: OemOilInterval | null = null,
-  opts?: { nowMs?: number | null; current?: OilCurrentReading | null },
+  opts?: {
+    nowMs?: number | null;
+    current?: OilCurrentReading | null;
+    /** Km pielaide pret OEM (noklusējums 3 % / 750 km); 0 - kad komentārs pats saka «pārsniedz» (BF 27.11). */
+    kmTolerance?: number;
+  },
 ): OilChangeIntervalSeries {
   const oilRows = collectEngineOilChangeRows(rows);
   const raw: Omit<OilChangeIntervalPoint, "kind" | "tone" | "periodTone">[] = [];
@@ -464,7 +469,7 @@ export function buildOilChangeIntervalSeries(
     return {
       ...p,
       kind,
-      tone: kmRatioTone(p.intervalKm, oem?.km),
+      tone: kmRatioTone(p.intervalKm, oem?.km, opts?.kmTolerance),
       periodTone: ratioTone(p.intervalMonths, oem?.months),
     };
   });

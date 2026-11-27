@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { emptyAutoRecordsBlock, type AutoRecordsBlockState } from "@/lib/admin-source-blocks";
-import { oilIntervalNotesWithRequiredNotes, oilExceededIntervalsForBlock } from "@/lib/oil-change-interval-chart";
+import {
+  oilIntervalNotesWithRequiredNotes,
+  oilExceededIntervalsForBlock,
+  resolveOilIntervalOem,
+} from "@/lib/oil-change-interval-chart";
+import { emptyOutvinDealerReport, emptyOutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import {
   OIL_NOT_SKIPPED_NOTE,
   ensureOilIntervalNotes,
   isGenericDealerRecordWork,
   oilGenericRecordsNote,
+  oilTextClaimsExceeded,
   replaceOilStepWordingLv,
   type OilNoteLang,
 } from "@/lib/oil-interval-dealer-notes";
@@ -263,5 +269,139 @@ describe("eļļas intervāla piebildes (Nils 26.11.2026, #1291 labojumi)", () =>
     expect(isGenericDealerRecordWork("Motoreļļa 5W-30")).toBe(false);
     expect(isGenericDealerRecordWork("Vējstikls")).toBe(false);
     expect(isGenericDealerRecordWork("Apkope, bremžu kluču maiņa")).toBe(false);
+  });
+});
+
+/**
+ * BF 27.11.2026 (S4): eļļas piebilde trūka, lai gan teksts saka «pārsniedz» vai OEM nebija zināms.
+ * Anonimizētas struktūras no 4 pasūtījumiem (BMW 535d N57, BMW X5 M57, Toyota Avensis 1AD-FTV, BMW 330d M57).
+ */
+describe("eļļas piebilde - BF 27.11 trūkumi (S4)", () => {
+  const row = (date: string, odometer: string, works: string) => ({ date, odometer, location: "", works });
+  const OIL = "Motoreļļas maiņa / Motoreļļa 0W-30 Shell LL-04 / Eļļas filtrs";
+
+  it("(1) teksts saka «minimāli pārsniedz» 30 405 pret 30 000 km - piebilde ir, lai gan pielaide to slēptu", () => {
+    const block: AutoRecordsBlockState = {
+      ...emptyAutoRecordsBlock(),
+      serviceWorks: [
+        row("15.11.2019", "163810", OIL),
+        row("27.04.2020", "174056", "Apkope"),
+        row("05.03.2021", "192182", "Apkope"),
+        row("07.04.2021", "194215", OIL),
+        row("29.08.2022", "222480", OIL),
+      ],
+    };
+    const claim =
+      "Ražotāja intervāls: 30 000 km / 24 mēn. (N57 D30 B)<br><br><strong>Intervālu dinamika</strong><br>Vienīgais intervāls, kas nobraukuma ziņā minimāli pārsniedz ražotāja intervālu, fiksēts 07.04.2021, kad nobraukums kopš iepriekšējās maiņas sasniedza 30 405 km (17 mēneši).<br><br><strong>Pēdējā</strong><br>29.08.2022.";
+    const out = oilIntervalNotesWithRequiredNotes(block, claim, "lv");
+    expect(count(out, OIL_NOT_SKIPPED_NOTE.lv)).toBe(1);
+    expect(out).toContain("(17 mēneši).<br><br>Tas nenozīmē");
+    expect(out).toContain("(27.04.2020, 05.03.2021)");
+    expect(oilIntervalNotesWithRequiredNotes(block, out, "lv")).toBe(out);
+    // Tas pats fakts bez apgalvojuma tekstā - pielaide paliek (30 405 km nav «virs»).
+    const neutral = claim.replace("minimāli pārsniedz ražotāja intervālu", "ir garākais");
+    expect(oilIntervalNotesWithRequiredNotes(block, neutral, "lv")).toBe(neutral);
+    const negated = claim.replace("minimāli pārsniedz", "nepārsniedz");
+    expect(oilIntervalNotesWithRequiredNotes(block, negated, "lv")).toBe(negated);
+  });
+
+  it("(1) teksts apgalvo pārsniegumu, bet kods eļļas rindas neatpazīst - 1. piebilde tomēr", () => {
+    const block: AutoRecordsBlockState = { ...emptyAutoRecordsBlock(), serviceWorks: [row("10.01.2020", "50000", "Bremžu kluči")] };
+    const text = "Ražotāja intervāls: 15 000 km / 12 mēn.\n\nIntervāls starp apkopēm pārsniedz ražotāja intervālu.";
+    expect(oilIntervalNotesWithRequiredNotes(block, text, "lv")).toBe(`${text}\n\n${OIL_NOT_SKIPPED_NOTE.lv}`);
+  });
+
+  it("pārsnieguma apgalvojums pret noliegumu (LV/EN/RU/DE)", () => {
+    expect(oilTextClaimsExceeded("Intervāls 30 405 km minimāli pārsniedz ražotāja intervālu.")).toBe(true);
+    expect(oilTextClaimsExceeded("Fiksēts neliels pārsniegums nobraukuma ziņā.")).toBe(true);
+    expect(oilTextClaimsExceeded("The interval exceeds the manufacturer limit.")).toBe(true);
+    expect(oilTextClaimsExceeded("Интервал превышает норму производителя.")).toBe(true);
+    expect(oilTextClaimsExceeded("Das Intervall überschreitet das Herstellerintervall.")).toBe(true);
+    expect(oilTextClaimsExceeded("Neviens intervāls nepārsniedz ražotāja intervālu.")).toBe(false);
+    expect(oilTextClaimsExceeded("Ražotāja intervāls nav pārsniegts.")).toBe(false);
+    expect(oilTextClaimsExceeded("Pārsniegumu nav.")).toBe(false);
+    expect(oilTextClaimsExceeded("No interval exceeds the manufacturer limit.")).toBe(false);
+    expect(oilTextClaimsExceeded("The interval does not exceed the limit.")).toBe(false);
+    expect(oilTextClaimsExceeded("Интервал не превышает норму.")).toBe(false);
+    expect(oilTextClaimsExceeded("Das Intervall überschreitet nicht.")).toBe(true); // DE noliegums aiz darbības vārda - konservatīvi «jā» (piebilde nekaitē)
+  });
+
+  it("(2) BMW dīzelis, AI «nav droši zināms» -> 30 000 km / 24 mēn. pirmajā rindā un piebildes", () => {
+    const block: AutoRecordsBlockState = {
+      ...emptyAutoRecordsBlock(),
+      outvinReport: {
+        ...emptyOutvinDealerReport(),
+        vehicleInfo: { ...emptyOutvinVehicleInfo(), model: "BMW", modelSeries: "X5", fuel: "DIESEL" },
+      },
+      serviceWorks: [
+        row("20.04.2011", "48086", "Motoreļļa 5W-30 / Eļļas filtrs"),
+        row("09.05.2012", "61000", "Apkope"),
+        row("18.07.2014", "100678", "Motoreļļa 5W-30 / Eļļas filtrs"),
+      ],
+    };
+    const text =
+      "Ražotāja intervāls: nav droši zināms.<br><br><strong>Eļļas maiņu vēsture</strong><br>Vienīgais aprēķināmais intervāls starp eļļas maiņām ir 52 592 km (39 mēneši).";
+    expect(resolveOilIntervalOem(block)).toEqual({ km: 30_000, kmMin: null, months: 24 });
+    const out = oilIntervalNotesWithRequiredNotes(block, text, "lv");
+    expect(out.startsWith("Ražotāja intervāls: 30 000 km / 24 mēn.<br><br>")).toBe(true);
+    expect(count(out, OIL_NOT_SKIPPED_NOTE.lv)).toBe(1);
+    expect(out).toContain("(09.05.2012)");
+    // Benzīna BMW - noklusējuma nav, teksts nemainās.
+    const petrol = {
+      ...block,
+      outvinReport: { ...block.outvinReport!, vehicleInfo: { ...block.outvinReport!.vehicleInfo, fuel: "PETROL" } },
+    };
+    expect(resolveOilIntervalOem(petrol)).toBeNull();
+    expect(oilIntervalNotesWithRequiredNotes(petrol, text, "lv")).toBe(text);
+  });
+
+  it("(3) «SERVICE MAJOR» / «Lielā apkope» bez detaļām ir vispārīgs ieraksts", () => {
+    expect(isGenericDealerRecordWork("Apkope. / Lielā apkope")).toBe(true);
+    expect(isGenericDealerRecordWork("SERVICE / SERVICE MAJOR")).toBe(true);
+    expect(isGenericDealerRecordWork("Minor service")).toBe(true);
+    expect(isGenericDealerRecordWork("Lielā apkope, bremžu kluči")).toBe(false);
+  });
+
+  it("(3)+(4) Toyota: tikai «Apkope / Lielā apkope», eļļas maiņu nav, periods > OEM -> abas piebildes ar visiem datumiem", () => {
+    const block: AutoRecordsBlockState = {
+      ...emptyAutoRecordsBlock(),
+      serviceWorks: [
+        row("07.05.2018", "151384", "Apkope. / Lielā apkope"),
+        row("22.02.2017", "114427", "Apkope. / Lielā apkope"),
+        row("08.08.2016", "96329", "Apkope. / Lielā apkope"),
+        row("24.02.2016", "76821", "Apkope. / Lielā apkope"),
+      ],
+    };
+    const text =
+      "Ražotāja intervāls: 15 000 km / 12 mēn. (1AD-FTV).<br><br><strong>Dīlera ierakstu dinamika</strong><br>Intervāli starp apmeklējumiem ir no 17 998 līdz 36 957 km.<br><br><strong>Pēdējais fiksētais ieraksts</strong><br>07.05.2018, 151 384 km.";
+    const iv = oilExceededIntervalsForBlock({ ...block, oilChangeIntervalNotes: text });
+    expect(iv).toEqual([
+      { fromDate: "24.02.2016", toDate: "07.05.2018", genericDates: ["24.02.2016", "08.08.2016", "22.02.2017", "07.05.2018"] },
+    ]);
+    const out = oilIntervalNotesWithRequiredNotes(block, text, "lv");
+    expect(count(out, OIL_NOT_SKIPPED_NOTE.lv)).toBe(1);
+    expect(out).toContain("(24.02.2016, 08.08.2016, 22.02.2017, 07.05.2018)");
+  });
+
+  it("(4) periods pēc pēdējās eļļas maiņas līdz pēdējam dīlera ierakstam > OEM -> piebildes", () => {
+    const block: AutoRecordsBlockState = {
+      ...emptyAutoRecordsBlock(),
+      serviceWorks: [
+        row("24.01.2014", "78331", "Eļļas filtra komplekts / Motoreļļa 5W-30"),
+        row("08.04.2015", "93348", "Motoreļļa Castrol Magnatec 5W-30"),
+        row("20.06.2022", "199005", "Apkope"),
+        row("19.06.2026", "235239", "Apkope"),
+      ],
+    };
+    const text = "Ražotāja intervāls: 30 000 km / 24 mēn. (M57 D30).\n\nPēdējā eļļas maiņa 08.04.2015, 93 348 km.";
+    expect(oilExceededIntervalsForBlock({ ...block, oilChangeIntervalNotes: text })).toEqual([
+      { fromDate: "08.04.2015", toDate: "19.06.2026", genericDates: ["20.06.2022", "19.06.2026"] },
+    ]);
+    const out = oilIntervalNotesWithRequiredNotes(block, text, "lv");
+    expect(out).toContain(OIL_NOT_SKIPPED_NOTE.lv);
+    expect(out).toContain("(20.06.2022, 19.06.2026)");
+    // Pēdējais ieraksts drīz pēc maiņas (iekļaujas OEM) - nekā.
+    const short = { ...block, serviceWorks: block.serviceWorks.slice(0, 2).concat([row("10.10.2015", "99000", "Apkope")]) };
+    expect(oilIntervalNotesWithRequiredNotes(short, text, "lv")).toBe(text);
   });
 });
