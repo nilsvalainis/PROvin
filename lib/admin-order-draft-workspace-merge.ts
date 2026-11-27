@@ -18,6 +18,7 @@ import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
 import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 import { dealerMajorWorkOverridesSnapshotField } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 
 export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): OrderWorkspacePersistBody {
   return normalizeOrderWorkspacePersistBody({
@@ -38,6 +39,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     ...odometerAnomalyOverridesSnapshotField(w.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(w.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(w.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(w.dealerSignals),
   });
 }
 
@@ -68,6 +70,7 @@ export function persistBodyToOrderDraftWorkspace(
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(safe.dealerSignals),
   };
 }
 

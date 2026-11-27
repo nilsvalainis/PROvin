@@ -26,6 +26,7 @@ import {
   dealerMajorWorkOverridesSnapshotField,
   type DealerMajorWorkOverride,
 } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField } from "@/lib/dealer-signals-persist";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -92,6 +93,7 @@ export type OrderWorkspacePersistBody = {
   contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   /** Operatora Lielie darbi labojumi. Nav vecos pasūtījumos. */
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  dealerSignals?: import("@/lib/dealer-signals-persist").DealerSignalsState;
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -489,6 +491,7 @@ export function coalesceOrderWorkspacePersistBody(
     ...dealerMajorWorkOverridesSnapshotField(
       incoming.dealerMajorWorkOverrides ?? baseline.dealerMajorWorkOverrides,
     ),
+    ...dealerSignalsSnapshotField(incoming.dealerSignals ?? baseline.dealerSignals),
   };
 }
 
@@ -540,6 +543,7 @@ export function buildOrderDraftWorkspaceBody(
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(safe.dealerSignals),
   };
 }
 
@@ -592,6 +596,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(body.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(body.dealerSignals),
   };
 }
 
@@ -626,6 +631,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(normalized.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(normalized.dealerSignals),
     savedAt,
     ...(typeof workspaceRevision === "number" && workspaceRevision > 0
       ? { workspaceRevision: Math.floor(workspaceRevision) }
@@ -663,6 +669,7 @@ export function serializeOrderWorkspaceSnapshot(
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(safe.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(safe.dealerSignals),
     savedAt,
   });
 }
@@ -828,6 +835,7 @@ type HydratedWorkspaceShape = {
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
   contradictionFeedback?: import("@/lib/contradiction-feedback").ContradictionFeedbackEntry[];
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  dealerSignals?: import("@/lib/dealer-signals-persist").DealerSignalsState;
 };
 
 function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
@@ -847,6 +855,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(h.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(h.dealerSignals),
   };
 }
 
@@ -948,6 +957,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     ...odometerAnomalyOverridesSnapshotField(merged.odometerAnomalyOverrides),
     ...contradictionFeedbackSnapshotField(merged.contradictionFeedback),
     ...dealerMajorWorkOverridesSnapshotField(merged.dealerMajorWorkOverrides),
+    ...dealerSignalsSnapshotField(merged.dealerSignals),
   } as T;
 
   const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));

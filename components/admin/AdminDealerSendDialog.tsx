@@ -64,6 +64,8 @@ export type DealerSendBridge = {
   paidCents: number | null;
   /** Pasūtījuma laiks (Stripe `created`, sekundes) - Black Friday piemaksai 79,99 €. */
   orderCreatedUnix?: number | null;
+  /** Dīlera PDF sadaļa «Signāli ārpus dīlera datiem» ieslēgta (ar ķeksētu signālu) -> rinda e-pastā. */
+  dealerSignalsOn?: boolean;
   prepareDealerPdf: (lang: ClientReportLang) => Promise<SendReportPrepared>;
   /** Tas pats servera ceļš kā «Sūtīt atskaiti» (versijas, Dropbox, «Izpildīts»), ar admina tekstu. */
   sendDealerReport: (input: {
@@ -171,6 +173,7 @@ export function AdminDealerSendDialog({
       refundCents,
       doc: templatesDocCache,
       lang: pdfLang,
+      signalsLine: bridge?.dealerSignalsOn === true,
     }),
   );
   // Izsoļu arhīvs: stāvoklis tikai kamēr logs atvērts.
@@ -272,10 +275,11 @@ export function AdminDealerSendDialog({
       review: opts.review,
       doc,
       lang: pdfLang,
+      signalsLine: bridge?.dealerSignalsOn === true,
     });
     setSubject(m.subject ?? "");
     setText(m.text);
-  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc, pdfLang]);
+  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc, pdfLang, bridge?.dealerSignalsOn]);
 
   const busyClose = useModalBackdropClose(onClose, busy === null);
   // 22.11 (Nils, iPhone): telefona doks (Kopēt VIN · VIN SCAN · PDF …) nedrīkst aizsegt «Sūtīt e-pastu».

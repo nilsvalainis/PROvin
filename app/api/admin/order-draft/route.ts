@@ -31,6 +31,7 @@ import {
   dealerMajorWorkOverridesSnapshotField,
   parseDealerMajorWorkOverrides,
 } from "@/lib/dealer-major-works-override-persist";
+import { dealerSignalsSnapshotField, parseDealerSignals } from "@/lib/dealer-signals-persist";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -187,6 +188,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(o.odometerAnomalyOverrides)),
     ...contradictionFeedbackSnapshotField(parseContradictionFeedback(o.contradictionFeedback)),
     ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(o.dealerMajorWorkOverrides)),
+    ...dealerSignalsSnapshotField(parseDealerSignals(o.dealerSignals)),
   };
 }
 
