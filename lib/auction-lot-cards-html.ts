@@ -23,6 +23,7 @@ import {
   type ArchiveKv,
   type ArchiveLotFacts,
 } from "@/lib/auction-archive-facts";
+import { translateAuctionTerms } from "@/lib/auction-terms-i18n";
 import { buildPaintMapSvg, type PaintMapReading, type PaintMapSlot } from "@/lib/paint-map-svg";
 import { sectionIconPdfHtml, type SectionIconId } from "@/lib/section-icons";
 import { buildThecarapiPdfModel, type ThecarapiPdfDamage, type ThecarapiPdfGrid, type ThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
@@ -142,8 +143,8 @@ export function auctionArchiveDamageBlockHtml(
   const rows = [
     ...damages.map(
       (d) =>
-        `<li><b>${esc([d.zone, d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
-          [d.type, d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
+        `<li><b>${esc([translateAuctionTerms(d.zone, lang), d.part].filter(Boolean).join(", ") || auctionCardText("Virsbūve", lang))}</b><span>${esc(
+          [translateAuctionTerms(d.type, lang), d.size, Number.parseInt(d.quantity, 10) > 1 ? auctionCardPieces(d.quantity, lang) : "", d.repair, d.notes].filter(Boolean).join(" · "),
         )}</span></li>`,
     ),
     ...marks.map(

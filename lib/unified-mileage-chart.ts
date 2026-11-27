@@ -452,10 +452,16 @@ export function buildSourceMileageSparkHtml(
   };
   const yOf = (km: number) => padT + plotH - ((km - kmMin) / (kmMax - kmMin)) * plotH;
 
-  const allPts = series.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
+  // Nils 27.11: pelēkā kopējā līkne tikai šī avota datu periodā. Ar 1 rādījumu (vai visiem vienā datumā)
+  // līkni nezīmē vispār - tikai punktu; līkne nekad neiet uz periodu, kurā šim avotam nav datu.
+  const mineTMin = mine[0]!.time;
+  const mineTMax = mine[mine.length - 1]!.time;
+  const ghostSeries = mineTMax > mineTMin ? series.filter((s) => s.time >= mineTMin && s.time <= mineTMax) : [];
+  const allPts = ghostSeries.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
   const minePts = mine.map((s) => ({ x: xOf(s.time), y: yOf(s.km) }));
-  const ghostD = monotoneCubicSvgPath(allPts);
-  const mineD = monotoneCubicSvgPath(minePts);
+  const ghostD = allPts.length >= 2 ? monotoneCubicSvgPath(allPts) : "";
+  const singleMoment = mineTMax === mineTMin;
+  const mineD = singleMoment ? "" : monotoneCubicSvgPath(minePts);
   const fadeId = `pdfSrcSparkFade-${sourceKey}`;
   const fillD = areaUnderPath(mineD, minePts, H - padB);
   // D37: gadu ass kā kopējā nobraukuma grafikā.
@@ -478,8 +484,8 @@ export function buildSourceMileageSparkHtml(
     : "";
   const fillPath = fillD ? `<path class="pdf-src-mileage-spark-fill" d="${fillD}" fill="url(#${fadeId})" />` : "";
   const sourcePath =
-    minePts.length === 1
-      ? `<circle class="pdf-src-mileage-spark-dot" cx="${minePts[0]!.x.toFixed(1)}" cy="${minePts[0]!.y.toFixed(1)}" r="3.5" fill="${color}" />`
+    singleMoment
+      ? `<circle class="pdf-src-mileage-spark-dot" cx="${minePts[minePts.length - 1]!.x.toFixed(1)}" cy="${minePts[minePts.length - 1]!.y.toFixed(1)}" r="3.5" fill="${color}" />`
       : mineD
         ? `<path class="pdf-src-mileage-spark-path" fill="none" stroke="${color}" d="${mineD}" />`
         : "";
