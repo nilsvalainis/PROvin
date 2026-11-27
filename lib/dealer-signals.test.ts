@@ -175,12 +175,13 @@ describe("PDF sadaļa", () => {
   it("nosaukums, viena rinda uz tipu, sarkanā nobraukuma rinda, audita saite", () => {
     const html = buildDealerSignalsSectionHtml(dealer(ALL_ON), "lv");
     expect(html).toContain(DEALER_SIGNALS_SECTION_TITLE.lv);
-    expect(html.match(/<tr class="pdf-dealer-signal-row/g)).toHaveLength(4);
-    expect(html.match(/pdf-dealer-signal-row--alert/g)).toHaveLength(1);
+    expect(html.match(/<tr class="pdf-dealer-signal-row/g)).toHaveLength(6);
+    expect(html.match(/pdf-dealer-signal-row--alert/g)).toHaveLength(2);
     expect(html).toMatch(/pdf-dealer-signal-row--alert" data-signal="mileage_mismatch"/);
+    expect(html).toMatch(/pdf-dealer-signal-row--alert" data-signal="special_status"/);
     expect(html).toContain("Nobraukuma nesakritība");
     expect(html).toContain("Iespējama odometra korekcija");
-    expect(html).toContain("Par šo auto pieejami negadījumu ieraksti");
+    expect(html).toContain("Par šo auto pieejami negadījumu vai bojājumu ieraksti");
     expect(html).toContain("Pieejamas izsoļu fotogrāfijas");
     expect(html).toContain('<a href="https://www.provin.lv/lv/papildinajums/abc">Pasūtīt PROVIN AUDITU</a>');
     expect(html).not.toMatch(/eksperts|pirkt|nepirkt|AutoDNA|carVertical|CARFAX|LTAB|CSDD|mnt\.ee/i);
@@ -223,12 +224,12 @@ describe("PDF sadaļa", () => {
     expect(buildDealerSignalsSectionHtml(dealer(ALL_ON), "de")).toContain(DEALER_SIGNALS_SECTION_TITLE.de);
     const custom = { kind: "incidents" as const, text: "Pieejami ieraksti — pārbaudiet" };
     expect(dealerSignalText(custom, "lv")).toBe("Pieejami ieraksti - pārbaudiet");
-    expect(dealerSignalText(custom, "en")).toBe("Accident records are available for this car");
-    expect(dealerSignalText({ kind: "incidents", text: "3 ieraksti" }, "lv")).toBe("Par šo auto pieejami negadījumu ieraksti");
+    expect(dealerSignalText(custom, "en")).toBe("Accident or damage records are available for this car");
+    expect(dealerSignalText({ kind: "incidents", text: "3 ieraksti" }, "lv")).toBe("Par šo auto pieejami negadījumu vai bojājumu ieraksti");
     expect(dealerSignalsPdfRows({ enabled: true, items: [{ kind: "incidents", checked: true }] }, "de")[0]).toEqual({
       kind: "incidents",
-      title: "Unfalleinträge",
-      text: "Für dieses Fahrzeug liegen Unfalleinträge vor",
+      title: "Unfall- und Schadenseinträge",
+      text: "Für dieses Fahrzeug liegen Unfall- oder Schadenseinträge vor",
       alert: false,
     });
   });
