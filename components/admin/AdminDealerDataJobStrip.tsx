@@ -22,6 +22,8 @@ import { AdminDealerShadowGateRow } from "@/components/admin/AdminDealerShadowGa
 import { AdminDealerReviewCard, useDealerReviewScore } from "@/components/admin/AdminDealerReviewCard";
 import type { AutoRecordsBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { collectSourceBlockTexts } from "@/lib/dealer-review-score";
+import { checkThisRegHighlighted, checkThisRegMake, checkThisRegMakeTexts } from "@/lib/checkthisreg";
+import { AdminCheckThisRegButton } from "@/components/admin/AdminCheckThisRegButton";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
@@ -143,6 +145,12 @@ export function AdminDealerDataJobStrip({
 
   if (!loaded) return null;
 
+  // CheckThisReg (27.11): markām no CHECKTHISREG_STRONG_MAKES poga redzama vienmēr.
+  const ctrMake = checkThisRegMake({
+    vin: vin || orderVin,
+    makeTexts: checkThisRegMakeTexts(getSourceBlocks ? getSourceBlocks() : null),
+  });
+
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
       {job ? (
@@ -228,6 +236,9 @@ export function AdminDealerDataJobStrip({
           >
             {busy === "run" ? "Ielasa…" : dealerDataRetryButtonLabel(job)}
           </button>
+        ) : null}
+        {ctrMake ? (
+          <AdminCheckThisRegButton make={ctrMake} vin={vin || orderVin} highlighted={checkThisRegHighlighted(job?.status)} />
         ) : null}
         {showRefund ? (
           <button
