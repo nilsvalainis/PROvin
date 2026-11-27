@@ -69,6 +69,12 @@ export function isAllowedHost(host) {
     isEparakstsHost(h) ||
     // eIDAS mezgli (Somijas / Latvijas proxy) pāradresācijās
     h.endsWith(".eidas.fi") ||
+    // Somijas eIDAS mezgls (27.11: nodefi1.eidas.tunnistus.fi)
+    h === "tunnistus.fi" ||
+    h.endsWith(".tunnistus.fi") ||
+    // Latvijas eIDAS mezgls / VDAA (VISS)
+    h.endsWith(".vdaa.gov.lv") ||
+    h.endsWith(".vraa.gov.lv") ||
     h.endsWith(".eidas.gov.lv") ||
     h.endsWith(".lvrtc.lv")
   );
