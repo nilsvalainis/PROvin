@@ -43,6 +43,25 @@ export function b2bClientMessageSignOff(lang: ClientReportLang = "lv"): string {
 
 export type ReportReadyProductKind = "dealer" | "mini" | "audits";
 
+/**
+ * B2B diskrētais režīms (AUDITS forma, Nils 27.11): partnerim e-pastā nav «PROVIN AUDITS» / «PROVIN.LV» -
+ * statusa kartē un tematā «Transportlīdzekļa pārbaude».
+ */
+export const B2B_DISCREET_PRODUCT: Record<ClientReportLang, string> = {
+  lv: "Transportlīdzekļa pārbaude",
+  en: "Vehicle check",
+  ru: "Проверка транспортного средства",
+  de: "Fahrzeugprüfung",
+};
+
+/** «Labota versija» statusa kartē (AUDITS forma). */
+export const REPORT_CORRECTED_TITLE: Record<ClientReportLang, string> = {
+  lv: "Labota versija",
+  en: "Corrected version",
+  ru: "Исправленная версия",
+  de: "Korrigierte Fassung",
+};
+
 export function resolveReportReadyProductKind(args: {
   checkoutLine?: string | null;
   amountTotalCents?: number | null;

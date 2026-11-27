@@ -436,6 +436,15 @@ export async function POST(req: Request) {
       lang: reportLang,
       corrected: previousSends.length > 0,
       custom: customMail,
+      ...(auditSendInput && customMail
+        ? {
+            audit: {
+              discreet: auditB2b,
+              corrected: auditSendInput.situation === "fixed",
+              consult: !auditB2b && auditSendInput.consult === true,
+            },
+          }
+        : {}),
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
