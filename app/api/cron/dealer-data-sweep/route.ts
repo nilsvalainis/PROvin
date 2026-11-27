@@ -1,7 +1,8 @@
 /**
  * Slaucītājs dīlera datu ielasēm, kuras webhook fona izpilde nepabeidza
  * (funkcija apturēta, deploy vidū, OneAuto pollings pārtrūka).
- * Ik 5 min: OneAuto 202 «apstrādē» atkārto pēc ~3 min, citas kļūdas pēc 30 min (`nextRetryAt`).
+ * Ik 5 min: OneAuto 202 «apstrādē» atkārto pēc ~3 min, OneAuto 5xx / taimauts («retry_wait») pēc
+ * 10 min, 30 min, 2 h, citas kļūdas pēc 30 min (`nextRetryAt`).
  *
  * Env: `ADMIN_DEALER_DATA_CRON_SECRET`.
  */
@@ -67,7 +68,12 @@ export async function GET(req: Request) {
     }
     const now = Date.now();
     const due = unfinished
-      .filter((job) => job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS && dealerDataJobRetryDue(job, now))
+      .filter(
+        (job) =>
+          // «retry_wait» savus griestus tur pats (upstreamRetries ≤ 3), mēģinājumu skaitu nepalielina.
+          (job.status === "retry_wait" || job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) &&
+          dealerDataJobRetryDue(job, now),
+      )
       .slice(0, MAX_JOBS_PER_RUN);
 
     const processed: Array<{ sessionId: string; status: string; reason: string }> = [];
@@ -90,7 +96,7 @@ export async function GET(req: Request) {
 
     // Neviens klients nepamanīts: gala kļūdas (arī iestrēgušas «running») -> admina paziņojums, vienreiz.
     for (const job of unfinished) {
-      if (job.status === "no_vin" || job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) continue;
+      if (job.status === "no_vin" || job.status === "retry_wait" || job.attempts < DEALER_DATA_MAX_AUTO_ATTEMPTS) continue;
       if (job.status === "running") {
         const started = Date.parse(job.startedAt ?? job.updatedAt);
         if (Number.isFinite(started) && now - started < DEALER_DATA_STALE_RUNNING_MS) continue;
@@ -107,7 +113,7 @@ export async function GET(req: Request) {
       processed,
       /** Operatoram: šie gaida manuālu lēmumu (atmaksa vai atkārtots mēģinājums). */
       needsOperator: unfinished
-        .filter((job) => job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS)
+        .filter((job) => job.status !== "retry_wait" && job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS)
         .map((job) => ({ sessionId: job.sessionId, error: job.error ?? "" })),
     });
   } catch (e) {

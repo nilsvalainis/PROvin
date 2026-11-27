@@ -7,7 +7,7 @@
  */
 
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
-import type { DealerDataJob } from "@/lib/dealer-data-job-types";
+import { dealerDataJobWaitsForUpstream, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import { formatEurFromCents } from "@/lib/order-upsell";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
@@ -17,6 +17,7 @@ export type DealerRefundEmailError = "no_recipient" | "send_failed";
 
 export type DealerRefundJobView = Pick<DealerDataJob, "status"> & {
   refund?: unknown;
+  error?: string;
 };
 
 /** Poga: canRefund, vēl nav atmaksāts, un no_data / failed / job nav. */
@@ -27,6 +28,8 @@ export function shouldShowDealerRefundButton(opts: {
   if (!opts.canRefund) return false;
   if (opts.job?.refund) return false;
   if (!opts.job) return true;
+  // OneAuto serveris nestrādā / gaida atkārtojumu (Nils 27.11): tā nav «datu nav» - atmaksu nepiedāvājam.
+  if (dealerDataJobWaitsForUpstream(opts.job)) return false;
   return opts.job.status === "no_data" || opts.job.status === "failed" || opts.job.status === "no_vin";
 }
 

@@ -5,6 +5,8 @@ import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import {
   dealerDataJobMissingAi,
+  dealerDataJobUpstreamDown,
+  dealerDataJobWaitsForUpstream,
   dealerDataRetryButtonLabel,
   describeDealerDataJob,
   type DealerDataJob,
@@ -67,6 +69,8 @@ const STATUS_TONE: Record<DealerDataJob["status"], string> = {
   done: "bg-emerald-50 text-emerald-700 border-emerald-200",
   no_data: "bg-orange-50 text-orange-700 border-orange-200",
   failed: "bg-rose-50 text-rose-700 border-rose-200",
+  // OneAuto serveris neatbild - nav kļūda, automātika atkārto (oranžs, ne sarkans).
+  retry_wait: "bg-orange-50 text-orange-700 border-orange-200",
   no_vin: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
@@ -157,9 +161,11 @@ export function AdminDealerDataJobStrip({
           </span>
           <span
             className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
-              (job.status === "no_data" && !job.refund) || dealerDataJobMissingAi(job)
-                ? STATUS_TONE.failed
-                : STATUS_TONE[job.status]
+              dealerDataJobWaitsForUpstream(job)
+                ? STATUS_TONE.retry_wait
+                : (job.status === "no_data" && !job.refund) || dealerDataJobMissingAi(job)
+                  ? STATUS_TONE.failed
+                  : STATUS_TONE[job.status]
             }`}
           >
             {describeDealerDataJob(job)}
@@ -227,7 +233,11 @@ export function AdminDealerDataJobStrip({
         {job ? (
           <button
             type="button"
-            className={job.status === "failed" || job.status === "no_vin" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
+            className={
+              (job.status === "failed" && !dealerDataJobUpstreamDown(job)) || job.status === "no_vin"
+                ? `${btn} ${ADMIN_PRO_TONE.danger}`
+                : btn
+            }
             disabled={!editable || busy !== null}
             onClick={() => void rerun(job.status === "done" || job.status === "no_data")}
           >

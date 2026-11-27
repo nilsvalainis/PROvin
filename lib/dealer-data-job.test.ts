@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -36,7 +36,7 @@ vi.mock("@/lib/dealer-data-job-store", async () => {
       const current = (await readDealerDataJob(args.sessionId)) as import("@/lib/dealer-data-job-types").DealerDataJob | null;
       const decision = types.decideDealerDataRun({ job: current, vin: args.vin, force: args.force, trigger: args.trigger });
       if (!decision.run) return { ok: false, reason: decision.reason, job: current };
-      if ((args.respectNextRetry || current?.pendingRequestId) && current?.status === "failed" && !types.dealerDataJobRetryDue(current)) {
+      if ((args.respectNextRetry || current?.pendingRequestId) && (current?.status === "failed" || current?.status === "retry_wait") && !types.dealerDataJobRetryDue(current)) {
         return { ok: false, reason: "not_due", job: current };
       }
       const base = merge.mergeDealerDataJobPatch(args.sessionId, current, { vin: args.vin });
@@ -739,5 +739,154 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(patchOrderDraft).toHaveBeenCalledTimes(1);
     const ar = patchOrderDraft.mock.calls[0]![1].workspace.sourceBlocks.auto_records;
     expect(JSON.stringify(ar.serviceWorks ?? [])).not.toMatch(/Oil change/);
+  });
+});
+
+describe("runDealerDataJob OneAuto servera kļūme (Nils 27.11, upstream_error)", () => {
+  const T0 = Date.parse("2026-11-27T18:10:00.000Z");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(T0);
+    getOneautoApiConfig.mockReturnValue({ apiKey: "test", baseUrl: "https://api.oneautoapi.com" });
+    upsertDealerDataJob.mockImplementation(async (_id: string, patch: Record<string, unknown>) => ({
+      sessionId: SESSION,
+      vin: VIN,
+      status: patch.status ?? "pending",
+      attempts: patch.attempts ?? 0,
+      createdAt: "2026-11-27T18:00:00.000Z",
+      updatedAt: "2026-11-27T18:00:00.000Z",
+      ...patch,
+    }));
+    patchOrderDraft.mockResolvedValue({ ok: true });
+    dealerDataRunLeaseHeld.mockResolvedValue(true);
+    readDealerDataJob.mockResolvedValue(null);
+    readOrderDraft.mockResolvedValue(emptyDraft(""));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function upstream502() {
+    return {
+      costEur: "",
+      results: { oe_service_history: { ok: false, error: "upstream_error", httpStatus: 502, payload: null } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    };
+  }
+
+  function lastSave(): Record<string, unknown> {
+    return upsertDealerDataJob.mock.calls.at(-1)![1] as Record<string, unknown>;
+  }
+
+  it("pirmā 502: retry_wait pēc 10 min (1/3), mēģinājums netiek skaitīts, nav paziņojuma", async () => {
+    fetchOneautoProducts.mockResolvedValueOnce(upstream502());
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r).toMatchObject({ ok: false, status: "retry_wait", reason: "upstream_retry_wait" });
+    const saved = lastSave();
+    expect(saved).toMatchObject({ status: "retry_wait", upstreamRetries: 1, attempts: 0, error: "upstream_error", runId: "" });
+    expect(saved.nextRetryAt).toBe(new Date(T0 + 10 * 60 * 1000).toISOString());
+    // Ēnu pārbaude nestartē (ielase nav pabeigta); paziņojuma lēmums - retry_wait nekad nebrīdina.
+    expect(runDealerShadowGate).not.toHaveBeenCalled();
+  });
+
+  it("otrā / trešā kļūme: 30 min, tad 2 h", async () => {
+    for (const [prev, delay] of [
+      [1, 30 * 60 * 1000],
+      [2, 2 * 60 * 60 * 1000],
+    ] as const) {
+      upsertDealerDataJob.mockClear();
+      readDealerDataJob.mockResolvedValue({
+        sessionId: SESSION,
+        vin: VIN,
+        status: "retry_wait",
+        attempts: 0,
+        upstreamRetries: prev,
+        nextRetryAt: new Date(T0 - 1000).toISOString(),
+        createdAt: "2026-11-27T18:00:00.000Z",
+        updatedAt: "2026-11-27T18:00:00.000Z",
+      });
+      fetchOneautoProducts.mockResolvedValueOnce(upstream502());
+      const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron", respectNextRetry: true });
+      expect(r.status).toBe("retry_wait");
+      expect(lastSave()).toMatchObject({ status: "retry_wait", upstreamRetries: prev + 1, attempts: 0 });
+      expect(lastSave().nextRetryAt).toBe(new Date(T0 + delay).toISOString());
+    }
+  });
+
+  it("pēc 3 atkārtojumiem: failed upstream_down, automātika apstājas", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "retry_wait",
+      attempts: 0,
+      upstreamRetries: 3,
+      nextRetryAt: new Date(T0 - 1000).toISOString(),
+      createdAt: "2026-11-27T18:00:00.000Z",
+      updatedAt: "2026-11-27T18:00:00.000Z",
+    });
+    fetchOneautoProducts.mockResolvedValueOnce(upstream502());
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron", respectNextRetry: true });
+    expect(r).toMatchObject({ ok: false, status: "failed", reason: "upstream_down" });
+    expect(lastSave()).toMatchObject({ status: "failed", error: "upstream_down", attempts: 3, upstreamRetries: 3 });
+    expect(sendDealerDataAlertIfNeeded).toHaveBeenCalled();
+  });
+
+  it("cron nepalaiž retry_wait pirms laika (OneAuto netiek izsaukts)", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "retry_wait",
+      attempts: 0,
+      upstreamRetries: 1,
+      nextRetryAt: new Date(T0 + 5 * 60 * 1000).toISOString(),
+      createdAt: "2026-11-27T18:00:00.000Z",
+      updatedAt: "2026-11-27T18:00:00.000Z",
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "cron", respectNextRetry: true });
+    expect(r.reason).toBe("not_due");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+  });
+
+  it("operatora «Atkārtot» pēc upstream_down sāk ciklu no jauna (1/3)", async () => {
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "failed",
+      error: "upstream_down",
+      attempts: 3,
+      upstreamRetries: 3,
+      createdAt: "2026-11-27T18:00:00.000Z",
+      updatedAt: "2026-11-27T18:00:00.000Z",
+    });
+    fetchOneautoProducts.mockResolvedValueOnce(upstream502());
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual" });
+    expect(r.status).toBe("retry_wait");
+    expect(lastSave()).toMatchObject({ status: "retry_wait", upstreamRetries: 1, attempts: 3 });
+  });
+
+  it("taimauts (tīkla kļūda) arī ir retry_wait", async () => {
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "",
+      results: {
+        oe_service_history: { ok: false, error: "The operation was aborted due to timeout", payload: null },
+      },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r.status).toBe("retry_wait");
+  });
+
+  it("cita kļūda (insufficient_balance) paliek failed ar 30 min", async () => {
+    fetchOneautoProducts.mockResolvedValueOnce({
+      costEur: "",
+      results: { oe_service_history: { ok: false, error: "insufficient_balance", httpStatus: 402, payload: null } },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
+    });
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
+    expect(r.status).toBe("failed");
+    expect(lastSave()).toMatchObject({ status: "failed", error: "insufficient_balance", attempts: 1 });
   });
 });
