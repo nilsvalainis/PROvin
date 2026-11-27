@@ -105,10 +105,52 @@ describe("ensureOrderDropboxFolder", () => {
     expect(dbx.calls.move).toBe(1);
   });
 
-  it("dīlera dati - atsevišķa virsmape", async () => {
+  it("dīlera dati - atsevišķa virsmape (izveido tikai pie pirmā faila)", async () => {
     const dbx = fakeDropbox();
-    const r = await ensureOrderDropboxFolder("cs_test_dealer", { category: "dealer", createdMs: created, vin: "WBA5R1C0XLFH42873", client: dbx.client });
+    const r = await ensureOrderDropboxFolder("cs_test_dealer", { category: "dealer", createdMs: created, vin: "WBA5R1C0XLFH42873", client: dbx.client, materialize: true });
     expect(r?.path).toBe("/_PROv/DILERA DATI/WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
+  });
+
+  it("dīlera dati (Nils 27.11): pie pasūtījuma mapi neveido - ieraksts pending; pirmais fails izveido mapi", async () => {
+    const dbx = fakeDropbox();
+    h.client = dbx.client;
+    const r = await ensureOrderDropboxFolder("cs_test_dlazy", { category: "dealer", createdMs: created, vin: "WBA5R1C0XLFH42873", client: dbx.client });
+    expect(r?.state).toBe("pending");
+    expect(r?.path).toBeUndefined();
+    expect(dbx.calls.create).toBe(0);
+    // Pārdēvēšanas izsaukumi (pēc CSDD sēklas, numurs -> VIN) mapi arī neveido.
+    expect((await ensureOrderDropboxFolder("cs_test_dlazy", { vin: "WBA5R1C0XLFH42873", client: dbx.client }))?.state).toBe("pending");
+    expect(dbx.calls.create).toBe(0);
+    expect((await readOrderDropboxRecord("cs_test_dlazy"))?.state).toBe("pending");
+
+    const saved = await saveFileToOrderFolderOrLegacy("cs_test_dlazy", "Dilera dati.pdf", new Uint8Array([1]), async () => ({ path: "/legacy" }));
+    expect(saved.legacy).toBe(false);
+    expect(saved.path).toBe("/_PROv/DILERA DATI/WBA5R1C0XLFH42873_2026-11-23_DILERA DATI/Dilera dati.pdf");
+    expect(dbx.calls.create).toBe(1);
+    const rec = await readOrderDropboxRecord("cs_test_dlazy");
+    expect(rec?.state).toBe("ok");
+    expect(rec?.orderCreatedMs).toBe(created);
+    // Otrs fails - tā pati mape.
+    await saveFileToOrderFolderOrLegacy("cs_test_dlazy", "CSDD.pdf", new Uint8Array([2]), async () => ({ path: "/legacy" }));
+    expect(dbx.calls.create).toBe(1);
+  });
+
+  it("dīlera dati pending -> produkts mainās uz AUDITI: mapi izveido uzreiz", async () => {
+    const dbx = fakeDropbox();
+    await ensureOrderDropboxFolder("manual_order_dl", { category: "dealer", createdMs: created, vin: "AB1236", client: dbx.client });
+    const r = await moveOrderDropboxFolderToCategory("manual_order_dl", "audits", dbx.client);
+    expect(r?.state).toBe("ok");
+    expect(r?.path?.startsWith("/_PROv/AUDITI/")).toBe(true);
+    expect(dbx.calls.create).toBe(1);
+  });
+
+  it("AUDITS / MINI / BUSINESS - mape uzreiz", async () => {
+    for (const category of ["audits", "mini", "business"] as const) {
+      const dbx = fakeDropbox();
+      const r = await ensureOrderDropboxFolder(`cs_test_now_${category}`, { category, createdMs: created, vin: "AB1237", client: dbx.client });
+      expect(r?.state).toBe("ok");
+      expect(dbx.calls.create).toBe(1);
+    }
   });
 
   it("Dropbox kļūda neizmet - ieraksts ar kļūdu (adminā sarkanā)", async () => {
@@ -226,7 +268,7 @@ describe("paralēla pārdēvēšana (Nils 26.11: 540i LTAB PDF otrā mapē ar ve
   it("cits izsaukums mapi jau pārdēvēja - ieraksts un fails iet uz jauno ceļu, vecā mape netiek atjaunota", async () => {
     const dbx = fakeDropbox();
     h.client = dbx.client;
-    const r1 = await ensureOrderDropboxFolder("cs_test_race", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00001", client: dbx.client });
+    const r1 = await ensureOrderDropboxFolder("cs_test_race", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00001", client: dbx.client, materialize: true });
     expect(r1?.path).toBe("/_PROv/DILERA DATI/WBAJB5101HWA00001_2026-11-23_DILERA DATI");
     h.drafts.set("cs_test_race", {
       workspace: { sourceBlocks: { csdd: { makeModel: "BMW 540I XDRIVE", registrationNumber: "BM0001", vin: "WBAJB5101HWA00001" } } },
@@ -328,7 +370,7 @@ describe("PDF pēc saglabātā ceļa, kad dubultmapes apvienotas (Nils 26.11)", 
 
   it("vecā mape pārvietota uz arhīvu - fails atrasts pasūtījuma kanoniskajā mapē pēc nosaukuma", async () => {
     const dbx = fakeDropbox();
-    const r = await ensureOrderDropboxFolder("cs_test_dl2", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00002", client: dbx.client });
+    const r = await ensureOrderDropboxFolder("cs_test_dl2", { category: "dealer", createdMs: created, vin: "WBAJB5101HWA00002", client: dbx.client, materialize: true });
     dbx.byId.set(r!.folderId!, "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI");
     const canon = "/_PROv/DILERA DATI/BMW 540I XDRIVE_BM0002_WBAJB5101HWA00002_2026-11-23_DILERA DATI/LTAB - BM0002.pdf";
     const { client } = withFiles(dbx, { [canon]: [7] });

@@ -69,7 +69,7 @@ export async function mirrorVendorArchivePhotosToDropbox(args: {
   const groups = [...tirgus, ...cc];
   const folders = archiveDropboxFolders(groups, args.source);
   if (!folders.length) return { uploaded: 0, failed: 0, folder: null };
-  const rec = await ensureOrderDropboxFolder(args.sessionId, { client });
+  const rec = await ensureOrderDropboxFolder(args.sessionId, { client, materialize: true });
   if (!rec || rec.state !== "ok" || !rec.path) return { uploaded: 0, failed: 0, folder: null };
   // Ceļš pēc mapes id (ne ieraksta `path`): ja mapi tikko pārdēvēja, foto nedrīkst izveidot otru mapi ar veco nosaukumu.
   const orderFolder = await currentOrderDropboxFolderPath(client, rec);
