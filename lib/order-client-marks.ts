@@ -5,6 +5,8 @@
 import type { DealerSendChannel, DealerSendSituation } from "@/lib/dealer-send-message";
 import { DEALER_SEND_CHANNEL_LV } from "@/lib/dealer-send-message";
 import type { DealerSentFile } from "@/lib/dealer-send-extra-files";
+import { isAuditSendSituation, type AuditSendSituation } from "@/lib/audits-send-message";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 
 function parseSentFiles(raw: unknown): DealerSentFile[] {
   if (!Array.isArray(raw)) return [];
@@ -28,8 +30,25 @@ export type DealerSendRecord = {
   files?: DealerSentFile[];
 };
 
+/** AUDITS / BUSINESS «Sūtīt atskaiti» (jaunā forma, Nils 27.11): sūtīšanas žurnāla ieraksts (bez satura). */
+export type AuditSendRecord = {
+  at: string;
+  channel: DealerSendChannel;
+  situation: AuditSendSituation;
+  /** B2B diskrētais režīms. */
+  b2b: boolean;
+  lang: ClientReportLang;
+  /** Konsultācijas bloks e-pastā (tikai B2C). */
+  consult: boolean;
+  /** Servera atskaites versija (e-pastam). */
+  version?: number;
+  /** Pielikumi blakus PDF (portfelis + pievienotie faili). */
+  files?: DealerSentFile[];
+};
+
 export type OrderClientMarks = {
   dealerSends?: DealerSendRecord[];
+  auditSends?: AuditSendRecord[];
   reviewRequestedAt?: string;
   reviewRequestChannel?: DealerSendChannel;
   /** Adminā «Nelūgt» / «Atcelt»: automātiski vairs nesūta. */
@@ -71,6 +90,13 @@ export function parseOrderClientMarks(raw: unknown): OrderClientMarks {
       });
     if (list.length > 0) out.dealerSends = list;
   }
+  if (Array.isArray(r.auditSends)) {
+    const list = r.auditSends
+      .filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === "object")
+      .map((x) => auditSendRecordFromRaw(x))
+      .filter((x): x is AuditSendRecord => x !== null);
+    if (list.length > 0) out.auditSends = list;
+  }
   if (typeof r.reviewRequestedAt === "string" && r.reviewRequestedAt) out.reviewRequestedAt = r.reviewRequestedAt;
   if (isDealerSendChannel(r.reviewRequestChannel)) out.reviewRequestChannel = r.reviewRequestChannel;
   if (typeof r.reviewOptOutAt === "string" && r.reviewOptOutAt) out.reviewOptOutAt = r.reviewOptOutAt;
@@ -85,6 +111,65 @@ export function withDealerSend(marks: OrderClientMarks, rec: DealerSendRecord): 
     next.reviewRequestChannel = rec.channel;
   }
   return next;
+}
+
+function auditSendRecordFromRaw(x: Record<string, unknown>): AuditSendRecord | null {
+  if (typeof x.at !== "string" || !isDealerSendChannel(x.channel) || !isAuditSendSituation(x.situation)) return null;
+  const lang = (CLIENT_REPORT_LANGS as readonly string[]).includes(String(x.lang)) ? (x.lang as ClientReportLang) : "lv";
+  const files = parseSentFiles(x.files);
+  const version = typeof x.version === "number" && Number.isFinite(x.version) && x.version > 0 ? Math.round(x.version) : null;
+  return {
+    at: x.at,
+    channel: x.channel,
+    situation: x.situation,
+    b2b: x.b2b === true,
+    lang,
+    consult: x.consult === true && x.b2b !== true,
+    ...(version ? { version } : {}),
+    ...(files.length > 0 ? { files } : {}),
+  };
+}
+
+/** Servera maršrutiem: AUDITS sūtījuma ieraksts no pieprasījuma laukiem (`auditSend`). */
+export function auditSendRecordFromInput(
+  raw: { situation?: unknown; b2b?: unknown; consult?: unknown },
+  ctx: { channel: DealerSendChannel; atIso: string; lang: ClientReportLang; b2b: boolean; version?: number; files?: DealerSentFile[] },
+): AuditSendRecord {
+  return (
+    auditSendRecordFromRaw({
+      at: ctx.atIso,
+      channel: ctx.channel,
+      situation: isAuditSendSituation(raw.situation) ? raw.situation : "ready",
+      b2b: ctx.b2b,
+      lang: ctx.lang,
+      consult: raw.consult === true,
+      ...(ctx.version ? { version: ctx.version } : {}),
+      ...(ctx.files ? { files: ctx.files } : {}),
+    }) ?? { at: ctx.atIso, channel: ctx.channel, situation: "ready", b2b: ctx.b2b, lang: ctx.lang, consult: false }
+  );
+}
+
+export function withAuditSend(marks: OrderClientMarks, rec: AuditSendRecord): OrderClientMarks {
+  return { ...marks, auditSends: [...(marks.auditSends ?? []), rec].slice(-DEALER_SEND_LOG_MAX) };
+}
+
+export function lastAuditSend(marks: OrderClientMarks | null | undefined): AuditSendRecord | null {
+  const list = marks?.auditSends ?? [];
+  return list.length > 0 ? list[list.length - 1]! : null;
+}
+
+/** «Nosūtīts: 27.11.2026 14:32 (Labota versija, e-pasts, B2B)» vai «Nav nosūtīts». */
+export function auditSendStatusLine(rec: AuditSendRecord | null): string {
+  if (!rec) return "Nav nosūtīts";
+  const extra = [
+    rec.situation === "fixed" ? "Labota versija" : "Gatava",
+    DEALER_SEND_CHANNEL_LV[rec.channel].toLowerCase(),
+    rec.lang.toUpperCase(),
+    rec.b2b ? "B2B" : "",
+    rec.version ? `versija ${rec.version}` : "",
+    rec.files?.length ? `+${rec.files.length} ${rec.files.length === 1 ? "fails" : "faili"}` : "",
+  ].filter(Boolean);
+  return `Nosūtīts: ${formatRigaDateTime(rec.at)} (${extra.join(", ")})`;
 }
 
 export function withReviewRequested(

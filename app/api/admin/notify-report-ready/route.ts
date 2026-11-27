@@ -35,7 +35,8 @@ import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
-import { recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { auditSendRecordFromInput } from "@/lib/order-client-marks";
+import { recordAuditSendOnServer, recordDealerSendOnServer } from "@/lib/order-client-marks-store";
 import { dealerExtraFilesError, dealerSentFilesFromAttachments } from "@/lib/dealer-send-extra-files";
 import { reviewCarLabel } from "@/lib/review-ask";
 import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
@@ -138,6 +139,8 @@ export async function POST(req: Request) {
   let customMail: { subject: string; text: string } | null = null;
   /** Dīlera «Sūtīt klientam»: ierakstīt klienta saziņas žurnālā pēc veiksmīgas sūtīšanas. */
   let dealerSendInput: Record<string, unknown> | null = null;
+  /** AUDITS «Sūtīt atskaiti» (jaunā forma, Nils 27.11): situācija, B2B diskrēts, konsultācijas bloks + žurnāls. */
+  let auditSendInput: Record<string, unknown> | null = null;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -169,6 +172,7 @@ export async function POST(req: Request) {
       const ct = typeof b.customText === "string" ? b.customText.trim().slice(0, 12_000) : "";
       if (cs && ct) customMail = { subject: cs, text: ct };
       if (b.dealerSend && typeof b.dealerSend === "object") dealerSendInput = b.dealerSend as Record<string, unknown>;
+      else if (b.auditSend && typeof b.auditSend === "object") auditSendInput = b.auditSend as Record<string, unknown>;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -290,7 +294,7 @@ export async function POST(req: Request) {
         );
       }
       manualAttachments = await fetchNotifyBlobAttachmentsForEmail(sessionId, jsonBlobAttachments, blobRw, {
-        keepNames: dealerSendInput != null,
+        keepNames: dealerSendInput != null || auditSendInput != null,
       });
     } else {
       const { attachments } = collectAttachmentsFromJsonBase64(jsonAttachmentsBase64);
@@ -325,12 +329,17 @@ export async function POST(req: Request) {
     manualAttachments = [serverPdf, ...manualAttachments.filter((a) => a.filename !== serverPdf!.filename)];
   }
 
-  // Dīlera «Sūtīt klientam» papildu faili: ≤10, PDF + faili ≤ 18 MB (Gmail SMTP 25 MB pēc base64).
+  // Dīlera «Sūtīt klientam» un AUDITS «Sūtīt atskaiti» pielikumi: ≤50, PDF + faili ≤ 18 MB (Gmail SMTP 25 MB pēc base64).
   const dealerExtraAttachments =
-    dealerSendInput && serverPdf ? manualAttachments.filter((a) => a !== serverPdf) : [];
-  if (dealerSendInput && serverPdf && dealerExtraAttachments.length > 0) {
+    (dealerSendInput || auditSendInput) && serverPdf ? manualAttachments.filter((a) => a !== serverPdf) : [];
+  if ((dealerSendInput || auditSendInput) && serverPdf && dealerExtraAttachments.length > 0) {
     const extraErr = dealerExtraFilesError(
-      dealerExtraAttachments.map((a) => ({ name: a.filename, size: a.content.length, type: a.contentType })),
+      // AUDITS: portfeļa faili jau pārbaudīti augšupielādē (arī GIF) - te tikai skaits un kopējais apjoms.
+      dealerExtraAttachments.map((a) => ({
+        name: a.filename,
+        size: a.content.length,
+        type: auditSendInput && a.content.length > 0 ? "application/pdf" : a.contentType,
+      })),
       serverPdf.content.length,
     );
     if (extraErr) {
@@ -395,6 +404,11 @@ export async function POST(req: Request) {
     partnerId: order.partnerId,
     partnerCompanyName: order.companyName,
   });
+  // AUDITS forma: B2B diskrētais režīms arī PROVIN paraugiem (isDemo) un, ja logs saņēmēju atzīmē kā partneri.
+  const auditB2b = auditSendInput
+    ? notifyB2bClient || order.isDemo === true || auditSendInput.b2b === true
+    : false;
+  const mailB2b = notifyB2bClient || auditB2b;
 
   const reportProductKind = resolveReportReadyProductKind({
     checkoutLine: order.checkoutLine,
@@ -418,7 +432,7 @@ export async function POST(req: Request) {
       emailContext,
       // 26.11 (Nils): atsauksmes lūgums atskaites e-pastā vairs nav - atsevišķs e-pasts nākamajā darba dienā.
       includeGoogleReview: false,
-      b2bClient: notifyB2bClient,
+      b2bClient: mailB2b,
       lang: reportLang,
       corrected: previousSends.length > 0,
       custom: customMail,
@@ -524,7 +538,7 @@ export async function POST(req: Request) {
   });
 
   // Google atsauksmes lūgums: rindā pēc pirmās atskaites (B2B, demo un iekšējie - nē). Kļūda sūtījumu neaptur.
-  if (!notifyB2bClient && !order.isDemo && order.auditPurpose !== "internal") {
+  if (!mailB2b && !order.isDemo && order.auditPurpose !== "internal") {
     const csddForCar = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
     const carForReview = orderCarFromCsdd(csddForCar, "", notifyVin);
     await enqueueReviewAskAfterReport({
@@ -550,11 +564,26 @@ export async function POST(req: Request) {
       )
     : null;
 
+  const auditMarks = auditSendInput
+    ? await recordAuditSendOnServer(
+        sessionId,
+        auditSendRecordFromInput(auditSendInput, {
+          channel: "email",
+          atIso: new Date().toISOString(),
+          lang: reportLang,
+          b2b: auditB2b,
+          ...(serverSend?.version ? { version: serverSend.version } : {}),
+          files: dealerSentFilesFromAttachments(dealerExtraAttachments),
+        }),
+      )
+    : null;
+
   return NextResponse.json({
     ok: true,
     sentTo: to,
     sentToSource,
     ...(serverSend ? { serverSend } : {}),
     ...(dealerMarks ? { dealerMarks } : {}),
+    ...(auditMarks ? { auditMarks } : {}),
   });
 }

@@ -232,6 +232,198 @@ PROVIN.LV",
 }
 `;
 
+exports[`template snapshots (default text) > snapshot email.audits_send.b2b_fixed 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light dark"/>
+<meta name="supported-color-schemes" content="light dark"/>
+<title>PROVIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+a{text-decoration:none}
+@media (max-width:480px){.m-pad{padding-left:20px !important;padding-right:20px !important}.m-pad2{padding:18px 16px !important}.m-outer{padding:12px 8px 28px !important}.m-stack{display:block !important;width:100% !important;padding:0 0 8px 0 !important;text-align:left !important}.m-full{width:100% !important}.m-tile{padding:12px 10px 10px !important}.m-num{font-size:18px !important;line-height:24px !important}.m-btn{display:block !important}}
+@media (prefers-color-scheme:dark){.c-bg{background-color:#0d0e11 !important}.c-card{background-color:#17191e !important}.c-ink{color:#eef0f3 !important}.c-mut{color:#9aa1ac !important}.c-line{border-color:#2a2d34 !important}.c-hr{background-color:#2a2d34 !important}.c-tint{background-color:#13223d !important;border-color:#1f3560 !important}.c-tile{background-color:#1f2228 !important}.c-lnk{color:#6ea2ff !important}.c-gh{border-color:#3a3e46 !important}.c-ght{color:#eef0f3 !important}.c-gen p,.c-gen li,.c-gen strong,.c-gen span{color:#eef0f3 !important}}
+[data-ogsc] .c-bg{background-color:#0d0e11 !important}[data-ogsc] .c-card{background-color:#17191e !important}[data-ogsc] .c-ink{color:#eef0f3 !important}[data-ogsc] .c-mut{color:#9aa1ac !important}[data-ogsc] .c-line{border-color:#2a2d34 !important}[data-ogsc] .c-hr{background-color:#2a2d34 !important}[data-ogsc] .c-tint{background-color:#13223d !important;border-color:#1f3560 !important}[data-ogsc] .c-tile{background-color:#1f2228 !important}[data-ogsc] .c-lnk{color:#6ea2ff !important}[data-ogsc] .c-gh{border-color:#3a3e46 !important}[data-ogsc] .c-ght{color:#eef0f3 !important}[data-ogsc] .c-gen p,[data-ogsc] .c-gen li,[data-ogsc] .c-gen strong,[data-ogsc] .c-gen span{color:#eef0f3 !important}
+</style>
+</head>
+<body class="c-bg" style="margin:0;padding:0;background-color:#f2f3f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Transportlīdzekļa pārbaude · labota versija</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-bg" bgcolor="#f2f3f5" style="background-color:#f2f3f5;"><tr><td align="center" class="m-outer" style="padding:32px 16px 40px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-card" bgcolor="#ffffff" style="max-width:600px;background-color:#ffffff;border-radius:14px;">
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.4px;line-height:26px;"><span class="c-ink" style="color:#16181d;">PRO</span><span style="color:#0066ff;">VIN</span><span class="c-ink" style="color:#16181d;">.LV</span></td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">Transportlīdzekļa pārbaude · labota versija</p></td></tr>
+<tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Nosūtām transportlīdzekļa pārbaudes atskaites labotu versiju (VIN WAUZZZ4G7FN012345). Lūdzu, izmantojiet šo versiju.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Jautājumi - atbildiet uz šo e-pastu.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN</p></td></tr>
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 26px;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">+371&nbsp;29&nbsp;502&nbsp;039</a></p></td></tr>
+</table>
+<p class="c-mut" style="margin:18px 0 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "Transportlīdzekļa pārbaude · labota versija · WAUZZZ4G7FN012345",
+  "text": "Labdien!
+
+Nosūtām transportlīdzekļa pārbaudes atskaites labotu versiju (VIN WAUZZZ4G7FN012345). Lūdzu, izmantojiet šo versiju.
+
+Jautājumi - atbildiet uz šo e-pastu.
+
+Ar cieņu,
+PROVIN",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.audits_send.b2b_ready 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light dark"/>
+<meta name="supported-color-schemes" content="light dark"/>
+<title>PROVIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+a{text-decoration:none}
+@media (max-width:480px){.m-pad{padding-left:20px !important;padding-right:20px !important}.m-pad2{padding:18px 16px !important}.m-outer{padding:12px 8px 28px !important}.m-stack{display:block !important;width:100% !important;padding:0 0 8px 0 !important;text-align:left !important}.m-full{width:100% !important}.m-tile{padding:12px 10px 10px !important}.m-num{font-size:18px !important;line-height:24px !important}.m-btn{display:block !important}}
+@media (prefers-color-scheme:dark){.c-bg{background-color:#0d0e11 !important}.c-card{background-color:#17191e !important}.c-ink{color:#eef0f3 !important}.c-mut{color:#9aa1ac !important}.c-line{border-color:#2a2d34 !important}.c-hr{background-color:#2a2d34 !important}.c-tint{background-color:#13223d !important;border-color:#1f3560 !important}.c-tile{background-color:#1f2228 !important}.c-lnk{color:#6ea2ff !important}.c-gh{border-color:#3a3e46 !important}.c-ght{color:#eef0f3 !important}.c-gen p,.c-gen li,.c-gen strong,.c-gen span{color:#eef0f3 !important}}
+[data-ogsc] .c-bg{background-color:#0d0e11 !important}[data-ogsc] .c-card{background-color:#17191e !important}[data-ogsc] .c-ink{color:#eef0f3 !important}[data-ogsc] .c-mut{color:#9aa1ac !important}[data-ogsc] .c-line{border-color:#2a2d34 !important}[data-ogsc] .c-hr{background-color:#2a2d34 !important}[data-ogsc] .c-tint{background-color:#13223d !important;border-color:#1f3560 !important}[data-ogsc] .c-tile{background-color:#1f2228 !important}[data-ogsc] .c-lnk{color:#6ea2ff !important}[data-ogsc] .c-gh{border-color:#3a3e46 !important}[data-ogsc] .c-ght{color:#eef0f3 !important}[data-ogsc] .c-gen p,[data-ogsc] .c-gen li,[data-ogsc] .c-gen strong,[data-ogsc] .c-gen span{color:#eef0f3 !important}
+</style>
+</head>
+<body class="c-bg" style="margin:0;padding:0;background-color:#f2f3f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Transportlīdzekļa pārbaude</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-bg" bgcolor="#f2f3f5" style="background-color:#f2f3f5;"><tr><td align="center" class="m-outer" style="padding:32px 16px 40px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-card" bgcolor="#ffffff" style="max-width:600px;background-color:#ffffff;border-radius:14px;">
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.4px;line-height:26px;"><span class="c-ink" style="color:#16181d;">PRO</span><span style="color:#0066ff;">VIN</span><span class="c-ink" style="color:#16181d;">.LV</span></td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">Transportlīdzekļa pārbaude</p></td></tr>
+<tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Transportlīdzekļa pārbaudes atskaite (VIN WAUZZZ4G7FN012345) ir gatava - PDF pielikumā.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Jautājumi - atbildiet uz šo e-pastu.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN</p></td></tr>
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 26px;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">+371&nbsp;29&nbsp;502&nbsp;039</a></p></td></tr>
+</table>
+<p class="c-mut" style="margin:18px 0 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "Transportlīdzekļa pārbaude · WAUZZZ4G7FN012345",
+  "text": "Labdien!
+
+Transportlīdzekļa pārbaudes atskaite (VIN WAUZZZ4G7FN012345) ir gatava - PDF pielikumā.
+
+Jautājumi - atbildiet uz šo e-pastu.
+
+Ar cieņu,
+PROVIN",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.audits_send.fixed 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light dark"/>
+<meta name="supported-color-schemes" content="light dark"/>
+<title>PROVIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+a{text-decoration:none}
+@media (max-width:480px){.m-pad{padding-left:20px !important;padding-right:20px !important}.m-pad2{padding:18px 16px !important}.m-outer{padding:12px 8px 28px !important}.m-stack{display:block !important;width:100% !important;padding:0 0 8px 0 !important;text-align:left !important}.m-full{width:100% !important}.m-tile{padding:12px 10px 10px !important}.m-num{font-size:18px !important;line-height:24px !important}.m-btn{display:block !important}}
+@media (prefers-color-scheme:dark){.c-bg{background-color:#0d0e11 !important}.c-card{background-color:#17191e !important}.c-ink{color:#eef0f3 !important}.c-mut{color:#9aa1ac !important}.c-line{border-color:#2a2d34 !important}.c-hr{background-color:#2a2d34 !important}.c-tint{background-color:#13223d !important;border-color:#1f3560 !important}.c-tile{background-color:#1f2228 !important}.c-lnk{color:#6ea2ff !important}.c-gh{border-color:#3a3e46 !important}.c-ght{color:#eef0f3 !important}.c-gen p,.c-gen li,.c-gen strong,.c-gen span{color:#eef0f3 !important}}
+[data-ogsc] .c-bg{background-color:#0d0e11 !important}[data-ogsc] .c-card{background-color:#17191e !important}[data-ogsc] .c-ink{color:#eef0f3 !important}[data-ogsc] .c-mut{color:#9aa1ac !important}[data-ogsc] .c-line{border-color:#2a2d34 !important}[data-ogsc] .c-hr{background-color:#2a2d34 !important}[data-ogsc] .c-tint{background-color:#13223d !important;border-color:#1f3560 !important}[data-ogsc] .c-tile{background-color:#1f2228 !important}[data-ogsc] .c-lnk{color:#6ea2ff !important}[data-ogsc] .c-gh{border-color:#3a3e46 !important}[data-ogsc] .c-ght{color:#eef0f3 !important}[data-ogsc] .c-gen p,[data-ogsc] .c-gen li,[data-ogsc] .c-gen strong,[data-ogsc] .c-gen span{color:#eef0f3 !important}
+</style>
+</head>
+<body class="c-bg" style="margin:0;padding:0;background-color:#f2f3f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">PROVIN.LV · AUDITS atskaite - labota versija</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-bg" bgcolor="#f2f3f5" style="background-color:#f2f3f5;"><tr><td align="center" class="m-outer" style="padding:32px 16px 40px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-card" bgcolor="#ffffff" style="max-width:600px;background-color:#ffffff;border-radius:14px;">
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.4px;line-height:26px;"><span class="c-ink" style="color:#16181d;">PRO</span><span style="color:#0066ff;">VIN</span><span class="c-ink" style="color:#16181d;">.LV</span></td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">PROVIN.LV · AUDITS atskaite - labota versija</p></td></tr>
+<tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Nosūtām Jūsu PROVIN AUDITS atskaites labotu versiju auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345). Lūdzu, izmantojiet šo versiju - iepriekšējā vairs nav aktuāla.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 26px;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">+371&nbsp;29&nbsp;502&nbsp;039</a></p></td></tr>
+</table>
+<p class="c-mut" style="margin:18px 0 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV · AUDITS atskaite - labota versija · WAUZZZ4G7FN012345",
+  "text": "Labdien!
+
+Nosūtām Jūsu PROVIN AUDITS atskaites labotu versiju auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345). Lūdzu, izmantojiet šo versiju - iepriekšējā vairs nav aktuāla.
+
+Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.
+
+Ar cieņu,
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.audits_send.ready 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light dark"/>
+<meta name="supported-color-schemes" content="light dark"/>
+<title>PROVIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+a{text-decoration:none}
+@media (max-width:480px){.m-pad{padding-left:20px !important;padding-right:20px !important}.m-pad2{padding:18px 16px !important}.m-outer{padding:12px 8px 28px !important}.m-stack{display:block !important;width:100% !important;padding:0 0 8px 0 !important;text-align:left !important}.m-full{width:100% !important}.m-tile{padding:12px 10px 10px !important}.m-num{font-size:18px !important;line-height:24px !important}.m-btn{display:block !important}}
+@media (prefers-color-scheme:dark){.c-bg{background-color:#0d0e11 !important}.c-card{background-color:#17191e !important}.c-ink{color:#eef0f3 !important}.c-mut{color:#9aa1ac !important}.c-line{border-color:#2a2d34 !important}.c-hr{background-color:#2a2d34 !important}.c-tint{background-color:#13223d !important;border-color:#1f3560 !important}.c-tile{background-color:#1f2228 !important}.c-lnk{color:#6ea2ff !important}.c-gh{border-color:#3a3e46 !important}.c-ght{color:#eef0f3 !important}.c-gen p,.c-gen li,.c-gen strong,.c-gen span{color:#eef0f3 !important}}
+[data-ogsc] .c-bg{background-color:#0d0e11 !important}[data-ogsc] .c-card{background-color:#17191e !important}[data-ogsc] .c-ink{color:#eef0f3 !important}[data-ogsc] .c-mut{color:#9aa1ac !important}[data-ogsc] .c-line{border-color:#2a2d34 !important}[data-ogsc] .c-hr{background-color:#2a2d34 !important}[data-ogsc] .c-tint{background-color:#13223d !important;border-color:#1f3560 !important}[data-ogsc] .c-tile{background-color:#1f2228 !important}[data-ogsc] .c-lnk{color:#6ea2ff !important}[data-ogsc] .c-gh{border-color:#3a3e46 !important}[data-ogsc] .c-ght{color:#eef0f3 !important}[data-ogsc] .c-gen p,[data-ogsc] .c-gen li,[data-ogsc] .c-gen strong,[data-ogsc] .c-gen span{color:#eef0f3 !important}
+</style>
+</head>
+<body class="c-bg" style="margin:0;padding:0;background-color:#f2f3f5;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">PROVIN.LV · AUDITS atskaite gatava</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-bg" bgcolor="#f2f3f5" style="background-color:#f2f3f5;"><tr><td align="center" class="m-outer" style="padding:32px 16px 40px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="c-card" bgcolor="#ffffff" style="max-width:600px;background-color:#ffffff;border-radius:14px;">
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.4px;line-height:26px;"><span class="c-ink" style="color:#16181d;">PRO</span><span style="color:#0066ff;">VIN</span><span class="c-ink" style="color:#16181d;">.LV</span></td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:22px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.4px;color:#16181d;">PROVIN.LV · AUDITS atskaite gatava</p></td></tr>
+<tr><td class="m-pad" style="padding:20px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Labdien!</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Jūsu PROVIN AUDITS atskaite auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345) ir gatava - PDF un pielikumi šajā e-pastā.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.</p></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;"><p class="c-ink" style="margin:0 0 14px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:15px;line-height:24px;color:#16181d;margin:0;">Ar cieņu,<br/>PROVIN.LV</p></td></tr>
+<tr><td class="m-pad" style="padding:26px 36px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td class="c-hr" height="1" style="height:1px;line-height:1px;font-size:1px;background-color:#e4e7eb;">&nbsp;</td></tr></table></td></tr>
+<tr><td class="m-pad" style="padding:14px 36px 26px;"><p class="c-mut" style="margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;"><a href="https://www.provin.lv/lv" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">provin.lv</a> · <a href="tel:+37129502039" target="_blank" class="c-mut" style="color:#646b76;text-decoration:none;">+371&nbsp;29&nbsp;502&nbsp;039</a></p></td></tr>
+</table>
+<p class="c-mut" style="margin:18px 0 0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:18px;color:#646b76;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV · AUDITS atskaite gatava · WAUZZZ4G7FN012345",
+  "text": "Labdien!
+
+Jūsu PROVIN AUDITS atskaite auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345) ir gatava - PDF un pielikumi šajā e-pastā.
+
+Ja ir jautājumi, vienkārši atbildiet uz šo e-pastu.
+
+Ar cieņu,
+PROVIN.LV",
+}
+`;
+
 exports[`template snapshots (default text) > snapshot email.client_link 1`] = `
 {
   "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
@@ -1659,6 +1851,62 @@ Ja ir jautājumi, rakstiet šeit vai uz info@provin.lv.
 
 Ja dati noderēja, būsim pateicīgi par īsu atsauksmi Google: https://g.page/r/…/review
 
+
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.audits_send.b2b_fixed 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Nosūtām transportlīdzekļa pārbaudes atskaites labotu versiju (VIN WAUZZZ4G7FN012345) - PDF pievienojam zemāk. Lūdzu, izmantojiet šo versiju.
+
+Jautājumi - rakstiet šeit.
+
+PROVIN",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.audits_send.b2b_ready 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Transportlīdzekļa pārbaudes atskaite (VIN WAUZZZ4G7FN012345) ir gatava - PDF pievienojam zemāk.
+
+Jautājumi - rakstiet šeit.
+
+PROVIN",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.audits_send.fixed 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Nosūtām Jūsu PROVIN AUDITS atskaites labotu versiju auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345) - PDF pievienojam zemāk. Lūdzu, izmantojiet šo versiju - iepriekšējā vairs nav aktuāla.
+
+Ja ir jautājumi, rakstiet šeit.
+
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.audits_send.ready 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu PROVIN AUDITS atskaite auto Audi A6 Avant 3.0 TDI (VIN WAUZZZ4G7FN012345) ir gatava - PDF pievienojam zemāk.
+
+Ja ir jautājumi, rakstiet šeit.
 
 PROVIN.LV",
 }

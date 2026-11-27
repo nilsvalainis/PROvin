@@ -1,5 +1,6 @@
 import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { REVIEW_ASK_COPY } from "@/lib/review-ask";
+import { AUDITS_SEND_LOCALIZED } from "@/lib/messages/audits-send-template-defs";
 
 /**
  * Klientu e-pastu / WhatsApp šablonu tulkojumi EN / RU / DE (Nils 25.11: «nav tulkojumi, pārbaudi visas valodas»).
@@ -889,6 +890,7 @@ export const LOCALIZED_TEMPLATES: Record<string, Record<ForeignLang, LocalizedTe
   "wa.auction_archive_send.no_data": perLang((l) => archiveNoData(l, "whatsapp")),
   "email.auction_archive_send.cancelled": perLang((l) => archiveCancelled(l, "email")),
   "wa.auction_archive_send.cancelled": perLang((l) => archiveCancelled(l, "whatsapp")),
+  ...AUDITS_SEND_LOCALIZED,
 };
 
 export function localizedTemplate(id: string, lang: ClientReportLang | null | undefined): LocalizedTemplate | null {
