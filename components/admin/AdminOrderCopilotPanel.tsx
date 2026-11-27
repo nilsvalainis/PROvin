@@ -4,7 +4,20 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { createPortal } from "react-dom";
-import { AlertTriangle, Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Bot,
+  FileUp,
+  GripVertical,
+  Loader2,
+  Minimize2,
+  Send,
+  ThumbsDown,
+  ThumbsUp,
+  Undo2,
+  X,
+} from "lucide-react";
+import { appendCopilotActionsToContent, type CopilotFeedbackRating } from "@/lib/admin-copilot-helpers";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -20,6 +33,11 @@ type UiMessage = {
   content: string;
   needsConfirm?: Array<CopilotAction & { label?: string }>;
   autoApplied?: Array<CopilotAction & { label?: string }>;
+  /** Operatora komanda, uz kuru šī ir atbilde (atgriezeniskajai saitei). */
+  command?: string;
+  /** Kļūdas teksts, ja atbilde bija kļūda. */
+  error?: string;
+  feedback?: CopilotFeedbackRating;
 };
 
 type CopilotApiOk = {
@@ -31,6 +49,8 @@ type CopilotApiOk = {
   skipped?: Array<CopilotAction & { label?: string; reason?: string }>;
   patchedSourceBlocks?: Partial<WorkspaceSourceBlocks>;
   changedKeys?: CopilotSourceKey[];
+  /** Piem. «Avots X izslēgts - ieslēdz ķeksīti». */
+  notice?: string;
 };
 
 type Props = {
@@ -189,6 +209,9 @@ function loadStoredChat(sessionId: string): { messages: UiMessage[]; allowedSour
         content: content.slice(0, 12_000),
         ...(Array.isArray(o.needsConfirm) ? { needsConfirm: o.needsConfirm as UiMessage["needsConfirm"] } : {}),
         ...(Array.isArray(o.autoApplied) ? { autoApplied: o.autoApplied as UiMessage["autoApplied"] } : {}),
+        ...(typeof o.command === "string" ? { command: o.command.slice(0, 1000) } : {}),
+        ...(typeof o.error === "string" ? { error: o.error.slice(0, 500) } : {}),
+        ...(o.feedback === "up" || o.feedback === "down" ? { feedback: o.feedback } : {}),
       });
     }
     if (messages.length === 0) return null;
@@ -210,6 +233,9 @@ function saveStoredChat(sessionId: string, messages: UiMessage[], allowedSources
       content: m.content.slice(0, 12_000),
       ...(m.needsConfirm?.length ? { needsConfirm: m.needsConfirm } : {}),
       ...(m.autoApplied?.length ? { autoApplied: m.autoApplied } : {}),
+      ...(m.command ? { command: m.command.slice(0, 1000) } : {}),
+      ...(m.error ? { error: m.error.slice(0, 500) } : {}),
+      ...(m.feedback ? { feedback: m.feedback } : {}),
     }));
     localStorage.setItem(
       chatStorageKey(sessionId),
@@ -336,7 +362,9 @@ export function AdminOrderCopilotPanel({
     setChatHydrated(false);
     const stored = loadStoredChat(sessionId);
     // Ieslēgtie avoti palika saglabāti, bet netika atjaunoti — operators tos ķeksēja katru reizi no jauna.
-    setAllowedSources(stored?.allowedSources ?? []);
+    // Pēc noklusējuma ieslēgti visi avoti (izslēgts avots klusi atmeta darbības).
+    const hasLocalSources = Boolean(stored?.allowedSources?.length);
+    setAllowedSources(hasLocalSources ? stored!.allowedSources! : [...COPILOT_SOURCE_KEYS]);
     setMessages(stored?.messages ?? [WELCOME_MESSAGE]);
     setChatHydrated(true);
 
@@ -363,7 +391,7 @@ export function AdminOrderCopilotPanel({
         const localCount = (stored?.messages ?? []).filter((m) => m.role !== "system").length;
         const serverCount = serverMessages.filter((m) => m.role !== "system").length;
         if (serverCount > localCount) setMessages([WELCOME_MESSAGE, ...serverMessages]);
-        if (!stored?.allowedSources?.length && data.allowedSources?.length) {
+        if (!hasLocalSources && data.allowedSources?.length) {
           setAllowedSources(data.allowedSources);
         }
       } catch {
@@ -487,7 +515,14 @@ export function AdminOrderCopilotPanel({
   const historyForApi = useCallback((): CopilotChatMessage[] => {
     return messages
       .filter((m) => m.role === "user" || m.role === "assistant")
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        // Darbības (ierakstītās / piedāvātās) vēsturē - lai «atcel to, ko tikko ieliki» strādā.
+        content:
+          m.role === "assistant"
+            ? appendCopilotActionsToContent(m.content, { applied: m.autoApplied, proposed: m.needsConfirm })
+            : m.content,
+      }));
   }, [messages]);
 
   const toggleSource = useCallback((source: CopilotSourceKey) => {
@@ -573,7 +608,7 @@ export function AdminOrderCopilotPanel({
         setError(reason);
         setMessages((prev) => [
           ...prev,
-          { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}` },
+          { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}`, command: userLabel, error: reason },
         ]);
         setUnreadDone(true);
         return;
@@ -601,6 +636,7 @@ export function AdminOrderCopilotPanel({
           content: parts.join("\n"),
           needsConfirm: data.needsConfirm,
           autoApplied: data.autoApplied,
+          command: userLabel,
         },
       ]);
       setUnreadDone(true);
@@ -614,7 +650,7 @@ export function AdminOrderCopilotPanel({
       setError(reason);
       setMessages((prev) => [
         ...prev,
-        { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}` },
+        { id: newId(), role: "assistant", content: `Neizdevās apstrādāt: ${reason}`, command: userLabel, error: reason },
       ]);
       setUnreadDone(true);
     } finally {
@@ -663,7 +699,12 @@ export function AdminOrderCopilotPanel({
           {
             id: newId(),
             role: "assistant",
-            content: `Apstiprināts: ${(data.autoApplied ?? []).map((a) => a.label ?? a.type).join("; ") || "-"}`,
+            content: [
+              `Apstiprināts: ${(data.autoApplied ?? []).map((a) => a.label ?? a.type).join("; ") || "-"}`,
+              data.notice?.trim() ?? "",
+            ]
+              .filter(Boolean)
+              .join("\n"),
           },
         ]);
         setUnreadDone(true);
@@ -672,6 +713,31 @@ export function AdminOrderCopilotPanel({
       }
     },
     [allowedSources, busy, getSourceBlocks, mergePatch, sessionId],
+  );
+
+  const sendFeedback = useCallback(
+    (messageId: string, rating: CopilotFeedbackRating) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target || target.feedback) return;
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, feedback: rating } : m)));
+      const actionTypes = [...(target.autoApplied ?? []), ...(target.needsConfirm ?? [])].map((a) => a.type);
+      // Serveris anonimizē komandu (vārdi, e-pasti, telefoni) pirms ieraksta žurnālā.
+      void fetch("/api/admin/copilot/feedback", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          rating,
+          command: target.command ?? "",
+          actionTypes,
+          error: target.error ?? "",
+        }),
+      }).catch(() => {
+        /* atgriezeniskā saite nav obligāta */
+      });
+    },
+    [messages, sessionId],
   );
 
   const undo = useCallback(() => {
@@ -884,6 +950,30 @@ export function AdminOrderCopilotPanel({
                   );
                 })()
               : null}
+            {m.role === "assistant" && m.command !== undefined ? (
+              <div className="mt-1.5 flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Laba atbilde"
+                  title="Laba atbilde"
+                  disabled={Boolean(m.feedback)}
+                  className={`rounded p-1 ${m.feedback === "up" ? "text-emerald-700" : "text-[var(--color-provin-muted)] hover:text-emerald-700"} disabled:cursor-default`}
+                  onClick={() => sendFeedback(m.id, "up")}
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Slikta atbilde"
+                  title="Slikta atbilde"
+                  disabled={Boolean(m.feedback)}
+                  className={`rounded p-1 ${m.feedback === "down" ? "text-red-600" : "text-[var(--color-provin-muted)] hover:text-red-600"} disabled:cursor-default`}
+                  onClick={() => sendFeedback(m.id, "down")}
+                >
+                  <ThumbsDown className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            ) : null}
           </div>
         ))}
         {busy ? (

@@ -13,6 +13,11 @@ import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 import {
+  COPILOT_HISTORY_ACTIONS_MARKER,
+  prioritizeCopilotAuditContext,
+  truncateCopilotHistoryContent,
+} from "@/lib/admin-copilot-helpers";
+import {
   COPILOT_CLEARABLE_FIELDS,
   COPILOT_SOURCE_KEYS,
   type CopilotAiResponse,
@@ -79,6 +84,8 @@ Actions:
 5) append_raw — Append significant leftover report facts into that source’s RAW / AI-context field (so later ✨ comment generation does not miss them). Targets: autodna/carvertical/cc_vin → Papildu AI konteksts; auto_records → RAW; ltab → PDF import RAW; citi_avoti → RAW; tjekbil/mnt_ee/lkf_ee/carinfo → RAW; finnik/traficom_fi → AI konteksts (ne kataloga cenu, BPM, tirgus statistiku). Use for: type/engine codes, stolen/taxi/fleet flags, ownership notes, inspection remarks, Status Center items, damage zone text without EUR, recalls, etc. that do NOT fit incident/mileage/service-history/Komplektācija actions. Factory PR/SA/LastVIN option lists belong in set_dealer_vehicle_info.equipment, NOT append_raw. Keep factual bullet/plain lines; no essay. Prefer the PDF’s matching source.
 6) set_registry_fields — ONLY tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi. Short Latvian facts, one line per fact. No icons, no “RED FLAG”, no English leftovers, no em dashes. ownersSummary: owner count + owner-change dates. statusRecords: in traffic, colour, engine, export. autoNotes: the noteworthy facts in plain Latvian (export, 0 km classified vs registry km, stolen, commercial use, km rollback). Never invent facts the dump does not support.
 
+6b) upsert_vehicle_history_timeline_row — VĒSTURES KOPSAVILKUMS (time-line fact that is NOT mileage and NOT an incident), ONLY source autodna | carvertical | carfax. Fields: date, description (short Latvian fact, e.g. „Sludinājums pārdošanai Vācijā”, „Reģistrēts Polijā”, „Vēsturiskā cena”), country, optional odometer (digits). Use it for dated listing / registration / import / price-record events printed in those reports. Never put accidents here (upsert_incident) or plain odometer readings (upsert_mileage).
+
 DELETING (7-10). The operator is in charge. When the operator asks you to remove, delete, clear, or undo something ("izdzēs", "noņem", "dzēs nost", "iztīri lauku", "atceļ šo rindu", "šī rinda ir kļūdaina"), you MUST emit the matching delete action. Do NOT refuse, do NOT answer that you cannot delete, and do NOT silently ignore the request. Deletions are never applied automatically: the operator sees them listed and presses confirm, so proposing a deletion is safe.
 7) delete_incident — remove a NEGADĪJUMU VĒSTURE row. Required: source + date. Add lossAmount to target one specific row; WITHOUT lossAmount every row on that date is removed.
 8) delete_mileage — remove a NOBRAUKUMS row. Required: source + date. Add odometer to target one specific row; WITHOUT odometer every row on that date is removed.
@@ -106,7 +113,18 @@ Confidence:
 
 If a PDF vendor is unclear, set clarificationNeeded (short Latvian) for that file only; still extract the PDFs you are sure about.
 
-reply: short Latvian confirmation. No markdown fences.
+reply: short Latvian answer. No markdown fences.
+
+QUESTIONS WITHOUT ACTIONS. The operator may simply ask ("kas trūkst?", "kāpēc nesakrīt nobraukums?", "kuram avotam ticēt?", "ko vēl pārbaudīt?"). Then answer the question in reply from CURRENT TABLES + audit context, return actions: [] and clarificationNeeded "". Do not invent work to do. Name concrete dates / km / sources from the tables, keep it short (a few lines).
+
+PROVIN RULES (apply to every reply and every text you write into tables):
+- PROVIN gives recommendations, never a verdict. Never write „pirkt” / „nepirkt”, „iesaku pirkt”, „neiesaku pirkt” or any buy / do-not-buy conclusion; the client decides.
+- Oil change interval: when an OEM interval is exceeded, always add that this does not mean the change was not done („tas nenozīmē, ka maiņa nav veikta” - it may just be missing from the records).
+- Never write EUR amounts of repairs or spare parts into the report (insurance claim amounts in incident rows are fine).
+- An order line / list position is not a performed repair („pozīcija nav darbība”): a quoted or listed item is not proof that the work was done.
+- Text meant for the client never names data vendors (AutoDNA, CarVertical, CARFAX…) - use data types instead („apdrošināšanas dati”, „servisa ieraksti”). Operator chat replies may name sources.
+- Use only the short hyphen „-” (never „—” or „–”). Never use the word „eksperts” / „eksperta”.
+- reply and clarificationNeeded are ALWAYS in Latvian, whatever language the operator or the PDF uses.
 
 Rules:
 - Dates: DD.MM.YYYY when the source prints a day. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), keep MM.YYYY (e.g. 06.2020). Never invent day 01.
@@ -135,6 +153,7 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
       enum: [
         "upsert_incident",
         "upsert_mileage",
+        "upsert_vehicle_history_timeline_row",
         "upsert_service_work",
         "set_service_history",
         "set_dealer_vehicle_info",
@@ -156,6 +175,7 @@ const ACTION_ITEM_SCHEMA: AiJsonSchema = {
     country: { type: JsonType.STRING },
     location: { type: JsonType.STRING },
     works: { type: JsonType.STRING },
+    description: { type: JsonType.STRING },
     text: { type: JsonType.STRING },
     ownersSummary: { type: JsonType.STRING },
     statusRecords: { type: JsonType.STRING },
@@ -204,8 +224,13 @@ function bufferToBase64(buffer: ArrayBuffer): string {
 /** Cik sarunas gājumu modelis redz. Operators sagaida, ka Copilot atceras sesijas kontekstu. */
 export const COPILOT_HISTORY_TURNS = 20;
 export const COPILOT_HISTORY_CHARS_PER_TURN = 2_500;
-/** Pilnā audita konteksta griesti — liels, bet neizspiež tabulu momentuzņēmumu. */
-export const COPILOT_AUDIT_CONTEXT_MAX_CHARS = 24_000;
+/**
+ * Pilnā audita konteksta griesti. 24 000 nogrieza ~60% tipiska audita; 80 000 zīmes ir
+ * ~20-25 tūkst. tokenu - Sonnet tos apstrādā krietni zem Vercel 120 s robežas.
+ * Ar PDF/foto pielikumiem griesti mazāki, jo PDF lapas jau ir smags ievads.
+ */
+export const COPILOT_AUDIT_CONTEXT_MAX_CHARS = 80_000;
+export const COPILOT_AUDIT_CONTEXT_WITH_FILES_MAX_CHARS = 40_000;
 
 export async function runOrderCopilotAi(opts: {
   message: string;
@@ -225,7 +250,10 @@ export async function runOrderCopilotAi(opts: {
   const allowedSources = (opts.allowedSources ?? [...COPILOT_SOURCE_KEYS]).filter((v, i, arr) => arr.indexOf(v) === i);
   const historyLines = (opts.history ?? [])
     .slice(-COPILOT_HISTORY_TURNS)
-    .map((m) => `${m.role === "user" ? "Operator" : "Copilot"}: ${m.content.slice(0, COPILOT_HISTORY_CHARS_PER_TURN)}`)
+    .map(
+      (m) =>
+        `${m.role === "user" ? "Operator" : "Copilot"}: ${truncateCopilotHistoryContent(m.content, COPILOT_HISTORY_CHARS_PER_TURN)}`,
+    )
     .join("\n");
 
   const pdfs = [
@@ -252,18 +280,25 @@ export async function runOrderCopilotAi(opts: {
     });
   }
 
-  const auditContext = (opts.auditContext ?? "").trim();
+  const auditContext = prioritizeCopilotAuditContext(
+    opts.auditContext ?? "",
+    pdfs.length > 0 || photos.length > 0
+      ? COPILOT_AUDIT_CONTEXT_WITH_FILES_MAX_CHARS
+      : COPILOT_AUDIT_CONTEXT_MAX_CHARS,
+  );
 
   parts.push({
     text: [
       "=== CURRENT TABLES ===",
       summary,
       auditContext
-        ? `\n=== REST OF THE AUDIT (read-only context: summaries, listing, operator notes) ===\n${auditContext.slice(0, COPILOT_AUDIT_CONTEXT_MAX_CHARS)}\nUse this only to understand the case and to resolve countries, dates and duplicates. Never copy expert commentary from here into table rows.`
+        ? `\n=== REST OF THE AUDIT (read-only context: summaries, listing, operator notes) ===\n${auditContext}\nUse this only to understand the case and to resolve countries, dates and duplicates. Never copy expert commentary from here into table rows.`
         : "",
       `\n=== ENABLED TARGET SOURCES ===\n${allowedSources.join(", ")}`,
       "\nOnly emit actions for the enabled target sources above. If a fact belongs elsewhere, skip it instead of redirecting it into another source. If auto_records is not enabled, do not emit set_service_history.",
-      historyLines ? `\n=== RECENT CHAT ===\n${historyLines}` : "",
+      historyLines
+        ? `\n=== RECENT CHAT ===\n${historyLines}\n(Lines "${COPILOT_HISTORY_ACTIONS_MARKER}" list what Copilot already wrote ("ierakstīts") or proposed ("piedāvāts"). Use them for "atcel / izdzēs to, ko tikko ieliki": emit the matching delete actions with the same source, date, km / amount.)`
+        : "",
       `\n=== ATTACHED PDFs ===\n${pdfs.length ? pdfs.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n") : "(none)"}`,
       photos.length ? `\n=== ATTACHED PHOTOS ===\n${photos.map((p, i) => `${i + 1}. ${p.fileName}`).join("\n")}` : "",
       "\n=== OPERATOR MESSAGE ===",

@@ -13,7 +13,12 @@ import {
   isLikelyCsddPdfText,
   selectCopilotClientPatch,
 } from "@/lib/admin-copilot-csdd";
-import { runOrderCopilotAi } from "@/lib/admin-copilot-ai";
+import { COPILOT_HISTORY_TURNS, runOrderCopilotAi } from "@/lib/admin-copilot-ai";
+import {
+  appendCopilotActionsToContent,
+  buildSourceDisabledNotice,
+  truncateCopilotHistoryContent,
+} from "@/lib/admin-copilot-helpers";
 import {
   COPILOT_SOURCE_KEYS,
   isCopilotSourceKey,
@@ -30,7 +35,11 @@ import {
   readCopilotChat,
 } from "@/lib/admin-copilot-chat-store";
 import { buildAiOrderContextText } from "@/lib/admin-ai-order-context";
-import { mergeSourceBlocksWithDefaults, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  mergeSourceBlocksWithDefaults,
+  SOURCE_BLOCK_LABELS,
+  type WorkspaceSourceBlocks,
+} from "@/lib/admin-source-blocks";
 import {
   COPILOT_IMAGE_MAX_FILE_BYTES,
   COPILOT_IMAGE_MAX_FILES,
@@ -83,13 +92,14 @@ function parseHistory(raw: unknown): CopilotChatMessage[] {
   }
   if (!Array.isArray(raw)) return [];
   const out: CopilotChatMessage[] = [];
-  for (const item of raw.slice(-10)) {
+  // Agrāk -10: modelis redzēja tikai 5 gājienus, lai gan COPILOT_HISTORY_TURNS = 20.
+  for (const item of raw.slice(-COPILOT_HISTORY_TURNS)) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
     const role = str(o.role);
     const content = str(o.content).trim();
     if ((role === "user" || role === "assistant") && content) {
-      out.push({ role, content: content.slice(0, 4000) });
+      out.push({ role, content: truncateCopilotHistoryContent(content, 4000) });
     }
   }
   return out;
@@ -156,6 +166,11 @@ function parseAllowedSources(raw: unknown): CopilotSourceKey[] {
     out.push(item);
   }
   return out;
+}
+
+/** Izslēgtā avota nosaukums operatoram (tāds pats kā admin blokā). */
+function copilotSourceLabel(key: CopilotSourceKey): string {
+  return SOURCE_BLOCK_LABELS[key] ?? key;
 }
 
 function describeAction(a: CopilotAction): string {
@@ -710,6 +725,11 @@ export async function POST(req: Request) {
     const previewConfirm =
       applyMode === "preview" ? [...vendorAgentApplied, ...autoResult.applied, ...needsConfirm] : needsConfirm;
     const replyParts = [ai.reply.trim()];
+    const sourceDisabledNotice = buildSourceDisabledNotice(
+      blocked.map((a) => a.source),
+      copilotSourceLabel,
+    );
+    if (sourceDisabledNotice) replyParts.push(sourceDisabledNotice);
     if (applyMode === "preview" && previewConfirm.length > 0) {
       const lead = csddDeterministicPatches.csdd
         ? "Priekšskatījums: pārējās izmaiņas nav ierakstītas."
@@ -749,7 +769,14 @@ export async function POST(req: Request) {
       sessionId,
       [
         { role: "user", content: message || `(${attachmentLabel || "pielikums"})` },
-        { role: "assistant", content: replyText },
+        {
+          role: "assistant",
+          // Darbību kopsavilkums vēsturē - lai «atcel to, ko tikko ieliki» zina, ko tieši.
+          content: appendCopilotActionsToContent(replyText, {
+            applied: shouldPatch ? [...vendorAgentApplied, ...autoResult.applied] : [],
+            proposed: previewConfirm,
+          }),
+        },
       ],
       allowedSources,
     ).catch((chatErr) => {
@@ -838,8 +865,26 @@ export async function PUT(req: Request) {
     citiAvotiSectionIndex:
       Number.isInteger(citiIdxPut) && citiIdxPut >= 0 ? citiIdxPut : undefined,
   });
+  if (result.applied.length > 0) {
+    void appendCopilotChatMessages(sessionId, [
+      {
+        role: "assistant",
+        content: appendCopilotActionsToContent(
+          `Apstiprināts: ${result.applied.map(describeAction).join("; ")}`,
+          { applied: result.applied },
+        ),
+      },
+    ]).catch((chatErr) => {
+      console.warn(`${LOG_PREFIX} chat_persist_failed`, chatErr instanceof Error ? chatErr.message : "unknown");
+    });
+  }
+  const notice = buildSourceDisabledNotice(
+    blocked.map((a) => a.source),
+    copilotSourceLabel,
+  );
   return NextResponse.json({
     ok: true,
+    ...(notice ? { notice } : {}),
     destructiveApplied: result.applied.filter(isDestructiveCopilotAction).length,
     autoApplied: result.applied.map((a) => ({ ...a, label: describeAction(a) })),
     skipped: [

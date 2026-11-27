@@ -5,6 +5,7 @@ import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
 
+import type { CopilotFeedbackEntry } from "@/lib/admin-copilot-helpers";
 import { COPILOT_SOURCE_KEYS, isCopilotSourceKey, type CopilotSourceKey } from "@/lib/admin-copilot-types";
 
 /**
@@ -212,4 +213,58 @@ export async function appendCopilotChatMessages(
 
 export async function clearCopilotChat(sessionId: string): Promise<boolean> {
   return writeCopilotChat(sessionId, emptyDocument());
+}
+
+/* ------------------------------------------------------------------ */
+/* 👍/👎 atgriezeniskās saites žurnāls (bez personas datiem)           */
+/* ------------------------------------------------------------------ */
+
+const FEEDBACK_BLOB_SUBPREFIX = "copilot-feedback/";
+const FEEDBACK_RELATIVE_DIR = ".data/admin-copilot-feedback";
+
+function feedbackDir(): string | null {
+  const chatDir = resolveDir();
+  if (!chatDir) return null;
+  if (process.env.VERCEL === "1") return path.join(os.tmpdir(), "provin-admin-copilot-feedback");
+  if (process.env.ADMIN_COPILOT_CHAT_DIR?.trim()) return path.join(chatDir, "feedback");
+  return path.join(process.cwd(), FEEDBACK_RELATIVE_DIR);
+}
+
+/**
+ * Viens ieraksts = viens Blob fails `…/copilot-feedback/YYYY-MM-DD/<laiks>-<rand>.json`
+ * (Blob nav «append»). Lokāli - JSONL fails pa dienām.
+ */
+export async function recordCopilotFeedback(entry: CopilotFeedbackEntry): Promise<boolean> {
+  const day = entry.at.slice(0, 10);
+  const body = JSON.stringify(entry);
+  let wrote = false;
+
+  const blob = resolveBlob();
+  if (blob) {
+    try {
+      const stamp = entry.at.replace(/[^0-9]/g, "").slice(0, 17);
+      const rand = Math.random().toString(36).slice(2, 8);
+      await put(`${blob.prefix}${FEEDBACK_BLOB_SUBPREFIX}${day}/${stamp}-${rand}.json`, body, {
+        access: "private",
+        token: blob.token,
+        addRandomSuffix: false,
+        contentType: "application/json",
+      });
+      wrote = true;
+    } catch {
+      /* mēģinām failsistēmu */
+    }
+  }
+
+  const dir = feedbackDir();
+  if (!wrote && dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      await fs.appendFile(path.join(dir, `${day}.jsonl`), `${body}\n`, "utf8");
+      wrote = true;
+    } catch {
+      /* nerakstāma vide */
+    }
+  }
+  return wrote;
 }

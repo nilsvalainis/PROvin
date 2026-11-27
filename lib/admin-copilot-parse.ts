@@ -102,6 +102,23 @@ function parseAction(raw: unknown): CopilotAction | null {
       ...(note ? { note } : {}),
     };
   }
+  if (type === "upsert_vehicle_history_timeline_row") {
+    if (source !== "autodna" && source !== "carvertical" && source !== "carfax") return null;
+    const date = asString(o.date, 40);
+    const description = asString(o.description, 500);
+    if (!date || !description) return null;
+    const odometer = asString(o.odometer, 32);
+    return {
+      type: "upsert_vehicle_history_timeline_row",
+      source,
+      date,
+      description,
+      country: asString(o.country, 80),
+      ...(odometer ? { odometer } : {}),
+      confidence,
+      ...(note ? { note } : {}),
+    };
+  }
   if (type === "set_service_history") {
     const text = asString(o.text, 12_000);
     if (!text) return null;
