@@ -1,5 +1,6 @@
 /**
- * Admin «Priekšskats» (Nils 26.11): nobraukuma un negadījumu tabulas ar PDF CSS - bez Chromium un bez PDF faila.
+ * Admin «Priekšskats» (Nils 26.11/27.11): «Viss» = pilnā atskaite ar visiem pasūtījuma datiem, «Nobraukums» /
+ * «Negadījumi» = apvienotās tabulas no visiem avotiem (sk. `reportPreviewPayload`). PDF CSS, bez Chromium.
  * Ķermenis: tas pats `ClientReportPayload`, ko pasūtījuma lapa padod PDF ģeneratoram (bez foto). Tikai lasa.
  */
 import { NextResponse } from "next/server";

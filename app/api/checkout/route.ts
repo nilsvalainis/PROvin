@@ -16,6 +16,7 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
 import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
+import { checkoutIpCountryMetadata } from "@/lib/client-lang-detect";
 import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 import { createMetaEventId } from "@/lib/meta-pixel";
 import {
@@ -188,6 +189,7 @@ export async function POST(req: Request) {
         authorization_ack: "true",
         ...(name ? { customer_name: name } : {}),
         ...(notes ? { notes } : {}),
+        ...checkoutIpCountryMetadata(req.headers),
       },
     ),
     locale: stripeCheckoutLocale(locale),

@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   DEALER_SIGNAL_ADMIN_KIND_LV,
   DEALER_SIGNAL_DEFAULT_TEXTS,
+  DEALER_SIGNAL_KINDS,
   DEALER_SIGNALS_AUDIT_LINK_LABEL,
   DEALER_SIGNALS_SECTION_TITLE,
+  dealerSignalsMissingTranslations,
   dealerSignalsPdfRows,
   dealerSignalsSectionOn,
   isDealerSignalTextAllowed,
   regenerateDealerSignals,
+  tidyDealerSignalText,
+  withDealerSignalTranslations,
   type DealerSignalKind,
   type DealerSignalsState,
 } from "@/lib/dealer-signals";
@@ -28,20 +33,112 @@ export function dealerSignalsEditorView(
   return stored ?? regenerateDealerSignals(undefined, detect());
 }
 
+type TranslateFn = (
+  lang: Exclude<ClientReportLang, "lv">,
+  texts: Partial<Record<DealerSignalKind, string>>,
+) => Promise<Partial<Record<DealerSignalKind, string>>>;
+
+/** Tas pats tulkošanas ceļš kā PDF komentāriem (`/api/admin/report-translate`). */
+export function dealerSignalsReportTranslate(sessionId: string): TranslateFn {
+  return async (lang, texts) => {
+    const body: Record<string, string> = {};
+    for (const kind of DEALER_SIGNAL_KINDS) {
+      const t = texts[kind];
+      if (t) body[`dealerSignal.${kind}`] = t;
+    }
+    const res = await fetch("/api/admin/report-translate", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, lang, texts: body }),
+    });
+    if (!res.ok) throw new Error(`translate_${res.status}`);
+    const data = (await res.json().catch(() => ({}))) as { texts?: Record<string, string> };
+    const out: Partial<Record<DealerSignalKind, string>> = {};
+    for (const kind of DEALER_SIGNAL_KINDS) {
+      const t = data.texts?.[`dealerSignal.${kind}`];
+      if (typeof t === "string" && t.trim()) out[kind] = t;
+    }
+    return out;
+  };
+}
+
+/**
+ * Klienta valodas priekšskats (Nils 27.11): labotā LV teksta tulkojumu pieprasa pēc pauzes un saglabā
+ * stāvoklī (`tr`) - PDF lieto tieši to, ko admins redzēja.
+ */
+function useDealerSignalsTranslation(
+  state: DealerSignalsState,
+  lang: ClientReportLang,
+  onChange: (next: DealerSignalsState) => void,
+  translate: TranslateFn | null,
+): "idle" | "busy" | "error" {
+  const [phase, setPhase] = useState<"idle" | "busy" | "error">("idle");
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const missing = lang === "lv" || !translate ? {} : dealerSignalsMissingTranslations(state, lang);
+  const key = JSON.stringify(missing);
+  useEffect(() => {
+    if (lang === "lv" || !translate || key === "{}") {
+      setPhase("idle");
+      return;
+    }
+    let cancelled = false;
+    const texts = JSON.parse(key) as Partial<Record<DealerSignalKind, string>>;
+    const t = window.setTimeout(() => {
+      setPhase("busy");
+      translate(lang, texts)
+        .then((out) => {
+          if (cancelled) return;
+          const pairs: Partial<Record<DealerSignalKind, { src: string; text: string }>> = {};
+          for (const kind of DEALER_SIGNAL_KINDS) {
+            const src = texts[kind];
+            const text = out[kind];
+            if (src && text) pairs[kind] = { src, text: tidyDealerSignalText(text) };
+          }
+          const next = withDealerSignalTranslations(stateRef.current, lang, pairs);
+          if (next !== stateRef.current) onChangeRef.current(next);
+          // Tulkojumā cipari / avots vai trūkst -> PDF būs standarta teksts (rāda sarkanā).
+          const allOk = Object.keys(texts).every((k) => {
+            const p = pairs[k as DealerSignalKind];
+            return Boolean(p && isDealerSignalTextAllowed(p.text));
+          });
+          setPhase(allOk ? "idle" : "error");
+        })
+        .catch(() => {
+          if (!cancelled) setPhase("error");
+        });
+    }, 900);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [key, lang, translate]);
+  return phase;
+}
+
 export function DealerSignalsEditor({
   state,
   onChange,
   onRegenerate,
   size = "desktop",
+  previewLang = "lv",
+  translate = null,
 }: {
   state: DealerSignalsState;
   onChange: (next: DealerSignalsState) => void;
   onRegenerate: () => void;
   size?: "desktop" | "touch";
+  /** Klienta (PDF) valoda - priekšskats un tulkojums šajā valodā. */
+  previewLang?: ClientReportLang;
+  translate?: TranslateFn | null;
 }) {
   const touch = size === "touch";
   const on = state.enabled === true;
-  const rows = dealerSignalsPdfRows({ ...state, enabled: true }, "lv");
+  const rows = dealerSignalsPdfRows({ ...state, enabled: true }, previewLang);
+  const trPhase = useDealerSignalsTranslation(state, previewLang, onChange, translate);
   const setItem = (kind: DealerSignalKind, patch: { checked?: boolean; text?: string }) => {
     onChange({
       ...state,
@@ -51,6 +148,8 @@ export function DealerSignalsEditor({
         if (patch.text !== undefined) {
           const t = patch.text;
           if (!t.trim() || t.trim() === DEALER_SIGNAL_DEFAULT_TEXTS[kind].lv) delete next.text;
+          // Vecais tulkojums vairs neatbilst - jauno pieprasa priekšskats.
+          delete next.tr;
         }
         return next;
       }),
@@ -132,8 +231,13 @@ export function DealerSignalsEditor({
           <p className="text-[12px] font-medium text-[var(--color-provin-muted)]">Sadaļa nav PDF</p>
         ) : (
           <>
-            <p className="mb-2 border-b border-[#E9EDF3] pb-1.5 text-[11px] font-bold uppercase tracking-[0.08em]">
-              {DEALER_SIGNALS_SECTION_TITLE.lv}
+            <p className="mb-2 flex items-center justify-between gap-2 border-b border-[#E9EDF3] pb-1.5 text-[11px] font-bold uppercase tracking-[0.08em]">
+              <span>{DEALER_SIGNALS_SECTION_TITLE[previewLang]}</span>
+              {previewLang !== "lv" ? (
+                <span data-dealer-signals-preview-lang className="text-[10px] text-[var(--color-provin-muted)]">
+                  {previewLang.toUpperCase()}
+                </span>
+              ) : null}
             </p>
             <table className="w-full border-collapse">
               <tbody>
@@ -151,7 +255,16 @@ export function DealerSignalsEditor({
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 text-right font-bold text-[#0061D2]">{DEALER_SIGNALS_AUDIT_LINK_LABEL.lv}</p>
+            <p className="mt-2 text-right font-bold text-[#0061D2]">{DEALER_SIGNALS_AUDIT_LINK_LABEL[previewLang]}</p>
+            {trPhase === "busy" ? (
+              <p data-dealer-signals-tr="busy" className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
+                Tulko…
+              </p>
+            ) : trPhase === "error" ? (
+              <p data-dealer-signals-tr="error" className="mt-1 text-[11px] font-medium text-[#b42318]">
+                Tulkojums neizdevās - PDF būs standarta teksts
+              </p>
+            ) : null}
           </>
         )}
       </div>
@@ -165,7 +278,13 @@ export function AdminDealerSignalsMenu({
   onChange,
   toneClass,
   disabled = false,
+  previewLang = "lv",
+  sessionId = null,
 }: {
+  /** Klienta (PDF) valoda priekšskatam. */
+  previewLang?: ClientReportLang;
+  /** Tulkošanai (bez tā priekšskats rāda standarta tekstu). */
+  sessionId?: string | null;
   /** Saglabātais stāvoklis (`undefined` - vēl nav veidots). */
   state: DealerSignalsState | null | undefined;
   /** Aprēķina tikai atverot / pārģenerējot (ne katrā renderā). */
@@ -183,6 +302,7 @@ export function AdminDealerSignalsMenu({
     [open, state],
   );
   const active = dealerSignalsSectionOn(state);
+  const translate = useMemo(() => (sessionId ? dealerSignalsReportTranslate(sessionId) : null), [sessionId]);
 
   useEffect(() => {
     if (!open) return;
@@ -222,6 +342,8 @@ export function AdminDealerSignalsMenu({
         >
           <DealerSignalsEditor
             state={view}
+            previewLang={previewLang}
+            translate={translate}
             onChange={onChange}
             onRegenerate={() => onChange(regenerateDealerSignals(view, detectRef.current(), { keepEdits: false }))}
           />

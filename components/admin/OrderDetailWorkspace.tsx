@@ -37,7 +37,7 @@ import { AdminOrderCountryTimelineStrip } from "@/components/admin/AdminOrderCou
 import { ADMIN_PRO_TONE, adminProBtn } from "@/lib/admin-pro-tones";
 import { AdminAutoIngestChipProvider } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
-import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
+import { autoIngestChipsWithCsddCountry, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
@@ -102,6 +102,7 @@ import {
   vendorAvotuBlockToPlainText,
   carfaxBlockToPlainText,
   vinRegistryBlockToPlainText,
+  vinRegistryBlockHasContent,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -328,12 +329,14 @@ import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { useAdminOverlayCover, useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { AdminPdfClientLangContext, AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
-import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideOrderClientLang, type ClientLangStoredSignals } from "@/lib/client-lang-detect";
+import { AdminClientLangChip, AdminClientLangControlContext, type AdminClientLangControl } from "@/components/admin/AdminClientLangControl";
 import { AdminDealerExtraMenu } from "@/components/admin/AdminDealerExtraMenu";
 import { AdminDealerSignalsMenu } from "@/components/admin/AdminDealerSignalsMenu";
 import {
   dealerSignalsAuditLinkFromOffer,
   dealerSignalsFallbackAuditUrl,
+  dealerSignalsPdfNeedsOffer,
   dealerSignalsSectionOn,
   type DealerSignalKind,
   type DealerSignalsAuditLink,
@@ -517,6 +520,12 @@ export type OrderWorkspacePayload = {
   checkoutLine?: string | null;
   /** Stripe `session.locale` - vietnes valoda pasūtot; klienta PDF / e-pasta noklusētā valoda. */
   locale?: string | null;
+  /** Latvijas signāli (valstu kodi, numurzīme) - EN/DE vietne -> LV noklusējums. */
+  clientLangSignals?: ClientLangStoredSignals | null;
+  /** Admina izvēlētā klienta valoda melnrakstā (`orderEdits.clientLangOverride`). */
+  clientLangOverride?: string | null;
+  /** Melnraksta `orderEdits.licensePlate` (pasūtīts pēc LV numura). */
+  licensePlate?: string | null;
   partnerCompanyName?: string | null;
   partnerId?: string | null;
   listingUrl: string | null;
@@ -1011,8 +1020,62 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
-  /** Klienta valoda (Nils 27.11): partnera izvēle, citādi vietnes valoda pasūtot, citādi LV. */
-  const orderClientLang = resolveOrderClientLang({ notes: payload.notes, locale: payload.locale });
+  /**
+   * Klienta valoda (Nils 27.11): partnera izvēle, admina izvēle, EN/DE vietne + Latvijas signāli -> LV,
+   * citādi vietnes valoda pasūtot, citādi LV.
+   */
+  const [clientLangOverride, setClientLangOverride] = useState<string>(() => payload.clientLangOverride ?? "");
+  const [clientLangBusy, setClientLangBusy] = useState(false);
+  const clientLangDecision = useMemo(
+    () =>
+      decideOrderClientLang({
+        notes: payload.notes,
+        locale: payload.locale,
+        override: clientLangOverride,
+        signals: {
+          ...(payload.clientLangSignals ?? {}),
+          plates: [payload.licensePlate, payload.vin],
+          phones: [payload.customerPhone],
+          emails: [payload.customerEmail],
+          customerName: payload.customerName,
+        },
+      }),
+    [
+      payload.notes,
+      payload.locale,
+      clientLangOverride,
+      payload.clientLangSignals,
+      payload.licensePlate,
+      payload.vin,
+      payload.customerPhone,
+      payload.customerEmail,
+      payload.customerName,
+    ],
+  );
+  const orderClientLang = clientLangDecision.lang;
+  const setClientLang = useCallback(
+    (lang: ClientReportLang | null) => {
+      const next = lang ?? "";
+      const prev = clientLangOverride;
+      setClientLangOverride(next);
+      setClientLangBusy(true);
+      void fetch("/api/admin/order-draft", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: payload.sessionId, orderEdits: { clientLangOverride: next } }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(String(res.status));
+        })
+        .catch(() => {
+          setClientLangOverride(prev);
+          window.alert("Valodu neizdevās saglabāt.");
+        })
+        .finally(() => setClientLangBusy(false));
+    },
+    [clientLangOverride, payload.sessionId],
+  );
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -1085,6 +1148,8 @@ export function OrderDetailWorkspace({
   /** EN/DE/RU PDF: keš pēc pēdējā tulkojuma, lai nesauktu AI atkārtoti, ja LV teksts nav mainījies. */
   const reportTranslationCacheRef = useRef<ClientReportTranslationCache>({});
   const pdfBusyRef = useRef(false);
+  /** Dīlera «Signāli»: kura audita saite nonāca pēdējā PDF (lai sūtīšana zinātu, vai jāpārveido ar piedāvājumu). */
+  const dealerSignalsPdfLinkRef = useRef<DealerSignalsAuditLink | null>(null);
   const pdfTargetRef = useRef(0);
   /** Dīlera PDF «+ Extra» (Nils 26.11): tikai lapas stāvoklis - pasūtījumā netiek saglabāts, sākumā tukšs. */
   const [dealerExtra, setDealerExtraState] = useState<DealerExtraKey[]>([]);
@@ -4400,6 +4465,10 @@ export function OrderDetailWorkspace({
     onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
     /** «Priekšskats»: tas pats payload kā PDF (bez foto, tulkojuma, faktu pārbaudes) - PDF netiek veidots. */
     preview?: (payload: ClientReportPayload) => void;
+    /** Dīlera «Signāli»: piedāvājuma saite (tikai sūtīšanas brīdī). Bez tās - AUDITS ar VIN. */
+    dealerSignalsAuditLink?: DealerSignalsAuditLink | null;
+    /** Tas pats saturs jau pārbaudīts (PDF pārveido tikai ar piedāvājuma saiti sūtīšanas brīdī). */
+    skipFactCheck?: boolean;
   }) => {
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
@@ -4413,8 +4482,8 @@ export function OrderDetailWorkspace({
     const closePhonePre = () => {
       if (!phonePreUsed) phonePre?.close();
     };
-    if (opts?.preview) {
-      /* Priekšskats nav sūtīšana - faktu pārbaude pie PDF. */
+    if (opts?.preview || opts?.skipFactCheck) {
+      /* Priekšskats nav sūtīšana - faktu pārbaude pie PDF; atkārtots sūtīšanas PDF jau pārbaudīts. */
     } else if (factCheckPdfSkipRef.current) {
       factCheckPdfSkipRef.current = false;
     } else {
@@ -4806,35 +4875,19 @@ export function OrderDetailWorkspace({
 
     const reportLang: ClientReportLang = opts?.lang ?? "lv";
 
-    // «Signāli ārpus dīlera datiem»: tikai dīlera PDF, ja admins ieslēdzis. Audita saite - esošais
-    // dīlera -> AUDITS piedāvājums (priekšskatam bez piedāvājuma izveides).
+    // «Signāli ārpus dīlera datiem»: tikai dīlera PDF, ja admins ieslēdzis. Audita saite (Nils 27.11):
+    // ģenerējot / priekšskatot piedāvājums NETIEK veidots - saite uz AUDITS ar VIN; piedāvājuma saiti
+    // padod tikai sūtīšana (`dealerSignalsAuditLink`, sk. `prepareSendReportPdf(..., { forSend })`).
     const dealerSignalsForPdf: DealerSignalsState | null = dealerOnly
       ? (wsPersistRef.current.dealerSignals ?? null)
       : null;
     let dealerSignalsAuditLink: DealerSignalsAuditLink | null = null;
     if (dealerSignalsForPdf && dealerSignalsSectionOn(dealerSignalsForPdf)) {
-      dealerSignalsAuditLink = { url: dealerSignalsFallbackAuditUrl(payload.vin, reportLang) };
-      if (!preview) {
-        try {
-          const res = await fetch("/api/admin/order-upsell", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: payload.sessionId, kind: "dealer_to_audit" }),
-          });
-          const data = (await res.json().catch(() => ({}))) as { url?: string; chargeCents?: number };
-          dealerSignalsAuditLink = dealerSignalsAuditLinkFromOffer(res.ok ? data : null, {
-            vin: payload.vin,
-            lang: reportLang,
-            nowMs: Date.now(),
-            bfWindow: isWithinBlackFridayWindow,
-            bfChargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS,
-          });
-        } catch {
-          /* saite paliek rezerves (AUDITS ar VIN) */
-        }
-      }
+      dealerSignalsAuditLink = opts?.dealerSignalsAuditLink ?? {
+        url: dealerSignalsFallbackAuditUrl(payload.vin, reportLang),
+      };
     }
+    dealerSignalsPdfLinkRef.current = dealerSignalsAuditLink;
 
     const reportPayload: ClientReportPayload = {
       ...payload,
@@ -5052,13 +5105,15 @@ export function OrderDetailWorkspace({
 
   const closeReportPreview = useCallback(() => setReportPreview(null), []);
 
-  /** «Priekšskats»: tas pats payload kā PDF -> servera HTML fragments (bez Chromium) iframe logā. */
-  const openReportPreview = (kind: "dealer" | "full") => {
+  /**
+   * «Priekšskats»: pilnās atskaites payload (arī dīlera datu pasūtījumam - dīlera payload bez «+ Extra» ir tukšs)
+   * -> servera HTML (bez Chromium) iframe logā. Visi pasūtījuma dati: Viss / Nobraukums / Negadījumi.
+   */
+  const openReportPreview = () => {
     if (pdfBusyRef.current) return;
     setReportPreview({ busy: true, html: null, error: null });
     let called = false;
     void openPrintReport({
-      ...(kind === "dealer" ? { dealerOnly: true } : {}),
       preview: (reportPayload) => {
         called = true;
         void (async () => {
@@ -5302,6 +5357,10 @@ export function OrderDetailWorkspace({
     partnerCompanyName: payload.partnerCompanyName,
   });
   const pdfLangLock = pdfLangUnlocked ? null : partnerReportLang;
+  const clientLangControl = useMemo<AdminClientLangControl>(
+    () => ({ decision: clientLangDecision, locked: Boolean(partnerReportLang), busy: clientLangBusy, setLang: setClientLang }),
+    [clientLangDecision, partnerReportLang, clientLangBusy, setClientLang],
+  );
   const unlockPdfLang = () => {
     if (!partnerReportLang) return;
     if (confirmUnlockB2bReportLang(partnerReportLang)) setPdfLangUnlocked(true);
@@ -5390,14 +5449,9 @@ export function OrderDetailWorkspace({
               >
                 Partnera atskaites valoda: {partnerReportLang.toUpperCase()}
               </span>
-            ) : orderClientLang !== "lv" ? (
-              <span
-                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700"
-                title="Klients pasūtīja šajā vietnes valodā. PDF un e-pasts pēc noklusējuma šajā valodā; LV - ar bultiņu."
-              >
-                Klienta valoda: {orderClientLang.toUpperCase()}
-              </span>
-            ) : null}
+            ) : (
+              <AdminClientLangChip />
+            )}
             <AdminPdfIncludeToggle
               checked={pdfVisibility.portfolio}
               onChange={(next) => onPdfVisibilityChange({ portfolio: next })}
@@ -5699,22 +5753,77 @@ export function OrderDetailWorkspace({
       ? "business"
       : "audits";
 
-  const prepareSendReportPdf = (kind: SendReportKind, lang: ClientReportLang): Promise<SendReportPrepared> =>
-    new Promise((resolve, reject) => {
+  /**
+   * Dīlera «Signāli» (Nils 27.11): dīlera -> AUDITS piedāvājumu izveido (vai atkārtoti izmanto) TIKAI sūtot klientam.
+   * Neizdodas / jau apmaksāts -> `null` (PDF paliek ar AUDITS saiti pēc VIN).
+   */
+  const openDealerSignalsOfferLink = async (lang: ClientReportLang): Promise<DealerSignalsAuditLink | null> => {
+    try {
+      const res = await fetch("/api/admin/order-upsell", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: payload.sessionId, kind: "dealer_to_audit" }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; chargeCents?: number };
+      const link = dealerSignalsAuditLinkFromOffer(res.ok ? data : null, {
+        vin: payload.vin,
+        lang,
+        nowMs: Date.now(),
+        bfWindow: isWithinBlackFridayWindow,
+        bfChargeCents: BF_DEALER_TO_AUDIT_CHARGE_CENTS,
+      });
+      return link.offer ? link : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const prepareSendReportPdf = async (
+    kind: SendReportKind,
+    lang: ClientReportLang,
+    prepOpts?: {
+      /** Sūtīšanas brīdis: ja dīlera PDF ir «Signāli» - vispirms piedāvājums, PDF ar tā saiti. */
+      forSend?: boolean;
+      skipFactCheck?: boolean;
+    },
+  ): Promise<SendReportPrepared> => {
+    if (pdfBusyRef.current) throw new Error("PDF jau tiek veidots - pagaidi.");
+    let offerLink: DealerSignalsAuditLink | null = null;
+    if (prepOpts?.forSend && kind === "dealer" && dealerSignalsSectionOn(wsPersistRef.current.dealerSignals ?? ws.dealerSignals)) {
+      // Neizdevās / jau apmaksāts: AUDITS ar VIN, `offer: false` - sūtīšana atkārtoti nemēģina.
+      offerLink = (await openDealerSignalsOfferLink(lang)) ?? {
+        url: dealerSignalsFallbackAuditUrl(payload.vin, lang),
+        offer: false,
+      };
+    }
+    return new Promise((resolve, reject) => {
       if (pdfBusyRef.current) {
         reject(new Error("PDF jau tiek veidots - pagaidi."));
         return;
       }
       let settled = false;
+      dealerSignalsPdfLinkRef.current = null;
       const opts = {
         dealerOnly: kind === "dealer",
         asvOnly: kind === "asv",
         businessBrand: kind === "business",
         lang,
         serverPdf: true,
+        ...(offerLink ? { dealerSignalsAuditLink: offerLink } : {}),
+        ...(prepOpts?.skipFactCheck ? { skipFactCheck: true } : {}),
         onServerPdf: (r: ServerReportPdfResult | null, err?: string) => {
           settled = true;
-          if (r) resolve({ pdfPathname: r.pdfPathname, downloadUrl: r.downloadUrl, filename: r.filename, bytes: r.bytes });
+          if (r)
+            resolve({
+              pdfPathname: r.pdfPathname,
+              downloadUrl: r.downloadUrl,
+              filename: r.filename,
+              bytes: r.bytes,
+              ...(kind === "dealer" && dealerSignalsPdfLinkRef.current
+                ? { dealerSignalsAuditLink: dealerSignalsPdfLinkRef.current }
+                : {}),
+            });
           else reject(new Error(err || "PDF netika izveidots."));
         },
       };
@@ -5727,6 +5836,19 @@ export function OrderDetailWorkspace({
           if (!settled) reject(e instanceof Error ? e : new Error("PDF netika izveidots."));
         });
     });
+  };
+
+  /**
+   * Sūtīšanas brīdis: dīlera PDF ar «Signāli», kas veidots bez piedāvājuma saites («Sūtīt atskaiti» logs
+   * PDF sagatavo pirms sūtīšanas) -> izveido piedāvājumu un pārveido to pašu PDF ar tā saiti.
+   */
+  const ensureDealerSignalsOfferPdf = async (
+    prepared: SendReportPrepared,
+    lang: ClientReportLang,
+  ): Promise<SendReportPrepared> => {
+    if (!dealerSignalsPdfNeedsOffer(prepared.dealerSignalsAuditLink)) return prepared;
+    return prepareSendReportPdf("dealer", lang, { forSend: true, skipFactCheck: true });
+  };
 
   const sendPreparedReport = async (input: {
     prepared: SendReportPrepared;
@@ -5746,6 +5868,8 @@ export function OrderDetailWorkspace({
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
     if (!email || !isValidOrderEmail(email)) throw new Error("Nepieciešams derīgs klienta e-pasts (sadaļā «Klienta dati»).");
+    // Dīlera «Signāli»: sūtītajā PDF jābūt piedāvājuma saitei (piedāvājums top tikai tagad).
+    const prepared = await ensureDealerSignalsOfferPdf(input.prepared, input.lang);
     const uploads: NotifyPortfolioUploadItem[] = [];
     for (const p of portfolio.filter((x) => input.attachmentIds.includes(x.id))) {
       const blob = await fetch(p.blobUrl).then((r) => r.blob());
@@ -5764,7 +5888,7 @@ export function OrderDetailWorkspace({
       uploads,
       includeGoogleReview: input.includeGoogleReview,
       lang: input.lang,
-      serverPdfPathname: input.prepared.pdfPathname,
+      serverPdfPathname: prepared.pdfPathname,
       markComplete: input.markComplete,
       saveDropbox: input.saveDropbox,
       ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
@@ -5828,7 +5952,7 @@ export function OrderDetailWorkspace({
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
     dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals),
-    prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
+    prepareDealerPdf: (lang, o) => prepareSendReportPdf("dealer", lang, o?.forSend ? { forSend: true } : undefined),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
         sendPreparedReport({
@@ -5983,12 +6107,18 @@ export function OrderDetailWorkspace({
   ];
 
   const autoIngestChips = useMemo(
-    () => autoIngestChipsByBlock(payload.autoIngest),
-    [payload.autoIngest],
+    () =>
+      autoIngestChipsWithCsddCountry(payload.autoIngest, blocksDisplaySafe.csdd, (key) =>
+        key === "tjekbil" || key === "mnt_ee" || key === "carinfo"
+          ? vinRegistryBlockHasContent(blocksDisplaySafe[key])
+          : false,
+      ),
+    [payload.autoIngest, blocksDisplaySafe],
   );
 
   return (
     <ContradictionFeedbackContext.Provider value={contradictionFeedbackCtx}>
+    <AdminClientLangControlContext.Provider value={clientLangControl}>
     <AdminPdfClientLangContext.Provider value={orderClientLang}>
     <AdminAutoIngestChipProvider chips={autoIngestChips}>
     <div className="relative min-w-0 pb-24 max-md:pb-[calc(9rem+env(safe-area-inset-bottom,0px))]">
@@ -6687,7 +6817,9 @@ export function OrderDetailWorkspace({
         dealerSignals={ws.dealerSignals ?? null}
         onDealerSignalsChange={setDealerSignals}
         detectDealerSignals={detectDealerSignalKinds}
-        onPreview={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
+        dealerSignalsPreviewLang={orderClientLang}
+        dealerSignalsSessionId={payload.sessionId}
+        onPreview={() => openReportPreview()}
         pdfProgressKey={pdfJob?.key ?? null}
         pdfProgressPct={pdfJob?.pct ?? null}
         onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
@@ -7729,6 +7861,8 @@ export function OrderDetailWorkspace({
           />
           <AdminDealerSignalsMenu
             toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            previewLang={orderClientLang}
+            sessionId={payload.sessionId}
             state={ws.dealerSignals}
             detect={detectDealerSignalKinds}
             onChange={setDealerSignals}
@@ -7737,7 +7871,7 @@ export function OrderDetailWorkspace({
             type="button"
             data-report-preview-button
             disabled={pdfJob !== null}
-            onClick={() => openReportPreview(isDealerOrderForMobilePanel || dealerExtra.length > 0 ? "dealer" : "full")}
+            onClick={() => openReportPreview()}
             className={`inline-flex h-9 shrink-0 items-center rounded-lg px-3 text-[11px] font-semibold tracking-tight disabled:opacity-40 ${PDF_FOOTER_NEUTRAL_TONE}`}
           >
             Priekšskats
@@ -7775,6 +7909,7 @@ export function OrderDetailWorkspace({
     </div>
     </AdminAutoIngestChipProvider>
     </AdminPdfClientLangContext.Provider>
+    </AdminClientLangControlContext.Provider>
     </ContradictionFeedbackContext.Provider>
   );
 }

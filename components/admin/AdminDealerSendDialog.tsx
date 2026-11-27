@@ -28,6 +28,7 @@ import type { DealerShadowFeedback, DealerShadowGate } from "@/lib/dealer-shadow
 import { AdminDealerShadowFeedback } from "@/components/admin/AdminDealerShadowGate";
 import type { DealerReviewScore } from "@/lib/dealer-review-score";
 import { AdminDealerReviewIndicator } from "@/components/admin/AdminDealerReviewCard";
+import { AdminClientLangSegments } from "@/components/admin/AdminClientLangControl";
 import { AdminDealerSendExtraFiles, type DealerExtraItem } from "@/components/admin/AdminDealerSendExtraFiles";
 import { dealerExtraFilesError } from "@/lib/dealer-send-extra-files";
 import {
@@ -68,7 +69,8 @@ export type DealerSendBridge = {
   orderCreatedUnix?: number | null;
   /** Dīlera PDF sadaļa «Signāli ārpus dīlera datiem» ieslēgta (ar ķeksētu signālu) -> rinda e-pastā. */
   dealerSignalsOn?: boolean;
-  prepareDealerPdf: (lang: ClientReportLang) => Promise<SendReportPrepared>;
+  /** `forSend` - tikai «Sūtīt»: «Signāli» piedāvājums top tagad un tā saite ir PDF (Nils 27.11). */
+  prepareDealerPdf: (lang: ClientReportLang, opts?: { forSend?: boolean }) => Promise<SendReportPrepared>;
   /** Tas pats servera ceļš kā «Sūtīt atskaiti» (versijas, Dropbox, «Izpildīts»), ar admina tekstu. */
   sendDealerReport: (input: {
     prepared: SendReportPrepared;
@@ -473,7 +475,7 @@ export function AdminDealerSendDialog({
       }
       setBusy("pdf");
       try {
-        const prepared = await bridge.prepareDealerPdf(pdfLang);
+        const prepared = await bridge.prepareDealerPdf(pdfLang, { forSend: true });
         recheckWithPdf(prepared);
         // PDF + faili kopā e-pasta limitā - kļūda logā pirms sūtīšanas.
         const sizeErr = extraFiles.length > 0 ? dealerExtraFilesError(extraFiles, prepared.bytes) : null;
@@ -594,6 +596,7 @@ export function AdminDealerSendDialog({
         </div>
 
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 max-md:space-y-2.5">
+          <AdminClientLangSegments disabled={busy !== null} />
           <div className="amx-seg flex rounded-lg bg-slate-100 p-[3px]" role="tablist" aria-label="Kanāls">
             {(["email", "whatsapp"] as const).map((c) => (
               <button key={c} type="button" role="tab" aria-selected={channel === c} className={seg(channel === c)} onClick={() => setChannel(c)}>

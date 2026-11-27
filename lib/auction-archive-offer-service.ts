@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ClientReportLang } from "@/lib/client-report-i18n";
-import { resolveOrderClientLang } from "@/lib/email/client-lang-email-copy";
+import { decideClientLangForOrder } from "@/lib/client-lang-detect";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { sendAdminPush } from "@/lib/admin-push";
@@ -105,7 +105,7 @@ export async function loadAuctionArchiveOrderContext(sessionId: string): Promise
     paidCents: typeof paid === "number" && paid > 0 ? paid : null,
     refunded: (order?.paymentAdjustment?.clawbackCents ?? 0) > 0,
     block,
-    lang: resolveOrderClientLang({ notes: draft?.orderEdits?.notes || order?.notes, locale: order?.locale }),
+    lang: decideClientLangForOrder(order, draft).lang,
   };
 }
 

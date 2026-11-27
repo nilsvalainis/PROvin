@@ -1,5 +1,6 @@
 import "server-only";
 import { checkoutSessionSiteLang } from "@/lib/checkout-session-site-lang";
+import { clientLangSignalsFromSession, type ClientLangStoredSignals } from "@/lib/client-lang-detect";
 
 import type Stripe from "stripe";
 import { getCompanyLegal } from "@/lib/company";
@@ -170,6 +171,8 @@ export type AdminOrderDetail = AdminOrderRow & {
   locale?: string | null;
   /** Stripe `metadata.promo` (piem. `bf2026` - Black Friday dīlera dati). */
   promo?: string | null;
+  /** Latvijas signāli klienta valodai (tikai valstu kodi un numurzīme; IP adrese netiek glabāta). */
+  clientLangSignals?: ClientLangStoredSignals | null;
 };
 
 /** Neļauj admin panelim gaidīt Stripe atbildi bezgalīgi (noklusējuma SDK ~80s ir par garu). */
@@ -406,7 +409,12 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
   let session: Stripe.Checkout.Session;
   try {
     const stripe = getStripe();
-    session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["line_items"] }, { timeout: 10_000 });
+    // `payment_intent.payment_method` - kartes izdevējvalsts klienta valodai (tas pats pieprasījums, bez maksas).
+    session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      { expand: ["line_items", "payment_intent.payment_method"] },
+      { timeout: 10_000 },
+    );
   } catch (error) {
     console.error(
       "[admin-orders] checkout.sessions.retrieve failed",
@@ -463,6 +471,7 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     customerDetailsPhone: session.customer_details?.phone ?? null,
     locale: checkoutSessionSiteLang(session),
     promo: session.metadata?.promo?.trim() || null,
+    clientLangSignals: clientLangSignalsFromSession(session),
     ...(select
       ? {
           selectBrandModel: select.selectBrandModel,

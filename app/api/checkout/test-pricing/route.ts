@@ -18,6 +18,7 @@ import {
   resolveInitiateCheckoutValueEur,
   stripeMetaCapiMetadataFromRequest,
 } from "@/lib/meta-capi";
+import { checkoutIpCountryMetadata } from "@/lib/client-lang-detect";
 import { mergeStripeCheckoutMetadata, stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
 import { getTestPricingPlan, TEST_PRICING_STEP2_MESSAGES } from "@/lib/test-pricing-plans";
 import { testPricingCancelPath } from "@/lib/test-pricing-checkout-pages";
@@ -207,6 +208,7 @@ export async function POST(req: Request) {
         authorization_ack: "true",
         inline_checkout: "true",
         ...bf.metadata,
+        ...checkoutIpCountryMetadata(req.headers),
       },
     ),
     locale: stripeCheckoutLocale(locale),

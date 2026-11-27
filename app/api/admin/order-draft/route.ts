@@ -158,6 +158,7 @@ function parseOrderEditsObject(v: unknown): OrderDraftOrderEdits | null {
   if (typeof o.internalComment === "string") out.internalComment = o.internalComment;
   if (typeof o.mileageComment === "string") out.mileageComment = o.mileageComment;
   if (typeof o.sourcesComparisonComment === "string") out.sourcesComparisonComment = o.sourcesComparisonComment;
+  if (typeof o.clientLangOverride === "string") out.clientLangOverride = o.clientLangOverride;
   return out;
 }
 

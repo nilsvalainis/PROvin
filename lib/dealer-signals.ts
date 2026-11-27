@@ -116,12 +116,18 @@ export const DEALER_SIGNALS_EMAIL_LINE: L4 = {
 
 const DIGIT_RE = /\d/;
 
-/** Admina teksts derīgs tikai bez cipariem (Nila likums: nekādu skaitļu, datumu, km). */
+/**
+ * Avotu nosaukumi (Nila likums: klientam tikai datu tipi, ne avoti). Labotā tekstā vai tulkojumā -> standarta teksts.
+ */
+const SOURCE_NAME_RE =
+  /autodna|carfax|car\s*vertical|e\.?csdd|csdd|thecarapi|the\s*car\s*api|ltab|copart|iaai|bid\.?cars|checkcar|tjekbil|mnt\.ee|lkf\.ee|car\.?info|oneauto|one\s*auto|joj|carstat|speckr|outvin|traficom|nummerplade|car-?pass|auchistory|autobid|openlane|adesa|auto1|mobile\.de|ecarstrade|stat\.vin|kfzgutachten/i;
+
+/** Admina teksts derīgs tikai bez cipariem (Nila likums: nekādu skaitļu, datumu, km) un bez avotu nosaukumiem. */
 export function isDealerSignalTextAllowed(text: string): boolean {
-  return !DIGIT_RE.test(text);
+  return !DIGIT_RE.test(text) && !SOURCE_NAME_RE.test(text);
 }
 
-function tidyText(text: string): string {
+export function tidyDealerSignalText(text: string): string {
   return text
     .replace(/[–—]/g, "-")
     .replace(/\s+/g, " ")
@@ -129,14 +135,97 @@ function tidyText(text: string): string {
     .slice(0, DEALER_SIGNAL_TEXT_MAX);
 }
 
-/**
- * PDF secinājums: admina labotais teksts tikai LV atskaitē (un tikai bez cipariem);
- * citās valodās vienmēr standarta tulkojums, lai klients nesaņem latviešu tekstu.
- */
-export function dealerSignalText(item: Pick<DealerSignalItem, "kind" | "text">, lang: ClientReportLang): string {
+const tidyText = tidyDealerSignalText;
+
+/** Admina labotais teksts (derīgs, atšķiras no LV standarta) vai `null`. */
+export function dealerSignalCustomText(item: Pick<DealerSignalItem, "kind" | "text">): string | null {
   const custom = tidyText(item.text ?? "");
-  if (lang === "lv" && custom && isDealerSignalTextAllowed(custom)) return custom;
+  if (!custom || !isDealerSignalTextAllowed(custom)) return null;
+  if (custom === DEALER_SIGNAL_DEFAULT_TEXTS[item.kind].lv) return null;
+  return custom;
+}
+
+/** Saglabātais tulkojums (tas, ko admins redzēja priekšskatā), ja tas atbilst pašreizējam tekstam. */
+export function dealerSignalStoredTranslation(
+  item: Pick<DealerSignalItem, "kind" | "text" | "tr">,
+  lang: ClientReportLang,
+): string | null {
+  if (lang === "lv") return null;
+  const custom = dealerSignalCustomText(item);
+  const tr = item.tr?.[lang];
+  if (!custom || !tr || tr.src !== custom) return null;
+  const text = tidyText(tr.text);
+  return text && isDealerSignalTextAllowed(text) ? text : null;
+}
+
+/**
+ * PDF secinājums (Nils 27.11): LV - admina labotais teksts (bez cipariem un avotiem);
+ * EN/RU/DE - tā AI tulkojums (saglabātais no priekšskata vai `translated` no PDF tulkošanas).
+ * Nav tulkojuma / tulkojumā cipari vai avots -> standarta teksts klienta valodā (nekad latviski).
+ */
+export function dealerSignalText(
+  item: Pick<DealerSignalItem, "kind" | "text" | "tr">,
+  lang: ClientReportLang,
+  translated?: string | null,
+): string {
+  const custom = dealerSignalCustomText(item);
+  if (!custom) return DEALER_SIGNAL_DEFAULT_TEXTS[item.kind][lang];
+  if (lang === "lv") return custom;
+  const stored = dealerSignalStoredTranslation(item, lang);
+  if (stored) return stored;
+  const fresh = tidyText(translated ?? "");
+  if (fresh && fresh !== custom && isDealerSignalTextAllowed(fresh)) return fresh;
   return DEALER_SIGNAL_DEFAULT_TEXTS[item.kind][lang];
+}
+
+/** Tulkojamie teksti: ķeksētie signāli ar admina labotu tekstu (`kind` -> LV teksts). */
+export function dealerSignalsTextsToTranslate(
+  state: DealerSignalsState | null | undefined,
+): Partial<Record<DealerSignalKind, string>> {
+  const out: Partial<Record<DealerSignalKind, string>> = {};
+  if (!state || state.enabled !== true) return out;
+  for (const it of state.items) {
+    if (!it.checked) continue;
+    const custom = dealerSignalCustomText(it);
+    if (custom) out[it.kind] = custom;
+  }
+  return out;
+}
+
+/** Tulkojums, kas vēl nav saglabāts šai valodai (priekšskatam jāpieprasa). */
+export function dealerSignalsMissingTranslations(
+  state: DealerSignalsState | null | undefined,
+  lang: ClientReportLang,
+): Partial<Record<DealerSignalKind, string>> {
+  if (lang === "lv" || !state) return {};
+  const all = dealerSignalsTextsToTranslate(state);
+  const out: Partial<Record<DealerSignalKind, string>> = {};
+  for (const it of state.items) {
+    const src = all[it.kind];
+    if (src && !dealerSignalStoredTranslation(it, lang)) out[it.kind] = src;
+  }
+  return out;
+}
+
+/** Saglabā tulkojumus stāvoklī (tikai tiem tipiem, kuru teksts joprojām ir tas pats `src`). */
+export function withDealerSignalTranslations(
+  state: DealerSignalsState,
+  lang: ClientReportLang,
+  translated: Partial<Record<DealerSignalKind, { src: string; text: string }>>,
+): DealerSignalsState {
+  if (lang === "lv") return state;
+  let changed = false;
+  const items = state.items.map((it) => {
+    const t = translated[it.kind];
+    const custom = dealerSignalCustomText(it);
+    if (!t || !custom || t.src !== custom) return it;
+    const text = tidyText(t.text);
+    if (!text) return it;
+    if (it.tr?.[lang]?.src === custom && it.tr?.[lang]?.text === text) return it;
+    changed = true;
+    return { ...it, tr: { ...(it.tr ?? {}), [lang]: { src: custom, text } } };
+  });
+  return changed ? { ...state, items } : state;
 }
 
 /** Noklusējums: izslēgts, bez signāliem. */
@@ -167,6 +256,7 @@ export function regenerateDealerSignals(
 export function dealerSignalsPdfRows(
   state: DealerSignalsState | null | undefined,
   lang: ClientReportLang,
+  translated?: Partial<Record<DealerSignalKind, string>> | null,
 ): { kind: DealerSignalKind; title: string; text: string; alert: boolean }[] {
   if (!state || state.enabled !== true) return [];
   const seen = new Set<DealerSignalKind>();
@@ -175,7 +265,7 @@ export function dealerSignalsPdfRows(
     const item = state.items.find((i) => i.kind === kind && i.checked);
     if (!item || seen.has(kind)) continue;
     seen.add(kind);
-    out.push({ kind, title: DEALER_SIGNAL_TITLES[kind][lang], text: dealerSignalText(item, lang), alert: isDealerSignalAlert(kind) });
+    out.push({ kind, title: DEALER_SIGNAL_TITLES[kind][lang], text: dealerSignalText(item, lang, translated?.[kind]), alert: isDealerSignalAlert(kind) });
   }
   return out;
 }
@@ -186,7 +276,20 @@ export function dealerSignalsSectionOn(state: DealerSignalsState | null | undefi
 }
 
 /** Audita saite PDF beigās: BF laikā ar cenu «- 79,99 €», ārpus BF bez cenas. */
-export type DealerSignalsAuditLink = { url: string; priceLabel?: string | null };
+export type DealerSignalsAuditLink = {
+  url: string;
+  priceLabel?: string | null;
+  /**
+   * `true` - saite uz izveidoto dīlera -> AUDITS piedāvājumu (tikai sūtīšanas brīdī, Nils 27.11);
+   * `false` - sūtot mēģināts, bet piedāvājumu nevar izveidot (piem. jau apmaksāts); nav - ģenerēts bez sūtīšanas.
+   */
+  offer?: boolean;
+};
+
+/** Sūtīšanas brīdī: PDF ar «Signāli» sadaļu, bet bez piedāvājuma saites -> jāizveido piedāvājums un PDF jāpārveido. */
+export function dealerSignalsPdfNeedsOffer(link: DealerSignalsAuditLink | null | undefined): boolean {
+  return Boolean(link && link.offer === undefined);
+}
 
 export function dealerSignalsAuditLinkLabel(lang: ClientReportLang, link: DealerSignalsAuditLink): string {
   const base = DEALER_SIGNALS_AUDIT_LINK_LABEL[lang];
@@ -223,7 +326,7 @@ export function dealerSignalsAuditLinkFromOffer(
   const url = (offer?.url ?? "").trim();
   if (!/^https:\/\//.test(url)) return { url: dealerSignalsFallbackAuditUrl(opts.vin, opts.lang) };
   const bf = offer?.chargeCents === opts.bfChargeCents && opts.bfWindow(opts.nowMs);
-  return bf ? { url, priceLabel: formatEurCents(opts.bfChargeCents) } : { url };
+  return bf ? { url, priceLabel: formatEurCents(opts.bfChargeCents), offer: true } : { url, offer: true };
 }
 
 function formatEurCents(cents: number): string {

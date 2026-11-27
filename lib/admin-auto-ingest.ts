@@ -3,6 +3,8 @@
  * Tīri tipi un čipu lēmumi (bez I/O), lai var testēt un rādīt adminā.
  */
 
+import { countryLabelToIso2 } from "@/lib/country-names-lv";
+
 export const AUTO_INGEST_PART_KEYS = [
   "listing",
   "csdd",
@@ -74,6 +76,72 @@ export function autoIngestChipsByBlock(
     }
   }
   return out;
+}
+
+/**
+ * Valsts (ISO2) → automātiskās ielases reģistra daļa, kas meklē pēc VIN.
+ * lkf_ee (OCTA atlīdzības) te nav: «nav atlīdzību» ir normāls rezultāts.
+ */
+export const AUTO_INGEST_REGISTRY_PART_BY_COUNTRY: Readonly<Record<string, AutoIngestPartKey>> = {
+  DK: "tjekbil",
+  EE: "mnt_ee",
+  SE: "carinfo",
+};
+
+export type CsddForeignCountryInput = {
+  /** CSDD nobraukuma vēstures rindas (arī «Nobraukums ārvalstīs»). */
+  mileageHistory?: ReadonlyArray<{ country?: string | null }> | null;
+  previousRegistrationCountry?: string | null;
+};
+
+/** ISO2 valstis (ne LV), kuras CSDD min nobraukuma vēsturē vai iepriekšējās reģistrācijas laukā. */
+export function csddForeignCountryIsos(csdd: CsddForeignCountryInput | null | undefined): string[] {
+  if (!csdd) return [];
+  const labels = [
+    ...(csdd.mileageHistory ?? []).map((r) => String(r?.country ?? "")),
+    String(csdd.previousRegistrationCountry ?? ""),
+  ];
+  const out = new Set<string>();
+  for (const label of labels) {
+    const iso = countryLabelToIso2(label);
+    if (iso && iso !== "LV") out.add(iso);
+  }
+  return [...out];
+}
+
+/**
+ * Pretruna: CSDD rāda ierakstu valstī X, bet X reģistrs pēc VIN auto neatrada.
+ * Tas nav koda kļūmes čips, bet signāls operatoram (vajag ārvalsts numurzīmi vai citu avotu).
+ * `blockHasData` - ja bloks jau aizpildīts (piem. ar roku), čipu nerāda.
+ */
+export function autoIngestCsddCountryMismatchChips(
+  status: AutoIngestStatus | null | undefined,
+  csdd: CsddForeignCountryInput | null | undefined,
+  blockHasData: (blockKey: string) => boolean = () => false,
+): Partial<Record<string, AutoIngestChip>> {
+  if (!status) return {};
+  const out: Partial<Record<string, AutoIngestChip>> = {};
+  for (const iso of csddForeignCountryIsos(csdd)) {
+    const part = AUTO_INGEST_REGISTRY_PART_BY_COUNTRY[iso];
+    if (!part || status.parts[part] !== "not_found") continue;
+    for (const block of AUTO_INGEST_PART_BLOCKS[part]) {
+      if (blockHasData(block)) continue;
+      out[block] = { label: `CSDD rāda ${iso}`, tone: "no_data" };
+    }
+  }
+  return out;
+}
+
+/** Kļūmju čipi + CSDD valsts pretrunas čipi (kļūme ir svarīgāka). */
+export function autoIngestChipsWithCsddCountry(
+  status: AutoIngestStatus | null | undefined,
+  csdd: CsddForeignCountryInput | null | undefined,
+  blockHasData?: (blockKey: string) => boolean,
+): Partial<Record<string, AutoIngestChip>> {
+  return {
+    ...autoIngestCsddCountryMismatchChips(status, csdd, blockHasData),
+    ...autoIngestChipsByBlock(status),
+  };
 }
 
 export function parseAutoIngestStatus(raw: unknown): AutoIngestStatus | null {

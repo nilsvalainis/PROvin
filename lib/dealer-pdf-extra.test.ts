@@ -197,32 +197,53 @@ describe("dīlera PDF EXTRA", () => {
 });
 
 describe("priekšskats", () => {
-  it("dīlera EXTRA: tās pašas tabulas kā PDF", () => {
-    const p = payload({ dealerExtra: ["unifiedMileage", "unifiedIncidents", "ltab"] });
-    const pdf = extraPart(docOf(p));
-    const prev = buildReportPreviewDocumentHtml(p, "all");
-    expect(prev).toContain("NOBRAUKUMA VĒSTURE");
-    expect(prev).toContain("NEGADĪJUMU VĒSTURE");
-    const mileagePdf = pdf.match(/<div class="pdf-page-flow-chunk pdf-unified-mileage-zone[\s\S]*?(?=<div class="pdf-page-flow-chunk pdf-unified-incidents-zone)/)?.[0];
-    expect(mileagePdf).toBeTruthy();
-    expect(prev).toContain(mileagePdf!);
-    expect(bodyOf(prev)).not.toMatch(/AutoDNA|CarVertical/i);
-    expect(prev).toContain(".pdf-sec{");
+  const body = (h: string) => h.slice(h.indexOf("<body"));
+
+  it("dīlera pasūtījums bez «+ Extra» - rāda visus datus, nevis «Nav datu» (Nils 27.11)", () => {
+    const p = payload();
+    const all = buildReportPreviewDocumentHtml(p, "all");
+    expect(body(all)).not.toContain("pdf-preview-empty");
+    expect(all).toContain("NOBRAUKUMA VĒSTURE");
+    expect(all).toContain("NEGADĪJUMU VĒSTURE");
+    expect(all).toContain("WBAJL71000BX48215");
+    const mileage = buildReportPreviewDocumentHtml(p, "mileage");
+    // CSDD, dīleris un visi avoti vienā tabulā.
+    for (const km of ["143", "47", "99", "98", "120"]) expect(body(mileage)).toMatch(new RegExp(`${km}[\\s\u00a0 ]?\\d{3}`));
+    expect(mileage).not.toContain("NEGADĪJUMU VĒSTURE");
+    const inc = buildReportPreviewDocumentHtml(p, "incidents");
+    expect(inc).toContain("NEGADĪJUMU VĒSTURE");
+    expect(inc).not.toContain("NOBRAUKUMA VĒSTURE");
+    expect(body(inc)).toContain("02.08.2023");
   });
 
-  it("cilnes: nobraukums / negadījumi atsevišķi", () => {
-    const p = payload({ dealerExtra: ["unifiedMileage", "unifiedIncidents", "ltab"] });
-    expect(buildReportPreviewDocumentHtml(p, "mileage")).not.toContain("NEGADĪJUMU VĒSTURE");
-    expect(buildReportPreviewDocumentHtml(p, "incidents")).not.toContain("NOBRAUKUMA VĒSTURE");
+  it("paslēptie avoti un sadaļas priekšskatā redzami (visi dati)", () => {
+    const p = payload({
+      pdfReportKind: "full",
+      pdfVisibility: { ...DEALER_ONLY_PDF_VISIBILITY, mnt_ee: false, ltab: false, mileageComment: false },
+    });
+    const mileage = buildReportPreviewDocumentHtml(p, "mileage");
+    expect(body(mileage)).toMatch(/120[\s\u00a0 ]?000/);
+    expect(mileage).toContain("Admin nobraukuma komentārs");
+    expect(body(buildReportPreviewDocumentHtml(p, "incidents"))).toContain("02.08.2023");
   });
 
-  it("dīlera bez EXTRA - tukšs (PDF tabulu nav)", () => {
-    expect(buildReportPreviewDocumentHtml(payload(), "all")).toContain("Nav datu");
+  it("tiešām nav datu - «Nav datu»", () => {
+    const csdd = emptyCsddFields();
+    const p = payload({
+      csddForm: csdd,
+      autoRecordsBlock: createDefaultSourceBlocks().auto_records,
+      manualVendorBlocks: [],
+      manualLtabBlock: null,
+      internalComment: "",
+      mileageComment: "",
+    });
+    expect(buildReportPreviewDocumentHtml(p, "mileage")).toContain("Nav datu");
+    expect(buildReportPreviewDocumentHtml(p, "incidents")).toContain("Nav datu");
   });
 
-  it("pilnā atskaite - pēc pasūtījuma redzamības", () => {
+  it("«Viss» = pilnās atskaites dokuments ar PDF CSS", () => {
     const html = buildReportPreviewDocumentHtml(payload({ pdfReportKind: "full", pdfVisibility: null }), "all");
-    expect(html).toContain("NOBRAUKUMA VĒSTURE");
+    expect(html).toContain(".pdf-sec{");
     expect(html).toContain("Admin nobraukuma komentārs");
   });
 });

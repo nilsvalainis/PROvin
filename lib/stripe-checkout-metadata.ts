@@ -56,6 +56,8 @@ export const STRIPE_SERVER_METADATA_KEYS = [
   "upgrade_token",
   "client_link_hash",
   "manual_order_id",
+  /** Valsts kods no `x-vercel-ip-country` (klienta valodai; IP adrese netiek glabāta). */
+  "ip_country",
   /** Black Friday u.c. akcijas - tikai serveris (`lib/promo/black-friday-checkout.ts`). */
   "promo",
   "promo_regular_cents",
