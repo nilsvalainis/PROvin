@@ -96,7 +96,11 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
-import { shouldCondenseDealerPdfRecords, type DealerProductScopeArgs } from "@/lib/dealer-product-scope";
+import {
+  isDealerDataOnlyProduct,
+  shouldCondenseDealerPdfRecords,
+  type DealerProductScopeArgs,
+} from "@/lib/dealer-product-scope";
 import {
   buildDealerServiceVisitsHtml,
   type DealerServiceVisitsPdfOpts,
@@ -3006,7 +3010,9 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
   // C33 (Business audits 23.11): Business / dīlera datu atskaitē nav ieteikumu - «Ieteikumi klātienes apskatei»
   // (arī statiskais krāsas biezuma bloks) tur nedrukājas.
-  const dataOnly = isBusinessBrandReport(p) || isDealerOnlyReport(p);
+  // 28.11 (Nils): arī dīlera datu pasūtījumam, kura PDF ģenerēts kā pilnā atskaite - bez ieteikumiem.
+  const dataOnly =
+    isBusinessBrandReport(p) || isDealerOnlyReport(p) || isDealerDataOnlyProduct(dealerPdfProductScope(p));
   const planHtml =
     vis.irissInspection && !dataOnly ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
   return [

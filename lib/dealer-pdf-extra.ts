@@ -118,10 +118,10 @@ export function dealerExtraSourcesOnlyVisibility(extra: readonly DealerExtraKey[
 type L4 = Record<ClientReportLang, string>;
 
 export const DEALER_EXTRA_SECTION_TITLE: L4 = {
-  lv: "EXTRA · Papildu dati",
-  en: "EXTRA · Additional data",
-  ru: "EXTRA · Дополнительные данные",
-  de: "EXTRA · Zusätzliche Daten",
+  lv: "Citi avoti",
+  en: "Other sources",
+  ru: "Другие источники",
+  de: "Weitere Quellen",
 };
 
 /**
