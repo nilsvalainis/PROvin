@@ -45,6 +45,8 @@ export function buildDealerSectionCoverHtml(args: {
   mileageRows?: AutoRecordsServiceRow[] | null;
   maskDemoVin?: boolean;
   lang?: ClientReportLang;
+  /** Nils 28.11 (makets B): signālu žetoni uzreiz zem «VIN · jauda», virs nobraukuma grafika. */
+  signalsHtml?: string;
 }): string {
   const lang = args.lang ?? "lv";
   const vi = args.vehicle;
@@ -73,6 +75,7 @@ export function buildDealerSectionCoverHtml(args: {
   return `<div class="pdf-dealer-cover">
     ${title}
     ${metaHtml}
+    ${args.signalsHtml ?? ""}
     ${chart}
   </div>`;
 }
