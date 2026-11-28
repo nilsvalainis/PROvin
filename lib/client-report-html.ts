@@ -3791,7 +3791,7 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-chip--orange .pdf-dealer-chip__ic{color:#B45309;}
       .pdf-dealer-chips__more{margin:7px 0 0;font-size:9.5px;color:#475569;}
       .pdf-dealer-chips__more a{color:#475569;text-decoration:none;}
-      .pdf-dealer-signals-info{margin:10px 0 0;font-size:10px;line-height:1.4;color:#64748b;display:flex;align-items:center;gap:5px;}
+      .pdf-dealer-signals-info{margin:16px 0 28px;font-size:10px;line-height:1.4;color:#64748b;display:flex;align-items:center;gap:5px;}
       .pdf-dealer-signals-info__ic{display:inline-flex;color:#94a3b8;}
       .pdf-dealer-signals-info__ic svg{width:11px;height:11px;display:block;}
       .pdf-dealer-signals-info a{color:#0061D2;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;}

@@ -1,9 +1,9 @@
 /**
  * Starptautiskās vēstures sadaļa klienta PDF.
  *
- * Rāda tikai to, kas maina pircēja lēmumu: sarkanos karogus, bojājumus, norakstīšanas un
- * īpašumtiesību ierakstus, pārdošanas vēsturi. Specifikācijas un „nav ierakstu” pārbaudes
- * netiek drukātas - tās jau ir citās sadaļās vai nesniedz informāciju.
+ * Rāda sarkanos karogus, bojājumus, norakstīšanas un īpašumtiesību ierakstus, pārdošanas vēsturi,
+ * servisa ierakstus un (28.11, Nils: «PILNĪGI VISA informācija») «Citi dati» - tehnisko specifikāciju.
+ * „Nav ierakstu” pārbaudes netiek drukātas - tās nesniedz informāciju.
  */
 
 import { AUCTION_LOT_CARDS_CSS } from "@/lib/auction-lot-cards-html";
@@ -21,6 +21,8 @@ import {
   ccVinDamageRowHasData,
   ccVinRecordRowHasData,
   ccVinSaleRowHasData,
+  ccVinServiceRowHasData,
+  ccVinSpecRowHasData,
   ccVinTitleRowHasData,
   type CcVinBlockState,
   type CcVinRecordRow,
@@ -55,6 +57,37 @@ function logTable(headings: string[], rows: string[][]): string {
     .map((cells) => `<tr>${cells.filter((_, i) => keep[i]).map(td).join("")}</tr>`)
     .join("");
   return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+/**
+ * Servisa ieraksti (28.11): datums, nobraukums, veiktie darbi. Darbu/detaļu nosaukumi paliek avota valodā
+ * ar norādi «(oriģināls)» - kā FIN teksts; katra rinda savā rindiņā.
+ */
+function servicesTable(b: CcVinBlockState, lang: ClientReportLang): string {
+  const rows = (b.services ?? []).filter(ccVinServiceRowHasData);
+  if (rows.length === 0) return "";
+  const hasKm = rows.some((r) => r.odometer.trim());
+  const head = `<tr><th>Datums</th>${hasKm ? "<th>Odometrs, km</th>" : ""}<th>Veiktie darbi un detaļas (oriģināls)</th></tr>`;
+  const body = rows
+    .map((r) => {
+      const lines = r.description
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => escapeHtml(translateAuctionTerms(l, lang)))
+        .join("<br>");
+      return `<tr>${td(r.date)}${hasKm ? td(kmDisplay(r.odometer)) : ""}<td>${lines || "-"}</td></tr>`;
+    })
+    .join("");
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+/** «Citi dati»: tehniskā specifikācija (nosaukums + vērtība), divas kolonnas. */
+function specsTable(b: CcVinBlockState): string {
+  const rows = (b.specs ?? []).filter(ccVinSpecRowHasData);
+  if (rows.length === 0) return "";
+  const body = rows.map((r) => `<tr>${td(r.label)}${td(r.value)}</tr>`).join("");
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log"><tbody>${body}</tbody></table>`;
 }
 
 /** „49890” → „49 890”; teksts, kas nav skaitlis, paliek nemainīts. */
@@ -215,8 +248,20 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined, au
     );
   }
 
+  const services = servicesTable(b, lang);
+  if (services) {
+    parts.push(subhead(CC_VIN_SUBTITLES.services));
+    parts.push(services);
+  }
+
   const thecarapiHtml = buildCcVinAuctionCardsHtml(b, auction);
   if (thecarapiHtml) parts.push(thecarapiHtml);
+
+  const specs = specsTable(b);
+  if (specs) {
+    parts.push(subhead(CC_VIN_SUBTITLES.specs));
+    parts.push(specs);
+  }
 
   return parts.join("\n");
 }
