@@ -208,6 +208,17 @@ export const DEALER_SIGNALS_AUDIT_LINK_LABEL: L4 = {
   de: "PROVIN AUDITS bestellen",
 };
 
+/**
+ * Nils 28.11 (makets B): PDF signālu sadaļas apakšā maza pelēka info rinda; saite tikai uz vārda `link`.
+ * Bez cenas. E-pastus/WhatsApp neietekmē.
+ */
+export const DEALER_SIGNALS_AUDIT_INFO: Record<ClientReportLang, { lead: string; link: string }> = {
+  lv: { lead: "Detalizētu pārbaudi piedāvā PROVIN AUDITS - ", link: "pasūtīt" },
+  en: { lead: "A detailed check is available with PROVIN AUDITS - ", link: "order" },
+  ru: { lead: "Детальную проверку предлагает PROVIN AUDITS - ", link: "заказать" },
+  de: { lead: "Eine detaillierte Prüfung bietet PROVIN AUDITS - ", link: "bestellen" },
+};
+
 /** Viena nemainīga e-pasta rinda (tikai, ja sadaļa ieslēgta). */
 export const DEALER_SIGNALS_EMAIL_LINE: L4 = {
   lv: "Atskaitē ir sadaļa ar papildu signāliem - ieteicams iepazīties.",

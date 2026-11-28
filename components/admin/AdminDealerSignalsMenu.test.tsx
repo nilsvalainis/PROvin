@@ -58,7 +58,8 @@ describe("«Signāli» admin bloks", () => {
     expect(html).toContain("Ir PDF");
     expect(html).toMatch(/class="bg-\[#FFF1F2\] text-\[#B91C1C\]" data-dealer-signal-preview-row="mileage_mismatch"/);
     expect(html).not.toContain('data-dealer-signal-preview-row="incidents"');
-    expect(html).toContain("Pasūtīt PROVIN AUDITU");
+    expect(html).toContain("Detalizētu pārbaudi piedāvā PROVIN AUDITS");
+    expect(html).not.toContain("Pasūtīt PROVIN AUDITU");
   });
 
   it("bez signāliem - sarkans «Nav signālu»", () => {
@@ -93,7 +94,7 @@ describe("«Signāli» admin bloks", () => {
     );
     expect(html).toContain("Signals beyond dealer data");
     expect(html).toContain("Records indicate body repair");
-    expect(html).toContain("Order PROVIN AUDITS");
+    expect(html).toContain("A detailed check is available with PROVIN AUDITS");
     expect(html).toContain("data-dealer-signals-preview-lang");
     // Teksta lauks - latviski (admins labo LV).
     expect(html).toContain(`>${src}</textarea>`);

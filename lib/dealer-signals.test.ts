@@ -183,7 +183,8 @@ describe("PDF sadaļa", () => {
     expect(html).toContain("Iespējama odometra korekcija");
     expect(html).toContain("Par šo auto pieejami negadījumu vai bojājumu ieraksti");
     expect(html).toContain("Pieejamas izsoļu fotogrāfijas");
-    expect(html).toContain('<a href="https://www.provin.lv/lv/papildinajums/abc">Pasūtīt PROVIN AUDITU</a>');
+    expect(html).toContain('<p class="pdf-dealer-signals-info">');
+    expect(html).toContain('Detalizētu pārbaudi piedāvā PROVIN AUDITS - <a href="https://www.provin.lv/lv/papildinajums/abc">pasūtīt</a> ↗');
     expect(html).not.toMatch(/eksperts|pirkt|nepirkt|AutoDNA|carVertical|CARFAX|LTAB|CSDD|mnt\.ee/i);
     expect(html).not.toMatch(/[–—]/);
   });
@@ -202,7 +203,8 @@ describe("PDF sadaļa", () => {
     const base = { vin: "WBA5R1C0XLFH42873", lang: "lv" as ClientReportLang, nowMs: NOW, bfChargeCents: 7999 };
     const bf = dealerSignalsAuditLinkFromOffer({ url: "https://x.lv/a", chargeCents: 7999 }, { ...base, bfWindow: () => true });
     expect(bf).toEqual({ url: "https://x.lv/a", priceLabel: "79,99 €", offer: true });
-    expect(buildDealerSignalsSectionHtml(dealer(ALL_ON, bf), "lv")).toContain("Pasūtīt PROVIN AUDITU - 79,99 €");
+    // Makets B (28.11): PDF info rindā cenu neliek.
+    expect(buildDealerSignalsSectionHtml(dealer(ALL_ON, bf), "lv")).not.toContain("79,99");
     expect(
       dealerSignalsAuditLinkFromOffer({ url: "https://x.lv/a", chargeCents: 7999 }, { ...base, bfWindow: () => false }),
     ).toEqual({ url: "https://x.lv/a", offer: true });
@@ -219,7 +221,7 @@ describe("PDF sadaļa", () => {
     const en = buildDealerSignalsSectionHtml(dealer(ALL_ON), "en");
     expect(en).toContain("Signals beyond dealer data");
     expect(en).toContain("Possible odometer correction");
-    expect(en).toContain("Order PROVIN AUDITS");
+    expect(en).toContain("A detailed check is available with PROVIN AUDITS");
     expect(buildDealerSignalsSectionHtml(dealer(ALL_ON), "ru")).toContain(DEALER_SIGNALS_SECTION_TITLE.ru);
     expect(buildDealerSignalsSectionHtml(dealer(ALL_ON), "de")).toContain(DEALER_SIGNALS_SECTION_TITLE.de);
     const custom = { kind: "incidents" as const, text: "Pieejami ieraksti — pārbaudiet" };
