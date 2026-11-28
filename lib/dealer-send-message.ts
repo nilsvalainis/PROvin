@@ -9,7 +9,7 @@ import { GOOGLE_REVIEW_URL } from "@/lib/messages/shared-blocks";
 import { reportReadyVinVar } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { formatEurFromCents } from "@/lib/order-upsell";
-import { withDealerSignalsEmailLine } from "@/lib/dealer-signals";
+import { withDealerSignalsEmailLine, withDealerSignalsMessageBlock } from "@/lib/dealer-signals";
 
 export type DealerSendChannel = "email" | "whatsapp";
 export type DealerSendSituation = "ready" | "no_data" | "cancelled";
@@ -66,6 +66,11 @@ export type DealerSendMessageInput = {
   lang?: ClientReportLang | null;
   /** PDF ieslēgta sadaļa «Signāli ārpus dīlera datiem» -> viena nemainīga e-pasta rinda (tikai «Dati gatavi»). */
   signalsLine?: boolean;
+  /**
+   * Tikai «Datu nav (atmaksa)»: signālu bloks (`dealerSignalsMessageBlock`) - dīlera datu nav, PDF nesūta,
+   * tāpēc signāli ir pašā ziņā (Nils 28.11).
+   */
+  signalsBlock?: string | null;
 };
 
 function tidy(text: string): string {
@@ -102,7 +107,9 @@ export function buildDealerSendMessage(input: DealerSendMessageInput): { subject
   const raw =
     input.signalsLine === true && input.channel === "email" && input.situation === "ready"
       ? withDealerSignalsEmailLine(base, input.lang ?? "lv")
-      : base;
+      : input.situation === "no_data" && input.signalsBlock
+        ? withDealerSignalsMessageBlock(base, input.signalsBlock)
+        : base;
   // B2B paraksts tikai «PROVIN» (Nils 25.11) - arī, ja admina pārrakstā palicis «Nils».
   const text = input.b2b ? applyB2bSignature(raw) : raw;
   const subject = input.channel === "email" ? rendered?.subject?.trim() : undefined;

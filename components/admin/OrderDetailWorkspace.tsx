@@ -6195,6 +6195,7 @@ export function OrderDetailWorkspace({
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
     dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals),
+    dealerSignals: ws.dealerSignals ?? null,
     prepareDealerPdf: (lang, o) => prepareSendReportPdf("dealer", lang, o?.forSend ? { forSend: true } : undefined),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
