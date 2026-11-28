@@ -40,3 +40,16 @@ describe("Faktu pārbaudes panelis - «Labot» ar AI", () => {
     }
   });
 });
+
+describe("28.11: «AI pārbaude» poga un virsraksts", () => {
+  it("poga tikai ar onAiClick", async () => {
+    const { AdminFactCheckButton } = await import("@/components/admin/AdminFactCheckPanel");
+    expect(renderHtml(<AdminFactCheckButton onClick={noop} />)).not.toContain("AI pārbaude");
+    const html = renderHtml(<AdminFactCheckButton onClick={noop} onAiClick={noop} />);
+    expect(html).toContain("AI pārbaude");
+    expect(html).toContain("data-fact-check-ai");
+  });
+  it("paneļa virsraksts", () => {
+    expect(renderHtml(<AdminFactCheckPanel title="PDF teksti" flags={[flag]} dismissed={[]} onDismiss={noop} />)).toContain("PDF teksti");
+  });
+});

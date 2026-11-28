@@ -12,6 +12,11 @@ export type ContradictionFeedbackTarget = {
   pair?: string;
   /** Smagums brīdī, kad operators lēma (statistikai). */
   severity?: string;
+  /** 28.11: brīdinājuma teikums nedēļas kopsavilkumam (serveris izņem personas datus). */
+  sample?: string;
+  /** Faktu pārbaudes atraduma veids (`kind`) un fakta id, ja ir. */
+  kind?: string;
+  factId?: string;
 };
 
 export type ContradictionFeedbackContextValue = {

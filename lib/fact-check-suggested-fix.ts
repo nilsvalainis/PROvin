@@ -184,6 +184,15 @@ export function factCheckActionLine(flag: FactCheckFlag): string {
     case "unsourced_date":
     case "unsourced":
       return "Pārbaudi avotu vai ignorē, ja frāze nav apgalvojums.";
+    case "translation_mismatch":
+      return "Tulkojums nedrīkst mainīt skaitļus un datumus - labo LV tekstu un ģenerē PDF vēlreiz.";
+    case "km_at_date":
+    case "power_output":
+    case "powertrain_gearbox":
+    case "service_count":
+      return "Salīdzini ar avota ierakstu un labo skaitli / kodu tekstā.";
+    case "auction_damage":
+      return "Min izsoles bojājumus (izsoļu sadaļa PDF) vai precizē, par kuru avotu teikums runā.";
     default:
       return flag.level === "E" ? "Labo tekstu pēc lapas faktiem." : "Pārbaudi avotu pirms publicēšanas.";
   }
