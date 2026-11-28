@@ -97,7 +97,7 @@ describe("dīlera PDF EXTRA", () => {
   it("bez izvēles - nekādas EXTRA sadaļas (kā līdz šim)", () => {
     const html = docOf(payload());
     expect(html).not.toContain("pdf-dealer-extra");
-    expect(html).not.toContain("EXTRA · Papildu dati");
+    expect(html).not.toContain("Citi avoti");
     expect(html).not.toContain("NOBRAUKUMA VĒSTURE");
     expect(html).not.toContain("MNT.EE");
     expect(html).toContain("OFICIĀLĀ DĪLERA DATI");
@@ -106,7 +106,7 @@ describe("dīlera PDF EXTRA", () => {
   it("ieslēdz tikai izvēlētās sadaļas", () => {
     const html = docOf(payload({ dealerExtra: ["mnt_ee"] }));
     const extra = extraPart(html);
-    expect(extra).toContain("EXTRA · Papildu dati");
+    expect(extra).toContain("Citi avoti");
     expect(extra).toContain("Igaunijas reģistrs");
     expect(extra).toContain("statuss");
     // Neizvēlētie: nav CSDD kartītes, LTAB, kopējo tabulu
