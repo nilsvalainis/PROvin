@@ -145,6 +145,13 @@ describe("Business PDF audits 23.11 - CSDD, ieteikumi, atruna, pasūtījums", ()
     expect(full).toContain("sniedzam ieteikumus");
   });
 
+  it("28.11: dīlera datu pasūtījums pilnā PDF ceļā - bez «Ieteikumi klātienes apskatei»", () => {
+    const dealerFull = doc(payload({ pdfReportKind: "full", checkoutLine: "dealer" }));
+    expect(dealerFull).not.toContain("Virsbūves stāvoklis un krāsas biezums");
+    const auditFull = doc(payload({ pdfReportKind: "full", checkoutLine: "audits" }));
+    expect(auditFull).toContain("Virsbūves stāvoklis un krāsas biezums");
+  });
+
   it("D44: bez summas nav tukša «Maksājums»; vārds «A. Bērziņš»", () => {
     const html = buildPdfAboutReportBlock({
       order: payload() as unknown as Parameters<typeof buildPdfAboutReportBlock>[0]["order"],

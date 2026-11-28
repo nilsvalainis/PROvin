@@ -505,12 +505,18 @@ import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenc
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import {
   collectFilledFactCheckFields,
+  collectPdfExtraFactCheckFields,
   collectPrePdfClientTextFields,
   factCheckDismissKey,
   openErrorFactCheckFlags,
   parseVehicleYear,
+  PDF_TEXT_FACT_FIELD_PREFIX,
+  pdfTextFactFlags,
   postAdminFactCheck,
+  withAiSkippedNotice,
 } from "@/lib/admin-fact-check-client";
+import { checkTranslatedPdfTexts } from "@/lib/pdf-translation-fact-check";
+import { collectClientReportTranslatableTexts } from "@/lib/client-report-translatable-fields";
 import { applyFactCheckFixToField } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag, FactCheckResult } from "@/lib/unit-facts/types";
 import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
@@ -1190,6 +1196,8 @@ export function OrderDetailWorkspace({
   } | null>(null);
   const [pdfJob, setPdfJob] = useState<{ key: string; pct: number } | null>(null);
   const [factCheckByField, setFactCheckByField] = useState<Record<string, FactCheckResult>>({});
+  /** 28.11: «pdf:» lauku nosaukumi (kartītes, signāli) paneļa «PDF teksti» ziņām. */
+  const [pdfTextFieldLabels, setPdfTextFieldLabels] = useState<Record<string, string>>({});
   const [factCheckBusy, setFactCheckBusy] = useState<Record<string, boolean>>({});
   const [factCheckDismissed, setFactCheckDismissed] = useState<string[]>([]);
   const [factCheckPublishItems, setFactCheckPublishItems] = useState<
@@ -1952,7 +1960,7 @@ export function OrderDetailWorkspace({
   const buildAiListingPayload = useCallback(() => buildAiOrderPayload(), [buildAiOrderPayload]);
 
   const runFactCheck = useCallback(
-    async (field: string, text: string): Promise<FactCheckResult> => {
+    async (field: string, text: string, opts?: { useAi?: boolean }): Promise<FactCheckResult> => {
       const plain = adminRichHtmlToPlainText(text).trim();
       if (!plain) {
         const empty: FactCheckResult = { flags: [], appliedFactIds: [], checkedAt: new Date().toISOString() };
@@ -1962,13 +1970,19 @@ export function OrderDetailWorkspace({
       setFactCheckBusy((prev) => ({ ...prev, [field]: true }));
       try {
         const csdd = wsPersistRef.current.sourceBlocks.csdd;
-        const result = await postAdminFactCheck({
-          ...buildAiOrderPayload(),
-          field,
-          text: plain,
-          vehicleLabel: csdd.makeModel.trim() || undefined,
-          year: parseVehicleYear(csdd.modelYear, csdd.firstRegistration),
-        });
+        const useAi = opts?.useAi === true;
+        const result = withAiSkippedNotice(
+          await postAdminFactCheck({
+            ...buildAiOrderPayload(),
+            field,
+            text: plain,
+            vehicleLabel: csdd.makeModel.trim() || undefined,
+            year: parseVehicleYear(csdd.modelYear, csdd.firstRegistration),
+            // 28.11: AI otrā pārbaude tikai pēc pogas «AI pārbaude».
+            ...(useAi ? { useAi: true } : {}),
+          }),
+          useAi,
+        );
         setFactCheckByField((prev) => ({ ...prev, [field]: result }));
         return result;
       } catch {
@@ -2010,7 +2024,16 @@ export function OrderDetailWorkspace({
       void fetch("/api/admin/contradiction-feedback", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId: payload.sessionId, vin: payload.vin ?? "", entry, severity: target.severity ?? "" }),
+        body: JSON.stringify({
+          sessionId: payload.sessionId,
+          vin: payload.vin ?? "",
+          entry,
+          severity: target.severity ?? "",
+          // 28.11: nedēļas kopsavilkumam (serveris izņem personas datus).
+          ...(target.sample ? { sample: target.sample } : {}),
+          ...(target.kind ? { kind: target.kind } : {}),
+          ...(target.factId ? { factId: target.factId } : {}),
+        }),
       }).catch(() => {
         /* žurnāls nav obligāts */
       });
@@ -2033,6 +2056,7 @@ export function OrderDetailWorkspace({
       flags: factCheckByField[field]?.flags ?? [],
       dismissed: factCheckDismissed,
       onCheck: () => void runFactCheck(field, text),
+      onAiCheck: payload.aiAllowed ? () => void runFactCheck(field, text, { useAi: true }) : undefined,
       onDismiss: dismissFactCheckFlag,
       onApplyFix: applyHtml
         ? (flag: FactCheckFlag) => {
@@ -4589,15 +4613,31 @@ export function OrderDetailWorkspace({
     } else {
       const cur = wsPersistRef.current;
       const edits = orderEditsRef.current;
-      const fields = collectFilledFactCheckFields({
-        tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
-        iriss: cur.iriss,
-        apskatesPlāns: cur.apskatesPlāns,
-        mileageComment: edits.mileage,
-        incidentsComment: edits.internal,
-        sourcesComparisonComment: edits.sourcesComparison,
-        sourceBlocks: cur.sourceBlocks,
+      // 28.11 (Nils 2): arī gatavā PDF kartīšu teksti un dīlera PDF «Signāli» (tikai brīdinājumi).
+      const pdfExtraFields = collectPdfExtraFactCheckFields({
+        manualBanners: opts?.dealerOnly ? [] : manualBannersRef.current,
+        dealerSignals: opts?.dealerOnly ? (cur.dealerSignals ?? null) : null,
       });
+      setPdfTextFieldLabels(Object.fromEntries(pdfExtraFields.map((f) => [f.field, f.label])));
+      setFactCheckByField((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).filter(
+            ([k]) => !k.startsWith(PDF_TEXT_FACT_FIELD_PREFIX) || k.startsWith(`${PDF_TEXT_FACT_FIELD_PREFIX}translation.`),
+          ),
+        ),
+      );
+      const fields = [
+        ...collectFilledFactCheckFields({
+          tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
+          iriss: cur.iriss,
+          apskatesPlāns: cur.apskatesPlāns,
+          mileageComment: edits.mileage,
+          incidentsComment: edits.internal,
+          sourcesComparisonComment: edits.sourcesComparison,
+          sourceBlocks: cur.sourceBlocks,
+        }),
+        ...pdfExtraFields,
+      ];
       const errorItems: { label: string; sentence: string; message: string }[] = [];
       await Promise.all(
         fields.map(async (f) => {
@@ -4624,15 +4664,18 @@ export function OrderDetailWorkspace({
         overrides: odometerAnomalyOverrides,
         manualBanners: opts?.dealerOnly ? [] : manualBannersRef.current,
         pdfBannerInclude: opts?.dealerOnly ? {} : pdfBannerIncludeRef.current,
-        clientTextFields: collectPrePdfClientTextFields({
-          tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
-          iriss: cur.iriss,
-          apskatesPlāns: cur.apskatesPlāns,
-          mileageComment: edits.mileage,
-          incidentsComment: edits.internal,
-          sourcesComparisonComment: edits.sourcesComparison,
-          sourceBlocks: cur.sourceBlocks,
-        }),
+        clientTextFields: [
+          ...collectPrePdfClientTextFields({
+            tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
+            iriss: cur.iriss,
+            apskatesPlāns: cur.apskatesPlāns,
+            mileageComment: edits.mileage,
+            incidentsComment: edits.internal,
+            sourcesComparisonComment: edits.sourcesComparison,
+            sourceBlocks: cur.sourceBlocks,
+          }),
+          ...pdfExtraFields,
+        ],
       });
       for (const flag of openErrorFactCheckFlags(applyFeedbackToFactFlags(prePdfFlags, feedbackOptsRef.current), factCheckDismissed)) {
         errorItems.push({
@@ -5067,6 +5110,22 @@ export function OrderDetailWorkspace({
         alert(
           `Tulkošana neizdevās (${e instanceof Error ? e.message : "kļūda"}). Atskaite tiks atvērta latviski.`,
         );
+      }
+      // 28.11 (Nils 2): tulkojums nedrīkst mainīt km / datumus / skaitus - brīdinājumi panelī «PDF teksti», PDF netiek bloķēts.
+      if (finalPayload !== reportPayload) {
+        const trFlags = checkTranslatedPdfTexts({
+          lv: collectClientReportTranslatableTexts(reportPayload),
+          translated: collectClientReportTranslatableTexts(finalPayload),
+          lang: reportLang,
+        });
+        setFactCheckByField((prev) => ({
+          ...prev,
+          [`${PDF_TEXT_FACT_FIELD_PREFIX}translation.${reportLang}`]: {
+            flags: trFlags,
+            appliedFactIds: [],
+            checkedAt: new Date().toISOString(),
+          },
+        }));
       }
     }
 
@@ -6195,6 +6254,7 @@ export function OrderDetailWorkspace({
     paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
     orderCreatedUnix: payload.created,
     dealerSignalsOn: dealerSignalsSectionOn(ws.dealerSignals),
+    dealerSignals: ws.dealerSignals ?? null,
     prepareDealerPdf: (lang, o) => prepareSendReportPdf("dealer", lang, o?.forSend ? { forSend: true } : undefined),
     sendDealerReport: async ({ prepared, lang, subject, text, dealerSend, extraFiles }) => {
       const run = (confirmRecipientOverride: boolean) =>
@@ -6442,12 +6502,12 @@ export function OrderDetailWorkspace({
           setComplete={async (complete) => {
             if (!(await postAdminAuditComplete(payload.sessionId, complete))) throw new Error("complete_failed");
           }}
-          recordWhatsapp={async ({ situation, lang, b2b }) => {
+          recordWhatsapp={async ({ situation, lang, b2b, review }) => {
             await fetch("/api/admin/order-client-marks", {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "audit_send", sessionId: payload.sessionId, channel: "whatsapp", situation, lang, b2b }),
+              body: JSON.stringify({ action: "audit_send", sessionId: payload.sessionId, channel: "whatsapp", situation, lang, b2b, review }),
             }).catch(() => null);
           }}
           onOpenOldForm={() => {
@@ -7756,6 +7816,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.incidents)}
                           onClick={() => void runFactCheck("incidents", internalCommentDraft)}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("incidents", internalCommentDraft, { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -7806,6 +7867,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.mileage)}
                           onClick={() => void runFactCheck("mileage", mileageCommentDraft)}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("mileage", mileageCommentDraft, { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -7891,6 +7953,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.technical_risks)}
                           onClick={() => void runFactCheck("technical_risks", ws.tehniskoRiskuAnalize ?? "")}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("technical_risks", ws.tehniskoRiskuAnalize ?? "", { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -7953,6 +8016,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.inspection)}
                           onClick={() => void runFactCheck("inspection", ws.apskatesPlāns ?? "")}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("inspection", ws.apskatesPlāns ?? "", { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -7999,6 +8063,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.summary)}
                           onClick={() => void runFactCheck("summary", ws.iriss ?? "")}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("summary", ws.iriss ?? "", { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -8044,6 +8109,7 @@ export function OrderDetailWorkspace({
                         <AdminFactCheckButton
                           busy={Boolean(factCheckBusy.sources_comparison)}
                           onClick={() => void runFactCheck("sources_comparison", sourcesComparisonCommentDraft)}
+                          onAiClick={payload.aiAllowed ? () => void runFactCheck("sources_comparison", sourcesComparisonCommentDraft, { useAi: true }) : undefined}
                         />
                       </span>
                     }
@@ -8070,6 +8136,16 @@ export function OrderDetailWorkspace({
             </AdminPhoneSectionCollapse>
           </section>
         ) : null}
+      </div>
+
+      {/* 28.11 (Nils 2): gatavā PDF teksti (kartītes, signāli, tulkojumi) - tikai brīdinājumi, PDF nebloķē. */}
+      <div className={`mx-auto w-full min-w-0 ${ADMIN_CONTENT_MAX}`}>
+        <AdminFactCheckPanel
+          title="PDF teksti"
+          flags={pdfTextFactFlags(factCheckByField, pdfTextFieldLabels)}
+          dismissed={factCheckDismissed}
+          onDismiss={dismissFactCheckFlag}
+        />
       </div>
 
       {/* Telefonā PDF ir apakšējā doka sheet; fiksētā kājene paliek tikai md+. */}

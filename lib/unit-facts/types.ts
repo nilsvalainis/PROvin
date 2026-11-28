@@ -126,7 +126,13 @@ export type FactCheckFlag = {
     | "purchase_verdict"
     | "unsourced_date"
     | "powertrain_fuel"
-    | "powertrain_engine";
+    | "powertrain_engine"
+    | "powertrain_gearbox"
+    | "power_output"
+    | "km_at_date"
+    | "service_count"
+    | "auction_damage"
+    | "translation_mismatch";
   message: string;
   sentence: string;
   factId?: string;
@@ -154,4 +160,8 @@ export type FactCheckResult = {
   /** Faktu ID, kas attiecās uz šo auto. */
   appliedFactIds: string[];
   checkedAt: string;
+  /** 28.11: AI otrā pārbaude (Gemini Flash) tiešām izpildīta. */
+  aiUsed?: boolean;
+  /** AI pieprasīta, bet nav izpildīta (karogs izslēgts / demo / sesija). */
+  aiSkipped?: string;
 };

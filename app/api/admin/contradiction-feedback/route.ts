@@ -12,6 +12,7 @@ import {
   autoDowngradedRuleKeys,
   computeRuleFeedbackStats,
   parseContradictionFeedback,
+  sanitizeFeedbackSample,
   type ContradictionFeedbackEntry,
 } from "@/lib/contradiction-feedback";
 import {
@@ -58,6 +59,10 @@ export async function POST(req: Request) {
   const vin = typeof body.vin === "string" ? body.vin.trim().toUpperCase() : "";
   const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim().slice(0, 120) : "";
   const severity = typeof body.severity === "string" ? body.severity.trim().slice(0, 12) : "";
+  // 28.11: teikums nedēļas kopsavilkumam - bez personas datiem (e-pasti, tālr., VIN, numurzīmes, vārdi).
+  const sample = sanitizeFeedbackSample(body.sample);
+  const kind = typeof body.kind === "string" ? body.kind.trim().slice(0, 60) : "";
+  const factId = typeof body.factId === "string" ? body.factId.trim().slice(0, 120) : "";
   // Piezīme var saturēt brīvu tekstu - žurnālā to neliek (paliek tikai pasūtījumā).
   const { note: _note, ...clean } = entry;
   void _note;
@@ -66,6 +71,9 @@ export async function POST(req: Request) {
     ...(VIN_RE.test(vin) ? { vin } : {}),
     ...(sessionId ? { sessionId } : {}),
     ...(severity ? { severity } : {}),
+    ...(sample ? { sample } : {}),
+    ...(kind ? { kind } : {}),
+    ...(factId ? { factId } : {}),
   });
   return NextResponse.json({ ok });
 }

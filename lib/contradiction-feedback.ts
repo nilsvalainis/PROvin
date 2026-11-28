@@ -37,6 +37,11 @@ export type ContradictionFeedbackLogLine = ContradictionFeedbackEntry & {
   sessionId?: string;
   /** Brīdinājuma smagums brīdī, kad operators lēma. */
   severity?: string;
+  /** 28.11: brīdinājuma teikums bez personas datiem (`sanitizeFeedbackSample`) - nedēļas kopsavilkumam. */
+  sample?: string;
+  /** Faktu pārbaudes atraduma veids un fakta id (ja ir). */
+  kind?: string;
+  factId?: string;
 };
 
 export const CONTRADICTION_FEEDBACK_MAX = 400;
@@ -345,4 +350,117 @@ export function ruleAdviceLv(s: Pick<RuleFeedbackStats, "dismissRatio" | "total"
   if (s.total >= 3 && s.dismissRatio >= 0.6) return "Bieži viltus - apsvērt izņēmumu";
   if (s.dismissRatio <= 0.2) return "Noteikums strādā";
   return "Vērot";
+}
+
+/* ---------- 28.11: nedēļas kopsavilkums no «Nav pretruna» (noteikumu labošanai) ---------- */
+
+export const FEEDBACK_SAMPLE_MAX = 240;
+
+/** Divvārdu zīmoli / vietas, kas nav personas vārdi. */
+const NAME_PAIR_ALLOW =
+  /^(?:Land Rover|Range Rover|Mercedes Benz|Alfa Romeo|Aston Martin|Rolls Royce|Lynk Co|Great Wall|Grand Cherokee|Grand Vitara|Model Y|Model S|Model X|Model)$/;
+
+/** Auto marka + modelis («Volkswagen Passat») nav personas vārds. */
+const CAR_MAKE_RE =
+  /^(?:Audi|Volkswagen|Skoda|Škoda|Seat|Cupra|Porsche|Toyota|Lexus|Honda|Mazda|Nissan|Subaru|Suzuki|Mitsubishi|Hyundai|Kia|Ford|Opel|Peugeot|Citroen|Citroën|Renault|Dacia|Fiat|Jeep|Volvo|Tesla|Mercedes|Mini|Jaguar|Chevrolet|Chrysler|Dodge|Lancia|Saab|Smart|Polestar|Genesis|Infiniti|Acura|Cadillac|Lincoln|Buick|Maserati|Ferrari|Lamborghini|Bentley)$/;
+
+/**
+ * Teikums žurnālam bez personas datiem: e-pasti, saites, tālruņi, personas kodi, VIN, numurzīmes,
+ * «Vārds Uzvārds» pāri. Skaitļi (km, datumi) paliek - tie vajadzīgi noteikuma labošanai.
+ */
+export function sanitizeFeedbackSample(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  let t = raw.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  t = t
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[e-pasts]")
+    .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/gi, "[saite]")
+    .replace(/(?<![\w-])\d{6}-\d{5}(?![\w-])/g, "[personas kods]")
+    .replace(/(?<![A-Z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Z0-9])/g, (m) => (/\d/.test(m) && /[A-Z]/.test(m) ? "[VIN]" : m))
+    .replace(/(?<!\d)(?:\+|00)\d{1,3}[\s-]?\d{2,4}(?:[\s-]?\d{2,4}){1,3}/g, "[tālr.]")
+    .replace(/(?<![\d.,])(?<!\d[\s\u00a0])(?:2|6)\d{7}(?![\d])/g, "[tālr.]")
+    .replace(/(?<![\p{L}\p{N}-])\p{Lu}{1,2}-\d{1,4}(?![\p{L}\p{N}])/gu, "[numurs]")
+    .replace(/(?<![\p{L}])(\p{Lu}\p{Ll}+)\s+(\p{Lu}\p{Ll}+)(?![\p{L}])/gu, (m, a: string, b: string) =>
+      NAME_PAIR_ALLOW.test(`${a} ${b}`) || CAR_MAKE_RE.test(a) ? m : "[vārds]",
+    );
+  return t.length > FEEDBACK_SAMPLE_MAX ? `${t.slice(0, FEEDBACK_SAMPLE_MAX - 1)}…` : t;
+}
+
+export type DismissedFeedbackGroup = {
+  /** `fact` / `prepdf` / `source` / `odometer`. */
+  origin: string;
+  rule: string;
+  kind: string;
+  factId: string;
+  dismiss: number;
+  confirm: number;
+  /** Līdz 3 dažādi teikumi (bez personas datiem). */
+  examples: string[];
+};
+
+export type DismissedFeedbackDigest = {
+  days: number;
+  from: string;
+  to: string;
+  decisions: number;
+  dismissed: number;
+  groups: DismissedFeedbackGroup[];
+};
+
+/**
+ * Pēdējo `days` dienu «Nav pretruna» lēmumi pa noteikumu / veidu / faktu ar piemēra teikumiem.
+ * Viens lēmums uz VIN + fp (jaunākais). Izvadē nav VIN, pasūtījuma id un piezīmju.
+ */
+export function buildDismissedFeedbackDigest(
+  lines: readonly ContradictionFeedbackLogLine[],
+  nowMs: number,
+  days = 7,
+): DismissedFeedbackDigest {
+  const since = nowMs - days * 86_400_000;
+  const latest = new Map<string, ContradictionFeedbackLogLine>();
+  for (const l of lines) {
+    const t = Date.parse(l.at);
+    if (!Number.isFinite(t) || t < since || t > nowMs + 60_000) continue;
+    const k = `${l.vin ?? ""}|${l.fp}`;
+    const prev = latest.get(k);
+    if (!prev || Date.parse(prev.at) <= t) latest.set(k, l);
+  }
+  const groups = new Map<string, DismissedFeedbackGroup>();
+  let dismissed = 0;
+  for (const l of latest.values()) {
+    const kind = (l.kind ?? "").slice(0, 60);
+    const factId = (l.factId ?? "").slice(0, 120);
+    const key = `${l.origin}|${l.rule}|${kind}|${factId}`;
+    const g = groups.get(key) ?? { origin: l.origin, rule: l.rule, kind, factId, dismiss: 0, confirm: 0, examples: [] };
+    if (l.verdict === "dismiss") {
+      g.dismiss += 1;
+      dismissed += 1;
+      // Vecās rindas var būt bez `sample`; jaunās jau tīrītas, bet tīra vēlreiz (aizsardzība).
+      const ex = sanitizeFeedbackSample(l.sample ?? "");
+      if (ex && g.examples.length < 3 && !g.examples.includes(ex)) g.examples.push(ex);
+    } else g.confirm += 1;
+    groups.set(key, g);
+  }
+  return {
+    days,
+    from: new Date(since).toISOString(),
+    to: new Date(nowMs).toISOString(),
+    decisions: latest.size,
+    dismissed,
+    groups: [...groups.values()]
+      .filter((g) => g.dismiss > 0)
+      .sort((a, b) => b.dismiss - a.dismiss || a.confirm - b.confirm || a.rule.localeCompare(b.rule)),
+  };
+}
+
+/** Teksta versija galvenajam (latviski): viena rinda katram noteikumam + piemēri. */
+export function formatDismissedFeedbackDigest(d: DismissedFeedbackDigest): string {
+  if (d.groups.length === 0) return `Pēdējās ${d.days} dienās «Nav pretruna» atzīmju nav.`;
+  const out = [`«Nav pretruna» pēdējās ${d.days} dienās: ${d.dismissed} no ${d.decisions} lēmumiem.`];
+  for (const g of d.groups) {
+    const id = [g.rule, g.kind && g.kind !== g.rule ? g.kind : "", g.factId].filter(Boolean).join(" / ");
+    out.push(`- ${id} (${g.origin}): noraidīti ${g.dismiss}, apstiprināti ${g.confirm}`);
+    for (const ex of g.examples) out.push(`  «${ex}»`);
+  }
+  return out.join("\n");
 }

@@ -34,7 +34,8 @@ import {
   reviewEmailKey,
   withReviewAsked,
 } from "@/lib/review-ask";
-import { readReviewAskDoc, readReviewAskEntry, updateReviewAskDoc } from "@/lib/review-ask-store";
+import { enqueueReviewAskAfterReport, readReviewAskDoc, readReviewAskEntry, updateReviewAskDoc } from "@/lib/review-ask-store";
+import { auditSendReviewDecision } from "@/lib/audits-send-message";
 import { readOrderClientMarks, updateOrderClientMarks } from "@/lib/order-client-marks-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
@@ -169,8 +170,20 @@ export async function POST(req: Request) {
       { situation: body.situation, consult: body.consult },
       { channel, atIso: nowIso, lang, b2b: body.b2b === true },
     );
-    const marks = await updateOrderClientMarks(sessionId, (cur) => withAuditSend(cur, rec));
+    // Google atsauksmes lūgums (Nils 28.11, kā e-pasta ceļā): ķeksis -> rindā (cron vēlreiz pārbauda B2B, demo,
+    // atmaksu, «Nelūgt»); noņemts -> «Nelūgt». Vecie pieprasījumi bez `review` - tikai žurnāls (kā līdz šim).
+    const decision = "review" in body ? auditSendReviewDecision({ review: body.review === true, b2b: body.b2b === true }) : "skip";
+    const marks = await updateOrderClientMarks(sessionId, (cur) => {
+      const next = withAuditSend(cur, rec);
+      return decision === "opt_out" ? withReviewOptOut(next, true, nowIso) : next;
+    });
     if (!marks) return NextResponse.json({ error: "store_failed" }, { status: 503 });
+    if (decision === "enqueue") {
+      const who = await customerEmailFor(sessionId).catch(() => null);
+      if (who?.to) {
+        await enqueueReviewAskAfterReport({ sessionId, reportSentAt: nowIso, email: who.to, lang, car: who.car, vin: who.vin || null });
+      }
+    }
     return NextResponse.json({ ok: true, marks });
   }
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  auditSendReviewDecision,
+  auditSendReviewDefault,
   AUDIT_SEND_CHECKS_EMPTY,
   auditSendBlockedReason,
   auditSendChecksAfterPdfChange,
@@ -157,5 +159,20 @@ describe("auditSend žurnāls", () => {
     expect(auditSendRecordFromInput({ situation: "??" }, { channel: "whatsapp", atIso: "t", lang: "lv", b2b: false }).situation).toBe(
       "ready",
     );
+  });
+});
+
+
+describe("AUDITS Google atsauksmes lūgums (Nils 28.11)", () => {
+  it("noklusējums: B2C ieslēgts, B2B izslēgts", () => {
+    expect(auditSendReviewDefault(false)).toBe(true);
+    expect(auditSendReviewDefault(true)).toBe(false);
+  });
+  it("lēmums: B2B - nekad; noņemts -> «Nelūgt»; bez lauka -> kā vecajā formā (rindā)", () => {
+    expect(auditSendReviewDecision({ review: true, b2b: true })).toBe("skip");
+    expect(auditSendReviewDecision({ review: false, b2b: true })).toBe("skip");
+    expect(auditSendReviewDecision({ review: true, b2b: false })).toBe("enqueue");
+    expect(auditSendReviewDecision({ review: false, b2b: false })).toBe("opt_out");
+    expect(auditSendReviewDecision({ b2b: false })).toBe("enqueue");
   });
 });

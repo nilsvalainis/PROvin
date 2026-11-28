@@ -96,7 +96,11 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
-import { shouldCondenseDealerPdfRecords, type DealerProductScopeArgs } from "@/lib/dealer-product-scope";
+import {
+  isDealerDataOnlyProduct,
+  shouldCondenseDealerPdfRecords,
+  type DealerProductScopeArgs,
+} from "@/lib/dealer-product-scope";
 import {
   buildDealerServiceVisitsHtml,
   type DealerServiceVisitsPdfOpts,
@@ -309,6 +313,7 @@ import {
   DEALER_EXTRA_KEYS,
 } from "@/lib/dealer-pdf-extra";
 import {
+  DEALER_SIGNALS_HERO_MORE,
   DEALER_SIGNALS_SECTION_TITLE,
   dealerSignalsAuditLinkLabel,
   dealerSignalsPdfRows,
@@ -2247,6 +2252,8 @@ function buildAutoRecordsAvotuSubsection(
   bevHints?: { fuel?: string | null; engineCode?: string | null },
   /** 27.11: markas logo no VIN, ja nosaukumā ir tikai modelis (citādi «P» monogramma Passat). */
   vin?: string | null,
+  /** 28.11: dīlera PDF signālu žetoni vāka kartītē (tukšs - nerāda). */
+  heroSignalsHtml = "",
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -2285,6 +2292,7 @@ function buildAutoRecordsAvotuSubsection(
     mileageRows: b.serviceHistory ?? [],
     maskDemoVin,
     lang,
+    signalsHtml: heroSignalsHtml,
   });
   const hasCover = coverHtml.length > 0;
   const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
@@ -2922,6 +2930,7 @@ function buildAvotuDatiSectionHtml(
     latestMileageReading(sparkCtx.rows),
     { fuel: p.csddForm?.fuelType ?? null },
     p.vin ?? null,
+    opts.extra ? "" : buildDealerSignalsHeroChipsHtml(p, lang),
   );
   const ccVin = buildCcVinAvotuSubsection(
     p.ccVinBlock ?? null,
@@ -3006,7 +3015,9 @@ function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySett
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
   // C33 (Business audits 23.11): Business / dīlera datu atskaitē nav ieteikumu - «Ieteikumi klātienes apskatei»
   // (arī statiskais krāsas biezuma bloks) tur nedrukājas.
-  const dataOnly = isBusinessBrandReport(p) || isDealerOnlyReport(p);
+  // 28.11 (Nils): arī dīlera datu pasūtījumam, kura PDF ģenerēts kā pilnā atskaite - bez ieteikumiem.
+  const dataOnly =
+    isBusinessBrandReport(p) || isDealerOnlyReport(p) || isDealerDataOnlyProduct(dealerPdfProductScope(p));
   const planHtml =
     vis.irissInspection && !dataOnly ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
   return [
@@ -3762,8 +3773,27 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-signal-row--warn td{background:#FFF7ED!important;color:#B45309!important;}
       .pdf-dealer-signal-row--warn td.pdf-dealer-signal-title{box-shadow:inset 3px 0 0 #F59E0B;}
       .pdf-dealer-signal-row--warn td.pdf-dealer-signal-text{font-weight:700;}
+      .pdf-dealer-chips{margin:12px 0 0;break-inside:avoid;page-break-inside:avoid;}
+      .pdf-dealer-chips__lbl{
+        margin:0 0 7px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#B91C1C;
+      }
+      .pdf-dealer-chips__row{display:flex;flex-wrap:wrap;gap:5px;}
+      .pdf-dealer-chip{
+        display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
+        background:#fff;border:1px solid #cbd5e1;font-size:10.5px;font-weight:600;line-height:1.3;color:#0f172a;
+        white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-dealer-chip__ic{display:inline-flex;color:#475569;}
+      .pdf-dealer-chip__ic svg{width:11px;height:11px;display:block;}
+      .pdf-dealer-chip--red{background:#FFF1F2;border-color:#FF4D4D;color:#B91C1C;}
+      .pdf-dealer-chip--red .pdf-dealer-chip__ic{color:#B91C1C;}
+      .pdf-dealer-chip--orange{background:#FFF7ED;border-color:#F59E0B;color:#B45309;}
+      .pdf-dealer-chip--orange .pdf-dealer-chip__ic{color:#B45309;}
+      .pdf-dealer-chips__more{margin:7px 0 0;font-size:9.5px;color:#475569;}
+      .pdf-dealer-chips__more a{color:#475569;text-decoration:none;}
       .pdf-dealer-signals-cta{margin:8px 0 0;font-size:10.5px;text-align:right;}
       .pdf-dealer-signals-cta a{color:#0061D2;font-weight:700;text-decoration:none;}
+      .pdf-dealer-chips__more a.pdf-dealer-chips__cta{color:#0061D2;font-weight:700;}
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-src{text-align:center!important;}
@@ -4474,7 +4504,59 @@ export function buildDealerSignalsSectionHtml(
     link && /^https:\/\//.test(url)
       ? `<p class="pdf-dealer-signals-cta"><a href="${escapeHtml(url)}">${escapeHtml(dealerSignalsAuditLinkLabel(lang, link))}</a></p>`
       : "";
-  return `<section class="pdf-dealer-signals pdf-page-flow-chunk" data-dealer-signals="${escapeHtml(rows.map((r) => r.kind).join(","))}">${head}<div class="pdf-mileage-history-table-wrap"><table class="pdf-dealer-signals-table"><colgroup><col class="pdf-dealer-signal-col-title"/><col/></colgroup><tbody>${body}</tbody></table></div>${cta}</section>`;
+  return `<section id="dealer-signals" class="pdf-dealer-signals pdf-page-flow-chunk" data-dealer-signals="${escapeHtml(rows.map((r) => r.kind).join(","))}">${head}<div class="pdf-mileage-history-table-wrap"><table class="pdf-dealer-signals-table"><colgroup><col class="pdf-dealer-signal-col-title"/><col/></colgroup><tbody>${body}</tbody></table></div>${cta}</section>`;
+}
+
+const DEALER_SIGNAL_CHIP_SVG_ATTRS =
+  'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+
+/** Žetona ikona pēc signāla tipa (makets B); noklusējums - karodziņš. */
+const DEALER_SIGNAL_CHIP_ICON_PATHS: Partial<Record<DealerSignalKind, string>> & { flag: string } = {
+  special_status:
+    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  incidents:
+    '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  us_history:
+    '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  foreign_registry:
+    '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  auction_photos:
+    '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  archive_photos:
+    '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  mileage_mismatch: '<path d="M4.9 19a9 9 0 1 1 14.2 0"/><path d="M12 14l4-5"/><circle cx="12" cy="14" r="1.5"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+};
+
+function dealerSignalChipIconSvg(kind: DealerSignalKind): string {
+  const paths = DEALER_SIGNAL_CHIP_ICON_PATHS[kind] ?? DEALER_SIGNAL_CHIP_ICON_PATHS.flag;
+  return `<svg ${DEALER_SIGNAL_CHIP_SVG_ATTRS}>${paths}</svg>`;
+}
+
+/**
+ * Nils 28.11 (makets B, «uzreiz produkcijā»): dīlera PDF 1. lapā zem «VIN · jauda» - signālu žetoni.
+ * Tie paši nosaukumi kā pilnajā sadaļā; bez skaitļiem, avotiem un verdikta. Pilnā tabula paliek savā vietā.
+ */
+export function buildDealerSignalsHeroChipsHtml(
+  p: Pick<ClientReportPayload, "pdfReportKind" | "dealerSignals" | "dealerSignalsAuditLink" | "dealerSignalsTranslated">,
+  lang: ClientReportLang,
+): string {
+  if (p.pdfReportKind !== "dealer") return "";
+  const rows = dealerSignalsPdfRows(p.dealerSignals, lang, p.dealerSignalsTranslated);
+  if (rows.length === 0) return "";
+  const chips = rows
+    .map((r) => {
+      const tone = r.tone === "red" ? " pdf-dealer-chip--red" : r.tone === "orange" ? " pdf-dealer-chip--orange" : "";
+      return `<span class="pdf-dealer-chip${tone}" data-signal="${escapeHtml(r.kind)}"><span class="pdf-dealer-chip__ic">${dealerSignalChipIconSvg(r.kind)}</span>${escapeHtml(r.title)}</span>`;
+    })
+    .join("");
+  const link = p.dealerSignalsAuditLink;
+  const url = (link?.url ?? "").trim();
+  const audit =
+    link && /^https:\/\//.test(url)
+      ? ` · <a class="pdf-dealer-chips__cta" href="${escapeHtml(url)}">${escapeHtml(dealerSignalsAuditLinkLabel(lang, link))}</a>`
+      : "";
+  return `<div class="pdf-dealer-chips" data-dealer-signal-chips="${escapeHtml(rows.map((r) => r.kind).join(","))}"><p class="pdf-dealer-chips__lbl">${escapeHtml(DEALER_SIGNALS_SECTION_TITLE[lang])}</p><div class="pdf-dealer-chips__row">${chips}</div><p class="pdf-dealer-chips__more"><a href="#dealer-signals">${escapeHtml(DEALER_SIGNALS_HERO_MORE[lang])}</a>${audit}</p></div>`;
 }
 
 /** «EXTRA · Papildu dati» - dīlera PDF beigās (pirms kājenes). Tukšs, ja nekas nav izvēlēts vai nav datu. */
