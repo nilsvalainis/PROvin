@@ -135,3 +135,23 @@ export function auditSendBlockedReason(args: {
 export function auditSendChecksAfterPdfChange(checks: AuditSendChecks): AuditSendChecks {
   return [false, checks[1], checks[2], checks[3]];
 }
+
+/**
+ * Google atsauksmes lūgums AUDITS formā (Nils 28.11 - kā vecajā formā): atsevišķs e-pasts nākamajā darba dienā
+ * (`lib/review-ask.ts`), atskaites e-pastā lūguma nav (26.11). B2C - ieslēgts pēc noklusējuma (vecā forma to
+ * rindoja vienmēr); B2B diskrētais režīms - nekad (vecā forma B2B nerindoja).
+ */
+export function auditSendReviewDefault(b2b: boolean): boolean {
+  return !b2b;
+}
+
+export type AuditSendReviewDecision = "enqueue" | "opt_out" | "skip";
+
+/**
+ * Serverim: `enqueue` - rindā (kā līdz šim); `opt_out` - admins noņēma ķeksi (atzīme «Nelūgt», arī jau rindotais
+ * netiks sūtīts); `skip` - B2B. Vecie pieprasījumi bez lauka `review` -> kā vecajā formā (`enqueue`).
+ */
+export function auditSendReviewDecision(input: { review?: unknown; b2b: boolean }): AuditSendReviewDecision {
+  if (input.b2b) return "skip";
+  return input.review === false ? "opt_out" : "enqueue";
+}

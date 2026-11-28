@@ -32,6 +32,7 @@ import {
   auditSendChecksAfterPdfChange,
   auditSendChecksDone,
   auditSendLangOptions,
+  auditSendReviewDefault,
   buildAuditSendMessage,
   type AuditSendChecks,
   type AuditSendSituation,
@@ -56,7 +57,8 @@ export type AuditSendInput = {
   saveDropbox: boolean;
   subject: string;
   text: string;
-  auditSend: { situation: AuditSendSituation; b2b: boolean; consult: boolean };
+  /** `review` - Google atsauksmes lūgums nākamajā darba dienā (B2B vienmēr `false`). */
+  auditSend: { situation: AuditSendSituation; b2b: boolean; consult: boolean; review: boolean };
   confirmRecipientOverride?: boolean;
 };
 
@@ -89,7 +91,7 @@ type Props = {
   /** WhatsApp: «Izpildīts» atzīme (e-pastam to dara serveris). */
   setComplete: (complete: boolean) => Promise<void>;
   /** WhatsApp sūtījuma ieraksts žurnālā. */
-  recordWhatsapp: (input: { situation: AuditSendSituation; lang: ClientReportLang; b2b: boolean }) => Promise<void>;
+  recordWhatsapp: (input: { situation: AuditSendSituation; lang: ClientReportLang; b2b: boolean; review: boolean }) => Promise<void>;
   /** «Vecā forma» (AdminSendReportDialog). */
   onOpenOldForm: () => void;
   /** Pēc nosūtīšanas «Aizvērt»: saglabā melnrakstu un atgriežas sarakstā. */
@@ -148,6 +150,7 @@ export function AdminAuditSendDialog(props: Props) {
   const [picked, setPicked] = useState<Set<string>>(() => new Set(attachments.map((a) => a.id)));
   const [extraItems, setExtraItems] = useState<DealerExtraItem[]>([]);
   const [consult, setConsult] = useState(!b2b);
+  const [reviewAsk, setReviewAsk] = useState(() => auditSendReviewDefault(b2b));
   const [saveDropbox, setSaveDropbox] = useState(true);
   const [markDone, setMarkDone] = useState(true);
   const [checks, setChecks] = useState<AuditSendChecks>(AUDIT_SEND_CHECKS_EMPTY);
@@ -171,6 +174,7 @@ export function AdminAuditSendDialog(props: Props) {
     setPicked(new Set(attachments.map((a) => a.id)));
     setExtraItems([]);
     setConsult(!b2b);
+    setReviewAsk(auditSendReviewDefault(b2b));
     setSaveDropbox(true);
     setMarkDone(true);
     setChecks(AUDIT_SEND_CHECKS_EMPTY);
@@ -271,7 +275,7 @@ export function AdminAuditSendDialog(props: Props) {
         window.open(p.downloadUrl, "_blank", "noopener,noreferrer");
         window.open(dealerSendWhatsappUrl(customerPhoneDigits, text.trim()), "_blank", "noopener,noreferrer");
         setBusy("send");
-        await recordWhatsapp({ situation, lang, b2b });
+        await recordWhatsapp({ situation, lang, b2b, review: !b2b && reviewAsk });
         let completed = false;
         if (markDone) {
           try {
@@ -319,7 +323,7 @@ export function AdminAuditSendDialog(props: Props) {
         saveDropbox,
         subject: subject.trim(),
         text: text.trim(),
-        auditSend: { situation, b2b, consult: !b2b && consult },
+        auditSend: { situation, b2b, consult: !b2b && consult, review: !b2b && reviewAsk },
       };
       let r: SendReportResult;
       try {
@@ -522,9 +526,18 @@ export function AdminAuditSendDialog(props: Props) {
       </div>
     );
 
-  const optionRow = (label: string, checked: boolean, onChange: (v: boolean) => void) => (
-    <label className="flex min-h-[34px] cursor-pointer items-center gap-2.5 text-[12.5px] text-slate-800 max-md:min-h-11 max-md:text-[14px]">
-      <input type="checkbox" className="max-md:h-[22px] max-md:w-[22px]" disabled={off} checked={checked} onChange={(e) => onChange(e.target.checked)} />
+  const optionRow = (label: string, checked: boolean, onChange: (v: boolean) => void, disabled = false, dataAttr?: string) => (
+    <label
+      {...(dataAttr ? { [dataAttr]: "" } : {})}
+      className={`flex min-h-[34px] items-center gap-2.5 text-[12.5px] text-slate-800 max-md:min-h-11 max-md:text-[14px] ${disabled ? "opacity-50" : "cursor-pointer"}`}
+    >
+      <input
+        type="checkbox"
+        className="max-md:h-[22px] max-md:w-[22px]"
+        disabled={off || disabled}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       {label}
     </label>
   );
@@ -533,6 +546,8 @@ export function AdminAuditSendDialog(props: Props) {
       <p className={clientSendLabelClass}>Opcijas</p>
       <div className="amx-card rounded-lg border border-slate-200 px-3 py-1 max-md:px-3.5">
         {!b2b && channel === "email" ? optionRow("Konsultācijas bloks e-pastā", consult, setConsult) : null}
+        {/* Kā vecajā formā: B2B - izslēgts un neaktīvs. Lūgums - atsevišķs e-pasts nākamajā darba dienā. */}
+        {optionRow("Lūgt Google atsauksmi", !b2b && reviewAsk, setReviewAsk, b2b, "data-audit-send-review")}
         {channel === "email" ? optionRow("Kopija Dropbox /_PROv/", saveDropbox, setSaveDropbox) : null}
         {optionRow("Pēc nosūtīšanas atzīmēt «Izpildīts»", markDone, setMarkDone)}
       </div>

@@ -15,6 +15,7 @@ const m = vi.hoisted(() => ({
   recordAudit: vi.fn(async (_sid: string, rec: unknown) => ({ auditSends: [rec] })),
   recordDealer: vi.fn(async () => null),
   review: vi.fn(async () => true),
+  updateMarks: vi.fn(async (_sid: string, fn: (cur: Record<string, unknown>) => Record<string, unknown>) => fn({})),
 }));
 
 vi.mock("@/lib/admin-auth", () => ({ getAdminSession: async () => true }));
@@ -48,7 +49,11 @@ vi.mock("@/lib/client-report-sends", () => ({
 vi.mock("@/lib/dropbox-client", () => ({ getDropboxClient: () => null }));
 vi.mock("@/lib/admin-audit-complete-store", () => ({ setAuditDeadlineComplete: async () => ({ ok: true, completedAt: "x" }) }));
 vi.mock("@/lib/review-ask-store", () => ({ enqueueReviewAskAfterReport: m.review }));
-vi.mock("@/lib/order-client-marks-store", () => ({ recordDealerSendOnServer: m.recordDealer, recordAuditSendOnServer: m.recordAudit }));
+vi.mock("@/lib/order-client-marks-store", () => ({
+  recordDealerSendOnServer: m.recordDealer,
+  recordAuditSendOnServer: m.recordAudit,
+  updateOrderClientMarks: m.updateMarks,
+}));
 
 import { POST } from "@/app/api/admin/notify-report-ready/route";
 
@@ -123,5 +128,28 @@ describe("notify-report-ready ar auditSend", () => {
     const sent = m.send.mock.calls[0]![0] as { audit?: unknown };
     expect(sent.audit).toBeUndefined();
     expect(m.recordAudit).not.toHaveBeenCalled();
+  });
+
+  it("«Lūgt Google atsauksmi» (28.11): ieslēgts -> rindā; noņemts -> nav rindā + «Nelūgt»", async () => {
+    await POST(req({ situation: "ready", b2b: false, consult: false, review: true }));
+    expect(m.review).toHaveBeenCalledTimes(1);
+    expect(m.updateMarks).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    m.get.mockResolvedValue({ statusCode: 200, stream: new Response(new Uint8Array(3)).body });
+    const res = await POST(req({ situation: "ready", b2b: false, consult: false, review: false }));
+    expect(res.status).toBe(200);
+    expect(m.review).not.toHaveBeenCalled();
+    expect(m.updateMarks).toHaveBeenCalledTimes(1);
+    const fn = m.updateMarks.mock.calls[0]![1] as (cur: Record<string, unknown>) => Record<string, unknown>;
+    expect(typeof fn({}).reviewOptOutAt).toBe("string");
+  });
+
+  it("B2B diskrēts ar review: true - atsauksmi nerindo un «Nelūgt» neliek (kā vecajā formā B2B)", async () => {
+    m.order.partnerId = "p_1";
+    m.order.notes = "partner_id=p_1";
+    await POST(req({ situation: "ready", b2b: true, consult: false, review: true }));
+    expect(m.review).not.toHaveBeenCalled();
+    expect(m.updateMarks).not.toHaveBeenCalled();
   });
 });
