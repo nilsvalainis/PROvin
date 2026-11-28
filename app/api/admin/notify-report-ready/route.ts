@@ -35,8 +35,9 @@ import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 import { dealerSendRecordFromInput } from "@/lib/order-client-marks";
-import { auditSendRecordFromInput } from "@/lib/order-client-marks";
-import { recordAuditSendOnServer, recordDealerSendOnServer } from "@/lib/order-client-marks-store";
+import { auditSendRecordFromInput, withReviewOptOut } from "@/lib/order-client-marks";
+import { auditSendReviewDecision } from "@/lib/audits-send-message";
+import { recordAuditSendOnServer, recordDealerSendOnServer, updateOrderClientMarks } from "@/lib/order-client-marks-store";
 import { dealerExtraFilesError, dealerSentFilesFromAttachments } from "@/lib/dealer-send-extra-files";
 import { reviewCarLabel } from "@/lib/review-ask";
 import { enqueueReviewAskAfterReport } from "@/lib/review-ask-store";
@@ -547,7 +548,20 @@ export async function POST(req: Request) {
   });
 
   // Google atsauksmes lūgums: rindā pēc pirmās atskaites (B2B, demo un iekšējie - nē). Kļūda sūtījumu neaptur.
-  if (!mailB2b && !order.isDemo && order.auditPurpose !== "internal") {
+  // AUDITS forma (Nils 28.11): ķeksis «Lūgt Google atsauksmi» - noņemts -> «Nelūgt» (arī jau rindotais netiek sūtīts).
+  const reviewDecision = auditSendInput
+    ? auditSendReviewDecision({ review: auditSendInput.review, b2b: mailB2b })
+    : mailB2b
+      ? "skip"
+      : "enqueue";
+  if (reviewDecision === "opt_out") {
+    try {
+      await updateOrderClientMarks(sessionId, (cur) => withReviewOptOut(cur, true, new Date().toISOString()));
+    } catch {
+      /* atzīme nav obligāta sūtījumam */
+    }
+  }
+  if (reviewDecision === "enqueue" && !order.isDemo && order.auditPurpose !== "internal") {
     const csddForCar = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
     const carForReview = orderCarFromCsdd(csddForCar, "", notifyVin);
     await enqueueReviewAskAfterReport({

@@ -103,6 +103,30 @@ describe("AUDITS «Sūtīt atskaiti» forma (makets 27.11)", () => {
   });
 });
 
+describe("«Lūgt Google atsauksmi» (Nils 28.11 - kā vecajā formā)", () => {
+  it("B2C: ķeksis ieslēgts pēc noklusējuma; B2B: izslēgts un neaktīvs", () => {
+    const b2c = renderHtml(dialog(false));
+    expect(renderText(dialog(false))).toContain("Lūgt Google atsauksmi");
+    expect(b2c).toMatch(/<label data-audit-send-review=""[^>]*><input type="checkbox"[^>]*checked=""/);
+    const b2b = renderHtml(dialog(true));
+    expect(renderText(dialog(true))).toContain("Lūgt Google atsauksmi");
+    const row = /<label data-audit-send-review=""[^>]*>(<input[^>]*>)/.exec(b2b)?.[1] ?? "";
+    expect(row).toContain('disabled=""');
+    expect(row).not.toContain('checked=""');
+  });
+
+  it("vērtība iet uz serveri: e-pastā `auditSend.review`, WhatsApp - `audit_send` ar `review`", () => {
+    const d = src("components/admin/AdminAuditSendDialog.tsx");
+    expect(d).toContain("auditSend: { situation, b2b, consult: !b2b && consult, review: !b2b && reviewAsk }");
+    expect(d).toContain("recordWhatsapp({ situation, lang, b2b, review: !b2b && reviewAsk })");
+    const ws = src("components/admin/OrderDetailWorkspace.tsx");
+    expect(ws).toMatch(/action: "audit_send",[^\n]*review \}/);
+    const marks = src("app/api/admin/order-client-marks/route.ts");
+    expect(marks).toContain("enqueueReviewAskAfterReport");
+    expect(marks).toContain("withReviewOptOut(next, true, nowIso)");
+  });
+});
+
 describe("pieslēgšana pasūtījumā", () => {
   const w = src("components/admin/OrderDetailWorkspace.tsx");
   it("«Sūtīt atskaiti» (dators), telefona «Sūtīt» un «Vairāk» atver jauno formu AUDITS/BUSINESS pasūtījumiem", () => {
