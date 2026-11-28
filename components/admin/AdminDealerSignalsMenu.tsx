@@ -10,7 +10,7 @@ import {
   DEALER_SIGNAL_TITLES,
   DEALER_SIGNAL_TONE_LABEL_LV,
   DEALER_SIGNAL_TONES,
-  DEALER_SIGNALS_AUDIT_LINK_LABEL,
+  DEALER_SIGNALS_AUDIT_INFO,
   DEALER_SIGNALS_SECTION_TITLE,
   dealerSignalsMissingTranslations,
   dealerSignalsPdfRows,
@@ -417,7 +417,10 @@ export function DealerSignalsEditor({
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 text-right font-bold text-[#0061D2]">{DEALER_SIGNALS_AUDIT_LINK_LABEL[previewLang]}</p>
+            <p className="mt-2 text-[10px] text-[#64748b]">
+              ⓘ {DEALER_SIGNALS_AUDIT_INFO[previewLang].lead}
+              <span className="text-[#0061D2] underline">{DEALER_SIGNALS_AUDIT_INFO[previewLang].link}</span> ↗
+            </p>
             {trPhase === "busy" ? (
               <p data-dealer-signals-tr="busy" className="mt-1 text-[11px] text-[var(--color-provin-muted)]">
                 Tulko…

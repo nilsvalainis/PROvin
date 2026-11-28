@@ -313,9 +313,9 @@ import {
   DEALER_EXTRA_KEYS,
 } from "@/lib/dealer-pdf-extra";
 import {
+  DEALER_SIGNALS_AUDIT_INFO,
   DEALER_SIGNALS_HERO_MORE,
   DEALER_SIGNALS_SECTION_TITLE,
-  dealerSignalsAuditLinkLabel,
   dealerSignalsPdfRows,
   type DealerSignalKind,
   type DealerSignalsAuditLink,
@@ -3791,9 +3791,10 @@ ${clientReportPageChromeCss(running)}
       .pdf-dealer-chip--orange .pdf-dealer-chip__ic{color:#B45309;}
       .pdf-dealer-chips__more{margin:7px 0 0;font-size:9.5px;color:#475569;}
       .pdf-dealer-chips__more a{color:#475569;text-decoration:none;}
-      .pdf-dealer-signals-cta{margin:8px 0 0;font-size:10.5px;text-align:right;}
-      .pdf-dealer-signals-cta a{color:#0061D2;font-weight:700;text-decoration:none;}
-      .pdf-dealer-chips__more a.pdf-dealer-chips__cta{color:#0061D2;font-weight:700;}
+      .pdf-dealer-signals-info{margin:10px 0 0;font-size:10px;line-height:1.4;color:#64748b;display:flex;align-items:center;gap:5px;}
+      .pdf-dealer-signals-info__ic{display:inline-flex;color:#94a3b8;}
+      .pdf-dealer-signals-info__ic svg{width:11px;height:11px;display:block;}
+      .pdf-dealer-signals-info a{color:#0061D2;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;}
       .pdf-mileage-history-table th.pdf-mileage-th-date{text-align:left!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-odo{text-align:center!important;}
       .pdf-mileage-history-table th.pdf-mileage-th-src{text-align:center!important;}
@@ -4498,12 +4499,12 @@ export function buildDealerSignalsSectionHtml(
         `<tr class="pdf-dealer-signal-row${r.tone === "red" ? " pdf-dealer-signal-row--alert" : r.tone === "orange" ? " pdf-dealer-signal-row--warn" : ""}" data-signal="${escapeHtml(r.kind)}"><td class="pdf-dealer-signal-title">${escapeHtml(r.title)}</td><td class="pdf-dealer-signal-text">${escapeHtml(r.text)}</td></tr>`,
     )
     .join("");
-  const link = p.dealerSignalsAuditLink;
-  const url = (link?.url ?? "").trim();
-  const cta =
-    link && /^https:\/\//.test(url)
-      ? `<p class="pdf-dealer-signals-cta"><a href="${escapeHtml(url)}">${escapeHtml(dealerSignalsAuditLinkLabel(lang, link))}</a></p>`
-      : "";
+  const url = (p.dealerSignalsAuditLink?.url ?? "").trim();
+  const info = DEALER_SIGNALS_AUDIT_INFO[lang];
+  // Nils 28.11 (makets B): pieticīga info rinda, zils un saite tikai vārds «pasūtīt»; bez cenas.
+  const cta = /^https:\/\//.test(url)
+    ? `<p class="pdf-dealer-signals-info"><span class="pdf-dealer-signals-info__ic"><svg ${DEALER_SIGNAL_CHIP_SVG_ATTRS}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><span>${escapeHtml(info.lead)}<a href="${escapeHtml(url)}">${escapeHtml(info.link)}</a> ↗</span></p>`
+    : "";
   return `<section id="dealer-signals" class="pdf-dealer-signals pdf-page-flow-chunk" data-dealer-signals="${escapeHtml(rows.map((r) => r.kind).join(","))}">${head}<div class="pdf-mileage-history-table-wrap"><table class="pdf-dealer-signals-table"><colgroup><col class="pdf-dealer-signal-col-title"/><col/></colgroup><tbody>${body}</tbody></table></div>${cta}</section>`;
 }
 
@@ -4550,13 +4551,7 @@ export function buildDealerSignalsHeroChipsHtml(
       return `<span class="pdf-dealer-chip${tone}" data-signal="${escapeHtml(r.kind)}"><span class="pdf-dealer-chip__ic">${dealerSignalChipIconSvg(r.kind)}</span>${escapeHtml(r.title)}</span>`;
     })
     .join("");
-  const link = p.dealerSignalsAuditLink;
-  const url = (link?.url ?? "").trim();
-  const audit =
-    link && /^https:\/\//.test(url)
-      ? ` · <a class="pdf-dealer-chips__cta" href="${escapeHtml(url)}">${escapeHtml(dealerSignalsAuditLinkLabel(lang, link))}</a>`
-      : "";
-  return `<div class="pdf-dealer-chips" data-dealer-signal-chips="${escapeHtml(rows.map((r) => r.kind).join(","))}"><p class="pdf-dealer-chips__lbl">${escapeHtml(DEALER_SIGNALS_SECTION_TITLE[lang])}</p><div class="pdf-dealer-chips__row">${chips}</div><p class="pdf-dealer-chips__more"><a href="#dealer-signals">${escapeHtml(DEALER_SIGNALS_HERO_MORE[lang])}</a>${audit}</p></div>`;
+  return `<div class="pdf-dealer-chips" data-dealer-signal-chips="${escapeHtml(rows.map((r) => r.kind).join(","))}"><p class="pdf-dealer-chips__lbl">${escapeHtml(DEALER_SIGNALS_SECTION_TITLE[lang])}</p><div class="pdf-dealer-chips__row">${chips}</div><p class="pdf-dealer-chips__more"><a href="#dealer-signals">${escapeHtml(DEALER_SIGNALS_HERO_MORE[lang])}</a></p></div>`;
 }
 
 /** «EXTRA · Papildu dati» - dīlera PDF beigās (pirms kājenes). Tukšs, ja nekas nav izvēlēts vai nav datu. */

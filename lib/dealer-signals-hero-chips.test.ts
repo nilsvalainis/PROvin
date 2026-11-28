@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildClientReportDocumentHtml,
   buildDealerSignalsHeroChipsHtml,
+  buildDealerSignalsSectionHtml,
   type ClientReportPayload,
 } from "@/lib/client-report-html";
 import { createDefaultSourceBlocks, emptyCsddFields } from "@/lib/admin-source-blocks";
 import { DEALER_ONLY_PDF_VISIBILITY } from "@/lib/pdf-visibility";
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
-import { DEALER_SIGNALS_HERO_MORE, DEALER_SIGNALS_SECTION_TITLE, type DealerSignalsState } from "@/lib/dealer-signals";
+import { DEALER_SIGNALS_AUDIT_INFO, DEALER_SIGNALS_HERO_MORE, DEALER_SIGNALS_SECTION_TITLE, type DealerSignalsState } from "@/lib/dealer-signals";
 
 /** Kā maketā B: īpašs statuss (sarkans), negadījumi, ASV vēsture, izsoļu foto. */
 const FOUR: DealerSignalsState = {
@@ -102,7 +103,9 @@ describe("dīlera PDF signālu žetoni 1. lapā (makets B)", () => {
     expect(html).toContain("Īpašs statuss");
     expect(html).toContain("ASV vēsture");
     expect(html).toContain('href="#dealer-signals"');
-    expect(html).toContain('<a class="pdf-dealer-chips__cta" href="https://www.provin.lv/lv/papildinajums/abc">Pasūtīt PROVIN AUDITU</a>');
+    // Makets B (28.11): 1. lapā audita saites nav.
+    expect(html).not.toContain("papildinajums");
+    expect(html).not.toContain("PROVIN AUDIT");
     expect(html).not.toMatch(/[–—]/);
     expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/\d/);
   });
@@ -123,10 +126,21 @@ describe("dīlera PDF signālu žetoni 1. lapā (makets B)", () => {
     expect(bodyOf(docOf(payload({ dealerSignals: null })))).not.toContain("pdf-dealer-chips");
   });
 
-  it("bez https saites - nav audita saites, norāde paliek", () => {
-    const html = buildDealerSignalsHeroChipsHtml(payload({ dealerSignalsAuditLink: { url: "http://x.lv" } }), "lv");
-    expect(html).not.toContain("pdf-dealer-chips__cta");
-    expect(html).toContain(DEALER_SIGNALS_HERO_MORE.lv);
+  it("pilnās sadaļas apakšā pelēka info rinda; saite tikai uz «pasūtīt», bez cenas; bez https - nav", () => {
+    const withPrice = payload({ dealerSignalsAuditLink: { url: "https://www.provin.lv/lv/papildinajums/abc", priceLabel: "79,99 €" } });
+    const sec = buildDealerSignalsSectionHtml(withPrice, "lv");
+    expect(sec).toContain('<a href="https://www.provin.lv/lv/papildinajums/abc">pasūtīt</a> ↗');
+    expect(sec.match(/<a /g)).toHaveLength(1);
+    expect(sec).not.toContain("79,99");
+    expect(sec).not.toContain("pdf-dealer-signals-cta");
+    const noHttps = payload({ dealerSignalsAuditLink: { url: "http://x.lv" } });
+    expect(buildDealerSignalsSectionHtml(noHttps, "lv")).not.toContain("pdf-dealer-signals-info");
+    expect(buildDealerSignalsHeroChipsHtml(noHttps, "lv")).toContain(DEALER_SIGNALS_HERO_MORE.lv);
+    for (const lang of ["en", "ru", "de"] as const) {
+      const html = buildDealerSignalsSectionHtml(withPrice, lang);
+      expect(html).toContain(`${DEALER_SIGNALS_AUDIT_INFO[lang].lead}<a href="https://www.provin.lv/lv/papildinajums/abc">${DEALER_SIGNALS_AUDIT_INFO[lang].link}</a>`);
+      expect(html).not.toContain(DEALER_SIGNALS_AUDIT_INFO.lv.link);
+    }
   });
 
   it("EN/RU/DE virsraksti un norāde tulkoti", () => {
