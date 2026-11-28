@@ -10,11 +10,6 @@ import {
   orderDropboxShouldRename,
   makeFromVinForFolder,
   parseOrderDropboxRecord,
-  matchPartnerFolderName,
-  partnerFolderName,
-  orderDropboxParentPath,
-  provPartnersPath,
-  dropboxParentDir,
 } from "@/lib/order-dropbox-folder";
 
 const created = Date.parse("2026-11-23T10:00:00+02:00");
@@ -45,12 +40,12 @@ describe("nosaukums: marka modelis vispirms", () => {
     const name = orderDropboxFolderName({ ...base, category: "audits", make: "Land Rover", model: "Discovery", plate: "ro-8544", vin: "SALLAAAM6FA743824" });
     expect(name).toBe("LAND ROVER DISCOVERY_RO8544_SALLAAAM6FA743824_2026-11-23_AUDITS");
     expect(orderDropboxFolderPath({ ...base, category: "audits", make: "Land Rover", model: "Discovery", plate: "RO8544", vin: "SALLAAAM6FA743824" }, {})).toBe(
-      "/_PROv/LAND ROVER DISCOVERY_RO8544_SALLAAAM6FA743824_2026-11-23_AUDITS",
+      "/_PROv/AUDITI/LAND ROVER DISCOVERY_RO8544_SALLAAAM6FA743824_2026-11-23_AUDITS",
     );
   });
   it("dīlera dati citā virsmapē un ar citu produktu nosaukumā", () => {
     const p = orderDropboxFolderPath({ ...base, category: "dealer", make: "BMW", model: "530d", vin: "WBA5R1C0XLFH42873" }, {});
-    expect(p).toBe("/_PROv/DĪLERA DATU ARHĪVS/BMW 530D_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
+    expect(p).toBe("/_PROv/DILERA DATI/BMW 530D_WBA5R1C0XLFH42873_2026-11-23_DILERA DATI");
   });
   it("marka vēl nav zināma -> numurs/VIN; ja nav nekā - īss id", () => {
     expect(orderDropboxFolderName({ ...base, category: "audits", plate: "RO8544" })).toBe("RO8544_2026-11-23_AUDITS");
@@ -76,7 +71,7 @@ describe("nosaukums: marka modelis vispirms", () => {
     expect(orderDropboxFolderName({ ...base, createdMs: late, category: "audits", plate: "RO8544" })).toBe("RO8544_2026-11-23_AUDITS");
   });
   it("root no env", () => {
-    expect(orderDropboxFolderPath({ ...base, category: "mini", plate: "AB123" }, { PROV_ORDERS_DROPBOX_ROOT: "Tests/" })).toBe("/Tests/AB123_2026-11-23_MINI");
+    expect(orderDropboxFolderPath({ ...base, category: "mini", plate: "AB123" }, { PROV_ORDERS_DROPBOX_ROOT: "Tests/" })).toBe("/Tests/MINI/AB123_2026-11-23_MINI");
   });
   it("pārdēvē tikai uz bagātāku nosaukumu", () => {
     expect(orderDropboxShouldRename("RO8544_2026-11-23_AUDITS", "LAND ROVER DISCOVERY_RO8544_2026-11-23_AUDITS")).toBe(true);
@@ -122,29 +117,5 @@ describe("produkta vārds mapes nosaukumā", () => {
     );
     expect(orderDropboxNameWithCategory("AB1234_2026-11-23_AUDITS_abc123", "audits", "dealer")).toBe("AB1234_2026-11-23_DILERA DATI_abc123");
     expect(orderDropboxNameWithCategory("Veca mape", "audits", "business")).toBe("Veca mape_BUSINESS");
-  });
-});
-
-describe("partneru mapes (Nils 27.11)", () => {
-  const existing = ["AM Cars SIA", "SIA RZ Autoparks", "Pērc un brauc (RKG GROUP)", "Auto2000 Import-Export GmbH"];
-  it("atrod esošo mapi pēc uzņēmuma nosaukuma (forma, diakritika, iekavas)", () => {
-    expect(matchPartnerFolderName(existing, "RKG GROUP SIA")).toBe("Pērc un brauc (RKG GROUP)");
-    expect(matchPartnerFolderName(existing, "SIA AM Cars")).toBe("AM Cars SIA");
-    expect(matchPartnerFolderName(existing, "RZ Autoparks")).toBe("SIA RZ Autoparks");
-    expect(matchPartnerFolderName(existing, "Auto2000 Import-Export GmbH")).toBe("Auto2000 Import-Export GmbH");
-    expect(matchPartnerFolderName(existing, "Perc un brauc")).toBe("Pērc un brauc (RKG GROUP)");
-  });
-  it("nav atbilstības - null; jauna mape pēc nosaukuma", () => {
-    expect(matchPartnerFolderName(existing, "Jauns Auto SIA")).toBeNull();
-    expect(matchPartnerFolderName(existing, "SIA")).toBeNull();
-    expect(partnerFolderName("  Jauns   Auto SIA ")).toBe("Jauns Auto SIA");
-  });
-  it("virsmapes: sakne, DĪLERA DATU ARHĪVS, PARTNERI", () => {
-    expect(orderDropboxParentPath("audits", {})).toBe("/_PROv");
-    expect(orderDropboxParentPath("business", {})).toBe("/_PROv");
-    expect(orderDropboxParentPath("mini", {})).toBe("/_PROv");
-    expect(orderDropboxParentPath("dealer", {})).toBe("/_PROv/DĪLERA DATU ARHĪVS");
-    expect(provPartnersPath({})).toBe("/_PROv/PARTNERI");
-    expect(dropboxParentDir("/_PROv/AUDITU ARHĪVS/X")).toBe("/_PROv/AUDITU ARHĪVS");
   });
 });
