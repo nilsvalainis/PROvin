@@ -1,0 +1,959 @@
+{
+ "vehicle_title": "BMW 530d, 2012",
+ "images": [
+  "https://cdn.autobid.de/data/cars/30899/3089807/84231053_hd.jpg",
+  "https://cdn.autobid.de/data/cars/30899/3089807/84231054_hd.jpg"
+ ],
+ "general_info": {
+  "title": "General Information",
+  "odometer": {
+   "title": "Odometer records",
+   "check_status": true,
+   "text": "268 200 km",
+   "val": 268200,
+   "metric": "km"
+  },
+  "damages": {
+   "title": "Vehicle damages",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "accidents": {
+   "title": "Accidents",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "salvage": {
+   "title": "Salvage records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "theft": {
+   "title": "Theft records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "lien": {
+   "title": "Lien / impound / export records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "junk": {
+   "title": "Services records",
+   "check_status": true,
+   "text": "29 record(s)"
+  },
+  "other": {
+   "title": "Other titles brands check",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "title_history": {
+   "title": "Registrations records",
+   "check_status": false,
+   "text": "No found records"
+  },
+  "sales": {
+   "title": "Sales history",
+   "check_status": false,
+   "text": "1 record(s)"
+  },
+  "owners": {
+   "title": "Number of owners",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "taxi": {
+   "title": "Taxi",
+   "check_status": false,
+   "text": "No records found"
+  }
+ },
+ "specifications": {
+  "title": "Vehicle Specifications",
+  "text": "0 damage(s)",
+  "year": {
+   "title": "Year",
+   "value": 2012
+  },
+  "country": {
+   "title": "Destination Market",
+   "value": "Europe"
+  },
+  "make": {
+   "title": "Make",
+   "value": "BMW"
+  },
+  "model": {
+   "title": "Model",
+   "value": "530d"
+  },
+  "body": {
+   "title": "Body",
+   "value": "Wagon"
+  },
+  "doors": {
+   "title": "Doors",
+   "value": 4
+  },
+  "color": {
+   "title": "Color",
+   "value": "-"
+  },
+  "engine": {
+   "title": "Engine capacity",
+   "value": "3L"
+  },
+  "fuel_type": {
+   "title": "Fuel type",
+   "value": "Diesel"
+  },
+  "seating": {
+   "title": "Standard seating",
+   "value": 5
+  },
+  "drive_type": {
+   "title": "Drive Type",
+   "value": "4x4 - Four-wheel drive"
+  },
+  "transmission": {
+   "title": "Transmission",
+   "value": "Automatic"
+  },
+  "keys": {
+   "title": "Keys",
+   "value": "-"
+  },
+  "series": {
+   "title": "Series",
+   "value": "-"
+  },
+  "product_type": {
+   "title": "Product type",
+   "value": "Car"
+  },
+  "vehicle_specification": {
+   "title": "Vehicle specification",
+   "value": "530d xDrive"
+  },
+  "engine_code": {
+   "title": "Engine code",
+   "value": "N57D30A"
+  },
+  "engine_type": {
+   "title": "Engine type",
+   "value": "4-Stroke / 6 / Row-T-DI"
+  },
+  "engine_manufacturer": {
+   "title": "Engine manufacturer",
+   "value": "BMW"
+  },
+  "cylinders": {
+   "title": "Number of cylinders",
+   "value": "-"
+  },
+  "power": {
+   "title": "Engine power",
+   "value": "190 kW (255 hp)"
+  },
+  "transmission_speeds": {
+   "title": "Number of gears",
+   "value": "8"
+  },
+  "steering_type": {
+   "title": "Steering type",
+   "value": "Electric steering"
+  },
+  "front_suspension": {
+   "title": "Front suspension",
+   "value": "-"
+  },
+  "rear_suspension": {
+   "title": "Rear suspension",
+   "value": "-"
+  },
+  "suspension": {
+   "title": "Suspension",
+   "value": "Silencer/Screws"
+  },
+  "front_brakes": {
+   "title": "Front brakes",
+   "value": "Disc"
+  },
+  "rear_brakes": {
+   "title": "Rear brakes",
+   "value": "-"
+  },
+  "abs": {
+   "title": "ABS",
+   "value": "YES"
+  },
+  "gross_weight": {
+   "title": "Gross weight",
+   "value": "2520 kg"
+  },
+  "curb_weight": {
+   "title": "Curb weight",
+   "value": "1940 kg"
+  },
+  "length": {
+   "title": "Length",
+   "value": "4907 mm"
+  },
+  "width": {
+   "title": "Width",
+   "value": "1860 mm"
+  },
+  "height": {
+   "title": "Height",
+   "value": "1462 mm"
+  },
+  "ride_height": {
+   "title": "Ride height",
+   "value": "-"
+  },
+  "track_front": {
+   "title": "Track front",
+   "value": "1600 mm"
+  },
+  "track_rear": {
+   "title": "Track rear",
+   "value": "1626 mm"
+  },
+  "wheelbase": {
+   "title": "Wheelbase",
+   "value": "2968 mm"
+  },
+  "wheel_size": {
+   "title": "Wheel size",
+   "value": "225/55 R17 97Y"
+  },
+  "number_of_wheels": {
+   "title": "Number of wheels",
+   "value": "4"
+  },
+  "number_of_axles": {
+   "title": "Number of axles",
+   "value": "2"
+  },
+  "max_speed": {
+   "title": "Max speed",
+   "value": "245 KM/H"
+  },
+  "emission_standard": {
+   "title": "Emission standard",
+   "value": "5L"
+  },
+  "co2_emission": {
+   "title": "CO2 emission",
+   "value": "153.31 g/km"
+  },
+  "max_roof_load": {
+   "title": "Max roof load",
+   "value": "100 kg"
+  },
+  "trailer_load": {
+   "title": "Trailer load without brakes",
+   "value": "750 kg"
+  },
+  "trunk_capacity": {
+   "title": "Trunk capacity",
+   "value": "-"
+  },
+  "manufacturer": {
+   "title": "Manufacturer",
+   "value": "BMW BAYERISCHE MOTOREN WERKE AG, D-80788 MUENCHEN"
+  },
+  "manufacturer_address": {
+   "title": "Manufacturer address",
+   "value": "Muenchen 13, Germany"
+  },
+  "plant_country": {
+   "title": "Plant country",
+   "value": "GERMANY"
+  }
+ },
+ "vehicle_value_information": {
+  "title": "Vehicle value information",
+  "text": "No records found",
+  "items": []
+ },
+ "vehicle_damages": {
+  "title": "Vehicle damages",
+  "text": "No records found",
+  "items": []
+ },
+ "accident_records": {
+  "title": "Accident records",
+  "text": "No records found",
+  "accidents": []
+ },
+ "services_records": {
+  "title": "Services records",
+  "text": "29 service(s)",
+  "services": [
+   {
+    "date": "2023-02-01T00:00:00.000000Z",
+    "date_ts": 1675209600,
+    "materialItems": [],
+    "laborItems": [
+     "ET-No. 11658595650        1/2 proportionally (FT999988880)",
+     "Exhaust gas radiator high temperature (11717822350)",
+     "EGR small parts set (11718490640)",
+     "Pipe union (11717799853)",
+     "Holder (61131369832)",
+     "O-ring (11618512504)",
+     "Acoustic cover front (11148490568)",
+     "Anti-freeze (83192211358)"
+    ]
+   },
+   {
+    "date": "2021-06-01T00:00:00.000000Z",
+    "date_ts": 1622505600,
+    "materialItems": [],
+    "laborItems": [
+     "Seal, door seam, roof front left (51767182285)",
+     "Plug, black (52208133466)",
+     "Seal, door seam, roof front right (51767182286)",
+     "Seal, door seam, roof, rear left (51767199783)",
+     "Seal, door seam, roof, rear right (51767199784)"
+    ]
+   },
+   {
+    "date": "2021-02-01T00:00:00.000000Z",
+    "date_ts": 1612137600,
+    "materialItems": [],
+    "laborItems": [
+     "Relay, make contact, white green (61368373700)"
+    ]
+   },
+   {
+    "date": "2021-02-01T00:00:00.000000Z",
+    "date_ts": 1612137600,
+    "materialItems": [],
+    "laborItems": [
+     "50% customer share (FT999988880)",
+     "Profile-gasket (11618507335)",
+     "O-ring (11618512504)",
+     "Gasket Steel (11618571005)",
+     "Gasket ring (13532247156)",
+     "Cylinder head cover (11127823181)"
+    ]
+   },
+   {
+    "date": "2020-10-01T00:00:00.000000Z",
+    "date_ts": 1601510400,
+    "materialItems": [],
+    "laborItems": [
+     "Hex Bolt (26117635643)",
+     "Gasket ring (64538375742)",
+     "Gasket ring (64508375741)",
+     "Gasket ring (64508363041)",
+     "Torx screw with ribs (26117529387)",
+     "Hexagon screw with flange (07119906495)",
+     "Self-locking collar nut (33306760349)",
+     "Combination nut (31106780613)",
+     "Collar bolt with compression spring (31206795249)",
+     "Assembly ring (31537502681)",
+     "Shaft seal with lock ring (31508743675)",
+     "Hex Bolt (24407561393)",
+     "Gasket ring (13532247156)",
+     "Torx bolt (11137800621)",
+     "Bearing journal, crankcase (13527797908)",
+     "Liquid sealant, Loctite 5970 (83190404517)",
+     "Timing chain (13528490225)",
+     "Guide rail (13528515670)",
+     "Chain tensioner (13528515671)",
+     "Sprocket (13527800025)",
+     "Chain tensioner (13527797905)",
+     "Shaft seal (11147797490)",
+     "Timing chain (11318570649)",
+     "Camshaft sprocket (11318509927)",
+     "Chain tensioner (11318586699)",
+     "Guide rail (11317797899)",
+     "Chain tensioner (11317797898)",
+     "Bearing journal, cylinder head (11317797900)",
+     "ISA screw (11417823426)",
+     "Cylinder head gasket asbestos-free (11128509153)",
+     "Set Bolt Cylinder Head (11128513130)",
+     "Gasket set, cylinder head cover (11128515732)",
+     "Profile-gasket (11317801703)",
+     "Gasket Steel (11137809836)",
+     "Torx bolt (11137800625)",
+     "O-ring (11437794698)",
+     "Hex Bolt (11227797966)",
+     "Gasket (18307803853)",
+     "V-band clamp (11657620508)",
+     "Muffler clamp (18307793766)",
+     "Gasket Steel (11657808159)",
+     "Muffler clamp (11658518404)",
+     "O-ring (31511213527)",
+     "ASA-Bolt (11138592611)",
+     "O-ring (17228573882)",
+     "O-ring (17228511461)",
+     "Gasket Steel (11628509783)",
+     "Flange nut (11628597827)",
+     "Gasket Steel (11628576287)",
+     "Profile-gasket (11618507335)",
+     "Gasket Steel (11618571005)",
+     "Set oil-filter element (11428507683)",
+     "BMW Engine Oil LL04 0W30 (83212405950)",
+     "Lubricant refrigeration compressor (83190143174)",
+     "Cooling agent (83190143177)"
+    ]
+   },
+   {
+    "date": "2020-10-01T00:00:00.000000Z",
+    "date_ts": 1601510400,
+    "materialItems": [],
+    "laborItems": [
+     "Dtf 1 (83222409710)"
+    ]
+   },
+   {
+    "date": "2020-09-01T00:00:00.000000Z",
+    "date_ts": 1598918400,
+    "materialItems": [],
+    "laborItems": [
+     "Rear Brake"
+    ]
+   },
+   {
+    "date": "2020-09-01T00:00:00.000000Z",
+    "date_ts": 1598918400,
+    "materialItems": [],
+    "laborItems": [
+     "FINE DUST STICKER        green (VSFSB2008)",
+     "Windshield washer antifreeze (83122298528)"
+    ]
+   },
+   {
+    "date": "2020-08-01T00:00:00.000000Z",
+    "date_ts": 1596240000,
+    "materialItems": [],
+    "laborItems": [
+     "Auxiliary damper (33536784122)",
+     "O-ring (61357684057)",
+     "Hex Bolt with washer (33506781988)",
+     "Hex Bolt (33506779488)",
+     "Self-locking hex nut (32216769539)",
+     "battery (61319217643)"
+    ]
+   },
+   {
+    "date": "2020-06-01T00:00:00.000000Z",
+    "date_ts": 1590969600,
+    "materialItems": [],
+    "laborItems": [
+     "Engine oil",
+     "Microfilter (consider further additional job(s) if appropriate)"
+    ]
+   },
+   {
+    "date": "2020-06-01T00:00:00.000000Z",
+    "date_ts": 1590969600,
+    "materialItems": [],
+    "laborItems": [
+     "BMW Engine Oil LL04 0W30 (83212405950)",
+     "Set oil-filter element (11428507683)",
+     "Set, microfilter/carbon canister (64119272642)"
+    ]
+   },
+   {
+    "date": "2019-11-01T00:00:00.000000Z",
+    "date_ts": 1572566400,
+    "materialItems": [],
+    "laborItems": [
+     "Brake fluid service"
+    ]
+   },
+   {
+    "date": "2019-11-01T00:00:00.000000Z",
+    "date_ts": 1572566400,
+    "materialItems": [],
+    "laborItems": [
+     "Brake fluid DOT4 LV, low viscosity (83132184843)",
+     "Clip nut, left (31106783591)",
+     "Clip nut, right (31106783592)",
+     "Hex Bolt with washer (31106786310)",
+     "Hex nut with flange (31106799668)",
+     "Hydrobearing (31126777653)",
+     "Collar bolt with compression spring (31206795249)",
+     "Combination nut (31106780613)",
+     "Screw, self tapping (31106783907)",
+     "Shaft seal with lock ring (31508743675)",
+     "Assembly ring (31537502681)",
+     "Repair kit bellows, exterior (31607606091)",
+     "Lubricating material Optitemp 2 LN 584 LO (83190447919)",
+     "Hypoid axle oil G2 (83222413511)"
+    ]
+   },
+   {
+    "date": "2019-01-01T00:00:00.000000Z",
+    "date_ts": 1546300800,
+    "materialItems": [],
+    "laborItems": [
+     "RP REMAN Headunit High (65129289611)",
+     "Code HU-H card/map Europe Next Update (65902406583)"
+    ]
+   },
+   {
+    "date": "2018-10-01T00:00:00.000000Z",
+    "date_ts": 1538352000,
+    "materialItems": [],
+    "laborItems": [
+     "Pneumatic spring, rear (37106784381)"
+    ]
+   },
+   {
+    "date": "2018-10-01T00:00:00.000000Z",
+    "date_ts": 1538352000,
+    "materialItems": [],
+    "laborItems": [
+     "Pneumatic spring, rear (37106784381)"
+    ]
+   },
+   {
+    "date": "2018-07-01T00:00:00.000000Z",
+    "date_ts": 1530403200,
+    "materialItems": [],
+    "laborItems": [
+     "Engine oil",
+     "Fuel filter",
+     "Air filter element",
+     "Kontrola vozidla",
+     "Microfilter (consider further additional job(s) if appropriate)"
+    ]
+   },
+   {
+    "date": "2018-07-01T00:00:00.000000Z",
+    "date_ts": 1530403200,
+    "materialItems": [],
+    "laborItems": [
+     "Ornam. grille, high-gloss, black, fr. left (51712165539)"
+    ]
+   },
+   {
+    "date": "2017-10-01T00:00:00.000000Z",
+    "date_ts": 1506816000,
+    "materialItems": [],
+    "laborItems": [
+     "Brake fluid service",
+     "Statutory vehicle inspection"
+    ]
+   },
+   {
+    "date": "2017-10-01T00:00:00.000000Z",
+    "date_ts": 1506816000,
+    "materialItems": [],
+    "laborItems": [
+     "Main Inspection DEKRA Saxony (VS00001641)",
+     "Brake fluid DOT4 LV, low viscosity (83132184843)",
+     "Gas pressure spring bonnet active (51237309117)"
+    ]
+   },
+   {
+    "date": "2017-03-01T00:00:00.000000Z",
+    "date_ts": 1488326400,
+    "materialItems": [],
+    "laborItems": [
+     "grab handle, paint finish, right (51217231934)",
+     "Hose clamp (07129952104)",
+     "EGR-valve (11717810871)"
+    ]
+   },
+   {
+    "date": "2016-06-01T00:00:00.000000Z",
+    "date_ts": 1464739200,
+    "materialItems": [],
+    "laborItems": [
+     "Set oil-filter element (11428507683)",
+     "BMW Engine Oil LL04 5W30 (83212405948)",
+     "Set, microfilter/carbon canister (64119272642)",
+     "Pollen-filter housing cleaner (83192180509)",
+     "External Invoice No:10239/16 Dent Removal (VS0000154)"
+    ]
+   },
+   {
+    "date": "2016-04-01T00:00:00.000000Z",
+    "date_ts": 1459468800,
+    "materialItems": [],
+    "laborItems": [
+     "Rubber valve (FT612111632)",
+     "Balancing weight (FT85450000000)",
+     "Pirelli Cinturato P7 r-f (85452549085)"
+    ]
+   },
+   {
+    "date": "2015-11-01T00:00:00.000000Z",
+    "date_ts": 1446336000,
+    "materialItems": [],
+    "laborItems": [
+     "Gasket ring (64508374959)",
+     "Gasket ring (64508375741)",
+     "Condenser, air conditioning (64509391489)"
+    ]
+   },
+   {
+    "date": "2015-10-01T00:00:00.000000Z",
+    "date_ts": 1443657600,
+    "materialItems": [],
+    "laborItems": [
+     "Main inspection int. DEKRA (VS0000264)"
+    ]
+   },
+   {
+    "date": "2015-09-01T00:00:00.000000Z",
+    "date_ts": 1441065600,
+    "materialItems": [],
+    "laborItems": [
+     "Set wheel locks (36136776076)"
+    ]
+   },
+   {
+    "date": "2014-12-01T00:00:00.000000Z",
+    "date_ts": 1417392000,
+    "materialItems": [],
+    "laborItems": [
+     "Set oil-filter element (11428507683)",
+     "Motor oil SAE 5W-30 Longlife-04 (83210398511)",
+     "Fuel filter cartridge (13327811227)",
+     "Hose clamp (16121180240)",
+     "Air filter element (13718518111)",
+     "Set, microfilter/carbon canister (64119272642)",
+     "Pollen-filter housing cleaner (83192180509)",
+     "Anti-freeze (83192218347)",
+     "Engine oil",
+     "Fuel filter",
+     "Air filter element",
+     "Kontrola vozidla",
+     "Microfilter (consider further additional job(s) if appropriate)",
+     "Standard scope"
+    ]
+   },
+   {
+    "date": "2014-06-01T00:00:00.000000Z",
+    "date_ts": 1401580800,
+    "materialItems": [],
+    "laborItems": [
+     "Hard wax with nanotechnology (83122298234)"
+    ]
+   },
+   {
+    "date": "2013-10-01T00:00:00.000000Z",
+    "date_ts": 1380585600,
+    "materialItems": [],
+    "laborItems": [
+     "Set oil-filter element (11428507683)",
+     "Motor oil SAE 5W-30 Longlife-04 (83210398511)",
+     "Set, microfilter/carbon canister (64119272642)",
+     "Pollen-filter housing cleaner (83192180509)",
+     "Dent in the front flap gently inst",
+     "Touch-up stick set, Carbon Black met"
+    ]
+   }
+  ]
+ },
+ "registration_record": {
+  "title": "Registration Records",
+  "text": "No records found",
+  "registrations": []
+ },
+ "mileages": {
+  "title": "Mileages",
+  "text": "29 record(s)",
+  "mileages": [
+   {
+    "date": "2013-10-01T00:00:00.000000Z",
+    "meter": 25500,
+    "val": 25500,
+    "metric": "km",
+    "sort_date": "2013-10-01",
+    "change": false
+   },
+   {
+    "date": "2014-05-01T00:00:00.000000Z",
+    "meter": 37000,
+    "val": 37000,
+    "metric": "km",
+    "sort_date": "2014-05-01",
+    "change": false
+   },
+   {
+    "date": "2014-06-01T00:00:00.000000Z",
+    "meter": 38000,
+    "val": 38000,
+    "metric": "km",
+    "sort_date": "2014-06-01",
+    "change": false
+   },
+   {
+    "date": "2014-12-01T00:00:00.000000Z",
+    "meter": 55000,
+    "val": 55000,
+    "metric": "km",
+    "sort_date": "2014-12-01",
+    "change": false
+   },
+   {
+    "date": "2015-09-01T00:00:00.000000Z",
+    "meter": 69000,
+    "val": 69000,
+    "metric": "km",
+    "sort_date": "2015-09-01",
+    "change": false
+   },
+   {
+    "date": "2015-10-01T00:00:00.000000Z",
+    "meter": 69000,
+    "val": 69000,
+    "metric": "km",
+    "sort_date": "2015-10-01",
+    "change": false
+   },
+   {
+    "date": "2015-11-01T00:00:00.000000Z",
+    "meter": 71500,
+    "val": 71500,
+    "metric": "km",
+    "sort_date": "2015-11-01",
+    "change": false
+   },
+   {
+    "date": "2016-04-01T00:00:00.000000Z",
+    "meter": 71500,
+    "val": 71500,
+    "metric": "km",
+    "sort_date": "2016-04-01",
+    "change": false
+   },
+   {
+    "date": "2016-06-01T00:00:00.000000Z",
+    "meter": 79500,
+    "val": 79500,
+    "metric": "km",
+    "sort_date": "2016-06-01",
+    "change": false
+   },
+   {
+    "date": "2017-03-01T00:00:00.000000Z",
+    "meter": 86000,
+    "val": 86000,
+    "metric": "km",
+    "sort_date": "2017-03-01",
+    "change": false
+   },
+   {
+    "date": "2017-04-01T00:00:00.000000Z",
+    "meter": 87500,
+    "val": 87500,
+    "metric": "km",
+    "sort_date": "2017-04-01",
+    "change": false
+   },
+   {
+    "date": "2017-10-01T00:00:00.000000Z",
+    "meter": 91500,
+    "val": 91500,
+    "metric": "km",
+    "sort_date": "2017-10-01",
+    "change": false
+   },
+   {
+    "date": "2018-07-01T00:00:00.000000Z",
+    "meter": 99500,
+    "val": 99500,
+    "metric": "km",
+    "sort_date": "2018-07-01",
+    "change": false
+   },
+   {
+    "date": "2018-10-01T00:00:00.000000Z",
+    "meter": 102500,
+    "val": 102500,
+    "metric": "km",
+    "sort_date": "2018-10-01",
+    "change": false
+   },
+   {
+    "date": "2019-01-01T00:00:00.000000Z",
+    "meter": 105500,
+    "val": 105500,
+    "metric": "km",
+    "sort_date": "2019-01-01",
+    "change": false
+   },
+   {
+    "date": "2019-02-01T00:00:00.000000Z",
+    "meter": 106000,
+    "val": 106000,
+    "metric": "km",
+    "sort_date": "2019-02-01",
+    "change": false
+   },
+   {
+    "date": "2019-11-01T00:00:00.000000Z",
+    "meter": 118000,
+    "val": 118000,
+    "metric": "km",
+    "sort_date": "2019-11-01",
+    "change": false
+   },
+   {
+    "date": "2019-12-01T00:00:00.000000Z",
+    "meter": 118500,
+    "val": 118500,
+    "metric": "km",
+    "sort_date": "2019-12-01",
+    "change": false
+   },
+   {
+    "date": "2020-06-01T00:00:00.000000Z",
+    "meter": 121000,
+    "val": 121000,
+    "metric": "km",
+    "sort_date": "2020-06-01",
+    "change": false
+   },
+   {
+    "date": "2020-07-01T00:00:00.000000Z",
+    "meter": 121000,
+    "val": 121000,
+    "metric": "km",
+    "sort_date": "2020-07-01",
+    "change": false
+   },
+   {
+    "date": "2020-08-01T00:00:00.000000Z",
+    "meter": 122000,
+    "val": 122000,
+    "metric": "km",
+    "sort_date": "2020-08-01",
+    "change": false
+   },
+   {
+    "date": "2020-09-01T00:00:00.000000Z",
+    "meter": 122000,
+    "val": 122000,
+    "metric": "km",
+    "sort_date": "2020-09-01",
+    "change": false
+   },
+   {
+    "date": "2020-10-01T00:00:00.000000Z",
+    "meter": 123500,
+    "val": 123500,
+    "metric": "km",
+    "sort_date": "2020-10-01",
+    "change": false
+   },
+   {
+    "date": "2021-02-01T00:00:00.000000Z",
+    "meter": 136000,
+    "val": 136000,
+    "metric": "km",
+    "sort_date": "2021-02-01",
+    "change": false
+   },
+   {
+    "date": "2021-06-01T00:00:00.000000Z",
+    "meter": 146000,
+    "val": 146000,
+    "metric": "km",
+    "sort_date": "2021-06-01",
+    "change": false
+   },
+   {
+    "date": "2021-07-01T00:00:00.000000Z",
+    "meter": 149500,
+    "val": 149500,
+    "metric": "km",
+    "sort_date": "2021-07-01",
+    "change": false
+   },
+   {
+    "date": "2021-09-01T00:00:00.000000Z",
+    "meter": 157000,
+    "val": 157000,
+    "metric": "km",
+    "sort_date": "2021-09-01",
+    "change": false
+   },
+   {
+    "date": "2023-02-01T00:00:00.000000Z",
+    "meter": 204000,
+    "val": 204000,
+    "metric": "km",
+    "sort_date": "2023-02-01",
+    "change": false
+   },
+   {
+    "date": "2025-06-22T00:00:00.000000Z",
+    "meter": 268200,
+    "val": 268200,
+    "metric": "km",
+    "sort_date": "2025-06-22",
+    "change": false
+   }
+  ],
+  "change": false
+ },
+ "auction_sale_history": {
+  "title": "Auction sale history",
+  "text": "1 record(s)",
+  "items": {
+   "AUTOBID": {
+    "date": "2025-06-22T00:00:00.000000Z",
+    "status": "SOLD",
+    "price": "10 158 EUR",
+    "mileage": "268 200 km",
+    "place": "AUTOBID",
+    "meta_make": {
+     "title": "Make",
+     "value": "BMW"
+    },
+    "meta_model": {
+     "title": "Model",
+     "value": "530d"
+    },
+    "year": {
+     "title": "Year",
+     "value": 2012
+    },
+    "engine": {
+     "title": "Engine capacity",
+     "value": "3L"
+    },
+    "body": {
+     "title": "Body",
+     "value": "Wagon"
+    },
+    "transmission": {
+     "title": "Transmission",
+     "value": "Automatic"
+    },
+    "images": [
+     "https://cdn.autobid.de/data/cars/30899/3089807/84231053_hd.jpg",
+     "https://cdn.autobid.de/data/cars/30899/3089807/84231054_hd.jpg"
+    ],
+    "sort_date": 1750550400,
+    "val": 268200,
+    "metric": "km",
+    "price_val": 10158,
+    "price_currency": "EUR",
+    "cntRecord": 1,
+    "childs": []
+   }
+  }
+ },
+ "safety_ratings_records": {
+  "title": "Safety ratings",
+  "text": "No records found",
+  "items": []
+ },
+ "complaints": {
+  "title": "Complaints",
+  "text": "No records found",
+  "items": []
+ }
+}

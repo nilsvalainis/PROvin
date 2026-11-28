@@ -14,6 +14,8 @@ import type {
   CcVinDamageRow,
   CcVinRecordRow,
   CcVinSaleRow,
+  CcVinServiceRow,
+  CcVinSpecRow,
   CcVinTitleRow,
 } from "@/lib/cc-vin-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -32,6 +34,10 @@ export type CcVinParsedReport = {
   brands: CcVinRecordRow[];
   titles: CcVinTitleRow[];
   sales: CcVinSaleRow[];
+  /** Servisa ieraksti (CheckCar lapa / dati). PDF parseris tos nelasa. */
+  services?: CcVinServiceRow[];
+  /** «Citi dati»: tehniskā specifikācija u.c. */
+  specs?: CcVinSpecRow[];
   notes: string[];
 };
 

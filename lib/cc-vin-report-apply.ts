@@ -12,6 +12,8 @@ import {
   ccVinDamageRowHasData,
   ccVinRecordRowHasData,
   ccVinSaleRowHasData,
+  ccVinServiceRowHasData,
+  ccVinSpecRowHasData,
   ccVinTitleRowHasData,
   emptyCcVinBlock,
   emptyCcVinDamageRow,
@@ -23,6 +25,8 @@ import {
   type CcVinDamageRow,
   type CcVinRecordRow,
   type CcVinSaleRow,
+  type CcVinServiceRow,
+  type CcVinSpecRow,
   type CcVinTitleRow,
 } from "@/lib/cc-vin-report";
 import { applyCcVinDefaultCommentPolicy } from "@/lib/admin-cc-vin-comment-presets";
@@ -134,6 +138,37 @@ export function applyCcVinParsedReport(
     ),
   );
 
+  // Servisi / «Citi dati»: tikai, ja atskaitē tādi ir (PDF parseris tos nelasa - esošie paliek).
+  const servicesIncoming = (parsed.services ?? []).filter(ccVinServiceRowHasData);
+  // Avotā var būt divi vienādi ieraksti tajā pašā dienā (BMW 01.10.2018: divas aizmugures pneimoatsperes) -
+  // atslēgā arī kārtas numurs, lai tie paliek abi, bet atkārtots imports nedublē.
+  const serviceKeys = (rows: CcVinServiceRow[]) => {
+    const n = new Map<string, number>();
+    return rows.map((r) => {
+      const k = `${r.date}|${squish(r.description)}`;
+      const i = (n.get(k) ?? 0) + 1;
+      n.set(k, i);
+      return `${k}#${i}`;
+    });
+  };
+  let services = base.services;
+  if (servicesIncoming.length) {
+    const existing = (base.services ?? []).filter(ccVinServiceRowHasData);
+    const seen = new Set(serviceKeys(existing));
+    const incomingKeys = serviceKeys(servicesIncoming);
+    services = byDateDesc([...existing, ...servicesIncoming.filter((_, i) => !seen.has(incomingKeys[i]!))]);
+  }
+  const specsIncoming = (parsed.specs ?? []).filter(ccVinSpecRowHasData);
+  const specs = specsIncoming.length
+    ? mergeRows<CcVinSpecRow>(
+        (base.specs ?? []).filter((r) => !specsIncoming.some((n) => squish(n.label) === squish(r.label))),
+        specsIncoming,
+        ccVinSpecRowHasData,
+        (r) => `${squish(r.label)}|${squish(r.value)}`,
+        () => ({ label: "", value: "" }),
+      ).filter(ccVinSpecRowHasData)
+    : base.specs;
+
   return applyCcVinDefaultCommentPolicy(
     {
       ...base,
@@ -147,6 +182,8 @@ export function applyCcVinParsedReport(
       brands: records(base.brands ?? [], parsed.brands),
       titles,
       sales,
+      ...(services?.length ? { services } : {}),
+      ...(specs?.length ? { specs } : {}),
     },
     base,
   );
@@ -164,6 +201,8 @@ export function describeCcVinParsedReport(parsed: CcVinParsedReport): string {
   if (parsed.insurance.length > 0) counts.push(`${parsed.insurance.length} apdrošinātāju ieraksti`);
   if (parsed.titles.length > 0) counts.push(`${parsed.titles.length} title ieraksti`);
   if (parsed.sales.length > 0) counts.push(`${parsed.sales.length} pārdošanas`);
+  if ((parsed.services?.length ?? 0) > 0) counts.push(`${parsed.services!.length} servisa ieraksti`);
+  if ((parsed.specs?.length ?? 0) > 0) counts.push(`${parsed.specs!.length} citi dati`);
   if (counts.length > 0) parts.push(counts.join(", "));
   return parts.length > 0 ? `Starptautiskā vēsture: ${parts.join(" · ")}.` : "Starptautiskā vēsture: nolasīta.";
 }

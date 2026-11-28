@@ -1,0 +1,576 @@
+Check VIN. Don't be fooled
+Main
+/
+VIN Decoder And Lookup Database Used Car
+/
+BMW
+/
+530d
+/
+WBAMW91040DV10103
+Vehicle history report
+BMW 530d, 2012
+VIN: WBAMW91040DV10103
+Report ID: 3fe1380d0c616363c2a97dff8ee912a5
+Report Date: 28/11/2026
+Found 30 photos
+1 auctions
++23
+See All Photos
+Download All
+PDF
+Print
+Share
+General Information
+2/12 attention marks
+Odometer records
+268,200 km
+Vehicle damages
+No problems found
+Accidents
+No problems found
+Salvage records
+No problems found
+Theft records
+No problems found
+Lien / impound / export records
+No problems found
+Services records
+29 record(s)
+Other titles brands check
+No problems found
+Registrations records
+No found records
+Sales history
+1 record(s)
+Number of owners
+No problems found
+Taxi
+No records found
+Vehicle Specifications
+Year
+2012
+Destination Market
+Europe
+Make
+BMW
+Model
+530d
+Body
+Wagon
+Doors
+4
+Color
+-
+Engine capacity
+3L
+Fuel type
+Diesel
+Standard seating
+5
+Drive Type
+4x4 - Four-wheel drive
+Transmission
+Automatic
+Keys
+-
+Series
+-
+Product type
+Car
+Vehicle specification
+530d xDrive
+Engine code
+N57D30A
+Engine type
+4-Stroke / 6 / Row-T-DI
+Engine manufacturer
+BMW
+Number of cylinders
+-
+Engine power
+190 kW (255 hp)
+Number of gears
+8
+Steering type
+Electric steering
+Front suspension
+-
+Rear suspension
+-
+Suspension
+Silencer/Screws
+Front brakes
+Disc
+Rear brakes
+-
+ABS
+YES
+Gross weight
+2520 kg
+Curb weight
+1940 kg
+Length
+4907 mm
+Width
+1860 mm
+Height
+1462 mm
+Ride height
+-
+Track front
+1600 mm
+Track rear
+1626 mm
+Wheelbase
+2968 mm
+Wheel size
+225/55 R17 97Y
+Number of wheels
+4
+Number of axles
+2
+Max speed
+245 KM/H
+Emission standard
+5L
+CO2 emission
+153.31 g/km
+Max roof load
+100 kg
+Trailer load without brakes
+750 kg
+Trunk capacity
+-
+Manufacturer
+BMW BAYERISCHE MOTOREN WERKE AG, D-80788 MUENCHEN
+Manufacturer address
+Muenchen 13, Germany
+Plant country
+GERMANY
+Source: Checkcar.vin
+Vehicle damages
+No records found
+Accident records
+No records found
+Mileages
+29 record(s)
+01/10/2013
+25500 km
+01/05/2014
+37000 km
+01/06/2014
+38000 km
+01/12/2014
+55000 km
+01/09/2015
+69000 km
+01/10/2015
+69000 km
+01/11/2015
+71500 km
+01/04/2016
+71500 km
+01/06/2016
+79500 km
+01/03/2017
+86000 km
+01/04/2017
+87500 km
+01/10/2017
+91500 km
+01/07/2018
+99500 km
+01/10/2018
+102500 km
+01/01/2019
+105500 km
+01/02/2019
+106000 km
+01/11/2019
+118000 km
+01/12/2019
+118500 km
+01/06/2020
+121000 km
+01/07/2020
+121000 km
+01/08/2020
+122000 km
+01/09/2020
+122000 km
+01/10/2020
+123500 km
+01/02/2021
+136000 km
+01/06/2021
+146000 km
+01/07/2021
+149500 km
+01/09/2021
+157000 km
+01/02/2023
+204000 km
+22/06/2025
+268200 km
+Show less
+Source: Checkcar.vin
+Vehicle value information
+No records found
+Services records
+29 service(s)
+01/02/2023
+Services #29
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+ET-No. 11658595650 1/2 proportionally (FT999988880)
+Exhaust gas radiator high temperature (11717822350)
+EGR small parts set (11718490640)
+Pipe union (11717799853)
+Holder (61131369832)
+O-ring (11618512504)
+Acoustic cover front (11148490568)
+Anti-freeze (83192211358)
+01/06/2021
+Services #28
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Seal, door seam, roof front left (51767182285)
+Plug, black (52208133466)
+Seal, door seam, roof front right (51767182286)
+Seal, door seam, roof, rear left (51767199783)
+Seal, door seam, roof, rear right (51767199784)
+01/02/2021
+Services #27
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Relay, make contact, white green (61368373700)
+01/02/2021
+Services #26
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+50% customer share (FT999988880)
+Profile-gasket (11618507335)
+O-ring (11618512504)
+Gasket Steel (11618571005)
+Gasket ring (13532247156)
+Cylinder head cover (11127823181)
+01/10/2020
+Services #25
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Hex Bolt (26117635643)
+Gasket ring (64538375742)
+Gasket ring (64508375741)
+Gasket ring (64508363041)
+Torx screw with ribs (26117529387)
+Hexagon screw with flange (07119906495)
+Self-locking collar nut (33306760349)
+Combination nut (31106780613)
+Collar bolt with compression spring (31206795249)
+Assembly ring (31537502681)
+Shaft seal with lock ring (31508743675)
+Hex Bolt (24407561393)
+Gasket ring (13532247156)
+Torx bolt (11137800621)
+Bearing journal, crankcase (13527797908)
+Liquid sealant, Loctite 5970 (83190404517)
+Timing chain (13528490225)
+Guide rail (13528515670)
+Chain tensioner (13528515671)
+Sprocket (13527800025)
+Chain tensioner (13527797905)
+Shaft seal (11147797490)
+Timing chain (11318570649)
+Camshaft sprocket (11318509927)
+Chain tensioner (11318586699)
+Guide rail (11317797899)
+Chain tensioner (11317797898)
+Bearing journal, cylinder head (11317797900)
+ISA screw (11417823426)
+Cylinder head gasket asbestos-free (11128509153)
+Set Bolt Cylinder Head (11128513130)
+Gasket set, cylinder head cover (11128515732)
+Profile-gasket (11317801703)
+Gasket Steel (11137809836)
+Torx bolt (11137800625)
+O-ring (11437794698)
+Hex Bolt (11227797966)
+Gasket (18307803853)
+V-band clamp (11657620508)
+Muffler clamp (18307793766)
+Gasket Steel (11657808159)
+Muffler clamp (11658518404)
+O-ring (31511213527)
+ASA-Bolt (11138592611)
+O-ring (17228573882)
+O-ring (17228511461)
+Gasket Steel (11628509783)
+Flange nut (11628597827)
+Gasket Steel (11628576287)
+Profile-gasket (11618507335)
+Gasket Steel (11618571005)
+Set oil-filter element (11428507683)
+BMW Engine Oil LL04 0W30 (83212405950)
+Lubricant refrigeration compressor (83190143174)
+Cooling agent (83190143177)
+01/10/2020
+Services #24
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Dtf 1 (83222409710)
+01/09/2020
+Services #23
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Rear Brake
+01/09/2020
+Services #22
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+FINE DUST STICKER green (VSFSB2008)
+Windshield washer antifreeze (83122298528)
+01/08/2020
+Services #21
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Auxiliary damper (33536784122)
+O-ring (61357684057)
+Hex Bolt with washer (33506781988)
+Hex Bolt (33506779488)
+Self-locking hex nut (32216769539)
+battery (61319217643)
+01/06/2020
+Services #20
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Engine oil
+Microfilter (consider further additional job(s) if appropriate)
+01/06/2020
+Services #19
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+BMW Engine Oil LL04 0W30 (83212405950)
+Set oil-filter element (11428507683)
+Set, microfilter/carbon canister (64119272642)
+01/11/2019
+Services #18
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Brake fluid service
+01/11/2019
+Services #17
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Brake fluid DOT4 LV, low viscosity (83132184843)
+Clip nut, left (31106783591)
+Clip nut, right (31106783592)
+Hex Bolt with washer (31106786310)
+Hex nut with flange (31106799668)
+Hydrobearing (31126777653)
+Collar bolt with compression spring (31206795249)
+Combination nut (31106780613)
+Screw, self tapping (31106783907)
+Shaft seal with lock ring (31508743675)
+Assembly ring (31537502681)
+Repair kit bellows, exterior (31607606091)
+Lubricating material Optitemp 2 LN 584 LO (83190447919)
+Hypoid axle oil G2 (83222413511)
+01/01/2019
+Services #16
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+RP REMAN Headunit High (65129289611)
+Code HU-H card/map Europe Next Update (65902406583)
+01/10/2018
+Services #15
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Pneumatic spring, rear (37106784381)
+01/10/2018
+Services #14
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Pneumatic spring, rear (37106784381)
+01/07/2018
+Services #13
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Engine oil
+Fuel filter
+Air filter element
+Kontrola vozidla
+Microfilter (consider further additional job(s) if appropriate)
+01/07/2018
+Services #12
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Ornam. grille, high-gloss, black, fr. left (51712165539)
+01/10/2017
+Services #11
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Brake fluid service
+Statutory vehicle inspection
+01/10/2017
+Services #10
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Main Inspection DEKRA Saxony (VS00001641)
+Brake fluid DOT4 LV, low viscosity (83132184843)
+Gas pressure spring bonnet active (51237309117)
+01/03/2017
+Services #9
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+grab handle, paint finish, right (51217231934)
+Hose clamp (07129952104)
+EGR-valve (11717810871)
+01/06/2016
+Services #8
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Set oil-filter element (11428507683)
+BMW Engine Oil LL04 5W30 (83212405948)
+Set, microfilter/carbon canister (64119272642)
+Pollen-filter housing cleaner (83192180509)
+External Invoice No:10239/16 Dent Removal (VS0000154)
+01/04/2016
+Services #7
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Rubber valve (FT612111632)
+Balancing weight (FT85450000000)
+Pirelli Cinturato P7 r-f (85452549085)
+01/11/2015
+Services #6
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Gasket ring (64508374959)
+Gasket ring (64508375741)
+Condenser, air conditioning (64509391489)
+01/10/2015
+Services #5
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Main inspection int. DEKRA (VS0000264)
+01/09/2015
+Services #4
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Set wheel locks (36136776076)
+01/12/2014
+Services #3
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Set oil-filter element (11428507683)
+Motor oil SAE 5W-30 Longlife-04 (83210398511)
+Fuel filter cartridge (13327811227)
+Hose clamp (16121180240)
+Air filter element (13718518111)
+Set, microfilter/carbon canister (64119272642)
+Pollen-filter housing cleaner (83192180509)
+Anti-freeze (83192218347)
+Engine oil
+Fuel filter
+Air filter element
+Kontrola vozidla
+Microfilter (consider further additional job(s) if appropriate)
+Standard scope
+01/06/2014
+Services #2
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Hard wax with nanotechnology (83122298234)
+01/10/2013
+Services #1
+MATERIALS INSTALLED:
+-
+WORK PERFORMED:
+Set oil-filter element (11428507683)
+Motor oil SAE 5W-30 Longlife-04 (83210398511)
+Set, microfilter/carbon canister (64119272642)
+Pollen-filter housing cleaner (83192180509)
+Dent in the front flap gently inst
+Touch-up stick set, Carbon Black met
+Show less
+Source: Checkcar.vin
+Registration Records
+No records found
+Auction sale history
+1 record(s)
+SOLD #1
+10 158 EUR
+268,200 km
+AUTOBID
+22/06/2025
+Photo: 30
+Show All
+VEHICLE INFO
+Make
+BMW
+Model
+530d
+Year
+2012
+Engine capacity
+3L
+Body
+Wagon
+Transmission
+Automatic
+Show less
+Source: Checkcar.vin
+Safety ratings
+No records found
+Complaints
+No records found
+REPORT VIEW SETTINGS
+Distance metric
+Kilometers
+Currency
+EUR
+Size metric
+Millimeters
+Capacity
+Liters
+TABLE OF CONTENTS
+General Information
+Vehicle Specifications
+Vehicle Damages
+Accident Records
+Mileages
+Vehicle Value Information
+Services Records
+Registration Records
+Auction Sale History
+Safety Ratings
+Complaints Records
