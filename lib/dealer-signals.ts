@@ -135,6 +135,14 @@ export const DEALER_SIGNAL_DEFAULT_TEXTS: Record<DealerSignalKind, L4> = {
   },
 };
 
+/** 1. lapas žetonu rinda (Nils 28.11, makets B): norāde uz pilno sadaļu. */
+export const DEALER_SIGNALS_HERO_MORE: L4 = {
+  lv: "Sīkāk sadaļā «Signāli ārpus dīlera datiem»",
+  en: "Details in the section “Signals beyond dealer data”",
+  ru: "Подробнее в разделе «Сигналы вне данных дилера»",
+  de: "Details im Abschnitt „Signale außerhalb der Händlerdaten“",
+};
+
 /** Sarkanā rinda (kā PDF sarkanie brīdinājumi). */
 export const DEALER_SIGNAL_ALERT_KINDS: ReadonlySet<DealerSignalKind> = new Set<DealerSignalKind>([
   "mileage_mismatch",
