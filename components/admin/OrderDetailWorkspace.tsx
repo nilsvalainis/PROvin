@@ -6443,12 +6443,12 @@ export function OrderDetailWorkspace({
           setComplete={async (complete) => {
             if (!(await postAdminAuditComplete(payload.sessionId, complete))) throw new Error("complete_failed");
           }}
-          recordWhatsapp={async ({ situation, lang, b2b }) => {
+          recordWhatsapp={async ({ situation, lang, b2b, review }) => {
             await fetch("/api/admin/order-client-marks", {
               method: "POST",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "audit_send", sessionId: payload.sessionId, channel: "whatsapp", situation, lang, b2b }),
+              body: JSON.stringify({ action: "audit_send", sessionId: payload.sessionId, channel: "whatsapp", situation, lang, b2b, review }),
             }).catch(() => null);
           }}
           onOpenOldForm={() => {
