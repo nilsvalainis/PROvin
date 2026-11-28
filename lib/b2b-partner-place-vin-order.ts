@@ -10,7 +10,7 @@ import { buildPartnerOrderNotes, type B2bPartnerAuditPurpose } from "@/lib/b2b-p
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
 import { enqueueCsddPaidAutoForOrder } from "@/lib/csdd-paid-auto";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
-import { ensureOrderDropboxFolderSafe, notePartnerOrderDropbox } from "@/lib/order-dropbox";
+import { ensureOrderDropboxFolderSafe } from "@/lib/order-dropbox";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 
 export type PartnerPlaceContact = {
@@ -54,14 +54,6 @@ export async function createPartnerCreditVinOrder(args: {
   await patchOrderDraft(created.orderId, {
     orderEdits: { notes },
   });
-  // Dropbox (Nils 27.11): partnera pasūtījumu mape `PARTNERI/<partneris>/` - tikai ieraksts, mapi veido vēlāk.
-  await notePartnerOrderDropbox(created.orderId, {
-    category: args.plan === "dealer" ? "dealer" : "business",
-    partnerId: args.partner.id,
-    partnerName: args.partner.companyName,
-    createdMs: Date.now(),
-    vin: args.vin,
-  }).catch(() => undefined);
   const dealerQueued =
     args.plan === "dealer"
       ? await enqueueDealerDataJob({ sessionId: created.orderId, vin: args.vin }).catch(() => false)

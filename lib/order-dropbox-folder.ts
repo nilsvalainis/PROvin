@@ -9,13 +9,9 @@ import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
  * PROVIN pasūtījuma Dropbox mape (tīrā loģika). Nils 23.11: mape uzreiz pēc pasūtījuma, dīlera dati strikti atsevišķi
  * no auditiem, nosaukumā vispirms marka un modelis. Personas datus (vārds, e-pasts, tālrunis) nosaukumā nekad neliek.
  *
- * Shēma (Nils 27.11, galīgā `_PROv` struktūra): `{root}/[{VIRSMAPE}/]{MARKA MODELIS}_{NUMURS}_{VIN}_{YYYY-MM-DD}_{PRODUKTS}`
- *  - root = `PROV_ORDERS_DROPBOX_ROOT` (noklusējums `/_PROv`);
- *  - AUDITS / MINI / privātais BUSINESS - mape tieši saknē (neizpildītie redzeslokā); uz `AUDITU ARHĪVS` pēc
- *    pabeigšanas pārvieto Nils pats - kods mapi atpakaļ uz sakni nekad nepārvieto (pārdēvē tajā pašā vietā);
- *  - B2B partnera pasūtījumi - `PARTNERI/<partneris>/` (partnera mapi meklē / izveido `order-dropbox.ts`);
- *  - dīlera dati - `DĪLERA DATU ARHĪVS/` (mapi izveido pirmais saglabātais fails);
- *  - saknē nekas cits (vecās virsmapes AUDITI / BUSINESS / MINI / DILERA DATI vairs neveido);
+ * Shēma: `{root}/{VIRSMAPE}/{MARKA MODELIS}_{NUMURS}_{VIN}_{YYYY-MM-DD}_{PRODUKTS}`
+ *  - root = `PROV_ORDERS_DROPBOX_ROOT` (noklusējums `/_PROv`, tur jau ir Nila veco auditu mapes);
+ *  - VIRSMAPE: AUDITI | DILERA DATI | MINI | BUSINESS (produktus nekad nejauc vienā mapē);
  *  - trūkstošās daļas izlaiž; ja nav ne numura, ne VIN - beigās īss pasūtījuma id;
  *  - Nils 27.11: «visiem folderiem jāsākas ar marka/modelis» - ja CSDD markas nav (ārzemju VIN, dīlera dati),
  *    marku ņem no VIN (WMI), lai mape nekad nesāktos ar VIN / numuru;
@@ -27,17 +23,11 @@ export const ORDER_FULFILLMENTS = new Set(["", "client_link", "business_link"]);
 
 export type OrderDropboxCategory = "audits" | "dealer" | "mini" | "business";
 
-/** `_PROv` saknes virsmapes (Nils 27.11). Saknē bez šīm - tikai neizpildīto pasūtījumu mapes. */
-export const PROV_AUDITS_ARCHIVE_DIR = "AUDITU ARHĪVS";
-export const PROV_DEALER_ARCHIVE_DIR = "DĪLERA DATU ARHĪVS";
-export const PROV_PARTNERS_DIR = "PARTNERI";
-
-/** Virsmape pēc produkta; "" = tieši saknē. */
 const CATEGORY_DIR: Record<OrderDropboxCategory, string> = {
-  audits: "",
-  dealer: PROV_DEALER_ARCHIVE_DIR,
-  mini: "",
-  business: "",
+  audits: "AUDITI",
+  dealer: "DILERA DATI",
+  mini: "MINI",
+  business: "BUSINESS",
 };
 
 const CATEGORY_LABEL: Record<OrderDropboxCategory, string> = {
@@ -163,55 +153,7 @@ export function provOrdersRoot(env: Record<string, string | undefined> = process
 }
 
 export function orderDropboxParentPath(category: OrderDropboxCategory, env: Record<string, string | undefined> = process.env): string {
-  const dir = CATEGORY_DIR[category];
-  return dir ? `${provOrdersRoot(env)}/${dir}` : provOrdersRoot(env);
-}
-
-export function provPartnersPath(env: Record<string, string | undefined> = process.env): string {
-  return `${provOrdersRoot(env)}/${PROV_PARTNERS_DIR}`;
-}
-
-/** Mapes nosaukums jaunam partnerim (`PARTNERI/<Uzņēmums>`). */
-export function partnerFolderName(companyName: string): string {
-  return sanitizeDropboxName(companyName.replace(/\s+/g, " ").trim(), 120);
-}
-
-const LEGAL_FORM = /\b(sia|as|ik|ltd|gmbh|ou|uab|ab|oy|sp z o o|s r o|kg|ag|bv|nv|import export)\b/g;
-
-function partnerKey(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(LEGAL_FORM, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Esošā partnera mape pēc uzņēmuma nosaukuma («Pērc un brauc (RKG GROUP)» ↔ «RKG Group SIA», «AM Cars SIA» ↔
- * «SIA AM Cars»). Salīdzina bez juridiskās formas, diakritikas un pieturzīmēm: vesels nosaukums vai iekavu daļa,
- * vai viens satur otru (≥4 zīmes). null - nav atbilstošas mapes.
- */
-export function matchPartnerFolderName(folderNames: readonly string[], companyName: string): string | null {
-  const want = partnerKey(companyName);
-  if (want.length < 2) return null;
-  let loose: string | null = null;
-  for (const name of folderNames) {
-    const whole = partnerKey(name);
-    const inParens = [...name.matchAll(/\(([^)]+)\)/g)].map((m) => partnerKey(m[1] ?? ""));
-    if (whole === want || inParens.includes(want)) return name;
-    const short = whole.replace(/\s*\([^)]*\)\s*/g, " ").trim();
-    if (!loose && want.length >= 4 && (whole.includes(want) || (short.length >= 4 && want.includes(partnerKey(short))))) loose = name;
-  }
-  return loose;
-}
-
-/** Ceļa vecākmape (`/_PROv/A/B` -> `/_PROv/A`). */
-export function dropboxParentDir(p: string): string {
-  const i = p.lastIndexOf("/");
-  return i > 0 ? p.slice(0, i) : "";
+  return `${provOrdersRoot(env)}/${CATEGORY_DIR[category]}`;
 }
 
 export function orderDropboxFolderPath(input: OrderDropboxNameInput, env: Record<string, string | undefined> = process.env): string {
@@ -266,9 +208,6 @@ export type OrderDropboxRecord = {
   /** `pending` ierakstam: VIN / numurs no pasūtījuma - mapes nosaukumam, kad to izveidos pirmais fails. */
   vin?: string;
   plate?: string;
-  /** B2B partnera pasūtījums: mape `PARTNERI/<partneris>/` (Nils 27.11). */
-  partnerId?: string;
-  partnerName?: string;
 };
 
 export function parseOrderDropboxRecord(raw: unknown): OrderDropboxRecord | null {
@@ -291,7 +230,5 @@ export function parseOrderDropboxRecord(raw: unknown): OrderDropboxRecord | null
     ...(s(o.error, 200) ? { error: s(o.error, 200) } : {}),
     ...(s(o.vin, 40) ? { vin: s(o.vin, 40) } : {}),
     ...(s(o.plate, 40) ? { plate: s(o.plate, 40) } : {}),
-    ...(s(o.partnerId, 80) ? { partnerId: s(o.partnerId, 80) } : {}),
-    ...(s(o.partnerName, 200) ? { partnerName: s(o.partnerName, 200) } : {}),
   };
 }
