@@ -481,3 +481,39 @@ export function dealerSignalsAuditLinkFromOffer(
 function formatEurCents(cents: number): string {
   return `${(cents / 100).toFixed(2).replace(".", ",")} €`;
 }
+
+/**
+ * «Datu nav (atmaksa)» (Nils 28.11): dīlera dati nav pieejami, PDF netiek sūtīts - ieslēgtie un ķeksētie
+ * signāli nonāk pašā ziņā (e-pasts / WhatsApp) klienta valodā. Tie paši teksti kā PDF sadaļā.
+ */
+export const DEALER_SIGNALS_NO_DATA_INTRO: L4 = {
+  lv: "Lai gan dīlera dati nav pieejami, citos datos par šo auto redzami šādi signāli:",
+  en: "Although dealer data is not available, other data for this car shows the following signals:",
+  ru: "Хотя данные дилера недоступны, в других данных по этому автомобилю видны следующие сигналы:",
+  de: "Obwohl keine Händlerdaten verfügbar sind, zeigen andere Daten zu diesem Fahrzeug folgende Signale:",
+};
+
+/** Signālu bloks ziņas tekstam (ievads + rinda katram signālam). Nav signālu -> tukšs. */
+export function dealerSignalsMessageBlock(
+  state: DealerSignalsState | null | undefined,
+  lang: ClientReportLang,
+  translated?: Partial<Record<DealerSignalKind, string>> | null,
+): string {
+  const rows = dealerSignalsPdfRows(state, lang, translated);
+  if (rows.length === 0) return "";
+  return [DEALER_SIGNALS_NO_DATA_INTRO[lang], ...rows.map((r) => `- ${r.title}: ${r.text}`)].join("\n");
+}
+
+/**
+ * Ievieto signālu bloku ziņā: pirms PROVIN AUDITA ieteikuma rindkopas (veidne labojama adminā),
+ * citādi pirms pēdējām divām rindkopām (jautājums + paraksts). Atkārtoti nepievieno.
+ */
+export function withDealerSignalsMessageBlock(text: string, block: string): string {
+  const b = block.trim();
+  if (!b || !text.trim() || text.includes(b)) return text;
+  const paras = text.split(/\n{2,}/);
+  let at = paras.findIndex((p, i) => i > 0 && /PROVIN\s+AUDIT/i.test(p));
+  if (at < 0) at = Math.max(paras.length >= 3 ? paras.length - 2 : paras.length, 0);
+  paras.splice(at, 0, b);
+  return paras.join("\n\n");
+}

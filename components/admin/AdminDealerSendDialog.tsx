@@ -50,6 +50,14 @@ import {
 } from "@/components/admin/AdminAuctionArchive";
 import type { AuctionArchiveManualSource } from "@/lib/auction-archive-offer";
 import {
+  dealerSignalsMessageBlock,
+  dealerSignalsMissingTranslations,
+  dealerSignalsPdfRows,
+  type DealerSignalKind,
+  type DealerSignalsState,
+} from "@/lib/dealer-signals";
+import { dealerSignalsReportTranslate } from "@/components/admin/AdminDealerSignalsMenu";
+import {
   auctionArchiveOfferSubject,
   auctionArchiveOfferText,
   auctionArchiveOfferWhatsappText,
@@ -80,6 +88,11 @@ export type DealerSendBridge = {
   orderCreatedUnix?: number | null;
   /** Dīlera PDF sadaļa «Signāli ārpus dīlera datiem» ieslēgta (ar ķeksētu signālu) -> rinda e-pastā. */
   dealerSignalsOn?: boolean;
+  /**
+   * Saglabātais «Signāli» stāvoklis: «Datu nav (atmaksa)» gadījumā (dīlera datu nav, PDF nesūta)
+   * ieslēgtie signāli nonāk pašā ziņā (Nils 28.11).
+   */
+  dealerSignals?: DealerSignalsState | null;
   /** `forSend` - tikai «Sūtīt»: «Signāli» piedāvājums top tagad un tā saite ir PDF (Nils 27.11). */
   prepareDealerPdf: (lang: ClientReportLang, opts?: { forSend?: boolean }) => Promise<SendReportPrepared>;
   /** Tas pats servera ceļš kā «Sūtīt atskaiti» (versijas, Dropbox, «Izpildīts»), ar admina tekstu. */
@@ -161,6 +174,13 @@ export function AdminDealerSendDialog({
   const [offer, setOffer] = useState<DealerSendOffer | null>(null);
   const [doc, setDoc] = useState<MessageTemplatesDoc | null>(cachedAdminMessageTemplatesDoc);
   // Sākuma temats un teksts jau pirmajā renderēšanā (no veidnes), nevis tukši līdz efektam.
+  // «Datu nav (atmaksa)»: signāli ziņā (Nils 28.11) - ķeksis redzams, ja sadaļa ieslēgta un ir ķeksēts signāls.
+  const signalsState = bridge?.dealerSignals ?? null;
+  const signalsCount = useMemo(() => dealerSignalsPdfRows(signalsState, "lv").length, [signalsState]);
+  const [signalsInText, setSignalsInText] = useState(true);
+  const [signalsTr, setSignalsTr] = useState<Partial<Record<DealerSignalKind, string>> | null>(null);
+  const signalsBlockFor = (sit: DealerSendMode): string | null =>
+    sit === "no_data" && signalsInText && signalsCount > 0 ? dealerSignalsMessageBlock(signalsState, pdfLang, signalsTr) || null : null;
   const [initialMsg] = useState(() =>
     buildDealerSendMessage({
       channel: "email",
@@ -171,6 +191,7 @@ export function AdminDealerSendDialog({
       doc: cachedAdminMessageTemplatesDoc(),
       lang: pdfLang,
       signalsLine: bridge?.dealerSignalsOn === true,
+      signalsBlock: signalsBlockFor(defaultSituation),
     }),
   );
   // Izsoļu arhīvs: stāvoklis tikai kamēr logs atvērts.
@@ -209,6 +230,7 @@ export function AdminDealerSendDialog({
     setPreviewIds([]);
     setManualSources([]);
     setShowPrices(false);
+    setSignalsInText(true);
     void loadAdminMessageTemplatesDoc().then((d) => d && setDoc(d));
   }, [open, defaultSituation]);
 
@@ -262,6 +284,30 @@ export function AdminDealerSendDialog({
     setPreviewIds([withThumb[0]!.id, ...(odo && odo.id !== withThumb[0]!.id ? [odo.id] : withThumb[1] ? [withThumb[1].id] : [])]);
   }, [open, arch, previewIds.length]);
 
+  // Labotā signālu teksta tulkojums klienta valodā (tas pats ceļš kā PDF); bez tā - standarta teksts klienta valodā.
+  const signalsMissingKey = useMemo(() => {
+    if (!open || situation !== "no_data" || signalsCount === 0 || pdfLang === "lv") return "";
+    const missing = dealerSignalsMissingTranslations(signalsState, pdfLang);
+    return Object.keys(missing).length > 0 ? JSON.stringify(missing) : "";
+  }, [open, situation, signalsCount, signalsState, pdfLang]);
+  useEffect(() => {
+    setSignalsTr(null);
+    if (!signalsMissingKey || pdfLang === "lv") return;
+    let cancelled = false;
+    const missing = JSON.parse(signalsMissingKey) as Partial<Record<DealerSignalKind, string>>;
+    void dealerSignalsReportTranslate(sessionId)(pdfLang, missing)
+      .then((tr) => {
+        if (!cancelled) setSignalsTr(tr);
+      })
+      .catch(() => {
+        /* standarta teksts klienta valodā */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signalsMissingKey, pdfLang, sessionId]);
+  const signalsBlock = signalsBlockFor(situation);
+
   useEffect(() => {
     if (!open || situation === "archive") return;
     const m = buildDealerSendMessage({
@@ -275,10 +321,11 @@ export function AdminDealerSendDialog({
       doc,
       lang: pdfLang,
       signalsLine: bridge?.dealerSignalsOn === true,
+      signalsBlock,
     });
     setSubject(m.subject ?? "");
     setText(m.text);
-  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc, pdfLang, bridge?.dealerSignalsOn]);
+  }, [open, channel, situation, b2b, vin, refundCents, opts, offer, doc, pdfLang, bridge?.dealerSignalsOn, signalsBlock]);
 
   const busyClose = useModalBackdropClose(onClose, busy === null);
   // 22.11 (Nils, iPhone): telefona doks (Kopēt VIN · VIN SCAN · PDF …) nedrīkst aizsegt «Sūtīt e-pastu».
@@ -676,7 +723,27 @@ export function AdminDealerSendDialog({
           </label>
         </div>
       ) : (
-        <div>
+        <div className="space-y-1.5">
+          {situation === "no_data" && signalsCount > 0 ? (
+            <label
+              data-dealer-send-signals
+              className={`amx-card flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 max-md:min-h-[54px] max-md:items-center max-md:gap-3 max-md:px-3.5 ${
+                signalsInText ? "border-slate-900" : "border-slate-200"
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5 max-md:mt-0 max-md:h-[22px] max-md:w-[22px] max-md:accent-[var(--amx-acc)]"
+                checked={signalsInText}
+                disabled={busy !== null}
+                onChange={(e) => setSignalsInText(e.target.checked)}
+              />
+              <div className="amx-tx text-[12.5px] font-medium text-slate-900 max-md:text-[15px]">
+                Signāli tekstā ({signalsCount})
+              </div>
+            </label>
+          ) : null}
+          <div>
           {refundLabel ? (
             <span className="inline-flex rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
               {refundLabel}
@@ -686,6 +753,7 @@ export function AdminDealerSendDialog({
               Nav atmaksāts
             </span>
           )}
+          </div>
         </div>
       )}
 
