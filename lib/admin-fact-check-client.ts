@@ -1,6 +1,7 @@
 /**
  * Admin faktu pārbaudes klients: atslēgas, lauku vākšana, POST.
- * Tekstu nemaina. useAi netiek sūtīts (UNIT_FACT_CHECK_AI paliek izslēgts).
+ * Tekstu nemaina. `useAi: true` sūta tikai poga «AI pārbaude» (28.11, Nils «jā») - nekad automātiski;
+ * serverī AI darbojas tikai ar UNIT_FACT_CHECK_AI=1.
  */
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import {
@@ -17,6 +18,8 @@ import {
   ADMIN_SUMMARY_SECTION_RISK_HEADING,
   ADMIN_SUMMARY_SECTION_SUMMARY_HEADING,
 } from "@/lib/admin-workspace-field-labels";
+import { dealerSignalsPdfRows, type DealerSignalsState } from "@/lib/dealer-signals";
+import type { ProvinManualBanner } from "@/lib/provin-alert-banners";
 import type { FactCheckFlag, FactCheckResult } from "@/lib/unit-facts/types";
 
 export function parseVehicleYear(modelYear?: string | null, firstRegistration?: string | null): number | null {
@@ -132,6 +135,63 @@ export function collectPrePdfClientTextFields(
   return out;
 }
 
+/** Lauku atslēgu prefikss gatavā PDF tekstiem (signāli, kartīšu teksti, tulkojumi) - viens panelis pie PDF. */
+export const PDF_TEXT_FACT_FIELD_PREFIX = "pdf:";
+
+/**
+ * 28.11 (Nils 2): gatavā PDF teksti ārpus komentāru laukiem - operatora kartīšu / baneru teksti un dīlera PDF
+ * «Signāli». Tos pārbauda pret kanonisko faktu tabulu tāpat kā komentārus (tikai brīdinājumi).
+ */
+export function collectPdfExtraFactCheckFields(input: {
+  manualBanners?: readonly ProvinManualBanner[] | null;
+  dealerSignals?: DealerSignalsState | null;
+}): FactCheckFieldText[] {
+  const out: FactCheckFieldText[] = [];
+  (input.manualBanners ?? []).forEach((b, i) => {
+    if (b.includeInPdf === false) return;
+    const text = [b.title, b.value, b.text]
+      .map((x) => adminRichHtmlToPlainText(x ?? "").trim())
+      .filter(Boolean)
+      .map((x) => (/[.!?]$/.test(x) ? x : `${x}.`))
+      .join(" ");
+    if (text) out.push({ field: `${PDF_TEXT_FACT_FIELD_PREFIX}banner.${i}`, label: `PDF kartīte ${i + 1}`, text });
+  });
+  for (const row of dealerSignalsPdfRows(input.dealerSignals ?? null, "lv")) {
+    const text = adminRichHtmlToPlainText(row.text ?? "").trim();
+    if (text) out.push({ field: `${PDF_TEXT_FACT_FIELD_PREFIX}signal.${row.kind}`, label: `Signāls: ${row.title}`, text });
+  }
+  return out;
+}
+
+/** Visi «pdf:» lauku karodziņi vienā sarakstā (ar lauka nosaukumu ziņā). */
+export function pdfTextFactFlags(
+  byField: Readonly<Record<string, FactCheckResult | undefined>>,
+  labels?: Readonly<Record<string, string>>,
+): FactCheckFlag[] {
+  const out: FactCheckFlag[] = [];
+  for (const [field, res] of Object.entries(byField)) {
+    if (!field.startsWith(PDF_TEXT_FACT_FIELD_PREFIX) || !res) continue;
+    const label = labels?.[field];
+    for (const f of res.flags) {
+      out.push(label && f.kind !== "translation_mismatch" ? { ...f, message: `${label}: ${f.message}` } : f);
+    }
+  }
+  return out;
+}
+
+/** AI pieprasīta, bet nav izpildīta - informatīva rinda (I), lai admins zina, ka otrā pārbaude nenotika. */
+export function withAiSkippedNotice(result: FactCheckResult, requested: boolean): FactCheckResult {
+  if (!requested || result.aiUsed || !result.aiSkipped) return result;
+  const why = result.aiSkipped === "ai_disabled" ? "AI faktu pārbaude serverī nav ieslēgta" : "AI pārbaude šai sesijai nav atļauta";
+  return {
+    ...result,
+    flags: [
+      ...result.flags,
+      { id: "ai_check_skipped", kind: "unsourced", level: "I", message: `${why} - pārbaudīts tikai bez AI.`, sentence: "AI pārbaude" },
+    ],
+  };
+}
+
 export async function postAdminFactCheck(body: Record<string, unknown>): Promise<FactCheckResult> {
   const res = await fetch("/api/admin/ai/fact-check", {
     method: "POST",
@@ -147,5 +207,7 @@ export async function postAdminFactCheck(body: Record<string, unknown>): Promise
     flags: Array.isArray(data.flags) ? data.flags : [],
     appliedFactIds: Array.isArray(data.appliedFactIds) ? data.appliedFactIds : [],
     checkedAt: typeof data.checkedAt === "string" ? data.checkedAt : new Date().toISOString(),
+    ...(data.aiUsed === true ? { aiUsed: true } : {}),
+    ...(typeof data.aiSkipped === "string" && data.aiSkipped ? { aiSkipped: data.aiSkipped } : {}),
   };
 }

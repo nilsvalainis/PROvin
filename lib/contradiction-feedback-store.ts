@@ -7,10 +7,12 @@ import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-or
 import {
   AUTO_DOWNGRADE_WINDOW_DAYS,
   autoDowngradedRuleKeys,
+  buildDismissedFeedbackDigest,
   computeRuleFeedbackStats,
   contradictionFeedbackLogPath,
   type ContradictionFeedbackEntry,
   type ContradictionFeedbackLogLine,
+  type DismissedFeedbackDigest,
   type RuleFeedbackStats,
 } from "@/lib/contradiction-feedback";
 
@@ -123,4 +125,10 @@ export async function loadVinContradictionFeedback(vin: string, days = 365): Pro
     byFp.set(l.fp, { fp: l.fp, rule: l.rule, origin: l.origin, verdict: l.verdict, at: l.at, ...(l.pair ? { pair: l.pair } : {}) });
   }
   return [...byFp.values()];
+}
+
+/** 28.11: «Nav pretruna» nedēļas kopsavilkums (bez personas datiem) - admin un cron maršrutiem. */
+export async function loadDismissedFeedbackDigest(days = 7, nowMs: number = Date.now()): Promise<DismissedFeedbackDigest> {
+  const d = Math.min(Math.max(Math.floor(days) || 7, 1), 31);
+  return buildDismissedFeedbackDigest(await readContradictionFeedbackLog(d, nowMs), nowMs, d);
 }
