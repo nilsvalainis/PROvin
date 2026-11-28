@@ -1,0 +1,487 @@
+{
+ "vehicle_title": "Volkswagen Amarok, 2016",
+ "images": [
+  "https://cdn.autobid.de/data/cars/30478/3047702/82545932_hd.jpg",
+  "https://cdn.autobid.de/data/cars/30478/3047702/82545931_hd.jpg"
+ ],
+ "general_info": {
+  "title": "General Information",
+  "odometer": {
+   "title": "Odometer records",
+   "check_status": true,
+   "text": "194 900 km",
+   "val": 194900,
+   "metric": "km"
+  },
+  "damages": {
+   "title": "Vehicle damages",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "accidents": {
+   "title": "Accidents",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "salvage": {
+   "title": "Salvage records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "theft": {
+   "title": "Theft records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "lien": {
+   "title": "Lien / impound / export records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "junk": {
+   "title": "Services records",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "other": {
+   "title": "Other titles brands check",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "title_history": {
+   "title": "Registrations records",
+   "check_status": false,
+   "text": "No found records"
+  },
+  "sales": {
+   "title": "Sales history",
+   "check_status": false,
+   "text": "4 record(s)"
+  },
+  "owners": {
+   "title": "Number of owners",
+   "check_status": false,
+   "text": "No problems found"
+  },
+  "taxi": {
+   "title": "Taxi",
+   "check_status": false,
+   "text": "No records found"
+  }
+ },
+ "specifications": {
+  "title": "Vehicle Specifications",
+  "text": "0 damage(s)",
+  "year": {
+   "title": "Year",
+   "value": 2016
+  },
+  "country": {
+   "title": "Destination Market",
+   "value": "Europe"
+  },
+  "make": {
+   "title": "Make",
+   "value": "Volkswagen"
+  },
+  "model": {
+   "title": "Model",
+   "value": "Amarok"
+  },
+  "body": {
+   "title": "Body",
+   "value": "Pickup"
+  },
+  "doors": {
+   "title": "Doors",
+   "value": 4
+  },
+  "color": {
+   "title": "Color",
+   "value": "-"
+  },
+  "engine": {
+   "title": "Engine capacity",
+   "value": "3L"
+  },
+  "fuel_type": {
+   "title": "Fuel type",
+   "value": "Diesel"
+  },
+  "seating": {
+   "title": "Standard seating",
+   "value": "-"
+  },
+  "drive_type": {
+   "title": "Drive Type",
+   "value": "4x4 - Four-wheel drive"
+  },
+  "transmission": {
+   "title": "Transmission",
+   "value": "Automatic"
+  },
+  "keys": {
+   "title": "Keys",
+   "value": "-"
+  },
+  "series": {
+   "title": "Series",
+   "value": "Amarok I Double Cab (facelift 2016)"
+  },
+  "product_type": {
+   "title": "Product type",
+   "value": "Truck"
+  },
+  "vehicle_specification": {
+   "title": "Vehicle specification",
+   "value": "Amarok 3.0 TDI 4M"
+  },
+  "engine_code": {
+   "title": "Engine code",
+   "value": "-"
+  },
+  "engine_type": {
+   "title": "Engine type",
+   "value": "4-Stroke / 6 / V-T-DI"
+  },
+  "engine_manufacturer": {
+   "title": "Engine manufacturer",
+   "value": "VW"
+  },
+  "cylinders": {
+   "title": "Number of cylinders",
+   "value": "-"
+  },
+  "power": {
+   "title": "Engine power",
+   "value": "-"
+  },
+  "transmission_speeds": {
+   "title": "Number of gears",
+   "value": "8"
+  },
+  "steering_type": {
+   "title": "Steering type",
+   "value": "Hydraulic steering"
+  },
+  "front_suspension": {
+   "title": "Front suspension",
+   "value": "-"
+  },
+  "rear_suspension": {
+   "title": "Rear suspension",
+   "value": "-"
+  },
+  "suspension": {
+   "title": "Suspension",
+   "value": "Silencer/Screws"
+  },
+  "front_brakes": {
+   "title": "Front brakes",
+   "value": "Disc"
+  },
+  "rear_brakes": {
+   "title": "Rear brakes",
+   "value": "Drum"
+  },
+  "abs": {
+   "title": "ABS",
+   "value": "YES"
+  },
+  "gross_weight": {
+   "title": "Gross weight",
+   "value": "2920 kg"
+  },
+  "curb_weight": {
+   "title": "Curb weight",
+   "value": "2003 kg"
+  },
+  "length": {
+   "title": "Length",
+   "value": "5191 mm"
+  },
+  "width": {
+   "title": "Width",
+   "value": "1954 mm"
+  },
+  "height": {
+   "title": "Height",
+   "value": "1834 mm"
+  },
+  "ride_height": {
+   "title": "Ride height",
+   "value": "192 mm"
+  },
+  "track_front": {
+   "title": "Track front",
+   "value": "1666 mm"
+  },
+  "track_rear": {
+   "title": "Track rear",
+   "value": "1662 mm"
+  },
+  "wheelbase": {
+   "title": "Wheelbase",
+   "value": "3090 mm"
+  },
+  "wheel_size": {
+   "title": "Wheel size",
+   "value": "245/65R17 XL*255/50R20 XL*255/55R19 XL"
+  },
+  "number_of_wheels": {
+   "title": "Number of wheels",
+   "value": "4"
+  },
+  "number_of_axles": {
+   "title": "Number of axles",
+   "value": "2"
+  },
+  "max_speed": {
+   "title": "Max speed",
+   "value": "191 KM/H"
+  },
+  "emission_standard": {
+   "title": "Emission standard",
+   "value": "6L"
+  },
+  "co2_emission": {
+   "title": "CO2 emission",
+   "value": "203.84 g/km"
+  },
+  "max_roof_load": {
+   "title": "Max roof load",
+   "value": "100 kg"
+  },
+  "trailer_load": {
+   "title": "Trailer load without brakes",
+   "value": "750 kg"
+  },
+  "trunk_capacity": {
+   "title": "Trunk capacity",
+   "value": "-"
+  },
+  "manufacturer": {
+   "title": "Manufacturer",
+   "value": "VOLKSWAGEN AG, D-38440 WOLFSBURG"
+  },
+  "manufacturer_address": {
+   "title": "Manufacturer address",
+   "value": "Wolfsburg/Hannover, Germany"
+  },
+  "plant_country": {
+   "title": "Plant country",
+   "value": "GERMANY"
+  }
+ },
+ "vehicle_value_information": {
+  "title": "Vehicle value information",
+  "text": "No records found",
+  "items": []
+ },
+ "vehicle_damages": {
+  "title": "Vehicle damages",
+  "text": "No records found",
+  "items": []
+ },
+ "accident_records": {
+  "title": "Accident records",
+  "text": "No records found",
+  "accidents": []
+ },
+ "services_records": {
+  "title": "Services records",
+  "text": "No records found",
+  "services": []
+ },
+ "registration_record": {
+  "title": "Registration Records",
+  "text": "No records found",
+  "registrations": []
+ },
+ "mileages": {
+  "title": "Mileages",
+  "text": "No records found",
+  "mileages": [],
+  "change": false
+ },
+ "auction_sale_history": {
+  "title": "Auction sale history",
+  "text": "4 record(s)",
+  "items": {
+   "AUTOBID": {
+    "childs": [
+     {
+      "date": "2025-05-14T00:00:00.000000Z",
+      "status": "Not Sold",
+      "price": "17 471 EUR",
+      "mileage": "194 900 km",
+      "place": "AUTOBID",
+      "meta_make": {
+       "title": "Make",
+       "value": "Volkswagen"
+      },
+      "meta_model": {
+       "title": "Model",
+       "value": "Amarok"
+      },
+      "year": {
+       "title": "Year",
+       "value": 2016
+      },
+      "engine": {
+       "title": "Engine capacity",
+       "value": "3L"
+      },
+      "body": {
+       "title": "Body",
+       "value": "Pickup"
+      },
+      "transmission": {
+       "title": "Transmission",
+       "value": "Automatic"
+      },
+      "images": [
+       "https://cdn.autobid.de/data/cars/30598/3059702/82939995_hd.jpg",
+       "https://cdn.autobid.de/data/cars/30598/3059702/82940007_hd.jpg"
+      ],
+      "sort_date": 1747180800,
+      "val": 194900,
+      "metric": "km",
+      "price_val": 17471,
+      "price_currency": "EUR"
+     },
+     {
+      "date": "2025-05-12T00:00:00.000000Z",
+      "status": "Not Sold",
+      "price": "16 607 EUR",
+      "mileage": "194 900 km",
+      "place": "AUTOBID",
+      "meta_make": {
+       "title": "Make",
+       "value": "Volkswagen"
+      },
+      "meta_model": {
+       "title": "Model",
+       "value": "Amarok"
+      },
+      "year": {
+       "title": "Year",
+       "value": 2016
+      },
+      "engine": {
+       "title": "Engine capacity",
+       "value": "3L"
+      },
+      "body": {
+       "title": "Body",
+       "value": "Pickup"
+      },
+      "transmission": {
+       "title": "Transmission",
+       "value": "Automatic"
+      },
+      "images": [
+       "https://cdn.autobid.de/data/cars/30532/3053132/82735194_hd.jpg",
+       "https://cdn.autobid.de/data/cars/30532/3053132/82735179_hd.jpg"
+      ],
+      "sort_date": 1747008000,
+      "val": 194900,
+      "metric": "km",
+      "price_val": 16607,
+      "price_currency": "EUR"
+     },
+     {
+      "date": "2025-05-07T00:00:00.000000Z",
+      "status": "Not Sold",
+      "price": "19 854 EUR",
+      "mileage": "194 900 km",
+      "place": "AUTOBID",
+      "meta_make": {
+       "title": "Make",
+       "value": "Volkswagen"
+      },
+      "meta_model": {
+       "title": "Model",
+       "value": "Amarok"
+      },
+      "year": {
+       "title": "Year",
+       "value": 2016
+      },
+      "engine": {
+       "title": "Engine capacity",
+       "value": "3L"
+      },
+      "body": {
+       "title": "Body",
+       "value": "Pickup"
+      },
+      "transmission": {
+       "title": "Transmission",
+       "value": "Automatic"
+      },
+      "images": [
+       "https://cdn.autobid.de/data/cars/30478/3047702/82545932_hd.jpg",
+       "https://cdn.autobid.de/data/cars/30478/3047702/82545931_hd.jpg"
+      ],
+      "sort_date": 1746576000,
+      "val": 194900,
+      "metric": "km",
+      "price_val": 19854,
+      "price_currency": "EUR"
+     },
+     {
+      "date": "2025-04-30T00:00:00.000000Z",
+      "status": "Not Sold",
+      "price": "19 998 EUR",
+      "mileage": "194 900 km",
+      "place": "AUTOBID",
+      "meta_make": {
+       "title": "Make",
+       "value": "Volkswagen"
+      },
+      "meta_model": {
+       "title": "Model",
+       "value": "Amarok"
+      },
+      "year": {
+       "title": "Year",
+       "value": 2016
+      },
+      "engine": {
+       "title": "Engine capacity",
+       "value": "3L"
+      },
+      "body": {
+       "title": "Body",
+       "value": "Pickup"
+      },
+      "transmission": {
+       "title": "Transmission",
+       "value": "Automatic"
+      },
+      "images": [
+       "https://img.checkcar.vin/medium/img5/48/2016/9/7041/a7250ea4c3b80c615304b5ded240a87c/ee421978b5afdaa7afe39309c1175d45.jpg",
+       "https://img.checkcar.vin/medium/img5/48/2016/9/7041/a7250ea4c3b80c615304b5ded240a87c/4cde39fe2d3a4759b791ac76b8aeec70.jpg"
+      ],
+      "sort_date": 1745971200,
+      "val": 194900,
+      "metric": "km",
+      "price_val": 19998,
+      "price_currency": "EUR"
+     }
+    ]
+   }
+  }
+ },
+ "safety_ratings_records": {
+  "title": "Safety ratings",
+  "text": "No records found",
+  "items": []
+ },
+ "complaints": {
+  "title": "Complaints",
+  "text": "No records found",
+  "items": []
+ }
+}

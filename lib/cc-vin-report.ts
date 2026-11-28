@@ -3,8 +3,8 @@
  * strukturētie lauki, normalizācija un LV vārdnīcas.
  *
  * Klienta PDF šo avotu sauc tikai par „IZSOĻU PORTĀLU ARHĪVS”: ne sadaļā, ne tabulās, ne leģendā
- * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas - akcents ir
- * uz sarkanajiem karogiem (bojājumi, total loss, īpašumtiesību atzīmes, īpašnieku maiņas).
+ * nedrīkst parādīties ārējā pakalpojuma nosaukums. Akcents ir uz sarkanajiem karogiem (bojājumi, total loss,
+ * īpašumtiesību atzīmes, īpašnieku maiņas); 28.11 klāt servisa ieraksti un «Citi dati» (specifikācija).
  */
 
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
@@ -34,6 +34,8 @@ export const CC_VIN_SUBTITLES = {
   brands: "Īpašumtiesību atzīmes",
   titles: "Īpašumtiesību (title) ieraksti",
   sales: "Pārdošanas un izsoļu vēsture",
+  services: "Servisa ieraksti",
+  specs: "Citi dati: tehniskā specifikācija",
 } as const;
 
 export type CcVinCheckSeverity = "ok" | "alert";
@@ -79,6 +81,19 @@ export type CcVinSaleRow = {
   priceLabel?: string;
 };
 
+/** Servisa ieraksts (28.11): datums + nobraukums (ja zināms) + veiktie darbi / detaļas (rindas ar \n). */
+export type CcVinServiceRow = {
+  date: string;
+  odometer: string;
+  description: string;
+};
+
+/** «Citi dati»: tehniskās specifikācijas un citu sadaļu lauki (nosaukums LV + vērtība). */
+export type CcVinSpecRow = {
+  label: string;
+  value: string;
+};
+
 /** Strukturāli identisks `SourcePdfChecklist` (bez importa, lai nav cikliskas atkarības). */
 export type CcVinPdfChecklist = {
   incidents: boolean;
@@ -101,6 +116,10 @@ export type CcVinBlockState = {
   brands: CcVinRecordRow[];
   titles: CcVinTitleRow[];
   sales: CcVinSaleRow[];
+  /** Servisa ieraksti (CheckCar «Services records»). Vecākos blokos nav. */
+  services?: CcVinServiceRow[];
+  /** Tehniskā specifikācija un citi lauki («Citi dati»). Vecākos blokos nav. */
+  specs?: CcVinSpecRow[];
   comments: string;
   /** Neapstrādātais avota teksts - tikai admin. */
   rawUnprocessedData: string;
@@ -140,6 +159,14 @@ export function emptyCcVinSaleRow(): CcVinSaleRow {
   return { date: "", venue: "", odometer: "", price: "", status: "" };
 }
 
+export function emptyCcVinServiceRow(): CcVinServiceRow {
+  return { date: "", odometer: "", description: "" };
+}
+
+export function emptyCcVinSpecRow(): CcVinSpecRow {
+  return { label: "", value: "" };
+}
+
 export function emptyCcVinBlock(): CcVinBlockState {
   return {
     reportDate: "",
@@ -176,6 +203,14 @@ export function ccVinRecordRowHasData(r: CcVinRecordRow | null | undefined): boo
 
 export function ccVinTitleRowHasData(r: CcVinTitleRow | null | undefined): boolean {
   return Boolean(r && (r.date.trim() || r.region.trim() || r.odometer.trim() || r.note.trim()));
+}
+
+export function ccVinServiceRowHasData(r: CcVinServiceRow | null | undefined): boolean {
+  return Boolean(r && (r.date.trim() || r.odometer.trim() || r.description.trim()));
+}
+
+export function ccVinSpecRowHasData(r: CcVinSpecRow | null | undefined): boolean {
+  return Boolean(r && r.label.trim() && r.value.trim());
 }
 
 export function ccVinSaleRowHasData(r: CcVinSaleRow | null | undefined): boolean {
@@ -220,6 +255,7 @@ export function countCcVinPdfVisibleRecords(b: CcVinBlockState | null | undefine
     (b.brands ?? []).filter(ccVinRecordRowHasData).length +
     (b.titles ?? []).filter(ccVinTitleRowHasData).length +
     sales.length +
+    (b.services ?? []).filter(ccVinServiceRowHasData).length +
     lots
   );
 }
@@ -233,7 +269,8 @@ export function countCcVinRecords(b: CcVinBlockState | null | undefined): number
     (b.insurance ?? []).filter(ccVinRecordRowHasData).length +
     (b.brands ?? []).filter(ccVinRecordRowHasData).length +
     (b.titles ?? []).filter(ccVinTitleRowHasData).length +
-    (b.sales ?? []).filter(ccVinSaleRowHasData).length
+    (b.sales ?? []).filter(ccVinSaleRowHasData).length +
+    (b.services ?? []).filter(ccVinServiceRowHasData).length
   );
 }
 
@@ -245,6 +282,7 @@ export function ccVinBlockHasContent(b: CcVinBlockState | null | undefined): boo
   if (!b) return false;
   if (countCcVinRecords(b) > 0) return true;
   if ((b.checks ?? []).some(ccVinCheckRowHasData)) return true;
+  if ((b.specs ?? []).some(ccVinSpecRowHasData)) return true;
   if ((b.photoGroups ?? []).some((g) => (g.photos ?? []).length > 0)) return true;
   if ((b.thecarapiRecords ?? []).some((record) => record.fields.length > 0 || record.photos.length > 0)) return true;
   return Boolean(b.comments.trim() || b.reportDate.trim() || b.attentionMarks.trim());
@@ -353,6 +391,26 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     })
     .filter(ccVinSaleRowHasData);
 
+  const services = arr(o.services)
+    .slice(0, 300)
+    .map((x) => {
+      const r = rowObj(x);
+      return {
+        date: str(r.date, 40),
+        odometer: str(r.odometer, 40),
+        description: str(r.description, 4000),
+      } as CcVinServiceRow;
+    })
+    .filter(ccVinServiceRowHasData);
+
+  const specs = arr(o.specs)
+    .slice(0, 200)
+    .map((x) => {
+      const r = rowObj(x);
+      return { label: str(r.label, 120), value: str(r.value, 600) } as CcVinSpecRow;
+    })
+    .filter(ccVinSpecRowHasData);
+
   const synced = syncCcVinPhotoGroupsAndFlat(normalizeCcVinPhotoGroups(o.photoGroups, o.photos));
   const thecarapiRecords = normalizeThecarapiAdminRecords(o.thecarapiRecords);
   const salesAligned = alignCcVinSaleDatesWithRecords(sales, thecarapiRecords);
@@ -368,6 +426,8 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     brands: withFallback(records("brands"), emptyCcVinRecordRow),
     titles: withFallback(titles, emptyCcVinTitleRow),
     sales: withFallback(salesAligned, emptyCcVinSaleRow),
+    ...(services.length > 0 ? { services } : {}),
+    ...(specs.length > 0 ? { specs } : {}),
     comments: str(o.comments, 12000),
     rawUnprocessedData: str(o.rawUnprocessedData, 200000),
     aiContextRaw: str(o.aiContextRaw, 200000),
@@ -459,6 +519,20 @@ export function ccVinBlockToPlainText(b: CcVinBlockState | null | undefined): st
     for (const r of sales) {
       lines.push([r.date, r.venue, r.odometer, r.price, r.status].filter(Boolean).join("\t"));
     }
+  }
+
+  const services = (b.services ?? []).filter(ccVinServiceRowHasData);
+  if (services.length > 0) {
+    lines.push(CC_VIN_SUBTITLES.services);
+    for (const r of services) {
+      lines.push([r.date, r.odometer && `${r.odometer} km`, r.description.replace(/\n+/g, "; ")].filter(Boolean).join("\t"));
+    }
+  }
+
+  const specs = (b.specs ?? []).filter(ccVinSpecRowHasData);
+  if (specs.length > 0) {
+    lines.push(CC_VIN_SUBTITLES.specs);
+    for (const r of specs) lines.push(`${r.label}: ${r.value}`);
   }
 
   if (b.comments.trim()) lines.push(b.comments.trim());

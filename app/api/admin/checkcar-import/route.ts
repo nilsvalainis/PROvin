@@ -4,7 +4,9 @@
  * Operators pats atver nopirkto atskaiti checkcar.vin savā pārlūkā un nospiež „Nosūtīt uz PROVIN”.
  * Serveris checkcar.vin neatver (Cloudflare) un neko nepērk.
  *
- * JSON POST { action: "prepare", vin, text, html?, pageUrl?, groups: [{label, urls[]}], hint?: {kind, id}, confirmHint? }
+ * JSON POST { action: "prepare", vin, text, html?, data?, pageUrl?, groups: [{label, urls[]}], hint?: {kind, id}, confirmHint? }
+ *   `data` - lapas datu stāvoklis (`__NUXT__` report.data, objekts vai JSON teksts): visi ieraksti, arī sakļautie
+ *   un lapā nerenderētie (servera savācējs /opt/provin-checkcar/collect.mjs).
  *   -> mērķis pēc VIN (Stripe, melnraksts, CSDD/VIN SCAN bloki, meklēšanas indekss): atvērtā lapa, ja tai ir
  *      šis VIN (citādi 409 hint_vin_mismatch; ar confirmHint=true ieliek tur tik un tā); bez lapas - jaunākais,
  *      ieraksta `cc_vin` vēstures rindas + RAW tekstu, atgriež foto grupu plānu un jau zināmos foto URL.
@@ -45,6 +47,7 @@ import {
   readAutobidOriginalHint,
   writeCheckcarBlock,
 } from "@/lib/checkcar-import-server";
+import { CHECKCAR_REPORT_DATA_MAX } from "@/lib/checkcar-report-data";
 import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
 import { isSafeListingPeekId } from "@/lib/listing-peek-photos";
 import { readQuickEval } from "@/lib/quick-eval-store";
@@ -90,6 +93,10 @@ async function prepare(b: Record<string, unknown>) {
   const text = str(b.text);
   const pageUrl = str(b.pageUrl).slice(0, 500);
   if (text.length > CHECKCAR_IMPORT_TEXT_MAX || html.length > CHECKCAR_IMPORT_HTML_MAX) return bad("too_large", 413);
+  const data = b.data == null ? undefined : b.data;
+  if (data !== undefined && (typeof data === "string" ? data : JSON.stringify(data)).length > CHECKCAR_REPORT_DATA_MAX) {
+    return bad("too_large", 413);
+  }
   const readable = text.trim() ? text : checkcarHtmlToText(html);
   if (!readable.trim()) return bad("page_not_ready");
   if (checkcarPageVinMismatch(readable, pageUrl, vin)) return bad("vin_mismatch");
@@ -117,7 +124,7 @@ async function prepare(b: Record<string, unknown>) {
   if (b.confirmHint === true && !(await checkcarTargetExists(target.kind, target.id))) return bad("not_found", 404);
 
   await loadEcbDailyRates().catch(() => undefined);
-  const imported = parseCheckcarImport({ vin, text, html, pageUrl, groups: b.groups as never });
+  const imported = parseCheckcarImport({ vin, text, html, pageUrl, groups: b.groups as never, data });
   const written = await writeCheckcarBlock(target.kind, target.id, (prev) =>
     applyCheckcarImportToBlock(prev, imported, rigaToday()),
   );
