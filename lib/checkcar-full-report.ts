@@ -19,6 +19,11 @@ import {
 } from "@/lib/cc-vin-report-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import {
+  checkcarReportDataToText,
+  mergeCheckcarParsed,
+  parseCheckcarReportData,
+} from "@/lib/checkcar-report-data";
+import {
   CC_VIN_MAX_PHOTOS,
   makeCcVinPhotoGroupId,
   normalizeCcVinPhotoGroups,
@@ -71,6 +76,8 @@ export type CheckcarImportInput = {
   html?: string;
   pageUrl?: string;
   groups?: CheckcarImportGroupInput[];
+  /** Lapas datu stāvoklis (`__NUXT__` report.data) - visi ieraksti, arī nerenderētie (28.11). */
+  data?: unknown;
 };
 
 export type CheckcarPhotoGroupPlan = { title: string; urls: string[] };
@@ -316,7 +323,8 @@ export function planCheckcarPhotoGroups(
 
 export function parseCheckcarImport(input: CheckcarImportInput): CheckcarParsedImport {
   const text = (input.text || "").trim() ? input.text : checkcarHtmlToText(input.html || "");
-  const main = parseCcVinReportText(text);
+  const data = input.data == null ? null : parseCheckcarReportData(input.data);
+  const main = mergeCheckcarParsed(parseCcVinReportText(text), data, text);
   let parsed = main;
   let fallbackRows = 0;
   if (main.sales.length === 0 && main.mileage.length === 0) {
@@ -332,7 +340,9 @@ export function parseCheckcarImport(input: CheckcarImportInput): CheckcarParsedI
     }
   }
   const groups = planCheckcarPhotoGroups(normalizeCheckcarGroups(input.groups), parsed.reportDate);
-  return { parsed, fallbackRows, groups, rawText: text.slice(0, CHECKCAR_IMPORT_TEXT_MAX) };
+  const dataText = checkcarReportDataToText(data);
+  const rawText = [text.trim(), dataText].filter(Boolean).join("\n\n").slice(0, CHECKCAR_IMPORT_TEXT_MAX);
+  return { parsed, fallbackRows, groups, rawText };
 }
 
 /** `rawUnprocessedData`: CheckCar sadaļa augšā, iepriekšējā CheckCar sadaļa aizstāta, pārējais paliek. */

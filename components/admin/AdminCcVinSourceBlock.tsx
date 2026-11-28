@@ -63,12 +63,16 @@ import {
   emptyCcVinMileageRow,
   emptyCcVinRecordRow,
   emptyCcVinSaleRow,
+  emptyCcVinServiceRow,
+  emptyCcVinSpecRow,
   emptyCcVinTitleRow,
   type CcVinBlockState,
   type CcVinCheckRow,
   type CcVinDamageRow,
   type CcVinRecordRow,
   type CcVinSaleRow,
+  type CcVinServiceRow,
+  type CcVinSpecRow,
   type CcVinTitleRow,
 } from "@/lib/cc-vin-report";
 import { displayUsdAsEur } from "@/lib/currency-eur-convert";
@@ -170,6 +174,8 @@ export function AdminCcVinSourceBlock({
   const insuranceRows = rowsOf(value.insurance, emptyCcVinRecordRow);
   const titleRows = rowsOf(value.titles, emptyCcVinTitleRow);
   const saleRows = rowsOf(value.sales, emptyCcVinSaleRow);
+  const serviceRows = rowsOf(value.services, emptyCcVinServiceRow);
+  const specRows = rowsOf(value.specs, emptyCcVinSpecRow);
 
   const patchRow = <T,>(rows: T[], index: number, patch: Partial<T>): T[] => {
     const next = [...rows];
@@ -1010,6 +1016,118 @@ export function AdminCcVinSourceBlock({
               onClick={() =>
                 setRows("sales", [...saleRows, emptyCcVinSaleRow()])
               }
+            >
+              + Rinda
+            </button>
+          ) : null}
+
+          <p className={subhead}>
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.serviceWorks} />
+            {CC_VIN_SUBTITLES.services}
+          </p>
+          <div className={tableWrap}>
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[460px]`}>
+              <thead>
+                <tr className={headRow}>
+                  <th className={`${cell} w-[92px]`}>Datums</th>
+                  <th className={`${cell} w-[92px]`}>Odometrs (km)</th>
+                  <th className={cell}>Veiktie darbi un detaļas</th>
+                  {!readOnly ? (
+                    <th className={`${cell} w-[28px]`} aria-label="Noņemt" />
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {serviceRows.map((row, i) => (
+                  <tr key={i} className="border-b border-slate-100 last:border-b-0">
+                    {textCell(i, "servisa datums", row.date, (next) =>
+                      setRows("services", patchRow<CcVinServiceRow>(serviceRows, i, { date: next })),
+                    )}
+                    {textCell(
+                      i,
+                      "servisa odometrs",
+                      row.odometer,
+                      (next) => setRows("services", patchRow<CcVinServiceRow>(serviceRows, i, { odometer: next })),
+                      { numeric: true },
+                    )}
+                    {textCell(
+                      i,
+                      "servisa darbi",
+                      row.description,
+                      (next) => setRows("services", patchRow<CcVinServiceRow>(serviceRows, i, { description: next })),
+                      { multiline: true },
+                    )}
+                    {!readOnly ? (
+                      <td className={`${cell} align-top`}>
+                        {editable ? (
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} - nodzēst servisa ierakstu ${i + 1}`}
+                            onClick={() => setRows("services", dropRow(serviceRows, i, emptyCcVinServiceRow))}
+                          />
+                        ) : null}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {editable ? (
+            <button
+              type="button"
+              className={addBtn}
+              onClick={() => setRows("services", [...serviceRows, emptyCcVinServiceRow()])}
+            >
+              + Rinda
+            </button>
+          ) : null}
+
+          <p className={subhead}>
+            <AdminProvinLucide icon={SUBHEADING_LUCIDE.listingHistory} />
+            {CC_VIN_SUBTITLES.specs}
+          </p>
+          <div className={tableWrap}>
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[360px]`}>
+              <thead>
+                <tr className={headRow}>
+                  <th className={`${cell} w-[40%]`}>Lauks</th>
+                  <th className={cell}>Vērtība</th>
+                  {!readOnly ? (
+                    <th className={`${cell} w-[28px]`} aria-label="Noņemt" />
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {specRows.map((row, i) => (
+                  <tr key={i} className="border-b border-slate-100 last:border-b-0">
+                    {textCell(i, "citu datu lauks", row.label, (next) =>
+                      setRows("specs", patchRow<CcVinSpecRow>(specRows, i, { label: next })),
+                    )}
+                    {textCell(i, "citu datu vērtība", row.value, (next) =>
+                      setRows("specs", patchRow<CcVinSpecRow>(specRows, i, { value: next })),
+                    )}
+                    {!readOnly ? (
+                      <td className={`${cell} align-top`}>
+                        {editable ? (
+                          <AdminFieldResetButton
+                            title="Nodzēst rindu"
+                            aria-label={`${ARIA} - nodzēst citu datu rindu ${i + 1}`}
+                            onClick={() => setRows("specs", dropRow(specRows, i, emptyCcVinSpecRow))}
+                          />
+                        ) : null}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {editable ? (
+            <button
+              type="button"
+              className={addBtn}
+              onClick={() => setRows("specs", [...specRows, emptyCcVinSpecRow()])}
             >
               + Rinda
             </button>
