@@ -43,12 +43,15 @@ export function AdminFactCheckButton({
   busy,
   disabled,
   onClick,
+  onAiClick,
 }: {
   busy?: boolean;
   disabled?: boolean;
   onClick: () => void;
+  /** 28.11 (Nils «jā»): otrā pārbaude ar AI (Gemini Flash) - tikai manuāli, nekad automātiski. */
+  onAiClick?: () => void;
 }) {
-  return (
+  const main = (
     <button
       type="button"
       className={adminProBtn("neutral")}
@@ -60,6 +63,22 @@ export function AdminFactCheckButton({
       {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden /> : null}
       Pārbaudīt faktus
     </button>
+  );
+  if (!onAiClick) return main;
+  return (
+    <>
+      {main}
+      <button
+        type="button"
+        data-fact-check-ai=""
+        className={adminProBtn("neutral")}
+        disabled={disabled || busy}
+        onClick={onAiClick}
+        title="Otrā faktu pārbaude ar AI (Gemini Flash), tekstu nemaina"
+      >
+        AI pārbaude
+      </button>
+    </>
   );
 }
 
@@ -209,7 +228,10 @@ export function AdminFactCheckPanel({
   onDismiss,
   onApplyFix,
   aiFix,
+  title = "Faktu pārbaude",
 }: {
+  /** Paneļa virsraksts (noklusējums «Faktu pārbaude»; PDF tekstiem «PDF teksti»). */
+  title?: string;
   flags: readonly FactCheckFlag[] | undefined;
   dismissed: ReadonlySet<string> | readonly string[];
   onDismiss: (flag: FactCheckFlag) => void;
@@ -279,7 +301,19 @@ export function AdminFactCheckPanel({
   const onVerdict = fb
     ? (f: FactCheckFlag, verdict: ContradictionVerdict) => {
         const { fp, rule } = factFlagFingerprint(f, fb.vin);
-        fb.onVerdict({ origin: f.id.startsWith("odo_") || /^c\d/.test(f.id) ? "prepdf" : "fact", fp, rule, severity: f.level }, verdict);
+        fb.onVerdict(
+          {
+            origin: f.id.startsWith("odo_") || /^c\d/.test(f.id) ? "prepdf" : "fact",
+            fp,
+            rule,
+            severity: f.level,
+            // 28.11: nedēļas kopsavilkumam - teikums (serverī bez personas datiem), veids un fakts.
+            sample: f.sentence,
+            kind: f.kind,
+            ...(f.factId ? { factId: f.factId } : {}),
+          },
+          verdict,
+        );
       }
     : undefined;
   const aiOn = Boolean(aiFix?.allowed && adminRichHtmlToPlainText(aiFix.text).trim());
@@ -329,7 +363,7 @@ export function AdminFactCheckPanel({
       role="status"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold">Faktu pārbaude</p>
+        <p className="text-[11px] font-semibold">{title}</p>
         <span className="inline-flex shrink-0 items-center gap-1">
         {aiOn ? (
           <button

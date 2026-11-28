@@ -1,7 +1,7 @@
 /**
  * Admin: pirms-publicēšanas faktu pārbaude AI komentāram pret PROVIN agregātu faktu bāzi.
  * Teksts NETIEK mainīts; atbilde ir karodziņi adminam. Deterministiskā daļa ir bez maksas;
- * Gemini Flash slānis tikai ar UNIT_FACT_CHECK_AI=1.
+ * Gemini Flash slānis tikai ar UNIT_FACT_CHECK_AI=1 UN `useAi: true` (poga «AI pārbaude», nekad automātiski).
  */
 import { NextResponse } from "next/server";
 
@@ -15,6 +15,7 @@ import { collectFilledFactCheckFields } from "@/lib/admin-fact-check-client";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import { checkCommentContradictions, mergeFactCheckFlags } from "@/lib/comment-contradiction-check";
 import { dropContextExemptFlags } from "@/lib/fact-check-context";
+import { checkExtraFacts } from "@/lib/fact-check-extra-facts";
 import { checkAiCommentFacts } from "@/lib/unit-facts/check";
 import { aiCheckAgainstUnitFacts, isUnitFactAiCheckEnabled } from "@/lib/unit-facts/ai-check";
 
@@ -75,18 +76,27 @@ export async function POST(req: Request) {
     sourceBlocks,
     vin: context.vin,
   });
+  // 28.11: kārbas kods / tips, jauda, nobraukums pie datuma, servisa ierakstu skaits, izsoļu bojājumi.
+  const extraFlags = checkExtraFacts({
+    text,
+    field: input.field,
+    facts,
+    sourceBlocks,
+    vin: context.vin,
+    contextText,
+  });
   // 27.11 (Nils): neviens atradums uz hipotētiska teikuma vai obligātās eļļas piebildes.
-  const mergedFlags = dropContextExemptFlags(mergeFactCheckFlags(result.flags, sheetFlags));
+  const mergedFlags = dropContextExemptFlags(mergeFactCheckFlags(mergeFactCheckFlags(result.flags, sheetFlags), extraFlags));
   const merged = { ...result, flags: mergedFlags };
-  const wantAi = b.useAi === true && isUnitFactAiCheckEnabled();
-  if (!wantAi) return NextResponse.json({ ...merged, aiUsed: false });
+  if (b.useAi !== true) return NextResponse.json({ ...merged, aiUsed: false });
+  if (!isUnitFactAiCheckEnabled()) return NextResponse.json({ ...merged, aiUsed: false, aiSkipped: "ai_disabled" });
 
   // Maksas slānis (Gemini Flash): tā pati demo/sesijas aizsardzība kā citiem AI maršrutiem.
   const guard = await assertAiAllowedForSession(context.sessionId);
-  if (!guard.ok) return NextResponse.json({ ...result, aiUsed: false, aiSkipped: guard.error });
+  if (!guard.ok) return NextResponse.json({ ...merged, aiUsed: false, aiSkipped: guard.error });
 
   return nextJsonBodyWithAiUsage(async () => {
-    const aiFlags = await aiCheckAgainstUnitFacts(input);
+    const aiFlags = await aiCheckAgainstUnitFacts(input, undefined, { canonicalSheet: facts.sheet });
     const seen = new Set(merged.flags.map((f) => `${f.factId ?? ""}|${f.sentence}`));
     const withAi = [
       ...merged.flags,

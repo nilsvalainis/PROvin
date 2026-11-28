@@ -18,6 +18,8 @@ export type AdminFactCheckSlot = {
   flags: FactCheckFlag[];
   dismissed: readonly string[];
   onCheck: () => void;
+  /** 28.11: «AI pārbaude» (Gemini Flash) - tikai manuāli. */
+  onAiCheck?: () => void;
   onDismiss: (flag: FactCheckFlag) => void;
   onApplyFix?: (flag: FactCheckFlag) => void;
   /** «Labot» ar AI (diff skatā). */
@@ -93,6 +95,7 @@ export function AdminSourceCommentField({
             busy={ai.factCheck.busy}
             disabled={disabled}
             onClick={ai.factCheck.onCheck}
+            onAiClick={ai.factCheck.onAiCheck}
           />
         ) : null}
       </span>
