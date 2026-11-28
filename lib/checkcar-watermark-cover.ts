@@ -1,7 +1,8 @@
 import sharp from "sharp";
 
 import {
-  coverCheckcarVinWatermarkRgb,
+  detectCheckcarVinWatermark,
+  type CheckcarWatermarkBox,
   type CheckcarWatermarkHit,
 } from "@/lib/checkcar-watermark-mask";
 
@@ -27,6 +28,11 @@ export async function coverCheckcarVinWatermark(
   }
 }
 
+/** Izpludināšanas stiprums pēc joslas augstuma (Nils 28.11: blur, nevis rūtaina mozaīka). */
+export function checkcarBlurSigma(box: CheckcarWatermarkBox): number {
+  return Math.max(12, Math.min(80, Math.round(box.h / 2.5)));
+}
+
 async function coverCheckcarVinWatermarkUnsafe(
   jpegBody: Buffer,
 ): Promise<CheckcarWatermarkCoverResult> {
@@ -48,12 +54,19 @@ async function coverCheckcarVinWatermarkUnsafe(
     height: info.height,
     channels: 3 as const,
   };
-  const hit = coverCheckcarVinWatermarkRgb(img);
+  const hit = detectCheckcarVinWatermark(img);
   if (!hit) return { covered: false, jpeg: jpegBody, hit: null };
 
-  const jpeg = await sharp(Buffer.from(img.data), {
-    raw: { width: img.width, height: img.height, channels: 3 },
-  })
+  const { box } = hit;
+  const rawOpts = { raw: { width: img.width, height: img.height, channels: 3 as const } };
+  // Centra josla izpludināta (Gaussian), malas mīkstinātas ar nelielu rezervi ap uzrakstu.
+  const blurred = await sharp(Buffer.from(data), rawOpts)
+    .extract({ left: box.x, top: box.y, width: box.w, height: box.h })
+    .blur(checkcarBlurSigma(box))
+    .png()
+    .toBuffer();
+  const jpeg = await sharp(Buffer.from(data), rawOpts)
+    .composite([{ input: blurred, left: box.x, top: box.y }])
     .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
     .toBuffer();
 
